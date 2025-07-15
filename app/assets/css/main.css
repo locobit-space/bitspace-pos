@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: "Public Sans", sans-serif;
+
+  --breakpoint-3xl: 1920px;
+
+  --color-purple-50: #f7f3ff;
+  --color-purple-100: #efe9fe;
+  --color-purple-200: #e2d6fe;
+  --color-purple-300: #cbb5fd;
+  --color-purple-400: #ad8bfa;
+  --color-purple-500: #8b5cf6;
+  --color-purple-600: #713aed;
+  --color-purple-700: #5e28d9;
+  --color-purple-800: #4e21b6;
+  --color-purple-900: #421d95;
+  --color-purple-950: #2a1065;
+}
