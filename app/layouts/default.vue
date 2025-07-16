@@ -1,13 +1,14 @@
 <template>
-    <div>
-        <slot />
-    </div>
+  <div class="h-dvh flex gap-4">
+    <aside>
+      <AppSideBar class="" />
+    </aside>
+    <main>
+      <slot />
+    </main>
+  </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts"></script>
 
-</script>
-
-<style scoped>
-
-</style>
+<style scoped></style>
