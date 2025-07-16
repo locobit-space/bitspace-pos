@@ -9,6 +9,8 @@ export default defineNuxtConfig({
     compatibilityVersion: 4
   },
 
+  css: ['~/assets/css/main.css'],
+
   modules: [
     '@nuxt/eslint',
     '@nuxt/icon',
@@ -17,4 +19,40 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     "@nuxtjs/i18n",
   ],
+
+  ui: {
+    theme: {
+      colors: [
+        "primary",
+        "red",
+        "gray",
+        "orange",
+        "amber",
+        "yellow",
+        "lime",
+        "green",
+        "emerald",
+        "teal",
+        "cyan",
+        "sky",
+        "blue",
+        "indigo",
+        "violet",
+        "purple",
+        "fuchsia",
+        "pink",
+        "rose",
+        "amethyst",
+        "slate",
+        "gray",
+        "zinc",
+        "neutral",
+        "stone",
+        "error",
+        "warning",
+        "info",
+        "success",
+      ],
+    },
+  },
 })
