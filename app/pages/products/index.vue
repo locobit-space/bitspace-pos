@@ -893,7 +893,6 @@ watch([selectedBranch, selectedCategory, selectedStatus, searchQuery], () => {
 definePageMeta({
   title: 'Product Manager',
   description: 'Manage products, inventory, and pricing',
-  layout: 'admin'
 })
 
 useHead({

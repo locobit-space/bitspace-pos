@@ -74,8 +74,8 @@ export default defineNuxtConfig({
     lazy: true,
     defaultLocale: "en",
     vueI18n: "./i18n.config.ts",
-    // bundle: {
-    //   optimizeTranslationDirective: false,
-    // },
+    bundle: {
+      optimizeTranslationDirective: false,
+    },
   },
 });
