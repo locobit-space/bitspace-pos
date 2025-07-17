@@ -1,9 +1,9 @@
 <template>
-  <div class="h-dvh flex gap-4">
+  <div class="h-dvh flex">
     <aside>
       <AppSideBar class="" />
     </aside>
-    <main>
+    <main class="flex-grow">
       <slot />
     </main>
   </div>

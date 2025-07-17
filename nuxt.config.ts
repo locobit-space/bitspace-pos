@@ -62,15 +62,20 @@ export default defineNuxtConfig({
         code: "lo",
         name: "Lao PDR",
         file: "lo-LA.json",
+        iso: "lo-LA",
       },
       {
         code: "en",
         name: "English (US)",
         file: "en-US.json",
+        iso: "en-US",
       },
     ],
     lazy: true,
-    defaultLocale: "lo",
+    defaultLocale: "en",
     vueI18n: "./i18n.config.ts",
+    // bundle: {
+    //   optimizeTranslationDirective: false,
+    // },
   },
 });

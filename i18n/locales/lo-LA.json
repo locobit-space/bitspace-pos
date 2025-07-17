@@ -1,1 +1,35 @@
-{}
+{
+  "settings": {
+    "general": {
+      "title": "General Settings",
+      "description": "Configure your system preferences and company information",
+      "tab": "General",
+      "company_info": "Company Information",
+      "system_settings": "System Settings"
+    },
+    "branches": {
+      "title": "Branch Management",
+      "tab": "Branches",
+      "branch": "Branch"
+    },
+    "security": {
+      "title": "Security Settings",
+      "tab": "Security",
+      "password_policy": "Password Policy"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "actions": "Actions",
+    "active": "Active",
+    "inactive": "Inactive",
+    "success": "Success",
+    "minutes": "minutes",
+    "hour": "hour",
+    "hours": "hours"
+  }
+}

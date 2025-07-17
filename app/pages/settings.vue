@@ -1,10 +1,10 @@
 <template>
-  <div class="flex gap-4 divide-x divide-slate-100 h-full">
-    <aside class="w-48">
+  <div class="flex gap-4 divide-x divide-slate-100 h-full dark:divide-slate-800">
+    <aside class="w-48  p-2">
       <UNavigationMenu orientation="vertical" :items="items" />
     </aside>
-    <main class="flex-1">
-      <slot />
+    <main class="flex-grow overflow-y-auto">
+      <NuxtPage />
     </main>
   </div>
 </template>
@@ -19,9 +19,9 @@ const items = ref<NavigationMenuItem[]>([
     icon: "i-heroicons-cog",
   },
   {
-    label: "Branches",
-    to: "/settings/branches",
-    icon: "mynaui:git-branch",
+    label: "Account  ",
+    to: "/settings/account",
+    icon: "i-heroicons-user",
   },
   {
     label: "Units",
