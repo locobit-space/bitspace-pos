@@ -28,6 +28,7 @@ export default defineAppConfig({
       zinc: "zinc",
       gray: "gray",
       stone: "stone",
+      white: "white",
     },
   },
 });
