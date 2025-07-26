@@ -159,7 +159,7 @@
                   :alt="product.name"
                   class="w-full h-full object-cover rounded-lg"
                 />
-                <NuxtIcon
+                <Icon
                   v-else
                   name="i-heroicons-photo"
                   class="w-6 h-6 text-gray-400"

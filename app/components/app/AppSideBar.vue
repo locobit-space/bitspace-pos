@@ -7,7 +7,7 @@
           class="flex p-2 transition-all px-3 justify-center rounded-xl hover:bg-gray-100 items-center"
           active-class="bg-primary-100 text-primary-600"
         >
-          <span><icon :name="item.icon" size="24" /></span>
+          <span><Icon :name="item.icon" size="24" /></span>
         </NuxtLinkLocale>
       </li>
     </ul>

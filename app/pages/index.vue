@@ -2,7 +2,6 @@
 <script setup lang="ts">
 import type { RecentOrder, SalesMetric, TopProduct } from "~/types";
 const { t } = useI18n();
-
 // Mock data - replace with actual API calls
 const salesData = ref<SalesMetric[]>([
   { period: "Jan", sales: 4500, orders: 120 },
@@ -155,7 +154,7 @@ const series = [
       />
       <UButton
         icon="i-heroicons-arrow-down-tray"
-        color="white"
+        variant="ghost"
         :label="t('dashboard.exportReport')"
         class="justify-center"
       />
@@ -166,7 +165,7 @@ const series = [
       <UCard>
         <div class="flex items-center">
           <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-            <NuxtIcon
+            <Icon
               name="sales"
               class="text-blue-500 dark:text-blue-400 text-xl"
             />
@@ -183,7 +182,7 @@ const series = [
       <UCard>
         <div class="flex items-center">
           <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-            <NuxtIcon
+            <Icon
               name="orders"
               class="text-green-500 dark:text-green-400 text-xl"
             />
@@ -200,7 +199,7 @@ const series = [
       <UCard>
         <div class="flex items-center">
           <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-            <NuxtIcon
+            <Icon
               name="average"
               class="text-purple-500 dark:text-purple-400 text-xl"
             />
@@ -217,7 +216,7 @@ const series = [
       <UCard>
         <div class="flex items-center">
           <div class="bg-amber-100 dark:bg-amber-900 p-3 rounded-full">
-            <NuxtIcon
+            <Icon
               name="conversion"
               class="text-amber-500 dark:text-amber-400 text-xl"
             />
@@ -234,7 +233,7 @@ const series = [
       <UCard>
         <div class="flex items-center">
           <div class="bg-cyan-100 dark:bg-cyan-900 p-3 rounded-full">
-            <NuxtIcon
+            <Icon
               name="branch"
               class="text-cyan-500 dark:text-cyan-400 text-xl"
             />

@@ -12,18 +12,17 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
 
   modules: [
+    "@nuxt/ui",
     "@nuxt/eslint",
+    "@nuxtjs/i18n",
     "@nuxt/icon",
     "@nuxt/image",
     "@nuxt/test-utils",
-    "@nuxt/ui",
-    "@nuxtjs/i18n",
   ],
 
   ui: {
     theme: {
       colors: [
-        "primary",
         "red",
         "gray",
         "orange",
@@ -52,7 +51,7 @@ export default defineNuxtConfig({
         "warning",
         "info",
         "success",
-        "white"
+        "white",
       ],
     },
   },
