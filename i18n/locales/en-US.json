@@ -1,4 +1,83 @@
 {
+  "pos": {
+    "title": "BitSpace POS",
+    "terminal": "POS Terminal",
+    "currentOrder": "Current Order",
+    "cart": {
+      "empty": "Cart is empty",
+      "addProducts": "Tap products to add",
+      "items": "items",
+      "clear": "Clear Cart"
+    },
+    "payment": {
+      "lightning": "Pay with Lightning",
+      "cash": "Cash Payment",
+      "processing": "Processing...",
+      "waitingPayment": "Waiting for payment...",
+      "paymentReceived": "Payment Received!",
+      "paymentFailed": "Payment Failed",
+      "expired": "Invoice expired",
+      "copyInvoice": "Copy Invoice",
+      "openWallet": "Open Wallet",
+      "tryAgain": "Try Again",
+      "cancel": "Cancel Payment"
+    },
+    "tip": {
+      "title": "Add Tip",
+      "noTip": "No tip"
+    },
+    "offline": {
+      "mode": "Offline Mode",
+      "online": "Online",
+      "pendingSync": "pending sync"
+    },
+    "session": {
+      "start": "Start Session",
+      "end": "End Session",
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
+  "loyalty": {
+    "title": "Rewards Program",
+    "member": "Member",
+    "points": "Points",
+    "tier": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum"
+    },
+    "rewards": "Rewards",
+    "sendReward": "Send Reward",
+    "viewHistory": "View History",
+    "loginNostr": "Login with Nostr"
+  },
+  "analytics": {
+    "title": "AI Insights",
+    "insights": "insights",
+    "noInsights": "No insights yet",
+    "positiveTrends": "Positive Trends",
+    "alerts": "Alerts",
+    "topSeller": "Top Seller",
+    "peakHours": "Peak Hours",
+    "lowStock": "Low Stock Alert",
+    "upsell": "Upsell Opportunity"
+  },
+  "receipt": {
+    "title": "E-Receipt",
+    "print": "Print Receipt",
+    "sendNostr": "Send via Nostr",
+    "paymentProof": "Payment Proof",
+    "thankYou": "Thank you for your purchase!"
+  },
+  "currency": {
+    "lak": "Lao Kip",
+    "thb": "Thai Baht",
+    "usd": "US Dollar",
+    "btc": "Bitcoin",
+    "sats": "Satoshis"
+  },
   "settings": {
     "general": {
       "title": "General Settings",
@@ -16,6 +95,75 @@
       "title": "Security Settings",
       "tab": "Security",
       "password_policy": "Password Policy"
+    },
+    "lightning": {
+      "title": "Lightning Settings",
+      "provider": "Provider",
+      "nodeUrl": "Node URL",
+      "apiKey": "API Key"
+    }
+  },
+  "auth": {
+    "signin": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to BitSpace POS",
+      "tabEmail": "Email",
+      "tabNostr": "Nostr",
+      "email": "Email address",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign In",
+      "signingIn": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create one"
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Join BitSpace POS",
+      "fullName": "Full name",
+      "email": "Email address",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "createAccount": "Create Account",
+      "creating": "Creating...",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "google": {
+      "signIn": "Continue with Google",
+      "signUp": "Sign up with Google"
+    },
+    "nostr": {
+      "signIn": "Sign in with Nostr",
+      "signUp": "Sign up with Nostr",
+      "connecting": "Connecting to extension...",
+      "description": "Use your Nostr key for passwordless login",
+      "noExtension": "No Nostr extension detected",
+      "installInfo": "Install a NIP-07 extension like nos2x or Alby to use Nostr login"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password?",
+      "subtitle": "No worries! Enter your email and we'll send you a reset link.",
+      "sendLink": "Send Reset Link",
+      "checkEmail": "Check your email",
+      "sentTo": "We've sent a password reset link to",
+      "backToSignIn": "Back to Sign In"
+    },
+    "verifyEmail": {
+      "title": "Verify Your Email",
+      "description": "We've sent a verification link to",
+      "checkInbox": "Please check your inbox and click the verification link.",
+      "resend": "Resend Email",
+      "resent": "Email resent!",
+      "backToSignIn": "Back to Sign In"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailExists": "Email already registered",
+      "weakPassword": "Password is too weak",
+      "nostrFailed": "Failed to connect with Nostr",
+      "generic": "Something went wrong. Please try again."
     }
   },
   "common": {
@@ -30,6 +178,9 @@
     "success": "Success",
     "minutes": "minutes",
     "hour": "hour",
-    "hours": "hours"
+    "hours": "hours",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Tax"
   }
 }

@@ -1,35 +1,186 @@
 {
+  "pos": {
+    "title": "BitSpace POS",
+    "terminal": "ເຄື່ອງຂາຍ",
+    "currentOrder": "ອໍເດີ້ປັດຈຸບັນ",
+    "cart": {
+      "empty": "ກະຕ່າວ່າງ",
+      "addProducts": "ແຕະສິນຄ້າເພື່ອເພີ່ມ",
+      "items": "ລາຍການ",
+      "clear": "ລຶບລ້າງ"
+    },
+    "payment": {
+      "lightning": "ຈ່າຍດ້ວຍ Lightning",
+      "cash": "ຈ່າຍເປັນເງິນສົດ",
+      "processing": "ກຳລັງດຳເນີນການ...",
+      "waitingPayment": "ກຳລັງລໍຖ້າການຈ່າຍ...",
+      "paymentReceived": "ຮັບເງິນສຳເລັດ!",
+      "paymentFailed": "ການຈ່າຍລົ້ມເຫລວ",
+      "expired": "ໃບແຈ້ງໜີ້ໝົດອາຍຸ",
+      "copyInvoice": "ສຳເນົາໃບແຈ້ງໜີ້",
+      "openWallet": "ເປີດກະເປົາ",
+      "tryAgain": "ລອງອີກຄັ້ງ",
+      "cancel": "ຍົກເລີກ"
+    },
+    "tip": {
+      "title": "ເພີ່ມທິບ",
+      "noTip": "ບໍ່ມີທິບ"
+    },
+    "offline": {
+      "mode": "ໂໝດອອຟໄລນ໌",
+      "online": "ອອນໄລນ໌",
+      "pendingSync": "ລໍຖ້າຊິ້ງ"
+    },
+    "session": {
+      "start": "ເລີ່ມຕົ້ນ",
+      "end": "ຈົບ",
+      "active": "ກຳລັງເຮັດວຽກ",
+      "inactive": "ປິດ"
+    }
+  },
+  "loyalty": {
+    "title": "ໂປຣແກຣມລາງວັນ",
+    "member": "ສະມາຊິກ",
+    "points": "ຄະແນນ",
+    "tier": {
+      "bronze": "ບຣອນ",
+      "silver": "ເງິນ",
+      "gold": "ຄຳ",
+      "platinum": "ແພລັດຕິນັ່ມ"
+    },
+    "rewards": "ລາງວັນ",
+    "sendReward": "ສົ່ງລາງວັນ",
+    "viewHistory": "ເບິ່ງປະຫວັດ",
+    "loginNostr": "ເຂົ້າສູ່ລະບົບດ້ວຍ Nostr"
+  },
+  "analytics": {
+    "title": "AI ວິເຄາະ",
+    "insights": "ຂໍ້ມູນເຈາະເລິກ",
+    "noInsights": "ບໍ່ມີຂໍ້ມູນເຈາະເລິກ",
+    "positiveTrends": "ແນວໂນ້ມບວກ",
+    "alerts": "ການແຈ້ງເຕືອນ",
+    "topSeller": "ຂາຍດີສຸດ",
+    "peakHours": "ຊົ່ວໂມງສູງສຸດ",
+    "lowStock": "ສິນຄ້າໃກ້ໝົດ",
+    "upsell": "ໂອກາດຂາຍເພີ່ມ"
+  },
+  "receipt": {
+    "title": "ໃບຮັບເງິນ",
+    "print": "ພິມ",
+    "sendNostr": "ສົ່ງຜ່ານ Nostr",
+    "paymentProof": "ຫຼັກຖານການຈ່າຍ",
+    "thankYou": "ຂອບໃຈທີ່ຊື້ສິນຄ້າ!"
+  },
+  "currency": {
+    "lak": "ກີບ",
+    "thb": "ບາດ",
+    "usd": "ໂດລາ",
+    "btc": "ບິດຄອຍ",
+    "sats": "ຊັດ"
+  },
   "settings": {
     "general": {
-      "title": "General Settings",
-      "description": "Configure your system preferences and company information",
-      "tab": "General",
-      "company_info": "Company Information",
-      "system_settings": "System Settings"
+      "title": "ການຕັ້ງຄ່າທົ່ວໄປ",
+      "description": "ກຳນົດຄ່າລະບົບ ແລະ ຂໍ້ມູນບໍລິສັດ",
+      "tab": "ທົ່ວໄປ",
+      "company_info": "ຂໍ້ມູນບໍລິສັດ",
+      "system_settings": "ການຕັ້ງຄ່າລະບົບ"
     },
     "branches": {
-      "title": "Branch Management",
-      "tab": "Branches",
-      "branch": "Branch"
+      "title": "ການຈັດການສາຂາ",
+      "tab": "ສາຂາ",
+      "branch": "ສາຂາ"
     },
     "security": {
-      "title": "Security Settings",
-      "tab": "Security",
-      "password_policy": "Password Policy"
+      "title": "ການຕັ້ງຄ່າຄວາມປອດໄພ",
+      "tab": "ຄວາມປອດໄພ",
+      "password_policy": "ນະໂຍບາຍລະຫັດຜ່ານ"
+    },
+    "lightning": {
+      "title": "ຕັ້ງຄ່າ Lightning",
+      "provider": "ຜູ້ໃຫ້ບໍລິການ",
+      "nodeUrl": "URL ໂໜດ",
+      "apiKey": "API Key"
+    }
+  },
+  "auth": {
+    "signin": {
+      "title": "ຍິນດີຕ້ອນຮັບ",
+      "subtitle": "ເຂົ້າສູ່ລະບົບ BitSpace POS",
+      "tabEmail": "ອີເມວ",
+      "tabNostr": "Nostr",
+      "email": "ທີ່ຢູ່ອີເມວ",
+      "password": "ລະຫັດຜ່ານ",
+      "rememberMe": "ຈື່ຂ້ອຍ",
+      "forgotPassword": "ລືມລະຫັດຜ່ານ?",
+      "signIn": "ເຂົ້າສູ່ລະບົບ",
+      "signingIn": "ກຳລັງເຂົ້າສູ່ລະບົບ...",
+      "noAccount": "ບໍ່ມີບັນຊີ?",
+      "createAccount": "ສ້າງບັນຊີ"
+    },
+    "signup": {
+      "title": "ສ້າງບັນຊີ",
+      "subtitle": "ເຂົ້າຮ່ວມ BitSpace POS",
+      "fullName": "ຊື່ເຕັມ",
+      "email": "ທີ່ຢູ່ອີເມວ",
+      "password": "ລະຫັດຜ່ານ",
+      "confirmPassword": "ຢືນຢັນລະຫັດຜ່ານ",
+      "createAccount": "ສ້າງບັນຊີ",
+      "creating": "ກຳລັງສ້າງ...",
+      "hasAccount": "ມີບັນຊີແລ້ວ?",
+      "signIn": "ເຂົ້າສູ່ລະບົບ"
+    },
+    "google": {
+      "signIn": "ດຳເນີນການດ້ວຍ Google",
+      "signUp": "ລົງທະບຽນດ້ວຍ Google"
+    },
+    "nostr": {
+      "signIn": "ເຂົ້າສູ່ລະບົບດ້ວຍ Nostr",
+      "signUp": "ລົງທະບຽນດ້ວຍ Nostr",
+      "connecting": "ກຳລັງເຊື່ອມຕໍ່...",
+      "description": "ໃຊ້ກະແຈ Nostr ເພື່ອເຂົ້າສູ່ລະບົບໂດຍບໍ່ຕ້ອງໃຊ້ລະຫັດຜ່ານ",
+      "noExtension": "ບໍ່ພົບ extension Nostr",
+      "installInfo": "ຕິດຕັ້ງ NIP-07 extension ເຊັ່ນ nos2x ຫຼື Alby"
+    },
+    "forgotPassword": {
+      "title": "ລືມລະຫັດຜ່ານ?",
+      "subtitle": "ປ້ອນອີເມວຂອງທ່ານ ແລະ ພວກເຮົາຈະສົ່ງລິ້ງຣີເຊັດໃຫ້",
+      "sendLink": "ສົ່ງລິ້ງຣີເຊັດ",
+      "checkEmail": "ກວດສອບອີເມວ",
+      "sentTo": "ພວກເຮົາໄດ້ສົ່ງລິ້ງຣີເຊັດໄປທີ່",
+      "backToSignIn": "ກັບຄືນໄປໜ້າເຂົ້າສູ່ລະບົບ"
+    },
+    "verifyEmail": {
+      "title": "ຢືນຢັນອີເມວຂອງທ່ານ",
+      "description": "ພວກເຮົາໄດ້ສົ່ງລິ້ງຢືນຢັນໄປທີ່",
+      "checkInbox": "ກະລຸນາກວດສອບກ່ອງຈົດໝາຍຂອງທ່ານ",
+      "resend": "ສົ່ງອີເມວອີກຄັ້ງ",
+      "resent": "ສົ່ງອີເມວແລ້ວ!",
+      "backToSignIn": "ກັບຄືນ"
+    },
+    "errors": {
+      "invalidCredentials": "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ",
+      "emailExists": "ອີເມວນີ້ຖືກລົງທະບຽນແລ້ວ",
+      "weakPassword": "ລະຫັດຜ່ານອ່ອນເກີນໄປ",
+      "nostrFailed": "ການເຊື່ອມຕໍ່ Nostr ລົ້ມເຫລວ",
+      "generic": "ມີບັນຫາເກີດຂຶ້ນ ກະລຸນາລອງໃໝ່"
     }
   },
   "common": {
-    "save": "Save",
-    "add": "Add",
-    "edit": "Edit",
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "actions": "Actions",
-    "active": "Active",
-    "inactive": "Inactive",
-    "success": "Success",
-    "minutes": "minutes",
-    "hour": "hour",
-    "hours": "hours"
+    "save": "ບັນທຶກ",
+    "add": "ເພີ່ມ",
+    "edit": "ແກ້ໄຂ",
+    "delete": "ລຶບ",
+    "cancel": "ຍົກເລີກ",
+    "actions": "ຄຳສັ່ງ",
+    "active": "ເປີດໃຊ້ງານ",
+    "inactive": "ປິດໃຊ້ງານ",
+    "success": "ສຳເລັດ",
+    "minutes": "ນາທີ",
+    "hour": "ຊົ່ວໂມງ",
+    "hours": "ຊົ່ວໂມງ",
+    "total": "ລວມ",
+    "subtotal": "ລວມຍ່ອຍ",
+    "tax": "ພາສີ"
   }
 }
