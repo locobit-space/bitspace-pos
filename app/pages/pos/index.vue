@@ -258,13 +258,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-screen flex bg-gray-950 text-white overflow-hidden">
+  <div class="h-screen flex bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
     <!-- ============================================ -->
     <!-- LEFT PANEL - Products -->
     <!-- ============================================ -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Header Bar -->
-      <header class="bg-gray-900/80 backdrop-blur-xl border-b border-gray-800/50 px-4 py-3">
+      <header class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800/50 px-4 py-3">
         <div class="flex items-center justify-between">
           <!-- Logo & Status -->
           <div class="flex items-center gap-4">
@@ -273,17 +273,17 @@ onUnmounted(() => {
                 ⚡
               </div>
               <div>
-                <h1 class="text-lg font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
+                <h1 class="text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent">
                   BitSpace POS
                 </h1>
-                <p class="text-xs text-gray-500">Lightning Powered</p>
+                <p class="text-xs text-gray-500 dark:text-gray-500">Lightning Powered</p>
               </div>
             </div>
             
             <!-- Connection Status -->
             <div 
               class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
-              :class="offline.isOnline.value ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20' : 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20'"
+              :class="offline.isOnline.value ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20'"
             >
               <span class="relative flex h-2 w-2">
                 <span 
@@ -301,7 +301,7 @@ onUnmounted(() => {
             <!-- Pending Sync -->
             <div 
               v-if="offline.pendingCount.value > 0" 
-              class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20"
             >
               <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
               {{ offline.pendingCount.value }} pending
@@ -312,14 +312,14 @@ onUnmounted(() => {
           <div class="flex items-center gap-4">
             <!-- Date & Time -->
             <div class="text-right hidden md:block">
-              <div class="text-sm font-medium text-white">{{ formattedTime }}</div>
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ formattedTime }}</div>
               <div class="text-xs text-gray-500">{{ formattedDate }}</div>
             </div>
 
-            <div class="h-8 w-px bg-gray-800" />
+            <div class="h-8 w-px bg-gray-300 dark:bg-gray-800" />
 
             <!-- BTC Price -->
-            <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50">
+            <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-200/50 dark:bg-gray-800/50">
               <span class="text-amber-500">₿</span>
               <span class="text-sm font-medium">{{ currency.btcPriceFormatted.value }}</span>
             </div>
@@ -399,8 +399,8 @@ onUnmounted(() => {
             :key="cat.id"
             class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200"
             :class="productsStore.selectedCategory.value === cat.id 
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/25' 
-              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-800 hover:text-white'"
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white dark:text-black shadow-lg shadow-amber-500/25' 
+              : 'bg-gray-200/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'"
             @click="productsStore.selectedCategory.value = cat.id"
           >
             <span>{{ categoryIcons[cat.id] || '📁' }}</span>
@@ -410,10 +410,10 @@ onUnmounted(() => {
       </header>
 
       <!-- Products Grid -->
-      <div class="flex-1 p-4 overflow-auto">
+      <div class="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-transparent">
         <div 
           v-if="productsStore.filteredProducts.value.length === 0" 
-          class="flex flex-col items-center justify-center h-full text-gray-500"
+          class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
         >
           <span class="text-6xl mb-4">🔍</span>
           <p class="text-lg">No products found</p>
@@ -427,7 +427,7 @@ onUnmounted(() => {
           <button
             v-for="product in productsStore.filteredProducts.value"
             :key="product.id"
-            class="group relative bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-amber-500/30 rounded-2xl p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/5"
+            class="group relative bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700/50 hover:border-amber-500/50 dark:hover:border-amber-500/30 rounded-2xl p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-amber-500/5"
             @click="selectProduct(product)"
           >
             <!-- Favorite Badge -->
@@ -446,15 +446,15 @@ onUnmounted(() => {
 
             <!-- Product Info -->
             <div class="space-y-1">
-              <h3 class="font-medium text-white text-sm leading-tight line-clamp-2">
+              <h3 class="font-medium text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
                 {{ product.name }}
               </h3>
-              <p class="text-xs text-gray-500">{{ product.sku }}</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500">{{ product.sku }}</p>
             </div>
 
             <!-- Price -->
             <div class="mt-3 space-y-0.5">
-              <div class="text-amber-400 font-bold text-base">
+              <div class="text-amber-600 dark:text-amber-400 font-bold text-base">
                 {{ currency.format(product.prices?.[pos.selectedCurrency.value] || product.price, pos.selectedCurrency.value) }}
               </div>
               <div class="text-xs text-gray-500">
@@ -465,7 +465,7 @@ onUnmounted(() => {
             <!-- Stock indicator -->
             <div 
               v-if="product.stock <= product.minStock"
-              class="absolute bottom-2 right-2 px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400"
+              class="absolute bottom-2 right-2 px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-400"
             >
               Low
             </div>
@@ -477,16 +477,16 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <!-- RIGHT PANEL - Cart -->
     <!-- ============================================ -->
-    <div class="w-[380px] bg-gray-900 border-l border-gray-800/50 flex flex-col">
+    <div class="w-[380px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800/50 flex flex-col">
       <!-- Cart Header -->
-      <div class="p-4 border-b border-gray-800/50 bg-gray-900/80 backdrop-blur-xl">
+      <div class="p-4 border-b border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-xl">
+            <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl">
               🛒
             </div>
             <div>
-              <h2 class="text-base font-semibold text-white">Current Order</h2>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-white">Current Order</h2>
               <p class="text-xs text-gray-500">{{ pos.itemCount.value }} items</p>
             </div>
           </div>
@@ -507,9 +507,9 @@ onUnmounted(() => {
         <!-- Empty State -->
         <div 
           v-if="pos.cartItems.value.length === 0" 
-          class="flex flex-col items-center justify-center h-full text-gray-500"
+          class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
         >
-          <div class="w-20 h-20 rounded-full bg-gray-800/50 flex items-center justify-center text-4xl mb-4">
+          <div class="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center text-4xl mb-4">
             🛒
           </div>
           <p class="text-base font-medium">Cart is empty</p>
@@ -521,7 +521,7 @@ onUnmounted(() => {
           <div
             v-for="item in pos.cartItems.value"
             :key="item.product.id"
-            class="bg-gray-800/50 rounded-xl p-3 border border-gray-700/30"
+            class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700/30"
           >
             <div class="flex gap-3">
               <!-- Product Image -->
@@ -530,11 +530,11 @@ onUnmounted(() => {
               <!-- Product Details -->
               <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-start gap-2">
-                  <h4 class="font-medium text-white text-sm leading-tight truncate">
+                  <h4 class="font-medium text-gray-900 dark:text-white text-sm leading-tight truncate">
                     {{ item.product.name }}
                   </h4>
                   <button
-                    class="text-gray-500 hover:text-red-400 flex-shrink-0"
+                    class="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
                     @click="pos.removeFromCart(item.product.id)"
                   >
                     <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
@@ -549,26 +549,26 @@ onUnmounted(() => {
                 <div class="flex items-center justify-between mt-2">
                   <div class="flex items-center gap-1">
                     <button
-                      class="w-7 h-7 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
+                      class="w-7 h-7 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
                       @click="handleQuantityChange(item.product.id, -1)"
                     >
                       −
                     </button>
                     <button
-                      class="w-10 h-7 bg-gray-700/50 rounded-lg flex items-center justify-center text-sm font-medium"
+                      class="w-10 h-7 bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center text-sm font-medium"
                       @click="openNumpad(item.product.id, item.quantity)"
                     >
                       {{ item.quantity }}
                     </button>
                     <button
-                      class="w-7 h-7 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
+                      class="w-7 h-7 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
                       @click="handleQuantityChange(item.product.id, 1)"
                     >
                       +
                     </button>
                   </div>
                   
-                  <div class="text-amber-400 font-bold text-sm">
+                  <div class="text-amber-600 dark:text-amber-400 font-bold text-sm">
                     {{ currency.format(item.total, pos.selectedCurrency.value) }}
                   </div>
                 </div>
@@ -579,17 +579,17 @@ onUnmounted(() => {
       </div>
 
       <!-- Discount & Tip Section -->
-      <div v-if="pos.cartItems.value.length > 0" class="px-4 py-3 border-t border-gray-800/50 space-y-3">
+      <div v-if="pos.cartItems.value.length > 0" class="px-4 py-3 border-t border-gray-200 dark:border-gray-800/50 space-y-3">
         <!-- Discount Button -->
         <button
-          class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors"
+          class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
           @click="showDiscountModal = true"
         >
-          <div class="flex items-center gap-2 text-sm text-gray-400">
+          <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <UIcon name="i-heroicons-tag" class="w-4 h-4" />
             <span>Add Discount</span>
           </div>
-          <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-600" />
+          <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-400 dark:text-gray-600" />
         </button>
 
         <!-- Tip Options -->
@@ -601,8 +601,8 @@ onUnmounted(() => {
               :key="tip.value"
               class="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
               :class="pos.tipAmount.value === (tip.value === 0 ? 0 : Math.round(pos.subtotal.value * tip.value / 100))
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/25'
-                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'"
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white dark:text-black shadow-lg shadow-amber-500/25'
+                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'"
               @click="pos.setTipPercentage(tip.value)"
             >
               {{ tip.label }}
@@ -612,28 +612,28 @@ onUnmounted(() => {
       </div>
 
       <!-- Cart Summary -->
-      <div class="p-4 border-t border-gray-800/50 bg-gray-900/80 backdrop-blur-xl">
+      <div class="p-4 border-t border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <!-- Summary Lines -->
         <div class="space-y-2 text-sm mb-4">
-          <div class="flex justify-between text-gray-400">
+          <div class="flex justify-between text-gray-500 dark:text-gray-400">
             <span>Subtotal</span>
             <span>{{ currency.format(pos.subtotal.value, pos.selectedCurrency.value) }}</span>
           </div>
-          <div v-if="pos.tipAmount.value > 0" class="flex justify-between text-gray-400">
+          <div v-if="pos.tipAmount.value > 0" class="flex justify-between text-gray-500 dark:text-gray-400">
             <span>Tip</span>
-            <span class="text-amber-400">+{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
+            <span class="text-amber-600 dark:text-amber-400">+{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
           </div>
         </div>
 
         <!-- Total -->
-        <div class="flex items-end justify-between mb-4 pt-3 border-t border-gray-800/50">
+        <div class="flex items-end justify-between mb-4 pt-3 border-t border-gray-200 dark:border-gray-800/50">
           <div>
             <p class="text-xs text-gray-500 mb-1">Total</p>
-            <p class="text-2xl font-bold text-white">{{ formattedTotal }}</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formattedTotal }}</p>
           </div>
           <div class="text-right">
             <p class="text-xs text-gray-500 mb-1">≈ Sats</p>
-            <p class="text-lg font-semibold text-amber-400">{{ formattedTotalSats }}</p>
+            <p class="text-lg font-semibold text-amber-600 dark:text-amber-400">{{ formattedTotalSats }}</p>
           </div>
         </div>
 
@@ -643,7 +643,7 @@ onUnmounted(() => {
             block
             size="lg"
             :disabled="pos.cartItems.value.length === 0"
-            class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-semibold shadow-lg shadow-amber-500/25"
+            class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white dark:text-black font-semibold shadow-lg shadow-amber-500/25"
             @click="proceedToPayment"
           >
             <span class="flex items-center gap-2">
@@ -685,7 +685,7 @@ onUnmounted(() => {
     <!-- Payment Modal -->
     <UModal v-model:open="showPaymentModal">
       <template #content>
-        <div class="p-6 bg-gray-900">
+        <div class="p-6 bg-white dark:bg-gray-900">
           <PaymentLightning
             v-if="showPaymentModal"
             :amount="pos.totalSats.value"
@@ -702,14 +702,14 @@ onUnmounted(() => {
     <!-- Discount Modal -->
     <UModal v-model:open="showDiscountModal">
       <template #content>
-        <div class="p-6 bg-gray-900">
-          <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span>🏷️</span> Apply Discount
           </h3>
           
           <div class="space-y-4">
             <div>
-              <label class="block text-sm text-gray-400 mb-2">Discount Type</label>
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">Discount Type</label>
               <div class="flex gap-2">
                 <UButton
                   :color="discountType === 'percentage' ? 'primary' : 'neutral'"
@@ -731,7 +731,7 @@ onUnmounted(() => {
             </div>
             
             <div>
-              <label class="block text-sm text-gray-400 mb-2">
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
                 {{ discountType === 'percentage' ? 'Discount %' : 'Discount Amount' }}
               </label>
               <UInput
@@ -766,14 +766,14 @@ onUnmounted(() => {
     <!-- Custom Item Modal -->
     <UModal v-model:open="showCustomItemModal">
       <template #content>
-        <div class="p-6 bg-gray-900">
-          <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span>📦</span> Add Custom Item
           </h3>
           
           <div class="space-y-4">
             <div>
-              <label class="block text-sm text-gray-400 mb-2">Item Name</label>
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">Item Name</label>
               <UInput
                 v-model="customItem.name"
                 placeholder="e.g., Special Order"
@@ -781,7 +781,7 @@ onUnmounted(() => {
             </div>
             
             <div>
-              <label class="block text-sm text-gray-400 mb-2">
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
                 Price ({{ pos.selectedCurrency.value }})
               </label>
               <UInput
@@ -817,12 +817,12 @@ onUnmounted(() => {
     <!-- Held Orders Modal -->
     <UModal v-model:open="showHeldOrdersModal">
       <template #content>
-        <div class="p-6 bg-gray-900">
-          <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span>⏸️</span> Held Orders
           </h3>
           
-          <div v-if="heldOrders.length === 0" class="text-center py-8 text-gray-500">
+          <div v-if="heldOrders.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500">
             <span class="text-4xl block mb-2">📋</span>
             No held orders
           </div>
@@ -831,21 +831,21 @@ onUnmounted(() => {
             <div
               v-for="order in heldOrders"
               :key="order.id"
-              class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/30"
+              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700/30"
             >
               <div class="flex justify-between items-start mb-2">
                 <div>
-                  <p class="font-medium text-white">{{ order.id }}</p>
+                  <p class="font-medium text-gray-900 dark:text-white">{{ order.id }}</p>
                   <p class="text-xs text-gray-500">
                     {{ new Date(order.createdAt).toLocaleTimeString() }}
                   </p>
                 </div>
-                <p class="font-bold text-amber-400">
+                <p class="font-bold text-amber-600 dark:text-amber-400">
                   {{ currency.format(order.total, pos.selectedCurrency.value) }}
                 </p>
               </div>
               
-              <p class="text-sm text-gray-400 mb-3">
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
                 {{ order.items.length }} items
               </p>
               
@@ -876,11 +876,11 @@ onUnmounted(() => {
     <!-- Numpad Modal -->
     <UModal v-model:open="showNumpad">
       <template #content>
-        <div class="p-6 bg-gray-900">
-          <h3 class="text-lg font-semibold text-white mb-4">Enter Quantity</h3>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Enter Quantity</h3>
           
-          <div class="bg-gray-800 rounded-xl p-4 mb-4 text-center">
-            <span class="text-3xl font-bold text-white">{{ numpadValue || '0' }}</span>
+          <div class="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 mb-4 text-center">
+            <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ numpadValue || '0' }}</span>
           </div>
           
           <div class="grid grid-cols-3 gap-2">
@@ -888,9 +888,9 @@ onUnmounted(() => {
               v-for="key in ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'DEL']"
               :key="key"
               class="h-14 rounded-xl font-bold text-lg transition-colors"
-              :class="key === 'C' ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 
-                      key === 'DEL' ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' :
-                      'bg-gray-800 text-white hover:bg-gray-700'"
+              :class="key === 'C' ? 'bg-red-500/20 text-red-500 dark:text-red-400 hover:bg-red-500/30' : 
+                      key === 'DEL' ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' :
+                      'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700'"
               @click="handleNumpadInput(key)"
             >
               {{ key }}
@@ -913,15 +913,15 @@ onUnmounted(() => {
     <!-- Settings Modal -->
     <UModal v-model:open="showSettingsModal">
       <template #content>
-        <div class="p-6 bg-gray-900">
-          <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <span>⚙️</span> POS Settings
           </h2>
           
           <div class="space-y-6">
             <!-- Currency Setting -->
             <div>
-              <label class="block text-sm text-gray-400 mb-2">Default Currency</label>
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">Default Currency</label>
               <USelect
                 v-model="pos.selectedCurrency.value"
                 :items="['LAK', 'THB', 'USD', 'SATS']"
@@ -930,7 +930,7 @@ onUnmounted(() => {
 
             <!-- Lightning Provider -->
             <div>
-              <label class="block text-sm text-gray-400 mb-2">Lightning Provider</label>
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">Lightning Provider</label>
               <USelect
                 :items="['LNbits', 'Alby', 'NWC']"
                 model-value="LNbits"
@@ -938,9 +938,9 @@ onUnmounted(() => {
             </div>
 
             <!-- Session Info -->
-            <div class="bg-gray-800/50 rounded-xl p-4">
+            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div class="flex items-center justify-between mb-3">
-                <span class="text-sm text-gray-400">Session Status</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">Session Status</span>
                 <UBadge :color="pos.isSessionActive.value ? 'success' : 'error'" variant="soft">
                   {{ pos.isSessionActive.value ? 'Active' : 'Inactive' }}
                 </UBadge>
@@ -949,23 +949,23 @@ onUnmounted(() => {
               <div v-if="pos.currentSession.value" class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-gray-500">Total Sales</span>
-                  <span class="text-white font-medium">
+                  <span class="text-gray-900 dark:text-white font-medium">
                     {{ currency.format(pos.currentSession.value.totalSales, pos.selectedCurrency.value) }}
                   </span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">Orders</span>
-                  <span class="text-white font-medium">{{ pos.currentSession.value.totalOrders }}</span>
+                  <span class="text-gray-900 dark:text-white font-medium">{{ pos.currentSession.value.totalOrders }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">Cash Sales</span>
-                  <span class="text-white font-medium">
+                  <span class="text-gray-900 dark:text-white font-medium">
                     {{ currency.format(pos.currentSession.value.cashSales, pos.selectedCurrency.value) }}
                   </span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">Lightning Sales</span>
-                  <span class="text-amber-400 font-medium">
+                  <span class="text-amber-600 dark:text-amber-400 font-medium">
                     {{ currency.format(pos.currentSession.value.lightningSales, pos.selectedCurrency.value) }}
                   </span>
                 </div>
@@ -973,15 +973,15 @@ onUnmounted(() => {
             </div>
 
             <!-- Offline Mode Info -->
-            <div class="bg-gray-800/50 rounded-xl p-4">
+            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div class="flex items-center gap-2 mb-2">
                 <span>📴</span>
-                <span class="font-medium text-white">Offline Mode</span>
+                <span class="font-medium text-gray-900 dark:text-white">Offline Mode</span>
               </div>
-              <p class="text-sm text-gray-400">
+              <p class="text-sm text-gray-500 dark:text-gray-400">
                 Payments are stored locally and synced when online.
               </p>
-              <p class="text-sm text-amber-400 mt-2">
+              <p class="text-sm text-amber-600 dark:text-amber-400 mt-2">
                 {{ offline.pendingCount.value }} payments pending sync
               </p>
             </div>
@@ -1014,6 +1014,7 @@ onUnmounted(() => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

@@ -1,14 +1,18 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- Navigation Items -->
-    <ul class="p-1 flex-1">
+    <ul class="p-1 flex-1 space-y-1">
       <li v-for="(item, index) in items" :key="index">
         <NuxtLinkLocale
           :to="item.to"
-          class="flex p-2 transition-all px-3 justify-center rounded-xl hover:bg-gray-100 items-center"
-          active-class="bg-primary-100 text-primary-600"
+          class="flex p-2 transition-all px-3 justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 items-center group relative"
+          active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
         >
           <span><Icon :name="item.icon" size="24" /></span>
+          <!-- Tooltip -->
+          <span class="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+            {{ item.label }}
+          </span>
         </NuxtLinkLocale>
       </li>
     </ul>
@@ -55,16 +59,7 @@
                   class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <Icon name="i-heroicons-user-circle" size="18" />
-                  View Profile
-                </NuxtLinkLocale>
-              </li>
-              <li>
-                <NuxtLinkLocale
-                  to="/settings/account"
-                  class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  <Icon name="i-heroicons-cog-6-tooth" size="18" />
-                  Account Settings
+                  {{ $t('settings.account.title') }}
                 </NuxtLinkLocale>
               </li>
               <li>
@@ -72,8 +67,8 @@
                   to="/settings"
                   class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  <Icon name="i-heroicons-adjustments-horizontal" size="18" />
-                  General Settings
+                  <Icon name="i-heroicons-cog-6-tooth" size="18" />
+                  {{ $t('settings.general.title') }}
                 </NuxtLinkLocale>
               </li>
               <li class="border-t border-gray-100 dark:border-gray-700 pt-1 mt-1">
@@ -82,7 +77,7 @@
                   @click="handleLogout"
                 >
                   <Icon name="i-heroicons-arrow-right-on-rectangle" size="18" />
-                  Sign Out
+                  {{ $t('auth.signin.signIn') === 'Sign In' ? 'Sign Out' : 'ອອກຈາກລະບົບ' }}
                 </button>
               </li>
             </ul>
@@ -94,36 +89,56 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n();
 const auth = useAuth();
 
-const items = [
+const items = computed(() => [
   {
-    label: "Home",
+    label: t('navigation.dashboard'),
     to: "/",
     icon: "i-heroicons-home",
   },
   {
-    label: "Orders",
-    to: "/orders",
-    icon: "i-heroicons-truck",
+    label: t('navigation.pos'),
+    to: "/pos",
+    icon: "i-heroicons-bolt",
   },
   {
-    label: "Customers",
+    label: t('navigation.orders'),
+    to: "/orders",
+    icon: "i-heroicons-shopping-bag",
+  },
+  {
+    label: t('navigation.products'),
+    to: "/products",
+    icon: "i-heroicons-cube",
+  },
+  {
+    label: t('navigation.customers'),
     to: "/customers",
     icon: "i-heroicons-users",
   },
   {
-    label: "Products",
-    to: "/products",
-    icon: "i-heroicons-cube",
+    label: t('navigation.inventory'),
+    to: "/inventory",
+    icon: "i-heroicons-archive-box",
   },
-
   {
-    label: "Settings",
-    to: "/settings",
-    icon: "i-heroicons-cog",
+    label: t('navigation.reports'),
+    to: "/reports",
+    icon: "i-heroicons-chart-bar",
   },
-];
+  {
+    label: t('navigation.accounting'),
+    to: "/accounting",
+    icon: "i-heroicons-calculator",
+  },
+  {
+    label: t('navigation.settings'),
+    to: "/settings",
+    icon: "i-heroicons-cog-6-tooth",
+  },
+]);
 
 // Provider badge styling
 const providerBadgeClass = computed(() => {

@@ -212,7 +212,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 flex flex-col justify-center">
+  <div class="h-full bg-gray-100 dark:bg-gray-950 flex flex-col justify-center">
     <!-- Background Pattern -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div class="absolute -top-40 -right-40 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl" />
@@ -227,17 +227,17 @@ onMounted(() => {
             <span class="text-3xl">⚡</span>
           </div>
         </div>
-        <h1 class="text-3xl font-bold text-white">BitSpace POS</h1>
-        <p class="mt-2 text-gray-400">Lightning-powered Point of Sale</p>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">BitSpace POS</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Lightning-powered Point of Sale</p>
       </div>
 
       <!-- Sign In Card -->
-      <div class="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
+      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
         <!-- Tabs -->
-        <div class="flex border-b border-gray-800">
+        <div class="flex border-b border-gray-200 dark:border-gray-800">
           <button
             class="flex-1 py-4 text-center font-medium transition-colors"
-            :class="activeTab === 'email' ? 'text-white bg-gray-800/50' : 'text-gray-400 hover:text-white'"
+            :class="activeTab === 'email' ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
             @click="activeTab = 'email'"
           >
             <span class="mr-2">📧</span>
@@ -245,7 +245,7 @@ onMounted(() => {
           </button>
           <button
             class="flex-1 py-4 text-center font-medium transition-colors"
-            :class="activeTab === 'nostr' ? 'text-white bg-gray-800/50' : 'text-gray-400 hover:text-white'"
+            :class="activeTab === 'nostr' ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
             @click="activeTab = 'nostr'"
           >
             <span class="mr-2">🔑</span>
@@ -283,16 +283,16 @@ onMounted(() => {
 
             <div class="relative">
               <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-gray-800" />
+                <div class="w-full border-t border-gray-200 dark:border-gray-800" />
               </div>
               <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-gray-900 text-gray-500">or sign in with email</span>
+                <span class="px-2 bg-white dark:bg-gray-900 text-gray-500">or sign in with email</span>
               </div>
             </div>
 
             <form class="space-y-4" @submit.prevent="handleEmailSignIn">
               <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                 <UInput
                   v-model="email"
                   type="email"
@@ -303,7 +303,7 @@ onMounted(() => {
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
                 <UInput
                   v-model="password"
                   :type="showPassword ? 'text' : 'password'"
@@ -326,7 +326,7 @@ onMounted(() => {
               <div class="flex items-center justify-between">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <UCheckbox v-model="rememberMe" />
-                  <span class="text-sm text-gray-400">Remember me</span>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Remember me</span>
                 </label>
                 <NuxtLink to="/auth/forgot-password" class="text-sm text-amber-500 hover:text-amber-400">
                   Forgot password?
@@ -353,8 +353,8 @@ onMounted(() => {
                 <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span class="text-3xl">🔑</span>
                 </div>
-                <h3 class="text-lg font-semibold text-white mb-1">Sign in with Nostr</h3>
-                <p class="text-gray-400 text-sm">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">Sign in with Nostr</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm">
                   Decentralized, private, and secure.
                 </p>
               </div>
@@ -364,9 +364,9 @@ onMounted(() => {
                 <span 
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
                   :class="{
-                    'bg-amber-500/20 text-amber-400': detectedExtension === 'alby',
-                    'bg-purple-500/20 text-purple-400': detectedExtension === 'nos2x',
-                    'bg-gray-700 text-gray-400': detectedExtension === 'unknown'
+                    'bg-amber-500/20 text-amber-600 dark:text-amber-400': detectedExtension === 'alby',
+                    'bg-purple-500/20 text-purple-600 dark:text-purple-400': detectedExtension === 'nos2x',
+                    'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400': detectedExtension === 'unknown'
                   }"
                 >
                   <span v-if="detectedExtension === 'alby'">🐝</span>
@@ -417,14 +417,14 @@ onMounted(() => {
               </div>
 
               <!-- Extension Help -->
-              <div class="mt-4 p-3 bg-gray-800/50 rounded-lg">
-                <p class="text-xs text-gray-400 mb-2">
+              <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
                   <span class="text-amber-400">💡</span> 
-                  <strong v-if="detectedExtension === 'alby'">Alby Tips:</strong>
-                  <strong v-else-if="detectedExtension === 'nos2x'">nos2x Tips:</strong>
-                  <strong v-else>Tips:</strong>
+                  <strong v-if="detectedExtension === 'alby'" class="text-gray-700 dark:text-gray-300">Alby Tips:</strong>
+                  <strong v-else-if="detectedExtension === 'nos2x'" class="text-gray-700 dark:text-gray-300">nos2x Tips:</strong>
+                  <strong v-else class="text-gray-700 dark:text-gray-300">Tips:</strong>
                 </p>
-                <ul class="text-xs text-gray-500 space-y-1">
+                <ul class="text-xs text-gray-500 dark:text-gray-500 space-y-1">
                   <template v-if="detectedExtension === 'alby'">
                     <li>• Make sure Alby is unlocked</li>
                     <li>• Go to Settings → Nostr → Enable Nostr</li>
@@ -445,7 +445,7 @@ onMounted(() => {
               <div class="mt-4">
                 <button 
                   type="button"
-                  class="text-sm text-gray-500 hover:text-gray-400 w-full text-center"
+                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center"
                   @click="showManualNpub = !showManualNpub; showNsecInput = false"
                 >
                   {{ showManualNpub ? '← Back to extension' : 'Extension not working? Enter npub manually' }}
@@ -476,7 +476,7 @@ onMounted(() => {
               <div class="mt-3">
                 <button 
                   type="button"
-                  class="text-sm text-amber-500 hover:text-amber-400 w-full text-center"
+                  class="text-sm text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 w-full text-center"
                   @click="showNsecInput = !showNsecInput; showManualNpub = false"
                 >
                   {{ showNsecInput ? '← Hide private key login' : '🔑 Login with private key (nsec)' }}
@@ -525,11 +525,11 @@ onMounted(() => {
             <!-- No Nostr Extension -->
             <template v-else>
               <div class="text-center py-4">
-                <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span class="text-3xl opacity-50">🔌</span>
                 </div>
-                <h3 class="text-lg font-semibold text-white mb-1">Install Nostr Extension</h3>
-                <p class="text-gray-400 text-sm mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">Install Nostr Extension</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   Choose a NIP-07 compatible extension:
                 </p>
               </div>
@@ -546,8 +546,8 @@ onMounted(() => {
                       <span class="text-2xl">🐝</span>
                     </div>
                     <div class="flex-1 text-left">
-                      <div class="font-semibold text-amber-400">Alby</div>
-                      <div class="text-xs text-gray-400">Lightning wallet + Nostr signer</div>
+                      <div class="font-semibold text-amber-600 dark:text-amber-400">Alby</div>
+                      <div class="text-xs text-gray-600 dark:text-gray-400">Lightning wallet + Nostr signer</div>
                     </div>
                     <div class="text-amber-500">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -556,8 +556,8 @@ onMounted(() => {
                     </div>
                   </div>
                   <div class="mt-2 flex gap-2">
-                    <span class="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Recommended</span>
-                    <span class="text-xs px-2 py-0.5 bg-gray-700 text-gray-400 rounded">Lightning</span>
+                    <span class="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded">Recommended</span>
+                    <span class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">Lightning</span>
                   </div>
                 </a>
 
@@ -572,8 +572,8 @@ onMounted(() => {
                       <span class="text-2xl">🔐</span>
                     </div>
                     <div class="flex-1 text-left">
-                      <div class="font-semibold text-purple-400">nos2x</div>
-                      <div class="text-xs text-gray-400">Simple & lightweight signer</div>
+                      <div class="font-semibold text-purple-600 dark:text-purple-400">nos2x</div>
+                      <div class="text-xs text-gray-600 dark:text-gray-400">Simple & lightweight signer</div>
                     </div>
                     <div class="text-purple-500">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -582,17 +582,17 @@ onMounted(() => {
                     </div>
                   </div>
                   <div class="mt-2 flex gap-2">
-                    <span class="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded">Lightweight</span>
-                    <span class="text-xs px-2 py-0.5 bg-gray-700 text-gray-400 rounded">Chrome</span>
+                    <span class="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded">Lightweight</span>
+                    <span class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">Chrome</span>
                   </div>
                 </a>
               </div>
 
               <!-- Manual npub for users without extension -->
-              <div class="mt-4 pt-4 border-t border-gray-800">
+              <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <button 
                   type="button"
-                  class="text-sm text-gray-500 hover:text-gray-400 w-full text-center"
+                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center"
                   @click="showManualNpub = !showManualNpub; showNsecInput = false"
                 >
                   {{ showManualNpub ? '← Hide' : 'Already have a key? Enter npub' }}
@@ -623,7 +623,7 @@ onMounted(() => {
               <div class="mt-3">
                 <button 
                   type="button"
-                  class="text-sm text-amber-500 hover:text-amber-400 w-full text-center"
+                  class="text-sm text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 w-full text-center"
                   @click="showNsecInput = !showNsecInput; showManualNpub = false"
                 >
                   {{ showNsecInput ? '← Hide private key login' : '🔑 Login with private key (nsec)' }}
@@ -670,9 +670,9 @@ onMounted(() => {
             </template>
 
             <!-- Nostr Benefits -->
-            <div class="mt-6 p-4 bg-gray-800/50 rounded-xl">
-              <h4 class="font-medium text-sm text-gray-300 mb-3">Why Nostr?</h4>
-              <ul class="space-y-2 text-xs text-gray-400">
+            <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-xl">
+              <h4 class="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3">Why Nostr?</h4>
+              <ul class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
                 <li class="flex items-center gap-2">
                   <span class="text-green-400">✓</span>
                   No email or password required
@@ -695,8 +695,8 @@ onMounted(() => {
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-800/30 border-t border-gray-800 text-center">
-          <p class="text-sm text-gray-400">
+        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-800 text-center">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
             Don't have an account?
             <NuxtLink to="/auth/signup" class="text-amber-500 hover:text-amber-400 font-medium">
               Create one
@@ -708,9 +708,9 @@ onMounted(() => {
       <!-- Bottom Links -->
       <div class="mt-6 text-center text-sm text-gray-500">
         <div class="flex justify-center gap-4">
-          <a href="#" class="hover:text-gray-400">Privacy Policy</a>
+          <a href="#" class="hover:text-gray-700 dark:hover:text-gray-400">Privacy Policy</a>
           <span>•</span>
-          <a href="#" class="hover:text-gray-400">Terms of Service</a>
+          <a href="#" class="hover:text-gray-700 dark:hover:text-gray-400">Terms of Service</a>
         </div>
       </div>
     </div>

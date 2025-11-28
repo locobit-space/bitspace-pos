@@ -355,6 +355,7 @@ export const useCurrency = () => {
     toSats,
     fromSats,
     format,
+    formatCurrency: format, // Alias for backward compatibility
     formatDual,
     createMultiPrice,
     getPriceInCurrency,

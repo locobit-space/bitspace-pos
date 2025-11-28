@@ -38,16 +38,16 @@
               class="h-16 w-16 object-contain"
             />
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">{{ companyInfo.name }}</h1>
-              <p class="text-sm text-gray-600 mt-1">{{ companyInfo.address }}</p>
-              <p class="text-sm text-gray-600">{{ $t('common.phone') }}: {{ companyInfo.phone }}</p>
-              <p class="text-sm text-gray-600">{{ $t('common.email') }}: {{ companyInfo.email }}</p>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ companyInfo.name }}</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ companyInfo.address }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('common.phone') }}: {{ companyInfo.phone }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('common.email') }}: {{ companyInfo.email }}</p>
             </div>
           </div>
           <div class="text-right">
             <h2 class="text-2xl font-bold text-primary-600">{{ $t('bill.invoice') }}</h2>
-            <p class="text-lg font-semibold mt-1">#{{ billData.invoiceNumber }}</p>
-            <p class="text-sm text-gray-600 mt-2">
+            <p class="text-lg font-semibold mt-1 text-gray-900 dark:text-white">#{{ billData.invoiceNumber }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
               {{ $t('bill.branch') }}: {{ getCurrentBranch?.name }}
             </p>
           </div>
@@ -57,11 +57,11 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Customer Information -->
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('bill.bill_to') }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">{{ $t('bill.bill_to') }}</h3>
             <div class="space-y-1">
-              <p class="font-medium">{{ billData.customer.name }}</p>
-              <p class="text-sm text-gray-600">{{ billData.customer.address }}</p>
-              <p class="text-sm text-gray-600">
+              <p class="font-medium text-gray-900 dark:text-white">{{ billData.customer.name }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ billData.customer.address }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ $t('common.phone') }}: {{ billData.customer.phone }}
               </p>
               <p class="text-sm text-gray-600" v-if="billData.customer.email">
@@ -75,23 +75,23 @@
 
           <!-- Invoice Details -->
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('bill.invoice_details') }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">{{ $t('bill.invoice_details') }}</h3>
             <div class="space-y-2">
               <div class="flex justify-between">
-                <span class="text-gray-600">{{ $t('bill.invoice_date') }}:</span>
-                <span class="font-medium">{{ formatDate(billData.date) }}</span>
+                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.invoice_date') }}:</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ formatDate(billData.date) }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">{{ $t('bill.due_date') }}:</span>
-                <span class="font-medium">{{ formatDate(billData.dueDate) }}</span>
+                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.due_date') }}:</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ formatDate(billData.dueDate) }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">{{ $t('bill.payment_terms') }}:</span>
-                <span class="font-medium">{{ billData.paymentTerms }}</span>
+                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.payment_terms') }}:</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ billData.paymentTerms }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">{{ $t('bill.sales_person') }}:</span>
-                <span class="font-medium">{{ billData.salesPerson }}</span>
+                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.sales_person') }}:</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ billData.salesPerson }}</span>
               </div>
             </div>
           </div>
@@ -100,24 +100,24 @@
         <!-- Items Table -->
         <div class="overflow-x-auto">
           <table class="w-full border-collapse border dark:border-slate-800 border-gray-300">
-            <thead class="bg-gray-50 dark:border-slate-800 dark:bg-gray-800">
+            <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   {{ $t('bill.item') }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900">
+                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
                   {{ $t('bill.quantity') }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900">
+                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
                   {{ $t('bill.unit') }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
                   {{ $t('bill.unit_price') }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
                   {{ $t('bill.discount') }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
                   {{ $t('bill.total') }}
                 </th>
               </tr>
@@ -126,12 +126,12 @@
               <tr v-for="(item, index) in billData.items" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td class="border dark:border-slate-800 border-gray-300 px-4 py-3">
                   <div>
-                    <p class="font-medium text-gray-900">{{ item.name }}</p>
-                    <p class="text-sm text-gray-600" v-if="item.description">{{ item.description }}</p>
-                    <p class="text-xs text-gray-500" v-if="item.sku">{{ $t('bill.sku') }}: {{ item.sku }}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400" v-if="item.description">{{ item.description }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500" v-if="item.sku">{{ $t('bill.sku') }}: {{ item.sku }}</p>
                   </div>
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center">
+                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-white">
                   {{ formatNumber(item.quantity) }}
                 </td>
                 <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center">
@@ -155,31 +155,31 @@
         <div class="flex justify-end">
           <div class="w-full md:w-96 space-y-3">
             <div class="flex justify-between py-2  border-t dark:border-slate-800 border-gray-200">
-              <span class="text-gray-600">{{ $t('bill.subtotal') }}:</span>
-              <span class="font-medium">{{ formatCurrency(billData.subtotal) }}</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.subtotal') }}:</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ formatCurrency(billData.subtotal) }}</span>
             </div>
             <div v-if="billData.discount > 0" class="flex justify-between py-2">
-              <span class="text-gray-600">{{ $t('bill.discount') }}:</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.discount') }}:</span>
               <span class="font-medium text-red-600">-{{ formatCurrency(billData.discount) }}</span>
             </div>
             <div v-if="billData.tax > 0" class="flex justify-between py-2">
-              <span class="text-gray-600">{{ $t('bill.tax') }} ({{ billData.taxRate }}%):</span>
-              <span class="font-medium">{{ formatCurrency(billData.tax) }}</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.tax') }} ({{ billData.taxRate }}%):</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ formatCurrency(billData.tax) }}</span>
             </div>
             <div v-if="billData.shipping > 0" class="flex justify-between py-2">
-              <span class="text-gray-600">{{ $t('bill.shipping') }}:</span>
-              <span class="font-medium">{{ formatCurrency(billData.shipping) }}</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.shipping') }}:</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ formatCurrency(billData.shipping) }}</span>
             </div>
             <div class="flex justify-between py-3 border-t-2 dark:border-slate-800 border-gray-300">
-              <span class="text-lg font-semibold text-gray-900">{{ $t('bill.total') }}:</span>
+              <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('bill.total') }}:</span>
               <span class="text-lg font-bold text-primary-600">{{ formatCurrency(billData.total) }}</span>
             </div>
             <div v-if="billData.amountPaid > 0" class="flex justify-between py-2">
-              <span class="text-gray-600">{{ $t('bill.amount_paid') }}:</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.amount_paid') }}:</span>
               <span class="font-medium text-green-600">{{ formatCurrency(billData.amountPaid) }}</span>
             </div>
             <div v-if="billData.balance > 0" class="flex justify-between py-2">
-              <span class="text-gray-600">{{ $t('bill.balance_due') }}:</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.balance_due') }}:</span>
               <span class="font-bold text-red-600">{{ formatCurrency(billData.balance) }}</span>
             </div>
           </div>
@@ -187,11 +187,11 @@
 
         <!-- Payment Information -->
         <div v-if="billData.paymentMethod" class="border-t dark:border-slate-800 border-gray-200 pt-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('bill.payment_information') }}</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">{{ $t('bill.payment_information') }}</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p><span class="text-gray-600">{{ $t('bill.payment_method') }}:</span> <span class="font-medium">{{ billData.paymentMethod }}</span></p>
-              <p v-if="billData.paymentReference"><span class="text-gray-600">{{ $t('bill.reference') }}:</span> <span class="font-medium">{{ billData.paymentReference }}</span></p>
+              <p><span class="text-gray-600 dark:text-gray-400">{{ $t('bill.payment_method') }}:</span> <span class="font-medium text-gray-900 dark:text-white">{{ billData.paymentMethod }}</span></p>
+              <p v-if="billData.paymentReference"><span class="text-gray-600 dark:text-gray-400">{{ $t('bill.reference') }}:</span> <span class="font-medium text-gray-900 dark:text-white">{{ billData.paymentReference }}</span></p>
             </div>
           </div>
         </div>
@@ -199,12 +199,12 @@
         <!-- Notes and Terms -->
         <div v-if="billData.notes || billData.terms" class="border-t dark:border-slate-800 border-gray-200 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div v-if="billData.notes">
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $t('bill.notes') }}</h3>
-            <p class="text-sm text-gray-600 whitespace-pre-line">{{ billData.notes }}</p>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ $t('bill.notes') }}</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{{ billData.notes }}</p>
           </div>
           <div v-if="billData.terms">
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $t('bill.terms_conditions') }}</h3>
-            <p class="text-sm text-gray-600 whitespace-pre-line">{{ billData.terms }}</p>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ $t('bill.terms_conditions') }}</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{{ billData.terms }}</p>
           </div>
         </div>
 

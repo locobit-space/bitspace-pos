@@ -2,10 +2,10 @@
   <div class="p-6">
     <div class="max-w-4xl mx-auto">
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
           {{ $t("account.settings") }}
         </h1>
-        <p class="text-gray-600 mt-2">
+        <p class="text-gray-600 dark:text-gray-400 mt-2">
           {{ $t("account.settings_description") }}
         </p>
       </div>
@@ -21,7 +21,7 @@
                   <img
                     :src="userProfile.avatar || '/default-avatar.png'"
                     :alt="userProfile.name"
-                    class="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                    class="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
                   />
                   <UButton
                     icon="i-heroicons-camera"
@@ -33,11 +33,11 @@
                   />
                 </div>
                 <div>
-                  <h3 class="text-xl font-semibold text-gray-900">
+                  <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
                     {{ userProfile.name }}
                   </h3>
-                  <p class="text-gray-600">{{ userProfile.email }}</p>
-                  <p class="text-sm text-gray-500">
+                  <p class="text-gray-600 dark:text-gray-400">{{ userProfile.email }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-500">
                     {{ $t("account.member_since") }}:
                     {{ formatDate(userProfile.createdAt) }}
                   </p>
@@ -108,7 +108,7 @@
             <div class="space-y-8">
               <!-- Change Password -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("account.change_password") }}
                 </h3>
                 <UForm
@@ -161,13 +161,13 @@
               </div>
 
               <!-- Two-Factor Authentication -->
-              <div class="border-t pt-8">
+              <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
                 <div class="flex items-center justify-between mb-4">
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-900">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                       {{ $t("account.two_factor_auth") }}
                     </h3>
-                    <p class="text-gray-600">
+                    <p class="text-gray-600 dark:text-gray-400">
                       {{ $t("account.two_factor_description") }}
                     </p>
                   </div>
@@ -194,24 +194,24 @@
               </div>
 
               <!-- Active Sessions -->
-              <div class="border-t pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("account.active_sessions") }}
                 </h3>
                 <div class="space-y-4">
                   <div
                     v-for="session in activeSessions"
                     :key="session.id"
-                    class="flex items-center justify-between p-4 border rounded-lg"
+                    class="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
                   >
                     <div class="flex items-center space-x-4">
                       <Icon
                         :name="getDeviceIcon(session.device)"
-                        class="text-gray-600 text-xl"
+                        class="text-gray-600 dark:text-gray-400 text-xl"
                       />
                       <div>
-                        <p class="font-medium">{{ session.device }}</p>
-                        <p class="text-sm text-gray-600">
+                        <p class="font-medium text-gray-900 dark:text-white">{{ session.device }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
                           {{ session.location }} •
                           {{ formatDate(session.lastActive) }}
                         </p>
@@ -243,7 +243,7 @@
             <div class="space-y-8">
               <!-- Language & Region -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("account.language_region") }}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -287,15 +287,15 @@
               </div>
 
               <!-- Display Settings -->
-              <div class="border-t pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("account.display_settings") }}
                 </h3>
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium">{{ $t("account.dark_mode") }}</p>
-                      <p class="text-sm text-gray-600">
+                      <p class="font-medium text-gray-900 dark:text-white">{{ $t("account.dark_mode") }}</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.dark_mode_description") }}
                       </p>
                     </div>
@@ -307,10 +307,10 @@
 
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium">
+                      <p class="font-medium text-gray-900 dark:text-white">
                         {{ $t("account.compact_view") }}
                       </p>
-                      <p class="text-sm text-gray-600">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.compact_view_description") }}
                       </p>
                     </div>
@@ -320,7 +320,7 @@
               </div>
 
               <!-- Save Preferences -->
-              <div class="flex justify-end pt-6 border-t">
+              <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
                 <UButton
                   color="primary"
                   :loading="isSavingPreferences"
@@ -337,16 +337,16 @@
             <div class="space-y-8">
               <!-- Email Notifications -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("account.email_notifications") }}
                 </h3>
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium">
+                      <p class="font-medium text-gray-900 dark:text-white">
                         {{ $t("account.order_updates") }}
                       </p>
-                      <p class="text-sm text-gray-600">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.order_updates_description") }}
                       </p>
                     </div>
@@ -355,10 +355,10 @@
 
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium">
+                      <p class="font-medium text-gray-900 dark:text-white">
                         {{ $t("account.inventory_alerts") }}
                       </p>
-                      <p class="text-sm text-gray-600">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.inventory_alerts_description") }}
                       </p>
                     </div>
@@ -367,10 +367,10 @@
 
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium">
+                      <p class="font-medium text-gray-900 dark:text-white">
                         {{ $t("account.system_updates") }}
                       </p>
-                      <p class="text-sm text-gray-600">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.system_updates_description") }}
                       </p>
                     </div>
@@ -380,17 +380,17 @@
               </div>
 
               <!-- Push Notifications -->
-              <div class="border-t pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("account.push_notifications") }}
                 </h3>
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium">
+                      <p class="font-medium text-gray-900 dark:text-white">
                         {{ $t("account.real_time_alerts") }}
                       </p>
-                      <p class="text-sm text-gray-600">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.real_time_alerts_description") }}
                       </p>
                     </div>
@@ -399,10 +399,10 @@
 
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium">
+                      <p class="font-medium text-gray-900 dark:text-white">
                         {{ $t("account.daily_summary") }}
                       </p>
-                      <p class="text-sm text-gray-600">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.daily_summary_description") }}
                       </p>
                     </div>
@@ -412,8 +412,8 @@
               </div>
 
               <!-- Notification Schedule -->
-              <div class="border-t pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("account.notification_schedule") }}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -434,7 +434,7 @@
               </div>
 
               <!-- Save Notifications -->
-              <div class="flex justify-end pt-6 border-t">
+              <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
                 <UButton
                   color="primary"
                   :loading="isSavingNotifications"
@@ -466,7 +466,7 @@
                   previewAvatar || userProfile.avatar || '/default-avatar.png'
                 "
                 alt="Avatar preview"
-                class="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
               />
             </div>
 
