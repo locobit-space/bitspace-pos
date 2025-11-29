@@ -18,6 +18,7 @@ definePageMeta({
 // ============================================
 const pos = usePOS();
 const productsStore = useProducts();
+const ordersStore = useOrders();
 const lightning = useLightning();
 const currency = useCurrency();
 const offline = useOffline();
@@ -336,6 +337,25 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
   try {
     const order = pos.createOrder(method);
     order.status = "completed";
+    
+    // Add payment proof if available
+    if (proof) {
+      order.paymentProof = {
+        id: `proof_${Date.now()}`,
+        orderId: order.id,
+        paymentHash: (proof as { paymentHash?: string })?.paymentHash || "",
+        preimage: (proof as { preimage?: string })?.preimage || "",
+        amount: order.totalSats || 0,
+        receivedAt: new Date().toISOString(),
+        method,
+        isOffline: !navigator.onLine,
+      };
+    }
+    
+    // Save order to local DB and sync to Nostr
+    await ordersStore.createOrder(order);
+    
+    // Update POS session totals
     pos.updateSessionTotals(order);
 
     // Play success sound
@@ -347,7 +367,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       sound.playOrderComplete();
     }
 
-    // Store offline if needed
+    // Store offline payment proof if needed
     if (!navigator.onLine) {
       const paymentProof = lightning.createPaymentProof(
         order.id,
@@ -384,6 +404,7 @@ onMounted(async () => {
   await currency.init("LAK");
   await offline.init();
   await productsStore.init();
+  await ordersStore.init();
 
   if (!pos.isSessionActive.value) {
     pos.startSession("main", "staff-1", 0);
