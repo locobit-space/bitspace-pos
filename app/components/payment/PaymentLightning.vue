@@ -18,6 +18,7 @@ const emit = defineEmits<{
 // Composables
 const lightning = useLightning();
 const currencyHelper = useCurrency();
+const sound = useSound();
 const { t } = useI18n();
 
 // State
@@ -77,6 +78,7 @@ const generateInvoice = async () => {
       throw new Error(lightning.error.value || t('payment.lightning.invoiceFailed'));
     }
   } catch (e) {
+    sound.playError();
     paymentStep.value = 'error';
     errorMessage.value = e instanceof Error ? e.message : t('payment.lightning.invoiceFailed');
     showErrorModal.value = true;
@@ -87,6 +89,7 @@ const watchForPayment = () => {
   // Watch for payment status changes
   watch(() => lightning.paymentStatus.value, (status) => {
     if (status === 'completed') {
+      sound.playLightningZap();
       paymentStep.value = 'success';
       emit('paid', lightning.currentInvoice.value?.preimage || '');
     }
@@ -143,6 +146,7 @@ const confirmPaymentReceived = () => {
   // For LNURL, we trust the cashier's confirmation
   // In production, you might want to add additional verification
   setTimeout(() => {
+    sound.playLightningZap();
     paymentStep.value = 'success';
     checkingPayment.value = false;
     emit('paid', 'manual-confirmation-' + Date.now());

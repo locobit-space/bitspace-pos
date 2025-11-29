@@ -69,6 +69,16 @@
     "thankYou": "Thank you for your purchase!"
   },
   "payment": {
+    "selectMethod": "Select Payment Method",
+    "changeMethod": "Change payment method",
+    "methods": {
+      "lightning": "Lightning",
+      "lightningDesc": "Fast, instant Bitcoin payments",
+      "cash": "Cash",
+      "cashDesc": "Pay with physical currency",
+      "staticQR": "Static QR",
+      "staticQRDesc": "BOLT12 - One QR for any amount"
+    },
     "lightning": {
       "title": "Lightning Payment",
       "scanOrCopy": "Scan QR code or copy invoice",
@@ -98,12 +108,20 @@
     },
     "cash": {
       "title": "Cash Payment",
-      "received": "Cash Received",
-      "change": "Change Due"
+      "amountDue": "Amount Due",
+      "amountTendered": "Amount Tendered",
+      "change": "Change",
+      "giveChange": "Give change to customer",
+      "exactAmount": "Exact Amount",
+      "confirm": "Confirm Payment",
+      "complete": "Complete Payment",
+      "received": "Payment Complete!",
+      "insufficientAmount": "Amount is less than total"
     },
     "staticQR": {
       "title": "Static QR Payment",
-      "description": "Scan this QR code to pay any amount"
+      "description": "Scan this QR code to pay any amount",
+      "confirmHint": "After customer pays, confirm the payment below"
     }
   },
   "currency": {

@@ -69,6 +69,16 @@
     "thankYou": "ຂອບໃຈທີ່ຊື້ສິນຄ້າ!"
   },
   "payment": {
+    "selectMethod": "ເລືອກວິທີການຈ່າຍເງິນ",
+    "changeMethod": "ປ່ຽນວິທີການຈ່າຍ",
+    "methods": {
+      "lightning": "Lightning",
+      "lightningDesc": "ຈ່າຍ Bitcoin ໄວທັນໃຈ",
+      "cash": "ເງິນສົດ",
+      "cashDesc": "ຈ່າຍດ້ວຍເງິນສົດ",
+      "staticQR": "QR ຄົງທີ່",
+      "staticQRDesc": "BOLT12 - QR ດຽວສຳລັບທຸກຈຳນວນ"
+    },
     "lightning": {
       "title": "ຈ່າຍຜ່ານ Lightning",
       "scanOrCopy": "ສະແກນ QR ຫຼື ສຳເນົາໃບແຈ້ງໜີ້",
@@ -98,12 +108,20 @@
     },
     "cash": {
       "title": "ຈ່າຍເງິນສົດ",
-      "received": "ຮັບເງິນສົດ",
-      "change": "ເງິນທອນ"
+      "amountDue": "ຈຳນວນທີ່ຕ້ອງຈ່າຍ",
+      "amountTendered": "ຈຳນວນທີ່ຮັບ",
+      "change": "ເງິນທອນ",
+      "giveChange": "ໃຫ້ເງິນທອນລູກຄ້າ",
+      "exactAmount": "ຈຳນວນພໍດີ",
+      "confirm": "ຢືນຢັນການຈ່າຍ",
+      "complete": "ສຳເລັດການຈ່າຍ",
+      "received": "ຈ່າຍເງິນສຳເລັດ!",
+      "insufficientAmount": "ຈຳນວນບໍ່ພໍ"
     },
     "staticQR": {
       "title": "ຈ່າຍຜ່ານ QR ຄົງທີ່",
-      "description": "ສະແກນ QR ນີ້ເພື່ອຈ່າຍເງິນຈຳນວນໃດກໍໄດ້"
+      "description": "ສະແກນ QR ນີ້ເພື່ອຈ່າຍເງິນຈຳນວນໃດກໍໄດ້",
+      "confirmHint": "ຫຼັງຈາກລູກຄ້າຈ່າຍແລ້ວ, ຢືນຢັນການຈ່າຍຂ້າງລຸ່ມ"
     }
   },
   "currency": {
