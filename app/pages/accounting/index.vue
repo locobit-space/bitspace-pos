@@ -699,15 +699,15 @@ const payWithLightning = (invoiceId: string) => {
         </template>
 
         <div class="space-y-4">
-          <UFormGroup :label="$t('accounting.customer')">
+          <UFormField :label="$t('accounting.customer')">
             <UInput v-model="newInvoice.customer" />
-          </UFormGroup>
-          <UFormGroup :label="$t('accounting.amount')">
+          </UFormField>
+          <UFormField :label="$t('accounting.amount')">
             <UInput v-model="newInvoice.amount" type="number" />
-          </UFormGroup>
-          <UFormGroup :label="$t('accounting.dueDate')">
+          </UFormField>
+          <UFormField :label="$t('accounting.dueDate')">
             <UInput v-model="newInvoice.dueDate" type="date" />
-          </UFormGroup>
+          </UFormField>
         </div>
 
         <template #footer>
@@ -730,27 +730,27 @@ const payWithLightning = (invoiceId: string) => {
         </template>
 
         <div class="space-y-4">
-          <UFormGroup :label="$t('accounting.description')">
+          <UFormField :label="$t('accounting.description')">
             <UInput v-model="newExpense.description" />
-          </UFormGroup>
-          <UFormGroup :label="$t('accounting.category')">
+          </UFormField>
+          <UFormField :label="$t('accounting.category')">
             <USelect
               v-model="newExpense.category"
               :options="['inventory', 'utilities', 'payroll', 'rent', 'marketing', 'other']"
             />
-          </UFormGroup>
-          <UFormGroup :label="$t('accounting.amount')">
+          </UFormField>
+          <UFormField :label="$t('accounting.amount')">
             <UInput v-model="newExpense.amount" type="number" />
-          </UFormGroup>
-          <UFormGroup :label="$t('accounting.date')">
+          </UFormField>
+          <UFormField :label="$t('accounting.date')">
             <UInput v-model="newExpense.date" type="date" />
-          </UFormGroup>
-          <UFormGroup :label="$t('accounting.paymentMethod')">
+          </UFormField>
+          <UFormField :label="$t('accounting.paymentMethod')">
             <USelect
               v-model="newExpense.paymentMethod"
               :options="['cash', 'lightning', 'bank_transfer']"
             />
-          </UFormGroup>
+          </UFormField>
         </div>
 
         <template #footer>
@@ -774,12 +774,12 @@ const payWithLightning = (invoiceId: string) => {
 
         <div class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
-            <UFormGroup :label="$t('accounting.date')">
+            <UFormField :label="$t('accounting.date')">
               <UInput v-model="newJournalEntry.date" type="date" />
-            </UFormGroup>
-            <UFormGroup :label="$t('accounting.description')">
+            </UFormField>
+            <UFormField :label="$t('accounting.description')">
               <UInput v-model="newJournalEntry.description" />
-            </UFormGroup>
+            </UFormField>
           </div>
 
           <div class="space-y-2">

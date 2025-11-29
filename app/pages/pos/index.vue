@@ -1,7 +1,7 @@
 <!-- pages/pos/index.vue -->
 <!-- 🛒 Full-Featured POS Terminal - Lightning + Nostr -->
 <script setup lang="ts">
-import type { Product, PaymentMethod } from '~/types';
+import type { Product, ProductVariant, ProductModifier, PaymentMethod } from '~/types';
 
 definePageMeta({
   layout: 'blank',
@@ -25,9 +25,21 @@ const showCustomItemModal = ref(false);
 const showHeldOrdersModal = ref(false);
 const showSettingsModal = ref(false);
 const showNumpad = ref(false);
-const numpadTarget = ref<{ productId: string; currentQty: number } | null>(null);
+const showProductOptionsModal = ref(false);
+const showItemNotesModal = ref(false);
+const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref('');
 const isProcessing = ref(false);
+
+// Product options selection
+const selectedProduct = ref<Product | null>(null);
+const selectedVariant = ref<ProductVariant | null>(null);
+const selectedModifiers = ref<ProductModifier[]>([]);
+const productQuantity = ref(1);
+
+// Item notes
+const editingItemIndex = ref<number | null>(null);
+const itemNotesValue = ref('');
 
 // Custom item form
 const customItem = ref({ name: '', price: 0 });
@@ -70,6 +82,16 @@ const formattedDate = computed(() => {
   });
 });
 
+// Calculate selected product total price
+const selectedProductPrice = computed(() => {
+  if (!selectedProduct.value) return 0;
+  return pos.calculateItemPrice(
+    selectedProduct.value, 
+    selectedVariant.value || undefined, 
+    selectedModifiers.value
+  );
+});
+
 // Category icons mapping
 const categoryIcons: Record<string, string> = {
   all: '🏪',
@@ -93,18 +115,62 @@ const tipOptions = [
 // Product Methods
 // ============================================
 const selectProduct = (product: Product) => {
-  pos.addToCart(product);
-};
-
-const handleQuantityChange = (productId: string, delta: number) => {
-  const item = pos.cartItems.value.find(i => i.product.id === productId);
-  if (item) {
-    pos.updateQuantity(productId, item.quantity + delta);
+  // If product has variants or modifiers, show options modal
+  if (product.hasVariants && product.variants && product.variants.length > 0) {
+    selectedProduct.value = product;
+    // Select default variant
+    selectedVariant.value = product.variants.find(v => v.isDefault) || product.variants[0] || null;
+    selectedModifiers.value = [];
+    productQuantity.value = 1;
+    showProductOptionsModal.value = true;
+  } else if (product.modifierGroups && product.modifierGroups.length > 0) {
+    selectedProduct.value = product;
+    selectedVariant.value = null;
+    // Select default modifiers
+    selectedModifiers.value = product.modifierGroups
+      .flatMap(g => g.modifiers.filter(m => m.isDefault));
+    productQuantity.value = 1;
+    showProductOptionsModal.value = true;
+  } else {
+    // No options, add directly
+    pos.addToCart(product);
   }
 };
 
-const openNumpad = (productId: string, currentQty: number) => {
-  numpadTarget.value = { productId, currentQty };
+const addProductWithOptions = () => {
+  if (!selectedProduct.value) return;
+  
+  pos.addToCart(selectedProduct.value, productQuantity.value, {
+    variant: selectedVariant.value || undefined,
+    modifiers: selectedModifiers.value.length > 0 ? selectedModifiers.value : undefined,
+  });
+  
+  // Reset and close
+  showProductOptionsModal.value = false;
+  selectedProduct.value = null;
+  selectedVariant.value = null;
+  selectedModifiers.value = [];
+  productQuantity.value = 1;
+};
+
+const toggleModifier = (modifier: ProductModifier) => {
+  const index = selectedModifiers.value.findIndex(m => m.id === modifier.id);
+  if (index === -1) {
+    selectedModifiers.value.push(modifier);
+  } else {
+    selectedModifiers.value.splice(index, 1);
+  }
+};
+
+const handleQuantityChange = (index: number, delta: number) => {
+  const item = pos.cartItems.value[index];
+  if (item) {
+    pos.updateQuantity(index, item.quantity + delta);
+  }
+};
+
+const openNumpad = (index: number, currentQty: number) => {
+  numpadTarget.value = { index, currentQty };
   numpadValue.value = currentQty.toString();
   showNumpad.value = true;
 };
@@ -115,15 +181,33 @@ const handleNumpadInput = (value: string) => {
   } else if (value === 'DEL') {
     numpadValue.value = numpadValue.value.slice(0, -1);
   } else if (value === 'OK') {
-    if (numpadTarget.value) {
+    if (numpadTarget.value !== null) {
       const qty = parseInt(numpadValue.value) || 0;
-      pos.updateQuantity(numpadTarget.value.productId, qty);
+      pos.updateQuantity(numpadTarget.value.index, qty);
     }
     showNumpad.value = false;
     numpadTarget.value = null;
   } else {
     numpadValue.value += value;
   }
+};
+
+// ============================================
+// Item Notes
+// ============================================
+const openItemNotes = (index: number) => {
+  editingItemIndex.value = index;
+  itemNotesValue.value = pos.cartItems.value[index]?.notes || '';
+  showItemNotesModal.value = true;
+};
+
+const saveItemNotes = () => {
+  if (editingItemIndex.value !== null) {
+    pos.updateItemNotes(editingItemIndex.value, itemNotesValue.value);
+  }
+  showItemNotesModal.value = false;
+  editingItemIndex.value = null;
+  itemNotesValue.value = '';
 };
 
 // ============================================
@@ -146,7 +230,11 @@ const recallOrder = (orderId: string) => {
   const order = heldOrders.value.find(o => o.id === orderId);
   if (order) {
     order.items.forEach(item => {
-      pos.addToCart(item.product, item.quantity);
+      pos.addToCart(item.product, item.quantity, {
+        variant: item.selectedVariant,
+        modifiers: item.selectedModifiers,
+        notes: item.notes,
+      });
     });
     heldOrders.value = heldOrders.value.filter(o => o.id !== orderId);
     showHeldOrdersModal.value = false;
@@ -331,15 +419,41 @@ onUnmounted(() => {
               size="sm"
               class="w-24"
             />
+
+            <!-- Dashboard Link -->
+            <UTooltip text="Go to Dashboard">
+              <NuxtLink to="/">
+                <UButton
+                  icon="i-heroicons-squares-2x2"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                />
+              </NuxtLink>
+            </UTooltip>
             
             <!-- Settings Button -->
-            <UButton
-              icon="i-heroicons-cog-6-tooth"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              @click="showSettingsModal = true"
-            />
+            <UTooltip text="Quick Settings">
+              <UButton
+                icon="i-heroicons-cog-6-tooth"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                @click="showSettingsModal = true"
+              />
+            </UTooltip>
+
+            <!-- Lightning Settings Link -->
+            <UTooltip text="Lightning Settings">
+              <NuxtLink to="/settings/lightning">
+                <UButton
+                  icon="i-heroicons-bolt"
+                  :color="lightning.isConnected.value ? 'primary' : 'yellow'"
+                  variant="ghost"
+                  size="sm"
+                />
+              </NuxtLink>
+            </UTooltip>
           </div>
         </div>
 
@@ -519,8 +633,8 @@ onUnmounted(() => {
         <!-- Cart Items List -->
         <div v-else class="space-y-3">
           <div
-            v-for="item in pos.cartItems.value"
-            :key="item.product.id"
+            v-for="(item, index) in pos.cartItems.value"
+            :key="`${item.product.id}-${index}`"
             class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700/30"
           >
             <div class="flex gap-3">
@@ -530,12 +644,27 @@ onUnmounted(() => {
               <!-- Product Details -->
               <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-start gap-2">
-                  <h4 class="font-medium text-gray-900 dark:text-white text-sm leading-tight truncate">
-                    {{ item.product.name }}
-                  </h4>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-medium text-gray-900 dark:text-white text-sm leading-tight truncate">
+                      {{ item.product.name }}
+                    </h4>
+                    <!-- Variant & Modifiers -->
+                    <div v-if="item.selectedVariant || (item.selectedModifiers && item.selectedModifiers.length > 0)" class="mt-0.5">
+                      <span v-if="item.selectedVariant" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium mr-1">
+                        {{ item.selectedVariant.shortName }}
+                      </span>
+                      <span 
+                        v-for="mod in item.selectedModifiers" 
+                        :key="mod.id"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-1"
+                      >
+                        {{ mod.name }}
+                      </span>
+                    </div>
+                  </div>
                   <button
                     class="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
-                    @click="pos.removeFromCart(item.product.id)"
+                    @click="pos.removeFromCart(index)"
                   >
                     <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
                   </button>
@@ -545,26 +674,44 @@ onUnmounted(() => {
                   {{ currency.format(item.price, pos.selectedCurrency.value) }} each
                 </p>
                 
+                <!-- Item Notes (if any) -->
+                <div 
+                  v-if="item.notes" 
+                  class="mt-1 px-2 py-1 rounded bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs italic"
+                >
+                  📝 {{ item.notes }}
+                </div>
+                
                 <!-- Quantity Controls & Total -->
                 <div class="flex items-center justify-between mt-2">
                   <div class="flex items-center gap-1">
                     <button
                       class="w-7 h-7 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
-                      @click="handleQuantityChange(item.product.id, -1)"
+                      @click="handleQuantityChange(index, -1)"
                     >
                       −
                     </button>
                     <button
                       class="w-10 h-7 bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center text-sm font-medium"
-                      @click="openNumpad(item.product.id, item.quantity)"
+                      @click="openNumpad(index, item.quantity)"
                     >
                       {{ item.quantity }}
                     </button>
                     <button
                       class="w-7 h-7 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
-                      @click="handleQuantityChange(item.product.id, 1)"
+                      @click="handleQuantityChange(index, 1)"
                     >
                       +
+                    </button>
+                    
+                    <!-- Add/Edit Note Button -->
+                    <button
+                      class="ml-1 w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors"
+                      :class="item.notes ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-100 dark:bg-gray-700/50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+                      :title="item.notes ? 'Edit note' : 'Add note'"
+                      @click="openItemNotes(index)"
+                    >
+                      📝
                     </button>
                   </div>
                   
@@ -995,6 +1142,209 @@ onUnmounted(() => {
             >
               Close
             </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Product Options Modal (Variants & Modifiers) -->
+    <UModal v-model:open="showProductOptionsModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900 max-h-[80vh] overflow-auto">
+          <div v-if="selectedProduct" class="space-y-5">
+            <!-- Product Header -->
+            <div class="flex items-center gap-4">
+              <div class="text-4xl">{{ selectedProduct.image || '📦' }}</div>
+              <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                  {{ selectedProduct.name }}
+                </h3>
+                <p class="text-sm text-gray-500">{{ selectedProduct.description || selectedProduct.sku }}</p>
+              </div>
+            </div>
+
+            <!-- Size/Variant Selection -->
+            <div v-if="selectedProduct.hasVariants && selectedProduct.variants && selectedProduct.variants.length > 0">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                📏 Select Size
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="variant in selectedProduct.variants"
+                  :key="variant.id"
+                  class="p-3 rounded-xl border-2 text-center transition-all"
+                  :class="selectedVariant?.id === variant.id 
+                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
+                  @click="selectedVariant = variant"
+                >
+                  <div class="text-lg font-bold">{{ variant.shortName }}</div>
+                  <div class="text-xs text-gray-500">{{ variant.name }}</div>
+                  <div 
+                    v-if="variant.priceModifier !== 0" 
+                    class="text-xs mt-1"
+                    :class="variant.priceModifier > 0 ? 'text-amber-600' : 'text-green-600'"
+                  >
+                    {{ variant.priceModifier > 0 ? '+' : '' }}{{ variant.priceModifierType === 'percentage' ? `${variant.priceModifier}%` : currency.format(variant.priceModifier, pos.selectedCurrency.value) }}
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Modifier Groups -->
+            <div v-if="selectedProduct.modifierGroups && selectedProduct.modifierGroups.length > 0">
+              <div v-for="group in selectedProduct.modifierGroups" :key="group.id" class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ group.name }}
+                  <span v-if="group.required" class="text-red-500">*</span>
+                  <span v-if="group.type === 'multiple'" class="text-xs text-gray-500 ml-1">
+                    (select {{ group.minSelect || 0 }}-{{ group.maxSelect || 'any' }})
+                  </span>
+                </label>
+                <div class="space-y-2">
+                  <button
+                    v-for="mod in group.modifiers"
+                    :key="mod.id"
+                    class="w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all"
+                    :class="selectedModifiers.some(m => m.id === mod.id) 
+                      ? 'border-amber-500 bg-amber-500/10' 
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
+                    @click="toggleModifier(mod)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div 
+                        class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                        :class="selectedModifiers.some(m => m.id === mod.id) 
+                          ? 'border-amber-500 bg-amber-500' 
+                          : 'border-gray-300 dark:border-gray-600'"
+                      >
+                        <UIcon 
+                          v-if="selectedModifiers.some(m => m.id === mod.id)" 
+                          name="i-heroicons-check" 
+                          class="w-3 h-3 text-white" 
+                        />
+                      </div>
+                      <span class="text-gray-900 dark:text-white">{{ mod.name }}</span>
+                    </div>
+                    <span 
+                      v-if="mod.price !== 0" 
+                      class="text-sm"
+                      :class="mod.price > 0 ? 'text-amber-600' : 'text-green-600'"
+                    >
+                      {{ mod.price > 0 ? '+' : '' }}{{ currency.format(mod.price, pos.selectedCurrency.value) }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quantity -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Quantity
+              </label>
+              <div class="flex items-center gap-3">
+                <button
+                  class="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xl font-bold"
+                  @click="productQuantity = Math.max(1, productQuantity - 1)"
+                >
+                  −
+                </button>
+                <span class="w-16 text-center text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ productQuantity }}
+                </span>
+                <button
+                  class="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xl font-bold"
+                  @click="productQuantity++"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <!-- Total & Actions -->
+            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-gray-500">Total</span>
+                <span class="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                  {{ currency.format(selectedProductPrice * productQuantity, pos.selectedCurrency.value) }}
+                </span>
+              </div>
+              <div class="flex gap-2">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  class="flex-1"
+                  @click="showProductOptionsModal = false"
+                >
+                  Cancel
+                </UButton>
+                <UButton
+                  color="primary"
+                  class="flex-1 bg-gradient-to-r from-amber-500 to-orange-500"
+                  @click="addProductWithOptions"
+                >
+                  Add to Cart
+                </UButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Item Notes Modal -->
+    <UModal v-model:open="showItemNotesModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span>📝</span> Item Notes
+          </h3>
+          
+          <div class="space-y-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Add special instructions for kitchen (e.g., "no onions", "extra spicy", "allergies")
+            </p>
+            
+            <UTextarea
+              v-model="itemNotesValue"
+              placeholder="Enter notes for this item..."
+              :rows="3"
+              autofocus
+            />
+
+            <!-- Quick Notes -->
+            <div>
+              <p class="text-xs text-gray-500 mb-2">Quick notes:</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="quickNote in ['No ice', 'Extra spicy', 'Less sugar', 'No onions', 'Gluten free', 'Vegan']"
+                  :key="quickNote"
+                  class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  @click="itemNotesValue = itemNotesValue ? `${itemNotesValue}, ${quickNote}` : quickNote"
+                >
+                  {{ quickNote }}
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex gap-2 pt-2">
+              <UButton
+                color="neutral"
+                variant="outline"
+                class="flex-1"
+                @click="showItemNotesModal = false"
+              >
+                Cancel
+              </UButton>
+              <UButton
+                color="primary"
+                class="flex-1"
+                @click="saveItemNotes"
+              >
+                Save Notes
+              </UButton>
+            </div>
           </div>
         </div>
       </template>

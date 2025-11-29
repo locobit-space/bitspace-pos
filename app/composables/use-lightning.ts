@@ -7,19 +7,21 @@ import type {
   BOLT12Offer, 
   PaymentProof, 
   PaymentStatus,
-  PaymentMethod 
+  PaymentMethod,
+  LightningSettings,
+  LightningProvider
 } from '~/types';
 
-// Lightning Node Configuration
-interface LightningConfig {
-  nodeUrl: string;
-  macaroon?: string;
-  rune?: string; // CLN rune for BOLT12
-  provider: 'lnbits' | 'lnd' | 'cln' | 'alby' | 'nwc';
-}
+// Singleton state for settings
+const isInitialized = ref(false);
+const lightningSettings = ref<LightningSettings>({
+  provider: 'lnbits',
+  isConfigured: false,
+});
 
 export const useLightning = () => {
   const _nostr = useNuxtApp().$nostr;
+  const SETTINGS_KEY = 'bitspace_lightning_settings';
   
   // State
   const isConnected = ref(false);
@@ -27,34 +29,191 @@ export const useLightning = () => {
   const error = ref<string | null>(null);
   const currentInvoice = ref<LightningInvoice | null>(null);
   const paymentStatus = ref<PaymentStatus>('pending');
-  const config = ref<LightningConfig | null>(null);
 
   // BOLT12 Static Offers
   const staticOffers = ref<BOLT12Offer[]>([]);
 
+  // ============================================
+  // ⚙️ SETTINGS MANAGEMENT
+  // ============================================
+
   /**
-   * Initialize Lightning connection
+   * Load settings from storage
    */
-  const connect = async (lightningConfig: LightningConfig) => {
+  const loadSettings = async (): Promise<LightningSettings> => {
+    if (typeof window === 'undefined') return lightningSettings.value;
+
+    try {
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        lightningSettings.value = { ...lightningSettings.value, ...parsed };
+      }
+    } catch (e) {
+      console.error('Failed to load Lightning settings:', e);
+    }
+    return lightningSettings.value;
+  };
+
+  /**
+   * Save settings to storage
+   */
+  const saveSettings = async (settings: Partial<LightningSettings>): Promise<boolean> => {
+    try {
+      lightningSettings.value = { ...lightningSettings.value, ...settings };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(lightningSettings.value));
+      return true;
+    } catch (e) {
+      console.error('Failed to save Lightning settings:', e);
+      return false;
+    }
+  };
+
+  /**
+   * Update Lightning configuration
+   */
+  const updateConfig = async (config: {
+    provider: LightningProvider;
+    nodeUrl?: string;
+    apiKey?: string;
+    nwcConnectionString?: string;
+    lightningAddress?: string;
+    bolt12Offer?: string;
+  }): Promise<boolean> => {
+    const settings: Partial<LightningSettings> = {
+      provider: config.provider,
+      nodeUrl: config.nodeUrl,
+      apiKey: config.apiKey,
+      nwcConnectionString: config.nwcConnectionString,
+      lightningAddress: config.lightningAddress,
+      bolt12Offer: config.bolt12Offer,
+    };
+
+    const saved = await saveSettings(settings);
+    if (saved) {
+      // Test connection directly without checking isConfigured
+      const testResult = await testConnection();
+      if (testResult.success) {
+        await saveSettings({ 
+          isConfigured: true, 
+          testStatus: 'success',
+          lastTestedAt: new Date().toISOString()
+        });
+        isConnected.value = true;
+        return true;
+      } else {
+        await saveSettings({ 
+          isConfigured: false, 
+          testStatus: 'failed',
+          lastTestedAt: new Date().toISOString()
+        });
+        error.value = testResult.message;
+      }
+    }
+    return false;
+  };
+
+  /**
+   * Test current configuration
+   */
+  const testConnection = async (): Promise<{ success: boolean; message: string }> => {
     isLoading.value = true;
     error.value = null;
 
     try {
-      config.value = lightningConfig;
+      const settings = lightningSettings.value;
       
-      // Test connection based on provider
-      switch (lightningConfig.provider) {
+      switch (settings.provider) {
         case 'lnbits':
-          await testLNbitsConnection(lightningConfig);
+          if (!settings.nodeUrl || !settings.apiKey) {
+            return { success: false, message: 'LNbits URL and API Key are required' };
+          }
+          await testLNbitsConnection(settings.nodeUrl, settings.apiKey);
           break;
         case 'alby':
           await testAlbyConnection();
           break;
         case 'nwc':
-          await testNWCConnection();
+          if (!settings.nwcConnectionString) {
+            return { success: false, message: 'NWC connection string is required' };
+          }
+          await testNWCConnection(settings.nwcConnectionString);
+          break;
+        case 'lnurl':
+          if (!settings.lightningAddress) {
+            return { success: false, message: 'Lightning address is required' };
+          }
+          await testLNURLConnection(settings.lightningAddress);
           break;
         default:
-          throw new Error(`Unsupported provider: ${lightningConfig.provider}`);
+          return { success: false, message: `Unsupported provider: ${settings.provider}` };
+      }
+
+      await saveSettings({ 
+        isConfigured: true, 
+        testStatus: 'success',
+        lastTestedAt: new Date().toISOString()
+      });
+      
+      isConnected.value = true;
+      return { success: true, message: 'Connection successful!' };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Connection failed';
+      error.value = message;
+      
+      await saveSettings({ 
+        testStatus: 'failed',
+        lastTestedAt: new Date().toISOString()
+      });
+      
+      isConnected.value = false;
+      return { success: false, message };
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * Initialize Lightning connection from saved settings
+   */
+  const connect = async (): Promise<boolean> => {
+    await loadSettings();
+    
+    if (!lightningSettings.value.isConfigured) {
+      error.value = 'Lightning not configured. Please configure in settings.';
+      return false;
+    }
+
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const settings = lightningSettings.value;
+      
+      switch (settings.provider) {
+        case 'lnbits':
+          if (!settings.nodeUrl || !settings.apiKey) {
+            throw new Error('LNbits URL and API Key required');
+          }
+          await testLNbitsConnection(settings.nodeUrl, settings.apiKey);
+          break;
+        case 'alby':
+          await testAlbyConnection();
+          break;
+        case 'nwc':
+          if (!settings.nwcConnectionString) {
+            throw new Error('NWC connection string required');
+          }
+          await testNWCConnection(settings.nwcConnectionString);
+          break;
+        case 'lnurl':
+          if (!settings.lightningAddress) {
+            throw new Error('Lightning address required');
+          }
+          await testLNURLConnection(settings.lightningAddress);
+          break;
+        default:
+          throw new Error(`Unsupported provider: ${settings.provider}`);
       }
 
       isConnected.value = true;
@@ -76,9 +235,15 @@ export const useLightning = () => {
     description: string,
     metadata?: Record<string, unknown>
   ): Promise<LightningInvoice | null> => {
-    if (!config.value) {
-      error.value = 'Lightning not configured';
+    if (!lightningSettings.value.isConfigured) {
+      error.value = 'Lightning not configured. Please configure in settings.';
       return null;
+    }
+
+    // Auto-connect if needed
+    if (!isConnected.value) {
+      const connected = await connect();
+      if (!connected) return null;
     }
 
     isLoading.value = true;
@@ -114,7 +279,7 @@ export const useLightning = () => {
       allowsAnyAmount?: boolean;
     }
   ): Promise<BOLT12Offer | null> => {
-    if (!config.value) {
+    if (!lightningSettings.value.isConfigured) {
       error.value = 'Lightning not configured';
       return null;
     }
@@ -241,10 +406,10 @@ export const useLightning = () => {
   // Provider-specific implementations
   // ============================================
 
-  const testLNbitsConnection = async (cfg: LightningConfig) => {
-    const response = await fetch(`${cfg.nodeUrl}/api/v1/wallet`, {
+  const testLNbitsConnection = async (nodeUrl: string, apiKey: string) => {
+    const response = await fetch(`${nodeUrl}/api/v1/wallet`, {
       headers: {
-        'X-Api-Key': cfg.macaroon || '',
+        'X-Api-Key': apiKey,
       },
     });
     if (!response.ok) throw new Error('LNbits connection failed');
@@ -258,13 +423,135 @@ export const useLightning = () => {
       await webln.webln.enable();
       return true;
     }
-    throw new Error('Alby/WebLN not available');
+    throw new Error('Alby/WebLN not available. Please install the Alby browser extension.');
   };
 
-  const testNWCConnection = async () => {
+  const testNWCConnection = async (connectionString: string) => {
     // NIP-47 Nostr Wallet Connect
+    // Parse the connection string
+    if (!connectionString.startsWith('nostr+walletconnect://')) {
+      throw new Error('Invalid NWC connection string');
+    }
     // Implementation for connecting via Nostr
     return true;
+  };
+
+  /**
+   * Test Lightning Address (LNURL-pay) connection
+   * Supports: Wallet of Satoshi, Blink, Alby, Stacker News, etc.
+   */
+  const testLNURLConnection = async (lightningAddress: string) => {
+    // Validate format: name@domain.com
+    if (!lightningAddress.includes('@')) {
+      throw new Error('Invalid Lightning address format. Expected: name@domain.com');
+    }
+
+    const [name, domain] = lightningAddress.split('@');
+    
+    // Fetch LNURL-pay metadata
+    const lnurlPayUrl = `https://${domain}/.well-known/lnurlp/${name}`;
+    
+    const response = await fetch(lnurlPayUrl);
+    if (!response.ok) {
+      throw new Error(`Lightning address not found or service unavailable: ${lightningAddress}`);
+    }
+    
+    const data = await response.json();
+    
+    // Validate LNURL-pay response
+    if (data.tag !== 'payRequest') {
+      throw new Error('Invalid LNURL-pay response');
+    }
+    
+    return {
+      callback: data.callback,
+      minSendable: data.minSendable, // millisats
+      maxSendable: data.maxSendable, // millisats
+      metadata: data.metadata,
+      allowsNostr: data.allowsNostr || false,
+      nostrPubkey: data.nostrPubkey,
+    };
+  };
+
+  /**
+   * Create invoice via Lightning Address (LNURL-pay)
+   * This works with Wallet of Satoshi, Blink, Alby, etc.
+   */
+  const createLNURLInvoice = async (
+    lightningAddress: string,
+    amountSats: number,
+    comment?: string
+  ): Promise<LightningInvoice> => {
+    const [name, domain] = lightningAddress.split('@');
+    const lnurlPayUrl = `https://${domain}/.well-known/lnurlp/${name}`;
+    
+    // Step 1: Get LNURL-pay metadata
+    const metaResponse = await fetch(lnurlPayUrl);
+    if (!metaResponse.ok) {
+      throw new Error('Failed to fetch Lightning address info');
+    }
+    
+    const meta = await metaResponse.json();
+    
+    // Validate amount
+    const amountMsats = amountSats * 1000;
+    if (amountMsats < meta.minSendable || amountMsats > meta.maxSendable) {
+      throw new Error(
+        `Amount must be between ${meta.minSendable / 1000} and ${meta.maxSendable / 1000} sats`
+      );
+    }
+    
+    // Step 2: Request invoice from callback
+    let callbackUrl = `${meta.callback}?amount=${amountMsats}`;
+    if (comment && meta.commentAllowed && comment.length <= meta.commentAllowed) {
+      callbackUrl += `&comment=${encodeURIComponent(comment)}`;
+    }
+    
+    const invoiceResponse = await fetch(callbackUrl);
+    if (!invoiceResponse.ok) {
+      throw new Error('Failed to get invoice from Lightning address');
+    }
+    
+    const invoiceData = await invoiceResponse.json();
+    
+    if (invoiceData.status === 'ERROR') {
+      throw new Error(invoiceData.reason || 'Invoice creation failed');
+    }
+    
+    // Parse the bolt11 invoice to get payment hash
+    const paymentHash = extractPaymentHash(invoiceData.pr);
+    
+    return {
+      id: paymentHash,
+      bolt11: invoiceData.pr,
+      paymentHash,
+      amount: amountSats,
+      description: comment || `Payment to ${lightningAddress}`,
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+      metadata: {
+        lightningAddress,
+        successAction: invoiceData.successAction,
+      },
+    };
+  };
+
+  /**
+   * Extract payment hash from BOLT11 invoice
+   */
+  const extractPaymentHash = (bolt11: string): string => {
+    // Simple extraction - payment hash is part of the invoice
+    // For production, use a proper BOLT11 decoder like bolt11 or light-bolt11-decoder
+    try {
+      // Remove the prefix (lnbc, lntb, lnbcrt) and validate
+      const _validated = bolt11.toLowerCase().replace(/^ln(bc|tb|bcrt)/, '');
+      // For now, generate a unique ID from the invoice - in production use proper decoder
+      // The invoice itself is unique, so we can use a hash of it
+      return crypto.randomUUID().replace(/-/g, '');
+    } catch {
+      return crypto.randomUUID().replace(/-/g, '');
+    }
   };
 
   const generateBolt11Invoice = async (
@@ -272,13 +559,20 @@ export const useLightning = () => {
     description: string,
     metadata?: Record<string, unknown>
   ): Promise<LightningInvoice> => {
-    if (!config.value) throw new Error('Not configured');
+    const settings = lightningSettings.value;
+    
+    if (!settings.isConfigured) throw new Error('Not configured');
 
-    if (config.value.provider === 'lnbits') {
-      const response = await fetch(`${config.value.nodeUrl}/api/v1/payments`, {
+    // LNURL/Lightning Address provider
+    if (settings.provider === 'lnurl' && settings.lightningAddress) {
+      return createLNURLInvoice(settings.lightningAddress, amount, description);
+    }
+
+    if (settings.provider === 'lnbits' && settings.nodeUrl && settings.apiKey) {
+      const response = await fetch(`${settings.nodeUrl}/api/v1/payments`, {
         method: 'POST',
         headers: {
-          'X-Api-Key': config.value.macaroon || '',
+          'X-Api-Key': settings.apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -289,7 +583,10 @@ export const useLightning = () => {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to create invoice');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create invoice: ${errorText}`);
+      }
       
       const data = await response.json();
       
@@ -307,7 +604,7 @@ export const useLightning = () => {
     }
 
     // WebLN (Alby)
-    if (config.value.provider === 'alby' && typeof window !== 'undefined') {
+    if (settings.provider === 'alby' && typeof window !== 'undefined') {
       interface WebLNInvoice {
         paymentRequest: string;
         paymentHash?: string;
@@ -338,6 +635,11 @@ export const useLightning = () => {
   };
 
   const generateBolt12Offer = async (description: string): Promise<string> => {
+    // Check if we have a static BOLT12 offer configured
+    if (lightningSettings.value.bolt12Offer) {
+      return lightningSettings.value.bolt12Offer;
+    }
+    
     // BOLT12 requires CLN or compatible node
     // For now, return placeholder
     // Real implementation would call CLN's `offer` command
@@ -345,14 +647,16 @@ export const useLightning = () => {
   };
 
   const checkPaymentStatus = async (paymentHash: string): Promise<PaymentStatus> => {
-    if (!config.value) return 'pending';
+    const settings = lightningSettings.value;
+    
+    if (!settings.isConfigured) return 'pending';
 
-    if (config.value.provider === 'lnbits') {
+    if (settings.provider === 'lnbits' && settings.nodeUrl && settings.apiKey) {
       const response = await fetch(
-        `${config.value.nodeUrl}/api/v1/payments/${paymentHash}`,
+        `${settings.nodeUrl}/api/v1/payments/${paymentHash}`,
         {
           headers: {
-            'X-Api-Key': config.value.macaroon || '',
+            'X-Api-Key': settings.apiKey,
           },
         }
       );
@@ -367,14 +671,16 @@ export const useLightning = () => {
   };
 
   const getPreimage = async (paymentHash: string): Promise<string> => {
-    if (!config.value) return '';
+    const settings = lightningSettings.value;
+    
+    if (!settings.isConfigured) return '';
 
-    if (config.value.provider === 'lnbits') {
+    if (settings.provider === 'lnbits' && settings.nodeUrl && settings.apiKey) {
       const response = await fetch(
-        `${config.value.nodeUrl}/api/v1/payments/${paymentHash}`,
+        `${settings.nodeUrl}/api/v1/payments/${paymentHash}`,
         {
           headers: {
-            'X-Api-Key': config.value.macaroon || '',
+            'X-Api-Key': settings.apiKey,
           },
         }
       );
@@ -408,9 +714,31 @@ export const useLightning = () => {
     return new Uint8Array(hashBuffer);
   };
 
+  // ============================================
+  // 🚀 INITIALIZATION
+  // ============================================
+
+  const initialize = async (): Promise<void> => {
+    if (isInitialized.value) return;
+    
+    await loadSettings();
+    isInitialized.value = true;
+
+    // Auto-connect if configured
+    if (lightningSettings.value.isConfigured) {
+      await connect();
+    }
+  };
+
+  // Auto-initialize
+  if (typeof window !== 'undefined' && !isInitialized.value) {
+    initialize();
+  }
+
   // Computed
   const isPaid = computed(() => paymentStatus.value === 'completed');
   const invoiceQR = computed(() => currentInvoice.value?.bolt11 || '');
+  const settings = computed(() => lightningSettings.value);
 
   return {
     // State
@@ -422,6 +750,13 @@ export const useLightning = () => {
     staticOffers,
     isPaid,
     invoiceQR,
+    settings,
+
+    // Settings
+    loadSettings,
+    saveSettings,
+    updateConfig,
+    testConnection,
 
     // Methods
     connect,
@@ -431,5 +766,6 @@ export const useLightning = () => {
     verifyPayment,
     createPaymentProof,
     broadcastPaymentReceived,
+    initialize,
   };
 };

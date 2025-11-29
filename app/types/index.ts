@@ -251,6 +251,37 @@ export interface SyncQueue {
 // 🛒 PRODUCT & ORDER TYPES (Enhanced)
 // ============================================
 
+// Product size/variant options
+export interface ProductVariant {
+  id: string;
+  name: string; // e.g., "Small", "Medium", "Large"
+  shortName: string; // e.g., "S", "M", "L"
+  priceModifier: number; // Additional price (can be negative for discounts)
+  priceModifierType: 'fixed' | 'percentage';
+  sku?: string;
+  stock?: number;
+  isDefault?: boolean;
+  sortOrder: number;
+}
+
+export interface ProductModifier {
+  id: string;
+  name: string; // e.g., "Extra Shot", "No Ice", "Less Sugar"
+  price: number; // Additional price
+  category: 'addon' | 'removal' | 'preference';
+  isDefault?: boolean;
+}
+
+export interface ProductModifierGroup {
+  id: string;
+  name: string; // e.g., "Size", "Sugar Level", "Ice Level", "Add-ons"
+  type: 'single' | 'multiple'; // single = radio, multiple = checkbox
+  required: boolean;
+  minSelect?: number;
+  maxSelect?: number;
+  modifiers: ProductModifier[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -267,6 +298,10 @@ export interface Product {
   image?: string;
   createdAt: string;
   updatedAt: string;
+  // Variants & Modifiers
+  hasVariants?: boolean;
+  variants?: ProductVariant[];
+  modifierGroups?: ProductModifierGroup[];
   // AI enhancement
   upsellProducts?: string[];
   complementaryProducts?: string[];
@@ -277,6 +312,8 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
+  icon?: string;
+  sortOrder?: number;
 }
 
 export interface Unit {
@@ -312,6 +349,11 @@ export interface Order {
   loyaltyPointsEarned?: number;
   eReceiptId?: string;
   isOffline?: boolean;
+  // Kitchen display
+  kitchenStatus?: 'new' | 'preparing' | 'ready' | 'served';
+  kitchenNotes?: string;
+  preparedAt?: string;
+  servedAt?: string;
 }
 
 export interface OrderItem {
@@ -323,6 +365,13 @@ export interface OrderItem {
   createdAt: string;
   updatedAt: string;
   product: Product;
+  // Variant & modifier selections
+  selectedVariant?: ProductVariant;
+  selectedModifiers?: ProductModifier[];
+  // Custom notes (e.g., "no onions", "extra spicy")
+  notes?: string;
+  // Kitchen tracking
+  kitchenStatus?: 'pending' | 'preparing' | 'ready';
 }
 
 // ============================================
@@ -378,8 +427,12 @@ export interface POSSession {
 export interface CartItem {
   product: Product;
   quantity: number;
-  price: number;
+  price: number; // Base price + variant + modifiers
   total: number;
+  // Variant & modifiers
+  selectedVariant?: ProductVariant;
+  selectedModifiers?: ProductModifier[];
+  // Custom notes for kitchen
   notes?: string;
 }
 
@@ -406,4 +459,208 @@ export interface POSNotification {
   read: boolean;
   createdAt: string;
   nostrEventId?: string;
+}
+
+// ============================================
+// 👤 USER & ROLE MANAGEMENT TYPES
+// ============================================
+
+export type UserRole = 'owner' | 'admin' | 'cashier' | 'staff';
+
+export interface UserPermissions {
+  // POS Operations
+  canCreateOrders: boolean;
+  canVoidOrders: boolean;
+  canApplyDiscounts: boolean;
+  canProcessRefunds: boolean;
+  // Product Management
+  canViewProducts: boolean;
+  canEditProducts: boolean;
+  canDeleteProducts: boolean;
+  // Customer Management
+  canViewCustomers: boolean;
+  canEditCustomers: boolean;
+  // Reports & Analytics
+  canViewReports: boolean;
+  canExportReports: boolean;
+  // Settings
+  canViewSettings: boolean;
+  canEditSettings: boolean;
+  canManageLightning: boolean;
+  canManageUsers: boolean;
+  // Inventory
+  canViewInventory: boolean;
+  canEditInventory: boolean;
+  canAdjustStock: boolean;
+}
+
+export const DEFAULT_PERMISSIONS: Record<UserRole, UserPermissions> = {
+  owner: {
+    canCreateOrders: true,
+    canVoidOrders: true,
+    canApplyDiscounts: true,
+    canProcessRefunds: true,
+    canViewProducts: true,
+    canEditProducts: true,
+    canDeleteProducts: true,
+    canViewCustomers: true,
+    canEditCustomers: true,
+    canViewReports: true,
+    canExportReports: true,
+    canViewSettings: true,
+    canEditSettings: true,
+    canManageLightning: true,
+    canManageUsers: true,
+    canViewInventory: true,
+    canEditInventory: true,
+    canAdjustStock: true,
+  },
+  admin: {
+    canCreateOrders: true,
+    canVoidOrders: true,
+    canApplyDiscounts: true,
+    canProcessRefunds: true,
+    canViewProducts: true,
+    canEditProducts: true,
+    canDeleteProducts: false,
+    canViewCustomers: true,
+    canEditCustomers: true,
+    canViewReports: true,
+    canExportReports: true,
+    canViewSettings: true,
+    canEditSettings: true,
+    canManageLightning: false,
+    canManageUsers: false,
+    canViewInventory: true,
+    canEditInventory: true,
+    canAdjustStock: true,
+  },
+  cashier: {
+    canCreateOrders: true,
+    canVoidOrders: false,
+    canApplyDiscounts: true,
+    canProcessRefunds: false,
+    canViewProducts: true,
+    canEditProducts: false,
+    canDeleteProducts: false,
+    canViewCustomers: true,
+    canEditCustomers: false,
+    canViewReports: false,
+    canExportReports: false,
+    canViewSettings: false,
+    canEditSettings: false,
+    canManageLightning: false,
+    canManageUsers: false,
+    canViewInventory: true,
+    canEditInventory: false,
+    canAdjustStock: false,
+  },
+  staff: {
+    canCreateOrders: true,
+    canVoidOrders: false,
+    canApplyDiscounts: false,
+    canProcessRefunds: false,
+    canViewProducts: true,
+    canEditProducts: false,
+    canDeleteProducts: false,
+    canViewCustomers: false,
+    canEditCustomers: false,
+    canViewReports: false,
+    canExportReports: false,
+    canViewSettings: false,
+    canEditSettings: false,
+    canManageLightning: false,
+    canManageUsers: false,
+    canViewInventory: true,
+    canEditInventory: false,
+    canAdjustStock: false,
+  },
+};
+
+export interface StoreUser {
+  id: string;
+  name: string;
+  email?: string;
+  pin?: string; // For quick POS login
+  role: UserRole;
+  permissions: UserPermissions;
+  branchId?: string; // Optional - restrict to specific branch
+  isActive: boolean;
+  nostrPubkey?: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string;
+}
+
+// ============================================
+// ⚙️ STORE SETTINGS TYPES
+// ============================================
+
+export type LightningProvider = 'lnbits' | 'alby' | 'nwc' | 'lnd' | 'cln' | 'lnurl';
+
+export interface LightningSettings {
+  provider: LightningProvider;
+  nodeUrl?: string; // LNbits URL, LND REST, etc.
+  apiKey?: string; // LNbits Admin/Invoice key
+  macaroon?: string; // LND macaroon (hex)
+  rune?: string; // CLN rune
+  nwcConnectionString?: string; // NWC connection string (nostr+walletconnect://...)
+  lightningAddress?: string; // name@domain.com (for LNURL-pay)
+  bolt12Offer?: string; // Static QR
+  isConfigured: boolean;
+  lastTestedAt?: string;
+  testStatus?: 'success' | 'failed' | 'pending';
+}
+
+export interface SecuritySettings {
+  dataEncryption: boolean;
+  encryptionKey?: string; // Encrypted with master password
+  autoLockTimeout: number; // Minutes
+  requirePinForRefunds: boolean;
+  requirePinForVoids: boolean;
+  requirePinForDiscounts: boolean;
+  auditLogging: boolean;
+}
+
+export interface GeneralSettings {
+  storeName: string;
+  storeAddress?: string;
+  storePhone?: string;
+  storeEmail?: string;
+  storeLogo?: string;
+  defaultCurrency: CurrencyCode;
+  taxRate: number; // Percentage
+  tipEnabled: boolean;
+  tipSuggestions: number[]; // e.g., [10, 15, 20]
+  receiptFooter?: string;
+  language: string;
+  timezone: string;
+}
+
+export interface StoreSettings {
+  general: GeneralSettings;
+  lightning: LightningSettings;
+  security: SecuritySettings;
+  updatedAt: string;
+}
+
+// ============================================
+// 🔐 ENCRYPTION TYPES
+// ============================================
+
+export interface EncryptedData {
+  iv: string; // Initialization vector (base64)
+  data: string; // Encrypted data (base64)
+  tag?: string; // Auth tag for GCM mode
+}
+
+export interface SecurityAuditLog {
+  id: string;
+  action: 'login' | 'logout' | 'settings_change' | 'refund' | 'void' | 'role_change';
+  userId: string;
+  userName: string;
+  details: string;
+  ipAddress?: string;
+  timestamp: string;
 }

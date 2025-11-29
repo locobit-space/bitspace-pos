@@ -328,27 +328,27 @@ const addVariant = () => {
 
         <div v-else class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormGroup :label="t('products.name')">
+            <UFormField :label="t('products.name')">
               <UInput v-model="editForm.name" />
-            </UFormGroup>
-            <UFormGroup :label="t('products.nameLao') || 'Name (Lao)'">
+            </UFormField>
+            <UFormField :label="t('products.nameLao') || 'Name (Lao)'">
               <UInput v-model="editForm.nameLao" />
-            </UFormGroup>
-            <UFormGroup :label="t('products.sku')">
+            </UFormField>
+            <UFormField :label="t('products.sku')">
               <UInput v-model="editForm.sku" />
-            </UFormGroup>
-            <UFormGroup :label="t('products.barcode')">
+            </UFormField>
+            <UFormField :label="t('products.barcode')">
               <UInput v-model="editForm.barcode" />
-            </UFormGroup>
-            <UFormGroup :label="t('products.category')">
+            </UFormField>
+            <UFormField :label="t('products.category')">
               <USelect v-model="editForm.category" :options="categories" />
-            </UFormGroup>
-            <UFormGroup :label="t('products.unit') || 'Unit'">
+            </UFormField>
+            <UFormField :label="t('products.unit') || 'Unit'">
               <USelect v-model="editForm.unit" :options="units" />
-            </UFormGroup>
-            <UFormGroup :label="t('products.description')" class="md:col-span-2">
+            </UFormField>
+            <UFormField :label="t('products.description')" class="md:col-span-2">
               <UTextarea v-model="editForm.description" :rows="3" />
-            </UFormGroup>
+            </UFormField>
           </div>
         </div>
       </UCard>
@@ -473,15 +473,15 @@ const addVariant = () => {
               <span class="text-gray-700 dark:text-gray-300">{{ t('inventory.trackInventory') || 'Track Inventory' }}</span>
               <UToggle v-model="product.trackInventory" />
             </div>
-            <UFormGroup :label="t('inventory.lowStockThreshold') || 'Low Stock Alert'">
+            <UFormField :label="t('inventory.lowStockThreshold') || 'Low Stock Alert'">
               <UInput v-model="product.lowStockThreshold" type="number" />
-            </UFormGroup>
-            <UFormGroup :label="t('inventory.reorderPoint') || 'Reorder Point'">
+            </UFormField>
+            <UFormField :label="t('inventory.reorderPoint') || 'Reorder Point'">
               <UInput v-model="product.reorderPoint" type="number" />
-            </UFormGroup>
-            <UFormGroup :label="t('inventory.reorderQuantity') || 'Reorder Quantity'">
+            </UFormField>
+            <UFormField :label="t('inventory.reorderQuantity') || 'Reorder Quantity'">
               <UInput v-model="product.reorderQuantity" type="number" />
-            </UFormGroup>
+            </UFormField>
           </div>
         </UCard>
       </div>
@@ -497,12 +497,12 @@ const addVariant = () => {
 
           <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
-              <UFormGroup :label="t('products.price')">
+              <UFormField :label="t('products.price')">
                 <UInput v-model="product.price" type="number" />
-              </UFormGroup>
-              <UFormGroup :label="t('products.costPrice') || 'Cost Price'">
+              </UFormField>
+              <UFormField :label="t('products.costPrice') || 'Cost Price'">
                 <UInput v-model="product.costPrice" type="number" />
-              </UFormGroup>
+              </UFormField>
             </div>
             
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -513,12 +513,12 @@ const addVariant = () => {
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-              <UFormGroup :label="t('products.taxRate') || 'Tax Rate (%)'">
+              <UFormField :label="t('products.taxRate') || 'Tax Rate (%)'">
                 <UInput v-model="product.taxRate" type="number" />
-              </UFormGroup>
-              <UFormGroup :label="t('products.taxIncluded') || 'Tax Included'">
+              </UFormField>
+              <UFormField :label="t('products.taxIncluded') || 'Tax Included'">
                 <UToggle v-model="product.taxIncluded" />
-              </UFormGroup>
+              </UFormField>
             </div>
           </div>
         </UCard>

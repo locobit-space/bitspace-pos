@@ -4,6 +4,8 @@
 import { ref, computed, watch } from 'vue';
 import type { 
   Product, 
+  ProductVariant,
+  ProductModifier,
   Cart, 
   CartItem, 
   Order, 
@@ -30,35 +32,116 @@ export const usePOS = () => {
   const isSessionActive = computed(() => currentSession.value?.status === 'active');
 
   // ============================================
+  // Price Calculation Helpers
+  // ============================================
+
+  /**
+   * Calculate final price with variant and modifiers
+   */
+  const calculateItemPrice = (
+    product: Product,
+    variant?: ProductVariant,
+    modifiers?: ProductModifier[]
+  ): number => {
+    let basePrice = product.prices?.[selectedCurrency.value] || product.price;
+
+    // Add variant price modifier
+    if (variant) {
+      if (variant.priceModifierType === 'fixed') {
+        basePrice += variant.priceModifier;
+      } else {
+        basePrice += basePrice * (variant.priceModifier / 100);
+      }
+    }
+
+    // Add modifier prices
+    if (modifiers && modifiers.length > 0) {
+      modifiers.forEach(mod => {
+        basePrice += mod.price;
+      });
+    }
+
+    return basePrice;
+  };
+
+  /**
+   * Generate unique cart item key (product + variant + modifiers)
+   */
+  const getCartItemKey = (
+    productId: string,
+    variant?: ProductVariant,
+    modifiers?: ProductModifier[]
+  ): string => {
+    let key = productId;
+    if (variant) key += `-${variant.id}`;
+    if (modifiers && modifiers.length > 0) {
+      key += `-${modifiers.map(m => m.id).sort().join(',')}`;
+    }
+    return key;
+  };
+
+  // ============================================
   // Cart Operations
   // ============================================
 
   /**
-   * Add product to cart
+   * Add product to cart with optional variant and modifiers
    */
-  const addToCart = (product: Product, quantity: number = 1) => {
-    const existingItem = cartItems.value.find(item => item.product.id === product.id);
+  const addToCart = (
+    product: Product, 
+    quantity: number = 1,
+    options?: {
+      variant?: ProductVariant;
+      modifiers?: ProductModifier[];
+      notes?: string;
+    }
+  ) => {
+    const variant = options?.variant;
+    const modifiers = options?.modifiers;
+    const notes = options?.notes;
+
+    // Find existing item with same product + variant + modifiers
+    const itemKey = getCartItemKey(product.id, variant, modifiers);
+    const existingItem = cartItems.value.find(item => {
+      const existingKey = getCartItemKey(
+        item.product.id, 
+        item.selectedVariant, 
+        item.selectedModifiers
+      );
+      return existingKey === itemKey && item.notes === notes;
+    });
 
     if (existingItem) {
       existingItem.quantity += quantity;
       existingItem.total = existingItem.quantity * existingItem.price;
     } else {
-      // Use multi-currency price if available
-      const price = product.prices?.[selectedCurrency.value] || product.price;
+      const price = calculateItemPrice(product, variant, modifiers);
       
       cartItems.value.push({
         product,
         quantity,
         price,
         total: quantity * price,
+        selectedVariant: variant,
+        selectedModifiers: modifiers,
+        notes,
       });
     }
   };
 
   /**
-   * Remove product from cart
+   * Remove product from cart by index
    */
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = (index: number) => {
+    if (index >= 0 && index < cartItems.value.length) {
+      cartItems.value.splice(index, 1);
+    }
+  };
+
+  /**
+   * Remove by product ID (removes first match)
+   */
+  const removeFromCartById = (productId: string) => {
     const index = cartItems.value.findIndex(item => item.product.id === productId);
     if (index !== -1) {
       cartItems.value.splice(index, 1);
@@ -66,17 +149,61 @@ export const usePOS = () => {
   };
 
   /**
-   * Update item quantity
+   * Update item quantity by index
    */
-  const updateQuantity = (productId: string, quantity: number) => {
-    const item = cartItems.value.find(item => item.product.id === productId);
+  const updateQuantity = (index: number, quantity: number) => {
+    const item = cartItems.value[index];
     if (item) {
       if (quantity <= 0) {
-        removeFromCart(productId);
+        removeFromCart(index);
       } else {
         item.quantity = quantity;
         item.total = item.quantity * item.price;
       }
+    }
+  };
+
+  /**
+   * Update item quantity by product ID (for backward compatibility)
+   */
+  const updateQuantityById = (productId: string, quantity: number) => {
+    const index = cartItems.value.findIndex(item => item.product.id === productId);
+    if (index !== -1) {
+      updateQuantity(index, quantity);
+    }
+  };
+
+  /**
+   * Update item notes
+   */
+  const updateItemNotes = (index: number, notes: string) => {
+    const item = cartItems.value[index];
+    if (item) {
+      item.notes = notes || undefined;
+    }
+  };
+
+  /**
+   * Update item variant
+   */
+  const updateItemVariant = (index: number, variant: ProductVariant) => {
+    const item = cartItems.value[index];
+    if (item) {
+      item.selectedVariant = variant;
+      item.price = calculateItemPrice(item.product, variant, item.selectedModifiers);
+      item.total = item.quantity * item.price;
+    }
+  };
+
+  /**
+   * Update item modifiers
+   */
+  const updateItemModifiers = (index: number, modifiers: ProductModifier[]) => {
+    const item = cartItems.value[index];
+    if (item) {
+      item.selectedModifiers = modifiers;
+      item.price = calculateItemPrice(item.product, item.selectedVariant, modifiers);
+      item.total = item.quantity * item.price;
     }
   };
 
@@ -121,7 +248,10 @@ export const usePOS = () => {
   });
 
   const totalSats = computed(() => {
-    return currency.toSats(total.value, selectedCurrency.value);
+    // Only calculate if we have a valid total
+    if (total.value <= 0) return 0;
+    const sats = currency.toSats(total.value, selectedCurrency.value);
+    return sats;
   });
 
   const itemCount = computed(() => {
@@ -159,6 +289,7 @@ export const usePOS = () => {
       paymentMethod,
       notes: customerNote.value || undefined,
       tip: tipAmount.value > 0 ? tipAmount.value : undefined,
+      kitchenStatus: 'new',
       items: cartItems.value.map((item, index) => ({
         id: `${index + 1}`,
         productId: item.product.id,
@@ -168,6 +299,10 @@ export const usePOS = () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         product: item.product,
+        selectedVariant: item.selectedVariant,
+        selectedModifiers: item.selectedModifiers,
+        notes: item.notes,
+        kitchenStatus: 'pending',
       })),
       isOffline: !navigator.onLine,
     };
@@ -332,12 +467,18 @@ export const usePOS = () => {
     // Cart Methods
     addToCart,
     removeFromCart,
+    removeFromCartById,
     updateQuantity,
+    updateQuantityById,
+    updateItemNotes,
+    updateItemVariant,
+    updateItemModifiers,
     clearCart,
     setTip,
     setTipPercentage,
     applyDiscount,
     changeCurrency,
+    calculateItemPrice,
 
     // Order
     createOrder,

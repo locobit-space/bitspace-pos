@@ -319,21 +319,21 @@ const deleteCustomer = () => {
 
         <div v-else class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormGroup :label="t('customers.name')">
+            <UFormField :label="t('customers.name')">
               <UInput v-model="editForm.name" />
-            </UFormGroup>
-            <UFormGroup :label="t('customers.email')">
+            </UFormField>
+            <UFormField :label="t('customers.email')">
               <UInput v-model="editForm.email" type="email" />
-            </UFormGroup>
-            <UFormGroup :label="t('customers.phone')">
+            </UFormField>
+            <UFormField :label="t('customers.phone')">
               <UInput v-model="editForm.phone" />
-            </UFormGroup>
-            <UFormGroup :label="t('customers.lightningAddress')">
+            </UFormField>
+            <UFormField :label="t('customers.lightningAddress')">
               <UInput v-model="editForm.lightningAddress" />
-            </UFormGroup>
-            <UFormGroup :label="t('customers.address')" class="md:col-span-2">
+            </UFormField>
+            <UFormField :label="t('customers.address')" class="md:col-span-2">
               <UTextarea v-model="editForm.address" rows="2" />
-            </UFormGroup>
+            </UFormField>
           </div>
         </div>
       </UCard>
@@ -597,12 +597,12 @@ const deleteCustomer = () => {
             <p class="text-sm text-gray-600 dark:text-gray-400">
               Send a Lightning zap reward to this customer's wallet.
             </p>
-            <UFormGroup label="Amount (sats)">
+            <UFormField label="Amount (sats)">
               <UInput v-model="rewardForm.points" type="number" placeholder="1000" />
-            </UFormGroup>
-            <UFormGroup label="Reason">
+            </UFormField>
+            <UFormField label="Reason">
               <USelect v-model="rewardForm.reason" :options="['loyalty_bonus', 'referral', 'promotion', 'birthday']" />
-            </UFormGroup>
+            </UFormField>
             <UButton block icon="i-heroicons-bolt" color="amber" @click="sendReward">
               ⚡ Send Zap Reward
             </UButton>
@@ -659,15 +659,15 @@ const deleteCustomer = () => {
         </template>
 
         <div class="space-y-4">
-          <UFormGroup :label="t('customers.channel') || 'Channel'">
+          <UFormField :label="t('customers.channel') || 'Channel'">
             <USelect v-model="messageForm.channel" :options="['nostr', 'email', 'sms']" />
-          </UFormGroup>
-          <UFormGroup :label="t('customers.subject') || 'Subject'">
+          </UFormField>
+          <UFormField :label="t('customers.subject') || 'Subject'">
             <UInput v-model="messageForm.subject" />
-          </UFormGroup>
-          <UFormGroup :label="t('customers.message') || 'Message'">
+          </UFormField>
+          <UFormField :label="t('customers.message') || 'Message'">
             <UTextarea v-model="messageForm.content" rows="4" />
-          </UFormGroup>
+          </UFormField>
         </div>
 
         <template #footer>
@@ -693,12 +693,12 @@ const deleteCustomer = () => {
           <p class="text-sm text-gray-600 dark:text-gray-400">
             Send a Lightning zap to <strong>{{ customer.lightningAddress }}</strong>
           </p>
-          <UFormGroup label="Amount (sats)">
+          <UFormField label="Amount (sats)">
             <UInput v-model="rewardForm.points" type="number" placeholder="1000" />
-          </UFormGroup>
-          <UFormGroup label="Reason">
+          </UFormField>
+          <UFormField label="Reason">
             <UInput v-model="rewardForm.reason" placeholder="Thank you for being a loyal customer!" />
-          </UFormGroup>
+          </UFormField>
         </div>
 
         <template #footer>

@@ -43,6 +43,89 @@
       </div>
     </UCard>
 
+    <!-- Quick Settings Links -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <NuxtLink to="/settings/lightning" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
+              <UIcon name="i-heroicons-bolt" class="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.lightning.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.lightning.subtitle") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+
+      <NuxtLink to="/settings/users" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+              <UIcon name="i-heroicons-users" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.users.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.users.subtitle") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+
+      <NuxtLink to="/settings/general" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+              <UIcon name="i-heroicons-cog-6-tooth" class="w-6 h-6 text-gray-600 dark:text-gray-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.general.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.general.subtitle") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+
+      <NuxtLink to="/settings/account" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+              <UIcon name="i-heroicons-user-circle" class="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.account.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.account.subtitle") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+    </div>
+
     <!-- Main Settings Tabs -->
     <UTabs :items="tabItems" v-model="activeTab" class="w-full">
       <!-- Categories Tab -->
