@@ -3,11 +3,12 @@
 <script setup lang="ts">
 import type { CurrencyCode, PaymentMethod } from '~/types';
 
-defineProps<{
+const props = defineProps<{
   amount: number; // Fiat amount
   satsAmount: number; // Sats amount
   currency: CurrencyCode;
   orderId: string;
+  defaultMethod?: PaymentMethod; // Auto-select this method on mount
 }>();
 
 const emit = defineEmits<{
@@ -46,6 +47,20 @@ const paymentMethods = computed(() => [
     available: true,
   },
   {
+    id: 'bank_transfer' as PaymentMethod,
+    name: t('payment.methods.bankTransfer'),
+    description: t('payment.methods.bankTransferDesc'),
+    icon: '🏦',
+    available: true,
+  },
+  {
+    id: 'external' as PaymentMethod,
+    name: t('payment.methods.external'),
+    description: t('payment.methods.externalDesc'),
+    icon: '💳',
+    available: true,
+  },
+  {
     id: 'qr_static' as PaymentMethod,
     name: t('payment.methods.staticQR'),
     description: t('payment.methods.staticQRDesc'),
@@ -73,6 +88,14 @@ const handleCashPaid = (data: { amountTendered: number; change: number }) => {
   emit('paid', 'cash', data);
 };
 
+const handleBankTransferPaid = (data: { reference: string; bankAccount: string }) => {
+  emit('paid', 'bank_transfer', data);
+};
+
+const handleExternalPaid = (data: { provider: string; reference?: string }) => {
+  emit('paid', 'external', data);
+};
+
 const handleStaticQRPaid = () => {
   emit('paid', 'qr_static', { manual: true });
 };
@@ -85,14 +108,19 @@ const handleCancel = () => {
   }
 };
 
-// Load settings on mount
+// Load settings on mount and auto-select method if provided
 onMounted(async () => {
   await lightning.loadSettings();
+  
+  // Auto-select default method if provided
+  if (props.defaultMethod) {
+    selectMethod(props.defaultMethod);
+  }
 });
 </script>
 
 <template>
-  <div class="min-h-[400px]">
+  <div class="min-h-[300px]">
     <!-- Method Selection -->
     <div v-if="showMethodSelect" class="space-y-4">
       <!-- Header -->
@@ -199,6 +227,26 @@ onMounted(async () => {
         :currency="currency"
         :order-id="orderId"
         @paid="handleCashPaid"
+        @cancel="handleCancel"
+      />
+
+      <!-- Bank Transfer Payment -->
+      <PaymentBankTransfer
+        v-else-if="selectedMethod === 'bank_transfer'"
+        :amount="amount"
+        :currency="currency"
+        :order-id="orderId"
+        @paid="handleBankTransferPaid"
+        @cancel="handleCancel"
+      />
+
+      <!-- External Payment -->
+      <PaymentExternal
+        v-else-if="selectedMethod === 'external'"
+        :amount="amount"
+        :currency="currency"
+        :order-id="orderId"
+        @paid="handleExternalPaid"
         @cancel="handleCancel"
       />
 

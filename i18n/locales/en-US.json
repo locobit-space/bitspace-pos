@@ -76,6 +76,10 @@
       "lightningDesc": "Fast, instant Bitcoin payments",
       "cash": "Cash",
       "cashDesc": "Pay with physical currency",
+      "bankTransfer": "Bank Transfer",
+      "bankTransferDesc": "Pay via bank account transfer",
+      "external": "Other Payment",
+      "externalDesc": "PromptPay, WeChat, Alipay, etc.",
       "staticQR": "Static QR",
       "staticQRDesc": "BOLT12 - One QR for any amount"
     },
@@ -87,6 +91,7 @@
       "copyInvoice": "Copy Invoice",
       "openWallet": "Open Wallet",
       "waitingForPayment": "Waiting for payment...",
+      "autoDetection": "Auto-detection enabled",
       "paymentReceived": "Payment Received!",
       "thankYou": "Thank you for your payment",
       "paymentFailed": "Payment Failed",
@@ -100,6 +105,13 @@
       "receivingTo": "Receiving to",
       "confirmReceived": "Confirm Payment Received",
       "lnurlManualConfirmHint": "Lightning Address payments require manual confirmation. After customer scans and pays, click the button below.",
+      "statusWaiting": "Connecting...",
+      "statusPending": "Waiting for payment",
+      "statusProcessing": "Processing payment",
+      "statusCompleted": "Payment completed",
+      "statusFailed": "Payment failed",
+      "statusExpired": "Invoice expired",
+      "closingIn": "Closing automatically...",
       "tips": "Tips",
       "tip1": "Use any Lightning wallet to scan",
       "tip2": "Popular wallets: Phoenix, Breez, WoS, Zeus",
@@ -118,10 +130,53 @@
       "received": "Payment Complete!",
       "insufficientAmount": "Amount is less than total"
     },
+    "bankTransfer": {
+      "title": "Bank Transfer",
+      "selectBank": "Select a bank account to receive payment",
+      "transferTo": "Transfer to this account",
+      "accountNumber": "Account Number",
+      "accountName": "Account Name",
+      "amount": "Transfer Amount",
+      "reference": "Transfer Reference",
+      "referencePlaceholder": "Enter transaction ID or reference",
+      "referenceHint": "Enter the bank transfer reference number for verification",
+      "scanQR": "Or scan QR code to pay",
+      "confirm": "Confirm Transfer",
+      "recorded": "Payment Recorded",
+      "recordedDesc": "Bank transfer has been recorded. Please verify the payment."
+    },
+    "external": {
+      "title": "External Payment",
+      "selectProvider": "Select payment provider",
+      "collectAmount": "Collect this amount",
+      "reference": "Reference Number",
+      "referencePlaceholder": "Enter transaction reference (optional)",
+      "confirmReceived": "Confirm Payment Received",
+      "confirmHint": "Only confirm after verifying payment was received",
+      "complete": "Payment Recorded!"
+    },
     "staticQR": {
       "title": "Static QR Payment",
       "description": "Scan this QR code to pay any amount",
       "confirmHint": "After customer pays, confirm the payment below"
+    }
+  },
+  "coupon": {
+    "addCoupon": "Add Coupon Code",
+    "enterCode": "Enter coupon code",
+    "apply": "Apply",
+    "applied": "Coupon Applied",
+    "removed": "Coupon Removed",
+    "discount": "Discount",
+    "errors": {
+      "empty": "Please enter a coupon code",
+      "invalid": "Invalid coupon code",
+      "inactive": "This coupon is no longer active",
+      "notStarted": "This coupon is not yet valid",
+      "expired": "This coupon has expired",
+      "limitReached": "This coupon has reached its usage limit",
+      "minOrder": "Minimum order amount is {amount}",
+      "alreadyApplied": "A coupon is already applied"
     }
   },
   "currency": {
@@ -517,9 +572,25 @@
       "lnbitsDescription": "Self-hosted or cloud LNbits wallet",
       "apiKey": "API Key (Invoice/Admin)",
       "apiKeyHint": "Found in your LNbits wallet settings",
+      "albyHubDescription": "Alby Hub self-hosted Lightning node",
+      "albyHubInfo": "Alby Hub API",
+      "albyHubInfoDescription": "Connect to your self-hosted Alby Hub instance for full control over your Lightning node with auto-payment detection.",
+      "albyHubUrl": "Alby Hub URL",
+      "albyHubUrlHint": "Your Alby Hub URL (e.g., https://your-hub.albyhub.com)",
+      "accessToken": "Access Token",
+      "accessTokenHint": "Generate an access token from your Alby Hub dashboard",
+      "blinkDescription": "Blink wallet with Bitcoin Beach standards",
+      "blinkInfo": "Blink Wallet API",
+      "blinkInfoDescription": "Connect to Blink wallet for easy Lightning payments with auto-detection. Get your API key from dev.blink.sv",
+      "blinkApiKey": "Blink API Key",
+      "blinkApiKeyHint": "Get your API key from dev.blink.sv dashboard",
+      "blinkFeatures": "Blink Features",
+      "blinkFeature1": "Auto payment detection",
+      "blinkFeature2": "No node required",
+      "blinkFeature3": "Works worldwide",
       "albyInfo": "Alby Browser Extension",
-      "albyInfoDescription": "Alby uses WebLN to connect directly from your browser",
-      "albyDescription": "Browser extension for Lightning payments",
+      "albyInfoDescription": "Alby uses WebLN to connect directly from your browser. Note: No auto-detection - manual confirmation required.",
+      "albyDescription": "Browser extension (WebLN) - manual confirm",
       "checkAlby": "Check Alby Extension",
       "albyDetected": "Alby Detected",
       "albyNotFound": "Alby Not Found",
@@ -543,7 +614,12 @@
       "testConnection": "Test Connection",
       "testResult": "Connection Test Result",
       "saveSuccess": "Lightning settings saved successfully",
-      "saveFailed": "Failed to save Lightning settings"
+      "saveFailed": "Failed to save Lightning settings",
+      "securityLocked": "Security Locked",
+      "securityLockedDescription": "Your data encryption is enabled but locked. Please unlock to view or modify API keys.",
+      "keysNotEncrypted": "API Keys Not Protected",
+      "keysNotEncryptedDescription": "Your API keys are stored without encryption. Enable data encryption with a master password for better security.",
+      "enableEncryption": "Enable Encryption"
     },
     "users": {
       "title": "User Management",
@@ -826,6 +902,8 @@
     "test": "Test",
     "configure": "Configure",
     "tryAgain": "Try Again",
-    "retry": "Retry"
+    "retry": "Retry",
+    "optional": "optional",
+    "clear": "Clear"
   }
 }

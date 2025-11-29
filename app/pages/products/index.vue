@@ -574,9 +574,18 @@
 
 <script setup lang="ts">
 import { z } from "zod";
+import type { Product, Category, Unit } from '~/types';
 
-// Types
-interface Product {
+// ============================================
+// 📦 PRODUCTS PAGE - Connected to Nostr/Dexie
+// ============================================
+
+// Use real products store with Nostr sync & encryption
+const productsStore = useProductsStore();
+const toast = useToast();
+
+// Types (local only)
+interface _Product {
   id: string;
   name: string;
   sku: string;
@@ -686,17 +695,9 @@ const mockProducts: Product[] = [
   },
 ];
 
-const mockCategories: Category[] = [
-  { id: "1", name: "ເຄື່ອງດື່ມ / Beverages" },
-  { id: "2", name: "ອາຫານ / Food" },
-  { id: "3", name: "ຂອງຫວານ / Desserts" },
-];
+// Categories loaded from store (Dexie/Nostr)
 
-const mockUnits: Unit[] = [
-  { id: "1", name: "ຂວດ / Bottle", symbol: "btl" },
-  { id: "2", name: "ຈານ / Plate", symbol: "plt" },
-  { id: "3", name: "ໂລ / Kilogram", symbol: "kg" },
-];
+// Units loaded from store (Dexie/Nostr)
 
 const mockBranches: Branch[] = [
   { id: "1", name: "ສາຂາໃຈກາງ / Central Branch", code: "CB001" },
@@ -704,10 +705,10 @@ const mockBranches: Branch[] = [
   { id: "3", name: "ສາຂາດົງໂດກ / Dongdok Branch", code: "DD001" },
 ];
 
-// Reactive Data
-const products = ref<Product[]>(mockProducts);
-const categories = ref<Category[]>(mockCategories);
-const units = ref<Unit[]>(mockUnits);
+// Reactive Data from Store (Dexie + Nostr with encryption)
+const products = computed(() => productsStore.products.value);
+const categories = computed(() => productsStore.categories.value);
+const units = computed(() => productsStore.units.value);
 const branches = ref<Branch[]>(mockBranches);
 
 // Filters
@@ -869,33 +870,40 @@ const saveProduct = async () => {
     saving.value = true;
 
     if (selectedProduct.value) {
-      // Update existing product
-      const index = products.value.findIndex(
-        (p) => p.id === selectedProduct.value!.id
-      );
-      if (index !== -1) {
-        products.value[index] = {
-          ...products.value[index],
-          ...productForm.value,
-          updatedAt: new Date().toISOString(),
-        };
-      }
+      // Update existing product in Dexie + Nostr (encrypted)
+      await productsStore.updateProduct(selectedProduct.value.id, {
+        ...productForm.value,
+      });
+      toast.add({
+        title: 'Product updated',
+        description: `${productForm.value.name} synced to Nostr (encrypted)`,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
     } else {
-      // Create new product
-      const newProduct: Product = {
-        id: Date.now().toString(),
+      // Create new product in Dexie + Nostr (encrypted)
+      await productsStore.addProduct({
         ...productForm.value,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      };
-      products.value.push(newProduct);
+      } as Omit<Product, 'id'>);
+      toast.add({
+        title: 'Product created',
+        description: `${productForm.value.name} saved & encrypted to Nostr`,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
     }
 
     showProductModal.value = false;
-    // Show success notification
   } catch (error) {
     console.error("Error saving product:", error);
-    // Show error notification
+    toast.add({
+      title: 'Error',
+      description: 'Failed to save product',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'red',
+    });
   } finally {
     saving.value = false;
   }
@@ -906,19 +914,25 @@ const confirmDelete = async () => {
     deleting.value = true;
 
     if (productToDelete.value) {
-      const index = products.value.findIndex(
-        (p) => p.id === productToDelete.value!.id
-      );
-      if (index !== -1) {
-        products.value.splice(index, 1);
-      }
+      // Delete from Dexie + mark as deleted in Nostr
+      await productsStore.deleteProduct(productToDelete.value.id);
+      toast.add({
+        title: 'Product deleted',
+        description: `${productToDelete.value.name} removed`,
+        icon: 'i-heroicons-trash',
+        color: 'orange',
+      });
     }
 
     showDeleteModal.value = false;
-    // Show success notification
   } catch (error) {
     console.error("Error deleting product:", error);
-    // Show error notification
+    toast.add({
+      title: 'Error',
+      description: 'Failed to delete product',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'red',
+    });
   } finally {
     deleting.value = false;
   }
@@ -943,21 +957,75 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-const exportProducts = () => {
-  // Export functionality
-  console.log("Exporting products...");
-  // Implementation for CSV/Excel export
+// ✅ Export products as JSON (encrypted data)
+const exportProducts = async () => {
+  try {
+    const data = await productsStore.exportProducts();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `products-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast.add({
+      title: 'Export successful',
+      description: 'Products exported to JSON file',
+      icon: 'i-heroicons-arrow-down-tray',
+      color: 'green',
+    });
+  } catch (error) {
+    console.error("Export error:", error);
+    toast.add({
+      title: 'Export failed',
+      description: 'Could not export products',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'red',
+    });
+  }
 };
 
-const importProducts = () => {
-  // Import functionality
-  console.log("Importing products...");
-  // Implementation for CSV/Excel import
+// ✅ Import products from JSON
+const importProducts = async () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const result = await productsStore.importProducts(text);
+      
+      toast.add({
+        title: 'Import successful',
+        description: `Imported ${result.products} products, ${result.categories} categories`,
+        icon: 'i-heroicons-arrow-up-tray',
+        color: 'green',
+      });
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.add({
+        title: 'Import failed',
+        description: 'Could not import products. Check file format.',
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'red',
+      });
+    }
+  };
+  input.click();
 };
 
 // Watch for filter changes to reset pagination
 watch([selectedBranch, selectedCategory, selectedStatus, searchQuery], () => {
   currentPage.value = 1;
+});
+
+// Initialize store on mount
+onMounted(async () => {
+  await productsStore.init();
 });
 
 // Meta and SEO

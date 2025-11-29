@@ -37,7 +37,7 @@ export interface MultiPrice {
 // ⚡ LIGHTNING PAYMENT TYPES
 // ============================================
 
-export type PaymentMethod = 'lightning' | 'bolt12' | 'lnurl' | 'onchain' | 'cash' | 'qr_static';
+export type PaymentMethod = 'lightning' | 'bolt12' | 'lnurl' | 'onchain' | 'cash' | 'qr_static' | 'bank_transfer' | 'external';
 
 export type PaymentStatus = 
   | 'pending' 
@@ -192,6 +192,65 @@ export interface RewardTier {
   minPoints: number;
   benefits: string[];
   zapMultiplier: number;
+}
+
+// ============================================
+// 🎫 COUPON & DISCOUNT TYPES
+// ============================================
+
+export type CouponType = 'percentage' | 'fixed' | 'free_item' | 'buy_x_get_y';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  type: CouponType;
+  value: number; // percentage or fixed amount
+  minOrderAmount?: number;
+  maxDiscount?: number; // cap for percentage discounts
+  freeItemId?: string; // for free_item type
+  buyQuantity?: number; // for buy_x_get_y
+  getQuantity?: number; // for buy_x_get_y
+  validFrom: string;
+  validUntil: string;
+  usageLimit?: number;
+  usedCount: number;
+  perCustomerLimit?: number;
+  applicableProducts?: string[]; // product IDs, empty = all
+  applicableCategories?: string[]; // category IDs, empty = all
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppliedCoupon {
+  coupon: Coupon;
+  discountAmount: number;
+  appliedAt: string;
+}
+
+// ============================================
+// 🏦 BANK TRANSFER TYPES
+// ============================================
+
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  bankCode?: string;
+  accountNumber: string;
+  accountName: string;
+  qrCode?: string; // QR code image URL or data
+  isDefault?: boolean;
+  isActive: boolean;
+}
+
+export interface ExternalPaymentProvider {
+  id: string;
+  name: string;
+  icon?: string;
+  description?: string;
+  isActive: boolean;
 }
 
 // ============================================
@@ -597,12 +656,15 @@ export interface StoreUser {
 // ⚙️ STORE SETTINGS TYPES
 // ============================================
 
-export type LightningProvider = 'lnbits' | 'alby' | 'nwc' | 'lnd' | 'cln' | 'lnurl';
+export type LightningProvider = 'lnbits' | 'alby' | 'alby-hub' | 'blink' | 'nwc' | 'lnd' | 'cln' | 'lnurl';
 
 export interface LightningSettings {
   provider: LightningProvider;
-  nodeUrl?: string; // LNbits URL, LND REST, etc.
+  nodeUrl?: string; // LNbits URL, LND REST, Alby Hub URL
   apiKey?: string; // LNbits Admin/Invoice key
+  accessToken?: string; // Alby Hub access token
+  blinkApiKey?: string; // Blink API key
+  blinkWalletId?: string; // Blink wallet ID
   macaroon?: string; // LND macaroon (hex)
   rune?: string; // CLN rune
   nwcConnectionString?: string; // NWC connection string (nostr+walletconnect://...)

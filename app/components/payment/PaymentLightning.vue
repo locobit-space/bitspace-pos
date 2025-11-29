@@ -28,18 +28,47 @@ const countdown = ref(600); // 10 minutes
 const showBolt12 = ref(false);
 const showErrorModal = ref(false);
 const checkingPayment = ref(false);
+const successCountdown = ref(3); // Auto-close after 3 seconds
+const isFadingOut = ref(false);
 
 // Computed
 const isLNURLProvider = computed(() => lightning.settings.value?.provider === 'lnurl');
+const isWebLNProvider = computed(() => lightning.settings.value?.provider === 'alby');
+const needsManualConfirm = computed(() => isLNURLProvider.value || isWebLNProvider.value);
+const hasAutoDetection = computed(() => {
+  const provider = lightning.settings.value?.provider;
+  return provider === 'lnbits' || provider === 'alby-hub' || provider === 'blink';
+});
 const lightningAddress = computed(() => lightning.settings.value?.lightningAddress || '');
 const providerName = computed(() => {
   const provider = lightning.settings.value?.provider;
   switch (provider) {
     case 'lnurl': return 'Lightning Address';
     case 'lnbits': return 'LNbits';
-    case 'alby': return 'Alby';
+    case 'alby': return 'Alby (WebLN)';
+    case 'alby-hub': return 'Alby Hub';
+    case 'blink': return 'Blink';
     case 'nwc': return 'NWC';
     default: return provider || 'Unknown';
+  }
+});
+
+// Payment status display
+const paymentStatusDisplay = computed(() => {
+  const status = lightning.paymentStatus.value;
+  switch (status) {
+    case 'pending':
+      return { text: t('payment.lightning.statusPending'), color: 'amber', icon: 'i-heroicons-clock' };
+    case 'processing':
+      return { text: t('payment.lightning.statusProcessing'), color: 'blue', icon: 'i-heroicons-arrow-path' };
+    case 'completed':
+      return { text: t('payment.lightning.statusCompleted'), color: 'green', icon: 'i-heroicons-check-circle' };
+    case 'failed':
+      return { text: t('payment.lightning.statusFailed'), color: 'red', icon: 'i-heroicons-x-circle' };
+    case 'expired':
+      return { text: t('payment.lightning.statusExpired'), color: 'gray', icon: 'i-heroicons-clock' };
+    default:
+      return { text: t('payment.lightning.statusWaiting'), color: 'gray', icon: 'i-heroicons-signal' };
   }
 });
 
@@ -91,9 +120,27 @@ const watchForPayment = () => {
     if (status === 'completed') {
       sound.playLightningZap();
       paymentStep.value = 'success';
-      emit('paid', lightning.currentInvoice.value?.preimage || '');
+      clearInterval(countdownInterval);
+      startSuccessCountdown();
     }
   });
+};
+
+let successInterval: ReturnType<typeof setInterval>;
+
+const startSuccessCountdown = () => {
+  successCountdown.value = 3;
+  successInterval = setInterval(() => {
+    successCountdown.value--;
+    if (successCountdown.value <= 0) {
+      clearInterval(successInterval);
+      isFadingOut.value = true;
+      // Wait for fade animation then emit
+      setTimeout(() => {
+        emit('paid', lightning.currentInvoice.value?.preimage || '');
+      }, 500);
+    }
+  }, 1000);
 };
 
 let countdownInterval: ReturnType<typeof setInterval>;
@@ -149,13 +196,17 @@ const confirmPaymentReceived = () => {
     sound.playLightningZap();
     paymentStep.value = 'success';
     checkingPayment.value = false;
-    emit('paid', 'manual-confirmation-' + Date.now());
+    clearInterval(countdownInterval);
+    startSuccessCountdown();
   }, 500);
 };
 
 onUnmounted(() => {
   if (countdownInterval) {
     clearInterval(countdownInterval);
+  }
+  if (successInterval) {
+    clearInterval(successInterval);
   }
 });
 </script>
@@ -261,13 +312,43 @@ onUnmounted(() => {
       </div>
 
       <!-- Payment Status Indicator -->
-      <div class="mt-6 flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
-        <div class="animate-pulse w-2 h-2 bg-amber-500 rounded-full" />
-        {{ t('payment.lightning.waitingForPayment') }}
+      <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
+        <div class="flex items-center justify-center gap-3">
+          <div 
+            class="w-3 h-3 rounded-full animate-pulse"
+            :class="{
+              'bg-amber-500': paymentStatusDisplay.color === 'amber',
+              'bg-blue-500': paymentStatusDisplay.color === 'blue',
+              'bg-green-500': paymentStatusDisplay.color === 'green',
+              'bg-red-500': paymentStatusDisplay.color === 'red',
+              'bg-gray-500': paymentStatusDisplay.color === 'gray',
+            }"
+          />
+          <UIcon :name="paymentStatusDisplay.icon" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <span class="font-medium text-gray-700 dark:text-gray-300">
+            {{ paymentStatusDisplay.text }}
+          </span>
+        </div>
+        
+        <!-- Provider Info -->
+        <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+          <span>{{ providerName }}</span>
+          <span v-if="hasAutoDetection" class="text-green-500">• {{ t('payment.lightning.autoDetection') }}</span>
+        </div>
       </div>
 
-      <!-- Manual Confirmation for LNURL (no automatic callback) -->
-      <div v-if="isLNURLProvider" class="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+      <!-- Auto-detection Badge -->
+      <div v-if="hasAutoDetection" class="mt-3">
+        <UBadge color="green" variant="subtle" class="text-xs">
+          <span class="flex items-center gap-1">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            {{ t('payment.lightning.autoDetection') }}
+          </span>
+        </UBadge>
+      </div>
+
+      <!-- Manual Confirmation for LNURL/WebLN (no automatic callback) -->
+      <div v-if="needsManualConfirm" class="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
         <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
           {{ t('payment.lightning.lnurlManualConfirmHint') }}
         </p>
@@ -285,15 +366,51 @@ onUnmounted(() => {
     </div>
 
     <!-- Success State -->
-    <div v-else-if="paymentStep === 'success'" class="py-8">
-      <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-        <span class="text-4xl text-white">✓</span>
+    <div 
+      v-else-if="paymentStep === 'success'" 
+      class="py-8 transition-all duration-500"
+      :class="{ 'opacity-0 scale-95': isFadingOut, 'opacity-100 scale-100': !isFadingOut }"
+    >
+      <!-- Success Animation -->
+      <div class="relative">
+        <!-- Ripple Effect -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-32 h-32 bg-green-500/20 rounded-full animate-ping" />
+        </div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-24 h-24 bg-green-500/30 rounded-full animate-pulse" />
+        </div>
+        
+        <!-- Checkmark -->
+        <div class="relative w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 animate-bounce">
+          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
       </div>
-      <h3 class="text-xl font-bold text-green-600 dark:text-green-400">{{ t('payment.lightning.paymentReceived') }}</h3>
+      
+      <!-- Success Text -->
+      <h3 class="text-2xl font-bold text-green-600 dark:text-green-400 mt-6">
+        {{ t('payment.lightning.paymentReceived') }}
+      </h3>
       <p class="text-gray-500 dark:text-gray-400 mt-2">{{ t('payment.lightning.thankYou') }}</p>
       
-      <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-mono text-gray-500">
-        Preimage: {{ lightning.currentInvoice.value?.preimage?.slice(0, 32) }}...
+      <!-- Amount Received -->
+      <div class="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+          ⚡ {{ currencyHelper.format(amount, 'SATS') }}
+        </div>
+        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          ≈ {{ currencyHelper.format(fiatAmount, currency) }}
+        </div>
+      </div>
+      
+      <!-- Auto-close countdown -->
+      <div class="mt-6 flex items-center justify-center gap-2 text-gray-400">
+        <div class="w-8 h-8 rounded-full border-2 border-green-500 flex items-center justify-center">
+          <span class="text-sm font-bold text-green-500">{{ successCountdown }}</span>
+        </div>
+        <span class="text-sm">{{ t('payment.lightning.closingIn') }}</span>
       </div>
     </div>
 

@@ -6,6 +6,7 @@ import type {
   ProductVariant,
   ProductModifier,
   PaymentMethod,
+  AppliedCoupon,
 } from "~/types";
 
 definePageMeta({
@@ -37,6 +38,12 @@ const showItemNotesModal = ref(false);
 const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref("");
 const isProcessing = ref(false);
+
+// Default payment method (when clicking specific payment buttons)
+const defaultPaymentMethod = ref<PaymentMethod | null>(null);
+
+// Coupon
+const appliedCoupon = ref<AppliedCoupon | null>(null);
 
 // Product options selection
 const selectedProduct = ref<Product | null>(null);
@@ -273,6 +280,23 @@ const applyDiscount = () => {
   discountValue.value = 0;
 };
 
+// ============================================
+// Coupon Methods
+// ============================================
+const handleCouponApply = (coupon: AppliedCoupon) => {
+  appliedCoupon.value = coupon;
+  // Apply as fixed discount
+  pos.applyDiscount('fixed', coupon.discountAmount);
+};
+
+const handleCouponRemove = () => {
+  if (appliedCoupon.value) {
+    // Remove the discount
+    pos.applyDiscount('fixed', 0);
+    appliedCoupon.value = null;
+  }
+};
+
 const addCustomItem = () => {
   if (customItem.value.name && customItem.value.price > 0) {
     const product: Product = {
@@ -299,9 +323,10 @@ const addCustomItem = () => {
 // ============================================
 // Payment Methods
 // ============================================
-const proceedToPayment = () => {
+const proceedToPayment = (method?: PaymentMethod) => {
   if (pos.cartItems.value.length === 0) return;
   sound.playNotification();
+  defaultPaymentMethod.value = method || null;
   showPaymentModal.value = true;
 };
 
@@ -834,11 +859,20 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Discount & Tip Section -->
+      <!-- Discount, Coupon & Tip Section -->
       <div
         v-if="pos.cartItems.value.length > 0"
         class="px-4 py-3 border-t border-gray-200 dark:border-gray-800/50 space-y-3"
       >
+        <!-- Coupon Input -->
+        <PosCouponInput
+          :subtotal="pos.subtotal.value"
+          :currency="pos.selectedCurrency.value"
+          :applied-coupon="appliedCoupon"
+          @apply="handleCouponApply"
+          @remove="handleCouponRemove"
+        />
+
         <!-- Discount Button -->
         <button
           class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
@@ -930,7 +964,7 @@ onUnmounted(() => {
             size="lg"
             :disabled="pos.cartItems.value.length === 0"
             class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white dark:text-black font-semibold shadow-lg shadow-amber-500/25"
-            @click="proceedToPayment"
+            @click="proceedToPayment('lightning')"
           >
             <span class="flex items-center gap-2">
               <span class="text-lg">⚡</span>
@@ -945,7 +979,7 @@ onUnmounted(() => {
               color="neutral"
               variant="soft"
               :disabled="pos.cartItems.value.length === 0"
-              @click="proceedToPayment"
+              @click="proceedToPayment('cash')"
             >
               💵 {{ t("payment.methods.cash") }}
             </UButton>
@@ -955,7 +989,7 @@ onUnmounted(() => {
               color="neutral"
               variant="soft"
               :disabled="pos.cartItems.value.length === 0"
-              @click="proceedToPayment"
+              @click="proceedToPayment('qr_static')"
             >
               📱 {{ t("payment.methods.staticQR") }}
             </UButton>
@@ -971,13 +1005,14 @@ onUnmounted(() => {
     <!-- Payment Modal -->
     <UModal v-model:open="showPaymentModal">
       <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg">
+        <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto">
           <PaymentSelector
             v-if="showPaymentModal"
             :amount="pos.total.value"
             :sats-amount="pos.totalSats.value"
             :currency="pos.selectedCurrency.value"
             :order-id="'ORD-' + Date.now().toString(36).toUpperCase()"
+            :default-method="defaultPaymentMethod || undefined"
             @paid="handlePaymentComplete"
             @cancel="cancelPayment"
           />

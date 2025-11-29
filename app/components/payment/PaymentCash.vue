@@ -130,7 +130,7 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="text-center">
+  <div class="text-center max-h-[70vh] overflow-y-auto">
     <!-- Header -->
     <div class="mb-6">
       <h2 class="text-2xl font-bold flex items-center justify-center gap-2 text-gray-900 dark:text-white">
@@ -149,11 +149,41 @@ const goBack = () => {
 
     <!-- Step 1: Input Amount -->
     <div v-if="step === 'input'" class="space-y-4">
+      <!-- Actions at Top -->
+      <div class="flex gap-3 sticky top-0 bg-white dark:bg-gray-900 py-2 z-10">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="lg"
+          class="flex-1"
+          @click="emit('cancel')"
+        >
+          {{ t('common.cancel') }}
+        </UButton>
+        <UButton
+          color="primary"
+          size="lg"
+          class="flex-1"
+          :disabled="!isValidPayment"
+          @click="confirmPayment"
+        >
+          {{ t('payment.cash.confirm') }}
+        </UButton>
+      </div>
+
       <!-- Amount Tendered Display -->
-      <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+      <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl relative">
         <div class="text-sm text-amber-600 dark:text-amber-400 mb-1">{{ t('payment.cash.amountTendered') }}</div>
         <div class="text-4xl font-bold text-amber-600 dark:text-amber-400 font-mono">
           {{ currencyHelper.format(amountTendered, currency) }}
+        </div>
+      </div>
+
+      <!-- Change Preview -->
+      <div v-if="isValidPayment && change > 0" class="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+        <div class="text-sm text-green-600 dark:text-green-400 mb-1">{{ t('payment.cash.change') }}</div>
+        <div class="text-3xl font-bold text-green-600 dark:text-green-400">
+          {{ currencyHelper.format(change, currency) }}
         </div>
       </div>
 
@@ -182,6 +212,18 @@ const goBack = () => {
         {{ t('payment.cash.exactAmount') }}
       </UButton>
 
+      <!-- Clear Button -->
+      <UButton
+        v-if="amountTendered > 0"
+        color="red"
+        variant="soft"
+        class="w-full"
+        icon="i-heroicons-x-mark"
+        @click="handleNumpad('clear')"
+      >
+        {{ t('common.clear') }}
+      </UButton>
+
       <!-- Numpad -->
       <div class="grid grid-cols-3 gap-2 mt-4">
         <UButton
@@ -194,46 +236,6 @@ const goBack = () => {
           @click="handleNumpad(num === '⌫' ? 'backspace' : num)"
         >
           {{ num }}
-        </UButton>
-      </div>
-
-      <!-- Clear Button -->
-      <UButton
-        color="neutral"
-        variant="ghost"
-        class="w-full"
-        @click="handleNumpad('clear')"
-      >
-        {{ t('common.clear') }}
-      </UButton>
-
-      <!-- Change Preview -->
-      <div v-if="isValidPayment && change > 0" class="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-        <div class="text-sm text-green-600 dark:text-green-400 mb-1">{{ t('payment.cash.change') }}</div>
-        <div class="text-3xl font-bold text-green-600 dark:text-green-400">
-          {{ currencyHelper.format(change, currency) }}
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex gap-3 mt-6">
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="lg"
-          class="flex-1"
-          @click="emit('cancel')"
-        >
-          {{ t('common.cancel') }}
-        </UButton>
-        <UButton
-          color="primary"
-          size="lg"
-          class="flex-1"
-          :disabled="!isValidPayment"
-          @click="confirmPayment"
-        >
-          {{ t('payment.cash.confirm') }}
         </UButton>
       </div>
     </div>

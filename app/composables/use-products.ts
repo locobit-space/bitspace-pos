@@ -189,7 +189,7 @@ const SAMPLE_PRODUCTS: Product[] = [
   { id: 'p21', name: 'Fried Insects', sku: 'SNK001', categoryId: 'snacks', unitId: 'plate', price: 25000, prices: { LAK: 25000, THB: 45, USD: 1.25, SATS: 1250 }, stock: 15, minStock: 5, branchId: 'main', status: 'active', image: '🦗', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   { id: 'p22', name: 'Sai Oua', sku: 'SNK002', categoryId: 'snacks', unitId: 'piece', price: 30000, prices: { LAK: 30000, THB: 54, USD: 1.50, SATS: 1500 }, stock: 20, minStock: 5, branchId: 'main', status: 'active', image: '🌭', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   { id: 'p23', name: 'Spring Rolls', sku: 'SNK003', categoryId: 'snacks', unitId: 'piece', price: 8000, prices: { LAK: 8000, THB: 14, USD: 0.40, SATS: 400 }, stock: 50, minStock: 15, branchId: 'main', status: 'active', image: '🥟', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p24', name: 'Fried Banana', sku: 'SNK004', categoryId: 'snacks', unitId: 'piece', price: 10000, prices: { LAK: 10000, THB: 18, USD: 0.50, SATS: 500 }, stock: 35, minStock: 10, branchId: 'main', status: 'active', image: '🍌', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'p24', name: 'Fried Banana', sku: 'SNK004', categoryId: 'snacks', unitId: 'piece', price: 10000, prices: { LAK: 1000, THB: 18, USD: 0.50, SATS: 10 }, stock: 35, minStock: 10, branchId: 'main', status: 'active', image: '🍌', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
 const CATEGORIES: Category[] = [

@@ -17,6 +17,50 @@
     </CommonPageHeader>
 
     <div class="container mx-auto px-4 py-8 max-w-4xl">
+      <!-- Security Lock Warning -->
+      <UAlert
+        v-if="security.isEncryptionEnabled.value && security.isLocked.value"
+        icon="i-heroicons-lock-closed"
+        color="yellow"
+        variant="subtle"
+        class="mb-6"
+        :title="$t('settings.lightning.securityLocked')"
+        :description="$t('settings.lightning.securityLockedDescription')"
+      >
+        <template #actions>
+          <UButton
+            color="yellow"
+            variant="solid"
+            size="sm"
+            @click="goToSecurity"
+          >
+            {{ $t('settings.security.unlock') }}
+          </UButton>
+        </template>
+      </UAlert>
+
+      <!-- API Key Protection Info -->
+      <UAlert
+        v-if="!security.isEncryptionEnabled.value && hasApiKeys"
+        icon="i-heroicons-shield-exclamation"
+        color="orange"
+        variant="subtle"
+        class="mb-6"
+        :title="$t('settings.lightning.keysNotEncrypted')"
+        :description="$t('settings.lightning.keysNotEncryptedDescription')"
+      >
+        <template #actions>
+          <UButton
+            color="orange"
+            variant="solid"
+            size="sm"
+            @click="goToSecurity"
+          >
+            {{ $t('settings.lightning.enableEncryption') }}
+          </UButton>
+        </template>
+      </UAlert>
+
       <!-- Connection Status Card -->
       <UCard class="mb-6">
         <template #header>
@@ -114,7 +158,75 @@
           </UFormField>
         </div>
 
-        <!-- Alby Configuration -->
+        <!-- Alby Hub API Configuration -->
+        <div v-else-if="selectedProvider === 'alby-hub'" class="space-y-4">
+          <UAlert
+            icon="i-heroicons-information-circle"
+            color="blue"
+            variant="subtle"
+            :title="$t('settings.lightning.albyHubInfo')"
+            :description="$t('settings.lightning.albyHubInfoDescription')"
+          />
+          
+          <UFormField :label="$t('settings.lightning.albyHubUrl')" required>
+            <UInput
+              v-model="form.nodeUrl"
+              placeholder="https://your-alby-hub.com"
+              icon="i-heroicons-globe-alt"
+            />
+            <template #hint>
+              {{ $t('settings.lightning.albyHubUrlHint') }}
+            </template>
+          </UFormField>
+
+          <UFormField :label="$t('settings.lightning.accessToken')" required>
+            <UInput
+              v-model="form.accessToken"
+              type="password"
+              placeholder="Your Alby Hub access token"
+              icon="i-heroicons-key"
+            />
+            <template #hint>
+              {{ $t('settings.lightning.accessTokenHint') }}
+            </template>
+          </UFormField>
+        </div>
+
+        <!-- Blink Configuration -->
+        <div v-else-if="selectedProvider === 'blink'" class="space-y-4">
+          <UAlert
+            icon="i-heroicons-sparkles"
+            color="purple"
+            variant="subtle"
+            :title="$t('settings.lightning.blinkInfo')"
+            :description="$t('settings.lightning.blinkInfoDescription')"
+          />
+          
+          <UFormField :label="$t('settings.lightning.blinkApiKey')" required>
+            <UInput
+              v-model="form.blinkApiKey"
+              type="password"
+              placeholder="blink_..."
+              icon="i-heroicons-key"
+            />
+            <template #hint>
+              {{ $t('settings.lightning.blinkApiKeyHint') }}
+            </template>
+          </UFormField>
+          
+          <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+            <h4 class="font-medium text-gray-900 dark:text-white mb-2">
+              {{ $t('settings.lightning.blinkFeatures') }}
+            </h4>
+            <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <li>{{ $t('settings.lightning.blinkFeature1') }}</li>
+              <li>{{ $t('settings.lightning.blinkFeature2') }}</li>
+              <li>{{ $t('settings.lightning.blinkFeature3') }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Alby WebLN Configuration -->
         <div v-else-if="selectedProvider === 'alby'" class="space-y-4">
           <UAlert
             icon="i-heroicons-information-circle"
@@ -311,12 +423,19 @@ definePageMeta({
 });
 
 const { t } = useI18n();
+const router = useRouter();
 const toast = useToast();
 const lightning = useLightning();
 const users = useUsers();
+const security = useSecurity();
 
 // Check permission
 const canManageLightning = computed(() => users.hasPermission('canManageLightning'));
+
+// Check if has API keys configured
+const hasApiKeys = computed(() => {
+  return !!(form.apiKey || form.accessToken || form.blinkApiKey || form.nwcConnectionString);
+});
 
 // State
 const selectedProvider = ref<LightningProvider>('lnbits');
@@ -331,6 +450,8 @@ const testResult = ref<{ success: boolean; message: string } | null>(null);
 const form = reactive({
   nodeUrl: '',
   apiKey: '',
+  accessToken: '',
+  blinkApiKey: '',
   nwcConnectionString: '',
   lightningAddress: '',
   bolt12Offer: '',
@@ -339,6 +460,11 @@ const form = reactive({
 // Computed
 const settings = computed(() => lightning.settings.value);
 const isConnected = computed(() => lightning.isConnected.value);
+
+// Navigation
+const goToSecurity = () => {
+  router.push('/settings/general');
+};
 
 // Providers
 const providers = [
@@ -349,8 +475,20 @@ const providers = [
     description: t('settings.lightning.lnbitsDescription'),
   },
   {
+    id: 'alby-hub' as LightningProvider,
+    name: 'Alby Hub',
+    icon: 'i-heroicons-server-stack',
+    description: t('settings.lightning.albyHubDescription'),
+  },
+  {
+    id: 'blink' as LightningProvider,
+    name: 'Blink',
+    icon: 'i-heroicons-sparkles',
+    description: t('settings.lightning.blinkDescription'),
+  },
+  {
     id: 'alby' as LightningProvider,
-    name: 'Alby',
+    name: 'Alby (WebLN)',
     icon: 'i-heroicons-puzzle-piece',
     description: t('settings.lightning.albyDescription'),
   },
@@ -390,6 +528,8 @@ const loadSettings = () => {
     selectedProvider.value = settings.value.provider || 'lnbits';
     form.nodeUrl = settings.value.nodeUrl || '';
     form.apiKey = settings.value.apiKey || '';
+    form.accessToken = settings.value.accessToken || '';
+    form.blinkApiKey = settings.value.blinkApiKey || '';
     form.nwcConnectionString = settings.value.nwcConnectionString || '';
     form.lightningAddress = settings.value.lightningAddress || '';
     form.bolt12Offer = settings.value.bolt12Offer || '';
@@ -442,6 +582,8 @@ const testConnection = async () => {
     provider: selectedProvider.value,
     nodeUrl: form.nodeUrl,
     apiKey: form.apiKey,
+    accessToken: form.accessToken,
+    blinkApiKey: form.blinkApiKey,
     nwcConnectionString: form.nwcConnectionString,
     lightningAddress: form.lightningAddress,
     bolt12Offer: form.bolt12Offer,
@@ -469,6 +611,8 @@ const saveConfiguration = async () => {
     provider: selectedProvider.value,
     nodeUrl: form.nodeUrl,
     apiKey: form.apiKey,
+    accessToken: form.accessToken,
+    blinkApiKey: form.blinkApiKey,
     nwcConnectionString: form.nwcConnectionString,
     lightningAddress: form.lightningAddress,
     bolt12Offer: form.bolt12Offer,

@@ -3,15 +3,15 @@
 import { ref } from "vue";
 import type { Event, Filter } from "nostr-tools";
 
-// Default relays
+// Default relays - Production relays
 const DEFAULT_RELAYS = [
-  // "wss://relay.damus.io",
-  // Uncomment these as needed
-  // "wss://yabu.me",
-  // "wss://nos.lol",
+  "wss://relay.damus.io",
+  "wss://nos.lol",
+  "wss://relay.nostr.band",
   // "wss://nostr-pub.wellorder.net",
-  // "wss://relay.nostr.band",
-  'ws://localhost:8080',
+  // "wss://yabu.me",
+  // Uncomment for local development:
+  // 'ws://localhost:8080',
 ];
 
 export const useNostrRelay = () => {

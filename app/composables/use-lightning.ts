@@ -19,9 +19,13 @@ const lightningSettings = ref<LightningSettings>({
   isConfigured: false,
 });
 
+// Encrypted storage keys
+const SETTINGS_KEY = 'bitspace_lightning_settings';
+const SENSITIVE_KEYS_KEY = 'bitspace_lightning_keys';
+
 export const useLightning = () => {
   const _nostr = useNuxtApp().$nostr;
-  const SETTINGS_KEY = 'bitspace_lightning_settings';
+  const security = useSecurity();
   
   // State
   const isConnected = ref(false);
@@ -34,6 +38,73 @@ export const useLightning = () => {
   const staticOffers = ref<BOLT12Offer[]>([]);
 
   // ============================================
+  // 🔐 SECURE KEY STORAGE
+  // ============================================
+
+  /**
+   * Store sensitive keys (API keys, tokens) with encryption
+   * Only works when master password is set and unlocked
+   */
+  const storeSensitiveKeys = async (keys: {
+    apiKey?: string;
+    accessToken?: string;
+    blinkApiKey?: string;
+    nwcConnectionString?: string;
+  }): Promise<boolean> => {
+    try {
+      // If encryption is enabled and unlocked, encrypt the keys
+      if (security.isEncryptionEnabled.value && !security.isLocked.value) {
+        return await security.encryptAndStore(SENSITIVE_KEYS_KEY, keys);
+      }
+      
+      // Fallback: store without encryption (less secure)
+      localStorage.setItem(SENSITIVE_KEYS_KEY, JSON.stringify(keys));
+      return true;
+    } catch (e) {
+      console.error('Failed to store sensitive keys:', e);
+      return false;
+    }
+  };
+
+  /**
+   * Retrieve sensitive keys (decrypted if encryption is enabled)
+   */
+  const getSensitiveKeys = async (): Promise<{
+    apiKey?: string;
+    accessToken?: string;
+    blinkApiKey?: string;
+    nwcConnectionString?: string;
+  } | null> => {
+    try {
+      // If encryption is enabled, try to decrypt
+      if (security.isEncryptionEnabled.value) {
+        if (security.isLocked.value) {
+          console.warn('Cannot retrieve keys: security is locked');
+          return null;
+        }
+        return await security.retrieveAndDecrypt(SENSITIVE_KEYS_KEY);
+      }
+      
+      // Fallback: read without decryption
+      const stored = localStorage.getItem(SENSITIVE_KEYS_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error('Failed to retrieve sensitive keys:', e);
+      return null;
+    }
+  };
+
+  /**
+   * Check if sensitive keys are accessible
+   */
+  const canAccessKeys = (): boolean => {
+    if (security.isEncryptionEnabled.value && security.isLocked.value) {
+      return false;
+    }
+    return true;
+  };
+
+  // ============================================
   // ⚙️ SETTINGS MANAGEMENT
   // ============================================
 
@@ -44,10 +115,22 @@ export const useLightning = () => {
     if (typeof window === 'undefined') return lightningSettings.value;
 
     try {
+      // Load non-sensitive settings
       const stored = localStorage.getItem(SETTINGS_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         lightningSettings.value = { ...lightningSettings.value, ...parsed };
+      }
+      
+      // Load sensitive keys (encrypted if master password is set)
+      if (canAccessKeys()) {
+        const sensitiveKeys = await getSensitiveKeys();
+        if (sensitiveKeys) {
+          lightningSettings.value.apiKey = sensitiveKeys.apiKey;
+          lightningSettings.value.accessToken = sensitiveKeys.accessToken;
+          lightningSettings.value.blinkApiKey = sensitiveKeys.blinkApiKey;
+          lightningSettings.value.nwcConnectionString = sensitiveKeys.nwcConnectionString;
+        }
       }
     } catch (e) {
       console.error('Failed to load Lightning settings:', e);
@@ -60,8 +143,23 @@ export const useLightning = () => {
    */
   const saveSettings = async (settings: Partial<LightningSettings>): Promise<boolean> => {
     try {
+      // Merge with existing settings
       lightningSettings.value = { ...lightningSettings.value, ...settings };
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(lightningSettings.value));
+      
+      // Separate sensitive keys from regular settings
+      const { apiKey, accessToken, blinkApiKey, nwcConnectionString, ...nonSensitiveSettings } = lightningSettings.value;
+      
+      // Store non-sensitive settings (unencrypted)
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(nonSensitiveSettings));
+      
+      // Store sensitive keys (encrypted if master password is set)
+      await storeSensitiveKeys({
+        apiKey,
+        accessToken,
+        blinkApiKey,
+        nwcConnectionString,
+      });
+      
       return true;
     } catch (e) {
       console.error('Failed to save Lightning settings:', e);
@@ -76,6 +174,8 @@ export const useLightning = () => {
     provider: LightningProvider;
     nodeUrl?: string;
     apiKey?: string;
+    accessToken?: string;
+    blinkApiKey?: string;
     nwcConnectionString?: string;
     lightningAddress?: string;
     bolt12Offer?: string;
@@ -84,6 +184,8 @@ export const useLightning = () => {
       provider: config.provider,
       nodeUrl: config.nodeUrl,
       apiKey: config.apiKey,
+      accessToken: config.accessToken,
+      blinkApiKey: config.blinkApiKey,
       nwcConnectionString: config.nwcConnectionString,
       lightningAddress: config.lightningAddress,
       bolt12Offer: config.bolt12Offer,
@@ -132,6 +234,18 @@ export const useLightning = () => {
           break;
         case 'alby':
           await testAlbyConnection();
+          break;
+        case 'alby-hub':
+          if (!settings.nodeUrl || !settings.accessToken) {
+            return { success: false, message: 'Alby Hub URL and Access Token are required' };
+          }
+          await testAlbyHubConnection(settings.nodeUrl, settings.accessToken);
+          break;
+        case 'blink':
+          if (!settings.blinkApiKey) {
+            return { success: false, message: 'Blink API Key is required' };
+          }
+          await testBlinkConnection(settings.blinkApiKey);
           break;
         case 'nwc':
           if (!settings.nwcConnectionString) {
@@ -199,6 +313,18 @@ export const useLightning = () => {
           break;
         case 'alby':
           await testAlbyConnection();
+          break;
+        case 'alby-hub':
+          if (!settings.nodeUrl || !settings.accessToken) {
+            throw new Error('Alby Hub URL and Access Token required');
+          }
+          await testAlbyHubConnection(settings.nodeUrl, settings.accessToken);
+          break;
+        case 'blink':
+          if (!settings.blinkApiKey) {
+            throw new Error('Blink API Key required');
+          }
+          await testBlinkConnection(settings.blinkApiKey);
           break;
         case 'nwc':
           if (!settings.nwcConnectionString) {
@@ -311,26 +437,54 @@ export const useLightning = () => {
     }
   };
 
+  // Store active cleanup functions for subscriptions
+  const activeSubscriptions = ref<Map<string, () => void>>(new Map());
+
   /**
    * Watch for incoming payment
    */
   const watchPayment = (paymentHash: string) => {
+    const settings = lightningSettings.value;
+    
+    // Clean up any existing subscription for this payment
+    const existingCleanup = activeSubscriptions.value.get(paymentHash);
+    if (existingCleanup) {
+      existingCleanup();
+    }
+    
+    // Callback when payment is received
+    const onPaymentReceived = async () => {
+      paymentStatus.value = 'completed';
+      
+      // Get preimage if available
+      const preimage = await getPreimage(paymentHash);
+      if (currentInvoice.value) {
+        currentInvoice.value.preimage = preimage;
+        currentInvoice.value.status = 'completed';
+      }
+      
+      // Broadcast via Nostr for realtime sync
+      await broadcastPaymentReceived(paymentHash, preimage);
+      
+      // Clean up subscription
+      activeSubscriptions.value.delete(paymentHash);
+    };
+    
+    // Use Blink WebSocket subscription for real-time updates
+    if (settings.provider === 'blink' && settings.blinkApiKey && currentInvoice.value?.bolt11) {
+      const cleanup = subscribeToBlinkPayments(currentInvoice.value.bolt11, onPaymentReceived);
+      activeSubscriptions.value.set(paymentHash, cleanup);
+      return;
+    }
+    
+    // Fallback to polling for other providers
     const checkPayment = async () => {
       try {
         const status = await checkPaymentStatus(paymentHash);
         paymentStatus.value = status;
 
         if (status === 'completed') {
-          // Payment received!
-          const preimage = await getPreimage(paymentHash);
-          if (currentInvoice.value) {
-            currentInvoice.value.preimage = preimage;
-            currentInvoice.value.status = 'completed';
-          }
-          
-          // Broadcast via Nostr for realtime sync
-          await broadcastPaymentReceived(paymentHash, preimage);
-          
+          await onPaymentReceived();
           return;
         }
 
@@ -424,6 +578,175 @@ export const useLightning = () => {
       return true;
     }
     throw new Error('Alby/WebLN not available. Please install the Alby browser extension.');
+  };
+
+  /**
+   * Test Alby Hub API connection
+   * https://guides.getalby.com/alby-hub-for-advanced-users/api-reference
+   */
+  const testAlbyHubConnection = async (nodeUrl: string, accessToken: string) => {
+    const url = nodeUrl.endsWith('/') ? nodeUrl.slice(0, -1) : nodeUrl;
+    const response = await fetch(`${url}/api/info`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Alby Hub connection failed: ${errorText}`);
+    }
+    return response.json();
+  };
+
+  /**
+   * Test Blink API connection
+   * https://dev.blink.sv/
+   */
+  const testBlinkConnection = async (apiKey: string) => {
+    const response = await fetch('https://api.blink.sv/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey,
+      },
+      body: JSON.stringify({
+        query: `query Me { me { defaultAccount { wallets { id walletCurrency balance } } } }`,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Blink API connection failed');
+    }
+    
+    const data = await response.json();
+    if (data.errors) {
+      throw new Error(data.errors[0]?.message || 'Blink API error');
+    }
+    
+    // Store the BTC wallet ID for later use
+    const wallets = data.data?.me?.defaultAccount?.wallets || [];
+    const btcWallet = wallets.find((w: { walletCurrency: string }) => w.walletCurrency === 'BTC');
+    if (btcWallet) {
+      await saveSettings({ blinkWalletId: btcWallet.id });
+    }
+    
+    return data;
+  };
+
+  /**
+   * Subscribe to Blink payment updates using GraphQL subscription
+   * This provides real-time payment detection
+   * Docs: https://dev.blink.sv/api/websocket
+   */
+  const subscribeToBlinkPayments = (paymentRequest: string, onPaid: () => void): (() => void) => {
+    const settings = lightningSettings.value;
+    if (!settings.blinkApiKey) return () => {};
+    
+    // Correct WebSocket endpoint from Blink docs
+    const wsUrl = 'wss://ws.blink.sv/graphql';
+    let ws: WebSocket | null = null;
+    let isSubscribed = false;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    
+    const connectWs = () => {
+      // Use graphql-transport-ws protocol as per Blink docs
+      ws = new WebSocket(wsUrl, 'graphql-transport-ws');
+      
+      ws.onopen = () => {
+        // Initialize connection with API key
+        ws?.send(JSON.stringify({
+          type: 'connection_init',
+          payload: {
+            'X-API-KEY': settings.blinkApiKey,
+          },
+        }));
+      };
+      
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === 'connection_ack' && !isSubscribed) {
+          // Subscribe to payment status using 'subscribe' type (not 'start')
+          // Use paymentRequest (bolt11 invoice) as per Blink docs
+          ws?.send(JSON.stringify({
+            id: '1',
+            type: 'subscribe',
+            payload: {
+              query: `subscription LnInvoicePaymentStatus($input: LnInvoicePaymentStatusInput!) {
+                lnInvoicePaymentStatus(input: $input) {
+                  status
+                  errors {
+                    code
+                    message
+                    path
+                  }
+                }
+              }`,
+              variables: {
+                input: {
+                  paymentRequest: paymentRequest,
+                },
+              },
+            },
+          }));
+          isSubscribed = true;
+          console.log('Blink WebSocket: Subscribed to payment status');
+        }
+        
+        // Handle 'next' message type (graphql-transport-ws protocol)
+        if (message.type === 'next') {
+          const status = message.payload?.data?.lnInvoicePaymentStatus?.status;
+          
+          if (status === 'PAID') {
+            console.log('Blink WebSocket: Payment received!');
+            onPaid();
+            // Close subscription gracefully
+            ws?.send(JSON.stringify({ id: '1', type: 'complete' }));
+            ws?.close();
+          } else if (status === 'EXPIRED') {
+            console.log('Blink WebSocket: Invoice expired');
+            ws?.send(JSON.stringify({ id: '1', type: 'complete' }));
+            ws?.close();
+          }
+          
+          // Check for errors in the response
+          if (message.payload?.errors?.length > 0) {
+            console.error('Blink WebSocket: Subscription error:', message.payload.errors);
+          }
+        }
+        
+        // Handle errors
+        if (message.type === 'error') {
+          console.error('Blink WebSocket error:', message.payload);
+        }
+      };
+      
+      ws.onerror = (error) => {
+        console.error('Blink WebSocket connection error:', error);
+      };
+      
+      ws.onclose = () => {
+        // Reconnect after 3 seconds if not paid and still pending
+        if (isSubscribed && paymentStatus.value === 'pending') {
+          reconnectTimeout = setTimeout(connectWs, 3000);
+        }
+      };
+    };
+    
+    connectWs();
+    
+    // Return cleanup function
+    return () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    };
   };
 
   const testNWCConnection = async (connectionString: string) => {
@@ -568,6 +891,7 @@ export const useLightning = () => {
       return createLNURLInvoice(settings.lightningAddress, amount, description);
     }
 
+    // LNbits provider
     if (settings.provider === 'lnbits' && settings.nodeUrl && settings.apiKey) {
       const response = await fetch(`${settings.nodeUrl}/api/v1/payments`, {
         method: 'POST',
@@ -603,7 +927,107 @@ export const useLightning = () => {
       };
     }
 
-    // WebLN (Alby)
+    // Alby Hub provider
+    if (settings.provider === 'alby-hub' && settings.nodeUrl && settings.accessToken) {
+      const url = settings.nodeUrl.endsWith('/') ? settings.nodeUrl.slice(0, -1) : settings.nodeUrl;
+      const response = await fetch(`${url}/api/invoices`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${settings.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount * 1000, // Alby Hub expects millisats
+          description,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create invoice: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      return {
+        id: data.payment_hash,
+        bolt11: data.payment_request,
+        paymentHash: data.payment_hash,
+        amount,
+        description,
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+        metadata,
+      };
+    }
+
+    // Blink provider
+    if (settings.provider === 'blink' && settings.blinkApiKey) {
+      const walletId = settings.blinkWalletId;
+      if (!walletId) {
+        throw new Error('Blink wallet not configured. Please test connection first.');
+      }
+
+      const response = await fetch('https://api.blink.sv/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': settings.blinkApiKey,
+        },
+        body: JSON.stringify({
+          query: `
+            mutation LnInvoiceCreate($input: LnInvoiceCreateInput!) {
+              lnInvoiceCreate(input: $input) {
+                invoice {
+                  paymentHash
+                  paymentRequest
+                  paymentSecret
+                  satoshis
+                }
+                errors {
+                  message
+                }
+              }
+            }
+          `,
+          variables: {
+            input: {
+              walletId,
+              amount: amount,
+              memo: description,
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Blink API request failed');
+      }
+      
+      const data = await response.json();
+      
+      if (data.errors || data.data?.lnInvoiceCreate?.errors?.length > 0) {
+        const err = data.errors?.[0] || data.data?.lnInvoiceCreate?.errors?.[0];
+        throw new Error(err?.message || 'Failed to create Blink invoice');
+      }
+      
+      const invoice = data.data.lnInvoiceCreate.invoice;
+      
+      return {
+        id: invoice.paymentHash,
+        bolt11: invoice.paymentRequest,
+        paymentHash: invoice.paymentHash,
+        amount,
+        description,
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+        metadata,
+      };
+    }
+
+    // WebLN (Alby browser extension)
     if (settings.provider === 'alby' && typeof window !== 'undefined') {
       interface WebLNInvoice {
         paymentRequest: string;
@@ -651,6 +1075,7 @@ export const useLightning = () => {
     
     if (!settings.isConfigured) return 'pending';
 
+    // LNbits provider
     if (settings.provider === 'lnbits' && settings.nodeUrl && settings.apiKey) {
       const response = await fetch(
         `${settings.nodeUrl}/api/v1/payments/${paymentHash}`,
@@ -667,6 +1092,63 @@ export const useLightning = () => {
       return data.paid ? 'completed' : 'pending';
     }
 
+    // Alby Hub provider
+    if (settings.provider === 'alby-hub' && settings.nodeUrl && settings.accessToken) {
+      const url = settings.nodeUrl.endsWith('/') ? settings.nodeUrl.slice(0, -1) : settings.nodeUrl;
+      const response = await fetch(
+        `${url}/api/invoices/${paymentHash}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${settings.accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) return 'pending';
+      
+      const data = await response.json();
+      // Alby Hub returns settled_at when paid
+      return data.settled_at ? 'completed' : 'pending';
+    }
+
+    // Blink provider
+    if (settings.provider === 'blink' && settings.blinkApiKey) {
+      const response = await fetch('https://api.blink.sv/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': settings.blinkApiKey,
+        },
+        body: JSON.stringify({
+          query: `
+            query LnInvoicePaymentStatus($input: LnInvoicePaymentStatusInput!) {
+              lnInvoicePaymentStatus(input: $input) {
+                status
+                errors {
+                  message
+                }
+              }
+            }
+          `,
+          variables: {
+            input: {
+              paymentHash,
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) return 'pending';
+      
+      const data = await response.json();
+      const status = data.data?.lnInvoicePaymentStatus?.status;
+      
+      // Blink returns: PENDING, PAID, EXPIRED
+      if (status === 'PAID') return 'completed';
+      if (status === 'EXPIRED') return 'expired';
+      return 'pending';
+    }
+
     return 'pending';
   };
 
@@ -675,6 +1157,7 @@ export const useLightning = () => {
     
     if (!settings.isConfigured) return '';
 
+    // LNbits provider
     if (settings.provider === 'lnbits' && settings.nodeUrl && settings.apiKey) {
       const response = await fetch(
         `${settings.nodeUrl}/api/v1/payments/${paymentHash}`,
@@ -691,6 +1174,25 @@ export const useLightning = () => {
       return data.preimage || '';
     }
 
+    // Alby Hub provider
+    if (settings.provider === 'alby-hub' && settings.nodeUrl && settings.accessToken) {
+      const url = settings.nodeUrl.endsWith('/') ? settings.nodeUrl.slice(0, -1) : settings.nodeUrl;
+      const response = await fetch(
+        `${url}/api/invoices/${paymentHash}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${settings.accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) return '';
+      
+      const data = await response.json();
+      return data.preimage || '';
+    }
+
+    // Blink doesn't expose preimage via API
     return '';
   };
 
@@ -757,6 +1259,7 @@ export const useLightning = () => {
     saveSettings,
     updateConfig,
     testConnection,
+    canAccessKeys,
 
     // Methods
     connect,
