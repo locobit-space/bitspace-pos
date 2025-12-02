@@ -126,6 +126,89 @@
       </NuxtLink>
     </div>
 
+    <!-- Advanced Settings Links -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <NuxtLink to="/settings/tax" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
+              <UIcon name="i-heroicons-receipt-percent" class="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.tax.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.tax.description") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+
+      <NuxtLink to="/settings/receipt" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+              <UIcon name="i-heroicons-document-text" class="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.receipt.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.receipt.description") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+
+      <NuxtLink to="/settings/backup" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
+              <UIcon name="i-heroicons-cloud-arrow-up" class="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.backup.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.backup.description") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+
+      <NuxtLink to="/settings/audit-log" class="block">
+        <UCard 
+          class="h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+              <UIcon name="i-heroicons-shield-check" class="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.auditLog.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("settings.auditLog.description") }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
+    </div>
+
     <!-- Main Settings Tabs -->
     <UTabs :items="tabItems" v-model="activeTab" class="w-full">
       <!-- Categories Tab -->

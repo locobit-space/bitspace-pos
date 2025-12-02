@@ -130,8 +130,11 @@ const hourlySales = computed(() => {
     .filter(o => new Date(o.date) >= today && o.status === 'completed')
     .forEach(order => {
       const hour = new Date(order.date).getHours();
-      hourlyData[hour].sales += order.total;
-      hourlyData[hour].orders += 1;
+      const hourData = hourlyData[hour];
+      if (hourData) {
+        hourData.sales += order.total;
+        hourData.orders += 1;
+      }
     });
 
   return hourlyData;
@@ -508,7 +511,7 @@ onMounted(async () => {
       </div>
 
       <!-- Quick Links -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <NuxtLink to="/pos" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
@@ -525,11 +528,27 @@ onMounted(async () => {
             </div>
           </UCard>
         </NuxtLink>
+        <NuxtLink to="/pos/tables" class="block">
+          <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
+            <div class="text-center">
+              <div class="text-3xl mb-2">🍽️</div>
+              <div class="font-medium text-gray-900 dark:text-white">{{ t('pos.tables.title') }}</div>
+            </div>
+          </UCard>
+        </NuxtLink>
         <NuxtLink to="/kitchen" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
               <div class="text-3xl mb-2">👨‍🍳</div>
               <div class="font-medium text-gray-900 dark:text-white">{{ t('kitchen.title') }}</div>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/accounting/expenses" class="block">
+          <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
+            <div class="text-center">
+              <div class="text-3xl mb-2">💸</div>
+              <div class="font-medium text-gray-900 dark:text-white">{{ t('accounting.tabs.expenses') }}</div>
             </div>
           </UCard>
         </NuxtLink>

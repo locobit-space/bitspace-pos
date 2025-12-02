@@ -534,6 +534,42 @@ onUnmounted(() => {
               </NuxtLink>
             </UTooltip>
 
+            <!-- Shift Management Link -->
+            <UTooltip text="Shift Management">
+              <NuxtLink to="/pos/shift">
+                <UButton
+                  icon="i-heroicons-banknotes"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                />
+              </NuxtLink>
+            </UTooltip>
+
+            <!-- Table Management Link -->
+            <UTooltip text="Tables">
+              <NuxtLink to="/pos/tables">
+                <UButton
+                  icon="i-heroicons-table-cells"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                />
+              </NuxtLink>
+            </UTooltip>
+
+            <!-- Kitchen Display Link -->
+            <UTooltip text="Kitchen Display">
+              <NuxtLink to="/kitchen">
+                <UButton
+                  icon="i-heroicons-fire"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                />
+              </NuxtLink>
+            </UTooltip>
+
             <!-- Settings Button -->
             <UTooltip text="Quick Settings">
               <UButton

@@ -124,6 +124,11 @@ const items = computed(() => [
     icon: "i-heroicons-archive-box",
   },
   {
+    label: t('navigation.kitchen'),
+    to: "/kitchen",
+    icon: "i-heroicons-fire",
+  },
+  {
     label: t('navigation.reports'),
     to: "/reports",
     icon: "i-heroicons-chart-bar",
