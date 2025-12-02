@@ -488,7 +488,7 @@ onMounted(() => {
     </div>
 
     <!-- Payment Modal -->
-    <UModal v-model:open="showPaymentModal" :ui="{ width: 'max-w-lg' }">
+    <UModal v-model:open="showPaymentModal" :ui="{ content: 'max-w-lg' }">
       <template #content>
         <UCard>
           <template #header>
@@ -572,7 +572,7 @@ onMounted(() => {
               <UTextarea
                 v-model="orderNotes"
                 :placeholder="t('orders.notesPlaceholder')"
-                rows="2"
+                :rows="2"
               />
             </UFormField>
           </div>

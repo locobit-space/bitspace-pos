@@ -103,11 +103,11 @@
 
       <!-- Reset Button -->
       <UButton
-        @click="resetFilters"
         color="gray"
         variant="ghost"
         :label="$t('common.reset')"
         icon="i-heroicons-x-mark"
+        @click="resetFilters"
       />
     </div>
 
@@ -198,7 +198,7 @@
                   :src="product.image"
                   :alt="product.name"
                   class="w-full h-full object-cover rounded-lg"
-                />
+                >
                 <Icon
                   v-else
                   name="i-heroicons-photo"

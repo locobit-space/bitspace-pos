@@ -332,7 +332,7 @@ const deleteCustomer = () => {
               <UInput v-model="editForm.lightningAddress" />
             </UFormField>
             <UFormField :label="t('customers.address')" class="md:col-span-2">
-              <UTextarea v-model="editForm.address" rows="2" />
+              <UTextarea v-model="editForm.address" :rows="2" />
             </UFormField>
           </div>
         </div>
@@ -381,7 +381,7 @@ const deleteCustomer = () => {
           <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ customer.notes || t('customers.noNotes') || 'No notes' }}</p>
         </div>
         <div v-else>
-          <UTextarea v-model="editForm.notes" rows="4" />
+          <UTextarea v-model="editForm.notes" :rows="4" />
         </div>
       </UCard>
 
@@ -601,7 +601,7 @@ const deleteCustomer = () => {
               <UInput v-model="rewardForm.points" type="number" placeholder="1000" />
             </UFormField>
             <UFormField label="Reason">
-              <USelect v-model="rewardForm.reason" :options="['loyalty_bonus', 'referral', 'promotion', 'birthday']" />
+              <USelect v-model="rewardForm.reason" :items="['loyalty_bonus', 'referral', 'promotion', 'birthday']" />
             </UFormField>
             <UButton block icon="i-heroicons-bolt" color="amber" @click="sendReward">
               ⚡ Send Zap Reward
@@ -649,7 +649,7 @@ const deleteCustomer = () => {
     </UCard>
 
     <!-- Send Message Modal -->
-    <UModal v-model="showSendMessageModal">
+    <UModal v-model:open="showSendMessageModal">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
@@ -660,13 +660,13 @@ const deleteCustomer = () => {
 
         <div class="space-y-4">
           <UFormField :label="t('customers.channel') || 'Channel'">
-            <USelect v-model="messageForm.channel" :options="['nostr', 'email', 'sms']" />
+            <USelect v-model="messageForm.channel" :items="['nostr', 'email', 'sms']" />
           </UFormField>
           <UFormField :label="t('customers.subject') || 'Subject'">
             <UInput v-model="messageForm.subject" />
           </UFormField>
           <UFormField :label="t('customers.message') || 'Message'">
-            <UTextarea v-model="messageForm.content" rows="4" />
+            <UTextarea v-model="messageForm.content" :rows="4" />
           </UFormField>
         </div>
 
@@ -680,7 +680,7 @@ const deleteCustomer = () => {
     </UModal>
 
     <!-- Reward Modal -->
-    <UModal v-model="showRewardModal">
+    <UModal v-model:open="showRewardModal">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">

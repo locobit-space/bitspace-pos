@@ -502,7 +502,7 @@ onMounted(async () => {
             </UFormField>
 
             <UFormField :label="t('inventory.reason')">
-              <UTextarea v-model="adjustmentForm.reason" rows="2" />
+              <UTextarea v-model="adjustmentForm.reason" :rows="2" />
             </UFormField>
           </div>
 
@@ -545,7 +545,7 @@ onMounted(async () => {
             </UFormField>
 
             <UFormField :label="t('common.notes')">
-              <UTextarea v-model="transferForm.notes" rows="2" />
+              <UTextarea v-model="transferForm.notes" :rows="2" />
             </UFormField>
           </div>
 

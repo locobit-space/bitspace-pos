@@ -1,404 +1,553 @@
-<!-- pages/dashboard/index.vue -->
+<!-- pages/index.vue -->
+<!-- 📊 Dashboard - Real-time Sales KPIs & Business Overview -->
 <script setup lang="ts">
-import type { RecentOrder, SalesMetric, TopProduct } from "~/types";
 const { t } = useI18n();
-// Mock data - replace with actual API calls
-const salesData = ref<SalesMetric[]>([
-  { period: "Jan", sales: 4500, orders: 120 },
-  { period: "Feb", sales: 5200, orders: 145 },
-  { period: "Mar", sales: 4800, orders: 130 },
-  { period: "Apr", sales: 6200, orders: 165 },
-  { period: "May", sales: 5800, orders: 152 },
-  { period: "Jun", sales: 7100, orders: 190 },
-  { period: "Jul", sales: 6800, orders: 182 },
-]);
+const currency = useCurrency();
+const ordersStore = useOrders();
+const productsStore = useProducts();
 
-const topProducts = ref<TopProduct[]>([
-  { id: 1, name: "Smartphone X", sales: 42, revenue: 8400 },
-  { id: 2, name: "Laptop Pro", sales: 28, revenue: 5600 },
-  { id: 3, name: "Wireless Headphones", sales: 35, revenue: 4200 },
-  { id: 4, name: "Smart Watch", sales: 19, revenue: 3800 },
-  { id: 5, name: "Tablet Mini", sales: 22, revenue: 3300 },
-]);
+// ============================================
+// State
+// ============================================
+const selectedPeriod = ref<'today' | 'week' | 'month'>('today');
+const isLoading = ref(true);
 
-const recentOrders = ref<RecentOrder[]>([
-  {
-    id: "ORD-1078",
-    customer: "Somsack Sihalath",
-    amount: 125.5,
-    status: "completed",
-    time: "2 hours ago",
-  },
-  {
-    id: "ORD-1077",
-    customer: "Khamla Vongsa",
-    amount: 89.99,
-    status: "processing",
-    time: "4 hours ago",
-  },
-  {
-    id: "ORD-1076",
-    customer: "Noy Phimmasone",
-    amount: 220.0,
-    status: "pending",
-    time: "6 hours ago",
-  },
-  {
-    id: "ORD-1075",
-    customer: "Bounmy Chanthavong",
-    amount: 56.75,
-    status: "completed",
-    time: "1 day ago",
-  },
-  {
-    id: "ORD-1074",
-    customer: "Sengphet Khounsavanh",
-    amount: 310.25,
-    status: "completed",
-    time: "1 day ago",
-  },
-]);
+// ============================================
+// Computed - Dashboard KPIs
+// ============================================
+const kpis = computed(() => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-const metrics = ref({
-  totalSales: "₭42,850",
-  totalOrders: 1084,
-  avgOrderValue: "₭395",
-  conversionRate: "4.2%",
-  currentBranch: "Vientiane Center",
+  const startDate = selectedPeriod.value === 'today' 
+    ? today 
+    : selectedPeriod.value === 'week' 
+      ? weekStart 
+      : monthStart;
+
+  const periodOrders = ordersStore.orders.value.filter(o => {
+    const orderDate = new Date(o.date);
+    return orderDate >= startDate && o.status === 'completed';
+  });
+
+  const totalRevenue = periodOrders.reduce((sum, o) => sum + o.total, 0);
+  const totalOrders = periodOrders.length;
+  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  
+  // Payment method breakdown
+  const cashSales = periodOrders
+    .filter(o => o.paymentMethod === 'cash')
+    .reduce((sum, o) => sum + o.total, 0);
+  const lightningSales = periodOrders
+    .filter(o => ['lightning', 'bolt12', 'lnurl'].includes(o.paymentMethod || ''))
+    .reduce((sum, o) => sum + o.total, 0);
+  const otherSales = totalRevenue - cashSales - lightningSales;
+
+  return {
+    totalRevenue,
+    totalOrders,
+    avgOrderValue,
+    cashSales,
+    lightningSales,
+    otherSales,
+  };
 });
 
-const branches = ["Vientiane Center", "Luang Prabang", "Pakse", "Savannakhet"];
-const timeRangeOptions = [
-  { value: "today", label: t("dashboard.today") },
-  { value: "week", label: t("dashboard.thisWeek") },
-  { value: "month", label: t("dashboard.thisMonth") },
-  { value: "quarter", label: t("dashboard.thisQuarter") },
-];
+// Today's stats
+const todayStats = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const todayOrders = ordersStore.orders.value.filter(o => {
+    const orderDate = new Date(o.date);
+    return orderDate >= today && o.status === 'completed';
+  });
 
-const selectedBranch = ref(metrics.value.currentBranch);
-const selectedTimeRange = ref("month");
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayOrders = ordersStore.orders.value.filter(o => {
+    const orderDate = new Date(o.date);
+    return orderDate >= yesterday && orderDate < today && o.status === 'completed';
+  });
 
-// Chart data - in a real app, use ApexCharts or similar
-const chartData = computed(() => ({
-  labels: salesData.value.map((d) => d.period),
-  sales: salesData.value.map((d) => d.sales),
-  orders: salesData.value.map((d) => d.orders),
-}));
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.total, 0);
+  const yesterdayRevenue = yesterdayOrders.reduce((sum, o) => sum + o.total, 0);
+  const revenueChange = yesterdayRevenue > 0 
+    ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 
+    : 0;
 
-// Update metrics when filters change
-watch([selectedBranch, selectedTimeRange], () => {
-  // In real app, fetch new data based on filters
-  console.log(
-    "Filters changed:",
-    selectedBranch.value,
-    selectedTimeRange.value
-  );
+  return {
+    revenue: todayRevenue,
+    orders: todayOrders.length,
+    revenueChange,
+    yesterdayRevenue,
+    yesterdayOrders: yesterdayOrders.length,
+  };
 });
 
-const series = [
-  {
-    name: "Sales",
-    type: "line",
-    smooth: true,
-    lineStyle: {
-      width: 4,
-    },
-    itemStyle: {
-      borderWidth: 10,
-      borderType: "solid",
-    },
-    symbolSize: 16,
-    data: salesData.value.map((d) => d.sales),
-  },
-];
+// Top products
+const topProducts = computed(() => {
+  const productSales = new Map<string, { name: string; quantity: number; revenue: number }>();
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  ordersStore.orders.value
+    .filter(o => new Date(o.date) >= today && o.status === 'completed')
+    .forEach(order => {
+      order.items?.forEach(item => {
+        const existing = productSales.get(item.productId) || {
+          name: item.product?.name || 'Unknown',
+          quantity: 0,
+          revenue: 0,
+        };
+        existing.quantity += item.quantity;
+        existing.revenue += item.total;
+        productSales.set(item.productId, existing);
+      });
+    });
+
+  return Array.from(productSales.values())
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+});
+
+// Hourly sales chart data
+const hourlySales = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const hourlyData = Array(24).fill(0).map((_, hour) => ({
+    hour: hour.toString().padStart(2, '0') + ':00',
+    sales: 0,
+    orders: 0,
+  }));
+
+  ordersStore.orders.value
+    .filter(o => new Date(o.date) >= today && o.status === 'completed')
+    .forEach(order => {
+      const hour = new Date(order.date).getHours();
+      hourlyData[hour].sales += order.total;
+      hourlyData[hour].orders += 1;
+    });
+
+  return hourlyData;
+});
+
+// Low stock products
+const lowStockProducts = computed(() => {
+  return productsStore.lowStockProducts.value.slice(0, 5);
+});
+
+// Recent orders
+const recentOrders = computed(() => {
+  return [...ordersStore.orders.value]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+});
+
+// Peak hours
+const peakHour = computed(() => {
+  const hourSales = hourlySales.value;
+  let maxHour = { hour: '-', sales: 0 };
+  hourSales.forEach(h => {
+    if (h.sales > maxHour.sales) {
+      maxHour = h;
+    }
+  });
+  return maxHour;
+});
+
+// ============================================
+// Methods
+// ============================================
+const formatTime = (date: string) => {
+  return new Date(date).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+const getStatusColor = (status: string): 'green' | 'yellow' | 'red' | 'gray' => {
+  const colors: Record<string, 'green' | 'yellow' | 'red' | 'gray'> = {
+    completed: 'green',
+    pending: 'yellow',
+    processing: 'yellow',
+    cancelled: 'red',
+  };
+  return colors[status] || 'gray';
+};
+
+// ============================================
+// Lifecycle
+// ============================================
+onMounted(async () => {
+  isLoading.value = true;
+  await Promise.all([
+    ordersStore.init(),
+    productsStore.init(),
+  ]);
+  isLoading.value = false;
+});
 </script>
 
 <template>
-  <div>
-    <CommonPageHeader
-      :title="t('dashboard.title')"
-      :description="t('dashboard.description')"
-    >
-      <template #right>
-        <UButton
-          icon="i-heroicons-plus"
-          color="primary"
-          :label="t('orders.newOrder')"
-          to="/orders/create"
-        />
-      </template>
-
-      <template #tabs>
-        <UTabs
-          variant="link"
-          :items="[
-            { label: 'Overview', value: 'overview' },
-            { label: 'Analytics', value: 'analytics' },
-            { label: 'Reports', value: 'reports' },
-          ]"
-        />
-      </template>
-    </CommonPageHeader>
-
-    <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
-      <USelect
-        v-model="selectedBranch"
-        :items="branches"
-        :placeholder="t('branches.selectBranch')"
-      />
-      <USelect
-        v-model="selectedTimeRange"
-        :items="timeRangeOptions"
-        :placeholder="t('dashboard.selectTimeRange')"
-      />
-      <UButton
-        icon="i-heroicons-arrow-down-tray"
-        variant="ghost"
-        :label="t('dashboard.exportReport')"
-        class="justify-center"
-      />
-    </div>
-
-    <!-- Key Metrics -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 px-4 mt-6">
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-            <Icon
-              name="sales"
-              class="text-blue-500 dark:text-blue-400 text-xl"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ t("dashboard.totalSales") }}
-            </p>
-            <p class="text-2xl font-bold">{{ metrics.totalSales }}</p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-            <Icon
-              name="orders"
-              class="text-green-500 dark:text-green-400 text-xl"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ t("dashboard.totalOrders") }}
-            </p>
-            <p class="text-2xl font-bold">{{ metrics.totalOrders }}</p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-            <Icon
-              name="average"
-              class="text-purple-500 dark:text-purple-400 text-xl"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ t("dashboard.avgOrderValue") }}
-            </p>
-            <p class="text-2xl font-bold">{{ metrics.avgOrderValue }}</p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-amber-100 dark:bg-amber-900 p-3 rounded-full">
-            <Icon
-              name="conversion"
-              class="text-amber-500 dark:text-amber-400 text-xl"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ t("dashboard.conversionRate") }}
-            </p>
-            <p class="text-2xl font-bold">{{ metrics.conversionRate }}</p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-cyan-100 dark:bg-cyan-900 p-3 rounded-full">
-            <Icon
-              name="branch"
-              class="text-cyan-500 dark:text-cyan-400 text-xl"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ t("branches.currentBranch") }}
-            </p>
-            <p class="text-xl font-bold truncate">
-              {{ metrics.currentBranch }}
-            </p>
-          </div>
-        </div>
-      </UCard>
-    </div>
-
-    <!-- Charts and Tables -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 mt-6">
-      <!-- Sales Chart -->
-      <UCard :title="t('dashboard.salesOverview')">
-        <template #header>
-          <div class="flex justify-between items-center">
-            <h3 class="text-lg font-medium">
-              {{ t("dashboard.salesOverview") }}
-            </h3>
-            <UButton
-              icon="i-heroicons-ellipsis-horizontal"
-              color="gray"
-              variant="ghost"
-            />
-          </div>
-        </template>
-
-        <!-- Chart Placeholder - Replace with actual chart component -->
-        <div class="h-80 flex items-center justify-center rounded-lg">
-          <ChartLine :series="series" class="h-full" />
-        </div>
-
-        <template #footer>
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ t("dashboard.timeRange") }}
-              </p>
-              <p class="font-medium">
-                {{ selectedTimeRange.label || t("dashboard.thisMonth") }}
-              </p>
-            </div>
-            <UBadge color="green" variant="subtle">
-              <span class="font-medium">+12.5%</span>
-              {{ t("dashboard.vsLastMonth") }}
-            </UBadge>
-          </div>
-        </template>
-      </UCard>
-
-      <!-- Top Products -->
-      <UCard :title="t('dashboard.topProducts')">
-        <template #header>
-          <div class="flex justify-between items-center">
-            <h3 class="text-lg font-medium">
-              {{ t("dashboard.topProducts") }}
-            </h3>
-            <UButton
-              icon="i-heroicons-ellipsis-horizontal"
-              color="gray"
-              variant="ghost"
-            />
-          </div>
-        </template>
-
-        <div class="space-y-4">
-          <div
-            v-for="(product, index) in topProducts"
-            :key="product.id"
-            class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 last:border-0 last:pb-0"
+  <div class="p-6 space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
+        <p class="text-gray-500">{{ t('dashboard.overview') }}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Period Selector -->
+        <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+          <button
+            v-for="period in ['today', 'week', 'month'] as const"
+            :key="period"
+            class="px-4 py-2 text-sm font-medium transition-colors"
+            :class="selectedPeriod === period
+              ? 'bg-primary-500 text-white'
+              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+            @click="selectedPeriod = period"
           >
-            <div class="flex items-center">
-              <span
-                class="text-gray-500 dark:text-gray-400 mr-3 w-6 text-center"
-                >{{ index + 1 }}</span
-              >
-              <div>
-                <p class="font-medium">{{ product.name }}</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ product.sales }} {{ t("dashboard.sales") }}
-                </p>
+            {{ t(`dashboard.${period}`) }}
+          </button>
+        </div>
+        
+        <!-- Quick Actions -->
+        <NuxtLink to="/pos">
+          <UButton color="primary" icon="i-heroicons-shopping-cart">
+            {{ t('pos.terminal') }}
+          </UButton>
+        </NuxtLink>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="isLoading" class="flex justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
+    </div>
+
+    <template v-else>
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Revenue -->
+        <UCard>
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.totalRevenue') }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {{ currency.format(kpis.totalRevenue, 'LAK') }}
+              </p>
+              <div v-if="selectedPeriod === 'today'" class="mt-2 flex items-center gap-1">
+                <UIcon
+                  :name="todayStats.revenueChange >= 0 ? 'i-heroicons-arrow-trending-up' : 'i-heroicons-arrow-trending-down'"
+                  :class="todayStats.revenueChange >= 0 ? 'text-green-500' : 'text-red-500'"
+                  class="w-4 h-4"
+                />
+                <span
+                  class="text-sm font-medium"
+                  :class="todayStats.revenueChange >= 0 ? 'text-green-600' : 'text-red-600'"
+                >
+                  {{ todayStats.revenueChange >= 0 ? '+' : '' }}{{ todayStats.revenueChange.toFixed(1) }}%
+                </span>
+                <span class="text-xs text-gray-500">vs yesterday</span>
               </div>
             </div>
-            <p class="font-bold">₭{{ product.revenue.toLocaleString() }}</p>
+            <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <span class="text-2xl">💰</span>
+            </div>
           </div>
+        </UCard>
+
+        <!-- Total Orders -->
+        <UCard>
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.totalOrders') }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {{ kpis.totalOrders }}
+              </p>
+              <div v-if="selectedPeriod === 'today'" class="mt-2">
+                <span class="text-sm text-gray-500">
+                  {{ todayStats.yesterdayOrders }} yesterday
+                </span>
+              </div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <span class="text-2xl">📋</span>
+            </div>
+          </div>
+        </UCard>
+
+        <!-- Average Order Value -->
+        <UCard>
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.avgOrderValue') }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {{ currency.format(kpis.avgOrderValue, 'LAK') }}
+              </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <span class="text-2xl">📊</span>
+            </div>
+          </div>
+        </UCard>
+
+        <!-- Lightning Sales -->
+        <UCard>
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.lightningSales') }}</p>
+              <p class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
+                {{ currency.format(kpis.lightningSales, 'LAK') }}
+              </p>
+              <div class="mt-2">
+                <span class="text-sm text-gray-500">
+                  {{ kpis.totalRevenue > 0 ? ((kpis.lightningSales / kpis.totalRevenue) * 100).toFixed(1) : 0 }}% of total
+                </span>
+              </div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <span class="text-2xl">⚡</span>
+            </div>
+          </div>
+        </UCard>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Sales Chart -->
+        <div class="lg:col-span-2">
+          <UCard>
+            <template #header>
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900 dark:text-white">{{ t('dashboard.hourlySales') }}</h3>
+                <UBadge v-if="peakHour.sales > 0" color="amber" variant="soft">
+                  Peak: {{ peakHour.hour }}
+                </UBadge>
+              </div>
+            </template>
+            
+            <div class="h-64">
+              <!-- Simple bar chart visualization -->
+              <div class="flex items-end justify-between h-full gap-1 px-2">
+                <div
+                  v-for="(data, index) in hourlySales.filter((_, i) => i >= 6 && i <= 22)"
+                  :key="index"
+                  class="flex-1 flex flex-col items-center gap-1"
+                >
+                  <div
+                    class="w-full bg-primary-500/80 dark:bg-primary-400/80 rounded-t transition-all"
+                    :style="{
+                      height: `${Math.max(4, (data.sales / (Math.max(...hourlySales.map(h => h.sales)) || 1)) * 180)}px`
+                    }"
+                  />
+                  <span class="text-xs text-gray-500 tabular-nums">{{ data.hour.split(':')[0] }}</span>
+                </div>
+              </div>
+            </div>
+          </UCard>
         </div>
 
-        <template #footer>
-          <UButton
-            color="gray"
-            variant="ghost"
-            :label="t('dashboard.viewAllProducts')"
-            icon="i-heroicons-arrow-right"
-            icon-right
-          />
-        </template>
-      </UCard>
+        <!-- Quick Stats -->
+        <div class="space-y-4">
+          <!-- Payment Breakdown -->
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold text-gray-900 dark:text-white">{{ t('dashboard.paymentBreakdown') }}</h3>
+            </template>
+            
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span>💵</span>
+                  <span class="text-gray-600 dark:text-gray-300">{{ t('payment.methods.cash') }}</span>
+                </div>
+                <span class="font-bold text-gray-900 dark:text-white">
+                  {{ currency.format(kpis.cashSales, 'LAK') }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span>⚡</span>
+                  <span class="text-gray-600 dark:text-gray-300">{{ t('payment.methods.lightning') }}</span>
+                </div>
+                <span class="font-bold text-amber-600 dark:text-amber-400">
+                  {{ currency.format(kpis.lightningSales, 'LAK') }}
+                </span>
+              </div>
+              <div v-if="kpis.otherSales > 0" class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span>📱</span>
+                  <span class="text-gray-600 dark:text-gray-300">{{ t('payment.methods.external') }}</span>
+                </div>
+                <span class="font-bold text-gray-900 dark:text-white">
+                  {{ currency.format(kpis.otherSales, 'LAK') }}
+                </span>
+              </div>
+            </div>
+          </UCard>
 
-      <!-- Recent Orders -->
-      <UCard class="lg:col-span-2" :title="t('dashboard.recentOrders')">
-        <template #header>
-          <div class="flex justify-between items-center">
-            <h3 class="text-lg font-medium">
-              {{ t("dashboard.recentOrders") }}
-            </h3>
-            <UButton
-              :label="t('dashboard.viewAllOrders')"
-              color="gray"
-              variant="ghost"
-              to="/orders"
-            />
-          </div>
-        </template>
-
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-800">
-                <th class="text-left py-3 px-4">{{ t("orders.id") }}</th>
-                <th class="text-left py-3 px-4">{{ t("orders.customer") }}</th>
-                <th class="text-right py-3 px-4">{{ t("orders.total") }}</th>
-                <th class="text-left py-3 px-4">{{ t("orders.status") }}</th>
-                <th class="text-left py-3 px-4">{{ t("orders.time") }}</th>
-                <th class="text-right py-3 px-4">{{ t("common.actions") }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="order in recentOrders"
-                :key="order.id"
-                class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+          <!-- Top Products -->
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold text-gray-900 dark:text-white">{{ t('dashboard.topProducts') }}</h3>
+            </template>
+            
+            <div v-if="topProducts.length === 0" class="text-center py-4 text-gray-500">
+              {{ t('dashboard.noSalesYet') }}
+            </div>
+            <div v-else class="space-y-3">
+              <div
+                v-for="(product, index) in topProducts"
+                :key="index"
+                class="flex items-center justify-between"
               >
-                <td class="py-3 px-4 font-medium">{{ order.id }}</td>
-                <td class="py-3 px-4">{{ order.customer }}</td>
-                <td class="py-3 px-4 text-right">
-                  ₭{{ order.amount.toFixed(2) }}
-                </td>
-                <td class="py-3 px-4">
-                  <UBadge
-                    :label="t(`orders.status.${order.status}`)"
-                    :color="order.status"
-                  />
-                </td>
-                <td class="py-3 px-4 text-gray-500 dark:text-gray-400">
-                  {{ order.time }}
-                </td>
-                <td class="py-3 px-4 text-right">
-                  <UButton
-                    icon="i-heroicons-eye"
-                    color="gray"
-                    variant="ghost"
-                    :to="`/orders/${order.id}`"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">
+                    {{ index + 1 }}
+                  </span>
+                  <span class="text-gray-900 dark:text-white truncate max-w-[120px]">{{ product.name }}</span>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-gray-900 dark:text-white">
+                    {{ currency.format(product.revenue, 'LAK') }}
+                  </div>
+                  <div class="text-xs text-gray-500">{{ product.quantity }} sold</div>
+                </div>
+              </div>
+            </div>
+          </UCard>
         </div>
-      </UCard>
-    </div>
+      </div>
+
+      <!-- Bottom Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Orders -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-gray-900 dark:text-white">{{ t('dashboard.recentOrders') }}</h3>
+              <NuxtLink to="/orders">
+                <UButton size="xs" color="neutral" variant="ghost">
+                  {{ t('common.viewAll') }}
+                </UButton>
+              </NuxtLink>
+            </div>
+          </template>
+          
+          <div v-if="recentOrders.length === 0" class="text-center py-8 text-gray-500">
+            {{ t('dashboard.noOrdersYet') }}
+          </div>
+          <div v-else class="space-y-3">
+            <NuxtLink
+              v-for="order in recentOrders"
+              :key="order.id"
+              :to="`/orders/${order.id}`"
+              class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <div>
+                <div class="font-medium text-gray-900 dark:text-white">#{{ order.id.slice(-6).toUpperCase() }}</div>
+                <div class="text-sm text-gray-500">{{ formatTime(order.date) }}</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-bold text-gray-900 dark:text-white">
+                  {{ currency.format(order.total, 'LAK') }}
+                </span>
+                <UBadge :color="getStatusColor(order.status)" variant="soft" size="xs">
+                  {{ t(`orders.status.${order.status}`) }}
+                </UBadge>
+              </div>
+            </NuxtLink>
+          </div>
+        </UCard>
+
+        <!-- Low Stock Alert -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <span>⚠️</span> {{ t('dashboard.lowStock') }}
+              </h3>
+              <NuxtLink to="/inventory">
+                <UButton size="xs" color="neutral" variant="ghost">
+                  {{ t('common.viewAll') }}
+                </UButton>
+              </NuxtLink>
+            </div>
+          </template>
+          
+          <div v-if="lowStockProducts.length === 0" class="text-center py-8 text-green-600 dark:text-green-400">
+            <span class="text-2xl">✅</span>
+            <p class="mt-2">{{ t('dashboard.allStocked') }}</p>
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="product in lowStockProducts"
+              :key="product.id"
+              class="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/20"
+            >
+              <div>
+                <div class="font-medium text-gray-900 dark:text-white">{{ product.name }}</div>
+                <div class="text-sm text-gray-500">SKU: {{ product.sku }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-lg font-bold text-red-600 dark:text-red-400">{{ product.stock }}</div>
+                <div class="text-xs text-gray-500">min: {{ product.minStock }}</div>
+              </div>
+            </div>
+          </div>
+        </UCard>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <NuxtLink to="/pos" class="block">
+          <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
+            <div class="text-center">
+              <div class="text-3xl mb-2">🛒</div>
+              <div class="font-medium text-gray-900 dark:text-white">{{ t('pos.terminal') }}</div>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/pos/shift" class="block">
+          <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
+            <div class="text-center">
+              <div class="text-3xl mb-2">💰</div>
+              <div class="font-medium text-gray-900 dark:text-white">{{ t('pos.shift.title') }}</div>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/kitchen" class="block">
+          <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
+            <div class="text-center">
+              <div class="text-3xl mb-2">👨‍🍳</div>
+              <div class="font-medium text-gray-900 dark:text-white">{{ t('kitchen.title') }}</div>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/reports" class="block">
+          <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
+            <div class="text-center">
+              <div class="text-3xl mb-2">📊</div>
+              <div class="font-medium text-gray-900 dark:text-white">{{ t('reports.title') }}</div>
+            </div>
+          </UCard>
+        </NuxtLink>
+      </div>
+    </template>
   </div>
 </template>
+
+<style scoped>
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+</style>

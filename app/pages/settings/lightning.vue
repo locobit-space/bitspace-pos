@@ -381,7 +381,7 @@
       </div>
 
       <!-- Test Result Modal -->
-      <UModal v-model="showTestResult">
+      <UModal v-model:open="showTestResult">
         <UCard>
           <template #header>
             <div class="flex items-center gap-3">

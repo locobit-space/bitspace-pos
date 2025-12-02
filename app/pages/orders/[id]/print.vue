@@ -429,7 +429,7 @@ useHead({
   
   body {
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 

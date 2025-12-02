@@ -146,14 +146,14 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-const getTierColor = (tier?: string): string => {
-  const colors: Record<string, string> = {
+const getTierColor = (tier?: string) => {
+  const colors = {
     bronze: 'amber',
     silver: 'gray',
     gold: 'yellow',
     platinum: 'violet',
-  };
-  return colors[tier || ''] || 'gray';
+  } as const;
+  return colors[tier as keyof typeof colors] || 'gray';
 };
 
 const openCustomerModal = (customer?: Customer) => {
@@ -201,10 +201,18 @@ const saveCustomer = async () => {
     if (selectedCustomer.value) {
       // Update existing customer
       const index = customers.value.findIndex(c => c.id === selectedCustomer.value!.id);
-      if (index !== -1) {
+      const existingCustomer = customers.value[index];
+      if (index !== -1 && existingCustomer) {
         customers.value[index] = {
-          ...customers.value[index],
-          ...customerForm.value,
+          ...existingCustomer,
+          name: customerForm.value.name,
+          email: customerForm.value.email,
+          phone: customerForm.value.phone,
+          nostrPubkey: customerForm.value.nostrPubkey,
+          lud16: customerForm.value.lud16,
+          address: customerForm.value.address,
+          notes: customerForm.value.notes,
+          tags: customerForm.value.tags,
           updatedAt: new Date().toISOString(),
         };
       }
@@ -505,11 +513,11 @@ const paginatedCustomers = computed(() => {
               </UFormField>
 
               <UFormField :label="t('customers.address')" class="md:col-span-2">
-                <UTextarea v-model="customerForm.address" :placeholder="t('customers.addressPlaceholder')" rows="2" />
+                <UTextarea v-model="customerForm.address" :placeholder="t('customers.addressPlaceholder')" :rows="2" />
               </UFormField>
 
               <UFormField :label="t('customers.notes')" class="md:col-span-2">
-                <UTextarea v-model="customerForm.notes" :placeholder="t('customers.notesPlaceholder')" rows="2" />
+                <UTextarea v-model="customerForm.notes" :placeholder="t('customers.notesPlaceholder')" :rows="2" />
               </UFormField>
             </div>
 

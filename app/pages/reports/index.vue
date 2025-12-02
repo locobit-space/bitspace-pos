@@ -233,7 +233,7 @@ const exportReport = (format: 'pdf' | 'excel' | 'csv') => {
 const salesChartSeries = computed(() => [
   {
     name: t('reports.revenue'),
-    type: 'bar',
+    type: 'bar' as const,
     data: salesData.value.byPeriod.map((d) => d.revenue),
   },
 ]);

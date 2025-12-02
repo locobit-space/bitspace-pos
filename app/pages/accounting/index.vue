@@ -497,7 +497,7 @@ const payWithLightning = (invoiceId: string) => {
             class="w-64"
           />
           <USelect
-            :options="['all', 'inventory', 'utilities', 'payroll', 'rent', 'marketing']"
+            :items="['all', 'inventory', 'utilities', 'payroll', 'rent', 'marketing']"
             model-value="all"
             class="w-40"
           />
@@ -689,7 +689,7 @@ const payWithLightning = (invoiceId: string) => {
     </div>
 
     <!-- Invoice Modal -->
-    <UModal v-model="showInvoiceModal">
+    <UModal v-model:open="showInvoiceModal">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
@@ -720,7 +720,7 @@ const payWithLightning = (invoiceId: string) => {
     </UModal>
 
     <!-- Expense Modal -->
-    <UModal v-model="showExpenseModal">
+    <UModal v-model:open="showExpenseModal">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
@@ -736,7 +736,7 @@ const payWithLightning = (invoiceId: string) => {
           <UFormField :label="$t('accounting.category')">
             <USelect
               v-model="newExpense.category"
-              :options="['inventory', 'utilities', 'payroll', 'rent', 'marketing', 'other']"
+              :items="['inventory', 'utilities', 'payroll', 'rent', 'marketing', 'other']"
             />
           </UFormField>
           <UFormField :label="$t('accounting.amount')">
@@ -748,7 +748,7 @@ const payWithLightning = (invoiceId: string) => {
           <UFormField :label="$t('accounting.paymentMethod')">
             <USelect
               v-model="newExpense.paymentMethod"
-              :options="['cash', 'lightning', 'bank_transfer']"
+              :items="['cash', 'lightning', 'bank_transfer']"
             />
           </UFormField>
         </div>
@@ -763,7 +763,7 @@ const payWithLightning = (invoiceId: string) => {
     </UModal>
 
     <!-- Journal Entry Modal -->
-    <UModal v-model="showJournalModal">
+    <UModal v-model:open="showJournalModal">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">

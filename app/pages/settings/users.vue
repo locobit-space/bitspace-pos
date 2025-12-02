@@ -181,7 +181,7 @@
     </div>
 
     <!-- Create/Edit User Modal -->
-    <UModal v-model="showUserModal">
+    <UModal v-model:open="showUserModal">
       <UCard>
         <template #header>
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -258,7 +258,7 @@
     </UModal>
 
     <!-- Permissions Modal -->
-    <UModal v-model="showPermissionsModal">
+    <UModal v-model:open="showPermissionsModal">
       <UCard>
         <template #header>
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -377,7 +377,7 @@
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model="showDeleteModal">
+    <UModal v-model:open="showDeleteModal">
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
