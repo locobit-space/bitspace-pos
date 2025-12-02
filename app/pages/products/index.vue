@@ -10,13 +10,36 @@
           {{ $t("products.subtitle") }}
         </p>
       </div>
-      <UButton
-        color="primary"
-        size="lg"
-        :label="$t('common.add')"
-        icon="i-heroicons-plus"
-        @click="openProductModal()"
-      />
+      <div class="flex items-center gap-2">
+        <!-- Quick Management Buttons -->
+        <UTooltip :text="$t('products.settings.manageCategories') || 'Manage Categories'">
+          <UButton
+            color="neutral"
+            variant="soft"
+            icon="i-heroicons-folder"
+            @click="openSettingsPanel('categories')"
+          >
+            <span class="hidden sm:inline">{{ $t('products.category') }}</span>
+          </UButton>
+        </UTooltip>
+        <UTooltip :text="$t('products.settings.manageUnits') || 'Manage Units'">
+          <UButton
+            color="neutral"
+            variant="soft"
+            icon="i-heroicons-scale"
+            @click="openSettingsPanel('units')"
+          >
+            <span class="hidden sm:inline">{{ $t('products.unit') }}</span>
+          </UButton>
+        </UTooltip>
+        <UButton
+          color="primary"
+          size="lg"
+          :label="$t('common.add')"
+          icon="i-heroicons-plus"
+          @click="openProductModal()"
+        />
+      </div>
     </div>
 
     <!-- Filters -->
@@ -34,13 +57,25 @@
 
       <!-- Category Filter -->
       <UFormField :label="$t('products.category')" class="min-w-[200px]">
-        <USelect
-          v-model="selectedCategory"
-          :options="categoryOptions"
-          option-attribute="name"
-          value-attribute="id"
-          :placeholder="$t('products.selectCategory')"
-        />
+        <div class="flex gap-1">
+          <USelect
+            v-model="selectedCategory"
+            :options="categoryOptions"
+            option-attribute="name"
+            value-attribute="id"
+            :placeholder="$t('products.selectCategory')"
+            class="flex-1"
+          />
+          <UTooltip :text="$t('common.add') + ' ' + $t('products.category')">
+            <UButton
+              icon="i-heroicons-plus"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              @click="openCategoryModal()"
+            />
+          </UTooltip>
+        </div>
       </UFormField>
 
       <!-- Status Filter -->
@@ -298,7 +333,7 @@
             @submit="saveProduct"
           >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Product Name -->
+              <!-- Product Name (Required) -->
               <UFormField
                 :label="$t('products.name')"
                 name="name"
@@ -311,30 +346,7 @@
                 />
               </UFormField>
 
-              <!-- SKU -->
-              <UFormField :label="$t('products.sku')" name="sku" required>
-                <UInput
-                  v-model="productForm.sku"
-                  :placeholder="$t('products.skuPlaceholder')"
-                />
-              </UFormField>
-
-              <!-- Category -->
-              <UFormField
-                :label="$t('products.category')"
-                name="categoryId"
-                required
-              >
-                <USelect
-                  v-model="productForm.categoryId"
-                  :options="categoryOptions"
-                  option-attribute="name"
-                  value-attribute="id"
-                  :placeholder="$t('products.selectCategory')"
-                />
-              </UFormField>
-
-              <!-- Price -->
+              <!-- Price (Required) -->
               <UFormField :label="$t('products.price')" name="price" required>
                 <UInput
                   v-model="productForm.price"
@@ -344,41 +356,86 @@
                 />
               </UFormField>
 
-              <!-- Unit -->
-              <UFormField :label="$t('products.unit')" name="unitId" required>
-                <USelect
-                  v-model="productForm.unitId"
-                  :options="unitOptions"
-                  option-attribute="name"
-                  value-attribute="id"
-                  :placeholder="$t('products.selectUnit')"
+              <!-- SKU (Optional) -->
+              <UFormField :label="$t('products.sku')" name="sku">
+                <UInput
+                  v-model="productForm.sku"
+                  :placeholder="$t('products.skuPlaceholder') || 'Auto-generated if empty'"
                 />
               </UFormField>
 
-              <!-- Stock -->
-              <UFormField :label="$t('products.stock')" name="stock" required>
+              <!-- Category (Optional) -->
+              <UFormField
+                :label="$t('products.category')"
+                name="categoryId"
+              >
+                <div class="flex gap-1">
+                  <USelect
+                    v-model="productForm.categoryId"
+                    :options="categoryOptions"
+                    option-attribute="name"
+                    value-attribute="id"
+                    :placeholder="$t('products.selectCategory')"
+                    class="flex-1"
+                  />
+                  <UTooltip :text="$t('common.add') + ' ' + $t('products.category')">
+                    <UButton
+                      icon="i-heroicons-plus"
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      @click="openCategoryModal()"
+                    />
+                  </UTooltip>
+                </div>
+              </UFormField>
+
+              <!-- Unit (Optional) -->
+              <UFormField :label="$t('products.unit')" name="unitId">
+                <div class="flex gap-1">
+                  <USelect
+                    v-model="productForm.unitId"
+                    :options="unitOptions"
+                    option-attribute="name"
+                    value-attribute="id"
+                    :placeholder="$t('products.selectUnit')"
+                    class="flex-1"
+                  />
+                  <UTooltip :text="$t('common.add') + ' ' + $t('products.unit')">
+                    <UButton
+                      icon="i-heroicons-plus"
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      @click="openUnitModal()"
+                    />
+                  </UTooltip>
+                </div>
+              </UFormField>
+
+              <!-- Stock (Optional) -->
+              <UFormField :label="$t('products.stock')" name="stock">
                 <UInput
                   v-model="productForm.stock"
                   type="number"
-                  :placeholder="$t('products.stockPlaceholder')"
+                  :placeholder="$t('products.stockPlaceholder') || '0'"
                 />
               </UFormField>
 
-              <!-- Min Stock -->
+              <!-- Min Stock (Optional) -->
               <UFormField
                 :label="$t('products.minStock')"
                 name="minStock"
-                required
               >
                 <UInput
                   v-model="productForm.minStock"
                   type="number"
-                  :placeholder="$t('products.minStockPlaceholder')"
+                  :placeholder="$t('products.minStockPlaceholder') || '0'"
                 />
               </UFormField>
 
-              <!-- Branch -->
-              <UFormField :label="$t('common.branch')" name="branchId" required>
+              <!-- Branch (Optional) -->
+              <UFormField :label="$t('common.branch')" name="branchId">
                 <USelect
                   v-model="productForm.branchId"
                   :options="branchOptions"
@@ -388,8 +445,8 @@
                 />
               </UFormField>
 
-              <!-- Status -->
-              <UFormField :label="$t('common.status')" name="status" required>
+              <!-- Status (Optional) -->
+              <UFormField :label="$t('common.status')" name="status">
                 <USelect
                   v-model="productForm.status"
                   :options="statusOptions"
@@ -397,7 +454,29 @@
                 />
               </UFormField>
 
-              <!-- Description -->
+              <!-- Image/Emoji (Optional) -->
+              <UFormField label="Image/Emoji" name="image">
+                <div class="flex gap-2">
+                  <UInput
+                    v-model="productForm.image"
+                    placeholder="📦 or image URL"
+                    class="flex-1"
+                  />
+                  <div class="flex gap-1">
+                    <button
+                      v-for="emoji in ['📦', '🍹', '🍜', '🍰', '☕', '🍺', '🍔', '🛒']"
+                      :key="emoji"
+                      type="button"
+                      class="w-8 h-8 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                      @click="productForm.image = emoji"
+                    >
+                      {{ emoji }}
+                    </button>
+                  </div>
+                </div>
+              </UFormField>
+
+              <!-- Description (Optional) -->
               <UFormField
                 :label="$t('products.description')"
                 name="description"
@@ -569,6 +648,371 @@
         </UCard>
       </template>
     </UModal>
+
+    <!-- ============================================ -->
+    <!-- Settings Slide-Over Panel (Categories/Units) -->
+    <!-- ============================================ -->
+    <USlideover v-model:open="showSettingsPanel" :side="'right'">
+      <template #content>
+        <div class="flex flex-col h-full bg-white dark:bg-gray-900">
+          <!-- Panel Header -->
+          <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl">
+                {{ settingsPanelTab === 'categories' ? '📁' : '📐' }}
+              </div>
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ settingsPanelTab === 'categories' 
+                    ? ($t('products.settings.manageCategories') || 'Manage Categories')
+                    : ($t('products.settings.manageUnits') || 'Manage Units') }}
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ settingsPanelTab === 'categories'
+                    ? ($t('products.settings.manageCategoriesDesc') || 'Add, edit or delete product categories')
+                    : ($t('products.settings.manageUnitsDesc') || 'Manage product measurement units') }}
+                </p>
+              </div>
+            </div>
+            <UButton
+              icon="i-heroicons-x-mark"
+              color="neutral"
+              variant="ghost"
+              @click="showSettingsPanel = false"
+            />
+          </div>
+
+          <!-- Panel Tabs -->
+          <div class="flex border-b border-gray-200 dark:border-gray-700">
+            <button
+              class="flex-1 px-4 py-3 text-sm font-medium transition-colors relative"
+              :class="settingsPanelTab === 'categories'
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+              @click="settingsPanelTab = 'categories'"
+            >
+              <span class="flex items-center justify-center gap-2">
+                <span>📁</span>
+                <span>{{ $t('products.category') || 'Categories' }}</span>
+                <UBadge color="neutral" variant="subtle" size="sm">
+                  {{ categories.length }}
+                </UBadge>
+              </span>
+              <div 
+                v-if="settingsPanelTab === 'categories'"
+                class="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500"
+              />
+            </button>
+            <button
+              class="flex-1 px-4 py-3 text-sm font-medium transition-colors relative"
+              :class="settingsPanelTab === 'units'
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+              @click="settingsPanelTab = 'units'"
+            >
+              <span class="flex items-center justify-center gap-2">
+                <span>📐</span>
+                <span>{{ $t('products.unit') || 'Units' }}</span>
+                <UBadge color="neutral" variant="subtle" size="sm">
+                  {{ units.length }}
+                </UBadge>
+              </span>
+              <div 
+                v-if="settingsPanelTab === 'units'"
+                class="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500"
+              />
+            </button>
+          </div>
+
+          <!-- Panel Content -->
+          <div class="flex-1 overflow-y-auto p-4">
+            <!-- Categories List -->
+            <div v-if="settingsPanelTab === 'categories'" class="space-y-3">
+              <div
+                v-for="category in categories"
+                :key="category.id"
+                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-amber-500/50 transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">{{ category.icon || '📦' }}</span>
+                  <div>
+                    <h3 class="font-medium text-gray-900 dark:text-white">
+                      {{ category.name }}
+                    </h3>
+                    <p v-if="category.description" class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ category.description }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <UButton
+                    v-if="!['all', 'favorites'].includes(category.id)"
+                    icon="i-heroicons-pencil"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    @click="openCategoryModal(category)"
+                  />
+                  <UButton
+                    v-if="!['all', 'favorites'].includes(category.id)"
+                    icon="i-heroicons-trash"
+                    color="red"
+                    variant="ghost"
+                    size="xs"
+                    @click="confirmDeleteCategory(category)"
+                  />
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-if="categories.length === 0" class="text-center py-8 text-gray-400">
+                <span class="text-4xl block mb-2">📁</span>
+                <p>{{ $t('products.noCategories') || 'No categories yet' }}</p>
+              </div>
+            </div>
+
+            <!-- Units List -->
+            <div v-if="settingsPanelTab === 'units'" class="space-y-3">
+              <div
+                v-for="unit in units"
+                :key="unit.id"
+                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-amber-500/50 transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-sm">
+                    {{ unit.symbol }}
+                  </div>
+                  <div>
+                    <h3 class="font-medium text-gray-900 dark:text-white">
+                      {{ unit.name }}
+                    </h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ $t('products.units.symbol') || 'Symbol' }}: {{ unit.symbol }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <UButton
+                    icon="i-heroicons-pencil"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    @click="openUnitModal(unit)"
+                  />
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-if="units.length === 0" class="text-center py-8 text-gray-400">
+                <span class="text-4xl block mb-2">📐</span>
+                <p>{{ $t('products.noUnits') || 'No units yet' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel Footer with Add Button -->
+          <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <UButton
+              block
+              color="primary"
+              icon="i-heroicons-plus"
+              @click="settingsPanelTab === 'categories' ? openCategoryModal() : openUnitModal()"
+            >
+              {{ settingsPanelTab === 'categories'
+                ? ($t('products.addCategory') || 'Add Category')
+                : ($t('products.addUnit') || 'Add Unit') }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </USlideover>
+
+    <!-- ============================================ -->
+    <!-- Category Modal -->
+    <!-- ============================================ -->
+    <UModal v-model:open="showCategoryModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span>📁</span>
+            {{ editingCategory ? ($t('common.edit') || 'Edit') : ($t('common.add') || 'Add') }}
+            {{ $t('products.category') || 'Category' }}
+          </h3>
+
+          <div class="space-y-4">
+            <!-- Icon Selection -->
+            <div>
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+                {{ $t('common.icon') || 'Icon' }}
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="icon in commonIcons"
+                  :key="icon"
+                  type="button"
+                  class="w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all"
+                  :class="categoryForm.icon === icon
+                    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25 scale-110'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'"
+                  @click="categoryForm.icon = icon"
+                >
+                  {{ icon }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Name -->
+            <UFormField :label="$t('common.name') || 'Name'" required>
+              <UInput
+                v-model="categoryForm.name"
+                :placeholder="$t('products.categories.namePlaceholder') || 'e.g., Drinks, Food, Snacks'"
+              />
+            </UFormField>
+
+            <!-- Description -->
+            <UFormField :label="$t('common.description') || 'Description'">
+              <UInput
+                v-model="categoryForm.description"
+                :placeholder="$t('common.optional') || 'Optional description'"
+              />
+            </UFormField>
+
+            <div class="flex gap-2 pt-4">
+              <UButton
+                color="neutral"
+                variant="outline"
+                class="flex-1"
+                @click="showCategoryModal = false"
+              >
+                {{ $t('common.cancel') || 'Cancel' }}
+              </UButton>
+              <UButton
+                color="primary"
+                class="flex-1"
+                :loading="savingCategory"
+                @click="saveCategory"
+              >
+                {{ editingCategory ? ($t('common.update') || 'Update') : ($t('common.create') || 'Create') }}
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ============================================ -->
+    <!-- Unit Modal -->
+    <!-- ============================================ -->
+    <UModal v-model:open="showUnitModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span>📐</span>
+            {{ editingUnit ? ($t('common.edit') || 'Edit') : ($t('common.add') || 'Add') }}
+            {{ $t('products.unit') || 'Unit' }}
+          </h3>
+
+          <div class="space-y-4">
+            <!-- Quick Unit Presets -->
+            <div>
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+                {{ $t('common.quickSelect') || 'Quick Select' }}
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="preset in unitPresets"
+                  :key="preset.symbol"
+                  type="button"
+                  class="px-3 py-1.5 rounded-lg text-sm transition-all"
+                  :class="unitForm.symbol === preset.symbol
+                    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+                  @click="unitForm.name = preset.name; unitForm.symbol = preset.symbol"
+                >
+                  {{ preset.name }} ({{ preset.symbol }})
+                </button>
+              </div>
+            </div>
+
+            <!-- Name -->
+            <UFormField :label="$t('common.name') || 'Name'" required>
+              <UInput
+                v-model="unitForm.name"
+                :placeholder="$t('products.units.namePlaceholder') || 'e.g., Piece, Kilogram, Liter'"
+              />
+            </UFormField>
+
+            <!-- Symbol -->
+            <UFormField :label="$t('products.units.symbol') || 'Symbol'" required>
+              <UInput
+                v-model="unitForm.symbol"
+                :placeholder="$t('products.units.symbolPlaceholder') || 'e.g., pc, kg, L'"
+              />
+            </UFormField>
+
+            <div class="flex gap-2 pt-4">
+              <UButton
+                color="neutral"
+                variant="outline"
+                class="flex-1"
+                @click="showUnitModal = false"
+              >
+                {{ $t('common.cancel') || 'Cancel' }}
+              </UButton>
+              <UButton
+                color="primary"
+                class="flex-1"
+                :loading="savingUnit"
+                @click="saveUnit"
+              >
+                {{ editingUnit ? ($t('common.update') || 'Update') : ($t('common.create') || 'Create') }}
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ============================================ -->
+    <!-- Delete Category Confirmation Modal -->
+    <!-- ============================================ -->
+    <UModal v-model:open="showDeleteCategoryModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2">
+            <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
+            {{ $t('common.confirmDelete') || 'Confirm Delete' }}
+          </h3>
+
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            {{ $t('common.deleteConfirmMessage') || 'Are you sure you want to delete' }}
+            <strong class="text-gray-900 dark:text-white">
+              "{{ categoryToDelete?.name }}"
+            </strong>?
+            {{ $t('common.cannotUndo') || 'This action cannot be undone.' }}
+          </p>
+
+          <div class="flex gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              class="flex-1"
+              @click="showDeleteCategoryModal = false"
+            >
+              {{ $t('common.cancel') || 'Cancel' }}
+            </UButton>
+            <UButton
+              color="red"
+              class="flex-1"
+              :loading="deletingCategory"
+              @click="executeDeleteCategory"
+            >
+              {{ $t('common.delete') || 'Delete' }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -631,19 +1075,20 @@ interface ProductForm {
   minStock: number;
   branchId: string;
   status: "active" | "inactive";
+  image: string;
 }
 
-// Validation Schema
+// Validation Schema - Only name and price required
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
-  sku: z.string().min(1, "SKU is required"),
-  categoryId: z.string().min(1, "Category is required"),
-  unitId: z.string().min(1, "Unit is required"),
+  sku: z.string().optional(),
+  categoryId: z.string().optional(),
+  unitId: z.string().optional(),
   price: z.number().min(0, "Price must be positive"),
-  stock: z.number().min(0, "Stock must be positive"),
-  minStock: z.number().min(0, "Min stock must be positive"),
-  branchId: z.string().min(1, "Branch is required"),
-  status: z.enum(["active", "inactive"]),
+  stock: z.number().min(0).optional(),
+  minStock: z.number().min(0).optional(),
+  branchId: z.string().optional(),
+  status: z.enum(["active", "inactive"]).optional(),
 });
 
 // Mock Data
@@ -726,6 +1171,53 @@ const showProductModal = ref<boolean>(false);
 const showDeleteModal = ref<boolean>(false);
 const showViewModal = ref<boolean>(false);
 
+// ============================================
+// Settings Panel State (Categories/Units)
+// ============================================
+const showSettingsPanel = ref<boolean>(false);
+const settingsPanelTab = ref<'categories' | 'units'>('categories');
+
+// Category Modal
+const showCategoryModal = ref<boolean>(false);
+const editingCategory = ref<Category | null>(null);
+const categoryForm = ref({
+  name: '',
+  description: '',
+  icon: '📦',
+});
+const savingCategory = ref<boolean>(false);
+
+// Unit Modal
+const showUnitModal = ref<boolean>(false);
+const editingUnit = ref<Unit | null>(null);
+const unitForm = ref({
+  name: '',
+  symbol: '',
+});
+const savingUnit = ref<boolean>(false);
+
+// Delete Category Modal
+const showDeleteCategoryModal = ref<boolean>(false);
+const categoryToDelete = ref<Category | null>(null);
+const deletingCategory = ref<boolean>(false);
+
+// Common icons for categories
+const commonIcons = ['📦', '🍹', '🍜', '🍰', '🍿', '☕', '🍺', '🍔', '🍕', '🌮', '🍣', '🥗', '🍪', '🎂', '🍦', '🧃', '🥤', '🍵', '🛒', '⭐'];
+
+// Common unit presets
+const unitPresets = [
+  { name: 'Piece', symbol: 'pc' },
+  { name: 'Kilogram', symbol: 'kg' },
+  { name: 'Gram', symbol: 'g' },
+  { name: 'Liter', symbol: 'L' },
+  { name: 'Milliliter', symbol: 'ml' },
+  { name: 'Box', symbol: 'box' },
+  { name: 'Pack', symbol: 'pk' },
+  { name: 'Bottle', symbol: 'btl' },
+  { name: 'Can', symbol: 'can' },
+  { name: 'Dozen', symbol: 'dz' },
+];
+
 // Form Data
 const selectedProduct = ref<Product | null>(null);
 const productToDelete = ref<Product | null>(null);
@@ -745,6 +1237,7 @@ const productForm = ref<ProductForm>({
   minStock: 0,
   branchId: "",
   status: "active",
+  image: "📦",
 });
 
 // Options
@@ -823,15 +1316,16 @@ const openProductModal = (product?: Product) => {
     selectedProduct.value = product;
     productForm.value = {
       name: product.name,
-      sku: product.sku,
+      sku: product.sku || "",
       description: product.description || "",
-      categoryId: product.categoryId,
-      unitId: product.unitId,
+      categoryId: product.categoryId || "",
+      unitId: product.unitId || "",
       price: product.price,
-      stock: product.stock,
-      minStock: product.minStock,
-      branchId: product.branchId,
-      status: product.status,
+      stock: product.stock || 0,
+      minStock: product.minStock || 0,
+      branchId: product.branchId || "",
+      status: product.status || "active",
+      image: product.image || "📦",
     };
   } else {
     selectedProduct.value = null;
@@ -846,6 +1340,7 @@ const openProductModal = (product?: Product) => {
       minStock: 0,
       branchId: "",
       status: "active",
+      image: "📦",
     };
   }
   showProductModal.value = true;
@@ -869,11 +1364,27 @@ const saveProduct = async () => {
   try {
     saving.value = true;
 
+    // Auto-generate SKU if empty
+    const sku = productForm.value.sku || `SKU-${Date.now().toString(36).toUpperCase()}`;
+
+    // Prepare product data with defaults for optional fields
+    const productData = {
+      name: productForm.value.name,
+      sku,
+      description: productForm.value.description || undefined,
+      categoryId: productForm.value.categoryId || 'all',
+      unitId: productForm.value.unitId || 'piece',
+      price: productForm.value.price || 0,
+      stock: productForm.value.stock || 0,
+      minStock: productForm.value.minStock || 0,
+      branchId: productForm.value.branchId || 'main',
+      status: productForm.value.status || 'active',
+      image: productForm.value.image || '📦',
+    };
+
     if (selectedProduct.value) {
       // Update existing product in Dexie + Nostr (encrypted)
-      await productsStore.updateProduct(selectedProduct.value.id, {
-        ...productForm.value,
-      });
+      await productsStore.updateProduct(selectedProduct.value.id, productData);
       toast.add({
         title: 'Product updated',
         description: `${productForm.value.name} synced to Nostr (encrypted)`,
@@ -883,7 +1394,7 @@ const saveProduct = async () => {
     } else {
       // Create new product in Dexie + Nostr (encrypted)
       await productsStore.addProduct({
-        ...productForm.value,
+        ...productData,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       } as Omit<Product, 'id'>);
@@ -955,6 +1466,200 @@ const formatCurrency = (amount: number): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+};
+
+// ============================================
+// Settings Panel Methods
+// ============================================
+const openSettingsPanel = (tab: 'categories' | 'units') => {
+  settingsPanelTab.value = tab;
+  showSettingsPanel.value = true;
+};
+
+// ============================================
+// Category Management Methods
+// ============================================
+const openCategoryModal = (category?: Category) => {
+  if (category) {
+    editingCategory.value = category;
+    categoryForm.value = {
+      name: category.name,
+      description: category.description || '',
+      icon: category.icon || '📦',
+    };
+  } else {
+    editingCategory.value = null;
+    categoryForm.value = {
+      name: '',
+      description: '',
+      icon: '📦',
+    };
+  }
+  showCategoryModal.value = true;
+};
+
+const saveCategory = async () => {
+  if (!categoryForm.value.name.trim()) {
+    toast.add({
+      title: 'Error',
+      description: 'Category name is required',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+    return;
+  }
+
+  savingCategory.value = true;
+  try {
+    if (editingCategory.value) {
+      await productsStore.updateCategory(editingCategory.value.id, {
+        name: categoryForm.value.name,
+        description: categoryForm.value.description || undefined,
+        icon: categoryForm.value.icon,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Category updated successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    } else {
+      await productsStore.addCategory({
+        name: categoryForm.value.name,
+        description: categoryForm.value.description || undefined,
+        icon: categoryForm.value.icon,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Category created successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    }
+    showCategoryModal.value = false;
+  } catch (error) {
+    console.error('Error saving category:', error);
+    toast.add({
+      title: 'Error',
+      description: 'Failed to save category',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+  } finally {
+    savingCategory.value = false;
+  }
+};
+
+const confirmDeleteCategory = (category: Category) => {
+  if (['all', 'favorites'].includes(category.id)) {
+    toast.add({
+      title: 'Error',
+      description: 'Cannot delete built-in category',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+    return;
+  }
+  categoryToDelete.value = category;
+  showDeleteCategoryModal.value = true;
+};
+
+const executeDeleteCategory = async () => {
+  if (!categoryToDelete.value) return;
+
+  deletingCategory.value = true;
+  try {
+    const success = await productsStore.deleteCategory(categoryToDelete.value.id);
+    if (success) {
+      toast.add({
+        title: 'Success',
+        description: 'Category deleted successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    } else {
+      toast.add({
+        title: 'Error',
+        description: productsStore.error.value || 'Failed to delete category',
+        color: 'red',
+        icon: 'i-heroicons-exclamation-circle',
+      });
+    }
+    showDeleteCategoryModal.value = false;
+  } finally {
+    deletingCategory.value = false;
+    categoryToDelete.value = null;
+  }
+};
+
+// ============================================
+// Unit Management Methods
+// ============================================
+const openUnitModal = (unit?: Unit) => {
+  if (unit) {
+    editingUnit.value = unit;
+    unitForm.value = {
+      name: unit.name,
+      symbol: unit.symbol,
+    };
+  } else {
+    editingUnit.value = null;
+    unitForm.value = {
+      name: '',
+      symbol: '',
+    };
+  }
+  showUnitModal.value = true;
+};
+
+const saveUnit = async () => {
+  if (!unitForm.value.name.trim() || !unitForm.value.symbol.trim()) {
+    toast.add({
+      title: 'Error',
+      description: 'Unit name and symbol are required',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+    return;
+  }
+
+  savingUnit.value = true;
+  try {
+    if (editingUnit.value) {
+      await productsStore.updateUnit(editingUnit.value.id, {
+        name: unitForm.value.name,
+        symbol: unitForm.value.symbol,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Unit updated successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    } else {
+      await productsStore.addUnit({
+        name: unitForm.value.name,
+        symbol: unitForm.value.symbol,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Unit created successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    }
+    showUnitModal.value = false;
+  } catch (error) {
+    console.error('Error saving unit:', error);
+    toast.add({
+      title: 'Error',
+      description: 'Failed to save unit',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+  } finally {
+    savingUnit.value = false;
+  }
 };
 
 // ✅ Export products as JSON (encrypted data)

@@ -1,690 +1,563 @@
 <template>
-  <div class="p-6 space-y-6">
+  <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex justify-between items-center px-4">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ $t("products.metadata.title") }}
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400">
-          {{ $t("products.metadata.description") }}
-        </p>
-      </div>
-
-      <!-- Branch Filter -->
-      <div class="flex items-center space-x-4">
-        <USelect
-          v-model="selectedBranch"
-          :options="branchOptions"
-          option-attribute="name"
-          value-attribute="id"
-          :placeholder="$t('common.selectBranch')"
-          class="w-48"
-        />
+        <div class="flex items-center gap-3">
+          <NuxtLink to="/products">
+            <UButton
+              icon="i-heroicons-arrow-left"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+            />
+          </NuxtLink>
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+              {{ $t('products.settings') || 'Product Settings' }}
+            </h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">
+              {{ $t('products.manageMetadata') || 'Manage categories and units' }}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Main Content -->
-    <UCard>
-      <UTabs v-model="activeTab" :items="tabItems" class="w-full">
-        <!-- Categories Tab -->
-        <template #categories>
-          <div class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold">
-                {{ $t("products.categories.title") }}
-              </h2>
-              <UButton
-                @click="openModal('category')"
-                icon="i-heroicons-plus"
-                :label="$t('common.add')"
-                color="primary"
-              />
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full border-collapse">
-                <thead>
-                  <tr class="border-b border-gray-200 dark:border-gray-700">
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.name") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.description") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.branch") }}
-                    </th>
-                    <th
-                      class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.actions") }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="category in filteredCategories"
-                    :key="category.id"
-                    class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  >
-                    <td class="py-3 px-4 text-gray-900 dark:text-white">
-                      {{ category.name }}
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {{ category.description || "-" }}
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {{ getBranchName(category.branchId) }}
-                    </td>
-                    <td class="py-3 px-4 text-right">
-                      <div class="flex items-center justify-end space-x-2">
-                        <UButton
-                          @click="editItem('category', category)"
-                          icon="i-heroicons-pencil-square"
-                          size="sm"
-                          color="gray"
-                          variant="ghost"
-                        />
-                        <UButton
-                          @click="deleteItem('category', category.id)"
-                          icon="i-heroicons-trash"
-                          size="sm"
-                          color="red"
-                          variant="ghost"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </template>
-
-        <!-- Units Tab -->
-        <template #units>
-          <div class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold">
-                {{ $t("products.units.title") }}
-              </h2>
-              <UButton
-                @click="openModal('unit')"
-                icon="i-heroicons-plus"
-                :label="$t('common.add')"
-                color="primary"
-              />
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full border-collapse">
-                <thead>
-                  <tr class="border-b border-gray-200 dark:border-gray-700">
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.name") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("products.units.symbol") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.description") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.branch") }}
-                    </th>
-                    <th
-                      class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.actions") }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="unit in filteredUnits"
-                    :key="unit.id"
-                    class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  >
-                    <td class="py-3 px-4 text-gray-900 dark:text-white">
-                      {{ unit.name }}
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      <span
-                        class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm"
-                      >
-                        {{ unit.symbol || "-" }}
-                      </span>
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {{ unit.description || "-" }}
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {{ getBranchName(unit.branchId) }}
-                    </td>
-                    <td class="py-3 px-4 text-right">
-                      <div class="flex items-center justify-end space-x-2">
-                        <UButton
-                          @click="editItem('unit', unit)"
-                          icon="i-heroicons-pencil-square"
-                          size="sm"
-                          color="gray"
-                          variant="ghost"
-                        />
-                        <UButton
-                          @click="deleteItem('unit', unit.id)"
-                          icon="i-heroicons-trash"
-                          size="sm"
-                          color="red"
-                          variant="ghost"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </template>
-
-        <!-- Payment Terms Tab -->
-        <template #terms>
-          <div class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold">
-                {{ $t("products.terms.title") }}
-              </h2>
-              <UButton
-                @click="openModal('term')"
-                icon="i-heroicons-plus"
-                :label="$t('common.add')"
-                color="primary"
-              />
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full border-collapse">
-                <thead>
-                  <tr class="border-b border-gray-200 dark:border-gray-700">
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.name") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("products.terms.days") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.description") }}
-                    </th>
-                    <th
-                      class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.branch") }}
-                    </th>
-                    <th
-                      class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
-                    >
-                      {{ $t("common.actions") }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="term in filteredTerms"
-                    :key="term.id"
-                    class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  >
-                    <td class="py-3 px-4 text-gray-900 dark:text-white">
-                      {{ term.name }}
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      <span
-                        class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm"
-                      >
-                        {{ term.days || 0 }} {{ $t("products.terms.daysUnit") }}
-                      </span>
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {{ term.description || "-" }}
-                    </td>
-                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {{ getBranchName(term.branchId) }}
-                    </td>
-                    <td class="py-3 px-4 text-right">
-                      <div class="flex items-center justify-end space-x-2">
-                        <UButton
-                          @click="editItem('term', term)"
-                          icon="i-heroicons-pencil-square"
-                          size="sm"
-                          color="gray"
-                          variant="ghost"
-                        />
-                        <UButton
-                          @click="deleteItem('term', term.id)"
-                          icon="i-heroicons-trash"
-                          size="sm"
-                          color="red"
-                          variant="ghost"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </template>
-      </UTabs>
-    </UCard>
-
-    <!-- Modal for Add/Edit -->
-    <UModal v-model="isModalOpen" :ui="{ width: 'sm:max-w-md' }">
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-semibold">
-            {{ isEditMode ? $t("common.edit") : $t("common.add") }}
-            {{ getModalTitle() }}
-          </h3>
-        </template>
-
-        <UForm
-          ref="form"
-          :state="formState"
-          :schema="getFormSchema()"
-          @submit="handleSubmit"
-          class="space-y-4"
+    <!-- Tabs -->
+    <div class="px-4">
+      <div class="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+        <button
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'categories'
+              ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          ]"
+          @click="activeTab = 'categories'"
         >
-          <UFormField name="name" :label="$t('common.name')" required>
-            <UInput v-model="formState.name" />
-          </UFormField>
+          📁 {{ $t('products.categories.title') || 'Categories' }}
+        </button>
+        <button
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'units'
+              ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          ]"
+          @click="activeTab = 'units'"
+        >
+          📐 {{ $t('products.units.title') || 'Units' }}
+        </button>
+      </div>
+    </div>
 
-          <UFormField name="description" :label="$t('common.description')">
-            <UTextarea v-model="formState.description" />
-          </UFormField>
+    <!-- Categories Tab -->
+    <div v-if="activeTab === 'categories'" class="px-4 space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          {{ $t('products.categories.title') || 'Categories' }} ({{ productsStore.categories.value.length }})
+        </h2>
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          @click="openCategoryModal()"
+        >
+          {{ $t('common.add') || 'Add' }}
+        </UButton>
+      </div>
 
-          <UFormField
-            v-if="currentMetaType === 'unit'"
-            name="symbol"
-            :label="$t('products.units.symbol')"
-          >
-            <UInput v-model="formState.symbol" placeholder="kg, m, pcs" />
-          </UFormField>
-
-          <UFormField
-            v-if="currentMetaType === 'term'"
-            name="days"
-            :label="$t('products.terms.days')"
-          >
-            <UInput v-model.number="formState.days" type="number" min="0" />
-          </UFormField>
-
-          <UFormField name="branchId" :label="$t('common.branch')" required>
-            <USelect
-              v-model="formState.branchId"
-              :options="branchOptions"
-              option-attribute="name"
-              value-attribute="id"
-              :placeholder="$t('common.selectBranch')"
-            />
-          </UFormField>
-        </UForm>
-
-        <template #footer>
-          <div class="flex justify-end space-x-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div
+          v-for="category in productsStore.categories.value"
+          :key="category.id"
+          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">{{ category.icon || '📦' }}</span>
+            <div>
+              <h3 class="font-medium text-gray-900 dark:text-white">
+                {{ category.name }}
+              </h3>
+              <p v-if="category.description" class="text-sm text-gray-500 dark:text-gray-400">
+                {{ category.description }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
             <UButton
-              @click="isModalOpen = false"
-              color="gray"
+              v-if="!['all', 'favorites'].includes(category.id)"
+              icon="i-heroicons-pencil"
+              color="neutral"
               variant="ghost"
-              :label="$t('common.cancel')"
+              size="xs"
+              @click="openCategoryModal(category)"
             />
             <UButton
-              @click="handleSubmit"
-              color="primary"
-              :loading="isLoading"
-              :label="isEditMode ? $t('common.update') : $t('common.create')"
+              v-if="!['all', 'favorites'].includes(category.id)"
+              icon="i-heroicons-trash"
+              color="red"
+              variant="ghost"
+              size="xs"
+              @click="confirmDelete('category', category)"
             />
           </div>
-        </template>
-      </UCard>
+        </div>
+      </div>
+    </div>
+
+    <!-- Units Tab -->
+    <div v-if="activeTab === 'units'" class="px-4 space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          {{ $t('products.units.title') || 'Units' }} ({{ productsStore.units.value.length }})
+        </h2>
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          @click="openUnitModal()"
+        >
+          {{ $t('common.add') || 'Add' }}
+        </UButton>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div
+          v-for="unit in productsStore.units.value"
+          :key="unit.id"
+          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+              {{ unit.symbol }}
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900 dark:text-white">
+                {{ unit.name }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t('products.units.symbol') || 'Symbol' }}: {{ unit.symbol }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <UButton
+              icon="i-heroicons-pencil"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              @click="openUnitModal(unit)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Modal -->
+    <UModal v-model:open="showCategoryModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            {{ editingCategory ? ($t('common.edit') || 'Edit') : ($t('common.add') || 'Add') }} {{ $t('products.categories.single') || 'Category' }}
+          </h3>
+
+          <div class="space-y-4">
+            <!-- Icon Selection -->
+            <div>
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+                {{ $t('common.icon') || 'Icon' }}
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="icon in commonIcons"
+                  :key="icon"
+                  type="button"
+                  class="w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-colors"
+                  :class="categoryForm.icon === icon
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'"
+                  @click="categoryForm.icon = icon"
+                >
+                  {{ icon }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Name -->
+            <UFormField :label="$t('common.name') || 'Name'" required>
+              <UInput
+                v-model="categoryForm.name"
+                :placeholder="$t('products.categories.namePlaceholder') || 'e.g., Drinks, Food, Snacks'"
+              />
+            </UFormField>
+
+            <!-- Description -->
+            <UFormField :label="$t('common.description') || 'Description'">
+              <UInput
+                v-model="categoryForm.description"
+                :placeholder="$t('common.optional') || 'Optional description'"
+              />
+            </UFormField>
+
+            <div class="flex gap-2 pt-4">
+              <UButton
+                color="neutral"
+                variant="outline"
+                class="flex-1"
+                @click="showCategoryModal = false"
+              >
+                {{ $t('common.cancel') || 'Cancel' }}
+              </UButton>
+              <UButton
+                color="primary"
+                class="flex-1"
+                :loading="savingCategory"
+                @click="saveCategory"
+              >
+                {{ editingCategory ? ($t('common.update') || 'Update') : ($t('common.create') || 'Create') }}
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Unit Modal -->
+    <UModal v-model:open="showUnitModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            {{ editingUnit ? ($t('common.edit') || 'Edit') : ($t('common.add') || 'Add') }} {{ $t('products.units.single') || 'Unit' }}
+          </h3>
+
+          <div class="space-y-4">
+            <!-- Name -->
+            <UFormField :label="$t('common.name') || 'Name'" required>
+              <UInput
+                v-model="unitForm.name"
+                :placeholder="$t('products.units.namePlaceholder') || 'e.g., Piece, Kilogram, Liter'"
+              />
+            </UFormField>
+
+            <!-- Symbol -->
+            <UFormField :label="$t('products.units.symbol') || 'Symbol'" required>
+              <UInput
+                v-model="unitForm.symbol"
+                :placeholder="$t('products.units.symbolPlaceholder') || 'e.g., pc, kg, L'"
+              />
+            </UFormField>
+
+            <div class="flex gap-2 pt-4">
+              <UButton
+                color="neutral"
+                variant="outline"
+                class="flex-1"
+                @click="showUnitModal = false"
+              >
+                {{ $t('common.cancel') || 'Cancel' }}
+              </UButton>
+              <UButton
+                color="primary"
+                class="flex-1"
+                :loading="savingUnit"
+                @click="saveUnit"
+              >
+                {{ editingUnit ? ($t('common.update') || 'Update') : ($t('common.create') || 'Create') }}
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Delete Confirmation Modal -->
+    <UModal v-model:open="showDeleteModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+            {{ $t('common.confirmDelete') || 'Confirm Delete' }}
+          </h3>
+
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            {{ $t('common.deleteConfirmMessage') || 'Are you sure you want to delete' }}
+            <strong class="text-gray-900 dark:text-white">
+              "{{ deleteTarget?.item.name }}"
+            </strong>?
+            {{ $t('common.cannotUndo') || 'This action cannot be undone.' }}
+          </p>
+
+          <div class="flex gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              class="flex-1"
+              @click="showDeleteModal = false"
+            >
+              {{ $t('common.cancel') || 'Cancel' }}
+            </UButton>
+            <UButton
+              color="red"
+              class="flex-1"
+              :loading="deleting"
+              @click="executeDelete"
+            >
+              {{ $t('common.delete') || 'Delete' }}
+            </UButton>
+          </div>
+        </div>
+      </template>
     </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { z } from "zod";
+import type { Category, Unit } from '~/types';
 
-// Types
-interface MetaItem {
-  id: string;
-  name: string;
-  description?: string;
-  symbol?: string;
-  days?: number;
-  branchId: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface Branch {
-  id: string;
-  name: string;
-}
-
-type MetaType = "category" | "unit" | "term";
-
-// Page meta
 definePageMeta({
-  title: "Product Metadata",
-  layout: "admin",
+  title: 'Product Settings',
+  description: 'Manage categories and units',
 });
 
-const { t } = useI18n();
+const productsStore = useProductsStore();
+const toast = useToast();
 
-// Reactive data
-const activeTab = ref(0);
-const isModalOpen = ref(false);
-const isEditMode = ref(false);
-const isLoading = ref(false);
-const currentMetaType = ref<MetaType>("category");
-const selectedBranch = ref<string>("");
-const editingItem = ref<MetaItem | null>(null);
+// ============================================
+// State
+// ============================================
+const activeTab = ref<'categories' | 'units'>('categories');
 
-// Form state
-const formState = ref({
-  name: "",
-  description: "",
-  symbol: "",
-  days: 0,
-  branchId: "",
+// Category Modal
+const showCategoryModal = ref(false);
+const editingCategory = ref<Category | null>(null);
+const categoryForm = ref({
+  name: '',
+  description: '',
+  icon: '📦',
 });
+const savingCategory = ref(false);
 
-// Mock data - In real app, this would come from Pinia store or composables
-const categories = ref<MetaItem[]>([
-  {
-    id: "1",
-    name: "Electronics",
-    description: "Electronic devices and accessories",
-    branchId: "branch1",
-  },
-  {
-    id: "2",
-    name: "Clothing",
-    description: "Apparel and fashion items",
-    branchId: "branch2",
-  },
-]);
-
-const units = ref<MetaItem[]>([
-  {
-    id: "1",
-    name: "Kilogram",
-    symbol: "kg",
-    description: "Weight measurement unit",
-    branchId: "branch1",
-  },
-  {
-    id: "2",
-    name: "Pieces",
-    symbol: "pcs",
-    description: "Count unit",
-    branchId: "branch1",
-  },
-]);
-
-const terms = ref<MetaItem[]>([
-  {
-    id: "1",
-    name: "Net 30",
-    days: 30,
-    description: "Payment due in 30 days",
-    branchId: "branch1",
-  },
-  {
-    id: "2",
-    name: "Cash on Delivery",
-    days: 0,
-    description: "Payment upon delivery",
-    branchId: "branch2",
-  },
-]);
-
-const branches = ref<Branch[]>([
-  { id: "branch1", name: "Main Branch" },
-  { id: "branch2", name: "Secondary Branch" },
-]);
-
-// Computed
-const branchOptions = computed(() => [
-  { id: "", name: "All Branches" },
-  ...branches.value,
-]);
-
-const tabItems = computed(() => [
-  {
-    key: "categories",
-    label: t("products.categories.title"),
-    icon: "i-heroicons-tag",
-  },
-  {
-    key: "units",
-    label: t("products.units.title"),
-    icon: "i-heroicons-scale",
-  },
-  {
-    key: "terms",
-    label: t("products.terms.title"),
-    icon: "i-heroicons-calendar-days",
-  },
-]);
-
-const filteredCategories = computed(() => {
-  if (!selectedBranch.value) return categories.value;
-  return categories.value.filter(
-    (item) => item.branchId === selectedBranch.value
-  );
+// Unit Modal
+const showUnitModal = ref(false);
+const editingUnit = ref<Unit | null>(null);
+const unitForm = ref({
+  name: '',
+  symbol: '',
 });
+const savingUnit = ref(false);
 
-const filteredUnits = computed(() => {
-  if (!selectedBranch.value) return units.value;
-  return units.value.filter((item) => item.branchId === selectedBranch.value);
-});
+// Delete confirmation
+const showDeleteModal = ref(false);
+const deleteTarget = ref<{ type: 'category' | 'unit'; item: Category | Unit } | null>(null);
+const deleting = ref(false);
 
-const filteredTerms = computed(() => {
-  if (!selectedBranch.value) return terms.value;
-  return terms.value.filter((item) => item.branchId === selectedBranch.value);
-});
+// Common icons for categories
+const commonIcons = ['📦', '🍹', '🍜', '🍰', '🍿', '☕', '🍺', '🍔', '🍕', '🌮', '🍣', '🥗', '🍪', '🎂', '🍦', '🧃', '🥤', '🍵', '🛒', '⭐'];
 
-// Methods
-const getBranchName = (branchId: string): string => {
-  const branch = branches.value.find((b) => b.id === branchId);
-  return branch?.name || "Unknown Branch";
-};
-
-const getModalTitle = (): string => {
-  const titles = {
-    category: t("products.categories.single"),
-    unit: t("products.units.single"),
-    term: t("products.terms.single"),
-  };
-  return titles[currentMetaType.value];
-};
-
-const getFormSchema = () => {
-  const baseSchema = {
-    name: z.string().min(1, t("validation.required")),
-    description: z.string().optional(),
-    branchId: z.string().min(1, t("validation.required")),
-  };
-
-  if (currentMetaType.value === "unit") {
-    return z.object({
-      ...baseSchema,
-      symbol: z.string().optional(),
-    });
-  }
-
-  if (currentMetaType.value === "term") {
-    return z.object({
-      ...baseSchema,
-      days: z.number().min(0).optional(),
-    });
-  }
-
-  return z.object(baseSchema);
-};
-
-const openModal = (type: MetaType) => {
-  currentMetaType.value = type;
-  isEditMode.value = false;
-  editingItem.value = null;
-  resetForm();
-  isModalOpen.value = true;
-};
-
-const editItem = (type: MetaType, item: MetaItem) => {
-  currentMetaType.value = type;
-  isEditMode.value = true;
-  editingItem.value = item;
-
-  formState.value = {
-    name: item.name,
-    description: item.description || "",
-    symbol: item.symbol || "",
-    days: item.days || 0,
-    branchId: item.branchId,
-  };
-
-  isModalOpen.value = true;
-};
-
-const resetForm = () => {
-  formState.value = {
-    name: "",
-    description: "",
-    symbol: "",
-    days: 0,
-    branchId: "",
-  };
-};
-
-const handleSubmit = async () => {
-  try {
-    isLoading.value = true;
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const newItem: MetaItem = {
-      id: isEditMode.value ? editingItem.value!.id : Date.now().toString(),
-      name: formState.value.name,
-      description: formState.value.description,
-      symbol: formState.value.symbol,
-      days: formState.value.days,
-      branchId: formState.value.branchId,
+// ============================================
+// Category Methods
+// ============================================
+const openCategoryModal = (category?: Category) => {
+  if (category) {
+    editingCategory.value = category;
+    categoryForm.value = {
+      name: category.name,
+      description: category.description || '',
+      icon: category.icon || '📦',
     };
+  } else {
+    editingCategory.value = null;
+    categoryForm.value = {
+      name: '',
+      description: '',
+      icon: '📦',
+    };
+  }
+  showCategoryModal.value = true;
+};
 
-    if (isEditMode.value) {
-      // Update existing item
-      const targetArray = getTargetArray();
-      const index = targetArray.findIndex(
-        (item) => item.id === editingItem.value!.id
-      );
-      if (index !== -1) {
-        targetArray[index] = newItem;
+const saveCategory = async () => {
+  if (!categoryForm.value.name.trim()) {
+    toast.add({
+      title: 'Error',
+      description: 'Category name is required',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+    return;
+  }
+
+  savingCategory.value = true;
+  try {
+    if (editingCategory.value) {
+      await productsStore.updateCategory(editingCategory.value.id, {
+        name: categoryForm.value.name,
+        description: categoryForm.value.description || undefined,
+        icon: categoryForm.value.icon,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Category updated successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    } else {
+      await productsStore.addCategory({
+        name: categoryForm.value.name,
+        description: categoryForm.value.description || undefined,
+        icon: categoryForm.value.icon,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Category created successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    }
+    showCategoryModal.value = false;
+  } catch (error) {
+    console.error('Error saving category:', error);
+    toast.add({
+      title: 'Error',
+      description: 'Failed to save category',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+  } finally {
+    savingCategory.value = false;
+  }
+};
+
+// ============================================
+// Unit Methods
+// ============================================
+const openUnitModal = (unit?: Unit) => {
+  if (unit) {
+    editingUnit.value = unit;
+    unitForm.value = {
+      name: unit.name,
+      symbol: unit.symbol,
+    };
+  } else {
+    editingUnit.value = null;
+    unitForm.value = {
+      name: '',
+      symbol: '',
+    };
+  }
+  showUnitModal.value = true;
+};
+
+const saveUnit = async () => {
+  if (!unitForm.value.name.trim() || !unitForm.value.symbol.trim()) {
+    toast.add({
+      title: 'Error',
+      description: 'Unit name and symbol are required',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+    return;
+  }
+
+  savingUnit.value = true;
+  try {
+    if (editingUnit.value) {
+      await productsStore.updateUnit(editingUnit.value.id, {
+        name: unitForm.value.name,
+        symbol: unitForm.value.symbol,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Unit updated successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    } else {
+      await productsStore.addUnit({
+        name: unitForm.value.name,
+        symbol: unitForm.value.symbol,
+      });
+      toast.add({
+        title: 'Success',
+        description: 'Unit created successfully',
+        color: 'green',
+        icon: 'i-heroicons-check-circle',
+      });
+    }
+    showUnitModal.value = false;
+  } catch (error) {
+    console.error('Error saving unit:', error);
+    toast.add({
+      title: 'Error',
+      description: 'Failed to save unit',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+  } finally {
+    savingUnit.value = false;
+  }
+};
+
+// ============================================
+// Delete Methods
+// ============================================
+const confirmDelete = (type: 'category' | 'unit', item: Category | Unit) => {
+  // Don't allow deleting built-in items
+  if (type === 'category' && ['all', 'favorites'].includes(item.id)) {
+    toast.add({
+      title: 'Error',
+      description: 'Cannot delete built-in category',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    });
+    return;
+  }
+
+  deleteTarget.value = { type, item };
+  showDeleteModal.value = true;
+};
+
+const executeDelete = async () => {
+  if (!deleteTarget.value) return;
+
+  deleting.value = true;
+  try {
+    if (deleteTarget.value.type === 'category') {
+      const success = await productsStore.deleteCategory(deleteTarget.value.item.id);
+      if (success) {
+        toast.add({
+          title: 'Success',
+          description: 'Category deleted successfully',
+          color: 'green',
+          icon: 'i-heroicons-check-circle',
+        });
+      } else {
+        toast.add({
+          title: 'Error',
+          description: productsStore.error.value || 'Failed to delete category',
+          color: 'red',
+          icon: 'i-heroicons-exclamation-circle',
+        });
       }
     } else {
-      // Add new item
-      const targetArray = getTargetArray();
-      targetArray.push(newItem);
+      // Delete unit
+      toast.add({
+        title: 'Info',
+        description: 'Unit deletion not implemented yet',
+        color: 'blue',
+        icon: 'i-heroicons-information-circle',
+      });
     }
-
-    isModalOpen.value = false;
-    resetForm();
-
-    // Show success toast
-    $toast.success(
-      isEditMode.value ? t("common.updateSuccess") : t("common.createSuccess")
-    );
-  } catch (error) {
-    console.error("Error saving item:", error);
-    $toast.error(t("common.error"));
+    showDeleteModal.value = false;
   } finally {
-    isLoading.value = false;
+    deleting.value = false;
+    deleteTarget.value = null;
   }
 };
 
-const getTargetArray = () => {
-  switch (currentMetaType.value) {
-    case "category":
-      return categories.value;
-    case "unit":
-      return units.value;
-    case "term":
-      return terms.value;
-    default:
-      return categories.value;
-  }
-};
-
-const deleteItem = async (type: MetaType, id: string) => {
-  try {
-    // Show confirmation dialog
-    const confirmed = await $confirm({
-      title: t("common.confirmDelete"),
-      description: t("common.confirmDeleteDescription"),
-    });
-
-    if (!confirmed) return;
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Remove item from appropriate array
-    const targetArray =
-      type === "category"
-        ? categories.value
-        : type === "unit"
-        ? units.value
-        : terms.value;
-
-    const index = targetArray.findIndex((item) => item.id === id);
-    if (index !== -1) {
-      targetArray.splice(index, 1);
-    }
-
-    $toast.success(t("common.deleteSuccess"));
-  } catch (error) {
-    console.error("Error deleting item:", error);
-    $toast.error(t("common.error"));
-  }
-};
-
-// Mock toast and confirm functions - replace with actual implementations
-const $toast = {
-  success: (message: string) => console.log("Success:", message),
-  error: (message: string) => console.log("Error:", message),
-};
-
-const $confirm = async (options: { title: string; description: string }) => {
-  return window.confirm(`${options.title}\n${options.description}`);
-};
+// ============================================
+// Lifecycle
+// ============================================
+onMounted(async () => {
+  await productsStore.init();
+});
 </script>

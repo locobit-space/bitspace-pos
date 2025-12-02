@@ -270,6 +270,29 @@
       "pricing": "ລາຄາ",
       "sales": "ການຂາຍ",
       "variants": "ຕົວເລືອກ"
+    },
+    "settings": {
+      "settings": "ການຕັ້ງຄ່າ",
+      "manageCategories": "ຈັດການປະເພດ",
+      "manageUnits": "ຈັດການຫົວໜ່ວຍ",
+      "manageCategoriesDesc": "ເພີ່ມ, ແກ້ໄຂ ຫຼື ລຶບປະເພດສິນຄ້າ",
+      "manageUnitsDesc": "ຈັດການຫົວໜ່ວຍວັດແທກສິນຄ້າ"
+    },
+    "noCategories": "ບໍ່ມີປະເພດເທື່ອ",
+    "noUnits": "ບໍ່ມີຫົວໜ່ວຍເທື່ອ",
+    "addCategory": "ເພີ່ມປະເພດ",
+    "addUnit": "ເພີ່ມຫົວໜ່ວຍ",
+    "categories": {
+      "title": "ປະເພດ",
+      "single": "ປະເພດ",
+      "namePlaceholder": "ເຊັ່ນ: ເຄື່ອງດື່ມ, ອາຫານ, ຂອງຫວ່າງ"
+    },
+    "units": {
+      "title": "ຫົວໜ່ວຍ",
+      "single": "ຫົວໜ່ວຍ",
+      "symbol": "ສັນຍາລັກ",
+      "namePlaceholder": "ເຊັ່ນ: ຊິ້ນ, ກິໂລກຣາມ, ລິດ",
+      "symbolPlaceholder": "ເຊັ່ນ: ຊ, kg, L"
     }
   },
   "customers": {
@@ -855,6 +878,13 @@
     "test": "ທົດສອບ",
     "configure": "ຕັ້ງຄ່າ",
     "tryAgain": "ລອງໃໝ່",
-    "retry": "ລອງອີກ"
+    "retry": "ລອງອີກ",
+    "deleteConfirmMessage": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບ",
+    "cannotUndo": "ຄຳສັ່ງນີ້ບໍ່ສາມາດຍົກເລີກໄດ້.",
+    "icon": "ໄອຄອນ",
+    "name": "ຊື່",
+    "description": "ລາຍລະອຽດ",
+    "quickSelect": "ເລືອກດ່ວນ",
+    "optional": "ບໍ່ບັງຄັບ"
   }
 }

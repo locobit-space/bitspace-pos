@@ -311,13 +311,36 @@
     "addVariant": "Add Variant",
     "priceDiff": "Price Diff",
     "finalPrice": "Final Price",
+    "settings": "Product Settings",
+    "manageMetadata": "Manage categories and units",
+    "selectUnit": "Select Unit",
     "tabs": {
       "details": "Details",
       "inventory": "Inventory",
       "pricing": "Pricing",
       "sales": "Sales",
       "variants": "Variants"
-    }
+    },
+    "categories": {
+      "title": "Categories",
+      "single": "Category",
+      "namePlaceholder": "e.g., Drinks, Food, Snacks",
+      "addCategory": "Add Category",
+      "editCategory": "Edit Category"
+    },
+    "units": {
+      "title": "Units",
+      "single": "Unit",
+      "symbol": "Symbol",
+      "namePlaceholder": "e.g., Piece, Kilogram, Liter",
+      "symbolPlaceholder": "e.g., pc, kg, L",
+      "addUnit": "Add Unit",
+      "editUnit": "Edit Unit"
+    },
+    "noCategories": "No categories yet",
+    "noUnits": "No units yet",
+    "addCategory": "Add Category",
+    "addUnit": "Add Unit"
   },
   "customers": {
     "title": "Customers",
@@ -861,6 +884,8 @@
     "next": "Next",
     "confirm": "Confirm",
     "confirmDelete": "Confirm Delete",
+    "deleteConfirmMessage": "Are you sure you want to delete",
+    "cannotUndo": "This action cannot be undone.",
     "actions": "Actions",
     "active": "Active",
     "inactive": "Inactive",
@@ -904,6 +929,10 @@
     "tryAgain": "Try Again",
     "retry": "Retry",
     "optional": "optional",
-    "clear": "Clear"
+    "clear": "Clear",
+    "icon": "Icon",
+    "name": "Name",
+    "description": "Description",
+    "quickSelect": "Quick Select"
   }
 }
