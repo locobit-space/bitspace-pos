@@ -223,9 +223,9 @@
           <UFormField :label="$t('settings.users.role')" required>
             <USelectMenu
               v-model="userForm.role"
-              :options="roleOptions"
-              option-attribute="label"
-              value-attribute="value"
+              :items="roleOptions"
+              label-key="label"
+              value-key="value"
             />
           </UFormField>
 

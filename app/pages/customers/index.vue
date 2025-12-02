@@ -4,6 +4,9 @@ import type { LoyaltyMember, NostrProfile } from '~/types';
 
 const { t } = useI18n();
 
+// Permissions
+const { canViewCustomers, canEditCustomers } = usePermissions();
+
 // Customer interface extending LoyaltyMember
 interface Customer extends Partial<LoyaltyMember> {
   id: string;
@@ -257,6 +260,7 @@ const paginatedCustomers = computed(() => {
     >
       <template #right>
         <UButton
+          v-if="canEditCustomers"
           icon="i-heroicons-plus"
           color="primary"
           :label="t('customers.addCustomer')"
@@ -285,16 +289,16 @@ const paginatedCustomers = computed(() => {
       />
       <USelect
         v-model="selectedTier"
-        :options="tierOptions"
-        value-attribute="value"
-        option-attribute="label"
+        :items="tierOptions"
+        value-key="value"
+        label-key="label"
         :placeholder="t('loyalty.tier')"
       />
       <USelect
         v-model="selectedTag"
-        :options="tagOptions"
-        value-attribute="value"
-        option-attribute="label"
+        :items="tagOptions"
+        value-key="value"
+        label-key="label"
         :placeholder="t('customers.filterByTag')"
       />
       <UButton
@@ -434,6 +438,7 @@ const paginatedCustomers = computed(() => {
                   @click="viewCustomer(customer)"
                 />
                 <UButton
+                  v-if="canEditCustomers"
                   icon="i-heroicons-pencil"
                   color="gray"
                   variant="ghost"
@@ -441,6 +446,7 @@ const paginatedCustomers = computed(() => {
                   @click="openCustomerModal(customer)"
                 />
                 <UButton
+                  v-if="canEditCustomers"
                   icon="i-heroicons-trash"
                   color="red"
                   variant="ghost"

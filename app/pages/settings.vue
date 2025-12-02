@@ -24,14 +24,9 @@ const items = ref<NavigationMenuItem[]>([
     icon: "i-heroicons-user",
   },
   {
-    label: "Units",
-    to: "/settings/units",
-    icon: "i-heroicons-scale",
-  },
-  {
-    label: "Categories",
-    to: "/settings/categories",
-    icon: "i-heroicons-tag",
+    label: "Security",
+    to: "/settings/security",
+    icon: "i-heroicons-shield-check",
   },
 ]);
 </script>

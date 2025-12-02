@@ -7,6 +7,9 @@ const currency = useCurrency();
 // Use real orders store with Nostr sync
 const ordersStore = useOrders();
 
+// Permissions
+const { canCreateOrders, canVoidOrders } = usePermissions();
+
 // UI State
 const searchQuery = ref("");
 const statusFilter = ref("all");
@@ -146,6 +149,7 @@ onMounted(async () => {
           </UButton>
           
           <UButton
+            v-if="canCreateOrders"
             icon="i-heroicons-plus"
             color="primary"
             :label="t('orders.newOrder')"
@@ -194,8 +198,8 @@ onMounted(async () => {
       <USelect
         v-model="statusFilter"
         :items="statusOptions"
-        value-attribute="value"
-        option-attribute="label"
+        value-key="value"
+        label-key="label"
         :placeholder="t('orders.filterStatus')"
       />
       <UButton
@@ -324,6 +328,7 @@ onMounted(async () => {
                   :to="`/orders/${order.id}/print`"
                 />
                 <UButton
+                  v-if="canVoidOrders"
                   icon="i-heroicons-trash"
                   color="red"
                   variant="ghost"

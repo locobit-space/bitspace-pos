@@ -341,10 +341,10 @@ const addVariant = () => {
               <UInput v-model="editForm.barcode" />
             </UFormField>
             <UFormField :label="t('products.category')">
-              <USelect v-model="editForm.category" :options="categories" />
+              <USelect v-model="editForm.category" :items="categories" />
             </UFormField>
             <UFormField :label="t('products.unit') || 'Unit'">
-              <USelect v-model="editForm.unit" :options="units" />
+              <USelect v-model="editForm.unit" :items="units" />
             </UFormField>
             <UFormField :label="t('products.description')" class="md:col-span-2">
               <UTextarea v-model="editForm.description" :rows="3" />

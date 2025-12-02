@@ -469,9 +469,9 @@
               <UFormField name="active" :label="$t('common.status')">
                 <USelect
                   v-model="categoryForm.active"
-                  :options="statusOptions"
-                  option-attribute="label"
-                  value-attribute="value"
+                  :items="statusOptions"
+                  label-key="label"
+                  value-key="value"
                 />
               </UFormField>
             </div>
@@ -522,9 +522,9 @@
               <UFormField name="type" :label="$t('settings.units.type')">
                 <USelect
                   v-model="unitForm.type"
-                  :options="unitTypeOptions"
-                  option-attribute="label"
-                  value-attribute="value"
+                  :items="unitTypeOptions"
+                  label-key="label"
+                  value-key="value"
                 />
               </UFormField>
             </div>

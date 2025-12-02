@@ -300,9 +300,9 @@ onMounted(() => {
           />
           <USelect
             v-model="selectedCategory"
-            :options="categories"
-            value-attribute="id"
-            option-attribute="name"
+            :items="categories"
+            value-key="id"
+            label-key="name"
             class="w-48"
           />
         </div>

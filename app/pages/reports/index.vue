@@ -300,16 +300,16 @@ const salesChartSeries = computed(() => [
         <UFormField :label="t('common.branch')">
           <USelect
             v-model="selectedBranch"
-            :options="branches"
-            value-attribute="id"
-            option-attribute="name"
+            :items="branches"
+            value-key="id"
+            label-key="name"
           />
         </UFormField>
         <UFormField :label="t('reports.quickSelect')">
           <USelect
-            :options="quickDateRanges"
-            value-attribute="value"
-            option-attribute="label"
+            :items="quickDateRanges"
+            value-key="value"
+            label-key="label"
             :placeholder="t('reports.selectRange')"
             @update:model-value="setQuickDateRange"
           />

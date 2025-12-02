@@ -11,28 +11,31 @@
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <!-- Quick Management Buttons -->
-        <UTooltip :text="$t('products.settings.manageCategories') || 'Manage Categories'">
-          <UButton
-            color="neutral"
-            variant="soft"
-            icon="i-heroicons-folder"
-            @click="openSettingsPanel('categories')"
-          >
-            <span class="hidden sm:inline">{{ $t('products.category') }}</span>
-          </UButton>
-        </UTooltip>
-        <UTooltip :text="$t('products.settings.manageUnits') || 'Manage Units'">
-          <UButton
-            color="neutral"
-            variant="soft"
-            icon="i-heroicons-scale"
-            @click="openSettingsPanel('units')"
-          >
-            <span class="hidden sm:inline">{{ $t('products.unit') }}</span>
-          </UButton>
-        </UTooltip>
+        <!-- Quick Management Buttons (only for users who can edit) -->
+        <template v-if="canEditProducts">
+          <UTooltip :text="$t('products.settings.manageCategories') || 'Manage Categories'">
+            <UButton
+              color="neutral"
+              variant="soft"
+              icon="i-heroicons-folder"
+              @click="openSettingsPanel('categories')"
+            >
+              <span class="hidden sm:inline">{{ $t('products.category') }}</span>
+            </UButton>
+          </UTooltip>
+          <UTooltip :text="$t('products.settings.manageUnits') || 'Manage Units'">
+            <UButton
+              color="neutral"
+              variant="soft"
+              icon="i-heroicons-scale"
+              @click="openSettingsPanel('units')"
+            >
+              <span class="hidden sm:inline">{{ $t('products.unit') }}</span>
+            </UButton>
+          </UTooltip>
+        </template>
         <UButton
+          v-if="canEditProducts"
           color="primary"
           size="lg"
           :label="$t('common.add')"
@@ -48,9 +51,9 @@
       <UFormField :label="$t('common.branch')" class="min-w-[200px]">
         <USelect
           v-model="selectedBranch"
-          :options="branchOptions"
-          option-attribute="name"
-          value-attribute="id"
+          :items="branchOptions"
+          label-key="name"
+          value-key="id"
           :placeholder="$t('common.selectBranch')"
         />
       </UFormField>
@@ -60,9 +63,9 @@
         <div class="flex gap-1">
           <USelect
             v-model="selectedCategory"
-            :options="categoryOptions"
-            option-attribute="name"
-            value-attribute="id"
+            :items="categoryOptions"
+            label-key="name"
+            value-key="id"
             :placeholder="$t('products.selectCategory')"
             class="flex-1"
           />
@@ -82,7 +85,9 @@
       <UFormField :label="$t('common.status')" class="min-w-[150px]">
         <USelect
           v-model="selectedStatus"
-          :options="statusOptions"
+          :items="statusOptions"
+          label-key="label"
+          value-key="value"
           :placeholder="$t('common.selectStatus')"
         />
       </UFormField>
@@ -263,6 +268,7 @@
                   @click="viewProduct(product)"
                 />
                 <UButton
+                  v-if="canEditProducts"
                   color="gray"
                   variant="ghost"
                   size="sm"
@@ -270,6 +276,7 @@
                   @click="editProduct(product)"
                 />
                 <UButton
+                  v-if="canDeleteProducts"
                   color="red"
                   variant="ghost"
                   size="sm"
@@ -372,9 +379,9 @@
                 <div class="flex gap-1">
                   <USelect
                     v-model="productForm.categoryId"
-                    :options="categoryOptions"
-                    option-attribute="name"
-                    value-attribute="id"
+                    :items="categoryOptions"
+                    label-key="name"
+                    value-key="id"
                     :placeholder="$t('products.selectCategory')"
                     class="flex-1"
                   />
@@ -395,9 +402,9 @@
                 <div class="flex gap-1">
                   <USelect
                     v-model="productForm.unitId"
-                    :options="unitOptions"
-                    option-attribute="name"
-                    value-attribute="id"
+                    :items="unitOptions"
+                    label-key="name"
+                    value-key="id"
                     :placeholder="$t('products.selectUnit')"
                     class="flex-1"
                   />
@@ -438,9 +445,9 @@
               <UFormField :label="$t('common.branch')" name="branchId">
                 <USelect
                   v-model="productForm.branchId"
-                  :options="branchOptions"
-                  option-attribute="name"
-                  value-attribute="id"
+                  :items="branchOptions"
+                  label-key="name"
+                  value-key="id"
                   :placeholder="$t('common.selectBranch')"
                 />
               </UFormField>
@@ -449,7 +456,9 @@
               <UFormField :label="$t('common.status')" name="status">
                 <USelect
                   v-model="productForm.status"
-                  :options="statusOptions"
+                  :items="statusOptions"
+                  label-key="label"
+                  value-key="value"
                   :placeholder="$t('common.selectStatus')"
                 />
               </UFormField>
@@ -485,7 +494,8 @@
                 <UTextarea
                   v-model="productForm.description"
                   :placeholder="$t('products.descriptionPlaceholder')"
-                  rows="3"
+                  :rows="3"
+                  class="w-full"
                 />
               </UFormField>
             </div>
@@ -955,6 +965,7 @@
                 color="neutral"
                 variant="outline"
                 class="flex-1"
+                block
                 @click="showUnitModal = false"
               >
                 {{ $t('common.cancel') || 'Cancel' }}
@@ -963,6 +974,7 @@
                 color="primary"
                 class="flex-1"
                 :loading="savingUnit"
+                block
                 @click="saveUnit"
               >
                 {{ editingUnit ? ($t('common.update') || 'Update') : ($t('common.create') || 'Create') }}
@@ -997,6 +1009,7 @@
               color="neutral"
               variant="outline"
               class="flex-1"
+              block
               @click="showDeleteCategoryModal = false"
             >
               {{ $t('common.cancel') || 'Cancel' }}
@@ -1005,6 +1018,7 @@
               color="red"
               class="flex-1"
               :loading="deletingCategory"
+              block
               @click="executeDeleteCategory"
             >
               {{ $t('common.delete') || 'Delete' }}
@@ -1018,7 +1032,7 @@
 
 <script setup lang="ts">
 import { z } from "zod";
-import type { Product, Category, Unit } from '~/types';
+import type { Product } from '~/types';
 
 // ============================================
 // 📦 PRODUCTS PAGE - Connected to Nostr/Dexie
@@ -1027,6 +1041,7 @@ import type { Product, Category, Unit } from '~/types';
 // Use real products store with Nostr sync & encryption
 const productsStore = useProductsStore();
 const toast = useToast();
+const { canEditProducts, canDeleteProducts } = usePermissions();
 
 // Types (local only)
 interface _Product {
@@ -1090,56 +1105,6 @@ const productSchema = z.object({
   branchId: z.string().optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });
-
-// Mock Data
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    name: "ເບຍ Beer Lao",
-    sku: "BL001",
-    description: "ເບຍລາວ ປະເພດຂວດ 640ml",
-    categoryId: "1",
-    unitId: "1",
-    price: 12000,
-    stock: 150,
-    minStock: 20,
-    branchId: "1",
-    status: "active",
-    createdAt: "2024-01-15T10:30:00Z",
-    updatedAt: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: "2",
-    name: "ເຂົ້າຈີ່ Grilled Chicken",
-    sku: "GC001",
-    description: "ເຂົ້າຈີ່ປີ້ງ ພ້ອມເຄື່ອງເຈບ",
-    categoryId: "2",
-    unitId: "2",
-    price: 25000,
-    stock: 5,
-    minStock: 10,
-    branchId: "1",
-    status: "active",
-    createdAt: "2024-01-15T10:30:00Z",
-    updatedAt: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: "3",
-    name: "ເຂົ້າຫມົກ Khao Mok",
-    sku: "KM001",
-    description: "ເຂົ້າຫມົກປະເພດຊີ້ນຫມູ",
-    categoryId: "2",
-    unitId: "2",
-    price: 20000,
-    stock: 30,
-    minStock: 5,
-    branchId: "2",
-    status: "active",
-    createdAt: "2024-01-15T10:30:00Z",
-    updatedAt: "2024-01-15T10:30:00Z",
-  },
-];
-
 // Categories loaded from store (Dexie/Nostr)
 
 // Units loaded from store (Dexie/Nostr)

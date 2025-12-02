@@ -317,9 +317,9 @@ const viewCustomer = () => {
           <div class="space-y-3">
             <USelect 
               v-model="order.status" 
-              :options="statusOptions" 
-              value-attribute="value"
-              option-attribute="label"
+              :items="statusOptions" 
+              value-key="value"
+              label-key="label"
             />
             <UButton 
               v-if="order.status !== 'cancelled' && order.status !== 'completed'"

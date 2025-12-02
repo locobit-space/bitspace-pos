@@ -77,9 +77,9 @@
                   <UFormField name="branch" :label="$t('account.branch')">
                     <USelect
                       v-model="profileForm.branchId"
-                      :options="branchOptions"
-                      option-attribute="label"
-                      value-attribute="value"
+                      :items="branchOptions"
+                      label-key="label"
+                      value-key="value"
                     />
                   </UFormField>
                 </div>
@@ -250,9 +250,9 @@
                   <UFormField :label="$t('account.language')">
                     <USelect
                       v-model="preferences.language"
-                      :options="languageOptions"
-                      option-attribute="label"
-                      value-attribute="value"
+                      :items="languageOptions"
+                      label-key="label"
+                      value-key="value"
                       @change="changeLanguage"
                     />
                   </UFormField>
@@ -260,27 +260,27 @@
                   <UFormField :label="$t('account.timezone')">
                     <USelect
                       v-model="preferences.timezone"
-                      :options="timezoneOptions"
-                      option-attribute="label"
-                      value-attribute="value"
+                      :items="timezoneOptions"
+                      label-key="label"
+                      value-key="value"
                     />
                   </UFormField>
 
                   <UFormField :label="$t('account.date_format')">
                     <USelect
                       v-model="preferences.dateFormat"
-                      :options="dateFormatOptions"
-                      option-attribute="label"
-                      value-attribute="value"
+                      :items="dateFormatOptions"
+                      label-key="label"
+                      value-key="value"
                     />
                   </UFormField>
 
                   <UFormField :label="$t('account.currency')">
                     <USelect
                       v-model="preferences.currency"
-                      :options="currencyOptions"
-                      option-attribute="label"
-                      value-attribute="value"
+                      :items="currencyOptions"
+                      label-key="label"
+                      value-key="value"
                     />
                   </UFormField>
                 </div>

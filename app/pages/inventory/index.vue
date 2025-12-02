@@ -1,174 +1,22 @@
 <!-- pages/inventory/index.vue -->
 <script setup lang="ts">
 const { t } = useI18n();
+const toast = useToast();
 
-// Inventory item interface
-interface InventoryItem {
-  id: string;
-  productId: string;
-  productName: string;
-  sku: string;
-  categoryId: string;
-  categoryName: string;
-  branchId: string;
-  branchName: string;
-  unitId: string;
-  unitSymbol: string;
-  currentStock: number;
-  minStock: number;
-  maxStock: number;
-  reorderPoint: number;
-  lastRestocked: string;
-  lastUpdated: string;
-  status: 'in-stock' | 'low-stock' | 'out-of-stock' | 'overstocked';
-  value: number;
-}
+// ============================================
+// 📦 INVENTORY PAGE - Connected to Dexie + Nostr
+// ============================================
 
-interface StockMovement {
-  id: string;
-  productId: string;
-  productName: string;
-  type: 'in' | 'out' | 'adjustment' | 'transfer';
-  quantity: number;
-  previousStock: number;
-  newStock: number;
-  reason: string;
-  reference?: string;
-  branchFrom?: string;
-  branchTo?: string;
-  createdBy: string;
-  createdAt: string;
-}
+// Permissions
+const { canEditInventory, canAdjustStock, canViewInventory } = usePermissions();
 
-interface Supplier {
-  id: string;
-  name: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  address: string;
-  products: string[];
-  lastOrderDate?: string;
-  status: 'active' | 'inactive';
-}
+// Use real inventory store with Nostr sync
+const inventory = useInventory();
 
-// Mock data
-const inventoryItems = ref<InventoryItem[]>([
-  {
-    id: '1',
-    productId: '1',
-    productName: 'ເບຍ Beer Lao',
-    sku: 'BL001',
-    categoryId: '1',
-    categoryName: 'ເຄື່ອງດື່ມ',
-    branchId: '1',
-    branchName: 'ສາຂາໃຈກາງ',
-    unitId: '1',
-    unitSymbol: 'btl',
-    currentStock: 150,
-    minStock: 20,
-    maxStock: 300,
-    reorderPoint: 50,
-    lastRestocked: '2024-01-15',
-    lastUpdated: '2024-01-20',
-    status: 'in-stock',
-    value: 1800000,
-  },
-  {
-    id: '2',
-    productId: '2',
-    productName: 'ເຂົ້າຈີ່ Grilled Chicken',
-    sku: 'GC001',
-    categoryId: '2',
-    categoryName: 'ອາຫານ',
-    branchId: '1',
-    branchName: 'ສາຂາໃຈກາງ',
-    unitId: '2',
-    unitSymbol: 'plt',
-    currentStock: 5,
-    minStock: 10,
-    maxStock: 50,
-    reorderPoint: 15,
-    lastRestocked: '2024-01-10',
-    lastUpdated: '2024-01-20',
-    status: 'low-stock',
-    value: 125000,
-  },
-  {
-    id: '3',
-    productId: '3',
-    productName: 'ນ້ຳດື່ມ Water',
-    sku: 'WA001',
-    categoryId: '1',
-    categoryName: 'ເຄື່ອງດື່ມ',
-    branchId: '1',
-    branchName: 'ສາຂາໃຈກາງ',
-    unitId: '1',
-    unitSymbol: 'btl',
-    currentStock: 0,
-    minStock: 50,
-    maxStock: 500,
-    reorderPoint: 100,
-    lastRestocked: '2024-01-05',
-    lastUpdated: '2024-01-20',
-    status: 'out-of-stock',
-    value: 0,
-  },
-]);
-
-const stockMovements = ref<StockMovement[]>([
-  {
-    id: '1',
-    productId: '1',
-    productName: 'ເບຍ Beer Lao',
-    type: 'in',
-    quantity: 100,
-    previousStock: 50,
-    newStock: 150,
-    reason: 'Purchase Order #PO-001',
-    reference: 'PO-001',
-    createdBy: 'Admin',
-    createdAt: '2024-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    productId: '2',
-    productName: 'ເຂົ້າຈີ່ Grilled Chicken',
-    type: 'out',
-    quantity: 10,
-    previousStock: 15,
-    newStock: 5,
-    reason: 'Sales Order #ORD-1078',
-    reference: 'ORD-1078',
-    createdBy: 'POS System',
-    createdAt: '2024-01-20T14:00:00Z',
-  },
-]);
-
-const suppliers = ref<Supplier[]>([
-  {
-    id: '1',
-    name: 'Lao Brewery Co., Ltd',
-    contactPerson: 'Mr. Somphone',
-    email: 'sales@laobeer.com',
-    phone: '+856 21 812 374',
-    address: 'Km 8, Thadeua Road, Vientiane',
-    products: ['1'],
-    lastOrderDate: '2024-01-15',
-    status: 'active',
-  },
-  {
-    id: '2',
-    name: 'Fresh Farm Supplies',
-    contactPerson: 'Mrs. Khamla',
-    email: 'order@freshfarm.la',
-    phone: '+856 20 5555 1234',
-    address: 'Dongdok, Vientiane',
-    products: ['2', '3'],
-    lastOrderDate: '2024-01-10',
-    status: 'active',
-  },
-]);
+// Get data from composable
+const inventoryItems = computed(() => inventory.inventoryItems.value);
+const stockMovements = computed(() => inventory.stockMovements.value);
+const suppliers = computed(() => inventory.suppliers.value);
 
 // Filters
 const searchQuery = ref('');
@@ -177,16 +25,16 @@ const selectedStatus = ref('');
 const activeTab = ref('inventory');
 
 const branches = [
-  { id: '', name: t('common.allBranches') },
+  { id: '', name: t('common.allBranches') || 'All Branches' },
   { id: '1', name: 'ສາຂາໃຈກາງ / Central Branch' },
   { id: '2', name: 'ສາຂາຫ້ວຍໂຮ້ງ / Huay Hong Branch' },
 ];
 
 const statusOptions = [
-  { value: '', label: t('common.all') },
-  { value: 'in-stock', label: t('inventory.inStock') },
-  { value: 'low-stock', label: t('inventory.lowStock') },
-  { value: 'out-of-stock', label: t('inventory.outOfStock') },
+  { value: '', label: t('common.all') || 'All' },
+  { value: 'in-stock', label: t('inventory.inStock') || 'In Stock' },
+  { value: 'low-stock', label: t('inventory.lowStock') || 'Low Stock' },
+  { value: 'out-of-stock', label: t('inventory.outOfStock') || 'Out of Stock' },
 ];
 
 // Computed
@@ -201,18 +49,16 @@ const filteredInventory = computed(() => {
   });
 });
 
-const totalInventoryValue = computed(() => {
-  return inventoryItems.value.reduce((sum, item) => sum + item.value, 0);
-});
-
-const lowStockCount = computed(() => {
-  return inventoryItems.value.filter((item) => item.status === 'low-stock' || item.status === 'out-of-stock').length;
-});
+// Stats from composable
+const totalInventoryValue = computed(() => inventory.totalInventoryValue.value);
+const lowStockCount = computed(() => inventory.lowStockCount.value);
 
 // Modal states
 const showAdjustModal = ref(false);
 const showTransferModal = ref(false);
 const showAddStockModal = ref(false);
+// Type from composable
+type InventoryItem = typeof inventoryItems.value[number];
 const selectedItem = ref<InventoryItem | null>(null);
 const adjusting = ref(false);
 
@@ -238,8 +84,8 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-const getStatusColor = (status: string): string => {
-  const colors: Record<string, string> = {
+const getStatusColor = (status: string): 'green' | 'yellow' | 'red' | 'blue' | 'gray' => {
+  const colors: Record<string, 'green' | 'yellow' | 'red' | 'blue' | 'gray'> = {
     'in-stock': 'green',
     'low-stock': 'yellow',
     'out-of-stock': 'red',
@@ -261,26 +107,86 @@ const openTransferModal = (item: InventoryItem) => {
 };
 
 const saveAdjustment = async () => {
+  if (!selectedItem.value) return;
+  
   adjusting.value = true;
   try {
-    // TODO: Save to backend
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    showAdjustModal.value = false;
+    let adjustment = adjustmentForm.value.quantity;
+    let reason: 'purchase' | 'sale' | 'adjustment' | 'waste' | 'return' | 'count' = 'adjustment';
+    
+    if (adjustmentForm.value.type === 'in') {
+      reason = 'purchase';
+    } else if (adjustmentForm.value.type === 'out') {
+      adjustment = -adjustment;
+      reason = 'sale';
+    }
+    
+    const success = await inventory.adjustStock(
+      selectedItem.value.productId,
+      adjustment,
+      reason,
+      adjustmentForm.value.reason
+    );
+    
+    if (success) {
+      toast.add({
+        title: t('inventory.stockAdjusted') || 'Stock Adjusted',
+        description: `${selectedItem.value.productName} stock updated`,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
+      showAdjustModal.value = false;
+    } else {
+      toast.add({
+        title: t('common.error') || 'Error',
+        description: inventory.error.value || 'Failed to adjust stock',
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'red',
+      });
+    }
   } finally {
     adjusting.value = false;
   }
 };
 
 const saveTransfer = async () => {
+  if (!selectedItem.value) return;
+  
   adjusting.value = true;
   try {
-    // TODO: Save to backend
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    showTransferModal.value = false;
+    const success = await inventory.transferStock(
+      selectedItem.value.productId,
+      selectedItem.value.branchId,
+      transferForm.value.toBranch,
+      transferForm.value.quantity,
+      transferForm.value.notes
+    );
+    
+    if (success) {
+      toast.add({
+        title: t('inventory.stockTransferred') || 'Stock Transferred',
+        description: `${transferForm.value.quantity} units transferred`,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
+      showTransferModal.value = false;
+    } else {
+      toast.add({
+        title: t('common.error') || 'Error',
+        description: inventory.error.value || 'Failed to transfer stock',
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'red',
+      });
+    }
   } finally {
     adjusting.value = false;
   }
 };
+
+// Initialize inventory on mount
+onMounted(async () => {
+  await inventory.init();
+});
 </script>
 
 <template>
@@ -299,6 +205,7 @@ const saveTransfer = async () => {
             :label="t('common.export')"
           />
           <UButton
+            v-if="canEditInventory"
             color="primary"
             icon="i-heroicons-plus"
             :label="t('inventory.addStock')"
@@ -379,15 +286,15 @@ const saveTransfer = async () => {
         />
         <USelect
           v-model="selectedBranch"
-          :options="branches"
-          value-attribute="id"
-          option-attribute="name"
+          :items="branches"
+          value-key="id"
+          label-key="name"
         />
         <USelect
           v-model="selectedStatus"
-          :options="statusOptions"
-          value-attribute="value"
-          option-attribute="label"
+          :items="statusOptions"
+          value-key="value"
+          label-key="label"
         />
         <UButton
           color="gray"
@@ -451,6 +358,7 @@ const saveTransfer = async () => {
               <td class="py-3 px-4">
                 <div class="flex justify-end gap-1">
                   <UButton
+                    v-if="canAdjustStock"
                     color="gray"
                     variant="ghost"
                     size="sm"
@@ -458,6 +366,7 @@ const saveTransfer = async () => {
                     @click="openAdjustModal(item)"
                   />
                   <UButton
+                    v-if="canAdjustStock"
                     color="gray"
                     variant="ghost"
                     size="sm"
@@ -578,13 +487,13 @@ const saveTransfer = async () => {
             <UFormField :label="t('inventory.adjustmentType')">
               <USelect
                 v-model="adjustmentForm.type"
-                :options="[
+                :items="[
                   { value: 'in', label: t('inventory.stockIn') },
                   { value: 'out', label: t('inventory.stockOut') },
                   { value: 'adjustment', label: t('inventory.adjustment') },
                 ]"
-                value-attribute="value"
-                option-attribute="label"
+                value-key="value"
+                label-key="label"
               />
             </UFormField>
 
@@ -625,9 +534,9 @@ const saveTransfer = async () => {
             <UFormField :label="t('inventory.toBranch')">
               <USelect
                 v-model="transferForm.toBranch"
-                :options="branches.filter(b => b.id && b.id !== selectedItem?.branchId)"
-                value-attribute="id"
-                option-attribute="name"
+                :items="branches.filter(b => b.id && b.id !== selectedItem?.branchId)"
+                value-key="id"
+                label-key="name"
               />
             </UFormField>
 
