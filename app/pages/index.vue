@@ -212,7 +212,7 @@ onMounted(async () => {
           <button
             v-for="period in ['today', 'week', 'month'] as const"
             :key="period"
-            class="px-4 py-2 text-sm font-medium transition-colors"
+            class="px-4 py-1.5 text-sm font-medium transition-colors"
             :class="selectedPeriod === period
               ? 'bg-primary-500 text-white'
               : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"

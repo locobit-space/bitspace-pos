@@ -189,26 +189,36 @@
   "dashboard": {
     "title": "Dashboard",
     "description": "Overview of your business performance",
+    "overview": "Overview of your business performance",
     "today": "Today",
+    "week": "This Week",
+    "month": "This Month",
     "thisWeek": "This Week",
     "thisMonth": "This Month",
     "thisQuarter": "This Quarter",
     "selectTimeRange": "Select time range",
     "exportReport": "Export Report",
+    "totalRevenue": "Total Revenue",
     "totalSales": "Total Sales",
     "totalOrders": "Total Orders",
     "avgOrderValue": "Avg Order Value",
+    "lightningSales": "Lightning Sales",
     "conversionRate": "Conversion Rate",
     "salesOverview": "Sales Overview",
+    "hourlySales": "Hourly Sales",
+    "paymentBreakdown": "Payment Breakdown",
     "timeRange": "Time Range",
     "vsLastMonth": "vs last month",
     "vsYesterday": "vs yesterday",
     "topProducts": "Top Products",
     "sales": "sales",
+    "noSalesYet": "No sales yet today",
     "viewAllProducts": "View All Products",
     "recentOrders": "Recent Orders",
+    "noOrdersYet": "No orders yet today",
     "viewAllOrders": "View All Orders",
     "quickActions": "Quick Actions",
+    "lowStock": "Low Stock Alert",
     "lowStockAlerts": "Low Stock Alerts",
     "itemsLowStock": "items low on stock",
     "allStocked": "All products are well stocked",
@@ -265,12 +275,14 @@
       "receipt": "Receipt",
       "history": "History"
     },
-    "status.all": "All",
-    "status.pending": "Pending",
-    "status.processing": "Processing",
-    "status.completed": "Completed",
-    "status.cancelled": "Cancelled",
-    "status.refunded": "Refunded"
+    "status": {
+      "all": "All",
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "refunded": "Refunded"
+    }
   },
   "products": {
     "title": "Products",
@@ -555,6 +567,37 @@
   "settings": {
     "title": "Settings",
     "description": "Configure your system preferences",
+    "branch_selection": "Branch Selection",
+    "select_branch": "Select a branch",
+    "add_branch": "Add Branch",
+    "edit_branch": "Edit Branch",
+    "address": "Address",
+    "phone": "Phone",
+    "save_all": "Save All",
+    "categories": {
+      "title": "Categories",
+      "add": "Add Category",
+      "edit": "Edit Category"
+    },
+    "units": {
+      "title": "Units",
+      "add": "Add Unit",
+      "edit": "Edit Unit",
+      "symbol": "Symbol",
+      "type": "Type",
+      "types": {
+        "quantity": "Quantity",
+        "weight": "Weight",
+        "length": "Length",
+        "volume": "Volume"
+      }
+    },
+    "terms": {
+      "title": "Payment Terms",
+      "add": "Add Term",
+      "edit": "Edit Term",
+      "days": "Days"
+    },
     "general": {
       "title": "General Settings",
       "subtitle": "Configure system preferences and company info",
@@ -1234,7 +1277,11 @@
     "icon": "Icon",
     "name": "Name",
     "description": "Description",
-    "quickSelect": "Quick Select"
+    "quickSelect": "Quick Select",
+    "viewAll": "View All",
+    "save_all": "Save All",
+    "email": "Email",
+    "confirm_delete": "Are you sure you want to delete this item?"
   },
   "pos": {
     "shift": {

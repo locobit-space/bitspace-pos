@@ -172,23 +172,25 @@
     </UCard>
 
     <!-- Table Detail Modal -->
-    <UModal v-model:open="showDetailModal" size="lg">
-      <template #header>
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-lg flex items-center justify-center"
-            :class="selectedTable ? getTableIconClass(selectedTable) : ''"
-          >
-            <UIcon :name="selectedTable ? getTableIcon(selectedTable) : 'i-heroicons-squares-2x2'" />
-          </div>
-          <div>
-            <h3 class="font-semibold">{{ selectedTable?.name }}</h3>
-            <p class="text-sm text-muted">{{ selectedTable?.seats }} {{ $t('pos.tables.seats') }}</p>
-          </div>
-        </div>
-      </template>
+    <UModal v-model:open="showDetailModal">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg flex items-center justify-center"
+                :class="selectedTable ? getTableIconClass(selectedTable) : ''"
+              >
+                <UIcon :name="selectedTable ? getTableIcon(selectedTable) : 'i-heroicons-squares-2x2'" />
+              </div>
+              <div>
+                <h3 class="font-semibold">{{ selectedTable?.name }}</h3>
+                <p class="text-sm text-muted">{{ selectedTable?.seats }} {{ $t('pos.tables.seats') }}</p>
+              </div>
+            </div>
+          </template>
       
-      <div v-if="selectedTable" class="p-4 space-y-4">
+          <div v-if="selectedTable" class="space-y-4">
         <!-- Status Actions -->
         <div class="flex flex-wrap gap-2">
           <UButton
@@ -296,184 +298,198 @@
             </div>
           </div>
         </div>
-      </div>
+          </div>
       
-      <template #footer>
-        <div class="flex justify-between">
-          <UButton variant="ghost" @click="openTableModal(selectedTable || undefined)">
-            {{ $t('common.edit') }}
-          </UButton>
-          <UButton variant="ghost" @click="showDetailModal = false">
-            {{ $t('common.close') }}
-          </UButton>
-        </div>
+          <template #footer>
+            <div class="flex justify-between">
+              <UButton variant="ghost" @click="openTableModal(selectedTable || undefined)">
+                {{ $t('common.edit') }}
+              </UButton>
+              <UButton variant="ghost" @click="showDetailModal = false">
+                {{ $t('common.close') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
       </template>
     </UModal>
 
     <!-- Add/Edit Table Modal -->
     <UModal v-model:open="showTableModal">
-      <template #header>
-        <h3 class="font-semibold">
-          {{ editingTable ? $t('pos.tables.editTable') : $t('pos.tables.addTable') }}
-        </h3>
-      </template>
+      <template #content>
+        <UCard>
+          <template #header>
+            <h3 class="font-semibold">
+              {{ editingTable ? $t('pos.tables.editTable') : $t('pos.tables.addTable') }}
+            </h3>
+          </template>
       
-      <div class="p-4 space-y-4">
-        <UFormField :label="$t('pos.tables.tableName')" required>
-          <UInput
-            v-model="tableForm.name"
-            :placeholder="$t('pos.tables.tableNamePlaceholder')"
-          />
-        </UFormField>
+          <div class="space-y-4">
+          <UFormField :label="$t('pos.tables.tableName')" required>
+            <UInput
+              v-model="tableForm.name"
+              :placeholder="$t('pos.tables.tableNamePlaceholder')"
+            />
+          </UFormField>
         
-        <UFormField :label="$t('pos.tables.seats')" required>
-          <UInput
-            v-model.number="tableForm.seats"
-            type="number"
-            min="1"
-            max="20"
-          />
-        </UFormField>
+          <UFormField :label="$t('pos.tables.seats')" required>
+            <UInput
+              v-model.number="tableForm.seats"
+              type="number"
+              min="1"
+              max="20"
+            />
+          </UFormField>
         
-        <UFormField :label="$t('pos.tables.floor')">
-          <USelect
-            v-model="tableForm.floorId"
-            :items="floors.map(f => ({ value: f.id, label: f.name }))"
-            value-key="value"
-            label-key="label"
-          />
-        </UFormField>
+          <UFormField :label="$t('pos.tables.floor')">
+            <USelect
+              v-model="tableForm.floorId"
+              :items="floors"
+              value-key="id"
+              label-key="name"
+            />
+          </UFormField>
         
-        <UFormField :label="$t('pos.tables.shape')">
-          <USelect
-            v-model="tableForm.shape"
-            :items="shapeOptions"
-            value-key="value"
-            label-key="label"
-          />
-        </UFormField>
+          <UFormField :label="$t('pos.tables.shape')">
+            <USelect
+              v-model="tableForm.shape"
+              :items="shapeOptions"
+              value-key="value"
+              label-key="label"
+            />
+          </UFormField>
         
-        <UFormField :label="$t('pos.tables.minSeats')">
-          <UInput
-            v-model.number="tableForm.minSeats"
-            type="number"
-            min="1"
-          />
-        </UFormField>
-      </div>
+          <UFormField :label="$t('pos.tables.minSeats')">
+            <UInput
+              v-model.number="tableForm.minSeats"
+              type="number"
+              min="1"
+            />
+          </UFormField>
+          </div>
       
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton variant="ghost" @click="showTableModal = false">
-            {{ $t('common.cancel') }}
-          </UButton>
-          <UButton :loading="savingTable" @click="saveTable">
-            {{ editingTable ? $t('common.update') : $t('common.create') }}
-          </UButton>
-        </div>
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton variant="ghost" @click="showTableModal = false">
+                {{ $t('common.cancel') }}
+              </UButton>
+              <UButton :loading="savingTable" @click="saveTable">
+                {{ editingTable ? $t('common.update') : $t('common.create') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
       </template>
     </UModal>
 
     <!-- Reservation Modal -->
     <UModal v-model:open="showReservationModal">
-      <template #header>
-        <h3 class="font-semibold">{{ $t('pos.tables.makeReservation') }}</h3>
-      </template>
+      <template #content>
+        <UCard>
+          <template #header>
+            <h3 class="font-semibold">{{ $t('pos.tables.makeReservation') }}</h3>
+          </template>
       
-      <div class="p-4 space-y-4">
-        <UFormField :label="$t('pos.tables.customer')" required>
-          <UInput
-            v-model="reservationForm.customerName"
-            :placeholder="$t('pos.tables.customerNamePlaceholder')"
-          />
-        </UFormField>
-        
-        <UFormField :label="$t('pos.tables.phone')" required>
-          <UInput
-            v-model="reservationForm.phone"
-            type="tel"
-            :placeholder="$t('pos.tables.phonePlaceholder')"
-          />
-        </UFormField>
-        
-        <div class="grid grid-cols-2 gap-4">
-          <UFormField :label="$t('pos.tables.date')" required>
-            <UInput v-model="reservationForm.date" type="date" />
-          </UFormField>
-          
-          <UFormField :label="$t('pos.tables.time')" required>
-            <UInput v-model="reservationForm.time" type="time" />
-          </UFormField>
-        </div>
-        
-        <UFormField :label="$t('pos.tables.partySize')" required>
-          <UInput
-            v-model.number="reservationForm.partySize"
-            type="number"
-            min="1"
-          />
-        </UFormField>
-        
-        <UFormField :label="$t('pos.tables.notes')">
-          <UTextarea
-            v-model="reservationForm.notes"
-            :placeholder="$t('pos.tables.notesPlaceholder')"
-            :rows="2"
-          />
-        </UFormField>
-      </div>
+          <div class="space-y-4">
+            <UFormField :label="$t('pos.tables.customer')" required>
+              <UInput
+                v-model="reservationForm.customerName"
+                :placeholder="$t('pos.tables.customerNamePlaceholder')"
+              />
+            </UFormField>
+            
+            <UFormField :label="$t('pos.tables.phone')" required>
+              <UInput
+                v-model="reservationForm.phone"
+                type="tel"
+                :placeholder="$t('pos.tables.phonePlaceholder')"
+              />
+            </UFormField>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <UFormField :label="$t('pos.tables.date')" required>
+                <UInput v-model="reservationForm.date" type="date" />
+              </UFormField>
+              
+              <UFormField :label="$t('pos.tables.time')" required>
+                <UInput v-model="reservationForm.time" type="time" />
+              </UFormField>
+            </div>
+            
+            <UFormField :label="$t('pos.tables.partySize')" required>
+              <UInput
+                v-model.number="reservationForm.partySize"
+                type="number"
+                min="1"
+              />
+            </UFormField>
+            
+            <UFormField :label="$t('pos.tables.notes')">
+              <UTextarea
+                v-model="reservationForm.notes"
+                :placeholder="$t('pos.tables.notesPlaceholder')"
+                :rows="2"
+              />
+            </UFormField>
+          </div>
       
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton variant="ghost" @click="showReservationModal = false">
-            {{ $t('common.cancel') }}
-          </UButton>
-          <UButton :loading="savingReservation" @click="saveReservation">
-            {{ $t('pos.tables.confirmReservation') }}
-          </UButton>
-        </div>
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton variant="ghost" @click="showReservationModal = false">
+                {{ $t('common.cancel') }}
+              </UButton>
+              <UButton :loading="savingReservation" @click="saveReservation">
+                {{ $t('pos.tables.confirmReservation') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
       </template>
     </UModal>
 
     <!-- Settings Modal -->
     <UModal v-model:open="showSettingsModal">
-      <template #header>
-        <h3 class="font-semibold">{{ $t('pos.tables.floorSettings') }}</h3>
-      </template>
-      
-      <div class="p-4 space-y-4">
-        <h4 class="font-medium">{{ $t('pos.tables.manageFloors') }}</h4>
-        
-        <div v-for="floor in floors" :key="floor.id" class="flex items-center gap-2">
-          <UInput v-model="floor.name" class="flex-1" />
-          <UButton
-            v-if="floors.length > 1"
-            variant="ghost"
-            color="error"
-            icon="i-heroicons-trash"
-            @click="removeFloor(floor.id)"
-          />
-        </div>
-        
-        <UButton
-          variant="outline"
-          icon="i-heroicons-plus"
-          size="sm"
-          @click="addFloor"
-        >
-          {{ $t('pos.tables.addFloor') }}
-        </UButton>
-      </div>
-      
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton variant="ghost" @click="showSettingsModal = false">
-            {{ $t('common.close') }}
-          </UButton>
-          <UButton @click="saveFloors">
-            {{ $t('common.save') }}
-          </UButton>
-        </div>
+      <template #content>
+        <UCard>
+          <template #header>
+            <h3 class="font-semibold">{{ $t('pos.tables.floorSettings') }}</h3>
+          </template>
+          
+          <div class="space-y-4">
+            <h4 class="font-medium">{{ $t('pos.tables.manageFloors') }}</h4>
+            
+            <div v-for="floor in floors" :key="floor.id" class="flex items-center gap-2">
+              <UInput v-model="floor.name" class="flex-1" />
+              <UButton
+                v-if="floors.length > 1"
+                variant="ghost"
+                color="error"
+                icon="i-heroicons-trash"
+                @click="removeFloor(floor.id)"
+              />
+            </div>
+            
+            <UButton
+              variant="outline"
+              icon="i-heroicons-plus"
+              size="sm"
+              @click="addFloor"
+            >
+              {{ $t('pos.tables.addFloor') }}
+            </UButton>
+          </div>
+          
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton variant="ghost" @click="showSettingsModal = false">
+                {{ $t('common.close') }}
+              </UButton>
+              <UButton @click="saveFloors">
+                {{ $t('common.save') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
       </template>
     </UModal>
   </UContainer>
