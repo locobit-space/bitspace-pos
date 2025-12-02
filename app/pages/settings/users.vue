@@ -49,6 +49,20 @@
             <div>
               <h3 class="font-semibold text-gray-900 dark:text-white">{{ currentUser.name }}</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400">{{ currentUser.email }}</p>
+              <!-- Show auth method badge -->
+              <div class="flex items-center gap-2 mt-1">
+                <UBadge 
+                  :color="getAuthMethodColor(currentUser.authMethod)" 
+                  variant="subtle" 
+                  size="xs"
+                >
+                  <UIcon :name="getAuthMethodIcon(currentUser.authMethod)" class="w-3 h-3 mr-1" />
+                  {{ $t(`settings.users.authMethod.${currentUser.authMethod || 'pin'}`) }}
+                </UBadge>
+                <span v-if="currentUser.npub" class="text-xs text-gray-400 font-mono">
+                  {{ truncateNpub(currentUser.npub) }}
+                </span>
+              </div>
             </div>
           </div>
           
@@ -76,9 +90,11 @@
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ $t('settings.users.allUsers') }}
             </h3>
-            <UBadge color="gray" variant="subtle">
-              {{ users.length }} {{ $t('settings.users.users') }}
-            </UBadge>
+            <div class="flex items-center gap-2">
+              <UBadge color="gray" variant="subtle">
+                {{ users.length }} {{ $t('settings.users.users') }}
+              </UBadge>
+            </div>
           </div>
         </template>
 
@@ -88,67 +104,178 @@
             v-for="user in users"
             :key="user.id"
             class="flex items-center justify-between py-4 first:pt-0 last:pb-0"
+            :class="{ 'opacity-50': user.revokedAt || !user.isActive }"
           >
             <div class="flex items-center gap-4">
-              <UAvatar
-                :src="user.avatar"
-                :alt="user.name"
-                size="sm"
-              />
+              <div class="relative">
+                <UAvatar
+                  :src="user.avatar"
+                  :alt="user.name"
+                  size="sm"
+                />
+                <!-- Auth method indicator -->
+                <div 
+                  class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                  :class="getAuthMethodBgColor(user.authMethod)"
+                >
+                  <UIcon 
+                    :name="getAuthMethodIcon(user.authMethod)" 
+                    class="w-2.5 h-2.5 text-white" 
+                  />
+                </div>
+              </div>
               <div>
-                <p class="font-medium text-gray-900 dark:text-white">{{ user.name }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="font-medium text-gray-900 dark:text-white">{{ user.name }}</p>
+                  <!-- Revoked/Expired indicator -->
+                  <UBadge v-if="user.revokedAt" color="red" variant="subtle" size="xs">
+                    {{ $t('settings.users.revoked') }}
+                  </UBadge>
+                  <UBadge v-else-if="isExpired(user)" color="orange" variant="subtle" size="xs">
+                    {{ $t('settings.users.expired') }}
+                  </UBadge>
+                </div>
                 <p v-if="user.email" class="text-sm text-gray-500 dark:text-gray-400">{{ user.email }}</p>
+                <p v-if="user.npub" class="text-xs text-gray-400 font-mono">{{ truncateNpub(user.npub) }}</p>
               </div>
             </div>
             
             <div class="flex items-center gap-4">
+              <!-- Role -->
               <UBadge :color="getRoleColor(user.role)" variant="subtle">
                 {{ $t(`settings.users.roles.${user.role}`) }}
               </UBadge>
               
-              <UBadge :color="user.isActive ? 'green' : 'red'" variant="subtle">
-                {{ user.isActive ? $t('common.active') : $t('common.inactive') }}
+              <!-- Status -->
+              <UBadge :color="getStatusColor(user)" variant="subtle">
+                {{ getStatusText(user) }}
               </UBadge>
               
-              <UIcon 
-                :name="user.pin ? 'i-heroicons-check-circle' : 'i-heroicons-minus-circle'"
-                :class="user.pin ? 'text-green-500' : 'text-gray-400'"
-                class="w-5 h-5"
-              />
+              <!-- PIN indicator -->
+              <UTooltip :text="user.pin ? $t('settings.users.pinSet') : $t('settings.users.noPin')">
+                <UIcon 
+                  :name="user.pin ? 'i-heroicons-check-circle' : 'i-heroicons-minus-circle'"
+                  :class="user.pin ? 'text-green-500' : 'text-gray-400'"
+                  class="w-5 h-5"
+                />
+              </UTooltip>
               
+              <!-- Expiry -->
+              <span v-if="user.expiresAt" class="text-xs text-gray-500 dark:text-gray-400">
+                {{ $t('settings.users.expiresOn') }}: {{ formatDate(user.expiresAt) }}
+              </span>
+              
+              <!-- Last login -->
               <span class="text-sm text-gray-500 dark:text-gray-400 min-w-[100px]">
                 {{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '-' }}
               </span>
               
-              <div class="flex items-center gap-2">
-                <UButton
-                  variant="ghost"
-                  size="xs"
-                  :disabled="user.id === currentUser?.id"
-                  @click="openEditModal(user)"
-                >
-                  <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
-                </UButton>
+              <!-- Actions -->
+              <div class="flex items-center gap-1">
+                <UTooltip :text="$t('common.edit')">
+                  <UButton
+                    variant="ghost"
+                    size="xs"
+                    :disabled="user.id === currentUser?.id"
+                    @click="openEditModal(user)"
+                  >
+                    <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
+                  </UButton>
+                </UTooltip>
                 
-                <UButton
-                  variant="ghost"
-                  size="xs"
-                  @click="openPermissionsModal(user)"
-                >
-                  <UIcon name="i-heroicons-shield-check" class="w-4 h-4" />
-                </UButton>
+                <UTooltip :text="$t('settings.users.permissions.title')">
+                  <UButton
+                    variant="ghost"
+                    size="xs"
+                    @click="openPermissionsModal(user)"
+                  >
+                    <UIcon name="i-heroicons-shield-check" class="w-4 h-4" />
+                  </UButton>
+                </UTooltip>
                 
-                <UButton
-                  v-if="user.id !== currentUser?.id"
-                  variant="ghost"
-                  color="red"
-                  size="xs"
-                  @click="confirmDelete(user)"
-                >
-                  <UIcon name="i-heroicons-trash" class="w-4 h-4" />
-                </UButton>
+                <!-- Revoke/Restore button -->
+                <UTooltip v-if="user.id !== currentUser?.id" :text="user.revokedAt ? $t('settings.users.restore') : $t('settings.users.revoke')">
+                  <UButton
+                    variant="ghost"
+                    size="xs"
+                    :color="user.revokedAt ? 'green' : 'orange'"
+                    @click="user.revokedAt ? restoreAccess(user) : openRevokeModal(user)"
+                  >
+                    <UIcon :name="user.revokedAt ? 'i-heroicons-arrow-path' : 'i-heroicons-no-symbol'" class="w-4 h-4" />
+                  </UButton>
+                </UTooltip>
+                
+                <UTooltip v-if="user.id !== currentUser?.id" :text="$t('common.delete')">
+                  <UButton
+                    variant="ghost"
+                    color="red"
+                    size="xs"
+                    @click="confirmDelete(user)"
+                  >
+                    <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+                  </UButton>
+                </UTooltip>
               </div>
             </div>
+          </div>
+        </div>
+      </UCard>
+
+      <!-- Auth Methods Info -->
+      <UCard class="mt-6">
+        <template #header>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ $t('settings.users.authMethods') }}
+          </h3>
+        </template>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Nostr Auth -->
+          <div class="p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
+                <UIcon name="i-heroicons-key" class="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900 dark:text-white">Nostr</h4>
+                <UBadge color="purple" variant="subtle" size="xs">{{ $t('settings.users.recommended') }}</UBadge>
+              </div>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              {{ $t('settings.users.authDesc.nostr') }}
+            </p>
+          </div>
+
+          <!-- Password Auth -->
+          <div class="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <UIcon name="i-heroicons-lock-closed" class="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900 dark:text-white">{{ $t('settings.users.password') }}</h4>
+                <UBadge color="blue" variant="subtle" size="xs">{{ $t('settings.users.traditional') }}</UBadge>
+              </div>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              {{ $t('settings.users.authDesc.password') }}
+            </p>
+          </div>
+
+          <!-- PIN Auth -->
+          <div class="p-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                <UIcon name="i-heroicons-hashtag" class="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900 dark:text-white">PIN</h4>
+                <UBadge color="green" variant="subtle" size="xs">{{ $t('settings.users.quickAccess') }}</UBadge>
+              </div>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              {{ $t('settings.users.authDesc.pin') }}
+            </p>
           </div>
         </div>
       </UCard>
@@ -183,62 +310,146 @@
     <!-- Create/Edit User Modal -->
     <UModal v-model:open="showUserModal">
       <template #content>
-        <UCard>
+        <UCard class="max-w-lg">
           <template #header>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ editingUser ? $t('settings.users.editUser') : $t('settings.users.addUser') }}
-          </h3>
-        </template>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ editingUser ? $t('settings.users.editUser') : $t('settings.users.addUser') }}
+            </h3>
+          </template>
 
-        <div class="space-y-4">
-          <UFormField :label="$t('settings.users.name')" required>
-            <UInput
-              v-model="userForm.name"
-              :placeholder="$t('settings.users.namePlaceholder')"
-              icon="i-heroicons-user"
-            />
-          </UFormField>
+          <div class="space-y-4">
+            <!-- Name -->
+            <UFormField :label="$t('settings.users.name')" required>
+              <UInput
+                v-model="userForm.name"
+                :placeholder="$t('settings.users.namePlaceholder')"
+                icon="i-heroicons-user"
+              />
+            </UFormField>
 
-          <UFormField :label="$t('settings.users.email')">
-            <UInput
-              v-model="userForm.email"
-              type="email"
-              :placeholder="$t('settings.users.emailPlaceholder')"
-              icon="i-heroicons-envelope"
-            />
-          </UFormField>
+            <!-- Email -->
+            <UFormField :label="$t('settings.users.email')">
+              <UInput
+                v-model="userForm.email"
+                type="email"
+                :placeholder="$t('settings.users.emailPlaceholder')"
+                icon="i-heroicons-envelope"
+              />
+            </UFormField>
 
-          <UFormField :label="$t('settings.users.pin')">
-            <UInput
-              v-model="userForm.pin"
-              type="password"
-              maxlength="6"
-              :placeholder="$t('settings.users.pinPlaceholder')"
-              icon="i-heroicons-key"
-            />
-            <template #hint>
-              {{ $t('settings.users.pinHint') }}
-            </template>
-          </UFormField>
+            <!-- Auth Method Selection -->
+            <UFormField :label="$t('settings.users.authMethodLabel')" required>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="method in authMethodOptions"
+                  :key="method.value"
+                  type="button"
+                  class="p-3 rounded-lg border-2 transition-all text-center"
+                  :class="userForm.authMethod === method.value 
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'"
+                  @click="userForm.authMethod = method.value"
+                >
+                  <UIcon :name="method.icon" class="w-6 h-6 mx-auto mb-1 text-primary-500" />
+                  <p class="text-sm font-medium">{{ method.label }}</p>
+                </button>
+              </div>
+            </UFormField>
 
-          <UFormField :label="$t('settings.users.role')" required>
-            <USelectMenu
-              v-model="userForm.role"
-              :items="roleOptions"
-              label-key="label"
-              value-key="value"
-            />
-          </UFormField>
+            <!-- Nostr Auth Fields -->
+            <div v-if="userForm.authMethod === 'nostr'" class="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <UFormField :label="$t('settings.users.npub')" required>
+                <UInput
+                  v-model="userForm.npub"
+                  :placeholder="$t('settings.users.npubPlaceholder')"
+                  icon="i-heroicons-key"
+                  class="font-mono"
+                />
+                <template #hint>
+                  {{ $t('settings.users.npubHint') }}
+                </template>
+              </UFormField>
+            </div>
 
-          <UFormField :label="$t('settings.users.status')">
-            <UToggle
-              v-model="userForm.isActive"
-              :label="userForm.isActive ? $t('common.active') : $t('common.inactive')"
-            />
-          </UFormField>
-        </div>
+            <!-- Password Auth Fields -->
+            <div v-if="userForm.authMethod === 'password'" class="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <UFormField :label="$t('settings.users.password')" :required="!editingUser">
+                <UInput
+                  v-model="userForm.password"
+                  type="password"
+                  :placeholder="editingUser ? $t('settings.users.passwordPlaceholderEdit') : $t('settings.users.passwordPlaceholder')"
+                  icon="i-heroicons-lock-closed"
+                />
+              </UFormField>
+              <UFormField v-if="userForm.password" :label="$t('settings.users.confirmPassword')" required>
+                <UInput
+                  v-model="userForm.confirmPassword"
+                  type="password"
+                  :placeholder="$t('settings.users.confirmPasswordPlaceholder')"
+                  icon="i-heroicons-lock-closed"
+                />
+              </UFormField>
+              <!-- Password strength indicator -->
+              <div v-if="userForm.password" class="space-y-1">
+                <div class="flex gap-1">
+                  <div 
+                    v-for="i in 4" 
+                    :key="i"
+                    class="h-1 flex-1 rounded"
+                    :class="i <= passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-gray-200 dark:bg-gray-700'"
+                  />
+                </div>
+                <p class="text-xs" :class="strengthTextColors[passwordStrength - 1] || 'text-gray-500'">
+                  {{ passwordStrengthText }}
+                </p>
+              </div>
+            </div>
 
-        <template #footer>
+            <!-- PIN (available for all auth methods as quick access) -->
+            <UFormField :label="$t('settings.users.pin')">
+              <UInput
+                v-model="userForm.pin"
+                type="password"
+                maxlength="6"
+                :placeholder="$t('settings.users.pinPlaceholder')"
+                icon="i-heroicons-hashtag"
+              />
+              <template #hint>
+                {{ $t('settings.users.pinHint') }}
+              </template>
+            </UFormField>
+
+            <!-- Role -->
+            <UFormField :label="$t('settings.users.role')" required>
+              <USelectMenu
+                v-model="userForm.role"
+                :items="roleOptions"
+                value-key="value"
+              />
+            </UFormField>
+
+            <!-- Access Expiry -->
+            <UFormField :label="$t('settings.users.accessExpiry')">
+              <UInput
+                v-model="userForm.expiresAt"
+                type="date"
+                icon="i-heroicons-calendar"
+              />
+              <template #hint>
+                {{ $t('settings.users.accessExpiryHint') }}
+              </template>
+            </UFormField>
+
+            <!-- Status -->
+            <UFormField :label="$t('settings.users.status')">
+              <UToggle
+                v-model="userForm.isActive"
+                :label="userForm.isActive ? $t('common.active') : $t('common.inactive')"
+              />
+            </UFormField>
+          </div>
+
+          <template #footer>
             <div class="flex justify-end gap-4">
               <UButton
                 variant="ghost"
@@ -264,102 +475,102 @@
       <template #content>
         <UCard>
           <template #header>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ $t('settings.users.editPermissions') }}: {{ selectedUser?.name }}
-          </h3>
-        </template>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ $t('settings.users.editPermissions') }}: {{ selectedUser?.name }}
+            </h3>
+          </template>
 
-        <div v-if="selectedUser" class="space-y-6">
-          <!-- POS Operations -->
-          <div>
-            <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-              {{ $t('settings.users.permissions.pos') }}
-            </h4>
-            <div class="grid grid-cols-2 gap-3">
-              <UCheckbox
-                v-model="permissionsForm.canCreateOrders"
-                :label="$t('settings.users.permissions.canCreateOrders')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canVoidOrders"
-                :label="$t('settings.users.permissions.canVoidOrders')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canApplyDiscounts"
-                :label="$t('settings.users.permissions.canApplyDiscounts')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canProcessRefunds"
-                :label="$t('settings.users.permissions.canProcessRefunds')"
-              />
+          <div v-if="selectedUser" class="space-y-6">
+            <!-- POS Operations -->
+            <div>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
+                {{ $t('settings.users.permissions.pos') }}
+              </h4>
+              <div class="grid grid-cols-2 gap-3">
+                <UCheckbox
+                  v-model="permissionsForm.canCreateOrders"
+                  :label="$t('settings.users.permissions.canCreateOrders')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canVoidOrders"
+                  :label="$t('settings.users.permissions.canVoidOrders')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canApplyDiscounts"
+                  :label="$t('settings.users.permissions.canApplyDiscounts')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canProcessRefunds"
+                  :label="$t('settings.users.permissions.canProcessRefunds')"
+                />
+              </div>
+            </div>
+
+            <!-- Products -->
+            <div>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
+                {{ $t('settings.users.permissions.products') }}
+              </h4>
+              <div class="grid grid-cols-2 gap-3">
+                <UCheckbox
+                  v-model="permissionsForm.canViewProducts"
+                  :label="$t('settings.users.permissions.canViewProducts')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canEditProducts"
+                  :label="$t('settings.users.permissions.canEditProducts')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canDeleteProducts"
+                  :label="$t('settings.users.permissions.canDeleteProducts')"
+                />
+              </div>
+            </div>
+
+            <!-- Reports -->
+            <div>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
+                {{ $t('settings.users.permissions.reports') }}
+              </h4>
+              <div class="grid grid-cols-2 gap-3">
+                <UCheckbox
+                  v-model="permissionsForm.canViewReports"
+                  :label="$t('settings.users.permissions.canViewReports')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canExportReports"
+                  :label="$t('settings.users.permissions.canExportReports')"
+                />
+              </div>
+            </div>
+
+            <!-- Settings -->
+            <div>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
+                {{ $t('settings.users.permissions.settings') }}
+              </h4>
+              <div class="grid grid-cols-2 gap-3">
+                <UCheckbox
+                  v-model="permissionsForm.canViewSettings"
+                  :label="$t('settings.users.permissions.canViewSettings')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canEditSettings"
+                  :label="$t('settings.users.permissions.canEditSettings')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canManageLightning"
+                  :label="$t('settings.users.permissions.canManageLightning')"
+                />
+                <UCheckbox
+                  v-model="permissionsForm.canManageUsers"
+                  :label="$t('settings.users.permissions.canManageUsers')"
+                />
+              </div>
             </div>
           </div>
 
-          <!-- Products -->
-          <div>
-            <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-              {{ $t('settings.users.permissions.products') }}
-            </h4>
-            <div class="grid grid-cols-2 gap-3">
-              <UCheckbox
-                v-model="permissionsForm.canViewProducts"
-                :label="$t('settings.users.permissions.canViewProducts')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canEditProducts"
-                :label="$t('settings.users.permissions.canEditProducts')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canDeleteProducts"
-                :label="$t('settings.users.permissions.canDeleteProducts')"
-              />
-            </div>
-          </div>
-
-          <!-- Reports -->
-          <div>
-            <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-              {{ $t('settings.users.permissions.reports') }}
-            </h4>
-            <div class="grid grid-cols-2 gap-3">
-              <UCheckbox
-                v-model="permissionsForm.canViewReports"
-                :label="$t('settings.users.permissions.canViewReports')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canExportReports"
-                :label="$t('settings.users.permissions.canExportReports')"
-              />
-            </div>
-          </div>
-
-          <!-- Settings -->
-          <div>
-            <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-              {{ $t('settings.users.permissions.settings') }}
-            </h4>
-            <div class="grid grid-cols-2 gap-3">
-              <UCheckbox
-                v-model="permissionsForm.canViewSettings"
-                :label="$t('settings.users.permissions.canViewSettings')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canEditSettings"
-                :label="$t('settings.users.permissions.canEditSettings')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canManageLightning"
-                :label="$t('settings.users.permissions.canManageLightning')"
-              />
-              <UCheckbox
-                v-model="permissionsForm.canManageUsers"
-                :label="$t('settings.users.permissions.canManageUsers')"
-              />
-            </div>
-          </div>
-        </div>
-
-        <template #footer>
+          <template #footer>
             <div class="flex justify-end gap-4">
               <UButton
                 variant="ghost"
@@ -380,24 +591,72 @@
       </template>
     </UModal>
 
+    <!-- Revoke Access Modal -->
+    <UModal v-model:open="showRevokeModal">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <UIcon name="i-heroicons-no-symbol" class="w-6 h-6 text-orange-500" />
+              <span class="font-semibold text-gray-900 dark:text-white">
+                {{ $t('settings.users.revokeAccess') }}
+              </span>
+            </div>
+          </template>
+
+          <div class="space-y-4">
+            <p class="text-gray-600 dark:text-gray-300">
+              {{ $t('settings.users.revokeWarning', { name: userToRevoke?.name }) }}
+            </p>
+            
+            <UFormField :label="$t('settings.users.revokeReason')">
+              <UTextarea
+                v-model="revokeReason"
+                :placeholder="$t('settings.users.revokeReasonPlaceholder')"
+                :rows="3"
+              />
+            </UFormField>
+          </div>
+
+          <template #footer>
+            <div class="flex justify-end gap-4">
+              <UButton
+                variant="ghost"
+                @click="showRevokeModal = false"
+              >
+                {{ $t('common.cancel') }}
+              </UButton>
+              <UButton
+                :loading="revoking"
+                color="orange"
+                @click="revokeAccessConfirmed"
+              >
+                {{ $t('settings.users.revoke') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
+
     <!-- Delete Confirmation Modal -->
     <UModal v-model:open="showDeleteModal">
       <template #content>
         <UCard>
           <template #header>
-          <div class="flex items-center gap-3">
-            <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-500" />
-            <span class="font-semibold text-gray-900 dark:text-white">
-              {{ $t('settings.users.confirmDelete') }}
-            </span>
-          </div>
-        </template>
+            <div class="flex items-center gap-3">
+              <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-500" />
+              <span class="font-semibold text-gray-900 dark:text-white">
+                {{ $t('settings.users.confirmDelete') }}
+              </span>
+            </div>
+          </template>
 
-        <p class="text-gray-600 dark:text-gray-300">
-          {{ $t('settings.users.deleteWarning', { name: userToDelete?.name }) }}
-        </p>
+          <p class="text-gray-600 dark:text-gray-300">
+            {{ $t('settings.users.deleteWarning', { name: userToDelete?.name }) }}
+          </p>
 
-        <template #footer>
+          <template #footer>
             <div class="flex justify-end gap-4">
               <UButton
                 variant="ghost"
@@ -421,7 +680,7 @@
 </template>
 
 <script setup lang="ts">
-import type { StoreUser, UserRole, UserPermissions } from '~/types';
+import type { StoreUser, UserRole, UserPermissions, AuthMethod } from '~/types';
 import { DEFAULT_PERMISSIONS } from '~/types';
 
 definePageMeta({
@@ -431,16 +690,21 @@ definePageMeta({
 const { t } = useI18n();
 const toast = useToast();
 const usersComposable = useUsers();
+const staffAuth = useStaffAuth();
 
 // State
 const showUserModal = ref(false);
 const showPermissionsModal = ref(false);
 const showDeleteModal = ref(false);
+const showRevokeModal = ref(false);
 const saving = ref(false);
 const deleting = ref(false);
+const revoking = ref(false);
 const editingUser = ref<StoreUser | null>(null);
 const selectedUser = ref<StoreUser | null>(null);
 const userToDelete = ref<StoreUser | null>(null);
+const userToRevoke = ref<StoreUser | null>(null);
+const revokeReason = ref('');
 
 // Computed
 const users = computed(() => usersComposable.users.value);
@@ -452,8 +716,13 @@ const userForm = reactive({
   name: '',
   email: '',
   pin: '',
+  password: '',
+  confirmPassword: '',
+  npub: '',
   role: 'staff' as UserRole,
+  authMethod: 'pin' as AuthMethod,
   isActive: true,
+  expiresAt: '',
 });
 
 const permissionsForm = reactive<UserPermissions>({
@@ -477,6 +746,13 @@ const permissionsForm = reactive<UserPermissions>({
   canAdjustStock: false,
 });
 
+// Auth method options
+const authMethodOptions = [
+  { value: 'nostr' as AuthMethod, label: 'Nostr', icon: 'i-heroicons-key', color: 'purple' },
+  { value: 'password' as AuthMethod, label: t('settings.users.password'), icon: 'i-heroicons-lock-closed', color: 'blue' },
+  { value: 'pin' as AuthMethod, label: 'PIN', icon: 'i-heroicons-hashtag', color: 'green' },
+];
+
 // Role options
 const roleOptions = [
   { value: 'owner', label: t('settings.users.roles.owner') },
@@ -493,6 +769,31 @@ const roleDescriptions = [
   { id: 'staff', color: 'gray' as const },
 ];
 
+// Password strength
+const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+const strengthTextColors = ['text-red-500', 'text-orange-500', 'text-yellow-500', 'text-green-500'];
+
+const passwordStrength = computed(() => {
+  const pwd = userForm.password;
+  if (!pwd) return 0;
+  let strength = 0;
+  if (pwd.length >= 8) strength++;
+  if (/[A-Z]/.test(pwd)) strength++;
+  if (/[0-9]/.test(pwd)) strength++;
+  if (/[^A-Za-z0-9]/.test(pwd)) strength++;
+  return strength;
+});
+
+const passwordStrengthText = computed(() => {
+  const texts = [
+    t('settings.users.passwordWeak'),
+    t('settings.users.passwordFair'),
+    t('settings.users.passwordGood'),
+    t('settings.users.passwordStrong'),
+  ];
+  return texts[passwordStrength.value - 1] || '';
+});
+
 // Methods
 const getRoleColor = (role: UserRole): 'purple' | 'blue' | 'green' | 'gray' => {
   const colors: Record<UserRole, 'purple' | 'blue' | 'green' | 'gray'> = {
@@ -504,8 +805,56 @@ const getRoleColor = (role: UserRole): 'purple' | 'blue' | 'green' | 'gray' => {
   return colors[role];
 };
 
+const getAuthMethodColor = (method?: AuthMethod): 'purple' | 'blue' | 'green' => {
+  const colors: Record<AuthMethod, 'purple' | 'blue' | 'green'> = {
+    nostr: 'purple',
+    password: 'blue',
+    pin: 'green',
+  };
+  return colors[method || 'pin'];
+};
+
+const getAuthMethodBgColor = (method?: AuthMethod): string => {
+  const colors: Record<AuthMethod, string> = {
+    nostr: 'bg-purple-500',
+    password: 'bg-blue-500',
+    pin: 'bg-green-500',
+  };
+  return colors[method || 'pin'];
+};
+
+const getAuthMethodIcon = (method?: AuthMethod): string => {
+  const icons: Record<AuthMethod, string> = {
+    nostr: 'i-heroicons-key',
+    password: 'i-heroicons-lock-closed',
+    pin: 'i-heroicons-hashtag',
+  };
+  return icons[method || 'pin'];
+};
+
+const getStatusColor = (user: StoreUser): 'green' | 'red' | 'orange' => {
+  if (user.revokedAt) return 'red';
+  if (isExpired(user)) return 'orange';
+  return user.isActive ? 'green' : 'red';
+};
+
+const getStatusText = (user: StoreUser): string => {
+  if (user.revokedAt) return t('settings.users.revoked');
+  if (isExpired(user)) return t('settings.users.expired');
+  return user.isActive ? t('common.active') : t('common.inactive');
+};
+
+const isExpired = (user: StoreUser): boolean => {
+  return !!(user.expiresAt && new Date(user.expiresAt) < new Date());
+};
+
+const truncateNpub = (npub: string): string => {
+  if (!npub) return '';
+  return `${npub.slice(0, 12)}...${npub.slice(-8)}`;
+};
+
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString();
+  return new Date(dateString).toLocaleDateString();
 };
 
 const openCreateModal = () => {
@@ -513,8 +862,13 @@ const openCreateModal = () => {
   userForm.name = '';
   userForm.email = '';
   userForm.pin = '';
+  userForm.password = '';
+  userForm.confirmPassword = '';
+  userForm.npub = '';
   userForm.role = 'staff';
+  userForm.authMethod = 'pin';
   userForm.isActive = true;
+  userForm.expiresAt = '';
   showUserModal.value = true;
 };
 
@@ -523,8 +877,13 @@ const openEditModal = (user: StoreUser) => {
   userForm.name = user.name;
   userForm.email = user.email || '';
   userForm.pin = '';
+  userForm.password = '';
+  userForm.confirmPassword = '';
+  userForm.npub = user.npub || '';
   userForm.role = user.role;
+  userForm.authMethod = user.authMethod || 'pin';
   userForm.isActive = user.isActive;
+  userForm.expiresAt = user.expiresAt ? user.expiresAt.split('T')[0] ?? '' : '';
   showUserModal.value = true;
 };
 
@@ -534,12 +893,52 @@ const openPermissionsModal = (user: StoreUser) => {
   showPermissionsModal.value = true;
 };
 
+const openRevokeModal = (user: StoreUser) => {
+  userToRevoke.value = user;
+  revokeReason.value = '';
+  showRevokeModal.value = true;
+};
+
 const saveUser = async () => {
+  // Validation
   if (!userForm.name.trim()) {
-    toast.add({
-      title: t('settings.users.nameRequired'),
-      color: 'red',
-    });
+    toast.add({ title: t('settings.users.nameRequired'), color: 'red' });
+    return;
+  }
+
+  // Validate auth method specific fields
+  if (userForm.authMethod === 'nostr' && !userForm.npub && !editingUser.value) {
+    toast.add({ title: t('settings.users.npubRequired'), color: 'red' });
+    return;
+  }
+
+  if (userForm.authMethod === 'password' && !editingUser.value) {
+    if (!userForm.password) {
+      toast.add({ title: t('settings.users.passwordRequired'), color: 'red' });
+      return;
+    }
+    if (userForm.password !== userForm.confirmPassword) {
+      toast.add({ title: t('settings.users.passwordMismatch'), color: 'red' });
+      return;
+    }
+    const validation = staffAuth.validatePasswordStrength(userForm.password);
+    if (!validation.valid) {
+      toast.add({ title: validation.errors[0], color: 'red' });
+      return;
+    }
+  }
+
+  if (userForm.pin) {
+    const pinValidation = staffAuth.validatePin(userForm.pin);
+    if (!pinValidation.valid) {
+      toast.add({ title: pinValidation.error!, color: 'red' });
+      return;
+    }
+  }
+
+  // Validate npub format if provided
+  if (userForm.npub && !staffAuth.validateNpub(userForm.npub)) {
+    toast.add({ title: t('settings.users.invalidNpub'), color: 'red' });
     return;
   }
 
@@ -553,39 +952,43 @@ const saveUser = async () => {
         email: userForm.email || undefined,
         role: userForm.role,
         isActive: userForm.isActive,
+        authMethod: userForm.authMethod,
         permissions: { ...DEFAULT_PERMISSIONS[userForm.role] },
+        expiresAt: userForm.expiresAt ? new Date(userForm.expiresAt).toISOString() : undefined,
       };
       
       if (userForm.pin) {
         updates.pin = userForm.pin;
       }
+      
+      if (userForm.npub) {
+        updates.npub = userForm.npub;
+      }
+      
+      if (userForm.password && userForm.authMethod === 'password') {
+        updates.passwordHash = userForm.password;
+      }
 
       await usersComposable.updateUser(editingUser.value.id, updates);
-      toast.add({
-        title: t('settings.users.updateSuccess'),
-        color: 'green',
-      });
+      toast.add({ title: t('settings.users.updateSuccess'), color: 'green' });
     } else {
       // Create new user
       await usersComposable.createUser({
         name: userForm.name,
         email: userForm.email || undefined,
         pin: userForm.pin || undefined,
+        password: userForm.password || undefined,
+        npub: userForm.npub || undefined,
         role: userForm.role,
+        authMethod: userForm.authMethod,
+        expiresAt: userForm.expiresAt ? new Date(userForm.expiresAt).toISOString() : undefined,
       });
-      toast.add({
-        title: t('settings.users.createSuccess'),
-        color: 'green',
-      });
+      toast.add({ title: t('settings.users.createSuccess'), color: 'green' });
     }
 
     showUserModal.value = false;
   } catch (error) {
-    toast.add({
-      title: t('common.error'),
-      description: String(error),
-      color: 'red',
-    });
+    toast.add({ title: t('common.error'), description: String(error), color: 'red' });
   } finally {
     saving.value = false;
   }
@@ -598,19 +1001,37 @@ const savePermissions = async () => {
 
   try {
     await usersComposable.updateUserPermissions(selectedUser.value.id, permissionsForm);
-    toast.add({
-      title: t('settings.users.permissionsSaved'),
-      color: 'green',
-    });
+    toast.add({ title: t('settings.users.permissionsSaved'), color: 'green' });
     showPermissionsModal.value = false;
   } catch (error) {
-    toast.add({
-      title: t('common.error'),
-      description: String(error),
-      color: 'red',
-    });
+    toast.add({ title: t('common.error'), description: String(error), color: 'red' });
   } finally {
     saving.value = false;
+  }
+};
+
+const revokeAccessConfirmed = async () => {
+  if (!userToRevoke.value) return;
+
+  revoking.value = true;
+
+  try {
+    await usersComposable.revokeUserAccess(userToRevoke.value.id, revokeReason.value);
+    toast.add({ title: t('settings.users.revokeSuccess'), color: 'green' });
+    showRevokeModal.value = false;
+  } catch (error) {
+    toast.add({ title: t('common.error'), description: String(error), color: 'red' });
+  } finally {
+    revoking.value = false;
+  }
+};
+
+const restoreAccess = async (user: StoreUser) => {
+  try {
+    await usersComposable.restoreUserAccess(user.id);
+    toast.add({ title: t('settings.users.restoreSuccess'), color: 'green' });
+  } catch (error) {
+    toast.add({ title: t('common.error'), description: String(error), color: 'red' });
   }
 };
 
@@ -626,17 +1047,10 @@ const deleteUserConfirmed = async () => {
 
   try {
     await usersComposable.deleteUser(userToDelete.value.id);
-    toast.add({
-      title: t('settings.users.deleteSuccess'),
-      color: 'green',
-    });
+    toast.add({ title: t('settings.users.deleteSuccess'), color: 'green' });
     showDeleteModal.value = false;
   } catch (error) {
-    toast.add({
-      title: t('common.error'),
-      description: String(error),
-      color: 'red',
-    });
+    toast.add({ title: t('common.error'), description: String(error), color: 'red' });
   } finally {
     deleting.value = false;
   }

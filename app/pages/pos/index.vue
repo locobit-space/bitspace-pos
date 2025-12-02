@@ -287,13 +287,13 @@ const applyDiscount = () => {
 const handleCouponApply = (coupon: AppliedCoupon) => {
   appliedCoupon.value = coupon;
   // Apply as fixed discount
-  pos.applyDiscount('fixed', coupon.discountAmount);
+  pos.applyDiscount("fixed", coupon.discountAmount);
 };
 
 const handleCouponRemove = () => {
   if (appliedCoupon.value) {
     // Remove the discount
-    pos.applyDiscount('fixed', 0);
+    pos.applyDiscount("fixed", 0);
     appliedCoupon.value = null;
   }
 };
@@ -337,7 +337,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
   try {
     const order = pos.createOrder(method);
     order.status = "completed";
-    
+
     // Add payment proof if available
     if (proof) {
       order.paymentProof = {
@@ -351,10 +351,10 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
         isOffline: !navigator.onLine,
       };
     }
-    
+
     // Save order to local DB and sync to Nostr
     await ordersStore.createOrder(order);
-    
+
     // Update POS session totals
     pos.updateSessionTotals(order);
 
@@ -436,10 +436,12 @@ onUnmounted(() => {
           <!-- Logo & Status -->
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2">
-              <div
-                class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xl shadow-lg shadow-amber-500/20"
-              >
-                ⚡
+              <div>
+                <div
+                  class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xl shadow-lg shadow-amber-500/20"
+                >
+                  ⚡
+                </div>
               </div>
               <div>
                 <h1
@@ -851,9 +853,7 @@ onUnmounted(() => {
                 </div>
 
                 <p class="text-xs text-gray-500 mt-0.5">
-                  {{
-                    currency.format(item.price, pos.selectedCurrency.value)
-                  }}
+                  {{ currency.format(item.price, pos.selectedCurrency.value) }}
                   each
                 </p>
 
@@ -1062,7 +1062,9 @@ onUnmounted(() => {
     <!-- Payment Modal -->
     <UModal v-model:open="showPaymentModal">
       <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto">
+        <div
+          class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto"
+        >
           <PaymentSelector
             v-if="showPaymentModal"
             :amount="pos.total.value"

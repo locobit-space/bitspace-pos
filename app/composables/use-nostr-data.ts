@@ -595,7 +595,7 @@ export function useNostrData() {
       [
         ['name', staff.name],
         ['role', staff.role],
-        staff.nostrPubkey ? ['p', staff.nostrPubkey] : [],
+        staff.pubkeyHex ? ['p', staff.pubkeyHex] : [],
       ].filter(t => t.length > 0) as string[][]
     );
   }

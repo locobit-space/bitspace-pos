@@ -526,6 +526,9 @@ export interface POSNotification {
 
 export type UserRole = 'owner' | 'admin' | 'cashier' | 'staff';
 
+// Authentication method - supports hybrid auth
+export type AuthMethod = 'nostr' | 'password' | 'pin';
+
 export interface UserPermissions {
   // POS Operations
   canCreateOrders: boolean;
@@ -640,16 +643,47 @@ export interface StoreUser {
   id: string;
   name: string;
   email?: string;
-  pin?: string; // For quick POS login
+  pin?: string; // For quick POS login (hashed)
   role: UserRole;
   permissions: UserPermissions;
   branchId?: string; // Optional - restrict to specific branch
   isActive: boolean;
-  nostrPubkey?: string;
   avatar?: string;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
+  
+  // ============================================
+  // 🔐 HYBRID AUTHENTICATION FIELDS
+  // ============================================
+  
+  // Primary authentication method
+  authMethod: AuthMethod;
+  
+  // Nostr authentication (for tech-savvy users)
+  npub?: string; // Nostr public key (npub format)
+  pubkeyHex?: string; // Nostr public key (hex format)
+  
+  // Password authentication (for traditional users)
+  passwordHash?: string; // Hashed password
+  
+  // ============================================
+  // 🛡️ PERMISSION & ACCESS CONTROL
+  // ============================================
+  
+  // Permission event tracking (for Nostr-based revocation)
+  permissionGrantId?: string; // ID of the permission grant event
+  grantedBy?: string; // npub of who granted access
+  grantedAt?: string; // When permission was granted
+  expiresAt?: string; // Auto-expiry date (optional)
+  revokedAt?: string; // If access was revoked
+  revocationReason?: string; // Why access was revoked
+  
+  // Security
+  failedLoginAttempts?: number;
+  lockedUntil?: string; // Account lockout
+  mustChangePassword?: boolean;
+  passwordChangedAt?: string;
 }
 
 // ============================================
@@ -719,10 +753,89 @@ export interface EncryptedData {
 
 export interface SecurityAuditLog {
   id: string;
-  action: 'login' | 'logout' | 'settings_change' | 'refund' | 'void' | 'role_change';
+  action: 'login' | 'logout' | 'settings_change' | 'refund' | 'void' | 'role_change' | 'permission_grant' | 'permission_revoke';
   userId: string;
   userName: string;
   details: string;
   ipAddress?: string;
   timestamp: string;
+}
+
+// ============================================
+// 🎫 PERMISSION EVENT TYPES (Nostr-based)
+// ============================================
+
+export type PermissionEventKind = 30078 | 30079; // 30078 = grant, 30079 = revoke
+
+export interface PermissionGrant {
+  id: string;
+  kind: 30078;
+  storeId: string;
+  storeName: string;
+  granterPubkey: string; // Owner/Admin who granted
+  granterNpub: string;
+  granteePubkey: string; // Staff member receiving permission
+  granteeNpub: string;
+  role: UserRole;
+  permissions: UserPermissions;
+  createdAt: string;
+  expiresAt?: string;
+  signature?: string; // Nostr event signature
+  nostrEventId?: string;
+}
+
+export interface PermissionRevocation {
+  id: string;
+  kind: 30079;
+  storeId: string;
+  revokerPubkey: string; // Owner/Admin who revoked
+  revokerNpub: string;
+  revokeePubkey: string; // Staff member being revoked
+  revokeeNpub: string;
+  grantId: string; // Reference to the grant being revoked
+  reason?: string;
+  createdAt: string;
+  signature?: string;
+  nostrEventId?: string;
+}
+
+// ============================================
+// 🏪 STORE IDENTITY TYPES
+// ============================================
+
+export interface StoreIdentity {
+  id: string;
+  name: string;
+  npub: string; // Store's Nostr public key
+  pubkeyHex: string;
+  ownerNpub: string; // Owner's personal npub
+  ownerPubkeyHex: string;
+  createdAt: string;
+  // Store key is used for data encryption
+  // The actual nsec is encrypted with owner's master password
+  encryptedStoreKey?: string;
+}
+
+// ============================================
+// 🔑 AUTH SESSION TYPES
+// ============================================
+
+export interface AuthSession {
+  userId: string;
+  npub?: string;
+  authMethod: AuthMethod;
+  loginAt: string;
+  expiresAt: string;
+  isValid: boolean;
+  deviceId?: string;
+  ipAddress?: string;
+}
+
+export interface AuthChallenge {
+  id: string;
+  challenge: string; // Random string to sign
+  createdAt: string;
+  expiresAt: string;
+  npub: string; // Who should sign this
+  isUsed: boolean;
 }
