@@ -64,12 +64,12 @@ const dateRange = ref({
   end: new Date().toISOString().split('T')[0],
 });
 
-const selectedBranch = ref('');
+const selectedBranch = ref('all');
 const selectedReport = ref<ReportType>('sales');
 const loading = ref(false);
 
 const branches = [
-  { id: '', name: t('common.allBranches') },
+  { id: 'all', name: t('common.allBranches') },
   { id: '1', name: 'ສາຂາໃຈກາງ / Central Branch' },
   { id: '2', name: 'ສາຂາຫ້ວຍໂຮ້ງ / Huay Hong Branch' },
 ];

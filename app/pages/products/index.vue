@@ -1065,6 +1065,7 @@ interface Category {
   id: string;
   name: string;
   description?: string;
+  icon?: string;
 }
 
 interface Unit {
@@ -1122,9 +1123,9 @@ const units = computed(() => productsStore.units.value);
 const branches = ref<Branch[]>(mockBranches);
 
 // Filters
-const selectedBranch = ref<string>("");
-const selectedCategory = ref<string>("");
-const selectedStatus = ref<string>("");
+const selectedBranch = ref<string>("all");
+const selectedCategory = ref<string>("all");
+const selectedStatus = ref<string>("all");
 const searchQuery = ref<string>("");
 
 // Pagination
@@ -1207,17 +1208,18 @@ const productForm = ref<ProductForm>({
 
 // Options
 const statusOptions = [
+  { value: "all", label: "All" },
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
 ];
 
 const branchOptions = computed(() => [
-  { id: "", name: "All Branches" },
+  { id: "all", name: "All Branches" },
   ...branches.value,
 ]);
 
 const categoryOptions = computed(() => [
-  { id: "", name: "All Categories" },
+  { id: "all", name: "All Categories" },
   ...categories.value,
 ]);
 
@@ -1227,15 +1229,15 @@ const unitOptions = computed(() => units.value);
 const filteredProducts = computed(() => {
   let filtered = products.value;
 
-  if (selectedBranch.value) {
+  if (selectedBranch.value && selectedBranch.value !== "all") {
     filtered = filtered.filter((p) => p.branchId === selectedBranch.value);
   }
 
-  if (selectedCategory.value) {
+  if (selectedCategory.value && selectedCategory.value !== "all") {
     filtered = filtered.filter((p) => p.categoryId === selectedCategory.value);
   }
 
-  if (selectedStatus.value) {
+  if (selectedStatus.value && selectedStatus.value !== "all") {
     filtered = filtered.filter((p) => p.status === selectedStatus.value);
   }
 
@@ -1269,9 +1271,9 @@ const endIndex = computed(() =>
 
 // Methods
 const resetFilters = () => {
-  selectedBranch.value = "";
-  selectedCategory.value = "";
-  selectedStatus.value = "";
+  selectedBranch.value = "all";
+  selectedCategory.value = "all";
+  selectedStatus.value = "all";
   searchQuery.value = "";
   currentPage.value = 1;
 };

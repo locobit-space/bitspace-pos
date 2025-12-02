@@ -1,6 +1,7 @@
 // ============================================
 // 📡 NOSTR DATA LAYER - ENCRYPTED STORAGE
 // Syncs POS data to Nostr relays with NIP-04/44 encryption
+// Uses centralized useEncryption module for all crypto operations
 // ============================================
 
 import { nip04, nip44, finalizeEvent, type UnsignedEvent, type Event } from 'nostr-tools';
@@ -80,6 +81,7 @@ interface EncryptedPayload {
 
 export function useNostrData() {
   const relay = useNostrRelay();
+  const encryption = useEncryption();
   // useSecurity() - for future encrypted local storage
   // useNuxtApp().$nostr - for direct nostr access
   
@@ -108,76 +110,96 @@ export function useNostrData() {
   };
 
   // ============================================
-  // 🔐 ENCRYPTION/DECRYPTION
+  // 🔐 ENCRYPTION/DECRYPTION (Using centralized module)
   // ============================================
 
   /**
-   * Encrypt data for storage (self-encryption using own keys)
-   * Uses NIP-44 if available, falls back to NIP-04
+   * Encrypt data for Nostr storage (self-encryption using own keys)
+   * Uses the centralized encryption module with NIP-44 preferred
    */
   async function encryptData(data: unknown): Promise<string> {
     const keys = getUserKeys();
     if (!keys) {
-      // Store unencrypted if no keys (will be encrypted locally by useSecurity)
+      // No keys available - use local AES encryption
+      const result = await encryption.encrypt(data, { algorithm: 'aes-256-gcm' });
+      if (result.success && result.data) {
+        return JSON.stringify({ v: 3, ...result.data }); // v3 = local AES
+      }
       return JSON.stringify(data);
     }
 
-    const plaintext = JSON.stringify(data);
-    
+    // Use centralized encryption module for Nostr
     try {
       // Try NIP-44 first (more secure)
-      if (nip44?.encrypt && nip44?.getConversationKey) {
-        // Convert hex privkey to bytes if needed
-        const privkeyBytes = typeof keys.privkey === 'string' 
-          ? hexToBytes(keys.privkey) 
-          : keys.privkey;
-        const pubkeyBytes = typeof keys.pubkey === 'string'
-          ? hexToBytes(keys.pubkey)
-          : keys.pubkey;
-        const conversationKey = nip44.getConversationKey(privkeyBytes as Uint8Array, pubkeyBytes as unknown as string);
-        const ciphertext = nip44.encrypt(plaintext, conversationKey);
-        const payload: EncryptedPayload = { v: 2, ct: ciphertext };
-        return JSON.stringify(payload);
+      const result = await encryption.encrypt(data, {
+        algorithm: 'nip-44',
+        nostrPrivkey: keys.privkey,
+        nostrPubkey: keys.pubkey,
+      });
+      
+      if (result.success && result.data) {
+        return JSON.stringify({ v: 2, ct: result.data.ciphertext });
       }
     } catch {
       // Fall through to NIP-04
     }
 
     // Fallback to NIP-04
-    const ciphertext = await nip04.encrypt(keys.privkey, keys.pubkey, plaintext);
-    const payload: EncryptedPayload = { v: 1, ct: ciphertext };
-    return JSON.stringify(payload);
+    try {
+      const result = await encryption.encrypt(data, {
+        algorithm: 'nip-04',
+        nostrPrivkey: keys.privkey,
+        nostrPubkey: keys.pubkey,
+      });
+      
+      if (result.success && result.data) {
+        return JSON.stringify({ v: 1, ct: result.data.ciphertext });
+      }
+    } catch {
+      // Last resort: plain JSON
+    }
+
+    return JSON.stringify(data);
   }
 
   /**
-   * Decrypt data from storage
+   * Decrypt data from Nostr storage
+   * Supports all encryption versions (v1=NIP-04, v2=NIP-44, v3=AES-256-GCM)
    */
   async function decryptData<T>(encrypted: string): Promise<T | null> {
     const keys = getUserKeys();
-    if (!keys) return null;
 
     try {
-      // Try to parse as encrypted payload
-      const payload: EncryptedPayload = JSON.parse(encrypted);
+      const payload = JSON.parse(encrypted);
       
-      if (payload.v === 2 && nip44?.decrypt && nip44?.getConversationKey) {
-        // NIP-44
-        const privkeyBytes = typeof keys.privkey === 'string' 
-          ? hexToBytes(keys.privkey) 
-          : keys.privkey;
-        const pubkeyBytes = typeof keys.pubkey === 'string'
-          ? hexToBytes(keys.pubkey)
-          : keys.pubkey;
-        const conversationKey = nip44.getConversationKey(privkeyBytes as Uint8Array, pubkeyBytes as unknown as string);
-        const plaintext = nip44.decrypt(payload.ct, conversationKey);
-        return JSON.parse(plaintext);
-      } else if (payload.v === 1 || payload.ct) {
-        // NIP-04
-        const plaintext = await nip04.decrypt(keys.privkey, keys.pubkey, payload.ct);
-        return JSON.parse(plaintext);
+      // Version 3: Local AES-256-GCM (no Nostr keys needed)
+      if (payload.v === 3 && payload.algorithm === 'aes-256-gcm') {
+        const result = await encryption.decrypt<T>(payload);
+        return result.success ? result.data || null : null;
+      }
+
+      // Nostr encryption requires keys
+      if (!keys) return null;
+
+      // Version 2: NIP-44
+      if (payload.v === 2) {
+        const result = await encryption.decrypt<T>(
+          { ciphertext: payload.ct, algorithm: 'nip-44', version: 2, encryptedAt: '' },
+          { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
+        );
+        return result.success ? result.data || null : null;
       }
       
-      // Not encrypted, parse directly
+      // Version 1: NIP-04
+      if (payload.v === 1 || payload.ct) {
+        const result = await encryption.decrypt<T>(
+          { ciphertext: payload.ct, algorithm: 'nip-04', version: 1, encryptedAt: '' },
+          { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
+        );
+        return result.success ? result.data || null : null;
+      }
+      
+      // Not encrypted, return as-is
       return payload as T;
     } catch {
       // Try parsing as plain JSON

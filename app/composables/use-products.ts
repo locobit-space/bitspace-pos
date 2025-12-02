@@ -1,207 +1,29 @@
-// composables/use-products.ts
-// 📦 Product & Category Management with Dexie + Nostr
+// ============================================
+// 📦 PRODUCTS COMPOSABLE
+// Product & Category Management with Dexie + Nostr
+// ============================================
 
-import { ref, computed } from 'vue';
-import type { Product, Category, Unit, ProductVariant, ProductModifierGroup } from '~/types';
+import type { 
+  Product, 
+  Category, 
+  Unit,
+} from '~/types';
+import { db, type ProductRecord, type CategoryRecord, type UnitRecord } from '~/db/db';
 
-// Common size variants
-const SIZE_VARIANTS: ProductVariant[] = [
-  { id: 'size-s', name: 'Small', shortName: 'S', priceModifier: 0, priceModifierType: 'fixed', sortOrder: 1, isDefault: true },
-  { id: 'size-m', name: 'Medium', shortName: 'M', priceModifier: 5000, priceModifierType: 'fixed', sortOrder: 2 },
-  { id: 'size-l', name: 'Large', shortName: 'L', priceModifier: 10000, priceModifierType: 'fixed', sortOrder: 3 },
+// ============================================
+// 📋 DEFAULT DATA (Initial Seed)
+// ============================================
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'all', name: 'All Items', description: 'All products', icon: '📦', sortOrder: 0 },
+  { id: 'drinks', name: 'Drinks', description: 'Beverages', icon: '🍹', sortOrder: 1 },
+  { id: 'food', name: 'Food', description: 'Main dishes', icon: '🍜', sortOrder: 2 },
+  { id: 'desserts', name: 'Desserts', description: 'Sweet treats', icon: '🍰', sortOrder: 3 },
+  { id: 'snacks', name: 'Snacks', description: 'Light bites', icon: '🍿', sortOrder: 4 },
+  { id: 'favorites', name: 'Favorites', description: 'Most popular items', icon: '⭐', sortOrder: 5 },
 ];
 
-const DRINK_SIZE_VARIANTS: ProductVariant[] = [
-  { id: 'size-regular', name: 'Regular', shortName: 'R', priceModifier: 0, priceModifierType: 'fixed', sortOrder: 1, isDefault: true },
-  { id: 'size-large', name: 'Large', shortName: 'L', priceModifier: 8000, priceModifierType: 'fixed', sortOrder: 2 },
-  { id: 'size-xl', name: 'Extra Large', shortName: 'XL', priceModifier: 15000, priceModifierType: 'fixed', sortOrder: 3 },
-];
-
-// Common modifier groups
-const DRINK_MODIFIERS: ProductModifierGroup[] = [
-  {
-    id: 'sugar-level',
-    name: '🍬 Sugar Level',
-    type: 'single',
-    required: false,
-    modifiers: [
-      { id: 'sugar-0', name: 'No Sugar', price: 0, category: 'preference' },
-      { id: 'sugar-25', name: '25% Sugar', price: 0, category: 'preference' },
-      { id: 'sugar-50', name: '50% Sugar', price: 0, category: 'preference', isDefault: true },
-      { id: 'sugar-100', name: 'Normal Sugar', price: 0, category: 'preference' },
-    ],
-  },
-  {
-    id: 'ice-level',
-    name: '🧊 Ice Level',
-    type: 'single',
-    required: false,
-    modifiers: [
-      { id: 'ice-no', name: 'No Ice', price: 0, category: 'preference' },
-      { id: 'ice-less', name: 'Less Ice', price: 0, category: 'preference' },
-      { id: 'ice-normal', name: 'Normal Ice', price: 0, category: 'preference', isDefault: true },
-      { id: 'ice-extra', name: 'Extra Ice', price: 0, category: 'preference' },
-    ],
-  },
-  {
-    id: 'drink-addons',
-    name: '➕ Add-ons',
-    type: 'multiple',
-    required: false,
-    maxSelect: 5,
-    modifiers: [
-      { id: 'addon-espresso', name: 'Extra Espresso Shot', price: 8000, category: 'addon' },
-      { id: 'addon-milk', name: 'Extra Milk', price: 3000, category: 'addon' },
-      { id: 'addon-whip', name: 'Whipped Cream', price: 5000, category: 'addon' },
-      { id: 'addon-caramel', name: 'Caramel Drizzle', price: 5000, category: 'addon' },
-    ],
-  },
-];
-
-const FOOD_MODIFIERS: ProductModifierGroup[] = [
-  {
-    id: 'spice-level',
-    name: '🌶️ Spice Level',
-    type: 'single',
-    required: false,
-    modifiers: [
-      { id: 'spice-no', name: 'No Spice', price: 0, category: 'preference' },
-      { id: 'spice-mild', name: 'Mild', price: 0, category: 'preference' },
-      { id: 'spice-medium', name: 'Medium', price: 0, category: 'preference', isDefault: true },
-      { id: 'spice-hot', name: 'Hot 🔥', price: 0, category: 'preference' },
-      { id: 'spice-thai', name: 'Thai Hot 🔥🔥', price: 0, category: 'preference' },
-    ],
-  },
-  {
-    id: 'food-addons',
-    name: '➕ Add-ons',
-    type: 'multiple',
-    required: false,
-    maxSelect: 5,
-    modifiers: [
-      { id: 'addon-egg', name: 'Fried Egg', price: 5000, category: 'addon' },
-      { id: 'addon-rice', name: 'Extra Sticky Rice', price: 5000, category: 'addon' },
-      { id: 'addon-veg', name: 'Extra Vegetables', price: 3000, category: 'addon' },
-      { id: 'addon-meat', name: 'Extra Meat', price: 15000, category: 'addon' },
-    ],
-  },
-];
-
-// Sample product data (replace with real data from DB/Nostr)
-const SAMPLE_PRODUCTS: Product[] = [
-  // ☕ Drinks - WITH VARIANTS
-  { 
-    id: 'p1', name: 'Lao Coffee', sku: 'COF001', categoryId: 'drinks', unitId: 'cup', 
-    price: 25000, prices: { LAK: 25000, THB: 45, USD: 1.25, SATS: 1250 }, 
-    stock: 100, minStock: 10, branchId: 'main', status: 'active', image: '☕', 
-    hasVariants: true, variants: DRINK_SIZE_VARIANTS, modifierGroups: DRINK_MODIFIERS,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { 
-    id: 'p2', name: 'Iced Coffee', sku: 'COF002', categoryId: 'drinks', unitId: 'cup', 
-    price: 30000, prices: { LAK: 30000, THB: 54, USD: 1.50, SATS: 1500 }, 
-    stock: 100, minStock: 10, branchId: 'main', status: 'active', image: '🧊', 
-    hasVariants: true, variants: DRINK_SIZE_VARIANTS, modifierGroups: DRINK_MODIFIERS,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { id: 'p3', name: 'Beer Lao', sku: 'BEV001', categoryId: 'drinks', unitId: 'bottle', price: 15000, prices: { LAK: 15000, THB: 27, USD: 0.75, SATS: 750 }, stock: 50, minStock: 10, branchId: 'main', status: 'active', image: '🍺', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p4', name: 'Beer Lao Dark', sku: 'BEV002', categoryId: 'drinks', unitId: 'bottle', price: 18000, prices: { LAK: 18000, THB: 32, USD: 0.90, SATS: 900 }, stock: 40, minStock: 10, branchId: 'main', status: 'active', image: '🍻', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { 
-    id: 'p5', name: 'Fruit Shake', sku: 'DRK001', categoryId: 'drinks', unitId: 'glass', 
-    price: 20000, prices: { LAK: 20000, THB: 36, USD: 1.00, SATS: 1000 }, 
-    stock: 40, minStock: 10, branchId: 'main', status: 'active', image: '🥤', 
-    hasVariants: true, variants: DRINK_SIZE_VARIANTS,
-    modifierGroups: [
-      {
-        id: 'shake-flavor',
-        name: '🍓 Flavor',
-        type: 'single',
-        required: true,
-        modifiers: [
-          { id: 'flavor-mango', name: 'Mango', price: 0, category: 'preference', isDefault: true },
-          { id: 'flavor-banana', name: 'Banana', price: 0, category: 'preference' },
-          { id: 'flavor-papaya', name: 'Papaya', price: 0, category: 'preference' },
-          { id: 'flavor-watermelon', name: 'Watermelon', price: 0, category: 'preference' },
-          { id: 'flavor-mixed', name: 'Mixed Fruits', price: 5000, category: 'preference' },
-        ],
-      },
-      ...DRINK_MODIFIERS.slice(0, 2), // Sugar & Ice
-    ],
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { id: 'p6', name: 'Water', sku: 'DRK002', categoryId: 'drinks', unitId: 'bottle', price: 5000, prices: { LAK: 5000, THB: 9, USD: 0.25, SATS: 250 }, stock: 200, minStock: 50, branchId: 'main', status: 'active', image: '💧', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { 
-    id: 'p7', name: 'Lao Tea', sku: 'TEA001', categoryId: 'drinks', unitId: 'cup', 
-    price: 15000, prices: { LAK: 15000, THB: 27, USD: 0.75, SATS: 750 }, 
-    stock: 80, minStock: 20, branchId: 'main', status: 'active', image: '🍵', 
-    hasVariants: true, variants: DRINK_SIZE_VARIANTS, modifierGroups: DRINK_MODIFIERS.slice(0, 2),
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { id: 'p8', name: 'Sugarcane Juice', sku: 'DRK003', categoryId: 'drinks', unitId: 'glass', price: 12000, prices: { LAK: 12000, THB: 22, USD: 0.60, SATS: 600 }, stock: 60, minStock: 15, branchId: 'main', status: 'active', image: '🧃', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-
-  // 🍜 Food - WITH MODIFIERS
-  { 
-    id: 'p9', name: 'Khao Piak Sen', sku: 'FOOD001', categoryId: 'food', unitId: 'bowl', 
-    price: 35000, prices: { LAK: 35000, THB: 63, USD: 1.75, SATS: 1750 }, 
-    stock: 30, minStock: 5, branchId: 'main', status: 'active', image: '🍜', 
-    hasVariants: true, variants: SIZE_VARIANTS, modifierGroups: FOOD_MODIFIERS,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { 
-    id: 'p10', name: 'Laap Moo', sku: 'FOOD002', categoryId: 'food', unitId: 'plate', 
-    price: 40000, prices: { LAK: 40000, THB: 72, USD: 2.00, SATS: 2000 }, 
-    stock: 25, minStock: 5, branchId: 'main', status: 'active', image: '🥗', 
-    modifierGroups: FOOD_MODIFIERS,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { id: 'p11', name: 'Ping Kai', sku: 'FOOD003', categoryId: 'food', unitId: 'piece', price: 50000, prices: { LAK: 50000, THB: 90, USD: 2.50, SATS: 2500 }, stock: 20, minStock: 5, branchId: 'main', status: 'active', image: '🍗', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p12', name: 'Sticky Rice', sku: 'FOOD004', categoryId: 'food', unitId: 'basket', price: 10000, prices: { LAK: 10000, THB: 18, USD: 0.50, SATS: 500 }, stock: 100, minStock: 20, branchId: 'main', status: 'active', image: '🍚', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { 
-    id: 'p13', name: 'Tam Mak Hoong', sku: 'FOOD005', categoryId: 'food', unitId: 'plate', 
-    price: 25000, prices: { LAK: 25000, THB: 45, USD: 1.25, SATS: 1250 }, 
-    stock: 30, minStock: 10, branchId: 'main', status: 'active', image: '🥬', 
-    modifierGroups: FOOD_MODIFIERS,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { 
-    id: 'p14', name: 'Or Lam', sku: 'FOOD006', categoryId: 'food', unitId: 'bowl', 
-    price: 45000, prices: { LAK: 45000, THB: 81, USD: 2.25, SATS: 2250 }, 
-    stock: 15, minStock: 5, branchId: 'main', status: 'active', image: '🍲', 
-    hasVariants: true, variants: SIZE_VARIANTS, modifierGroups: FOOD_MODIFIERS,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-  { id: 'p15', name: 'Khao Jee', sku: 'FOOD007', categoryId: 'food', unitId: 'piece', price: 15000, prices: { LAK: 15000, THB: 27, USD: 0.75, SATS: 750 }, stock: 40, minStock: 10, branchId: 'main', status: 'active', image: '🥖', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { 
-    id: 'p16', name: 'Fried Rice', sku: 'FOOD008', categoryId: 'food', unitId: 'plate', 
-    price: 30000, prices: { LAK: 30000, THB: 54, USD: 1.50, SATS: 1500 }, 
-    stock: 35, minStock: 10, branchId: 'main', status: 'active', image: '🍛',
-    hasVariants: true, variants: SIZE_VARIANTS, modifierGroups: FOOD_MODIFIERS,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() 
-  },
-
-  // 🍰 Desserts
-  { id: 'p17', name: 'Khao Lam', sku: 'DES001', categoryId: 'desserts', unitId: 'piece', price: 20000, prices: { LAK: 20000, THB: 36, USD: 1.00, SATS: 1000 }, stock: 25, minStock: 5, branchId: 'main', status: 'active', image: '🎋', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p18', name: 'Nam Van', sku: 'DES002', categoryId: 'desserts', unitId: 'bowl', price: 15000, prices: { LAK: 15000, THB: 27, USD: 0.75, SATS: 750 }, stock: 30, minStock: 10, branchId: 'main', status: 'active', image: '🍨', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p19', name: 'Mango Sticky Rice', sku: 'DES003', categoryId: 'desserts', unitId: 'plate', price: 35000, prices: { LAK: 35000, THB: 63, USD: 1.75, SATS: 1750 }, stock: 20, minStock: 5, branchId: 'main', status: 'active', image: '🥭', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p20', name: 'Coconut Ice Cream', sku: 'DES004', categoryId: 'desserts', unitId: 'scoop', price: 18000, prices: { LAK: 18000, THB: 32, USD: 0.90, SATS: 900 }, stock: 40, minStock: 10, branchId: 'main', status: 'active', image: '🍦', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-
-  // 🍿 Snacks
-  { id: 'p21', name: 'Fried Insects', sku: 'SNK001', categoryId: 'snacks', unitId: 'plate', price: 25000, prices: { LAK: 25000, THB: 45, USD: 1.25, SATS: 1250 }, stock: 15, minStock: 5, branchId: 'main', status: 'active', image: '🦗', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p22', name: 'Sai Oua', sku: 'SNK002', categoryId: 'snacks', unitId: 'piece', price: 30000, prices: { LAK: 30000, THB: 54, USD: 1.50, SATS: 1500 }, stock: 20, minStock: 5, branchId: 'main', status: 'active', image: '🌭', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p23', name: 'Spring Rolls', sku: 'SNK003', categoryId: 'snacks', unitId: 'piece', price: 8000, prices: { LAK: 8000, THB: 14, USD: 0.40, SATS: 400 }, stock: 50, minStock: 15, branchId: 'main', status: 'active', image: '🥟', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'p24', name: 'Fried Banana', sku: 'SNK004', categoryId: 'snacks', unitId: 'piece', price: 10000, prices: { LAK: 1000, THB: 18, USD: 0.50, SATS: 10 }, stock: 35, minStock: 10, branchId: 'main', status: 'active', image: '🍌', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-];
-
-const CATEGORIES: Category[] = [
-  { id: 'all', name: 'All Items', description: 'All products' },
-  { id: 'drinks', name: 'Drinks', description: 'Beverages' },
-  { id: 'food', name: 'Food', description: 'Main dishes' },
-  { id: 'desserts', name: 'Desserts', description: 'Sweet treats' },
-  { id: 'snacks', name: 'Snacks', description: 'Light bites' },
-  { id: 'favorites', name: 'Favorites', description: 'Most popular items' },
-];
-
-const UNITS: Unit[] = [
+const DEFAULT_UNITS: Unit[] = [
   { id: 'piece', name: 'Piece', symbol: 'pc' },
   { id: 'cup', name: 'Cup', symbol: 'cup' },
   { id: 'bottle', name: 'Bottle', symbol: 'btl' },
@@ -210,19 +32,38 @@ const UNITS: Unit[] = [
   { id: 'plate', name: 'Plate', symbol: 'plt' },
   { id: 'basket', name: 'Basket', symbol: 'bsk' },
   { id: 'scoop', name: 'Scoop', symbol: 'scp' },
+  { id: 'kg', name: 'Kilogram', symbol: 'kg' },
+  { id: 'g', name: 'Gram', symbol: 'g' },
+  { id: 'l', name: 'Liter', symbol: 'L' },
+  { id: 'ml', name: 'Milliliter', symbol: 'ml' },
 ];
 
-export const useProducts = () => {
-  // State
-  const products = ref<Product[]>(SAMPLE_PRODUCTS);
-  const categories = ref<Category[]>(CATEGORIES);
-  const units = ref<Unit[]>(UNITS);
-  const isLoading = ref(false);
-  const searchQuery = ref('');
-  const selectedCategory = ref<string>('all');
-  const favoriteIds = ref<Set<string>>(new Set(['p1', 'p9', 'p12', 'p3'])); // Sample favorites
+// Singleton state
+const products = ref<Product[]>([]);
+const categories = ref<Category[]>([]);
+const units = ref<Unit[]>([]);
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+const isInitialized = ref(false);
+const syncPending = ref(0);
 
-  // Filtered products
+// UI State
+const searchQuery = ref('');
+const selectedCategory = ref<string>('all');
+const favoriteIds = ref<Set<string>>(new Set());
+
+/**
+ * 📦 PRODUCTS STORE (Production-ready with Dexie + Nostr sync)
+ * Primary composable for product, category, and unit management
+ */
+export function useProductsStore() {
+  const nostrData = useNostrData();
+  const offline = useOffline();
+
+  // ============================================
+  // 📊 COMPUTED
+  // ============================================
+
   const filteredProducts = computed(() => {
     let result = [...products.value];
 
@@ -238,7 +79,8 @@ export const useProducts = () => {
       const query = searchQuery.value.toLowerCase().trim();
       result = result.filter(p => 
         p.name.toLowerCase().includes(query) || 
-        p.sku.toLowerCase().includes(query)
+        p.sku.toLowerCase().includes(query) ||
+        p.description?.toLowerCase().includes(query)
       );
     }
 
@@ -248,135 +90,687 @@ export const useProducts = () => {
     return result;
   });
 
-  // Popular products (top 8 by popularity score)
-  const popularProducts = computed(() => {
-    return [...products.value]
-      .filter(p => p.status === 'active')
-      .sort((a, b) => (b.popularityScore || 0) - (a.popularityScore || 0))
-      .slice(0, 8);
+  const activeProducts = computed(() => 
+    products.value.filter(p => p.status === 'active')
+  );
+
+  const lowStockProducts = computed(() => 
+    products.value.filter(p => p.stock <= p.minStock && p.status === 'active')
+  );
+
+  const outOfStockProducts = computed(() => 
+    products.value.filter(p => p.stock <= 0 && p.status === 'active')
+  );
+
+  const productsByCategory = computed(() => {
+    const grouped: Record<string, Product[]> = {};
+    for (const product of activeProducts.value) {
+      if (!grouped[product.categoryId]) {
+        grouped[product.categoryId] = [];
+      }
+      grouped[product.categoryId]!.push(product);
+    }
+    return grouped;
   });
 
-  // Low stock products
-  const lowStockProducts = computed(() => {
-    return products.value.filter(p => p.stock <= p.minStock);
-  });
+  // ============================================
+  // 💾 LOCAL DB OPERATIONS
+  // ============================================
 
-  // Get product by ID
-  const getProduct = (id: string): Product | undefined => {
-    return products.value.find(p => p.id === id);
-  };
+  async function loadProductsFromLocal(): Promise<Product[]> {
+    try {
+      const records = await db.products
+        .where('status')
+        .equals('active')
+        .toArray();
+      return records.map(r => JSON.parse(r.data) as Product);
+    } catch (e) {
+      console.error('Failed to load products from local DB:', e);
+      return [];
+    }
+  }
 
-  // Get category by ID
-  const getCategory = (id: string): Category | undefined => {
-    return categories.value.find(c => c.id === id);
-  };
+  async function loadCategoriesFromLocal(): Promise<Category[]> {
+    try {
+      const records = await db.categories.orderBy('sortOrder').toArray();
+      if (records.length === 0) {
+        // Seed default categories
+        await seedDefaultCategories();
+        return DEFAULT_CATEGORIES;
+      }
+      return records.map(r => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        icon: r.icon,
+        sortOrder: r.sortOrder,
+      }));
+    } catch (e) {
+      console.error('Failed to load categories:', e);
+      return DEFAULT_CATEGORIES;
+    }
+  }
 
-  // Get products by category
-  const getProductsByCategory = (categoryId: string): Product[] => {
-    if (categoryId === 'all') return products.value.filter(p => p.status === 'active');
-    return products.value.filter(p => p.categoryId === categoryId && p.status === 'active');
-  };
+  async function loadUnitsFromLocal(): Promise<Unit[]> {
+    try {
+      const records = await db.units.toArray();
+      if (records.length === 0) {
+        // Seed default units
+        await seedDefaultUnits();
+        return DEFAULT_UNITS;
+      }
+      return records.map(r => ({
+        id: r.id,
+        name: r.name,
+        symbol: r.symbol,
+      }));
+    } catch (e) {
+      console.error('Failed to load units:', e);
+      return DEFAULT_UNITS;
+    }
+  }
 
-  // Add product
-  const addProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newProduct: Product = {
-      ...product,
-      id: `p${Date.now()}`,
+  async function seedDefaultCategories(): Promise<void> {
+    for (const cat of DEFAULT_CATEGORIES) {
+      await db.categories.put({
+        id: cat.id,
+        name: cat.name,
+        description: cat.description,
+        icon: cat.icon,
+        sortOrder: cat.sortOrder || 0,
+        synced: false,
+      });
+    }
+  }
+
+  async function seedDefaultUnits(): Promise<void> {
+    for (const unit of DEFAULT_UNITS) {
+      await db.units.put({
+        id: unit.id,
+        name: unit.name,
+        symbol: unit.symbol,
+        synced: false,
+      });
+    }
+  }
+
+  async function saveProductToLocal(product: Product): Promise<void> {
+    const record: ProductRecord = {
+      id: product.id,
+      data: JSON.stringify(product),
+      sku: product.sku,
+      name: product.name,
+      categoryId: product.categoryId,
+      status: product.status,
+      price: product.price,
+      stock: product.stock,
+      updatedAt: Date.now(),
+      synced: false,
+    };
+    await db.products.put(record);
+  }
+
+  async function saveCategoryToLocal(category: Category): Promise<void> {
+    const record: CategoryRecord = {
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      icon: category.icon,
+      sortOrder: category.sortOrder || 0,
+      synced: false,
+    };
+    await db.categories.put(record);
+  }
+
+  async function saveUnitToLocal(unit: Unit): Promise<void> {
+    const record: UnitRecord = {
+      id: unit.id,
+      name: unit.name,
+      symbol: unit.symbol,
+      synced: false,
+    };
+    await db.units.put(record);
+  }
+
+  // ============================================
+  // 📡 NOSTR SYNC
+  // ============================================
+
+  async function syncProductToNostr(product: Product): Promise<boolean> {
+    try {
+      const event = await nostrData.saveProduct(product);
+      if (event) {
+        await db.products.update(product.id, {
+          synced: true,
+          nostrEventId: event.id,
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync product to Nostr:', e);
+      return false;
+    }
+  }
+
+  async function syncCategoryToNostr(category: Category): Promise<boolean> {
+    try {
+      const event = await nostrData.saveCategory(category);
+      if (event) {
+        await db.categories.update(category.id, {
+          synced: true,
+          nostrEventId: event.id,
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync category to Nostr:', e);
+      return false;
+    }
+  }
+
+  async function loadFromNostr(): Promise<void> {
+    try {
+      const [nostrProducts, nostrCategories, nostrUnits] = await Promise.all([
+        nostrData.getAllProducts(),
+        nostrData.getAllCategories(),
+        nostrData.getAllUnits(),
+      ]);
+
+      // Merge with local (Nostr takes precedence for synced items)
+      for (const product of nostrProducts) {
+        await saveProductToLocal(product);
+      }
+      for (const category of nostrCategories) {
+        await saveCategoryToLocal(category);
+      }
+      for (const unit of nostrUnits) {
+        await saveUnitToLocal(unit);
+      }
+
+      // Reload from local
+      products.value = await loadProductsFromLocal();
+      categories.value = await loadCategoriesFromLocal();
+      units.value = await loadUnitsFromLocal();
+    } catch (e) {
+      console.error('Failed to load from Nostr:', e);
+    }
+  }
+
+  async function syncAllToNostr(): Promise<{ synced: number; failed: number }> {
+    let synced = 0;
+    let failed = 0;
+
+    // Sync unsynced products
+    const unsyncedProducts = await db.products.filter(p => !p.synced).toArray();
+    for (const record of unsyncedProducts) {
+      const product = JSON.parse(record.data) as Product;
+      if (await syncProductToNostr(product)) {
+        synced++;
+      } else {
+        failed++;
+      }
+    }
+
+    // Sync unsynced categories
+    const unsyncedCategories = await db.categories.filter(c => !c.synced).toArray();
+    for (const record of unsyncedCategories) {
+      const category: Category = {
+        id: record.id,
+        name: record.name,
+        description: record.description,
+        icon: record.icon,
+        sortOrder: record.sortOrder,
+      };
+      if (await syncCategoryToNostr(category)) {
+        synced++;
+      } else {
+        failed++;
+      }
+    }
+
+    syncPending.value = failed;
+    return { synced, failed };
+  }
+
+  // ============================================
+  // 🚀 INITIALIZATION
+  // ============================================
+
+  async function init(): Promise<void> {
+    if (isInitialized.value) return;
+    
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      // Load from local DB first (fast)
+      products.value = await loadProductsFromLocal();
+      categories.value = await loadCategoriesFromLocal();
+      units.value = await loadUnitsFromLocal();
+
+      // Load favorites
+      loadFavorites();
+
+      // Sync with Nostr if online
+      if (offline.isOnline.value) {
+        await loadFromNostr();
+      }
+
+      // Count pending syncs
+      const unsyncedCount = await db.products.filter(p => !p.synced).count();
+      syncPending.value = unsyncedCount;
+
+      isInitialized.value = true;
+    } catch (e) {
+      error.value = `Failed to initialize products: ${e}`;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============================================
+  // 🛍️ PRODUCT CRUD
+  // ============================================
+
+  async function addProduct(
+    productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Product> {
+    const product: Product = {
+      ...productData,
+      id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    products.value.push(newProduct);
-    return newProduct;
-  };
 
-  // Update product
-  const updateProduct = async (id: string, updates: Partial<Product>) => {
+    // Add to state
+    products.value.push(product);
+
+    // Save to local DB
+    await saveProductToLocal(product);
+
+    // Sync to Nostr
+    if (offline.isOnline.value) {
+      const synced = await syncProductToNostr(product);
+      if (!synced) syncPending.value++;
+    } else {
+      syncPending.value++;
+    }
+
+    return product;
+  }
+
+  async function updateProduct(
+    id: string, 
+    updates: Partial<Product>
+  ): Promise<Product | null> {
     const index = products.value.findIndex(p => p.id === id);
-    if (index !== -1) {
-      const existing = products.value[index]!;
-      products.value[index] = {
-        ...existing,
-        ...updates,
-        id: existing.id,
-        name: updates.name ?? existing.name,
-        sku: updates.sku ?? existing.sku,
-        categoryId: updates.categoryId ?? existing.categoryId,
-        unitId: updates.unitId ?? existing.unitId,
-        price: updates.price ?? existing.price,
-        stock: updates.stock ?? existing.stock,
-        minStock: updates.minStock ?? existing.minStock,
-        branchId: updates.branchId ?? existing.branchId,
-        status: updates.status ?? existing.status,
-        createdAt: existing.createdAt,
-        updatedAt: new Date().toISOString(),
-      };
-      return products.value[index];
+    if (index === -1) return null;
+
+    const existing = products.value[index]!;
+    const updatedProduct: Product = {
+      ...existing,
+      ...updates,
+      id: existing.id, // Ensure ID doesn't change
+      createdAt: existing.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    products.value[index] = updatedProduct;
+
+    // Save to local DB
+    await saveProductToLocal(updatedProduct);
+
+    // Sync to Nostr
+    if (offline.isOnline.value) {
+      await syncProductToNostr(updatedProduct);
     }
-    return null;
-  };
 
-  // Update stock
-  const updateStock = async (id: string, quantity: number) => {
-    const product = products.value.find(p => p.id === id);
-    if (product) {
-      product.stock += quantity;
-      product.updatedAt = new Date().toISOString();
+    return updatedProduct;
+  }
+
+  async function deleteProduct(id: string): Promise<boolean> {
+    const index = products.value.findIndex(p => p.id === id);
+    if (index === -1) return false;
+
+    // Soft delete - mark as inactive
+    const product = products.value[index]!;
+    product.status = 'inactive';
+    product.updatedAt = new Date().toISOString();
+
+    // Update local DB
+    await saveProductToLocal(product);
+
+    // Remove from active list
+    products.value.splice(index, 1);
+
+    // Sync to Nostr
+    if (offline.isOnline.value) {
+      await nostrData.deleteProduct(id);
     }
-  };
 
-  // Decrease stock after sale
-  const decreaseStock = async (id: string, quantity: number) => {
-    await updateStock(id, -quantity);
-  };
+    return true;
+  }
 
-  // Toggle favorite
-  const toggleFavorite = (id: string) => {
+  function getProduct(id: string): Product | undefined {
+    return products.value.find(p => p.id === id);
+  }
+
+  function getProductBySku(sku: string): Product | undefined {
+    return products.value.find(p => p.sku === sku);
+  }
+
+  function getProductsByCategory(categoryId: string): Product[] {
+    if (categoryId === 'all') return activeProducts.value;
+    return activeProducts.value.filter(p => p.categoryId === categoryId);
+  }
+
+  // ============================================
+  // 📁 CATEGORY CRUD
+  // ============================================
+
+  async function addCategory(
+    categoryData: Omit<Category, 'id'>
+  ): Promise<Category> {
+    const category: Category = {
+      ...categoryData,
+      id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sortOrder: categories.value.length,
+    };
+
+    categories.value.push(category);
+    await saveCategoryToLocal(category);
+
+    if (offline.isOnline.value) {
+      await syncCategoryToNostr(category);
+    }
+
+    return category;
+  }
+
+  async function updateCategory(
+    id: string, 
+    updates: Partial<Category>
+  ): Promise<Category | null> {
+    const index = categories.value.findIndex(c => c.id === id);
+    if (index === -1) return null;
+
+    const existing = categories.value[index]!;
+    const updatedCategory: Category = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+    };
+
+    categories.value[index] = updatedCategory;
+    await saveCategoryToLocal(updatedCategory);
+
+    if (offline.isOnline.value) {
+      await syncCategoryToNostr(updatedCategory);
+    }
+
+    return updatedCategory;
+  }
+
+  async function deleteCategory(id: string): Promise<boolean> {
+    // Don't delete built-in categories
+    if (['all', 'favorites'].includes(id)) return false;
+
+    const index = categories.value.findIndex(c => c.id === id);
+    if (index === -1) return false;
+
+    // Check if category has products
+    const hasProducts = products.value.some(p => p.categoryId === id);
+    if (hasProducts) {
+      error.value = 'Cannot delete category with products';
+      return false;
+    }
+
+    categories.value.splice(index, 1);
+    await db.categories.delete(id);
+
+    return true;
+  }
+
+  function getCategory(id: string): Category | undefined {
+    return categories.value.find(c => c.id === id);
+  }
+
+  // ============================================
+  // 📐 UNIT CRUD
+  // ============================================
+
+  async function addUnit(unitData: Omit<Unit, 'id'>): Promise<Unit> {
+    const unit: Unit = {
+      ...unitData,
+      id: `unit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+
+    units.value.push(unit);
+    await saveUnitToLocal(unit);
+
+    return unit;
+  }
+
+  async function updateUnit(
+    id: string, 
+    updates: Partial<Unit>
+  ): Promise<Unit | null> {
+    const index = units.value.findIndex(u => u.id === id);
+    if (index === -1) return null;
+
+    const existing = units.value[index]!;
+    const updatedUnit: Unit = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+    };
+
+    units.value[index] = updatedUnit;
+    await saveUnitToLocal(updatedUnit);
+
+    return updatedUnit;
+  }
+
+  function getUnit(id: string): Unit | undefined {
+    return units.value.find(u => u.id === id);
+  }
+
+  // ============================================
+  // 📦 STOCK MANAGEMENT
+  // ============================================
+
+  async function updateStock(
+    productId: string, 
+    adjustment: number,
+    reason: 'sale' | 'purchase' | 'adjustment' | 'count' | 'waste' | 'return' = 'adjustment',
+    notes?: string
+  ): Promise<boolean> {
+    const product = products.value.find(p => p.id === productId);
+    if (!product) return false;
+
+    const previousStock = product.stock;
+    const newStock = previousStock + adjustment;
+
+    // Update product
+    await updateProduct(productId, { stock: newStock });
+
+    // Record stock adjustment
+    const adjustmentRecord = {
+      id: `adj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      productId,
+      previousStock,
+      newStock,
+      adjustment,
+      reason,
+      notes,
+      staffId: 'current_user', // TODO: Get from auth
+      createdAt: new Date().toISOString(),
+    };
+
+    await db.stockAdjustments.put({
+      ...adjustmentRecord,
+      createdAt: Date.now(),
+      synced: false,
+    });
+
+    // Sync to Nostr
+    if (offline.isOnline.value) {
+      await nostrData.recordStockAdjustment(adjustmentRecord);
+    }
+
+    return true;
+  }
+
+  async function decreaseStock(productId: string, quantity: number): Promise<boolean> {
+    return updateStock(productId, -quantity, 'sale');
+  }
+
+  async function increaseStock(productId: string, quantity: number, reason: 'purchase' | 'return' = 'purchase'): Promise<boolean> {
+    return updateStock(productId, quantity, reason);
+  }
+
+  async function setStock(productId: string, newStock: number, notes?: string): Promise<boolean> {
+    const product = products.value.find(p => p.id === productId);
+    if (!product) return false;
+
+    const adjustment = newStock - product.stock;
+    return updateStock(productId, adjustment, 'count', notes);
+  }
+
+  async function getStockHistory(productId: string, limit = 50): Promise<Array<{
+    id: string;
+    adjustment: number;
+    reason: string;
+    notes?: string;
+    createdAt: string;
+  }>> {
+    const records = await db.stockAdjustments
+      .where('productId')
+      .equals(productId)
+      .reverse()
+      .limit(limit)
+      .toArray();
+
+    return records.map(r => ({
+      id: r.id,
+      adjustment: r.adjustment,
+      reason: r.reason,
+      notes: r.notes,
+      createdAt: new Date(r.createdAt).toISOString(),
+    }));
+  }
+
+  // ============================================
+  // ⭐ FAVORITES
+  // ============================================
+
+  function toggleFavorite(id: string): void {
     if (favoriteIds.value.has(id)) {
       favoriteIds.value.delete(id);
     } else {
       favoriteIds.value.add(id);
     }
-    // Save to localStorage
-    localStorage.setItem('pos_favorites', JSON.stringify([...favoriteIds.value]));
-  };
+    saveFavorites();
+  }
 
-  // Check if favorite
-  const isFavorite = (id: string): boolean => {
+  function isFavorite(id: string): boolean {
     return favoriteIds.value.has(id);
-  };
+  }
 
-  // Load favorites from storage
-  const loadFavorites = () => {
+  function saveFavorites(): void {
+    localStorage.setItem('pos_favorites', JSON.stringify([...favoriteIds.value]));
+  }
+
+  function loadFavorites(): void {
     const stored = localStorage.getItem('pos_favorites');
     if (stored) {
       try {
         favoriteIds.value = new Set(JSON.parse(stored));
       } catch {
-        // Ignore parse errors
+        favoriteIds.value = new Set();
       }
     }
-  };
+  }
 
-  // Add category
-  const addCategory = async (category: Omit<Category, 'id'>) => {
-    const newCategory: Category = {
-      ...category,
-      id: `cat${Date.now()}`,
+  // ============================================
+  // 🔍 SEARCH & FILTER
+  // ============================================
+
+  function searchProducts(query: string): Product[] {
+    const q = query.toLowerCase();
+    return activeProducts.value.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q)
+    );
+  }
+
+  function setSearchQuery(query: string): void {
+    searchQuery.value = query;
+  }
+
+  function setSelectedCategory(categoryId: string): void {
+    selectedCategory.value = categoryId;
+  }
+
+  // ============================================
+  // 📊 IMPORT/EXPORT
+  // ============================================
+
+  async function exportProducts(): Promise<string> {
+    const data = {
+      products: products.value,
+      categories: categories.value,
+      units: units.value,
+      exportedAt: new Date().toISOString(),
     };
-    categories.value.push(newCategory);
-    return newCategory;
-  };
+    return JSON.stringify(data, null, 2);
+  }
 
-  // Initialize
-  const init = async () => {
-    isLoading.value = true;
-    try {
-      loadFavorites();
-      // In production, load from Dexie/Nostr here
-    } finally {
-      isLoading.value = false;
+  async function importProducts(jsonData: string): Promise<{
+    products: number;
+    categories: number;
+    units: number;
+  }> {
+    const data = JSON.parse(jsonData);
+    let productCount = 0;
+    let categoryCount = 0;
+    let unitCount = 0;
+
+    // Import categories first
+    if (data.categories) {
+      for (const cat of data.categories) {
+        if (!categories.value.find(c => c.id === cat.id)) {
+          await addCategory(cat);
+          categoryCount++;
+        }
+      }
     }
-  };
+
+    // Import units
+    if (data.units) {
+      for (const unit of data.units) {
+        if (!units.value.find(u => u.id === unit.id)) {
+          await addUnit(unit);
+          unitCount++;
+        }
+      }
+    }
+
+    // Import products
+    if (data.products) {
+      for (const prod of data.products) {
+        if (!products.value.find(p => p.id === prod.id)) {
+          await addProduct(prod);
+          productCount++;
+        }
+      }
+    }
+
+    return { products: productCount, categories: categoryCount, units: unitCount };
+  }
 
   return {
     // State
@@ -384,26 +778,72 @@ export const useProducts = () => {
     categories,
     units,
     isLoading,
+    error,
+    isInitialized,
+    syncPending,
+
+    // UI State
     searchQuery,
     selectedCategory,
     favoriteIds,
 
     // Computed
     filteredProducts,
-    popularProducts,
+    activeProducts,
     lowStockProducts,
+    outOfStockProducts,
+    productsByCategory,
 
-    // Methods
-    getProduct,
-    getCategory,
-    getProductsByCategory,
+    // Init
+    init,
+
+    // Product CRUD
     addProduct,
     updateProduct,
+    deleteProduct,
+    getProduct,
+    getProductBySku,
+    getProductsByCategory,
+
+    // Category CRUD
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    getCategory,
+
+    // Unit CRUD
+    addUnit,
+    updateUnit,
+    getUnit,
+
+    // Stock
     updateStock,
     decreaseStock,
+    increaseStock,
+    setStock,
+    getStockHistory,
+
+    // Favorites
     toggleFavorite,
     isFavorite,
-    addCategory,
-    init,
+
+    // Search
+    searchProducts,
+    setSearchQuery,
+    setSelectedCategory,
+
+    // Sync
+    syncAllToNostr,
+    loadFromNostr,
+
+    // Import/Export
+    exportProducts,
+    importProducts,
   };
-};
+}
+
+/**
+ * Alias for backward compatibility
+ * @deprecated Use useProductsStore() instead
+ */
+export const useProducts = useProductsStore;

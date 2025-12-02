@@ -100,7 +100,7 @@ const products = ref<Product[]>([
 ]);
 
 const categories = [
-  { id: '', name: t('common.all') },
+  { id: 'all', name: t('common.all') },
   { id: '1', name: 'ເຄື່ອງດື່ມ / Beverages' },
   { id: '2', name: 'ອາຫານ / Food' },
   { id: '3', name: 'ຂອງຫວານ / Desserts' },
@@ -109,7 +109,7 @@ const categories = [
 // Cart state
 const cart = ref<CartItem[]>([]);
 const searchQuery = ref('');
-const selectedCategory = ref('');
+const selectedCategory = ref('all');
 const customerName = ref('');
 const customerPhone = ref('');
 const customerEmail = ref('');
@@ -134,7 +134,7 @@ const filteredProducts = computed(() => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const matchesCategory = !selectedCategory.value || product.categoryId === selectedCategory.value;
+    const matchesCategory = selectedCategory.value === 'all' || product.categoryId === selectedCategory.value;
     return matchesSearch && matchesCategory && product.status === 'active';
   });
 });

@@ -84,11 +84,11 @@ const customers = ref<Customer[]>([
 
 // Filters
 const searchQuery = ref('');
-const selectedTier = ref('');
-const selectedTag = ref('');
+const selectedTier = ref('all');
+const selectedTag = ref('all');
 
 const tierOptions = [
-  { value: '', label: t('common.all') },
+  { value: 'all', label: t('common.all') },
   { value: 'bronze', label: t('loyalty.bronze') },
   { value: 'silver', label: t('loyalty.silver') },
   { value: 'gold', label: t('loyalty.gold') },
@@ -96,7 +96,7 @@ const tierOptions = [
 ];
 
 const tagOptions = [
-  { value: '', label: t('common.allTags') },
+  { value: 'all', label: t('common.allTags') },
   { value: 'vip', label: 'VIP' },
   { value: 'regular', label: t('customers.regular') },
   { value: 'lightning', label: 'Lightning' },
@@ -110,8 +110,8 @@ const filteredCustomers = computed(() => {
       customer.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       customer.phone?.includes(searchQuery.value);
-    const matchesTier = !selectedTier.value || customer.tier === selectedTier.value;
-    const matchesTag = !selectedTag.value || customer.tags.includes(selectedTag.value);
+    const matchesTier = selectedTier.value === 'all' || customer.tier === selectedTier.value;
+    const matchesTag = selectedTag.value === 'all' || customer.tags.includes(selectedTag.value);
     return matchesSearch && matchesTier && matchesTag;
   });
 });

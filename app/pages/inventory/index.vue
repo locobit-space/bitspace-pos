@@ -20,18 +20,18 @@ const suppliers = computed(() => inventory.suppliers.value);
 
 // Filters
 const searchQuery = ref('');
-const selectedBranch = ref('');
-const selectedStatus = ref('');
+const selectedBranch = ref('all');
+const selectedStatus = ref('all');
 const activeTab = ref('inventory');
 
 const branches = [
-  { id: '', name: t('common.allBranches') || 'All Branches' },
+  { id: 'all', name: t('common.allBranches') || 'All Branches' },
   { id: '1', name: 'ສາຂາໃຈກາງ / Central Branch' },
   { id: '2', name: 'ສາຂາຫ້ວຍໂຮ້ງ / Huay Hong Branch' },
 ];
 
 const statusOptions = [
-  { value: '', label: t('common.all') || 'All' },
+  { value: 'all', label: t('common.all') || 'All' },
   { value: 'in-stock', label: t('inventory.inStock') || 'In Stock' },
   { value: 'low-stock', label: t('inventory.lowStock') || 'Low Stock' },
   { value: 'out-of-stock', label: t('inventory.outOfStock') || 'Out of Stock' },
@@ -43,8 +43,8 @@ const filteredInventory = computed(() => {
     const matchesSearch =
       item.productName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const matchesBranch = !selectedBranch.value || item.branchId === selectedBranch.value;
-    const matchesStatus = !selectedStatus.value || item.status === selectedStatus.value;
+    const matchesBranch = selectedBranch.value === 'all' || item.branchId === selectedBranch.value;
+    const matchesStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value;
     return matchesSearch && matchesBranch && matchesStatus;
   });
 });
