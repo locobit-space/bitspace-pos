@@ -382,34 +382,36 @@
 
       <!-- Test Result Modal -->
       <UModal v-model:open="showTestResult">
-        <UCard>
-          <template #header>
-            <div class="flex items-center gap-3">
-              <UIcon 
-                :name="testResult?.success ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'"
-                :class="[
-                  'w-6 h-6',
-                  testResult?.success ? 'text-green-500' : 'text-red-500'
-                ]"
-              />
-              <span class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.lightning.testResult') }}
-              </span>
-            </div>
-          </template>
+        <template #content>
+          <UCard>
+            <template #header>
+              <div class="flex items-center gap-3">
+                <UIcon 
+                  :name="testResult?.success ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'"
+                  :class="[
+                    'w-6 h-6',
+                    testResult?.success ? 'text-green-500' : 'text-red-500'
+                  ]"
+                />
+                <span class="font-semibold text-gray-900 dark:text-white">
+                  {{ $t('settings.lightning.testResult') }}
+                </span>
+              </div>
+            </template>
 
-          <p class="text-gray-600 dark:text-gray-300">
-            {{ testResult?.message }}
-          </p>
+            <p class="text-gray-600 dark:text-gray-300">
+              {{ testResult?.message }}
+            </p>
 
-          <template #footer>
-            <div class="flex justify-end">
-              <UButton @click="showTestResult = false">
-                {{ $t('common.close') }}
-              </UButton>
-            </div>
-          </template>
-        </UCard>
+            <template #footer>
+              <div class="flex justify-end">
+                <UButton @click="showTestResult = false">
+                  {{ $t('common.close') }}
+                </UButton>
+              </div>
+            </template>
+          </UCard>
+        </template>
       </UModal>
     </div>
   </div>
@@ -463,7 +465,7 @@ const isConnected = computed(() => lightning.isConnected.value);
 
 // Navigation
 const goToSecurity = () => {
-  router.push('/settings/general');
+  router.push('/settings/general?tab=security');
 };
 
 // Providers

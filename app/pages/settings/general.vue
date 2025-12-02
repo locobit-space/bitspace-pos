@@ -242,8 +242,8 @@
                   </thead>
                   <tbody>
                     <tr
-                      v-for="branch in branches"
-                      :key="branch.id"
+                      v-for="(branch, index) in branches"
+                      :key="branch.id ?? index"
                       class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <td class="py-3 px-4">
@@ -281,7 +281,7 @@
                             size="sm"
                             variant="ghost"
                             color="red"
-                            @click="deleteBranch(branch.id)"
+                            @click="branch.id !== null && deleteBranch(branch.id)"
                           />
                         </div>
                       </td>
@@ -380,6 +380,70 @@
                     v-model="state.enableTwoFactor"
                     :label="$t('settings.security.enable_two_factor')"
                   />
+                </div>
+              </div>
+
+              <!-- Data Encryption -->
+              <div>
+                <h3 class="text-lg font-semibold mb-4">
+                  {{ $t("settings.security.dataEncryption") }}
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {{ $t("settings.security.dataEncryptionDesc") }}
+                </p>
+
+                <div v-if="!security.isEncryptionEnabled.value" class="space-y-4">
+                  <UFormField :label="$t('settings.security.setupMasterPassword')">
+                    <UInput
+                      v-model="masterPassword"
+                      type="password"
+                      :placeholder="$t('settings.security.masterPasswordHint')"
+                    />
+                  </UFormField>
+                  <UFormField :label="$t('settings.security.confirmPassword')">
+                    <UInput
+                      v-model="confirmMasterPassword"
+                      type="password"
+                      :placeholder="$t('settings.security.confirmPasswordHint')"
+                    />
+                  </UFormField>
+                  <UButton
+                    color="primary"
+                    :disabled="!masterPassword || masterPassword !== confirmMasterPassword"
+                    @click="enableEncryption"
+                  >
+                    {{ $t("settings.security.enableEncryption") }}
+                  </UButton>
+                </div>
+
+                <div v-else class="space-y-4">
+                  <UAlert
+                    :icon="security.isLocked.value ? 'i-heroicons-lock-closed' : 'i-heroicons-lock-open'"
+                    :color="security.isLocked.value ? 'yellow' : 'green'"
+                    variant="subtle"
+                    :title="security.isLocked.value ? $t('settings.security.locked') : $t('settings.security.unlocked')"
+                  />
+
+                  <div v-if="security.isLocked.value" class="space-y-3">
+                    <UFormField :label="$t('settings.security.enterMasterPassword')">
+                      <UInput
+                        v-model="unlockPassword"
+                        type="password"
+                        :placeholder="$t('settings.security.masterPasswordHint')"
+                        @keyup.enter="unlockEncryption"
+                      />
+                    </UFormField>
+                    <UButton color="primary" @click="unlockEncryption">
+                      {{ $t("settings.security.unlock") }}
+                    </UButton>
+                  </div>
+
+                  <div v-else>
+                    <UButton variant="outline" @click="lockEncryption">
+                      <UIcon name="i-heroicons-lock-closed" class="w-4 h-4 mr-2" />
+                      {{ $t("settings.security.lock") }}
+                    </UButton>
+                  </div>
                 </div>
               </div>
             </div>
@@ -492,6 +556,9 @@
 import { z } from "zod";
 
 const { t, locale } = useI18n();
+const route = useRoute();
+const toast = useToast();
+const security = useSecurity();
 
 // Page meta
 definePageMeta({
@@ -506,6 +573,62 @@ const branchFormRef = ref();
 // State
 const saving = ref(false);
 const activeTab = ref("0");
+const masterPassword = ref("");
+const confirmMasterPassword = ref("");
+const unlockPassword = ref("");
+
+// Handle tab query parameter
+onMounted(() => {
+  const tabParam = route.query.tab as string;
+  if (tabParam === "security") {
+    activeTab.value = "2"; // Security is the 3rd tab (index 2)
+  } else if (tabParam === "branches") {
+    activeTab.value = "1";
+  }
+});
+
+// Encryption functions
+const enableEncryption = async () => {
+  if (masterPassword.value && masterPassword.value === confirmMasterPassword.value) {
+    const success = await security.setupMasterPassword(masterPassword.value);
+    if (success) {
+      masterPassword.value = "";
+      confirmMasterPassword.value = "";
+      toast.add({
+        title: t("common.success"),
+        description: t("settings.security.encryptionEnabled"),
+        color: "green",
+      });
+    }
+  }
+};
+
+const unlockEncryption = async () => {
+  if (unlockPassword.value) {
+    const success = await security.unlock(unlockPassword.value);
+    if (success) {
+      unlockPassword.value = "";
+      toast.add({
+        title: t("settings.security.unlocked"),
+        color: "green",
+      });
+    } else {
+      toast.add({
+        title: t("common.error"),
+        description: t("settings.security.wrongPassword"),
+        color: "red",
+      });
+    }
+  }
+};
+
+const lockEncryption = () => {
+  security.lock();
+  toast.add({
+    title: t("settings.security.locked"),
+    color: "yellow",
+  });
+};
 
 // Form validation schema
 const schema = z.object({
@@ -631,8 +754,19 @@ const statusOptions = [
   { value: "inactive", name: t("common.inactive") },
 ];
 
+// Branch type definition
+interface Branch {
+  id: number | null;
+  name: string;
+  code: string;
+  phone: string;
+  email: string;
+  address: string;
+  status: string;
+}
+
 // Branches data
-const branches = ref([
+const branches = ref<Branch[]>([
   {
     id: 1,
     name: "Main Branch",
@@ -654,7 +788,12 @@ const branches = ref([
 ]);
 
 // Branch modal state
-const branchModal = reactive({
+const branchModal = reactive<{
+  open: boolean;
+  isEdit: boolean;
+  saving: boolean;
+  data: Branch;
+}>({
   open: false,
   isEdit: false,
   saving: false,
@@ -710,7 +849,7 @@ const openBranchModal = () => {
   branchModal.open = true;
 };
 
-const editBranch = (branch: any) => {
+const editBranch = (branch: Branch) => {
   branchModal.isEdit = true;
   branchModal.data = { ...branch };
   branchModal.open = true;

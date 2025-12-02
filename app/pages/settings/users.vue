@@ -182,8 +182,9 @@
 
     <!-- Create/Edit User Modal -->
     <UModal v-model:open="showUserModal">
-      <UCard>
-        <template #header>
+      <template #content>
+        <UCard>
+          <template #header>
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
             {{ editingUser ? $t('settings.users.editUser') : $t('settings.users.addUser') }}
           </h3>
@@ -238,29 +239,31 @@
         </div>
 
         <template #footer>
-          <div class="flex justify-end gap-4">
-            <UButton
-              variant="ghost"
-              @click="showUserModal = false"
-            >
-              {{ $t('common.cancel') }}
-            </UButton>
-            <UButton
-              :loading="saving"
-              color="primary"
-              @click="saveUser"
-            >
-              {{ $t('common.save') }}
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+            <div class="flex justify-end gap-4">
+              <UButton
+                variant="ghost"
+                @click="showUserModal = false"
+              >
+                {{ $t('common.cancel') }}
+              </UButton>
+              <UButton
+                :loading="saving"
+                color="primary"
+                @click="saveUser"
+              >
+                {{ $t('common.save') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
     </UModal>
 
     <!-- Permissions Modal -->
     <UModal v-model:open="showPermissionsModal">
-      <UCard>
-        <template #header>
+      <template #content>
+        <UCard>
+          <template #header>
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
             {{ $t('settings.users.editPermissions') }}: {{ selectedUser?.name }}
           </h3>
@@ -357,29 +360,31 @@
         </div>
 
         <template #footer>
-          <div class="flex justify-end gap-4">
-            <UButton
-              variant="ghost"
-              @click="showPermissionsModal = false"
-            >
-              {{ $t('common.cancel') }}
-            </UButton>
-            <UButton
-              :loading="saving"
-              color="primary"
-              @click="savePermissions"
-            >
-              {{ $t('common.save') }}
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+            <div class="flex justify-end gap-4">
+              <UButton
+                variant="ghost"
+                @click="showPermissionsModal = false"
+              >
+                {{ $t('common.cancel') }}
+              </UButton>
+              <UButton
+                :loading="saving"
+                color="primary"
+                @click="savePermissions"
+              >
+                {{ $t('common.save') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
     </UModal>
 
     <!-- Delete Confirmation Modal -->
     <UModal v-model:open="showDeleteModal">
-      <UCard>
-        <template #header>
+      <template #content>
+        <UCard>
+          <template #header>
           <div class="flex items-center gap-3">
             <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-500" />
             <span class="font-semibold text-gray-900 dark:text-white">
@@ -393,23 +398,24 @@
         </p>
 
         <template #footer>
-          <div class="flex justify-end gap-4">
-            <UButton
-              variant="ghost"
-              @click="showDeleteModal = false"
-            >
-              {{ $t('common.cancel') }}
-            </UButton>
-            <UButton
-              :loading="deleting"
-              color="red"
-              @click="deleteUserConfirmed"
-            >
-              {{ $t('common.delete') }}
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+            <div class="flex justify-end gap-4">
+              <UButton
+                variant="ghost"
+                @click="showDeleteModal = false"
+              >
+                {{ $t('common.cancel') }}
+              </UButton>
+              <UButton
+                :loading="deleting"
+                color="red"
+                @click="deleteUserConfirmed"
+              >
+                {{ $t('common.delete') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
     </UModal>
   </div>
 </template>
