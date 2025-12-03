@@ -41,6 +41,7 @@ const showNumpad = ref(false);
 const showProductOptionsModal = ref(false);
 const showItemNotesModal = ref(false);
 const showMobileCart = ref(false); // Mobile cart slide-up panel
+const showExtras = ref(false); // Toggle for coupon/discount/tip section
 const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref("");
 const isProcessing = ref(false);
@@ -819,7 +820,7 @@ onUnmounted(() => {
     >
       <!-- Cart Header -->
       <div
-        class="p-4 border-b border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
+        class="p-4 border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -1039,59 +1040,105 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Discount, Coupon & Tip Section -->
+      <!-- Extras Toggle Bar (Coupon/Discount/Tip) -->
       <div
         v-if="pos.cartItems.value.length > 0"
-        class="px-4 py-3 border-t border-gray-200 dark:border-gray-800/50 space-y-3"
+        class="border-t border-gray-200 dark:border-gray-800/50"
       >
-        <!-- Coupon Input -->
-        <PosCouponInput
-          :subtotal="pos.subtotal.value"
-          :currency="pos.selectedCurrency.value"
-          :applied-coupon="appliedCoupon"
-          @apply="handleCouponApply"
-          @remove="handleCouponRemove"
-        />
-
-        <!-- Discount Button -->
+        <!-- Toggle Header -->
         <button
-          class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-          @click="showDiscountModal = true"
+          class="w-full px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+          @click="showExtras = !showExtras"
         >
-          <div
-            class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
-          >
-            <UIcon name="i-heroicons-tag" class="w-4 h-4" />
-            <span>Add Discount</span>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Extras</span>
+            <!-- Active indicators -->
+            <div class="flex items-center gap-1.5">
+              <span 
+                v-if="appliedCoupon" 
+                class="px-1.5 py-0.5 text-[10px] font-semibold bg-green-500/20 text-green-600 dark:text-green-400 rounded"
+              >
+                🎟️ {{ appliedCoupon.coupon.code }}
+              </span>
+              <span 
+                v-if="pos.tipAmount.value > 0" 
+                class="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded"
+              >
+                ⚡ Tip
+              </span>
+            </div>
           </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-4 h-4 text-gray-400 dark:text-gray-600"
+          <UIcon 
+            :name="showExtras ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" 
+            class="w-4 h-4 text-gray-400 transition-transform"
           />
         </button>
 
-        <!-- Tip Options -->
-        <div>
-          <p class="text-xs text-gray-500 mb-2">Add Tip ⚡</p>
-          <div class="flex gap-2">
-            <button
-              v-for="tip in tipOptions"
-              :key="tip.value"
-              class="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
-              :class="
-                pos.tipAmount.value ===
-                (tip.value === 0
-                  ? 0
-                  : Math.round((pos.subtotal.value * tip.value) / 100))
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white dark:text-black shadow-lg shadow-amber-500/25'
-                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-              "
-              @click="pos.setTipPercentage(tip.value)"
-            >
-              {{ tip.label }}
-            </button>
+        <!-- Collapsible Content -->
+        <Transition name="collapse">
+          <div v-if="showExtras" class="px-4 pb-3 space-y-3">
+            <!-- Quick Actions Row -->
+            <div class="flex gap-2">
+              <!-- Coupon Button -->
+              <button
+                class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                :class="appliedCoupon 
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/30' 
+                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'"
+                @click="appliedCoupon ? handleCouponRemove() : null"
+              >
+                <span>🎟️</span>
+                <span v-if="appliedCoupon">{{ appliedCoupon.coupon.code }} ✓</span>
+                <span v-else>Coupon</span>
+              </button>
+
+              <!-- Discount Button -->
+              <button
+                class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-all"
+                @click="showDiscountModal = true"
+              >
+                <span>🏷️</span>
+                <span>Discount</span>
+              </button>
+            </div>
+
+            <!-- Coupon Input (shows when no coupon applied) -->
+            <div v-if="!appliedCoupon" class="-mt-1">
+              <PosCouponInput
+                :subtotal="pos.subtotal.value"
+                :currency="pos.selectedCurrency.value"
+                :applied-coupon="appliedCoupon"
+                @apply="handleCouponApply"
+                @remove="handleCouponRemove"
+              />
+            </div>
+
+            <!-- Tip Options -->
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+                <span>⚡</span> Quick Tip
+              </p>
+              <div class="grid grid-cols-5 gap-1.5">
+                <button
+                  v-for="tip in tipOptions"
+                  :key="tip.value"
+                  class="py-2 rounded-lg text-xs font-medium transition-all"
+                  :class="
+                    pos.tipAmount.value ===
+                    (tip.value === 0
+                      ? 0
+                      : Math.round((pos.subtotal.value * tip.value) / 100))
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 scale-105'
+                      : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                  "
+                  @click="pos.setTipPercentage(tip.value)"
+                >
+                  {{ tip.label }}
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        </Transition>
       </div>
 
       <!-- Cart Summary -->
@@ -1099,7 +1146,7 @@ onUnmounted(() => {
         class="p-4 border-t border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
       >
         <!-- Summary Lines -->
-        <div class="space-y-2 text-sm mb-4">
+        <div class="space-y-1.5 text-sm mb-3">
           <div class="flex justify-between text-gray-500 dark:text-gray-400">
             <span>Subtotal</span>
             <span>{{
@@ -1107,15 +1154,22 @@ onUnmounted(() => {
             }}</span>
           </div>
           <div
-            v-if="pos.tipAmount.value > 0"
-            class="flex justify-between text-gray-500 dark:text-gray-400"
+            v-if="appliedCoupon"
+            class="flex justify-between text-green-600 dark:text-green-400"
           >
-            <span>Tip</span>
-            <span class="text-amber-600 dark:text-amber-400"
-              >+{{
-                currency.format(pos.tipAmount.value, pos.selectedCurrency.value)
-              }}</span
-            >
+            <span class="flex items-center gap-1">
+              <span>🎟️</span> {{ appliedCoupon.coupon.code }}
+            </span>
+            <span>-{{ currency.format(appliedCoupon.discountAmount, pos.selectedCurrency.value) }}</span>
+          </div>
+          <div
+            v-if="pos.tipAmount.value > 0"
+            class="flex justify-between text-amber-600 dark:text-amber-400"
+          >
+            <span class="flex items-center gap-1">
+              <span>⚡</span> Tip
+            </span>
+            <span>+{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
           </div>
         </div>
 
@@ -2024,5 +2078,26 @@ onUnmounted(() => {
 .slide-up-enter-from > div:last-child,
 .slide-up-leave-to > div:last-child {
   transform: translateY(100%);
+}
+
+/* Collapse transition for extras section */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all 0.2s ease-out;
+  overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.collapse-enter-to,
+.collapse-leave-from {
+  opacity: 1;
+  max-height: 200px;
 }
 </style>
