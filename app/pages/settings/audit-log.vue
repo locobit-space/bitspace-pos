@@ -260,8 +260,8 @@ const showDetailModal = ref(false)
 const selectedLog = ref<AuditLog | null>(null)
 
 const filters = reactive({
-  action: '',
-  userId: '',
+  action: null as string | null,
+  userId: null as string | null,
   startDate: '',
   endDate: ''
 })
@@ -393,7 +393,7 @@ const auditLogs = ref<AuditLog[]>([
 
 // Computed
 const actionTypes = computed(() => [
-  { value: '', label: t('common.all') },
+  { value: null, label: t('common.all') },
   { value: 'login', label: t('settings.auditLog.actions.login') },
   { value: 'logout', label: t('settings.auditLog.actions.logout') },
   { value: 'login_failed', label: t('settings.auditLog.actions.login_failed') },
@@ -414,7 +414,7 @@ const actionTypes = computed(() => [
 const userOptions = computed(() => {
   const users = [...new Set(auditLogs.value.map(log => log.userId))]
   return [
-    { value: '', label: t('common.all') },
+    { value: null, label: t('common.all') },
     ...users.map(userId => {
       const log = auditLogs.value.find(l => l.userId === userId)
       return { value: userId, label: log?.userName || userId }
@@ -488,12 +488,12 @@ watch(filteredLogs, (logs) => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const columns: any[] = [
-  { key: 'action', label: t('settings.auditLog.action') },
-  { key: 'user', label: t('settings.auditLog.user') },
-  { key: 'timestamp', label: t('settings.auditLog.timestamp') },
-  { key: 'details', label: t('settings.auditLog.details') },
-  { key: 'ip', label: t('settings.auditLog.ipAddress') },
-  { key: 'actions', label: '' }
+  { id: 'action', key: 'action', header: t('settings.auditLog.action') },
+  { id: 'user', key: 'user', header: t('settings.auditLog.user') },
+  { id: 'timestamp', key: 'timestamp', header: t('settings.auditLog.timestamp') },
+  { id: 'details', key: 'details', header: t('settings.auditLog.details') },
+  { id: 'ip', key: 'ip', header: t('settings.auditLog.ipAddress') },
+  { id: 'actions', key: 'actions', header: '' }
 ]
 
 // Methods
@@ -552,8 +552,8 @@ function formatDateTime(date: Date): string {
 }
 
 function resetFilters() {
-  filters.action = ''
-  filters.userId = ''
+  filters.action = null
+  filters.userId = null
   filters.startDate = ''
   filters.endDate = ''
   searchQuery.value = ''

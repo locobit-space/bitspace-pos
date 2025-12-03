@@ -33,9 +33,9 @@
         </button>
 
         <template #content>
-          <div class="w-56 p-2">
+          <div class="w-64 p-3">
             <!-- User Info -->
-            <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-2">
+            <div class="px-2 py-2 border-b border-gray-200 dark:border-gray-700 mb-3">
               <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
                 {{ auth.user.value?.displayName || 'User' }}
               </p>
@@ -49,6 +49,49 @@
                 {{ auth.user.value?.provider === 'nostr' ? '⚡ Nostr' : 
                    auth.user.value?.provider === 'google' ? '🔷 Google' : '📧 Email' }}
               </span>
+            </div>
+
+            <!-- Quick Settings -->
+            <div class="px-2 py-3 border-b border-gray-200 dark:border-gray-700 mb-3 space-y-3">
+              <!-- Dark Mode Toggle -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <Icon 
+                    :name="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'" 
+                    size="18" 
+                    class="text-gray-600 dark:text-gray-400" 
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    {{ $t('account.dark_mode') }}
+                  </span>
+                </div>
+                <USwitch v-model="isDark" size="sm" />
+              </div>
+
+              <!-- Theme Color Selector -->
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <Icon name="i-heroicons-swatch" size="18" class="text-gray-600 dark:text-gray-400" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    {{ $t('account.theme_color') }}
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button
+                    v-for="color in themeColors"
+                    :key="color.value"
+                    :title="color.label"
+                    :class="[
+                      'w-5 h-5 rounded-full ring-1 ring-offset-1 ring-offset-white dark:ring-offset-gray-800 transition-all',
+                      color.class,
+                      selectedColor === color.value 
+                        ? 'ring-gray-900 dark:ring-white scale-110' 
+                        : 'ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600'
+                    ]"
+                    @click="setThemeColor(color.value)"
+                  />
+                </div>
+              </div>
             </div>
 
             <!-- Menu Items -->
@@ -71,13 +114,13 @@
                   {{ $t('settings.general.title') }}
                 </NuxtLinkLocale>
               </li>
-              <li class="border-t border-gray-100 dark:border-gray-700 pt-1 mt-1">
+              <li class="border-t border-gray-200 dark:border-gray-700 pt-1 mt-1">
                 <button
                   class="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   @click="handleLogout"
                 >
                   <Icon name="i-heroicons-arrow-right-on-rectangle" size="18" />
-                  {{ $t('auth.signin.signIn') === 'Sign In' ? 'Sign Out' : 'ອອກຈາກລະບົບ' }}
+                  {{ $t('auth.signOut') }}
                 </button>
               </li>
             </ul>
@@ -91,6 +134,54 @@
 <script setup lang="ts">
 const { t } = useI18n();
 const auth = useAuth();
+const colorMode = useColorMode();
+const appConfig = useAppConfig();
+
+// Dark mode
+const isDark = computed({
+  get: () => colorMode.value === 'dark',
+  set: (value: boolean) => {
+    colorMode.preference = value ? 'dark' : 'light'
+  }
+});
+
+// Theme colors
+const themeColors = [
+  { value: 'red', label: 'Red', class: 'bg-red-500' },
+  { value: 'orange', label: 'Orange', class: 'bg-orange-500' },
+  { value: 'amber', label: 'Amber', class: 'bg-amber-500' },
+  { value: 'yellow', label: 'Yellow', class: 'bg-yellow-500' },
+  { value: 'lime', label: 'Lime', class: 'bg-lime-500' },
+  { value: 'green', label: 'Green', class: 'bg-green-500' },
+  { value: 'emerald', label: 'Emerald', class: 'bg-emerald-500' },
+  { value: 'teal', label: 'Teal', class: 'bg-teal-500' },
+  { value: 'cyan', label: 'Cyan', class: 'bg-cyan-500' },
+  { value: 'sky', label: 'Sky', class: 'bg-sky-500' },
+  { value: 'blue', label: 'Blue', class: 'bg-blue-500' },
+  { value: 'indigo', label: 'Indigo', class: 'bg-indigo-500' },
+  { value: 'violet', label: 'Violet', class: 'bg-violet-500' },
+  { value: 'purple', label: 'Purple', class: 'bg-purple-500' },
+  { value: 'fuchsia', label: 'Fuchsia', class: 'bg-fuchsia-500' },
+  { value: 'pink', label: 'Pink', class: 'bg-pink-500' },
+  { value: 'rose', label: 'Rose', class: 'bg-rose-500' },
+];
+
+const selectedColor = ref(appConfig.ui?.primary || 'purple');
+
+const setThemeColor = (color: string) => {
+  selectedColor.value = color;
+  appConfig.ui.primary = color;
+  localStorage.setItem('theme-color', color);
+};
+
+// Load saved color on mount
+onMounted(() => {
+  const savedColor = localStorage.getItem('theme-color');
+  if (savedColor) {
+    selectedColor.value = savedColor;
+    appConfig.ui.primary = savedColor;
+  }
+});
 
 const items = computed(() => [
   {

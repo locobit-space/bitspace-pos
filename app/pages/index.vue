@@ -10,7 +10,15 @@ const productsStore = useProducts();
 // State
 // ============================================
 const selectedPeriod = ref<'today' | 'week' | 'month'>('today');
-const isLoading = ref(true);
+const isInitialLoad = ref(true);
+const isRefreshing = ref(false);
+
+// ============================================
+// Computed - Check if we have cached data
+// ============================================
+const hasCachedData = computed(() => {
+  return ordersStore.orders.value.length > 0 || productsStore.products.value.length > 0;
+});
 
 // ============================================
 // Computed - Dashboard KPIs
@@ -186,15 +194,28 @@ const getStatusColor = (status: string): 'green' | 'yellow' | 'red' | 'gray' => 
 };
 
 // ============================================
-// Lifecycle
+// Lifecycle - Fast load with background refresh
 // ============================================
 onMounted(async () => {
-  isLoading.value = true;
-  await Promise.all([
-    ordersStore.init(),
-    productsStore.init(),
-  ]);
-  isLoading.value = false;
+  // If we have cached data, show it immediately
+  if (hasCachedData.value) {
+    isInitialLoad.value = false;
+    // Refresh in background
+    isRefreshing.value = true;
+    await Promise.all([
+      ordersStore.init(),
+      productsStore.init(),
+    ]).finally(() => {
+      isRefreshing.value = false;
+    });
+  } else {
+    // No cached data, need to wait for initial load
+    await Promise.all([
+      ordersStore.init(),
+      productsStore.init(),
+    ]);
+    isInitialLoad.value = false;
+  }
 });
 </script>
 
@@ -204,7 +225,13 @@ onMounted(async () => {
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
-        <p class="text-gray-500">{{ t('dashboard.overview') }}</p>
+        <p class="text-gray-500 flex items-center gap-2">
+          {{ t('dashboard.overview') }}
+          <span v-if="isRefreshing" class="inline-flex items-center gap-1 text-xs text-primary-500">
+            <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
+            {{ t('common.syncing') }}
+          </span>
+        </p>
       </div>
       <div class="flex items-center gap-3">
         <!-- Period Selector -->
@@ -231,11 +258,69 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Loading -->
-    <div v-if="isLoading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
-    </div>
+    <!-- Initial Loading State with Skeletons -->
+    <template v-if="isInitialLoad && !hasCachedData">
+      <!-- KPI Cards Skeleton -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <UCard v-for="i in 4" :key="i">
+          <div class="flex items-start justify-between">
+            <div class="space-y-2 flex-1">
+              <USkeleton class="h-4 w-24" />
+              <USkeleton class="h-8 w-32" />
+              <USkeleton class="h-3 w-20" />
+            </div>
+            <USkeleton class="w-12 h-12 rounded-xl" />
+          </div>
+        </UCard>
+      </div>
 
+      <!-- Main Content Skeleton -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+          <UCard>
+            <template #header>
+              <USkeleton class="h-5 w-32" />
+            </template>
+            <div class="h-64 flex items-end justify-between gap-1 px-2">
+              <USkeleton v-for="i in 17" :key="i" class="flex-1 rounded-t" :style="{ height: `${Math.random() * 150 + 30}px` }" />
+            </div>
+          </UCard>
+        </div>
+        <div class="space-y-4">
+          <UCard v-for="i in 2" :key="i">
+            <template #header>
+              <USkeleton class="h-5 w-28" />
+            </template>
+            <div class="space-y-3">
+              <div v-for="j in 3" :key="j" class="flex items-center justify-between">
+                <USkeleton class="h-4 w-24" />
+                <USkeleton class="h-4 w-16" />
+              </div>
+            </div>
+          </UCard>
+        </div>
+      </div>
+
+      <!-- Bottom Skeleton -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UCard v-for="i in 2" :key="i">
+          <template #header>
+            <USkeleton class="h-5 w-32" />
+          </template>
+          <div class="space-y-3">
+            <div v-for="j in 4" :key="j" class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+              <div class="space-y-1">
+                <USkeleton class="h-4 w-20" />
+                <USkeleton class="h-3 w-16" />
+              </div>
+              <USkeleton class="h-5 w-24" />
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </template>
+
+    <!-- Actual Dashboard Content -->
     <template v-else>
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

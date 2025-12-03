@@ -22,10 +22,13 @@ const autoRefresh = ref(true);
 // ============================================
 // Computed
 // ============================================
-// Get kitchen orders (orders that need to be prepared)
+// Get kitchen orders (orders that need to be prepared - NOT served/closed)
 const kitchenOrders = computed(() => {
   let orders = ordersStore.orders.value.filter(o => 
-    o.status === 'completed' || o.status === 'processing'
+    // Only show orders that are processing (not paid yet) OR completed (paid) but still in kitchen
+    (o.status === 'completed' || o.status === 'processing') &&
+    // IMPORTANT: Exclude orders that have been served or picked up
+    o.kitchenStatus !== 'served'
   );
 
   // Filter by kitchen status
@@ -42,15 +45,24 @@ const kitchenOrders = computed(() => {
 });
 
 const newOrdersCount = computed(() => 
-  ordersStore.orders.value.filter(o => o.kitchenStatus === 'new').length
+  ordersStore.orders.value.filter(o => 
+    (o.status === 'completed' || o.status === 'processing') &&
+    o.kitchenStatus === 'new'
+  ).length
 );
 
 const preparingOrdersCount = computed(() => 
-  ordersStore.orders.value.filter(o => o.kitchenStatus === 'preparing').length
+  ordersStore.orders.value.filter(o => 
+    (o.status === 'completed' || o.status === 'processing') &&
+    o.kitchenStatus === 'preparing'
+  ).length
 );
 
 const readyOrdersCount = computed(() => 
-  ordersStore.orders.value.filter(o => o.kitchenStatus === 'ready').length
+  ordersStore.orders.value.filter(o => 
+    (o.status === 'completed' || o.status === 'processing') &&
+    o.kitchenStatus === 'ready'
+  ).length
 );
 
 // ============================================
@@ -97,24 +109,29 @@ const getStatusBgColor = (status?: string) => {
   return colors[status || 'new'] || 'bg-gray-50 border-gray-200';
 };
 
-const updateOrderStatus = async (orderId: string, status: 'new' | 'preparing' | 'ready' | 'served') => {
+const updateKitchenStatus = async (orderId: string, kitchenStatus: 'new' | 'preparing' | 'ready' | 'served') => {
   try {
-    await ordersStore.updateOrder(orderId, {
-      kitchenStatus: status,
-      ...(status === 'preparing' ? { preparedAt: new Date().toISOString() } : {}),
-      ...(status === 'served' ? { servedAt: new Date().toISOString() } : {}),
+    // Find the order and update it via the ordersStore.updateOrderStatus
+    // Pass the current payment status to keep it unchanged, but add kitchenStatus data
+    const order = ordersStore.orders.value.find(o => o.id === orderId);
+    if (!order) return;
+    
+    await ordersStore.updateOrderStatus(orderId, order.status, {
+      kitchenStatus,
+      ...(kitchenStatus === 'preparing' ? { preparedAt: new Date().toISOString() } : {}),
+      ...(kitchenStatus === 'served' ? { servedAt: new Date().toISOString() } : {}),
     });
 
     // Play sound
     if (soundEnabled.value) {
-      if (status === 'ready') {
+      if (kitchenStatus === 'ready') {
         playBellSound();
       } else {
         playClickSound();
       }
     }
   } catch (error) {
-    console.error('Error updating order status:', error);
+    console.error('Error updating kitchen status:', error);
   }
 };
 
@@ -126,12 +143,12 @@ const bumpOrder = async (orderId: string, currentStatus?: string) => {
   };
   const nextStatus = statusFlow[currentStatus || 'new'];
   if (nextStatus) {
-    await updateOrderStatus(orderId, nextStatus);
+    await updateKitchenStatus(orderId, nextStatus);
   }
 };
 
 const recallOrder = async (orderId: string) => {
-  await updateOrderStatus(orderId, 'preparing');
+  await updateKitchenStatus(orderId, 'preparing');
 };
 
 // Sound effects
@@ -343,8 +360,8 @@ onUnmounted(() => {
             </div>
 
             <!-- Customer/Table Info -->
-            <div v-if="order.customer || order.customerName" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              <span>👤 {{ order.customerName || order.customer }}</span>
+            <div v-if="order.customer" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <span>👤 {{ order.customer }}</span>
             </div>
           </div>
 

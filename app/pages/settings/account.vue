@@ -179,14 +179,14 @@
 
                 <div
                   v-if="securitySettings.twoFactorEnabled"
-                  class="bg-green-50 p-4 rounded-lg"
+                  class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg"
                 >
                   <div class="flex items-center">
                     <Icon
                       name="heroicons:shield-check"
-                      class="text-green-600 text-xl mr-3"
+                      class="text-green-600 dark:text-green-400 text-xl mr-3"
                     />
-                    <span class="text-green-800">{{
+                    <span class="text-green-800 dark:text-green-300">{{
                       $t("account.two_factor_enabled")
                     }}</span>
                   </div>
@@ -218,7 +218,7 @@
                       </div>
                       <span
                         v-if="session.current"
-                        class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
+                        class="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs px-2 py-1 rounded-full"
                       >
                         {{ $t("account.current_session") }}
                       </span>
