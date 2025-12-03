@@ -93,6 +93,11 @@ const tables = ref<Array<{
   seats: number;
 }>>([]);
 
+// Tax settings
+const taxEnabled = ref(false);
+const taxRatePercent = ref(10); // Default 10% (common VAT rate)
+const taxInclusive = ref(false); // false = add tax on top, true = tax included in price
+
 // Current time display
 const currentTime = ref(new Date());
 let timeInterval: ReturnType<typeof setInterval>;
@@ -108,13 +113,6 @@ const orderTypes: Array<{ value: OrderType; label: string; icon: string }> = [
 // ============================================
 // Computed
 // ============================================
-const formattedTotal = computed(() =>
-  currency.format(pos.total.value, pos.selectedCurrency.value)
-);
-
-const formattedTotalSats = computed(() =>
-  currency.format(pos.totalSats.value, "SATS")
-);
 
 // Available tables for switching
 const availableTables = computed(() => 
@@ -371,8 +369,8 @@ const proceedToPayment = (method?: PaymentMethod) => {
   // Notify customer display that payment is pending
   pos.setPaymentState({
     status: 'pending',
-    amount: pos.total.value,
-    satsAmount: pos.totalSats.value,
+    amount: totalWithTax.value,
+    satsAmount: totalSatsWithTax.value,
   });
 };
 
@@ -466,6 +464,75 @@ const cancelPayment = () => {
 };
 
 // ============================================
+// Tax Calculation
+// ============================================
+const taxAmount = computed(() => {
+  if (!taxEnabled.value) return 0;
+  
+  if (taxInclusive.value) {
+    // Tax is already included in price, calculate it for display
+    // If price includes 10% tax: taxAmount = price - (price / 1.10)
+    return Math.round(pos.subtotal.value - (pos.subtotal.value / (1 + taxRatePercent.value / 100)));
+  } else {
+    // Tax is added on top
+    return Math.round(pos.subtotal.value * (taxRatePercent.value / 100));
+  }
+});
+
+// Override total calculation to include tax
+const totalWithTax = computed(() => {
+  if (taxInclusive.value) {
+    // Tax already in subtotal, just add tip
+    return pos.subtotal.value + pos.tipAmount.value;
+  } else {
+    // Add tax on top
+    return pos.subtotal.value + taxAmount.value + pos.tipAmount.value;
+  }
+});
+
+// Calculate sats amount with tax
+const totalSatsWithTax = computed(() => {
+  if (totalWithTax.value <= 0) return 0;
+  return currency.toSats(totalWithTax.value, pos.selectedCurrency.value);
+});
+
+// Formatted totals with tax
+const formattedTotalWithTax = computed(() =>
+  currency.format(totalWithTax.value, pos.selectedCurrency.value)
+);
+
+const formattedTotalSatsWithTax = computed(() =>
+  currency.format(totalSatsWithTax.value, "SATS")
+);
+
+const loadTaxSettings = () => {
+  try {
+    const stored = localStorage.getItem('pos_tax_settings');
+    if (stored) {
+      const settings = JSON.parse(stored);
+      taxEnabled.value = settings.enabled ?? false;
+      taxRatePercent.value = settings.rate ?? 10;
+      taxInclusive.value = settings.inclusive ?? false;
+    }
+  } catch (e) {
+    console.error('Failed to load tax settings:', e);
+  }
+};
+
+const saveTaxSettings = () => {
+  localStorage.setItem('pos_tax_settings', JSON.stringify({
+    enabled: taxEnabled.value,
+    rate: taxRatePercent.value,
+    inclusive: taxInclusive.value,
+  }));
+};
+
+// Watch tax settings changes and save
+watch([taxEnabled, taxRatePercent, taxInclusive], () => {
+  saveTaxSettings();
+});
+
+// ============================================
 // Table Switching Functions  
 // ============================================
 const loadTables = () => {
@@ -543,6 +610,9 @@ onMounted(async () => {
 
   // Load tables from localStorage
   loadTables();
+  
+  // Load tax settings
+  loadTaxSettings();
 
   // Handle table context from query params
   if (route.query.tableId) {
@@ -900,7 +970,7 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <button
       v-if="pos.cartItems.value.length > 0"
-      class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white rounded-2xl shadow-2xl shadow-amber-500/40 dark:shadow-amber-900/50 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-all duration-200 hover:shadow-amber-500/50"
+      class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white rounded-2xl shadow-[0_8px_30px_rgba(251,146,60,0.5)] dark:shadow-[0_8px_30px_rgba(251,146,60,0.35)] ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-all duration-200 hover:shadow-[0_12px_40px_rgba(251,146,60,0.6)] dark:hover:shadow-[0_12px_40px_rgba(251,146,60,0.45)]"
       @click="showMobileCart = true"
     >
       <span class="text-xl drop-shadow-sm">🛒</span>
@@ -1276,6 +1346,20 @@ onUnmounted(() => {
               currency.format(pos.subtotal.value, pos.selectedCurrency.value)
             }}</span>
           </div>
+          <!-- Tax Line -->
+          <div
+            v-if="taxEnabled && taxAmount > 0"
+            class="flex justify-between text-gray-500 dark:text-gray-400"
+          >
+            <span class="flex items-center gap-1">
+              <span>🧾</span> 
+              <span>VAT {{ taxRatePercent }}%</span>
+              <span v-if="taxInclusive" class="text-xs opacity-60">(incl.)</span>
+            </span>
+            <span :class="taxInclusive ? '' : ''">
+              {{ taxInclusive ? '' : '+' }}{{ currency.format(taxAmount, pos.selectedCurrency.value) }}
+            </span>
+          </div>
           <div
             v-if="appliedCoupon"
             class="flex justify-between text-green-600 dark:text-green-400"
@@ -1303,13 +1387,13 @@ onUnmounted(() => {
           <div>
             <p class="text-xs text-gray-500 mb-1">Total</p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ formattedTotal }}
+              {{ formattedTotalWithTax }}
             </p>
           </div>
           <div class="text-right">
             <p class="text-xs text-gray-500 mb-1">≈ Sats</p>
             <p class="text-lg font-semibold text-amber-600 dark:text-amber-400">
-              {{ formattedTotalSats }}
+              {{ formattedTotalSatsWithTax }}
             </p>
           </div>
         </div>
@@ -1492,12 +1576,12 @@ onUnmounted(() => {
             <div class="flex justify-between items-end mb-4">
               <div>
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Total</p>
-                <p class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{{ formattedTotal }}</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{{ formattedTotalWithTax }}</p>
               </div>
               <div class="text-right">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full">
                   <span class="text-amber-500">⚡</span>
-                  <span class="text-sm font-semibold text-amber-600 dark:text-amber-400">{{ formattedTotalSats }}</span>
+                  <span class="text-sm font-semibold text-amber-600 dark:text-amber-400">{{ formattedTotalSatsWithTax }}</span>
                 </div>
               </div>
             </div>
@@ -1542,8 +1626,8 @@ onUnmounted(() => {
         >
           <PaymentSelector
             v-if="showPaymentModal"
-            :amount="pos.total.value"
-            :sats-amount="pos.totalSats.value"
+            :amount="totalWithTax"
+            :sats-amount="totalSatsWithTax"
             :currency="pos.selectedCurrency.value"
             :order-id="'ORD-' + Date.now().toString(36).toUpperCase()"
             :default-method="defaultPaymentMethod || undefined"
@@ -1854,6 +1938,92 @@ onUnmounted(() => {
                 >Lightning Provider</label
               >
               <USelect :items="['LNbits', 'Alby', 'NWC']" />
+            </div>
+
+            <!-- Tax Settings -->
+            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span>🧾</span>
+                  <span class="font-medium text-gray-900 dark:text-white">Tax / VAT</span>
+                </div>
+                <USwitch v-model="taxEnabled" />
+              </div>
+              
+              <Transition name="collapse">
+                <div v-if="taxEnabled" class="space-y-3 pt-2">
+                  <!-- Tax Rate -->
+                  <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tax Rate (%)</label>
+                    <div class="flex gap-2">
+                      <button
+                        v-for="rate in [5, 7, 10, 15, 20]"
+                        :key="rate"
+                        class="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all"
+                        :class="taxRatePercent === rate 
+                          ? 'bg-primary-500 text-white shadow-md' 
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                        @click="taxRatePercent = rate"
+                      >
+                        {{ rate }}%
+                      </button>
+                    </div>
+                    <!-- Custom rate input -->
+                    <div class="mt-2">
+                      <UInput
+                        v-model.number="taxRatePercent"
+                        type="number"
+                        placeholder="Custom rate"
+                        size="sm"
+                        :min="0"
+                        :max="100"
+                        :step="0.5"
+                      >
+                        <template #trailing>
+                          <span class="text-gray-400 text-xs">%</span>
+                        </template>
+                      </UInput>
+                    </div>
+                  </div>
+                  
+                  <!-- Tax Mode -->
+                  <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tax Mode</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button
+                        class="py-2 px-3 rounded-lg text-sm font-medium transition-all"
+                        :class="!taxInclusive 
+                          ? 'bg-primary-500 text-white shadow-md' 
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                        @click="taxInclusive = false"
+                      >
+                        <div class="flex flex-col items-center gap-0.5">
+                          <span>➕</span>
+                          <span>Add on top</span>
+                        </div>
+                      </button>
+                      <button
+                        class="py-2 px-3 rounded-lg text-sm font-medium transition-all"
+                        :class="taxInclusive 
+                          ? 'bg-primary-500 text-white shadow-md' 
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                        @click="taxInclusive = true"
+                      >
+                        <div class="flex flex-col items-center gap-0.5">
+                          <span>📦</span>
+                          <span>Included</span>
+                        </div>
+                      </button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">
+                      {{ taxInclusive 
+                        ? 'Prices already include tax (e.g., ₭110,000 includes ₭10,000 tax)' 
+                        : 'Tax added to subtotal (e.g., ₭100,000 + ₭10,000 tax = ₭110,000)' 
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </Transition>
             </div>
 
             <!-- Session Info -->

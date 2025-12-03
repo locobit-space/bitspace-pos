@@ -477,12 +477,12 @@ const formatDate = computed(() => {
       <!-- SUCCESS STATE -->
       <!-- ============================================ -->
       <div v-else-if="displayState === 'success'" class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900">
-        <div class="text-center max-w-2xl mx-auto px-8">
-          <div class="flex flex-col lg:flex-row items-center justify-center gap-12">
+        <div class="text-center w-full max-w-4xl mx-auto px-8">
+          <div class="flex flex-col lg:flex-row items-center justify-center gap-16">
             <!-- Left: Success Message -->
-            <div class="text-center lg:text-left">
+            <div class="text-center flex-1">
               <!-- Animated checkmark -->
-              <div class="success-checkmark mb-6">
+              <div class="success-checkmark mb-8 mx-auto">
                 <div class="check-icon">
                   <span class="icon-line line-tip" />
                   <span class="icon-line line-long" />
@@ -490,45 +490,45 @@ const formatDate = computed(() => {
                   <div class="icon-fix" />
                 </div>
               </div>
-              <h2 class="text-5xl font-light text-green-600 dark:text-green-400 mb-3 tracking-tight">Thank You!</h2>
-              <p class="text-xl text-gray-500 font-light">Payment successful</p>
+              <h2 class="text-6xl font-light text-green-600 dark:text-green-400 mb-4 tracking-tight">Thank You!</h2>
+              <p class="text-2xl text-gray-500 font-light mb-8">Payment successful</p>
               
               <!-- Amount Display -->
-              <div v-if="pos.paymentState.value.amount" class="mt-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl inline-block">
-                <p class="text-sm text-gray-400">Amount Paid</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              <div v-if="pos.paymentState.value.amount" class="p-6 bg-white/70 dark:bg-gray-800/50 rounded-2xl backdrop-blur-sm inline-block">
+                <p class="text-sm text-gray-400 uppercase tracking-wide mb-1">Amount Paid</p>
+                <p class="text-4xl font-bold text-gray-900 dark:text-white">
                   {{ currency.format(pos.paymentState.value.amount, pos.selectedCurrency.value) }}
                 </p>
-                <p v-if="pos.paymentState.value.satsAmount" class="text-sm text-amber-600 dark:text-amber-400">
-                  ⚡ {{ currency.format(pos.paymentState.value.satsAmount, 'SATS') }}
+                <p v-if="pos.paymentState.value.satsAmount" class="text-lg text-amber-600 dark:text-amber-400 mt-2 flex items-center justify-center gap-1">
+                  <span>⚡</span> {{ currency.format(pos.paymentState.value.satsAmount, 'SATS') }}
                 </p>
               </div>
             </div>
 
             <!-- Right: E-Bill QR Code -->
-            <div v-if="pos.paymentState.value.eBillUrl" class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
-              <div class="text-center mb-4">
-                <p class="text-lg font-medium text-gray-900 dark:text-white">📱 Digital Receipt</p>
-                <p class="text-sm text-gray-500">Scan for your e-bill</p>
+            <div v-if="pos.paymentState.value.eBillUrl" class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-2xl shadow-gray-200/50 dark:shadow-none">
+              <div class="text-center mb-6">
+                <p class="text-xl font-semibold text-gray-900 dark:text-white">📱 Digital Receipt</p>
+                <p class="text-gray-500 mt-1">Scan for your e-bill</p>
               </div>
               
               <!-- QR Code -->
-              <div class="bg-white p-3 rounded-xl shadow-inner">
+              <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-2xl">
                 <img
-                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pos.paymentState.value.eBillUrl)}`"
+                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pos.paymentState.value.eBillUrl)}`"
                   alt="E-Bill QR Code"
-                  class="w-44 h-44 mx-auto"
+                  class="w-48 h-48 mx-auto"
                 >
               </div>
               
-              <p class="mt-4 text-xs text-gray-400 text-center">
-                Or visit: <span class="font-mono text-amber-600">{{ pos.paymentState.value.eBillId }}</span>
+              <p class="mt-5 text-sm text-gray-400 text-center">
+                Receipt ID: <span class="font-mono text-amber-600 dark:text-amber-400">{{ pos.paymentState.value.eBillId }}</span>
               </p>
             </div>
           </div>
 
           <!-- Footer message -->
-          <p class="text-lg text-gray-400 mt-8">Have a great day! ☀️</p>
+          <p class="text-xl text-gray-400 mt-12">Have a great day! ☀️</p>
         </div>
       </div>
     </main>
