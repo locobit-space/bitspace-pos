@@ -172,11 +172,11 @@ const themeColors = [
   { value: 'rose', label: 'Rose', class: 'bg-rose-500' },
 ]
 
-const selectedColor = ref(appConfig.ui?.primary || 'purple')
+const selectedColor = ref(appConfig.ui?.colors?.primary || 'purple')
 
 const setThemeColor = (color: string) => {
   selectedColor.value = color
-  appConfig.ui.primary = color
+  appConfig.ui.colors.primary = color
   // Persist to localStorage
   localStorage.setItem('theme-color', color)
 }
@@ -186,7 +186,7 @@ onMounted(() => {
   const savedColor = localStorage.getItem('theme-color')
   if (savedColor) {
     selectedColor.value = savedColor
-    appConfig.ui.primary = savedColor
+    appConfig.ui.colors.primary = savedColor
   }
 })
 

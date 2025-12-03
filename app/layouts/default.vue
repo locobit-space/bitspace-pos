@@ -9,6 +9,16 @@
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const appConfig = useAppConfig();
+
+// Load saved theme color on layout mount
+onMounted(() => {
+  const savedColor = localStorage.getItem('theme-color');
+  if (savedColor) {
+    appConfig.ui.colors.primary = savedColor;
+  }
+});
+</script>
 
 <style scoped></style>

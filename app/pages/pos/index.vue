@@ -1411,22 +1411,6 @@ onUnmounted(() => {
                 <span>{{ type.label }}</span>
               </button>
             </div>
-            
-            <!-- Table Selector (for dine-in, mobile) -->
-            <div v-if="pos.orderType.value === 'dine_in' && tables.length > 0" class="mt-2">
-              <button
-                class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all"
-                :class="currentTable 
-                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30' 
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'"
-                @click="showTableSwitcher = true"
-              >
-                <span class="text-lg">🍽️</span>
-                <span v-if="currentTable" class="font-medium">{{ currentTable.name }}</span>
-                <span v-else>Select Table</span>
-                <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 ml-auto opacity-50" />
-              </button>
-            </div>
           </div>
 
           <!-- Cart Items (Scrollable) -->

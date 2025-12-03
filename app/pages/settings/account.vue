@@ -516,6 +516,7 @@
 import { z } from "zod";
 
 const { t } = useI18n();
+const colorMode = useColorMode();
 
 // Page meta
 definePageMeta({
@@ -635,7 +636,7 @@ const preferences = reactive({
   timezone: "Asia/Vientiane",
   dateFormat: "DD/MM/YYYY",
   currency: "LAK",
-  darkMode: false,
+  darkMode: colorMode.preference === 'dark',
   compactView: false,
 });
 
@@ -756,7 +757,8 @@ const changeLanguage = (newLanguage: string) => {
 };
 
 const toggleDarkMode = (enabled: boolean) => {
-  // Toggle dark mode
+  // Toggle dark mode using Nuxt color mode
+  colorMode.preference = enabled ? 'dark' : 'light';
   console.log("Dark mode", enabled ? "enabled" : "disabled");
 };
 
@@ -830,4 +832,14 @@ const getDeviceIcon = (device: string) => {
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
+
+// Sync dark mode preference on mount and watch for external changes
+onMounted(() => {
+  preferences.darkMode = colorMode.preference === 'dark' || colorMode.value === 'dark';
+});
+
+// Watch for external color mode changes (e.g., from other components)
+watch(() => colorMode.value, (newVal) => {
+  preferences.darkMode = newVal === 'dark';
+});
 </script>
