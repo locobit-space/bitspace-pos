@@ -803,11 +803,12 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <button
       v-if="pos.cartItems.value.length > 0"
-      class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full shadow-xl shadow-amber-500/30 active:scale-95 transition-transform"
+      class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white rounded-2xl shadow-2xl shadow-amber-500/40 dark:shadow-amber-900/50 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-all duration-200 hover:shadow-amber-500/50"
       @click="showMobileCart = true"
     >
-      <span class="text-xl">🛒</span>
-      <span class="font-bold">{{ pos.itemCount.value }}</span>
+      <span class="text-xl drop-shadow-sm">🛒</span>
+      <span class="font-bold text-white/90">{{ pos.itemCount.value }}</span>
+      <span class="w-px h-4 bg-white/30" />
       <span class="font-semibold">{{ currency.format(pos.total.value, pos.selectedCurrency.value) }}</span>
     </button>
 
@@ -907,31 +908,31 @@ onUnmounted(() => {
       </div>
 
       <!-- Cart Items -->
-      <div class="flex-1 overflow-auto p-4">
+      <div class="flex-1 overflow-auto p-3 bg-gray-50 dark:bg-gray-950/50">
         <!-- Empty State -->
         <div
           v-if="pos.cartItems.value.length === 0"
           class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
         >
           <div
-            class="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center text-4xl mb-4"
+            class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-4xl mb-4"
           >
             🛒
           </div>
-          <p class="text-base font-medium">Cart is empty</p>
+          <p class="text-base font-medium text-gray-500">Cart is empty</p>
           <p class="text-sm mt-1">Tap products to add</p>
         </div>
 
         <!-- Cart Items List -->
-        <div v-else class="space-y-3">
+        <div v-else class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700/50">
           <div
             v-for="(item, index) in pos.cartItems.value"
             :key="`${item.product.id}-${index}`"
-            class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700/30"
+            class="p-3 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors"
           >
             <div class="flex gap-3">
               <!-- Product Image -->
-              <div class="text-2xl flex-shrink-0">
+              <div class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0">
                 {{ item.product.image || "📦" }}
               </div>
 
@@ -940,7 +941,7 @@ onUnmounted(() => {
                 <div class="flex justify-between items-start gap-2">
                   <div class="flex-1 min-w-0">
                     <h4
-                      class="font-medium text-gray-900 dark:text-white text-sm leading-tight truncate"
+                      class="font-semibold text-gray-900 dark:text-white text-sm leading-tight truncate"
                     >
                       {{ item.product.name }}
                     </h4>
@@ -955,21 +956,21 @@ onUnmounted(() => {
                     >
                       <span
                         v-if="item.selectedVariant"
-                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium mr-1"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium mr-1"
                       >
                         {{ item.selectedVariant.shortName }}
                       </span>
                       <span
                         v-for="mod in item.selectedModifiers"
                         :key="mod.id"
-                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-1"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-1"
                       >
                         {{ mod.name }}
                       </span>
                     </div>
                   </div>
                   <button
-                    class="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
+                    class="text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0 transition-colors"
                     @click="pos.removeFromCart(index)"
                   >
                     <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
@@ -984,28 +985,28 @@ onUnmounted(() => {
                 <!-- Item Notes (if any) -->
                 <div
                   v-if="item.notes"
-                  class="mt-1 px-2 py-1 rounded bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs italic"
+                  class="mt-1.5 px-2 py-1 rounded-lg bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs"
                 >
                   📝 {{ item.notes }}
                 </div>
 
                 <!-- Quantity Controls & Total -->
                 <div class="flex items-center justify-between mt-2">
-                  <div class="flex items-center gap-1">
+                  <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
                     <button
-                      class="w-7 h-7 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
+                      class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 transition-colors"
                       @click="handleQuantityChange(index, -1)"
                     >
                       −
                     </button>
                     <button
-                      class="w-10 h-7 bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center text-sm font-medium"
+                      class="w-8 h-7 flex items-center justify-center text-sm font-bold text-gray-900 dark:text-white"
                       @click="openNumpad(index, item.quantity)"
                     >
                       {{ item.quantity }}
                     </button>
                     <button
-                      class="w-7 h-7 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
+                      class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 transition-colors"
                       @click="handleQuantityChange(index, 1)"
                     >
                       +
@@ -1240,30 +1241,32 @@ onUnmounted(() => {
         v-if="showMobileCart"
         class="lg:hidden fixed inset-0 z-50"
       >
-        <!-- Backdrop -->
+        <!-- Backdrop with blur -->
         <div 
-          class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          class="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-md"
           @click="showMobileCart = false"
         />
         
-        <!-- Cart Panel -->
-        <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
+        <!-- Cart Panel - Glass effect -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
           <!-- Drag Handle -->
-          <div class="flex justify-center py-3">
-            <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
+          <div class="flex justify-center pt-3 pb-2">
+            <div class="w-10 h-1 bg-gray-300/80 dark:bg-gray-600 rounded-full" />
           </div>
           
-          <!-- Cart Header -->
-          <div class="px-4 pb-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
+          <!-- Cart Header - Cleaner -->
+          <div class="px-5 pb-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🛒</span>
+              <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
+                <span class="text-xl">🛒</span>
+              </div>
               <div>
                 <h2 class="font-bold text-gray-900 dark:text-white">Your Order</h2>
-                <p class="text-xs text-gray-500">{{ pos.itemCount.value }} items</p>
+                <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">{{ pos.itemCount.value }} items</p>
               </div>
             </div>
             <button 
-              class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500"
+              class="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200/80 dark:hover:bg-gray-700 transition-colors"
               @click="showMobileCart = false"
             >
               <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
@@ -1271,73 +1274,92 @@ onUnmounted(() => {
           </div>
 
           <!-- Order Type Selector (Mobile) -->
-          <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-            <div class="flex gap-2">
+          <div class="px-4 pb-4">
+            <div class="flex gap-1.5">
               <button
                 v-for="type in orderTypes"
                 :key="type.value"
-                class="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-medium transition-all"
+                class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
                 :class="pos.orderType.value === type.value 
-                  ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md' 
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500'"
+                  ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
                 @click="pos.setOrderType(type.value)"
               >
-                <span class="text-base">{{ type.icon }}</span>
+                <span class="text-lg">{{ type.icon }}</span>
                 <span>{{ type.label }}</span>
               </button>
             </div>
           </div>
 
           <!-- Cart Items (Scrollable) -->
-          <div class="flex-1 overflow-y-auto px-4 py-3">
-            <div v-if="pos.cartItems.value.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400">
-              <span class="text-5xl mb-3">🛒</span>
-              <p>Cart is empty</p>
+          <div class="flex-1 overflow-y-auto px-4 pb-3 bg-gray-50/50 dark:bg-gray-950/50">
+            <div v-if="pos.cartItems.value.length === 0" class="flex flex-col items-center justify-center py-16 text-gray-400">
+              <div class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center mb-4">
+                <span class="text-4xl">🛒</span>
+              </div>
+              <p class="font-medium text-gray-500">Cart is empty</p>
+              <p class="text-sm text-gray-400 mt-1">Tap products to add</p>
             </div>
-            <div v-else class="space-y-3">
+            <div v-else class="space-y-2 pt-2">
               <div
                 v-for="(item, index) in pos.cartItems.value"
                 :key="`mobile-${item.product.id}-${index}`"
-                class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl"
+                class="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl"
               >
-                <span class="text-2xl">{{ item.product.image || '📦' }}</span>
-                <div class="flex-1 min-w-0">
-                  <p class="font-medium text-sm text-gray-900 dark:text-white truncate">{{ item.product.name }}</p>
-                  <p class="text-xs text-gray-500">{{ currency.format(item.price, pos.selectedCurrency.value) }}</p>
+                <!-- Product Icon -->
+                <div class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0">
+                  {{ item.product.image || '📦' }}
                 </div>
-                <div class="flex items-center gap-2">
+                
+                <!-- Product Info -->
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold text-sm text-gray-900 dark:text-white truncate">{{ item.product.name }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ currency.format(item.price, pos.selectedCurrency.value) }}</p>
+                </div>
+                
+                <!-- Quantity Controls -->
+                <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
                   <button 
-                    class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm font-bold"
+                    class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
                     @click="handleQuantityChange(index, -1)"
                   >−</button>
-                  <span class="w-6 text-center font-semibold text-sm">{{ item.quantity }}</span>
+                  <span class="w-7 text-center font-bold text-sm text-gray-900 dark:text-white">{{ item.quantity }}</span>
                   <button 
-                    class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm font-bold"
+                    class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
                     @click="handleQuantityChange(index, 1)"
                   >+</button>
                 </div>
-                <p class="font-bold text-amber-600 dark:text-amber-400 text-sm w-20 text-right">
+                
+                <!-- Total Price -->
+                <p class="font-bold text-amber-600 dark:text-amber-400 text-sm min-w-[4.5rem] text-right tabular-nums">
                   {{ currency.format(item.total, pos.selectedCurrency.value) }}
                 </p>
               </div>
             </div>
           </div>
 
-          <!-- Cart Footer -->
-          <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-            <div class="flex justify-between items-center mb-4">
-              <span class="text-gray-500">Total</span>
+          <!-- Cart Footer - Glass effect -->
+          <div class="px-5 py-4 bg-gradient-to-t from-white via-white to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900/80 border-t border-gray-100 dark:border-gray-800">
+            <!-- Summary -->
+            <div class="flex justify-between items-end mb-4">
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Total</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{{ formattedTotal }}</p>
+              </div>
               <div class="text-right">
-                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formattedTotal }}</p>
-                <p class="text-sm text-amber-600 dark:text-amber-400">⚡ {{ formattedTotalSats }}</p>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full">
+                  <span class="text-amber-500">⚡</span>
+                  <span class="text-sm font-semibold text-amber-600 dark:text-amber-400">{{ formattedTotalSats }}</span>
+                </div>
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-5 gap-2.5">
               <UButton
                 color="neutral"
                 variant="soft"
                 size="lg"
-                class="w-full"
+                class="col-span-2 !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-800 dark:hover:!bg-gray-700 !text-gray-600 dark:!text-gray-300 font-semibold"
                 @click="pos.clearCart(); showMobileCart = false"
               >
                 Clear
@@ -1345,11 +1367,14 @@ onUnmounted(() => {
               <UButton
                 color="primary"
                 size="lg"
-                class="w-full bg-gradient-to-r from-amber-500 to-orange-500"
+                class="col-span-3 !bg-gradient-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white font-semibold shadow-lg shadow-amber-500/25"
                 :disabled="pos.cartItems.value.length === 0"
                 @click="showMobileCart = false; proceedToPayment()"
               >
-                Pay Now
+                <span class="flex items-center gap-2">
+                  <span>Pay Now</span>
+                  <span class="text-amber-200">→</span>
+                </span>
               </UButton>
             </div>
           </div>
