@@ -13,7 +13,8 @@ import type {
   Order, 
   POSSession,
   CurrencyCode,
-  PaymentMethod 
+  PaymentMethod,
+  OrderType 
 } from '~/types';
 import { useCurrency } from './use-currency';
 
@@ -29,6 +30,13 @@ const taxRate = ref(0); // 0% default for Laos
 const customerNote = ref('');
 const customerPubkey = ref<string | null>(null);
 const currentSession = ref<POSSession | null>(null);
+
+// Order type state (dine-in, take-away, delivery, pickup)
+const orderType = ref<OrderType>('dine_in');
+const tableNumber = ref<string>('');
+const deliveryAddress = ref<string>('');
+const customerPhone = ref<string>('');
+const scheduledTime = ref<string>('');
 
 // Payment state for customer display sync
 const paymentState = ref<{
@@ -73,10 +81,21 @@ const initBroadcastChannel = () => {
       tipAmount.value = payload.tipAmount || 0;
       selectedCurrency.value = payload.selectedCurrency || 'LAK';
       customerNote.value = payload.customerNote || '';
+      // Order type sync
+      orderType.value = payload.orderType || 'dine_in';
+      tableNumber.value = payload.tableNumber || '';
+      deliveryAddress.value = payload.deliveryAddress || '';
+      customerPhone.value = payload.customerPhone || '';
+      scheduledTime.value = payload.scheduledTime || '';
     } else if (type === 'cart-clear') {
       cartItems.value = [];
       tipAmount.value = 0;
       customerNote.value = '';
+      orderType.value = 'dine_in';
+      tableNumber.value = '';
+      deliveryAddress.value = '';
+      customerPhone.value = '';
+      scheduledTime.value = '';
       paymentState.value = { status: 'idle' };
     } else if (type === 'payment-update') {
       paymentState.value = payload;
@@ -114,6 +133,12 @@ const broadcastCartState = () => {
       tipAmount: tipAmount.value,
       selectedCurrency: selectedCurrency.value,
       customerNote: customerNote.value,
+      // Order type info
+      orderType: orderType.value,
+      tableNumber: tableNumber.value,
+      deliveryAddress: deliveryAddress.value,
+      customerPhone: customerPhone.value,
+      scheduledTime: scheduledTime.value,
     }
   });
 };
@@ -141,6 +166,9 @@ const broadcastPaymentState = () => {
     bankQrData: paymentState.value.bankQrData || undefined,
     // External
     externalMethod: paymentState.value.externalMethod || undefined,
+    // E-Bill (for customer display after payment)
+    eBillUrl: paymentState.value.eBillUrl || undefined,
+    eBillId: paymentState.value.eBillId || undefined,
   };
   
   broadcastChannel.postMessage({
@@ -357,7 +385,30 @@ export const usePOS = () => {
     tipAmount.value = 0;
     customerNote.value = '';
     customerPubkey.value = null;
+    // Reset order type to defaults
+    orderType.value = 'dine_in';
+    tableNumber.value = '';
+    deliveryAddress.value = '';
+    customerPhone.value = '';
+    scheduledTime.value = '';
     broadcastCartClear();
+  };
+
+  /**
+   * Set order type with optional details
+   */
+  const setOrderType = (type: OrderType, details?: {
+    tableNumber?: string;
+    deliveryAddress?: string;
+    customerPhone?: string;
+    scheduledTime?: string;
+  }) => {
+    orderType.value = type;
+    if (details?.tableNumber) tableNumber.value = details.tableNumber;
+    if (details?.deliveryAddress) deliveryAddress.value = details.deliveryAddress;
+    if (details?.customerPhone) customerPhone.value = details.customerPhone;
+    if (details?.scheduledTime) scheduledTime.value = details.scheduledTime;
+    broadcastCartState();
   };
 
   /**
@@ -637,5 +688,13 @@ export const usePOS = () => {
     // Payment state (for customer display sync)
     paymentState,
     setPaymentState,
+    
+    // Order type
+    orderType,
+    tableNumber,
+    deliveryAddress,
+    customerPhone,
+    scheduledTime,
+    setOrderType,
   };
 };

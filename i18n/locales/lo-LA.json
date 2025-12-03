@@ -21,6 +21,16 @@
     "tax": "ພາສີ",
     "tip": "ທິບ",
     "total": "ລວມທັງໝົດ",
+    "orderType": {
+      "title": "ປະເພດອໍເດີ້",
+      "dine_in": "ກິນທີ່ຮ້ານ",
+      "take_away": "ຫໍ່ກັບບ້ານ",
+      "delivery": "ສົ່ງເຖິງບ່ອນ",
+      "pickup": "ມາຮັບເອງ",
+      "tableNumber": "ເລກໂຕະ",
+      "customerPhone": "ເບີໂທລູກຄ້າ",
+      "deliveryAddress": "ທີ່ຢູ່ສົ່ງ"
+    },
     "offline": {
       "mode": "ໂໝດອອຟໄລນ໌",
       "online": "ອອນໄລນ໌",

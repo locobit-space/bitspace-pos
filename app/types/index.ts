@@ -601,6 +601,9 @@ export interface Branch {
   address?: string;
 }
 
+// Order Types (dine-in, take-away, delivery)
+export type OrderType = 'dine_in' | 'take_away' | 'delivery' | 'pickup';
+
 export interface Order {
   id: string;
   customer: string;
@@ -619,6 +622,12 @@ export interface Order {
   loyaltyPointsEarned?: number;
   eReceiptId?: string;
   isOffline?: boolean;
+  // Order type
+  orderType?: OrderType;
+  tableNumber?: string; // For dine-in
+  deliveryAddress?: string; // For delivery
+  customerPhone?: string; // For delivery/pickup
+  scheduledTime?: string; // For scheduled pickup/delivery
   // Kitchen display
   kitchenStatus?: 'new' | 'preparing' | 'ready' | 'served';
   kitchenNotes?: string;

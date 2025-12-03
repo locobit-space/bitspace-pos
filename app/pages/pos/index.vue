@@ -8,6 +8,7 @@ import type {
   PaymentMethod,
   AppliedCoupon,
   Order,
+  OrderType,
 } from "~/types";
 
 definePageMeta({
@@ -39,6 +40,7 @@ const showSettingsModal = ref(false);
 const showNumpad = ref(false);
 const showProductOptionsModal = ref(false);
 const showItemNotesModal = ref(false);
+const showMobileCart = ref(false); // Mobile cart slide-up panel
 const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref("");
 const isProcessing = ref(false);
@@ -83,6 +85,14 @@ const heldOrders = ref<
 // Current time display
 const currentTime = ref(new Date());
 let timeInterval: ReturnType<typeof setInterval>;
+
+// Order types for selector
+const orderTypes: Array<{ value: OrderType; label: string; icon: string }> = [
+  { value: 'dine_in', label: 'Dine In', icon: '🍽️' },
+  { value: 'take_away', label: 'Take Away', icon: '🥡' },
+  { value: 'delivery', label: 'Delivery', icon: '🛵' },
+  { value: 'pickup', label: 'Pickup', icon: '🏃' },
+];
 
 // ============================================
 // Computed
@@ -459,7 +469,7 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="h-screen flex bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden"
+    class="h-screen flex flex-col lg:flex-row bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden"
   >
     <!-- ============================================ -->
     <!-- LEFT PANEL - Products -->
@@ -467,20 +477,20 @@ onUnmounted(() => {
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Header Bar -->
       <header
-        class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800/50 px-4 py-3"
+        class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800/50 px-2 sm:px-4 py-2 sm:py-3"
       >
         <div class="flex items-center justify-between">
           <!-- Logo & Status -->
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 sm:gap-4">
             <div class="flex items-center gap-2">
               <div>
                 <div
-                  class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xl shadow-lg shadow-amber-500/20"
+                  class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-amber-500/20"
                 >
                   ⚡
                 </div>
               </div>
-              <div>
+              <div class="hidden sm:block">
                 <h1
                   class="text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent"
                 >
@@ -494,7 +504,7 @@ onUnmounted(() => {
 
             <!-- Connection Status -->
             <div
-              class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+              class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
               :class="
                 offline.isOnline.value
                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20'
@@ -515,13 +525,19 @@ onUnmounted(() => {
                   "
                 />
               </span>
-              {{ offline.isOnline.value ? "Online" : "Offline Mode" }}
+              {{ offline.isOnline.value ? "Online" : "Offline" }}
             </div>
+
+            <!-- Mobile status indicator -->
+            <span 
+              class="sm:hidden flex h-2.5 w-2.5 rounded-full"
+              :class="offline.isOnline.value ? 'bg-emerald-500' : 'bg-amber-500'"
+            />
 
             <!-- Pending Sync -->
             <div
               v-if="offline.pendingCount.value > 0"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20"
+              class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20"
             >
               <UIcon
                 name="i-heroicons-arrow-path"
@@ -782,10 +798,24 @@ onUnmounted(() => {
     </div>
 
     <!-- ============================================ -->
-    <!-- RIGHT PANEL - Cart -->
+    <!-- MOBILE CART TOGGLE (visible on small screens) -->
     <!-- ============================================ -->
+    <button
+      v-if="pos.cartItems.value.length > 0"
+      class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full shadow-xl shadow-amber-500/30 active:scale-95 transition-transform"
+      @click="showMobileCart = true"
+    >
+      <span class="text-xl">🛒</span>
+      <span class="font-bold">{{ pos.itemCount.value }}</span>
+      <span class="font-semibold">{{ currency.format(pos.total.value, pos.selectedCurrency.value) }}</span>
+    </button>
+
+    <!-- ============================================ -->
+    <!-- RIGHT PANEL - Cart (Desktop) / Slide-up (Mobile) -->
+    <!-- ============================================ -->
+    <!-- Desktop Cart Panel -->
     <div
-      class="w-[380px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800/50 flex flex-col"
+      class="hidden lg:flex w-[380px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800/50 flex-col"
     >
       <!-- Cart Header -->
       <div
@@ -815,6 +845,62 @@ onUnmounted(() => {
             variant="ghost"
             size="xs"
             @click="pos.clearCart"
+          />
+        </div>
+
+        <!-- Order Type Selector -->
+        <div class="mt-3 flex gap-1.5">
+          <button
+            v-for="type in orderTypes"
+            :key="type.value"
+            class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
+            :class="pos.orderType.value === type.value 
+              ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25' 
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+            @click="pos.setOrderType(type.value)"
+          >
+            <span class="text-lg">{{ type.icon }}</span>
+            <span>{{ type.label }}</span>
+          </button>
+        </div>
+
+        <!-- Table Number (for dine-in) -->
+        <div v-if="pos.orderType.value === 'dine_in'" class="mt-2">
+          <UInput
+            v-model="pos.tableNumber.value"
+            placeholder="Table # (optional)"
+            size="xs"
+            icon="i-heroicons-table-cells"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Delivery/Pickup Info -->
+        <div v-if="pos.orderType.value === 'delivery'" class="mt-2 space-y-2">
+          <UInput
+            v-model="pos.customerPhone.value"
+            placeholder="Customer phone"
+            size="xs"
+            icon="i-heroicons-phone"
+            class="w-full"
+          />
+          <UInput
+            v-model="pos.deliveryAddress.value"
+            placeholder="Delivery address"
+            size="xs"
+            icon="i-heroicons-map-pin"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Pickup Info -->
+        <div v-if="pos.orderType.value === 'pickup'" class="mt-2">
+          <UInput
+            v-model="pos.customerPhone.value"
+            placeholder="Customer phone (for pickup notification)"
+            size="xs"
+            icon="i-heroicons-phone"
+            class="w-full"
           />
         </div>
       </div>
@@ -1091,6 +1177,131 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- ============================================ -->
+    <!-- MOBILE CART SLIDE-UP PANEL -->
+    <!-- ============================================ -->
+    <Transition name="slide-up">
+      <div
+        v-if="showMobileCart"
+        class="lg:hidden fixed inset-0 z-50"
+      >
+        <!-- Backdrop -->
+        <div 
+          class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          @click="showMobileCart = false"
+        />
+        
+        <!-- Cart Panel -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
+          <!-- Drag Handle -->
+          <div class="flex justify-center py-3">
+            <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
+          </div>
+          
+          <!-- Cart Header -->
+          <div class="px-4 pb-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🛒</span>
+              <div>
+                <h2 class="font-bold text-gray-900 dark:text-white">Your Order</h2>
+                <p class="text-xs text-gray-500">{{ pos.itemCount.value }} items</p>
+              </div>
+            </div>
+            <button 
+              class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500"
+              @click="showMobileCart = false"
+            >
+              <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Order Type Selector (Mobile) -->
+          <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+            <div class="flex gap-2">
+              <button
+                v-for="type in orderTypes"
+                :key="type.value"
+                class="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-medium transition-all"
+                :class="pos.orderType.value === type.value 
+                  ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500'"
+                @click="pos.setOrderType(type.value)"
+              >
+                <span class="text-base">{{ type.icon }}</span>
+                <span>{{ type.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cart Items (Scrollable) -->
+          <div class="flex-1 overflow-y-auto px-4 py-3">
+            <div v-if="pos.cartItems.value.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400">
+              <span class="text-5xl mb-3">🛒</span>
+              <p>Cart is empty</p>
+            </div>
+            <div v-else class="space-y-3">
+              <div
+                v-for="(item, index) in pos.cartItems.value"
+                :key="`mobile-${item.product.id}-${index}`"
+                class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl"
+              >
+                <span class="text-2xl">{{ item.product.image || '📦' }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-sm text-gray-900 dark:text-white truncate">{{ item.product.name }}</p>
+                  <p class="text-xs text-gray-500">{{ currency.format(item.price, pos.selectedCurrency.value) }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button 
+                    class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm font-bold"
+                    @click="handleQuantityChange(index, -1)"
+                  >−</button>
+                  <span class="w-6 text-center font-semibold text-sm">{{ item.quantity }}</span>
+                  <button 
+                    class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm font-bold"
+                    @click="handleQuantityChange(index, 1)"
+                  >+</button>
+                </div>
+                <p class="font-bold text-amber-600 dark:text-amber-400 text-sm w-20 text-right">
+                  {{ currency.format(item.total, pos.selectedCurrency.value) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cart Footer -->
+          <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-gray-500">Total</span>
+              <div class="text-right">
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formattedTotal }}</p>
+                <p class="text-sm text-amber-600 dark:text-amber-400">⚡ {{ formattedTotalSats }}</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <UButton
+                color="neutral"
+                variant="soft"
+                size="lg"
+                class="w-full"
+                @click="pos.clearCart(); showMobileCart = false"
+              >
+                Clear
+              </UButton>
+              <UButton
+                color="primary"
+                size="lg"
+                class="w-full bg-gradient-to-r from-amber-500 to-orange-500"
+                :disabled="pos.cartItems.value.length === 0"
+                @click="showMobileCart = false; proceedToPayment()"
+              >
+                Pay Now
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- ============================================ -->
     <!-- MODALS -->
@@ -1797,5 +2008,21 @@ onUnmounted(() => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Slide-up transition for mobile cart */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-from > div:last-child,
+.slide-up-leave-to > div:last-child {
+  transform: translateY(100%);
 }
 </style>

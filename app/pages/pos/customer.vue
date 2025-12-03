@@ -50,6 +50,22 @@ const promoMessages = [
 const currentPromoIndex = ref(0);
 const isPromoTransitioning = ref(false);
 
+// Order type display info
+interface OrderTypeDisplay {
+  icon: string;
+  label: string;
+  color: string;
+}
+const orderTypeInfo = computed<OrderTypeDisplay>(() => {
+  const types: Record<string, OrderTypeDisplay> = {
+    dine_in: { icon: '🍽️', label: 'Dine In', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+    take_away: { icon: '🥡', label: 'Take Away', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+    delivery: { icon: '🛵', label: 'Delivery', color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
+    pickup: { icon: '🏃', label: 'Pickup', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+  };
+  return types[pos.orderType.value] ?? types.dine_in!;
+});
+
 // ============================================
 // Lifecycle
 // ============================================
@@ -176,7 +192,21 @@ const formatDate = computed(() => {
       <div v-else-if="displayState === 'active'" class="h-full flex">
         <!-- Cart Items -->
         <div class="flex-1 flex flex-col bg-white dark:bg-gray-950">
-          <div class="flex-1 overflow-y-auto px-8 py-6">
+          <!-- Order Type Badge -->
+          <div class="px-8 pt-6 pb-2">
+            <div 
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+              :class="orderTypeInfo.color"
+            >
+              <span class="text-lg">{{ orderTypeInfo.icon }}</span>
+              <span>{{ orderTypeInfo.label }}</span>
+              <span v-if="pos.orderType.value === 'dine_in' && pos.tableNumber.value" class="font-bold">
+                · Table {{ pos.tableNumber.value }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="flex-1 overflow-y-auto px-8 py-4">
             <TransitionGroup name="list" tag="div" class="space-y-3">
               <div
                 v-for="(item, index) in pos.cartItems.value"

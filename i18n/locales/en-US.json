@@ -21,6 +21,16 @@
     "tax": "Tax",
     "tip": "Tip",
     "total": "Total",
+    "orderType": {
+      "title": "Order Type",
+      "dine_in": "Dine In",
+      "take_away": "Take Away",
+      "delivery": "Delivery",
+      "pickup": "Pickup",
+      "tableNumber": "Table Number",
+      "customerPhone": "Customer Phone",
+      "deliveryAddress": "Delivery Address"
+    },
     "offline": {
       "mode": "Offline Mode",
       "online": "Online",
