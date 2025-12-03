@@ -20,7 +20,11 @@
     <!-- User Profile Section -->
     <div class="p-1 border-t border-gray-200 dark:border-gray-700">
       <!-- Profile Dropdown -->
-      <UPopover>
+      <UPopover
+        :ui="{
+          content: 'w-72 p-4 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 rounded-2xl shadow-xl border-white/20 dark:border-gray-700/50'
+        }"
+      >
         <button
           class="flex p-2 w-full transition-all px-3 justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 items-center"
         >
@@ -33,17 +37,27 @@
         </button>
 
         <template #content>
-          <div class="w-64 p-3">
-            <!-- User Info -->
-            <div class="px-2 py-2 border-b border-gray-200 dark:border-gray-700 mb-3">
-              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {{ auth.user.value?.displayName || 'User' }}
-              </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {{ auth.user.value?.email || formatPubkey(auth.user.value?.nostrPubkey) }}
-              </p>
+          <div class="">
+            <!-- User Info with gradient accent -->
+            <div class="relative px-3 py-3 mb-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary-100 dark:border-primary-800/30">
+              <div class="flex items-center gap-3">
+                <div v-if="auth.user.value?.avatarUrl" class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-md">
+                  <img :src="auth.user.value.avatarUrl" alt="Profile" class="w-full h-full object-cover" />
+                </div>
+                <div v-else class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-md">
+                  <Icon name="i-heroicons-user" size="20" class="text-white" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {{ auth.user.value?.displayName || 'User' }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {{ auth.user.value?.email || formatPubkey(auth.user.value?.nostrPubkey) }}
+                  </p>
+                </div>
+              </div>
               <span 
-                class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full"
+                class="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-medium shadow-sm"
                 :class="providerBadgeClass"
               >
                 {{ auth.user.value?.provider === 'nostr' ? '⚡ Nostr' : 
@@ -51,17 +65,19 @@
               </span>
             </div>
 
-            <!-- Quick Settings -->
-            <div class="px-2 py-3 border-b border-gray-200 dark:border-gray-700 mb-3 space-y-3">
+            <!-- Quick Settings with glass cards -->
+            <div class="space-y-4 mb-4">
               <!-- Dark Mode Toggle -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <Icon 
-                    :name="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'" 
-                    size="18" 
-                    class="text-gray-600 dark:text-gray-400" 
-                  />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">
+              <div class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 dark:from-indigo-500 dark:to-purple-600 flex items-center justify-center shadow-sm">
+                    <Icon 
+                      :name="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'" 
+                      size="16" 
+                      class="text-white" 
+                    />
+                  </div>
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
                     {{ $t('account.dark_mode') }}
                   </span>
                 </div>
@@ -69,24 +85,26 @@
               </div>
 
               <!-- Theme Color Selector -->
-              <div>
-                <div class="flex items-center gap-2 mb-2">
-                  <Icon name="i-heroicons-swatch" size="18" class="text-gray-600 dark:text-gray-400" />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">
+              <div class="px-3 py-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-sm">
+                    <Icon name="i-heroicons-swatch" size="16" class="text-white" />
+                  </div>
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
                     {{ $t('account.theme_color') }}
                   </span>
                 </div>
-                <div class="flex flex-wrap gap-1.5">
+                <div class="flex flex-wrap gap-2 pl-11">
                   <button
                     v-for="color in themeColors"
                     :key="color.value"
                     :title="color.label"
                     :class="[
-                      'w-5 h-5 rounded-full ring-1 ring-offset-1 ring-offset-white dark:ring-offset-gray-800 transition-all',
+                      'w-6 h-6 rounded-full transition-all duration-200 shadow-sm',
                       color.class,
                       selectedColor === color.value 
-                        ? 'ring-gray-900 dark:ring-white scale-110' 
-                        : 'ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600'
+                        ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 ring-gray-900 dark:ring-white scale-110 shadow-md' 
+                        : 'hover:scale-110 hover:shadow-md opacity-80 hover:opacity-100'
                     ]"
                     @click="setThemeColor(color.value)"
                   />
@@ -94,36 +112,42 @@
               </div>
             </div>
 
+            <!-- Divider -->
+            <div class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-3" />
+
             <!-- Menu Items -->
             <ul class="space-y-1">
               <li>
                 <NuxtLinkLocale
                   to="/settings/account"
-                  class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
                 >
-                  <Icon name="i-heroicons-user-circle" size="18" />
+                  <Icon name="i-heroicons-user-circle" size="18" class="text-gray-500 dark:text-gray-400" />
                   {{ $t('settings.account.title') }}
                 </NuxtLinkLocale>
               </li>
               <li>
                 <NuxtLinkLocale
                   to="/settings"
-                  class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
                 >
-                  <Icon name="i-heroicons-cog-6-tooth" size="18" />
+                  <Icon name="i-heroicons-cog-6-tooth" size="18" class="text-gray-500 dark:text-gray-400" />
                   {{ $t('settings.general.title') }}
                 </NuxtLinkLocale>
               </li>
-              <li class="border-t border-gray-200 dark:border-gray-700 pt-1 mt-1">
-                <button
-                  class="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  @click="handleLogout"
-                >
-                  <Icon name="i-heroicons-arrow-right-on-rectangle" size="18" />
-                  {{ $t('auth.signOut') }}
-                </button>
-              </li>
             </ul>
+
+            <!-- Divider -->
+            <div class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent my-3" />
+
+            <!-- Sign Out -->
+            <button
+              class="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
+              @click="handleLogout"
+            >
+              <Icon name="i-heroicons-arrow-right-on-rectangle" size="18" />
+              {{ $t('common.signOut') }}
+            </button>
           </div>
         </template>
       </UPopover>

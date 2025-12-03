@@ -1307,6 +1307,7 @@
     "next": "Next",
     "confirm": "Confirm",
     "confirmDelete": "Confirm Delete",
+    "signOut": "Sign Out",
     "deleteConfirmMessage": "Are you sure you want to delete",
     "cannotUndo": "This action cannot be undone.",
     "actions": "Actions",
