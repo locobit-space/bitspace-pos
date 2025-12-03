@@ -18,6 +18,7 @@ const emit = defineEmits<{
 const currencyHelper = useCurrency();
 const sound = useSound();
 const { t } = useI18n();
+const pos = usePOS();
 
 // State
 const amountTendered = ref(0);
@@ -103,6 +104,13 @@ const setExactAmount = () => {
 const confirmPayment = () => {
   if (!isValidPayment.value) return;
   step.value = 'confirm';
+  
+  // Broadcast to customer display
+  pos.setPaymentState({
+    status: 'pending',
+    method: 'cash',
+    amount: props.amount,
+  });
 };
 
 const processPayment = () => {

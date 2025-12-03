@@ -33,9 +33,18 @@ const currentSession = ref<POSSession | null>(null);
 // Payment state for customer display sync
 const paymentState = ref<{
   status: 'idle' | 'pending' | 'paid' | 'cancelled';
+  method?: 'lightning' | 'cash' | 'bank_transfer' | 'external';
   invoiceData?: string;
   amount?: number;
   satsAmount?: number;
+  // Bank transfer specific
+  bankCode?: string;  // 'bcel' | 'ldb' | 'jdb' | 'apb' etc
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  bankQrData?: string;
+  // External payment specific
+  externalMethod?: string;
 }>({ status: 'idle' });
 
 // ============================================
@@ -117,9 +126,18 @@ const broadcastPaymentState = () => {
   // Serialize payment state to plain object
   const serializedState = {
     status: paymentState.value.status,
+    method: paymentState.value.method || undefined,
     invoiceData: paymentState.value.invoiceData || undefined,
     amount: paymentState.value.amount || undefined,
     satsAmount: paymentState.value.satsAmount || undefined,
+    // Bank transfer
+    bankCode: paymentState.value.bankCode || undefined,
+    bankName: paymentState.value.bankName || undefined,
+    accountNumber: paymentState.value.accountNumber || undefined,
+    accountName: paymentState.value.accountName || undefined,
+    bankQrData: paymentState.value.bankQrData || undefined,
+    // External
+    externalMethod: paymentState.value.externalMethod || undefined,
   };
   
   broadcastChannel.postMessage({

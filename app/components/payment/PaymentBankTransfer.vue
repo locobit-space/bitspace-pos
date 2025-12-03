@@ -8,7 +8,7 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
-defineProps<{
+const props = defineProps<{
   amount: number;
   currency: CurrencyCode;
   orderId: string;
@@ -17,6 +17,7 @@ defineProps<{
 // Composables
 const currencyHelper = useCurrency();
 const { t } = useI18n();
+const pos = usePOS();
 
 // State
 const step = ref<'select' | 'confirm' | 'complete'>('select');
@@ -65,6 +66,18 @@ const bankIcons: Record<string, string> = {
 const selectBank = (bank: BankAccount) => {
   selectedBank.value = bank;
   step.value = 'confirm';
+  
+  // Broadcast to customer display
+  pos.setPaymentState({
+    status: 'pending',
+    method: 'bank_transfer',
+    amount: props.amount,
+    bankCode: bank.id,
+    bankName: bank.bankName,
+    accountNumber: bank.accountNumber,
+    accountName: bank.accountName,
+    bankQrData: bank.qrCode || `bank:${bank.bankCode}:${bank.accountNumber}:${props.amount}`,
+  });
 };
 
 const confirmTransfer = () => {

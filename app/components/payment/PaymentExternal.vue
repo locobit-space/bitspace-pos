@@ -8,7 +8,7 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
-defineProps<{
+const props = defineProps<{
   amount: number;
   currency: CurrencyCode;
   orderId: string;
@@ -17,6 +17,7 @@ defineProps<{
 // Composables
 const currencyHelper = useCurrency();
 const { t } = useI18n();
+const pos = usePOS();
 
 // State
 const step = ref<'select' | 'confirm' | 'complete'>('select');
@@ -73,6 +74,14 @@ const externalProviders = ref<ExternalPaymentProvider[]>([
 const selectProvider = (provider: ExternalPaymentProvider) => {
   selectedProvider.value = provider;
   step.value = 'confirm';
+  
+  // Broadcast to customer display
+  pos.setPaymentState({
+    status: 'pending',
+    method: 'external',
+    amount: props.amount,
+    externalMethod: provider.name,
+  });
 };
 
 const confirmPayment = () => {

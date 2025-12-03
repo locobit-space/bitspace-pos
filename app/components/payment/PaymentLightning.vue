@@ -108,6 +108,7 @@ const generateInvoice = async () => {
       // Broadcast invoice to customer display
       pos.setPaymentState({
         status: 'pending',
+        method: 'lightning',
         invoiceData: invoice.bolt11,
         amount: props.fiatAmount,
         satsAmount: props.amount,

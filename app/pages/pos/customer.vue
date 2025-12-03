@@ -242,46 +242,203 @@ const formatDate = computed(() => {
       </div>
 
       <!-- ============================================ -->
-      <!-- PAYMENT STATE: QR Code -->
+      <!-- PAYMENT STATE: Multiple Payment Methods -->
       <!-- ============================================ -->
-      <div v-else-if="displayState === 'payment'" class="h-full flex items-center justify-center gap-24 bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <!-- QR Code -->
-        <div class="text-center">
-          <div class="relative">
-            <div v-if="pos.paymentState.value.invoiceData" class="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-none dark:border dark:border-gray-800">
-              <img
-                :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pos.paymentState.value.invoiceData)}`"
-                alt="QR"
-                class="w-72 h-72"
-              >
+      <div v-else-if="displayState === 'payment'" class="h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+        
+        <!-- ==================== -->
+        <!-- LIGHTNING PAYMENT -->
+        <!-- ==================== -->
+        <div v-if="pos.paymentState.value.method === 'lightning' || pos.paymentState.value.invoiceData" class="flex items-center justify-center gap-24 w-full">
+          <!-- QR Code -->
+          <div class="text-center">
+            <div class="relative">
+              <div v-if="pos.paymentState.value.invoiceData" class="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-none dark:border dark:border-gray-800">
+                <img
+                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pos.paymentState.value.invoiceData)}`"
+                  alt="QR"
+                  class="w-72 h-72"
+                >
+              </div>
+              <div v-else class="w-72 h-72 bg-gray-100 dark:bg-gray-900 rounded-3xl flex items-center justify-center">
+                <span class="text-7xl animate-pulse">⚡</span>
+              </div>
+              <!-- Corner accent -->
+              <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full animate-ping opacity-75" />
+              <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full" />
             </div>
-            <div v-else class="w-72 h-72 bg-gray-100 dark:bg-gray-900 rounded-3xl flex items-center justify-center">
-              <span class="text-7xl animate-pulse">⚡</span>
-            </div>
-            <!-- Corner accent -->
-            <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full animate-ping opacity-75" />
-            <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full" />
+            <p class="text-gray-500 mt-6 text-lg">Scan with Lightning wallet</p>
           </div>
-          <p class="text-gray-500 mt-6 text-lg">Scan with Lightning wallet</p>
+
+          <!-- Amount -->
+          <div class="text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 mb-4">
+              <span class="text-xl">⚡</span>
+              <span class="font-semibold">Lightning Payment</span>
+            </div>
+            <p class="text-gray-400 text-lg mb-2">Amount Due</p>
+            <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
+              {{ currency.format(pos.paymentState.value.amount || pos.total.value, pos.selectedCurrency.value) }}
+            </div>
+            <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-2xl font-semibold">
+              <span>⚡</span>
+              <span>{{ (pos.paymentState.value.satsAmount || pos.totalSats.value).toLocaleString() }} sats</span>
+            </div>
+            
+            <!-- Waiting indicator -->
+            <div class="mt-12">
+              <div class="flex items-center justify-center gap-3">
+                <div class="payment-loader" />
+                <span class="text-gray-500 text-lg">Waiting for payment...</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Amount -->
-        <div class="text-center">
-          <p class="text-gray-400 text-lg mb-2">Amount Due</p>
-          <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
-            {{ currency.format(pos.paymentState.value.amount || pos.total.value, pos.selectedCurrency.value) }}
+        <!-- ==================== -->
+        <!-- BANK TRANSFER -->
+        <!-- ==================== -->
+        <div v-else-if="pos.paymentState.value.method === 'bank_transfer'" class="flex items-center justify-center gap-20 w-full px-12">
+          <!-- Bank QR Code -->
+          <div class="text-center">
+            <div class="relative">
+              <!-- Bank Logo -->
+              <div class="absolute -top-4 -left-4 z-10">
+                <div class="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center">
+                  <span v-if="pos.paymentState.value.bankCode === 'bcel'" class="text-3xl">🏦</span>
+                  <span v-else-if="pos.paymentState.value.bankCode === 'ldb'" class="text-3xl">🏛️</span>
+                  <span v-else-if="pos.paymentState.value.bankCode === 'jdb'" class="text-3xl">💳</span>
+                  <span v-else class="text-3xl">🏦</span>
+                </div>
+              </div>
+              
+              <div v-if="pos.paymentState.value.bankQrData" class="bg-white p-8 rounded-3xl shadow-xl shadow-blue-200/50 dark:shadow-none dark:border dark:border-gray-800">
+                <img
+                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pos.paymentState.value.bankQrData)}`"
+                  alt="Bank QR"
+                  class="w-72 h-72"
+                >
+              </div>
+              <div v-else class="w-72 h-72 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-blue-300 dark:border-blue-700">
+                <span class="text-6xl mb-4">🏦</span>
+                <span class="text-blue-600 dark:text-blue-400 font-medium">Bank Transfer</span>
+              </div>
+            </div>
+            <p class="text-gray-500 mt-6 text-lg">Scan with banking app</p>
           </div>
-          <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-2xl font-semibold">
-            <span>⚡</span>
-            <span>{{ (pos.paymentState.value.satsAmount || pos.totalSats.value).toLocaleString() }} sats</span>
+
+          <!-- Bank Details & Amount -->
+          <div class="text-center max-w-md">
+            <!-- Bank Badge -->
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-6">
+              <span class="text-xl">🏦</span>
+              <span class="font-semibold">{{ pos.paymentState.value.bankName || 'Bank Transfer' }}</span>
+            </div>
+            
+            <!-- Amount -->
+            <p class="text-gray-400 text-lg mb-2">Amount Due</p>
+            <div class="text-6xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
+              {{ currency.format(pos.paymentState.value.amount || pos.total.value, pos.selectedCurrency.value) }}
+            </div>
+            
+            <!-- Account Details -->
+            <div v-if="pos.paymentState.value.accountNumber" class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 text-left space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-400">Bank</span>
+                <span class="font-semibold text-gray-700 dark:text-gray-300">{{ pos.paymentState.value.bankName }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Account</span>
+                <span class="font-mono font-semibold text-gray-700 dark:text-gray-300">{{ pos.paymentState.value.accountNumber }}</span>
+              </div>
+              <div v-if="pos.paymentState.value.accountName" class="flex justify-between">
+                <span class="text-gray-400">Name</span>
+                <span class="font-semibold text-gray-700 dark:text-gray-300">{{ pos.paymentState.value.accountName }}</span>
+              </div>
+            </div>
+            
+            <!-- Waiting indicator -->
+            <div class="mt-8">
+              <div class="flex items-center justify-center gap-3">
+                <div class="payment-loader border-blue-500 border-t-blue-200" />
+                <span class="text-gray-500 text-lg">Waiting for transfer...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== -->
+        <!-- CASH PAYMENT -->
+        <!-- ==================== -->
+        <div v-else-if="pos.paymentState.value.method === 'cash'" class="text-center">
+          <div class="mb-8">
+            <div class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center">
+              <span class="text-8xl">💵</span>
+            </div>
           </div>
           
-          <!-- Waiting indicator -->
-          <div class="mt-12">
-            <div class="flex items-center justify-center gap-3">
-              <div class="payment-loader" />
-              <span class="text-gray-500 text-lg">Waiting for payment...</span>
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-6">
+            <span class="text-xl">💵</span>
+            <span class="font-semibold">Cash Payment</span>
+          </div>
+          
+          <p class="text-gray-400 text-xl mb-3">Please pay</p>
+          <div class="text-8xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">
+            {{ currency.format(pos.paymentState.value.amount || pos.total.value, pos.selectedCurrency.value) }}
+          </div>
+          
+          <div class="flex items-center justify-center gap-3 text-gray-400">
+            <div class="payment-loader border-green-500 border-t-green-200" />
+            <span class="text-lg">Processing payment...</span>
+          </div>
+        </div>
+
+        <!-- ==================== -->
+        <!-- EXTERNAL / OTHER PAYMENT -->
+        <!-- ==================== -->
+        <div v-else-if="pos.paymentState.value.method === 'external'" class="text-center">
+          <div class="mb-8">
+            <div class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+              <span class="text-8xl">📱</span>
             </div>
+          </div>
+          
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+            <span class="text-xl">📱</span>
+            <span class="font-semibold">{{ pos.paymentState.value.externalMethod || 'External Payment' }}</span>
+          </div>
+          
+          <p class="text-gray-400 text-xl mb-3">Amount Due</p>
+          <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">
+            {{ currency.format(pos.paymentState.value.amount || pos.total.value, pos.selectedCurrency.value) }}
+          </div>
+          
+          <p class="text-gray-500 text-lg mb-8">Please complete payment on the terminal</p>
+          
+          <div class="flex items-center justify-center gap-3 text-gray-400">
+            <div class="payment-loader border-purple-500 border-t-purple-200" />
+            <span class="text-lg">Waiting for confirmation...</span>
+          </div>
+        </div>
+
+        <!-- ==================== -->
+        <!-- DEFAULT: Generic Pending -->
+        <!-- ==================== -->
+        <div v-else class="text-center">
+          <div class="mb-8">
+            <div class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+              <span class="text-8xl animate-pulse">💳</span>
+            </div>
+          </div>
+          
+          <p class="text-gray-400 text-xl mb-3">Amount Due</p>
+          <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">
+            {{ currency.format(pos.paymentState.value.amount || pos.total.value, pos.selectedCurrency.value) }}
+          </div>
+          
+          <div class="flex items-center justify-center gap-3 text-gray-400">
+            <div class="payment-loader" />
+            <span class="text-lg">Processing...</span>
           </div>
         </div>
       </div>
