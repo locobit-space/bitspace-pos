@@ -7,6 +7,7 @@ import type {
   ProductModifier,
   PaymentMethod,
   AppliedCoupon,
+  Order,
 } from "~/types";
 
 definePageMeta({
@@ -23,12 +24,14 @@ const lightning = useLightning();
 const currency = useCurrency();
 const offline = useOffline();
 const sound = useSound();
+const receipt = useReceipt();
 const { t } = useI18n();
 
 // ============================================
 // UI State
 // ============================================
 const showPaymentModal = ref(false);
+const showReceiptModal = ref(false);
 const showDiscountModal = ref(false);
 const showCustomItemModal = ref(false);
 const showHeldOrdersModal = ref(false);
@@ -39,6 +42,10 @@ const showItemNotesModal = ref(false);
 const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref("");
 const isProcessing = ref(false);
+
+// Completed order for receipt
+const completedOrder = ref<Order | null>(null);
+const completedPaymentMethod = ref<PaymentMethod>('cash');
 
 // Default payment method (when clicking specific payment buttons)
 const defaultPaymentMethod = ref<PaymentMethod | null>(null);
@@ -389,11 +396,29 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       await offline.storeOfflinePayment(order, paymentProof);
     }
 
+    // Store completed order for receipt modal
+    completedOrder.value = order;
+    completedPaymentMethod.value = method;
+    
+    // Generate e-bill for customer display
+    const generatedReceipt = receipt.generateReceipt(order, order.paymentProof);
+    receipt.storeEBill(generatedReceipt);
+    const eBillUrl = receipt.generateEBillUrl(generatedReceipt.id);
+    
     pos.clearCart();
     showPaymentModal.value = false;
     
-    // Notify customer display that payment is complete
-    pos.setPaymentState({ status: 'paid' });
+    // Show receipt options
+    showReceiptModal.value = true;
+    
+    // Notify customer display that payment is complete with e-bill
+    pos.setPaymentState({ 
+      status: 'paid',
+      eBillUrl: eBillUrl,
+      eBillId: generatedReceipt.id,
+      amount: order.total,
+      satsAmount: order.totalSats,
+    });
   } catch (e) {
     console.error("Payment error:", e);
     sound.playError();
@@ -1086,6 +1111,23 @@ onUnmounted(() => {
             :default-method="defaultPaymentMethod || undefined"
             @paid="handlePaymentComplete"
             @cancel="cancelPayment"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Receipt Actions Modal -->
+    <UModal v-model:open="showReceiptModal" :dismissable="false">
+      <template #content>
+        <div
+          class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg"
+        >
+          <ReceiptActions
+            v-if="showReceiptModal && completedOrder"
+            :order="completedOrder"
+            :payment-method="completedPaymentMethod"
+            @close="showReceiptModal = false"
+            @done="showReceiptModal = false; completedOrder = null"
           />
         </div>
       </template>

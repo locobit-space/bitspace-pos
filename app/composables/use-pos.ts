@@ -45,6 +45,9 @@ const paymentState = ref<{
   bankQrData?: string;
   // External payment specific
   externalMethod?: string;
+  // E-Bill for customer (after payment success)
+  eBillUrl?: string;
+  eBillId?: string;
 }>({ status: 'idle' });
 
 // ============================================

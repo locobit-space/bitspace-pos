@@ -447,19 +447,58 @@ const formatDate = computed(() => {
       <!-- SUCCESS STATE -->
       <!-- ============================================ -->
       <div v-else-if="displayState === 'success'" class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900">
-        <div class="text-center">
-          <!-- Animated checkmark -->
-          <div class="success-checkmark mb-8">
-            <div class="check-icon">
-              <span class="icon-line line-tip" />
-              <span class="icon-line line-long" />
-              <div class="icon-circle" />
-              <div class="icon-fix" />
+        <div class="text-center max-w-2xl mx-auto px-8">
+          <div class="flex flex-col lg:flex-row items-center justify-center gap-12">
+            <!-- Left: Success Message -->
+            <div class="text-center lg:text-left">
+              <!-- Animated checkmark -->
+              <div class="success-checkmark mb-6">
+                <div class="check-icon">
+                  <span class="icon-line line-tip" />
+                  <span class="icon-line line-long" />
+                  <div class="icon-circle" />
+                  <div class="icon-fix" />
+                </div>
+              </div>
+              <h2 class="text-5xl font-light text-green-600 dark:text-green-400 mb-3 tracking-tight">Thank You!</h2>
+              <p class="text-xl text-gray-500 font-light">Payment successful</p>
+              
+              <!-- Amount Display -->
+              <div v-if="pos.paymentState.value.amount" class="mt-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl inline-block">
+                <p class="text-sm text-gray-400">Amount Paid</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ currency.format(pos.paymentState.value.amount, pos.selectedCurrency.value) }}
+                </p>
+                <p v-if="pos.paymentState.value.satsAmount" class="text-sm text-amber-600 dark:text-amber-400">
+                  ⚡ {{ currency.format(pos.paymentState.value.satsAmount, 'SATS') }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: E-Bill QR Code -->
+            <div v-if="pos.paymentState.value.eBillUrl" class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
+              <div class="text-center mb-4">
+                <p class="text-lg font-medium text-gray-900 dark:text-white">📱 Digital Receipt</p>
+                <p class="text-sm text-gray-500">Scan for your e-bill</p>
+              </div>
+              
+              <!-- QR Code -->
+              <div class="bg-white p-3 rounded-xl shadow-inner">
+                <img
+                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pos.paymentState.value.eBillUrl)}`"
+                  alt="E-Bill QR Code"
+                  class="w-44 h-44 mx-auto"
+                >
+              </div>
+              
+              <p class="mt-4 text-xs text-gray-400 text-center">
+                Or visit: <span class="font-mono text-amber-600">{{ pos.paymentState.value.eBillId }}</span>
+              </p>
             </div>
           </div>
-          <h2 class="text-6xl font-light text-green-600 dark:text-green-400 mb-4 tracking-tight">Thank You!</h2>
-          <p class="text-2xl text-gray-500 font-light">Payment successful</p>
-          <p class="text-lg text-gray-400 mt-2">Have a great day! ☀️</p>
+
+          <!-- Footer message -->
+          <p class="text-lg text-gray-400 mt-8">Have a great day! ☀️</p>
         </div>
       </div>
     </main>
