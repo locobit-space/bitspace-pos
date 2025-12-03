@@ -1,6 +1,7 @@
 // ============================================
 // 🧾 ORDERS COMPOSABLE
 // Order Management with Dexie + Nostr Sync
+// + Auto Ingredient Deduction
 // ============================================
 
 import type { 
@@ -20,6 +21,15 @@ const syncPending = ref(0);
 export function useOrders() {
   const nostrData = useNostrData();
   const offline = useOffline();
+  
+  // Lazy load recipes to avoid circular dependency
+  const getRecipesStore = () => {
+    try {
+      return useRecipes();
+    } catch {
+      return null;
+    }
+  };
   
   // ============================================
   // 📊 COMPUTED
@@ -163,15 +173,17 @@ export function useOrders() {
     // Save to local DB
     await saveToLocal(order);
 
-      // Sync to Nostr if online
-      if (offline.isOnline.value) {
-        const synced = await saveToNostr(order);
-        if (!synced) {
-          syncPending.value++;
-        }
-      } else {
+    // Sync to Nostr if online
+    if (offline.isOnline.value) {
+      const synced = await saveToNostr(order);
+      if (!synced) {
         syncPending.value++;
-      }    return order;
+      }
+    } else {
+      syncPending.value++;
+    }
+    
+    return order;
   }
 
   /**
@@ -207,6 +219,7 @@ export function useOrders() {
 
   /**
    * Complete order with payment proof
+   * Auto-deducts ingredients if recipe exists
    */
   async function completeOrder(
     orderId: string,
@@ -216,6 +229,21 @@ export function useOrders() {
       preimage?: string;
     }
   ): Promise<Order | null> {
+    const order = orders.value.find(o => o.id === orderId);
+    if (!order) return null;
+
+    // Try to deduct ingredients for items with recipes
+    const recipesStore = getRecipesStore();
+    if (recipesStore) {
+      for (const item of order.items) {
+        await recipesStore.deductIngredientsForSale(
+          item.productId,
+          item.quantity,
+          orderId
+        );
+      }
+    }
+
     return updateOrderStatus(orderId, 'completed', {
       paymentMethod,
       paymentProof: paymentProof ? {

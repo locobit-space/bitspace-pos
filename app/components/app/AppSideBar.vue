@@ -229,6 +229,16 @@ const items = computed(() => [
     icon: "i-heroicons-cube",
   },
   {
+    label: 'Recipes',
+    to: "/recipes",
+    icon: "i-heroicons-beaker",
+  },
+  {
+    label: 'Ingredients',
+    to: "/ingredients",
+    icon: "i-heroicons-variable",
+  },
+  {
     label: t('navigation.customers'),
     to: "/customers",
     icon: "i-heroicons-users",

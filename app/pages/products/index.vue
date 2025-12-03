@@ -524,7 +524,7 @@
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="showDeleteModal">
+    <UModal v-model:open="showDeleteModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
       <template #content>
         <UCard>
           <template #header>
@@ -558,7 +558,7 @@
     </UModal>
 
     <!-- Product View Modal -->
-    <UModal v-model:open="showViewModal">
+    <UModal v-model:open="showViewModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
       <template #content>
         <UCard>
           <template #header>
@@ -840,7 +840,7 @@
     <!-- ============================================ -->
     <!-- Category Modal -->
     <!-- ============================================ -->
-    <UModal v-model:open="showCategoryModal">
+    <UModal v-model:open="showCategoryModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -913,7 +913,7 @@
     <!-- ============================================ -->
     <!-- Unit Modal -->
     <!-- ============================================ -->
-    <UModal v-model:open="showUnitModal">
+    <UModal v-model:open="showUnitModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -988,7 +988,7 @@
     <!-- ============================================ -->
     <!-- Delete Category Confirmation Modal -->
     <!-- ============================================ -->
-    <UModal v-model:open="showDeleteCategoryModal">
+    <UModal v-model:open="showDeleteCategoryModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2">

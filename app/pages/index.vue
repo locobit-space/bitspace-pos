@@ -348,7 +348,7 @@ onMounted(async () => {
               </div>
             </div>
             <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <span class="text-2xl">💰</span>
+              <UIcon name="i-heroicons-banknotes" class="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
           </div>
         </UCard>
@@ -368,7 +368,7 @@ onMounted(async () => {
               </div>
             </div>
             <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <span class="text-2xl">📋</span>
+              <UIcon name="i-heroicons-clipboard-document-list" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
         </UCard>
@@ -383,7 +383,7 @@ onMounted(async () => {
               </p>
             </div>
             <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-              <span class="text-2xl">📊</span>
+              <UIcon name="i-heroicons-chart-bar" class="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
         </UCard>
@@ -403,7 +403,7 @@ onMounted(async () => {
               </div>
             </div>
             <div class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <span class="text-2xl">⚡</span>
+              <UIcon name="i-heroicons-bolt" class="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
           </div>
         </UCard>
@@ -455,7 +455,7 @@ onMounted(async () => {
             <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span>💵</span>
+                  <UIcon name="i-heroicons-banknotes" class="w-5 h-5 text-green-600 dark:text-green-400" />
                   <span class="text-gray-600 dark:text-gray-300">{{ t('payment.methods.cash') }}</span>
                 </div>
                 <span class="font-bold text-gray-900 dark:text-white">
@@ -464,7 +464,7 @@ onMounted(async () => {
               </div>
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span>⚡</span>
+                  <UIcon name="i-heroicons-bolt" class="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   <span class="text-gray-600 dark:text-gray-300">{{ t('payment.methods.lightning') }}</span>
                 </div>
                 <span class="font-bold text-amber-600 dark:text-amber-400">
@@ -473,7 +473,7 @@ onMounted(async () => {
               </div>
               <div v-if="kpis.otherSales > 0" class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span>📱</span>
+                  <UIcon name="i-heroicons-device-phone-mobile" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   <span class="text-gray-600 dark:text-gray-300">{{ t('payment.methods.external') }}</span>
                 </div>
                 <span class="font-bold text-gray-900 dark:text-white">
@@ -562,7 +562,7 @@ onMounted(async () => {
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <span>⚠️</span> {{ t('dashboard.lowStock') }}
+                <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-amber-500" /> {{ t('dashboard.lowStock') }}
               </h3>
               <NuxtLink to="/inventory">
                 <UButton size="xs" color="neutral" variant="ghost">
@@ -573,7 +573,7 @@ onMounted(async () => {
           </template>
           
           <div v-if="lowStockProducts.length === 0" class="text-center py-8 text-green-600 dark:text-green-400">
-            <span class="text-2xl">✅</span>
+            <UIcon name="i-heroicons-check-circle" class="w-8 h-8 mx-auto" />
             <p class="mt-2">{{ t('dashboard.allStocked') }}</p>
           </div>
           <div v-else class="space-y-3">
@@ -600,7 +600,7 @@ onMounted(async () => {
         <NuxtLink to="/pos" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
-              <div class="text-3xl mb-2">🛒</div>
+              <UIcon name="i-heroicons-shopping-cart" class="w-8 h-8 text-primary-600 dark:text-primary-400 mx-auto mb-2" />
               <div class="font-medium text-gray-900 dark:text-white">{{ t('pos.terminal') }}</div>
             </div>
           </UCard>
@@ -608,7 +608,7 @@ onMounted(async () => {
         <NuxtLink to="/pos/shift" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
-              <div class="text-3xl mb-2">💰</div>
+              <UIcon name="i-heroicons-currency-dollar" class="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
               <div class="font-medium text-gray-900 dark:text-white">{{ t('pos.shift.title') }}</div>
             </div>
           </UCard>
@@ -616,7 +616,7 @@ onMounted(async () => {
         <NuxtLink to="/pos/tables" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
-              <div class="text-3xl mb-2">🍽️</div>
+              <UIcon name="i-heroicons-table-cells" class="w-8 h-8 text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
               <div class="font-medium text-gray-900 dark:text-white">{{ t('pos.tables.title') }}</div>
             </div>
           </UCard>
@@ -624,7 +624,7 @@ onMounted(async () => {
         <NuxtLink to="/kitchen" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
-              <div class="text-3xl mb-2">👨‍🍳</div>
+              <UIcon name="i-heroicons-fire" class="w-8 h-8 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
               <div class="font-medium text-gray-900 dark:text-white">{{ t('kitchen.title') }}</div>
             </div>
           </UCard>
@@ -632,7 +632,7 @@ onMounted(async () => {
         <NuxtLink to="/accounting/expenses" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
-              <div class="text-3xl mb-2">💸</div>
+              <UIcon name="i-heroicons-arrow-trending-down" class="w-8 h-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
               <div class="font-medium text-gray-900 dark:text-white">{{ t('accounting.tabs.expenses') }}</div>
             </div>
           </UCard>
@@ -640,7 +640,7 @@ onMounted(async () => {
         <NuxtLink to="/reports" class="block">
           <UCard class="hover:border-primary-500 transition-colors cursor-pointer">
             <div class="text-center">
-              <div class="text-3xl mb-2">📊</div>
+              <UIcon name="i-heroicons-chart-bar-square" class="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
               <div class="font-medium text-gray-900 dark:text-white">{{ t('reports.title') }}</div>
             </div>
           </UCard>

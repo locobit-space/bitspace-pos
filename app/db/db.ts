@@ -2,6 +2,7 @@
 // 🗄️ IndexedDB Database for Offline-First POS
 import Dexie from "dexie";
 import type { Table } from "dexie";
+import type { IngredientUnit } from "~/types";
 
 // ============================================
 // Database Types
@@ -201,6 +202,126 @@ export interface StaffRecord {
 }
 
 // ============================================
+// 🧪 RECIPE & INGREDIENT DATABASE TYPES
+// ============================================
+
+// Ingredient (Raw Material)
+export interface IngredientRecord {
+  id: string;
+  code: string;
+  name: string;
+  nameTh?: string;
+  unit: IngredientUnit;
+  baseUnit: IngredientUnit;
+  conversionFactor: number;
+  costPerBaseUnit: number;
+  costPerUnit: number;
+  currentStock: number;
+  minStock: number;
+  maxStock: number;
+  supplierId?: string;
+  categoryId?: string;
+  storageType: 'ambient' | 'refrigerated' | 'frozen';
+  isActive: boolean;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Ingredient Category
+export interface IngredientCategoryRecord {
+  id: string;
+  name: string;
+  nameTh?: string;
+  icon?: string;
+  sortOrder: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Recipe
+export interface RecipeRecord {
+  id: string;
+  productId: string;
+  name: string;
+  nameTh?: string;
+  description?: string;
+  servings: number;
+  servingUnit: string;
+  ingredientsJson: string; // JSON of RecipeIngredient[]
+  stepsJson?: string; // JSON of RecipeStep[]
+  totalIngredientCost: number;
+  costPerServing: number;
+  overheadCost: number;
+  totalCostPerServing: number;
+  sellingPrice: number;
+  profitPerServing: number;
+  profitMargin: number;
+  prepTime: number;
+  cookTime: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  categoryId?: string;
+  tagsJson?: string; // JSON of string[]
+  isActive: boolean;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Ingredient Stock Adjustment
+export interface IngredientStockAdjustmentRecord {
+  id: string;
+  ingredientId: string;
+  type: 'purchase' | 'usage' | 'waste' | 'return' | 'adjustment' | 'count';
+  previousStock: number;
+  adjustment: number;
+  newStock: number;
+  unitCost?: number;
+  totalCost?: number;
+  reason: string;
+  referenceId?: string;
+  referenceType?: 'order' | 'purchase' | 'production' | 'manual';
+  notes?: string;
+  staffId: string;
+  createdAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Production Plan
+export interface ProductionPlanRecord {
+  id: string;
+  date: string;
+  itemsJson: string; // JSON of ProductionPlanItem[]
+  totalIngredientCost: number;
+  status: 'planned' | 'in-progress' | 'completed' | 'cancelled';
+  notes?: string;
+  createdBy: string;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Low Stock Alert
+export interface LowStockAlertRecord {
+  id: string;
+  ingredientId: string;
+  currentStock: number;
+  minStock: number;
+  deficitAmount: number;
+  suggestedPurchaseQty: number;
+  estimatedCost: number;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  createdAt: number;
+  acknowledgedAt?: number;
+  acknowledgedBy?: string;
+  synced: boolean;
+}
+
+// ============================================
 // Database Class
 // ============================================
 
@@ -221,6 +342,13 @@ export class POSDatabase extends Dexie {
   stockAdjustments!: Table<StockAdjustmentRecord, string>;
   branches!: Table<BranchRecord, string>;
   staff!: Table<StaffRecord, string>;
+  // Recipe & Ingredient tables
+  ingredients!: Table<IngredientRecord, string>;
+  ingredientCategories!: Table<IngredientCategoryRecord, string>;
+  recipes!: Table<RecipeRecord, string>;
+  ingredientStockAdjustments!: Table<IngredientStockAdjustmentRecord, string>;
+  productionPlans!: Table<ProductionPlanRecord, string>;
+  lowStockAlerts!: Table<LowStockAlertRecord, string>;
 
   constructor() {
     super("POSDatabase");
@@ -261,6 +389,32 @@ export class POSDatabase extends Dexie {
       stockAdjustments: "id, productId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
+    });
+
+    // Version 4: Recipe & Ingredient Management System
+    this.version(4).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products: "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      // New in v4 - Recipe & Ingredients
+      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
     });
   }
 }

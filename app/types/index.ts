@@ -4,6 +4,207 @@
 // ============================================
 
 // ============================================
+// 🧪 RECIPE & INGREDIENT TYPES
+// Cost Calculation + Stock Management
+// ============================================
+
+/**
+ * Unit of measurement for ingredients
+ */
+export type IngredientUnit = 'g' | 'kg' | 'ml' | 'l' | 'piece' | 'pack' | 'tray' | 'bottle' | 'can' | 'cup' | 'tbsp' | 'tsp';
+
+/**
+ * Raw ingredient/material used in recipes
+ */
+export interface Ingredient {
+  id: string;
+  code: string; // e.g., "F001", "C001"
+  name: string;
+  nameTh?: string; // Thai name (e.g., "แป้งเค้ก")
+  unit: IngredientUnit;
+  baseUnit: IngredientUnit; // Base unit for purchase (e.g., "kg")
+  conversionFactor: number; // How many units in 1 base unit (e.g., 1000g = 1kg)
+  costPerBaseUnit: number; // Cost per base unit (e.g., 40 THB/kg)
+  costPerUnit: number; // Calculated: costPerBaseUnit / conversionFactor
+  currentStock: number; // In base unit
+  minStock: number; // Minimum stock level (in base unit)
+  maxStock: number; // Maximum stock level (in base unit)
+  supplierId?: string;
+  lastPurchaseDate?: string;
+  lastPurchasePrice?: number;
+  categoryId?: string; // Ingredient category (e.g., "dry", "dairy", "fresh")
+  expiryDays?: number; // Days until expiry
+  storageType: 'ambient' | 'refrigerated' | 'frozen';
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Category for organizing ingredients
+ */
+export interface IngredientCategory {
+  id: string;
+  name: string;
+  nameTh?: string;
+  icon?: string;
+  sortOrder: number;
+}
+
+/**
+ * Ingredient used in a recipe
+ */
+export interface RecipeIngredient {
+  ingredientId: string;
+  ingredient?: Ingredient; // Populated reference
+  quantity: number; // Amount needed
+  unit: IngredientUnit; // Unit for this recipe
+  cost: number; // Calculated cost for this quantity
+  notes?: string; // e.g., "sifted", "room temperature"
+}
+
+/**
+ * Production step in a recipe
+ */
+export interface RecipeStep {
+  order: number;
+  instruction: string;
+  duration?: number; // Minutes
+  temperature?: number; // Celsius
+  notes?: string;
+}
+
+/**
+ * Recipe for a menu item
+ */
+export interface Recipe {
+  id: string;
+  productId?: string; // Links to Product (optional - recipe can exist without product link)
+  product?: Product; // Populated reference
+  name: string;
+  nameTh?: string;
+  description?: string;
+  servings: number; // How many portions this recipe makes (e.g., 8 slices for 1 pound cake)
+  servingUnit: string; // e.g., "slice", "plate", "cup", "portion"
+  ingredients: RecipeIngredient[];
+  steps?: RecipeStep[];
+  // Cost calculations
+  totalIngredientCost: number; // Sum of all ingredient costs
+  costPerServing: number; // totalIngredientCost / servings
+  overheadCost: number; // Labor, utilities, etc.
+  totalCostPerServing: number; // costPerServing + overhead allocation
+  // Pricing
+  sellingPrice: number; // Price per serving
+  profitPerServing: number; // sellingPrice - totalCostPerServing
+  profitMargin: number; // (profitPerServing / sellingPrice) * 100
+  // Management
+  prepTime: number; // Minutes
+  cookTime: number; // Minutes
+  difficulty: 'easy' | 'medium' | 'hard';
+  categoryId?: string;
+  tags?: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Stock adjustment for ingredients
+ */
+export interface IngredientStockAdjustment {
+  id: string;
+  ingredientId: string;
+  ingredient?: Ingredient;
+  type: 'purchase' | 'usage' | 'waste' | 'return' | 'adjustment' | 'count';
+  previousStock: number;
+  adjustment: number; // Positive for increase, negative for decrease
+  newStock: number;
+  unitCost?: number; // Cost per unit at time of adjustment
+  totalCost?: number; // Total cost of adjustment
+  reason: string;
+  referenceId?: string; // Order ID or Purchase ID
+  referenceType?: 'order' | 'purchase' | 'production' | 'manual';
+  notes?: string;
+  staffId: string;
+  createdAt: string;
+}
+
+/**
+ * Low stock alert
+ */
+export interface LowStockAlert {
+  id: string;
+  ingredientId: string;
+  ingredient: Ingredient;
+  currentStock: number;
+  minStock: number;
+  deficitAmount: number;
+  suggestedPurchaseQty: number;
+  estimatedCost: number;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  createdAt: string;
+  acknowledgedAt?: string;
+  acknowledgedBy?: string;
+}
+
+/**
+ * Daily production plan
+ */
+export interface ProductionPlan {
+  id: string;
+  date: string;
+  items: ProductionPlanItem[];
+  totalIngredientCost: number;
+  status: 'planned' | 'in-progress' | 'completed' | 'cancelled';
+  notes?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductionPlanItem {
+  recipeId: string;
+  recipe?: Recipe;
+  quantity: number; // How many batches
+  totalServings: number; // quantity * recipe.servings
+  ingredientCost: number;
+  status: 'pending' | 'in-progress' | 'completed';
+}
+
+/**
+ * Profit analytics for menu items
+ */
+export interface MenuProfitAnalysis {
+  productId: string;
+  productName: string;
+  recipeId?: string;
+  totalSold: number;
+  totalRevenue: number;
+  totalIngredientCost: number;
+  totalProfit: number;
+  profitMargin: number;
+  avgCostPerUnit: number;
+  period: string; // Date range
+}
+
+/**
+ * Ingredient usage report
+ */
+export interface IngredientUsageReport {
+  ingredientId: string;
+  ingredientName: string;
+  usedQuantity: number;
+  unit: IngredientUnit;
+  totalCost: number;
+  usedInRecipes: Array<{
+    recipeId: string;
+    recipeName: string;
+    quantity: number;
+  }>;
+  period: string;
+}
+
+// ============================================
 // 💰 MULTI-CURRENCY TYPES
 // ============================================
 
