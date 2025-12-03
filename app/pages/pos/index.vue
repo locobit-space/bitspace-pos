@@ -42,6 +42,7 @@ const showProductOptionsModal = ref(false);
 const showItemNotesModal = ref(false);
 const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
+const showTableSwitcher = ref(false); // Table switcher modal
 const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref("");
 const isProcessing = ref(false);
@@ -80,8 +81,17 @@ const heldOrders = ref<
     items: typeof pos.cartItems.value;
     total: number;
     createdAt: string;
+    tableNumber?: string;
   }>
 >([]);
+
+// Tables data (loaded from localStorage)
+const tables = ref<Array<{
+  id: string;
+  name: string;
+  status: 'available' | 'occupied' | 'reserved';
+  seats: number;
+}>>([]);
 
 // Current time display
 const currentTime = ref(new Date());
@@ -104,6 +114,16 @@ const formattedTotal = computed(() =>
 
 const formattedTotalSats = computed(() =>
   currency.format(pos.totalSats.value, "SATS")
+);
+
+// Available tables for switching
+const availableTables = computed(() => 
+  tables.value.filter(t => t.status === 'available' || t.name === pos.tableNumber.value)
+);
+
+// Current table info
+const currentTable = computed(() => 
+  tables.value.find(t => t.name === pos.tableNumber.value)
 );
 
 const formattedTime = computed(() => {
@@ -446,8 +466,71 @@ const cancelPayment = () => {
 };
 
 // ============================================
+// Table Switching Functions  
+// ============================================
+const loadTables = () => {
+  try {
+    const stored = localStorage.getItem('tables');
+    if (stored) {
+      tables.value = JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Failed to load tables:', e);
+  }
+};
+
+const switchTable = (table: typeof tables.value[0]) => {
+  // If there's an existing table with items, hold the current order
+  if (pos.tableNumber.value && pos.cartItems.value.length > 0 && pos.tableNumber.value !== table.name) {
+    heldOrders.value.push({
+      id: Date.now().toString(),
+      items: [...pos.cartItems.value],
+      total: pos.total.value,
+      createdAt: new Date().toISOString(),
+      tableNumber: pos.tableNumber.value,
+    });
+    pos.clearCart();
+  }
+
+  // Switch to new table
+  pos.tableNumber.value = table.name;
+  pos.setOrderType('dine_in');
+  
+  // Check if there's a held order for this table and restore it
+  const heldIndex = heldOrders.value.findIndex(o => o.tableNumber === table.name);
+  if (heldIndex !== -1) {
+    const held = heldOrders.value[heldIndex];
+    if (held) {
+      held.items.forEach((item) => {
+        pos.addToCart(item.product, item.quantity, {
+          variant: item.selectedVariant,
+          modifiers: item.selectedModifiers,
+          notes: item.notes,
+        });
+      });
+      heldOrders.value.splice(heldIndex, 1);
+    }
+  }
+  
+  // Update table status
+  const tableIndex = tables.value.findIndex(t => t.id === table.id);
+  if (tableIndex !== -1 && tables.value[tableIndex]) {
+    tables.value[tableIndex].status = 'occupied';
+    localStorage.setItem('tables', JSON.stringify(tables.value));
+  }
+  
+  showTableSwitcher.value = false;
+};
+
+const clearTableSelection = () => {
+  pos.tableNumber.value = '';
+};
+
+// ============================================
 // Lifecycle
 // ============================================
+const route = useRoute();
+
 onMounted(async () => {
   await currency.init("LAK");
   await offline.init();
@@ -456,6 +539,20 @@ onMounted(async () => {
 
   if (!pos.isSessionActive.value) {
     pos.startSession("main", "staff-1", 0);
+  }
+
+  // Load tables from localStorage
+  loadTables();
+
+  // Handle table context from query params
+  if (route.query.tableId) {
+    pos.tableNumber.value = route.query.tableName as string || route.query.tableId as string;
+    pos.setOrderType('dine_in');
+    
+    // If action is 'pay', open payment modal
+    if (route.query.action === 'pay' && pos.cartItems.value.length > 0) {
+      setTimeout(() => proceedToPayment(), 500);
+    }
   }
 
   timeInterval = setInterval(() => {
@@ -868,7 +965,32 @@ onUnmounted(() => {
 
         <!-- Table Number (for dine-in) -->
         <div v-if="pos.orderType.value === 'dine_in'" class="mt-2">
+          <!-- Table Quick Selector (when tables exist) -->
+          <div v-if="tables.length > 0" class="flex gap-2">
+            <button
+              class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all"
+              :class="currentTable 
+                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30 hover:ring-emerald-500/50' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+              @click="showTableSwitcher = true"
+            >
+              <UIcon name="i-heroicons-table-cells" class="w-4 h-4" />
+              <span v-if="currentTable" class="font-medium">{{ currentTable.name }}</span>
+              <span v-else>Select Table</span>
+              <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 ml-auto opacity-50" />
+            </button>
+            <button
+              v-if="pos.tableNumber.value"
+              title="Clear table"
+              class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              @click="clearTableSelection"
+            >
+              <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
+            </button>
+          </div>
+          <!-- Fallback input (when no tables configured) -->
           <UInput
+            v-else
             v-model="pos.tableNumber.value"
             placeholder="Table # (optional)"
             size="xs"
@@ -1289,6 +1411,22 @@ onUnmounted(() => {
                 <span>{{ type.label }}</span>
               </button>
             </div>
+            
+            <!-- Table Selector (for dine-in, mobile) -->
+            <div v-if="pos.orderType.value === 'dine_in' && tables.length > 0" class="mt-2">
+              <button
+                class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all"
+                :class="currentTable 
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'"
+                @click="showTableSwitcher = true"
+              >
+                <span class="text-lg">🍽️</span>
+                <span v-if="currentTable" class="font-medium">{{ currentTable.name }}</span>
+                <span v-else>Select Table</span>
+                <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 ml-auto opacity-50" />
+              </button>
+            </div>
           </div>
 
           <!-- Cart Items (Scrollable) -->
@@ -1304,36 +1442,62 @@ onUnmounted(() => {
               <div
                 v-for="(item, index) in pos.cartItems.value"
                 :key="`mobile-${item.product.id}-${index}`"
-                class="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl"
+                class="bg-white dark:bg-gray-800 rounded-xl p-3"
               >
-                <!-- Product Icon -->
-                <div class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0">
-                  {{ item.product.image || '📦' }}
+                <div class="flex items-center gap-3">
+                  <!-- Product Icon -->
+                  <div class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0">
+                    {{ item.product.image || '📦' }}
+                  </div>
+                  
+                  <!-- Product Info -->
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm text-gray-900 dark:text-white truncate">{{ item.product.name }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ currency.format(item.price, pos.selectedCurrency.value) }}</p>
+                  </div>
+                  
+                  <!-- Quantity Controls -->
+                  <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
+                    <button 
+                      class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
+                      @click="handleQuantityChange(index, -1)"
+                    >−</button>
+                    <span class="w-7 text-center font-bold text-sm text-gray-900 dark:text-white">{{ item.quantity }}</span>
+                    <button 
+                      class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
+                      @click="handleQuantityChange(index, 1)"
+                    >+</button>
+                  </div>
+                  
+                  <!-- Total Price -->
+                  <p class="font-bold text-amber-600 dark:text-amber-400 text-sm min-w-[4rem] text-right tabular-nums">
+                    {{ currency.format(item.total, pos.selectedCurrency.value) }}
+                  </p>
                 </div>
                 
-                <!-- Product Info -->
-                <div class="flex-1 min-w-0">
-                  <p class="font-semibold text-sm text-gray-900 dark:text-white truncate">{{ item.product.name }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ currency.format(item.price, pos.selectedCurrency.value) }}</p>
+                <!-- Item Notes & Actions Row -->
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                  <!-- Notes display or add button -->
+                  <button
+                    class="flex items-center gap-1.5 text-xs transition-colors"
+                    :class="item.notes 
+                      ? 'text-yellow-600 dark:text-yellow-400' 
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+                    @click="openItemNotes(index)"
+                  >
+                    <span>📝</span>
+                    <span v-if="item.notes" class="truncate max-w-[150px]">{{ item.notes }}</span>
+                    <span v-else>Add note</span>
+                  </button>
+                  
+                  <!-- Remove button -->
+                  <button
+                    class="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    @click="pos.removeFromCart(index)"
+                  >
+                    Remove
+                  </button>
                 </div>
-                
-                <!-- Quantity Controls -->
-                <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
-                  <button 
-                    class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
-                    @click="handleQuantityChange(index, -1)"
-                  >−</button>
-                  <span class="w-7 text-center font-bold text-sm text-gray-900 dark:text-white">{{ item.quantity }}</span>
-                  <button 
-                    class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
-                    @click="handleQuantityChange(index, 1)"
-                  >+</button>
-                </div>
-                
-                <!-- Total Price -->
-                <p class="font-bold text-amber-600 dark:text-amber-400 text-sm min-w-[4.5rem] text-right tabular-nums">
-                  {{ currency.format(item.total, pos.selectedCurrency.value) }}
-                </p>
               </div>
             </div>
           </div>
@@ -2065,6 +2229,127 @@ onUnmounted(() => {
                 Save Notes
               </UButton>
             </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ============================================ -->
+    <!-- Table Switcher Modal -->
+    <!-- ============================================ -->
+    <UModal v-model:open="showTableSwitcher">
+      <template #content>
+        <div class="p-6 max-h-[80vh] overflow-auto">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl">
+              🍽️
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Select Table
+              </h3>
+              <p class="text-sm text-gray-500">
+                {{ availableTables.length }} tables available
+              </p>
+            </div>
+          </div>
+
+          <!-- Current table badge -->
+          <div v-if="currentTable" class="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500/30">
+            <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+              <UIcon name="i-heroicons-check-circle" class="w-5 h-5" />
+              <span class="font-medium">Current: {{ currentTable.name }}</span>
+              <span class="text-sm opacity-75">({{ currentTable.seats }} seats)</span>
+            </div>
+          </div>
+
+          <!-- Tables grid -->
+          <div v-if="tables.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <button
+              v-for="table in tables"
+              :key="table.id"
+              :disabled="table.status === 'occupied' && table.name !== pos.tableNumber.value"
+              class="relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="[
+                table.name === pos.tableNumber.value
+                  ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-500/50'
+                  : table.status === 'available'
+                    ? 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 ring-1 ring-gray-200 dark:ring-gray-700 hover:ring-amber-500/50'
+                    : table.status === 'reserved'
+                      ? 'bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500/30'
+                      : 'bg-gray-100 dark:bg-gray-800/50 ring-1 ring-gray-200 dark:ring-gray-700'
+              ]"
+              @click="switchTable(table)"
+            >
+              <!-- Table icon based on status -->
+              <div class="text-2xl">
+                {{ table.status === 'reserved' ? '📋' : table.status === 'occupied' ? '🍽️' : '🪑' }}
+              </div>
+              
+              <!-- Table name -->
+              <span class="font-semibold text-sm" :class="table.name === pos.tableNumber.value ? 'text-white' : 'text-gray-900 dark:text-white'">
+                {{ table.name }}
+              </span>
+              
+              <!-- Seats -->
+              <span class="text-xs" :class="table.name === pos.tableNumber.value ? 'text-white/75' : 'text-gray-500'">
+                {{ table.seats }} seats
+              </span>
+
+              <!-- Status badge -->
+              <span
+                v-if="table.status !== 'available' && table.name !== pos.tableNumber.value"
+                class="absolute top-1 right-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                :class="table.status === 'reserved' ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'"
+              >
+                {{ table.status === 'reserved' ? 'Reserved' : 'In use' }}
+              </span>
+
+              <!-- Current indicator -->
+              <span
+                v-if="table.name === pos.tableNumber.value"
+                class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg"
+              >
+                <UIcon name="i-heroicons-check" class="w-3 h-3" />
+              </span>
+            </button>
+          </div>
+
+          <!-- Empty state -->
+          <div v-else class="text-center py-8">
+            <div class="text-4xl mb-3">🪑</div>
+            <p class="text-gray-500 dark:text-gray-400 mb-2">No tables configured</p>
+            <p class="text-sm text-gray-400 dark:text-gray-500">
+              Go to Tables page to set up your floor plan
+            </p>
+            <UButton
+              color="primary"
+              variant="soft"
+              class="mt-4"
+              @click="navigateTo('/pos/tables')"
+            >
+              Set up Tables
+            </UButton>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <UButton
+              color="neutral"
+              variant="outline"
+              class="flex-1"
+              @click="showTableSwitcher = false"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              color="primary"
+              variant="soft"
+              icon="i-heroicons-arrow-top-right-on-square"
+              @click="navigateTo('/pos/tables')"
+            >
+              Manage Tables
+            </UButton>
           </div>
         </div>
       </template>

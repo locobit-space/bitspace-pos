@@ -731,25 +731,46 @@ async function saveTable() {
 }
 
 function startOrder(table: Table) {
-  // Navigate to POS with table context
+  // Navigate to POS with table context - set table as occupied
+  const index = tables.value.findIndex(t => t.id === table.id)
+  const tableToUpdate = tables.value[index]
+  if (index !== -1 && tableToUpdate) {
+    tableToUpdate.status = 'occupied'
+    tableToUpdate.currentOrder = {
+      id: `order-${Date.now()}`,
+      customerName: table.reservation?.customerName,
+      items: 0,
+      total: 0,
+      duration: '0m',
+      startTime: new Date()
+    }
+    tableToUpdate.reservation = undefined
+    localStorage.setItem('tables', JSON.stringify(tables.value))
+  }
+  
   router.push({
-    path: '/orders/create',
+    path: '/pos',
     query: { tableId: table.id, tableName: table.name }
   })
 }
 
 function addToOrder(table: Table) {
   if (table.currentOrder) {
+    // Go to POS with existing table order
     router.push({
-      path: `/orders/${table.currentOrder.id}`,
-      query: { action: 'add' }
+      path: '/pos',
+      query: { tableId: table.id, tableName: table.name }
     })
   }
 }
 
 function processPayment(table: Table) {
   if (table.currentOrder) {
-    router.push(`/orders/${table.currentOrder.id}`)
+    // Go to POS to process payment for this table
+    router.push({
+      path: '/pos',
+      query: { tableId: table.id, tableName: table.name, action: 'pay' }
+    })
   }
 }
 
