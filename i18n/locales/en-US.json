@@ -116,7 +116,12 @@
       "tip1": "Use any Lightning wallet to scan",
       "tip2": "Popular wallets: Phoenix, Breez, WoS, Zeus",
       "tip3": "Payment confirms instantly",
-      "tip4": "BOLT12 offers work offline!"
+      "tip4": "BOLT12 offers work offline!",
+      "manualApproveTitle": "Manual Override",
+      "manualApproveHint": "If auto-detection fails, you can manually approve the payment after verifying it was received.",
+      "manualApprove": "⚠️ Manually Approve Payment",
+      "manualApproveWarning": "Only use if you have confirmed payment was received.",
+      "manualApproveAvailableIn": "Manual override available in"
     },
     "cash": {
       "title": "Cash Payment",

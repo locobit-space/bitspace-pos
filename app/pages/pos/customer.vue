@@ -28,12 +28,12 @@ const displayState = computed<DisplayState>(() => {
   return 'idle';
 });
 
-// Success animation auto-clear
+// Success animation auto-clear (15s to allow e-bill QR scanning)
 watch(() => pos.paymentState.value.status, (status) => {
   if (status === 'paid') {
     setTimeout(() => {
       pos.setPaymentState({ status: 'idle' });
-    }, 5000);
+    }, 15000); // 15 seconds for customer to scan e-bill
   }
 });
 

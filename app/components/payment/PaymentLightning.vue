@@ -31,6 +31,8 @@ const showErrorModal = ref(false);
 const checkingPayment = ref(false);
 const successCountdown = ref(3); // Auto-close after 3 seconds
 const isFadingOut = ref(false);
+const showManualApprove = ref(false); // Show manual approve after 30 seconds
+const manualApproveTimer = ref(30); // Countdown to show manual approve option
 
 // Computed
 const isLNURLProvider = computed(() => lightning.settings.value?.provider === 'lnurl');
@@ -154,8 +156,10 @@ const startSuccessCountdown = () => {
 };
 
 let countdownInterval: ReturnType<typeof setInterval>;
+let manualApproveInterval: ReturnType<typeof setInterval>;
 
 const startCountdown = () => {
+  // Main countdown for invoice expiry
   countdownInterval = setInterval(() => {
     countdown.value--;
     if (countdown.value <= 0) {
@@ -163,6 +167,16 @@ const startCountdown = () => {
       paymentStep.value = 'error';
       errorMessage.value = t('payment.lightning.invoiceExpired');
       showErrorModal.value = true;
+    }
+  }, 1000);
+  
+  // Manual approve countdown (show option after 30 seconds)
+  manualApproveTimer.value = 30;
+  manualApproveInterval = setInterval(() => {
+    manualApproveTimer.value--;
+    if (manualApproveTimer.value <= 0) {
+      clearInterval(manualApproveInterval);
+      showManualApprove.value = true;
     }
   }, 1000);
 };
@@ -207,6 +221,20 @@ const confirmPaymentReceived = () => {
     paymentStep.value = 'success';
     checkingPayment.value = false;
     clearInterval(countdownInterval);
+    if (manualApproveInterval) clearInterval(manualApproveInterval);
+    startSuccessCountdown();
+  }, 500);
+};
+
+// Emergency manual approval (for system errors, network issues, etc.)
+const emergencyApprove = () => {
+  checkingPayment.value = true;
+  setTimeout(() => {
+    sound.playLightningZap();
+    paymentStep.value = 'success';
+    checkingPayment.value = false;
+    clearInterval(countdownInterval);
+    if (manualApproveInterval) clearInterval(manualApproveInterval);
     startSuccessCountdown();
   }, 500);
 };
@@ -217,6 +245,9 @@ onUnmounted(() => {
   }
   if (successInterval) {
     clearInterval(successInterval);
+  }
+  if (manualApproveInterval) {
+    clearInterval(manualApproveInterval);
   }
 });
 </script>
@@ -372,6 +403,38 @@ onUnmounted(() => {
         >
           {{ t('payment.lightning.confirmReceived') }}
         </UButton>
+      </div>
+
+      <!-- Emergency Manual Approve (shows after 30 seconds for all providers) -->
+      <div v-if="showManualApprove && !needsManualConfirm" class="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+        <div class="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
+          <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
+          <span class="font-semibold text-sm">{{ t('payment.lightning.manualApproveTitle') || 'Manual Override' }}</span>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+          {{ t('payment.lightning.manualApproveHint') || 'If customer has paid but auto-detection failed (network issue, system error), you can manually approve:' }}
+        </p>
+        <UButton
+          color="red"
+          variant="soft"
+          size="lg"
+          :loading="checkingPayment"
+          icon="i-heroicons-shield-check"
+          class="w-full"
+          @click="emergencyApprove"
+        >
+          {{ t('payment.lightning.manualApprove') || '⚠️ Manually Approve Payment' }}
+        </UButton>
+        <p class="text-xs text-gray-400 mt-2">
+          {{ t('payment.lightning.manualApproveWarning') || 'Only use if you have confirmed payment was received.' }}
+        </p>
+      </div>
+
+      <!-- Waiting for manual approve option -->
+      <div v-else-if="!needsManualConfirm && manualApproveTimer > 0 && paymentStep === 'waiting'" class="mt-4 text-center">
+        <p class="text-xs text-gray-400">
+          {{ t('payment.lightning.manualApproveAvailableIn') || 'Manual override available in' }} {{ manualApproveTimer }}s
+        </p>
       </div>
     </div>
 

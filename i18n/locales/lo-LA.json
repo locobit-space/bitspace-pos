@@ -112,7 +112,12 @@
       "tip1": "ໃຊ້ Lightning wallet ໃດກໍໄດ້ເພື່ອສະແກນ",
       "tip2": "Wallet ທີ່ນິຍົມ: Phoenix, Breez, WoS, Zeus",
       "tip3": "ການຈ່າຍເງິນຢືນຢັນທັນທີ",
-      "tip4": "BOLT12 ໃຊ້ໄດ້ແບບ offline!"
+      "tip4": "BOLT12 ໃຊ້ໄດ້ແບບ offline!",
+      "manualApproveTitle": "ອະນຸມັດດ້ວຍຕົນເອງ",
+      "manualApproveHint": "ຖ້າກວດຈັບອັດຕະໂນມັດບໍ່ເຮັດວຽກ, ທ່ານສາມາດອະນຸມັດດ້ວຍຕົນເອງຫຼັງຈາກກວດສອບວ່າໄດ້ຮັບເງິນແລ້ວ.",
+      "manualApprove": "⚠️ ອະນຸມັດການຈ່າຍດ້ວຍຕົນເອງ",
+      "manualApproveWarning": "ໃຊ້ສະເພາະເມື່ອທ່ານກວດສອບແລ້ວວ່າໄດ້ຮັບເງິນແລ້ວ.",
+      "manualApproveAvailableIn": "ອະນຸມັດດ້ວຍຕົນເອງພ້ອມໃນ"
     },
     "cash": {
       "title": "ຈ່າຍເງິນສົດ",
