@@ -359,9 +359,19 @@ export interface ReceiptItem {
 export interface LoyaltyMember {
   id: string;
   nostrPubkey: string;
+  // Profile info (can be fetched from Nostr profile or manually entered)
+  name?: string;
+  email?: string;
+  phone?: string;
+  lud16?: string; // Lightning address
+  address?: string;
+  notes?: string;
+  tags?: string[];
+  // Loyalty data
   points: number;
   tier: 'bronze' | 'silver' | 'gold' | 'platinum';
   totalSpent: number;
+  totalOrders?: number;
   visitCount: number;
   lastVisit: string;
   joinedAt: string;

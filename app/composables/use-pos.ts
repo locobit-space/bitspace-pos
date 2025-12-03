@@ -1,5 +1,7 @@
 // composables/use-pos.ts
 // 🛒 POS Cart & Session Management
+// 🔗 SINGLETON STATE - Shared across all screens (staff POS + customer display)
+// 📡 Uses BroadcastChannel for cross-window sync
 
 import { ref, computed, watch } from 'vue';
 import type { 
@@ -15,20 +17,133 @@ import type {
 } from '~/types';
 import { useCurrency } from './use-currency';
 
+// ============================================
+// GLOBAL SINGLETON STATE
+// These refs are shared across ALL usePOS() calls
+// This enables dual-screen sync (staff POS ↔ customer display)
+// ============================================
+const cartItems = ref<CartItem[]>([]);
+const selectedCurrency = ref<CurrencyCode>('LAK');
+const tipAmount = ref(0);
+const taxRate = ref(0); // 0% default for Laos
+const customerNote = ref('');
+const customerPubkey = ref<string | null>(null);
+const currentSession = ref<POSSession | null>(null);
+
+// Payment state for customer display sync
+const paymentState = ref<{
+  status: 'idle' | 'pending' | 'paid' | 'cancelled';
+  invoiceData?: string;
+  amount?: number;
+  satsAmount?: number;
+}>({ status: 'idle' });
+
+// ============================================
+// CROSS-WINDOW SYNC via BroadcastChannel
+// This syncs cart state across browser windows/tabs
+// ============================================
+let broadcastChannel: BroadcastChannel | null = null;
+let isReceivingBroadcast = false;
+
+const initBroadcastChannel = () => {
+  if (typeof window === 'undefined') return;
+  if (broadcastChannel) return; // Already initialized
+  
+  broadcastChannel = new BroadcastChannel('pos-cart-sync');
+  
+  // Listen for updates from other windows
+  broadcastChannel.onmessage = (event) => {
+    isReceivingBroadcast = true;
+    const { type, payload } = event.data;
+    
+    if (type === 'cart-update') {
+      cartItems.value = payload.cartItems || [];
+      tipAmount.value = payload.tipAmount || 0;
+      selectedCurrency.value = payload.selectedCurrency || 'LAK';
+      customerNote.value = payload.customerNote || '';
+    } else if (type === 'cart-clear') {
+      cartItems.value = [];
+      tipAmount.value = 0;
+      customerNote.value = '';
+      paymentState.value = { status: 'idle' };
+    } else if (type === 'payment-update') {
+      paymentState.value = payload;
+    } else if (type === 'request-sync') {
+      // Another window is asking for current state
+      broadcastCartState();
+      broadcastPaymentState();
+    }
+    
+    isReceivingBroadcast = false;
+  };
+  
+  // Request current state from any existing POS window
+  broadcastChannel.postMessage({ type: 'request-sync' });
+};
+
+const broadcastCartState = () => {
+  if (!broadcastChannel || isReceivingBroadcast) return;
+  
+  // Serialize cart items to plain objects (remove any non-clonable data)
+  const serializedItems = cartItems.value.map(item => ({
+    product: JSON.parse(JSON.stringify(item.product)),
+    quantity: item.quantity,
+    price: item.price,
+    total: item.total,
+    selectedVariant: item.selectedVariant ? JSON.parse(JSON.stringify(item.selectedVariant)) : undefined,
+    selectedModifiers: item.selectedModifiers ? JSON.parse(JSON.stringify(item.selectedModifiers)) : undefined,
+    notes: item.notes,
+  }));
+  
+  broadcastChannel.postMessage({
+    type: 'cart-update',
+    payload: {
+      cartItems: serializedItems,
+      tipAmount: tipAmount.value,
+      selectedCurrency: selectedCurrency.value,
+      customerNote: customerNote.value,
+    }
+  });
+};
+
+const broadcastCartClear = () => {
+  if (!broadcastChannel) return;
+  broadcastChannel.postMessage({ type: 'cart-clear' });
+};
+
+const broadcastPaymentState = () => {
+  if (!broadcastChannel || isReceivingBroadcast) return;
+  
+  // Serialize payment state to plain object
+  const serializedState = {
+    status: paymentState.value.status,
+    invoiceData: paymentState.value.invoiceData || undefined,
+    amount: paymentState.value.amount || undefined,
+    satsAmount: paymentState.value.satsAmount || undefined,
+  };
+  
+  broadcastChannel.postMessage({
+    type: 'payment-update',
+    payload: serializedState,
+  });
+};
+
+// Helper to update payment state and broadcast
+const setPaymentState = (state: typeof paymentState.value) => {
+  paymentState.value = state;
+  broadcastPaymentState();
+};
+
 export const usePOS = () => {
+  // Initialize broadcast channel on first use
+  if (typeof window !== 'undefined') {
+    initBroadcastChannel();
+  }
+  
   // Initialize currency composable
   const currency = useCurrency();
 
-  // Cart State
-  const cartItems = ref<CartItem[]>([]);
-  const selectedCurrency = ref<CurrencyCode>('LAK');
-  const tipAmount = ref(0);
-  const taxRate = ref(0); // 0% default for Laos
-  const customerNote = ref('');
-  const customerPubkey = ref<string | null>(null);
-
-  // Session State
-  const currentSession = ref<POSSession | null>(null);
+  // Session computed (uses global state)
   const isSessionActive = computed(() => currentSession.value?.status === 'active');
 
   // ============================================
@@ -127,6 +242,9 @@ export const usePOS = () => {
         notes,
       });
     }
+    
+    // Broadcast to other windows
+    broadcastCartState();
   };
 
   /**
@@ -135,6 +253,7 @@ export const usePOS = () => {
   const removeFromCart = (index: number) => {
     if (index >= 0 && index < cartItems.value.length) {
       cartItems.value.splice(index, 1);
+      broadcastCartState();
     }
   };
 
@@ -145,6 +264,7 @@ export const usePOS = () => {
     const index = cartItems.value.findIndex(item => item.product.id === productId);
     if (index !== -1) {
       cartItems.value.splice(index, 1);
+      broadcastCartState();
     }
   };
 
@@ -159,6 +279,7 @@ export const usePOS = () => {
       } else {
         item.quantity = quantity;
         item.total = item.quantity * item.price;
+        broadcastCartState();
       }
     }
   };
@@ -215,6 +336,7 @@ export const usePOS = () => {
     tipAmount.value = 0;
     customerNote.value = '';
     customerPubkey.value = null;
+    broadcastCartClear();
   };
 
   /**
@@ -222,6 +344,7 @@ export const usePOS = () => {
    */
   const setTip = (amount: number) => {
     tipAmount.value = amount;
+    broadcastCartState();
   };
 
   /**
@@ -229,6 +352,7 @@ export const usePOS = () => {
    */
   const setTipPercentage = (percentage: number) => {
     tipAmount.value = Math.round(subtotal.value * (percentage / 100));
+    broadcastCartState();
   };
 
   // ============================================
@@ -488,5 +612,9 @@ export const usePOS = () => {
     endSession,
     updateSessionTotals,
     restoreSession,
+    
+    // Payment state (for customer display sync)
+    paymentState,
+    setPaymentState,
   };
 };

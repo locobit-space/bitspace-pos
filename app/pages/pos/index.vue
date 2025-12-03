@@ -329,6 +329,13 @@ const proceedToPayment = (method?: PaymentMethod) => {
   sound.playNotification();
   defaultPaymentMethod.value = method || null;
   showPaymentModal.value = true;
+  
+  // Notify customer display that payment is pending
+  pos.setPaymentState({
+    status: 'pending',
+    amount: pos.total.value,
+    satsAmount: pos.totalSats.value,
+  });
 };
 
 const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
@@ -384,9 +391,13 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 
     pos.clearCart();
     showPaymentModal.value = false;
+    
+    // Notify customer display that payment is complete
+    pos.setPaymentState({ status: 'paid' });
   } catch (e) {
     console.error("Payment error:", e);
     sound.playError();
+    pos.setPaymentState({ status: 'cancelled' });
   } finally {
     isProcessing.value = false;
   }
@@ -395,6 +406,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 const cancelPayment = () => {
   showPaymentModal.value = false;
   isProcessing.value = false;
+  pos.setPaymentState({ status: 'idle' });
 };
 
 // ============================================

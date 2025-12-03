@@ -19,6 +19,7 @@ const emit = defineEmits<{
 const lightning = useLightning();
 const currencyHelper = useCurrency();
 const sound = useSound();
+const pos = usePOS();
 const { t } = useI18n();
 
 // State
@@ -103,6 +104,14 @@ const generateInvoice = async () => {
       paymentStep.value = 'waiting';
       startCountdown();
       watchForPayment();
+      
+      // Broadcast invoice to customer display
+      pos.setPaymentState({
+        status: 'pending',
+        invoiceData: invoice.bolt11,
+        amount: props.fiatAmount,
+        satsAmount: props.amount,
+      });
     } else {
       throw new Error(lightning.error.value || t('payment.lightning.invoiceFailed'));
     }

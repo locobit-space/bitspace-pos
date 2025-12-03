@@ -1,86 +1,26 @@
 <!-- pages/customers/index.vue -->
+<!-- 👥 Customer Management with Nostr + Dexie Integration -->
 <script setup lang="ts">
-import type { LoyaltyMember, NostrProfile } from "~/types";
+import type { LoyaltyMember } from "~/types";
 
 const { t } = useI18n();
+const toast = useToast();
 
 // Permissions
 const { canViewCustomers, canEditCustomers } = usePermissions();
 
-// Customer interface extending LoyaltyMember
-interface Customer extends Partial<LoyaltyMember> {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  nostrPubkey?: string;
-  npub?: string;
-  lud16?: string;
-  address?: string;
-  notes?: string;
-  tags: string[];
-  totalOrders: number;
-  totalSpent: number;
-  lastOrderDate?: string;
-  createdAt: string;
-  updatedAt: string;
+// Redirect if no permission
+if (!canViewCustomers.value) {
+  navigateTo('/');
 }
 
-// Mock customers data
-const customers = ref<Customer[]>([
-  {
-    id: "1",
-    name: "ທ່ານ ສົມສັກ ສີຫາລາດ",
-    email: "somsack@email.com",
-    phone: "+856 20 5555 1234",
-    nostrPubkey: "npub1abc123...",
-    lud16: "somsack@getalby.com",
-    address: "ບ້ານໂພນສີນວນ, ເມືອງສີສັດຕະນາກ, ນະຄອນຫຼວງວຽງຈັນ",
-    notes: "VIP customer, prefers Lightning payments",
-    tags: ["vip", "lightning"],
-    tier: "gold",
-    points: 2500,
-    totalOrders: 48,
-    totalSpent: 5250000,
-    visitCount: 52,
-    lastOrderDate: "2024-01-20",
-    createdAt: "2023-06-15",
-    updatedAt: "2024-01-20",
-  },
-  {
-    id: "2",
-    name: "ນາງ ຄຳລາ ວົງສາ",
-    email: "khamla@email.com",
-    phone: "+856 20 5555 5678",
-    address: "ບ້ານທາດຫຼວງ, ເມືອງໄຊເສດຖາ, ນະຄອນຫຼວງວຽງຈັນ",
-    tags: ["regular"],
-    tier: "silver",
-    points: 1200,
-    totalOrders: 25,
-    totalSpent: 2850000,
-    visitCount: 28,
-    lastOrderDate: "2024-01-18",
-    createdAt: "2023-08-20",
-    updatedAt: "2024-01-18",
-  },
-  {
-    id: "3",
-    name: "ທ່ານ ບຸນມີ ຈັນທະວົງ",
-    email: "bounmy@email.com",
-    phone: "+856 20 5555 9012",
-    nostrPubkey: "npub1def456...",
-    lud16: "bounmy@walletofsatoshi.com",
-    tags: ["bitcoin", "new"],
-    tier: "bronze",
-    points: 350,
-    totalOrders: 8,
-    totalSpent: 890000,
-    visitCount: 10,
-    lastOrderDate: "2024-01-15",
-    createdAt: "2023-12-01",
-    updatedAt: "2024-01-15",
-  },
-]);
+// Use the customers composable with Nostr/Dexie integration
+const customersStore = useCustomers();
+
+// Initialize on mount
+onMounted(async () => {
+  await customersStore.init();
+});
 
 // Filters
 const searchQuery = ref("");
@@ -88,32 +28,33 @@ const selectedTier = ref("all");
 const selectedTag = ref("all");
 
 const tierOptions = [
-  { value: "all", label: t("common.all") },
-  { value: "bronze", label: t("loyalty.bronze") },
-  { value: "silver", label: t("loyalty.silver") },
-  { value: "gold", label: t("loyalty.gold") },
-  { value: "platinum", label: t("loyalty.platinum") },
+  { value: "all", label: t("common.all") || "All" },
+  { value: "bronze", label: t("loyalty.bronze") || "Bronze" },
+  { value: "silver", label: t("loyalty.silver") || "Silver" },
+  { value: "gold", label: t("loyalty.gold") || "Gold" },
+  { value: "platinum", label: t("loyalty.platinum") || "Platinum" },
 ];
 
 const tagOptions = [
-  { value: "all", label: t("common.allTags") },
+  { value: "all", label: t("common.allTags") || "All Tags" },
   { value: "vip", label: "VIP" },
-  { value: "regular", label: t("customers.regular") },
+  { value: "regular", label: t("customers.regular") || "Regular" },
   { value: "lightning", label: "Lightning" },
   { value: "bitcoin", label: "Bitcoin" },
-  { value: "new", label: t("customers.new") },
+  { value: "new", label: t("customers.new") || "New" },
 ];
 
 const filteredCustomers = computed(() => {
-  return customers.value.filter((customer) => {
+  return customersStore.customers.value.filter((customer) => {
     const matchesSearch =
-      customer.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      customer.email?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (customer.name?.toLowerCase() || '').includes(searchQuery.value.toLowerCase()) ||
+      customer.nostrPubkey?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (customer.email?.toLowerCase() || '').includes(searchQuery.value.toLowerCase()) ||
       customer.phone?.includes(searchQuery.value);
     const matchesTier =
       selectedTier.value === "all" || customer.tier === selectedTier.value;
     const matchesTag =
-      selectedTag.value === "all" || customer.tags.includes(selectedTag.value);
+      selectedTag.value === "all" || customer.tags?.includes(selectedTag.value);
     return matchesSearch && matchesTier && matchesTag;
   });
 });
@@ -122,9 +63,9 @@ const filteredCustomers = computed(() => {
 const showCustomerModal = ref(false);
 const showViewModal = ref(false);
 const showDeleteModal = ref(false);
-const selectedCustomer = ref<Customer | null>(null);
-const customerToDelete = ref<Customer | null>(null);
-const viewingCustomer = ref<Customer | null>(null);
+const selectedCustomer = ref<LoyaltyMember | null>(null);
+const customerToDelete = ref<LoyaltyMember | null>(null);
+const viewingCustomer = ref<LoyaltyMember | null>(null);
 const saving = ref(false);
 const deleting = ref(false);
 
@@ -151,25 +92,25 @@ const formatCurrency = (amount: number): string => {
 const getTierColor = (tier?: string) => {
   const colors = {
     bronze: "amber",
-    silver: "gray",
+    silver: "neutral",
     gold: "yellow",
     platinum: "violet",
   } as const;
-  return colors[tier as keyof typeof colors] || "gray";
+  return colors[tier as keyof typeof colors] || "neutral";
 };
 
-const openCustomerModal = (customer?: Customer) => {
+const openCustomerModal = (customer?: LoyaltyMember) => {
   if (customer) {
     selectedCustomer.value = customer;
     customerForm.value = {
-      name: customer.name,
+      name: customer.name || "",
       email: customer.email || "",
       phone: customer.phone || "",
       nostrPubkey: customer.nostrPubkey || "",
       lud16: customer.lud16 || "",
       address: customer.address || "",
       notes: customer.notes || "",
-      tags: [...customer.tags],
+      tags: [...(customer.tags || [])],
     };
   } else {
     selectedCustomer.value = null;
@@ -187,12 +128,12 @@ const openCustomerModal = (customer?: Customer) => {
   showCustomerModal.value = true;
 };
 
-const viewCustomer = (customer: Customer) => {
+const viewCustomer = (customer: LoyaltyMember) => {
   viewingCustomer.value = customer;
   showViewModal.value = true;
 };
 
-const confirmDeleteCustomer = (customer: Customer) => {
+const confirmDeleteCustomer = (customer: LoyaltyMember) => {
   customerToDelete.value = customer;
   showDeleteModal.value = true;
 };
@@ -202,40 +143,54 @@ const saveCustomer = async () => {
   try {
     if (selectedCustomer.value) {
       // Update existing customer
-      const index = customers.value.findIndex(
-        (c) => c.id === selectedCustomer.value!.id
-      );
-      const existingCustomer = customers.value[index];
-      if (index !== -1 && existingCustomer) {
-        customers.value[index] = {
-          ...existingCustomer,
-          name: customerForm.value.name,
-          email: customerForm.value.email,
-          phone: customerForm.value.phone,
-          nostrPubkey: customerForm.value.nostrPubkey,
-          lud16: customerForm.value.lud16,
-          address: customerForm.value.address,
-          notes: customerForm.value.notes,
-          tags: customerForm.value.tags,
-          updatedAt: new Date().toISOString(),
-        };
-      }
+      await customersStore.updateCustomer(selectedCustomer.value.id, {
+        name: customerForm.value.name,
+        email: customerForm.value.email || undefined,
+        phone: customerForm.value.phone || undefined,
+        lud16: customerForm.value.lud16 || undefined,
+        address: customerForm.value.address || undefined,
+        notes: customerForm.value.notes || undefined,
+        tags: customerForm.value.tags,
+      });
+      toast.add({
+        title: t('common.success'),
+        description: t('customers.updated') || 'Customer updated',
+        color: 'success',
+      });
     } else {
-      // Create new customer
-      const newCustomer: Customer = {
-        id: Date.now().toString(),
-        ...customerForm.value,
-        tier: "bronze",
-        points: 0,
-        totalOrders: 0,
-        totalSpent: 0,
-        visitCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      customers.value.push(newCustomer);
+      // Create new customer via nostr pubkey
+      if (customerForm.value.nostrPubkey) {
+        const customer = await customersStore.getOrCreateCustomer(customerForm.value.nostrPubkey);
+        await customersStore.updateCustomer(customer.id, {
+          name: customerForm.value.name,
+          email: customerForm.value.email || undefined,
+          phone: customerForm.value.phone || undefined,
+          lud16: customerForm.value.lud16 || undefined,
+          address: customerForm.value.address || undefined,
+          notes: customerForm.value.notes || undefined,
+          tags: customerForm.value.tags,
+        });
+        toast.add({
+          title: t('common.success'),
+          description: t('customers.created') || 'Customer created',
+          color: 'success',
+        });
+      } else {
+        toast.add({
+          title: t('common.error'),
+          description: t('customers.nostrRequired') || 'Nostr pubkey is required',
+          color: 'error',
+        });
+        return;
+      }
     }
     showCustomerModal.value = false;
+  } catch (error) {
+    toast.add({
+      title: t('common.error'),
+      description: String(error),
+      color: 'error',
+    });
   } finally {
     saving.value = false;
   }
@@ -244,11 +199,11 @@ const saveCustomer = async () => {
 const deleteCustomer = async () => {
   deleting.value = true;
   try {
-    if (customerToDelete.value) {
-      customers.value = customers.value.filter(
-        (c) => c.id !== customerToDelete.value!.id
-      );
-    }
+    toast.add({
+      title: t('common.info'),
+      description: 'Customer deletion not yet implemented',
+      color: 'warning',
+    });
     showDeleteModal.value = false;
   } finally {
     deleting.value = false;
@@ -258,13 +213,13 @@ const deleteCustomer = async () => {
 // Pagination
 const currentPage = ref(1);
 const itemsPerPage = 10;
-const totalPages = computed(() =>
-  Math.ceil(filteredCustomers.value.length / itemsPerPage)
-);
 const paginatedCustomers = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredCustomers.value.slice(start, start + itemsPerPage);
 });
+
+// Stats
+const stats = computed(() => customersStore.getCustomerStats());
 </script>
 
 <template>
@@ -296,381 +251,239 @@ const paginatedCustomers = computed(() => {
       </template>
     </CommonPageHeader>
 
-    <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
-      <UInput
-        v-model="searchQuery"
-        icon="i-heroicons-magnifying-glass"
-        :placeholder="t('customers.searchPlaceholder')"
-      />
-      <USelect
-        v-model="selectedTier"
-        :items="tierOptions"
-        value-key="value"
-        label-key="label"
-        :placeholder="t('loyalty.tier')"
-      />
-      <USelect
-        v-model="selectedTag"
-        :items="tagOptions"
-        value-key="value"
-        label-key="label"
-        :placeholder="t('customers.filterByTag')"
-      />
-      <UButton
-        color="gray"
-        variant="ghost"
-        icon="i-heroicons-arrow-down-tray"
-        :label="t('common.export')"
-      />
+    <!-- Loading State -->
+    <div v-if="customersStore.isLoading.value" class="flex justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-            <Icon
-              name="i-heroicons-users"
-              class="w-6 h-6 text-blue-500 dark:text-blue-400"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("customers.total") }}
-            </p>
-            <p class="text-2xl font-bold">{{ customers.length }}</p>
-          </div>
-        </div>
-      </UCard>
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-full">
-            <Icon
-              name="i-heroicons-star"
-              class="w-6 h-6 text-yellow-500 dark:text-yellow-400"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("customers.vipCount") }}
-            </p>
-            <p class="text-2xl font-bold">
-              {{ customers.filter((c) => c.tags.includes("vip")).length }}
-            </p>
-          </div>
-        </div>
-      </UCard>
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-            <Icon
-              name="i-heroicons-bolt"
-              class="w-6 h-6 text-green-500 dark:text-green-400"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("customers.lightningUsers") }}
-            </p>
-            <p class="text-2xl font-bold">
-              {{ customers.filter((c) => c.lud16).length }}
-            </p>
-          </div>
-        </div>
-      </UCard>
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-            <Icon
-              name="i-heroicons-gift"
-              class="w-6 h-6 text-purple-500 dark:text-purple-400"
-            />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("loyalty.totalPoints") }}
-            </p>
-            <p class="text-2xl font-bold">
-              {{
-                customers
-                  .reduce((sum, c) => sum + (c.points || 0), 0)
-                  .toLocaleString()
-              }}
-            </p>
-          </div>
-        </div>
-      </UCard>
-    </div>
+    <template v-else>
+      <!-- Filters -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
+        <UInput
+          v-model="searchQuery"
+          icon="i-heroicons-magnifying-glass"
+          :placeholder="t('customers.searchPlaceholder')"
+        />
+        <USelect
+          v-model="selectedTier"
+          :items="tierOptions"
+          value-key="value"
+          label-key="label"
+          :placeholder="t('loyalty.tier')"
+        />
+        <USelect
+          v-model="selectedTag"
+          :items="tagOptions"
+          value-key="value"
+          label-key="label"
+          :placeholder="t('customers.filterByTag')"
+        />
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-arrow-down-tray"
+          :label="t('common.export')"
+          @click="customersStore.exportCustomers()"
+        />
+      </div>
 
-    <!-- Customers Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-gray-200 dark:border-gray-800">
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
+        <UCard>
+          <div class="flex items-center">
+            <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
+              <UIcon name="i-heroicons-users" class="w-6 h-6 text-blue-500 dark:text-blue-400" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ t("customers.total") }}</p>
+              <p class="text-2xl font-bold">{{ stats.total }}</p>
+            </div>
+          </div>
+        </UCard>
+        <UCard>
+          <div class="flex items-center">
+            <div class="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-full">
+              <UIcon name="i-heroicons-star" class="w-6 h-6 text-yellow-500 dark:text-yellow-400" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Gold+ Members</p>
+              <p class="text-2xl font-bold">{{ (stats.byTier.gold || 0) + (stats.byTier.platinum || 0) }}</p>
+            </div>
+          </div>
+        </UCard>
+        <UCard>
+          <div class="flex items-center">
+            <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full">
+              <UIcon name="i-heroicons-bolt" class="w-6 h-6 text-green-500 dark:text-green-400" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Active This Month</p>
+              <p class="text-2xl font-bold">{{ stats.activeThisMonth }}</p>
+            </div>
+          </div>
+        </UCard>
+        <UCard>
+          <div class="flex items-center">
+            <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
+              <UIcon name="i-heroicons-gift" class="w-6 h-6 text-purple-500 dark:text-purple-400" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ t("loyalty.totalPoints") }}</p>
+              <p class="text-2xl font-bold">{{ stats.totalPoints.toLocaleString() }}</p>
+            </div>
+          </div>
+        </UCard>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="filteredCustomers.length === 0" class="text-center py-12 px-4">
+        <UIcon name="i-heroicons-users" class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          {{ t('customers.noCustomers') || 'No customers found' }}
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">
+          {{ t('customers.noCustomersHint') || 'Customers will appear here after they make purchases' }}
+        </p>
+        <UButton
+          v-if="canEditCustomers"
+          icon="i-heroicons-plus"
+          :label="t('customers.addCustomer')"
+          @click="openCustomerModal()"
+        />
+      </div>
+
+      <!-- Customers Table -->
+      <div v-else class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-800">
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("customers.name") }}</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("customers.contact") }}</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("loyalty.tier") }}</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("loyalty.points") }}</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("customers.totalSpent") }}</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("customers.visits") }}</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("customers.lastVisit") }}</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">{{ t("common.actions") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="customer in paginatedCustomers"
+              :key="customer.id"
+              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
-              {{ t("customers.name") }}
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("customers.contact") }}
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("loyalty.tier") }}
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("loyalty.points") }}
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("customers.totalSpent") }}
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("customers.orders") }}
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("customers.lastOrder") }}
-            </th>
-            <th
-              class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("common.actions") }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="customer in paginatedCustomers"
-            :key="customer.id"
-            class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-          >
-            <td class="py-3 px-4">
-              <div class="flex items-center gap-3">
-                <div>
-                  <div
-                    class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold"
-                  >
-                    {{ customer.name.charAt(0) }}
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {{ (customer.name || customer.nostrPubkey || '?').charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900 dark:text-white">
+                      {{ customer.name || `${customer.nostrPubkey?.slice(0, 8)}...` }}
+                    </p>
+                    <div class="flex gap-1 mt-1">
+                      <UBadge
+                        v-for="tag in (customer.tags || []).slice(0, 2)"
+                        :key="tag"
+                        size="xs"
+                        :color="tag === 'vip' ? 'yellow' : tag === 'lightning' ? 'orange' : 'neutral'"
+                        variant="subtle"
+                      >
+                        {{ tag }}
+                      </UBadge>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <p class="font-medium text-gray-900 dark:text-white">
-                    {{ customer.name }}
+              </td>
+              <td class="py-3 px-4">
+                <div class="text-sm">
+                  <p v-if="customer.email" class="text-gray-600 dark:text-gray-400">{{ customer.email }}</p>
+                  <p v-if="customer.phone" class="text-gray-500">{{ customer.phone }}</p>
+                  <p v-if="customer.lud16" class="text-orange-500 flex items-center gap-1">
+                    <UIcon name="i-heroicons-bolt" class="w-3 h-3" />
+                    {{ customer.lud16 }}
                   </p>
-                  <div class="flex gap-1 mt-1">
-                    <UBadge
-                      v-for="tag in customer.tags.slice(0, 2)"
-                      :key="tag"
-                      size="xs"
-                      :color="
-                        tag === 'vip'
-                          ? 'yellow'
-                          : tag === 'lightning'
-                          ? 'orange'
-                          : 'gray'
-                      "
-                      variant="subtle"
-                    >
-                      {{ tag }}
-                    </UBadge>
-                  </div>
                 </div>
-              </div>
-            </td>
-            <td class="py-3 px-4">
-              <div class="text-sm">
-                <p
-                  v-if="customer.email"
-                  class="text-gray-600 dark:text-gray-400"
-                >
-                  {{ customer.email }}
-                </p>
-                <p
-                  v-if="customer.phone"
-                  class="text-gray-500 dark:text-gray-500"
-                >
-                  {{ customer.phone }}
-                </p>
-                <p
-                  v-if="customer.lud16"
-                  class="text-orange-500 flex items-center gap-1"
-                >
-                  <Icon name="i-heroicons-bolt" class="w-3 h-3" />
-                  {{ customer.lud16 }}
-                </p>
-              </div>
-            </td>
-            <td class="py-3 px-4">
-              <UBadge
-                v-if="customer.tier"
-                :color="getTierColor(customer.tier)"
-                :label="t(`loyalty.${customer.tier}`)"
-              />
-            </td>
-            <td class="py-3 px-4">
-              <span class="font-medium">{{
-                (customer.points || 0).toLocaleString()
-              }}</span>
-            </td>
-            <td class="py-3 px-4">
-              <span class="font-medium">{{
-                formatCurrency(customer.totalSpent)
-              }}</span>
-            </td>
-            <td class="py-3 px-4">
-              <span>{{ customer.totalOrders }}</span>
-            </td>
-            <td class="py-3 px-4">
-              <span class="text-gray-500 dark:text-gray-400">{{
-                customer.lastOrderDate || "-"
-              }}</span>
-            </td>
-            <td class="py-3 px-4">
-              <div class="flex justify-end gap-1">
-                <UButton
-                  icon="i-heroicons-eye"
-                  color="gray"
-                  variant="ghost"
-                  size="sm"
-                  @click="viewCustomer(customer)"
-                />
-                <UButton
-                  v-if="canEditCustomers"
-                  icon="i-heroicons-pencil"
-                  color="gray"
-                  variant="ghost"
-                  size="sm"
-                  @click="openCustomerModal(customer)"
-                />
-                <UButton
-                  v-if="canEditCustomers"
-                  icon="i-heroicons-trash"
-                  color="red"
-                  variant="ghost"
-                  size="sm"
-                  @click="confirmDeleteCustomer(customer)"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              </td>
+              <td class="py-3 px-4">
+                <UBadge v-if="customer.tier" :color="getTierColor(customer.tier)" :label="t(`loyalty.${customer.tier}`)" />
+              </td>
+              <td class="py-3 px-4">
+                <span class="font-medium">{{ (customer.points || 0).toLocaleString() }}</span>
+              </td>
+              <td class="py-3 px-4">
+                <span class="font-medium">{{ formatCurrency(customer.totalSpent) }}</span>
+              </td>
+              <td class="py-3 px-4">{{ customer.visitCount || 0 }}</td>
+              <td class="py-3 px-4">
+                <span class="text-gray-500 dark:text-gray-400">
+                  {{ customer.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : "-" }}
+                </span>
+              </td>
+              <td class="py-3 px-4">
+                <div class="flex justify-end gap-1">
+                  <UButton icon="i-heroicons-eye" color="neutral" variant="ghost" size="sm" @click="viewCustomer(customer)" />
+                  <UButton v-if="canEditCustomers" icon="i-heroicons-pencil" color="neutral" variant="ghost" size="sm" @click="openCustomerModal(customer)" />
+                  <UButton v-if="canEditCustomers" icon="i-heroicons-trash" color="red" variant="ghost" size="sm" @click="confirmDeleteCustomer(customer)" />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <!-- Pagination -->
-    <div class="flex justify-between items-center px-4">
-      <span class="text-sm text-gray-500 dark:text-gray-400">
-        {{ t("common.showing") }} {{ paginatedCustomers.length }}
-        {{ t("common.of") }} {{ filteredCustomers.length }}
-        {{ t("common.entries") }}
-      </span>
-      <UPagination
-        v-model="currentPage"
-        :page-count="itemsPerPage"
-        :total="filteredCustomers.length"
-      />
-    </div>
+      <!-- Pagination -->
+      <div v-if="filteredCustomers.length > 0" class="flex justify-between items-center px-4">
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+          {{ t("common.showing") }} {{ paginatedCustomers.length }} {{ t("common.of") }} {{ filteredCustomers.length }} {{ t("common.entries") }}
+        </span>
+        <UPagination v-model="currentPage" :page-count="itemsPerPage" :total="filteredCustomers.length" />
+      </div>
+    </template>
 
     <!-- Add/Edit Customer Modal -->
     <UModal v-model:open="showCustomerModal">
       <template #content>
         <UCard>
           <template #header>
-            <h3 class="text-lg font-medium">
-              {{
-                selectedCustomer
-                  ? t("customers.editCustomer")
-                  : t("customers.addCustomer")
-              }}
-            </h3>
+            <h3 class="text-lg font-medium">{{ selectedCustomer ? t("customers.editCustomer") : t("customers.addCustomer") }}</h3>
           </template>
 
           <form class="space-y-4" @submit.prevent="saveCustomer">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField
-                :label="t('customers.name')"
-                required
-                class="md:col-span-2"
-              >
-                <UInput
-                  v-model="customerForm.name"
-                  :placeholder="t('customers.namePlaceholder')"
-                />
+              <UFormField :label="t('customers.name')" required class="md:col-span-2">
+                <UInput v-model="customerForm.name" :placeholder="t('customers.namePlaceholder')" />
               </UFormField>
 
-              <UFormField :label="t('customers.email')">
-                <UInput
-                  v-model="customerForm.email"
-                  type="email"
-                  :placeholder="t('customers.emailPlaceholder')"
-                />
-              </UFormField>
-
-              <UFormField :label="t('customers.phone')">
-                <UInput
-                  v-model="customerForm.phone"
-                  :placeholder="t('customers.phonePlaceholder')"
-                />
-              </UFormField>
-
-              <UFormField :label="t('customers.nostrPubkey')">
-                <UInput
-                  v-model="customerForm.nostrPubkey"
-                  placeholder="npub1..."
-                />
+              <UFormField :label="t('customers.nostrPubkey')" :required="!selectedCustomer">
+                <UInput v-model="customerForm.nostrPubkey" placeholder="npub1... or hex pubkey" :disabled="!!selectedCustomer" />
               </UFormField>
 
               <UFormField :label="t('customers.lightningAddress')">
-                <UInput
-                  v-model="customerForm.lud16"
-                  placeholder="user@getalby.com"
-                />
+                <UInput v-model="customerForm.lud16" placeholder="user@getalby.com" />
+              </UFormField>
+
+              <UFormField :label="t('customers.email')">
+                <UInput v-model="customerForm.email" type="email" :placeholder="t('customers.emailPlaceholder')" />
+              </UFormField>
+
+              <UFormField :label="t('customers.phone')">
+                <UInput v-model="customerForm.phone" :placeholder="t('customers.phonePlaceholder')" />
               </UFormField>
 
               <UFormField :label="t('customers.address')" class="md:col-span-2">
-                <UTextarea
-                  v-model="customerForm.address"
-                  :placeholder="t('customers.addressPlaceholder')"
-                  :rows="2"
-                />
+                <UTextarea v-model="customerForm.address" :placeholder="t('customers.addressPlaceholder')" :rows="2" />
               </UFormField>
 
               <UFormField :label="t('customers.notes')" class="md:col-span-2">
-                <UTextarea
-                  v-model="customerForm.notes"
-                  :placeholder="t('customers.notesPlaceholder')"
-                  :rows="2"
-                />
+                <UTextarea v-model="customerForm.notes" :placeholder="t('customers.notesPlaceholder')" :rows="2" />
               </UFormField>
             </div>
 
             <div class="flex justify-end gap-3 pt-4">
-              <UButton
-                color="gray"
-                variant="outline"
-                :label="t('common.cancel')"
-                @click="showCustomerModal = false"
-              />
-              <UButton
-                type="submit"
-                color="primary"
-                :loading="saving"
-                :label="
-                  selectedCustomer ? t('common.update') : t('common.create')
-                "
-              />
+              <UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="showCustomerModal = false" />
+              <UButton type="submit" color="primary" :loading="saving" :label="selectedCustomer ? t('common.update') : t('common.create')" />
             </div>
           </form>
         </UCard>
@@ -683,17 +496,12 @@ const paginatedCustomers = computed(() => {
         <UCard v-if="viewingCustomer">
           <template #header>
             <div class="flex items-center gap-3">
-              <div
-                class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl"
-              >
-                {{ viewingCustomer.name.charAt(0) }}
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                {{ (viewingCustomer.name || viewingCustomer.nostrPubkey || '?').charAt(0).toUpperCase() }}
               </div>
               <div>
-                <h3 class="text-lg font-medium">{{ viewingCustomer.name }}</h3>
-                <UBadge
-                  :color="getTierColor(viewingCustomer.tier)"
-                  :label="t(`loyalty.${viewingCustomer.tier || 'bronze'}`)"
-                />
+                <h3 class="text-lg font-medium">{{ viewingCustomer.name || `${viewingCustomer.nostrPubkey?.slice(0, 12)}...` }}</h3>
+                <UBadge :color="getTierColor(viewingCustomer.tier)" :label="t(`loyalty.${viewingCustomer.tier || 'bronze'}`)" />
               </div>
             </div>
           </template>
@@ -701,136 +509,69 @@ const paginatedCustomers = computed(() => {
           <div class="space-y-6">
             <!-- Contact Info -->
             <div>
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("customers.contactInfo") }}
-              </h4>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">{{ t("customers.contactInfo") }}</h4>
               <div class="grid grid-cols-2 gap-4 text-sm">
                 <div v-if="viewingCustomer.email">
-                  <p class="text-gray-500 dark:text-gray-400">
-                    {{ t("customers.email") }}
-                  </p>
+                  <p class="text-gray-500 dark:text-gray-400">{{ t("customers.email") }}</p>
                   <p class="font-medium">{{ viewingCustomer.email }}</p>
                 </div>
                 <div v-if="viewingCustomer.phone">
-                  <p class="text-gray-500 dark:text-gray-400">
-                    {{ t("customers.phone") }}
-                  </p>
+                  <p class="text-gray-500 dark:text-gray-400">{{ t("customers.phone") }}</p>
                   <p class="font-medium">{{ viewingCustomer.phone }}</p>
                 </div>
                 <div v-if="viewingCustomer.lud16" class="col-span-2">
-                  <p class="text-gray-500 dark:text-gray-400">
-                    {{ t("customers.lightningAddress") }}
-                  </p>
-                  <p class="font-medium text-orange-500">
-                    ⚡ {{ viewingCustomer.lud16 }}
-                  </p>
+                  <p class="text-gray-500 dark:text-gray-400">{{ t("customers.lightningAddress") }}</p>
+                  <p class="font-medium text-orange-500">⚡ {{ viewingCustomer.lud16 }}</p>
                 </div>
-                <div v-if="viewingCustomer.address" class="col-span-2">
-                  <p class="text-gray-500 dark:text-gray-400">
-                    {{ t("customers.address") }}
-                  </p>
-                  <p class="font-medium">{{ viewingCustomer.address }}</p>
+                <div class="col-span-2">
+                  <p class="text-gray-500 dark:text-gray-400">Nostr Pubkey</p>
+                  <p class="font-mono text-xs break-all">{{ viewingCustomer.nostrPubkey }}</p>
                 </div>
               </div>
             </div>
 
             <!-- Loyalty Stats -->
             <div>
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("loyalty.stats") }}
-              </h4>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">{{ t("loyalty.stats") }}</h4>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-2xl font-bold text-primary-500">
-                    {{ viewingCustomer.points?.toLocaleString() || 0 }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("loyalty.points") }}
-                  </p>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
+                  <p class="text-2xl font-bold text-primary-500">{{ viewingCustomer.points?.toLocaleString() || 0 }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ t("loyalty.points") }}</p>
                 </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-2xl font-bold text-green-500">
-                    {{ viewingCustomer.totalOrders }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("customers.orders") }}
-                  </p>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
+                  <p class="text-2xl font-bold text-green-500">{{ viewingCustomer.totalOrders || 0 }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ t("customers.orders") }}</p>
                 </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-2xl font-bold text-blue-500">
-                    {{ viewingCustomer.visitCount || 0 }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("customers.visits") }}
-                  </p>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
+                  <p class="text-2xl font-bold text-blue-500">{{ viewingCustomer.visitCount || 0 }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ t("customers.visits") }}</p>
                 </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-lg font-bold text-purple-500">
-                    {{ formatCurrency(viewingCustomer.totalSpent) }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("customers.totalSpent") }}
-                  </p>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
+                  <p class="text-lg font-bold text-purple-500">{{ formatCurrency(viewingCustomer.totalSpent) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ t("customers.totalSpent") }}</p>
                 </div>
               </div>
             </div>
 
             <!-- Tags -->
-            <div v-if="viewingCustomer.tags.length">
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("customers.tags") }}
-              </h4>
+            <div v-if="viewingCustomer.tags?.length">
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">{{ t("customers.tags") }}</h4>
               <div class="flex flex-wrap gap-2">
-                <UBadge
-                  v-for="tag in viewingCustomer.tags"
-                  :key="tag"
-                  :color="
-                    tag === 'vip'
-                      ? 'yellow'
-                      : tag === 'lightning'
-                      ? 'orange'
-                      : 'gray'
-                  "
-                >
-                  {{ tag }}
-                </UBadge>
+                <UBadge v-for="tag in viewingCustomer.tags" :key="tag" :color="tag === 'vip' ? 'yellow' : tag === 'lightning' ? 'orange' : 'neutral'">{{ tag }}</UBadge>
               </div>
             </div>
 
             <!-- Notes -->
             <div v-if="viewingCustomer.notes">
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("customers.notes") }}
-              </h4>
-              <p class="text-gray-600 dark:text-gray-400 text-sm">
-                {{ viewingCustomer.notes }}
-              </p>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">{{ t("customers.notes") }}</h4>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">{{ viewingCustomer.notes }}</p>
             </div>
           </div>
 
           <template #footer>
             <div class="flex justify-between">
-              <UButton
-                color="gray"
-                variant="ghost"
-                :label="t('customers.viewOrders')"
-                icon="i-heroicons-shopping-bag"
-                :to="`/orders?customer=${viewingCustomer.id}`"
-              />
-              <UButton
-                color="gray"
-                variant="outline"
-                :label="t('common.close')"
-                @click="showViewModal = false"
-              />
+              <UButton color="neutral" variant="ghost" :label="t('customers.viewOrders')" icon="i-heroicons-shopping-bag" :to="`/orders?customer=${viewingCustomer.id}`" />
+              <UButton color="neutral" variant="outline" :label="t('common.close')" @click="showViewModal = false" />
             </div>
           </template>
         </UCard>
@@ -842,33 +583,15 @@ const paginatedCustomers = computed(() => {
       <template #content>
         <UCard>
           <template #header>
-            <h3 class="text-lg font-medium text-red-600 dark:text-red-400">
-              {{ t("common.confirmDelete") }}
-            </h3>
+            <h3 class="text-lg font-medium text-red-600 dark:text-red-400">{{ t("common.confirmDelete") }}</h3>
           </template>
-
           <p class="text-gray-600 dark:text-gray-400">
-            {{
-              t("customers.deleteConfirmation", {
-                name: customerToDelete?.name,
-              })
-            }}
+            {{ t("customers.deleteConfirmation", { name: customerToDelete?.name || customerToDelete?.nostrPubkey?.slice(0, 12) }) }}
           </p>
-
           <template #footer>
             <div class="flex justify-end gap-3">
-              <UButton
-                color="gray"
-                variant="outline"
-                :label="t('common.cancel')"
-                @click="showDeleteModal = false"
-              />
-              <UButton
-                color="red"
-                :loading="deleting"
-                :label="t('common.delete')"
-                @click="deleteCustomer"
-              />
+              <UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="showDeleteModal = false" />
+              <UButton color="red" :loading="deleting" :label="t('common.delete')" @click="deleteCustomer" />
             </div>
           </template>
         </UCard>
