@@ -12,7 +12,7 @@ definePageMeta({
   layout: 'blank',
 });
 
-const { t } = useI18n();
+const _t = useI18n();
 const pos = usePOS();
 const currency = useCurrency();
 
@@ -42,12 +42,13 @@ const currentTime = ref(new Date());
 
 // Promotional messages for idle state
 const promoMessages = [
-  { icon: '☕', title: 'Fresh Coffee Daily' },
-  { icon: '⚡', title: 'Pay with Lightning' },
-  { icon: '🎁', title: 'Earn Loyalty Points' },
-  { icon: '🌿', title: 'Organic Ingredients' },
+  { icon: '☕', title: 'Fresh Coffee Daily', subtitle: 'Locally roasted beans' },
+  { icon: '⚡', title: 'Pay with Lightning', subtitle: 'Fast & secure payments' },
+  { icon: '🎁', title: 'Earn Loyalty Points', subtitle: 'Rewards on every purchase' },
+  { icon: '🌿', title: 'Organic Ingredients', subtitle: 'Farm to cup freshness' },
 ];
 const currentPromoIndex = ref(0);
+const isPromoTransitioning = ref(false);
 
 // ============================================
 // Lifecycle
@@ -63,7 +64,11 @@ onMounted(async () => {
   }, 1000);
   
   promoInterval = setInterval(() => {
-    currentPromoIndex.value = (currentPromoIndex.value + 1) % promoMessages.length;
+    isPromoTransitioning.value = true;
+    setTimeout(() => {
+      currentPromoIndex.value = (currentPromoIndex.value + 1) % promoMessages.length;
+      isPromoTransitioning.value = false;
+    }, 300);
   }, 4000);
 });
 
@@ -82,55 +87,85 @@ const formatTime = computed(() => {
     hour12: true,
   });
 });
+
+const formatDate = computed(() => {
+  return currentTime.value.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+});
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-white dark:bg-gray-950 text-gray-900 dark:text-white">
+  <div class="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
     <!-- Minimal Header -->
-    <header class="px-8 py-5 flex justify-between items-center border-b border-gray-100 dark:border-gray-900">
+    <header class="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800">
       <div class="flex items-center gap-4">
-        <span class="text-3xl">☕</span>
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+          <span class="text-2xl">☕</span>
+        </div>
         <div>
-          <h1 class="text-xl font-semibold">Berkeley Café</h1>
-          <p class="text-sm text-gray-400">{{ t('pos.welcomeMessage') || 'Welcome' }}</p>
+          <h1 class="text-xl font-semibold tracking-tight">Berkeley Café</h1>
+          <p class="text-sm text-gray-400 font-light">{{ formatDate }}</p>
         </div>
       </div>
-      <div class="flex items-center gap-6">
-        <div v-if="pos.cartItems.value.length > 0" class="text-sm text-gray-500">
-          {{ pos.itemCount.value }} items
+      <div class="flex items-center gap-8">
+        <div v-if="pos.cartItems.value.length > 0" class="flex items-center gap-2 text-gray-500">
+          <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center justify-center">
+            {{ pos.itemCount.value }}
+          </span>
+          <span class="text-sm">items</span>
         </div>
-        <div class="text-2xl font-light tabular-nums text-gray-400">
-          {{ formatTime }}
+        <div class="text-right">
+          <div class="text-2xl font-light tabular-nums">{{ formatTime }}</div>
         </div>
       </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-hidden">
+    <main class="flex-1 overflow-hidden relative">
       <!-- ============================================ -->
       <!-- IDLE STATE -->
       <!-- ============================================ -->
-      <div v-if="displayState === 'idle'" class="h-full flex flex-col items-center justify-center">
-        <div class="text-center transition-all duration-700">
-          <div class="text-8xl mb-8">{{ promoMessages[currentPromoIndex]?.icon }}</div>
-          <h2 class="text-4xl font-light text-gray-700 dark:text-gray-200">
+      <div v-if="displayState === 'idle'" class="h-full flex flex-col items-center justify-center bg-white dark:bg-gray-950">
+        <!-- Promo Content -->
+        <div 
+          class="text-center transition-all duration-300 ease-out"
+          :class="isPromoTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'"
+        >
+          <div class="text-9xl mb-6 filter drop-shadow-sm">{{ promoMessages[currentPromoIndex]?.icon }}</div>
+          <h2 class="text-5xl font-light text-gray-800 dark:text-gray-100 tracking-tight">
             {{ promoMessages[currentPromoIndex]?.title }}
           </h2>
+          <p class="text-xl text-gray-400 font-light mt-3">
+            {{ promoMessages[currentPromoIndex]?.subtitle }}
+          </p>
+        </div>
+
+        <!-- Promo Dots -->
+        <div class="flex gap-2 mt-12">
+          <span 
+            v-for="(_, i) in promoMessages" 
+            :key="i"
+            class="w-2 h-2 rounded-full transition-all duration-300"
+            :class="i === currentPromoIndex ? 'w-6 bg-amber-500' : 'bg-gray-200 dark:bg-gray-800'"
+          />
         </div>
         
         <!-- Payment methods -->
-        <div class="absolute bottom-12 flex gap-12 text-gray-400">
-          <div class="flex items-center gap-2">
+        <div class="absolute bottom-16 flex gap-10">
+          <div class="flex items-center gap-3 px-5 py-3 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-500">
             <span class="text-xl">💵</span>
-            <span>Cash</span>
+            <span class="font-medium">Cash</span>
           </div>
-          <div class="flex items-center gap-2 text-amber-500">
+          <div class="flex items-center gap-3 px-5 py-3 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
             <span class="text-xl">⚡</span>
-            <span>Lightning</span>
+            <span class="font-medium">Lightning</span>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-3 px-5 py-3 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-500">
             <span class="text-xl">📱</span>
-            <span>QR</span>
+            <span class="font-medium">QR Pay</span>
           </div>
         </div>
       </div>
@@ -140,16 +175,16 @@ const formatTime = computed(() => {
       <!-- ============================================ -->
       <div v-else-if="displayState === 'active'" class="h-full flex">
         <!-- Cart Items -->
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col bg-white dark:bg-gray-950">
           <div class="flex-1 overflow-y-auto px-8 py-6">
-            <TransitionGroup name="list" tag="div" class="space-y-4">
+            <TransitionGroup name="list" tag="div" class="space-y-3">
               <div
                 v-for="(item, index) in pos.cartItems.value"
                 :key="`${item.product?.id || index}-${index}`"
-                class="flex items-center gap-6 py-4 border-b border-gray-100 dark:border-gray-900"
+                class="flex items-center gap-5 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
               >
                 <!-- Icon -->
-                <div class="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-2xl">
+                <div class="w-14 h-14 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-2xl">
                   {{ item.product?.image || '📦' }}
                 </div>
                 
@@ -157,19 +192,20 @@ const formatTime = computed(() => {
                 <div class="flex-1 min-w-0">
                   <h3 class="text-lg font-medium truncate">{{ item.product?.name || 'Product' }}</h3>
                   <div v-if="item.selectedVariant || item.selectedModifiers?.length" class="text-sm text-gray-400 mt-0.5">
-                    <span v-if="item.selectedVariant">{{ item.selectedVariant.name }}</span>
-                    <span v-if="item.selectedModifiers?.length"> · {{ item.selectedModifiers.map(m => m.name).join(', ') }}</span>
+                    <span v-if="item.selectedVariant" class="text-amber-600 dark:text-amber-400">{{ item.selectedVariant.name }}</span>
+                    <span v-if="item.selectedModifiers?.length" class="text-gray-400"> · {{ item.selectedModifiers.map(m => m.name).join(', ') }}</span>
                   </div>
-                  <p v-if="item.notes" class="text-sm text-amber-500 mt-1">{{ item.notes }}</p>
+                  <p v-if="item.notes" class="text-sm text-blue-500 mt-1 italic">"{{ item.notes }}"</p>
                 </div>
                 
                 <!-- Qty -->
-                <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-lg font-semibold">
-                  {{ item.quantity }}
+                <div class="flex items-center gap-1">
+                  <span class="text-gray-400">×</span>
+                  <span class="text-xl font-semibold w-8 text-center">{{ item.quantity }}</span>
                 </div>
                 
                 <!-- Price -->
-                <div class="w-32 text-right">
+                <div class="w-36 text-right">
                   <div class="text-lg font-semibold">{{ currency.format(item.total, pos.selectedCurrency.value) }}</div>
                 </div>
               </div>
@@ -178,25 +214,26 @@ const formatTime = computed(() => {
         </div>
 
         <!-- Summary Panel -->
-        <div class="w-80 bg-gray-50 dark:bg-gray-900/50 flex flex-col justify-end p-8">
-          <div class="space-y-3 text-lg">
-            <div class="flex justify-between text-gray-500">
+        <div class="w-96 bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col justify-end p-8 border-l border-gray-200 dark:border-gray-800">
+          <div class="space-y-4">
+            <div class="flex justify-between text-lg text-gray-500">
               <span>Subtotal</span>
-              <span>{{ currency.format(pos.subtotal.value, pos.selectedCurrency.value) }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">{{ currency.format(pos.subtotal.value, pos.selectedCurrency.value) }}</span>
             </div>
-            <div v-if="pos.tipAmount.value > 0" class="flex justify-between text-gray-500">
+            <div v-if="pos.tipAmount.value > 0" class="flex justify-between text-lg text-gray-500">
               <span>Tip</span>
-              <span>{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
             </div>
           </div>
           
-          <div class="border-t border-gray-200 dark:border-gray-800 mt-6 pt-6">
+          <div class="border-t-2 border-gray-200 dark:border-gray-800 mt-6 pt-6">
             <div class="flex justify-between items-end">
               <span class="text-xl text-gray-500">Total</span>
               <div class="text-right">
-                <div class="text-4xl font-bold">{{ currency.format(pos.total.value, pos.selectedCurrency.value) }}</div>
-                <div v-if="pos.totalSats.value > 0" class="text-lg text-amber-500 mt-1">
-                  ⚡ {{ pos.totalSats.value.toLocaleString() }} sats
+                <div class="text-5xl font-bold tracking-tight">{{ currency.format(pos.total.value, pos.selectedCurrency.value) }}</div>
+                <div v-if="pos.totalSats.value > 0" class="text-xl text-amber-500 font-medium mt-2 flex items-center justify-end gap-1">
+                  <span>⚡</span>
+                  <span>{{ pos.totalSats.value.toLocaleString() }} sats</span>
                 </div>
               </div>
             </div>
@@ -207,40 +244,44 @@ const formatTime = computed(() => {
       <!-- ============================================ -->
       <!-- PAYMENT STATE: QR Code -->
       <!-- ============================================ -->
-      <div v-else-if="displayState === 'payment'" class="h-full flex items-center justify-center gap-20">
+      <div v-else-if="displayState === 'payment'" class="h-full flex items-center justify-center gap-24 bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
         <!-- QR Code -->
         <div class="text-center">
-          <div v-if="pos.paymentState.value.invoiceData" class="bg-white p-6 rounded-3xl inline-block">
-            <img
-              :src="`https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(pos.paymentState.value.invoiceData)}`"
-              alt="QR"
-              class="w-64 h-64"
-            >
+          <div class="relative">
+            <div v-if="pos.paymentState.value.invoiceData" class="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-none dark:border dark:border-gray-800">
+              <img
+                :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pos.paymentState.value.invoiceData)}`"
+                alt="QR"
+                class="w-72 h-72"
+              >
+            </div>
+            <div v-else class="w-72 h-72 bg-gray-100 dark:bg-gray-900 rounded-3xl flex items-center justify-center">
+              <span class="text-7xl animate-pulse">⚡</span>
+            </div>
+            <!-- Corner accent -->
+            <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full animate-ping opacity-75" />
+            <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full" />
           </div>
-          <div v-else class="w-64 h-64 bg-gray-100 dark:bg-gray-900 rounded-3xl flex items-center justify-center">
-            <span class="text-6xl animate-pulse">⚡</span>
-          </div>
-          <p class="text-gray-400 mt-4">Scan with Lightning wallet</p>
+          <p class="text-gray-500 mt-6 text-lg">Scan with Lightning wallet</p>
         </div>
 
         <!-- Amount -->
         <div class="text-center">
-          <p class="text-gray-400 mb-2">Amount Due</p>
-          <div class="text-6xl font-bold mb-4">
+          <p class="text-gray-400 text-lg mb-2">Amount Due</p>
+          <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
             {{ currency.format(pos.paymentState.value.amount || pos.total.value, pos.selectedCurrency.value) }}
           </div>
-          <div class="text-2xl text-amber-500">
-            ⚡ {{ (pos.paymentState.value.satsAmount || pos.totalSats.value).toLocaleString() }} sats
+          <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-2xl font-semibold">
+            <span>⚡</span>
+            <span>{{ (pos.paymentState.value.satsAmount || pos.totalSats.value).toLocaleString() }} sats</span>
           </div>
           
           <!-- Waiting indicator -->
-          <div class="flex items-center justify-center gap-2 text-gray-400 mt-10">
-            <span class="flex gap-1">
-              <span class="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style="animation-delay: 0ms" />
-              <span class="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style="animation-delay: 100ms" />
-              <span class="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style="animation-delay: 200ms" />
-            </span>
-            <span>Waiting for payment</span>
+          <div class="mt-12">
+            <div class="flex items-center justify-center gap-3">
+              <div class="payment-loader" />
+              <span class="text-gray-500 text-lg">Waiting for payment...</span>
+            </div>
           </div>
         </div>
       </div>
@@ -248,21 +289,32 @@ const formatTime = computed(() => {
       <!-- ============================================ -->
       <!-- SUCCESS STATE -->
       <!-- ============================================ -->
-      <div v-else-if="displayState === 'success'" class="h-full flex items-center justify-center">
-        <div class="text-center animate-fade-in">
-          <div class="text-9xl mb-8">✓</div>
-          <h2 class="text-5xl font-light text-green-500 mb-4">Thank You!</h2>
-          <p class="text-xl text-gray-400">Payment received</p>
+      <div v-else-if="displayState === 'success'" class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900">
+        <div class="text-center">
+          <!-- Animated checkmark -->
+          <div class="success-checkmark mb-8">
+            <div class="check-icon">
+              <span class="icon-line line-tip" />
+              <span class="icon-line line-long" />
+              <div class="icon-circle" />
+              <div class="icon-fix" />
+            </div>
+          </div>
+          <h2 class="text-6xl font-light text-green-600 dark:text-green-400 mb-4 tracking-tight">Thank You!</h2>
+          <p class="text-2xl text-gray-500 font-light">Payment successful</p>
+          <p class="text-lg text-gray-400 mt-2">Have a great day! ☀️</p>
         </div>
       </div>
     </main>
 
     <!-- Minimal Footer -->
-    <footer class="px-8 py-3 border-t border-gray-100 dark:border-gray-900 flex justify-between text-sm text-gray-400">
-      <span>BitSpace POS</span>
-      <div class="flex items-center gap-2">
-        <span class="w-1.5 h-1.5 rounded-full bg-green-500" />
-        <span>Live</span>
+    <footer class="px-8 py-3 bg-white dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex justify-between text-sm text-gray-400">
+      <span class="font-medium">BitSpace POS</span>
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span>Connected</span>
+        </span>
       </div>
     </footer>
   </div>
@@ -276,26 +328,157 @@ const formatTime = computed(() => {
 /* List animations */
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .list-enter-from {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateX(-30px);
 }
 
 .list-leave-to {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateX(30px);
 }
 
-/* Fade in */
-@keyframes fade-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+.list-move {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.animate-fade-in {
-  animation: fade-in 0.5s ease-out;
+/* Payment Loader */
+.payment-loader {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #d4d4d8;
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success Checkmark Animation */
+.success-checkmark {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+}
+
+.check-icon {
+  width: 140px;
+  height: 140px;
+  position: relative;
+  border-radius: 50%;
+  box-sizing: content-box;
+  border: 5px solid #22c55e;
+}
+
+.check-icon::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: -3px;
+  width: 30px;
+  height: 100px;
+  border-radius: 40% 0 0 40%;
+  transform-origin: 100% 50%;
+  transform: rotate(-45deg);
+  background-color: #f0fdf4;
+}
+
+.dark .check-icon::before {
+  background-color: #030712;
+}
+
+.check-icon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50px;
+  width: 60px;
+  height: 120px;
+  border-radius: 0 60% 60% 0;
+  transform-origin: 0 50%;
+  transform: rotate(-45deg);
+  background-color: #f0fdf4;
+}
+
+.dark .check-icon::after {
+  background-color: #030712;
+}
+
+.icon-line {
+  height: 8px;
+  background-color: #22c55e;
+  display: block;
+  border-radius: 4px;
+  position: absolute;
+  z-index: 10;
+}
+
+.line-tip {
+  width: 40px;
+  left: 22px;
+  top: 76px;
+  transform: rotate(45deg);
+  animation: icon-line-tip 0.75s;
+}
+
+.line-long {
+  width: 70px;
+  right: 12px;
+  top: 62px;
+  transform: rotate(-45deg);
+  animation: icon-line-long 0.75s;
+}
+
+.icon-circle {
+  width: 140px;
+  height: 140px;
+  position: absolute;
+  border-radius: 50%;
+  box-sizing: content-box;
+  top: -8px;
+  left: -8px;
+  border: 5px solid rgba(34, 197, 94, 0.3);
+  animation: circle 0.75s;
+}
+
+.icon-fix {
+  background-color: #f0fdf4;
+  width: 10px;
+  height: 105px;
+  position: absolute;
+  left: 34px;
+  top: 12px;
+  z-index: 1;
+  transform: rotate(-45deg);
+}
+
+.dark .icon-fix {
+  background-color: #030712;
+}
+
+@keyframes icon-line-tip {
+  0% { width: 0; left: 1px; top: 19px; }
+  54% { width: 0; left: 1px; top: 19px; }
+  70% { width: 50px; left: 4px; top: 82px; }
+  84% { width: 25px; left: 18px; top: 71px; }
+  100% { width: 40px; left: 22px; top: 76px; }
+}
+
+@keyframes icon-line-long {
+  0% { width: 0; right: 56px; top: 74px; }
+  65% { width: 0; right: 56px; top: 74px; }
+  84% { width: 75px; right: 2px; top: 60px; }
+  100% { width: 70px; right: 12px; top: 62px; }
+}
+
+@keyframes circle {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
 }
 </style>
