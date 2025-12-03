@@ -191,15 +191,24 @@
           >
             <td class="py-3 px-4">
               <div
-                class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center"
+                class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden"
               >
+                <!-- URL image -->
                 <img
-                  v-if="product.image"
+                  v-if="product.image && product.image.startsWith('http')"
                   :src="product.image"
                   :alt="product.name"
-                  class="w-full h-full object-cover rounded-lg"
+                  class="w-full h-full object-cover"
                 >
-                <Icon
+                <!-- Emoji -->
+                <span
+                  v-else-if="product.image"
+                  class="text-2xl"
+                >
+                  {{ product.image }}
+                </span>
+                <!-- No image -->
+                <UIcon
                   v-else
                   name="i-heroicons-photo"
                   class="w-6 h-6 text-gray-400"
@@ -464,23 +473,47 @@
               </UFormField>
 
               <!-- Image/Emoji (Optional) -->
-              <UFormField label="Image/Emoji" name="image">
-                <div class="flex gap-2">
-                  <UInput
-                    v-model="productForm.image"
-                    placeholder="📦 or image URL"
-                    class="flex-1"
-                  />
-                  <div class="flex gap-1">
-                    <button
-                      v-for="emoji in ['📦', '🍹', '🍜', '🍰', '☕', '🍺', '🍔', '🛒']"
-                      :key="emoji"
-                      type="button"
-                      class="w-8 h-8 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                      @click="productForm.image = emoji"
-                    >
-                      {{ emoji }}
-                    </button>
+              <UFormField :label="$t('products.image') || 'Image'" name="image" class="md:col-span-2">
+                <div class="space-y-3">
+                  <!-- Preview -->
+                  <div class="flex items-center gap-3">
+                    <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <img
+                        v-if="productForm.image && productForm.image.startsWith('http')"
+                        :src="productForm.image"
+                        alt="Preview"
+                        class="w-full h-full object-cover"
+                      >
+                      <span v-else-if="productForm.image" class="text-3xl">{{ productForm.image }}</span>
+                      <UIcon v-else name="i-heroicons-photo" class="w-8 h-8 text-gray-400" />
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">{{ $t('products.imageHint') || 'Select an emoji or paste image URL' }}</p>
+                      <UInput
+                        v-model="productForm.image"
+                        :placeholder="$t('products.imageUrlPlaceholder') || 'https://example.com/image.jpg'"
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <!-- Emoji Quick Select -->
+                  <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ $t('common.quickSelect') || 'Quick Select' }}</p>
+                    <div class="flex flex-wrap gap-1.5">
+                      <button
+                        v-for="emoji in productEmojis"
+                        :key="emoji"
+                        type="button"
+                        class="w-9 h-9 rounded-lg text-xl flex items-center justify-center transition-all"
+                        :class="productForm.image === emoji 
+                          ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25 scale-110 ring-2 ring-primary-500' 
+                          : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'"
+                        @click="productForm.image = emoji"
+                      >
+                        {{ emoji }}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </UFormField>
@@ -1169,6 +1202,14 @@ const deletingCategory = ref<boolean>(false);
 
 // Common icons for categories
 const commonIcons = ['📦', '🍹', '🍜', '🍰', '🍿', '☕', '🍺', '🍔', '🍕', '🌮', '🍣', '🥗', '🍪', '🎂', '🍦', '🧃', '🥤', '🍵', '🛒', '⭐'];
+
+// Product emojis for image field (more comprehensive list)
+const productEmojis = [
+  '📦', '🍹', '🍜', '🍰', '☕', '🍺', '🍔', '🛒',
+  '🍕', '🌮', '🍣', '🥗', '🍪', '🎂', '🍦', '🧃',
+  '🥤', '🍵', '🍿', '🥡', '🍱', '🍛', '🍝', '🥪',
+  '🌭', '🍟', '🥐', '🧁', '🍩', '🥧', '🍫', '🍬',
+];
 
 // Common unit presets
 const unitPresets = [

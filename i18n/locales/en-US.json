@@ -377,7 +377,15 @@
     "noCategories": "No categories yet",
     "noUnits": "No units yet",
     "addCategory": "Add Category",
-    "addUnit": "Add Unit"
+    "addUnit": "Add Unit",
+    "descriptionPlaceholder": "Enter product description",
+    "imageHint": "Select an emoji or paste image URL",
+    "imageUrlPlaceholder": "https://example.com/image.jpg",
+    "skuPlaceholder": "Auto-generated if empty",
+    "pricePlaceholder": "0",
+    "stockPlaceholder": "0",
+    "minStockPlaceholder": "0",
+    "namePlaceholder": "Enter product name"
   },
   "customers": {
     "title": "Customers",
