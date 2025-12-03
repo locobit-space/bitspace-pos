@@ -1320,7 +1320,7 @@ onUnmounted(() => {
             block
             size="lg"
             :disabled="pos.cartItems.value.length === 0"
-            class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white dark:text-black font-semibold shadow-lg shadow-amber-500/25"
+            class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white dark:text-black font-semibold shadow-sm shadow-amber-500/25"
             @click="proceedToPayment('lightning')"
           >
             <span class="flex items-center gap-2">

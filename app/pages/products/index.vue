@@ -330,18 +330,18 @@
 
     <!-- Product Modal -->
     <UModal v-model:open="showProductModal">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-medium">
-              {{
-                selectedProduct?.id
-                  ? $t("products.editProduct")
-                  : $t("products.addProduct")
-              }}
-            </h3>
-          </template>
+      <template #header>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          {{
+            selectedProduct?.id
+              ? $t("products.editProduct")
+              : $t("products.addProduct")
+          }}
+        </h3>
+      </template>
 
+      <template #body>
+        <div class="max-h-[60vh] overflow-y-auto">
           <UForm
             :schema="productSchema"
             :state="productForm"
@@ -533,6 +533,7 @@
               </UFormField>
             </div>
 
+            <!-- Footer Actions inside form for submit -->
             <div class="flex justify-end gap-3 pt-4">
               <UButton
                 color="gray"
@@ -552,143 +553,125 @@
               />
             </div>
           </UForm>
-        </UCard>
+        </div>
       </template>
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="showDeleteModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-medium text-red-600 dark:text-red-400">
-              {{ $t("common.confirmDelete") }}
-            </h3>
-          </template>
+    <UModal v-model:open="showDeleteModal">
+      <template #header>
+        <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">
+          {{ $t("common.confirmDelete") }}
+        </h3>
+      </template>
 
-          <p class="text-gray-600 dark:text-gray-400 mb-4">
-            {{
-              $t("products.deleteConfirmation", { name: productToDelete?.name })
-            }}
-          </p>
+      <template #body>
+        <p class="text-gray-600 dark:text-gray-400">
+          {{ $t("products.deleteConfirmation", { name: productToDelete?.name }) }}
+        </p>
+      </template>
 
-          <div class="flex justify-end gap-3">
-            <UButton
-              color="gray"
-              variant="outline"
-              :label="$t('common.cancel')"
-              @click="showDeleteModal = false"
-            />
-            <UButton
-              color="red"
-              :loading="deleting"
-              :label="$t('common.delete')"
-              @click="confirmDelete"
-            />
-          </div>
-        </UCard>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton
+            color="gray"
+            variant="outline"
+            :label="$t('common.cancel')"
+            @click="showDeleteModal = false"
+          />
+          <UButton
+            color="red"
+            :loading="deleting"
+            :label="$t('common.delete')"
+            @click="confirmDelete"
+          />
+        </div>
       </template>
     </UModal>
 
     <!-- Product View Modal -->
-    <UModal v-model:open="showViewModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-medium">
-              {{ $t("products.viewProduct") }}
-            </h3>
-          </template>
+    <UModal v-model:open="showViewModal">
+      <template #header>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          {{ $t("products.viewProduct") }}
+        </h3>
+      </template>
 
-          <div v-if="viewingProduct" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {{ $t("products.name") }}
-                </label>
-                <p class="text-gray-900 dark:text-white">
-                  {{ viewingProduct.name }}
-                </p>
-              </div>
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {{ $t("products.sku") }}
-                </label>
-                <p class="text-gray-900 dark:text-white">
-                  {{ viewingProduct.sku }}
-                </p>
-              </div>
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {{ $t("products.category") }}
-                </label>
-                <p class="text-gray-900 dark:text-white">
-                  {{ getCategoryName(viewingProduct.categoryId) }}
-                </p>
-              </div>
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {{ $t("products.price") }}
-                </label>
-                <p class="text-gray-900 dark:text-white">
-                  {{ formatCurrency(viewingProduct.price) }}
-                </p>
-              </div>
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {{ $t("products.stock") }}
-                </label>
-                <p class="text-gray-900 dark:text-white">
-                  {{ viewingProduct.stock }}
-                  {{ getUnitSymbol(viewingProduct.unitId) }}
-                </p>
-              </div>
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {{ $t("common.status") }}
-                </label>
-                <UBadge
-                  :color="viewingProduct.status === 'active' ? 'green' : 'gray'"
-                  :label="$t(`common.${viewingProduct.status}`)"
-                />
-              </div>
-            </div>
-
-            <div v-if="viewingProduct.description">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                {{ $t("products.description") }}
+      <template #body>
+        <div v-if="viewingProduct" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {{ $t("products.name") }}
               </label>
               <p class="text-gray-900 dark:text-white">
-                {{ viewingProduct.description }}
+                {{ viewingProduct.name }}
               </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {{ $t("products.sku") }}
+              </label>
+              <p class="text-gray-900 dark:text-white">
+                {{ viewingProduct.sku || '-' }}
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {{ $t("products.category") }}
+              </label>
+              <p class="text-gray-900 dark:text-white">
+                {{ getCategoryName(viewingProduct.categoryId) }}
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {{ $t("products.price") }}
+              </label>
+              <p class="text-gray-900 dark:text-white">
+                {{ formatCurrency(viewingProduct.price) }}
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {{ $t("products.stock") }}
+              </label>
+              <p class="text-gray-900 dark:text-white">
+                {{ viewingProduct.stock }}
+                {{ getUnitSymbol(viewingProduct.unitId) }}
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {{ $t("common.status") }}
+              </label>
+              <UBadge
+                :color="viewingProduct.status === 'active' ? 'green' : 'gray'"
+                :label="$t(`common.${viewingProduct.status}`)"
+              />
             </div>
           </div>
 
-          <template #footer>
-            <div class="flex justify-end">
-              <UButton
-                color="gray"
-                variant="outline"
-                :label="$t('common.close')"
-                @click="showViewModal = false"
-              />
-            </div>
-          </template>
-        </UCard>
+          <div v-if="viewingProduct.description">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {{ $t("products.description") }}
+            </label>
+            <p class="text-gray-900 dark:text-white">
+              {{ viewingProduct.description }}
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end">
+          <UButton
+            color="gray"
+            variant="outline"
+            :label="$t('common.close')"
+            @click="showViewModal = false"
+          />
+        </div>
       </template>
     </UModal>
 
