@@ -29,6 +29,43 @@
           </div>
         </div>
 
+        <!-- Account Switcher -->
+        <div v-if="otherAccounts.length > 0" class="py-3 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-2">
+            {{ $t('account.switchAccount') || 'Switch Account' }}
+          </p>
+          <div class="space-y-1 max-h-32 overflow-y-auto">
+            <button
+              v-for="account in otherAccounts"
+              :key="account.pubkey"
+              class="flex items-center gap-3 w-full px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              @click="switchAccount(account.pubkey)"
+            >
+              <UAvatar :alt="account.displayName || account.name || 'Account'" size="sm" />
+              <div class="flex-1 min-w-0 text-left">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                  {{ account.displayName || account.name || 'Account' }}
+                </p>
+                <p class="text-xs text-gray-400 truncate">
+                  {{ account.pubkey.slice(0, 8) }}...{{ account.pubkey.slice(-8) }}
+                </p>
+              </div>
+              <UIcon name="i-heroicons-arrow-right-circle" class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Add Account Button -->
+        <div class="py-2 border-b border-gray-200 dark:border-gray-700">
+          <NuxtLink
+            to="/auth/signin"
+            class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <UIcon name="i-heroicons-plus-circle" class="w-5 h-5" />
+            <span class="text-sm">{{ $t('account.addAccount') || 'Add Account' }}</span>
+          </NuxtLink>
+        </div>
+
         <!-- Quick Settings -->
         <div class="py-4 border-b border-gray-200 dark:border-gray-700 space-y-4">
           <!-- Dark/Light Mode Toggle -->
@@ -109,10 +146,40 @@
 const { t } = useI18n()
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
+const nostrStorage = useNostrStorage()
+const auth = useAuth()
+
+// Load accounts on mount
+const allAccounts = ref<Array<{ pubkey: string; displayName?: string; name?: string; userKeys?: unknown }>>([])
+const currentPubkey = ref<string>('')
+
+onMounted(() => {
+  // Load all accounts
+  allAccounts.value = nostrStorage.loadAllAccounts()
+  
+  // Get current user
+  const { userInfo } = nostrStorage.loadCurrentUser()
+  if (userInfo?.pubkey) {
+    currentPubkey.value = userInfo.pubkey
+  }
+})
+
+// Other accounts (excluding current)
+const otherAccounts = computed(() => {
+  return allAccounts.value.filter(acc => acc.pubkey !== currentPubkey.value)
+})
 
 // User info from auth
-const userName = computed(() => 'nostr:243a7ccb...')
-const userIdentifier = computed(() => '243a7ccb...bd005eaf')
+const userName = computed(() => {
+  const { userInfo } = nostrStorage.loadCurrentUser()
+  return userInfo?.displayName || userInfo?.name || 'nostr:' + (currentPubkey.value?.slice(0, 8) || '...')
+})
+
+const userIdentifier = computed(() => {
+  if (!currentPubkey.value) return '...'
+  return currentPubkey.value.slice(0, 8) + '...' + currentPubkey.value.slice(-8)
+})
+
 const authMethod = computed(() => 'nostr' as 'nostr' | 'password' | 'pin' | null)
 
 // Auth method display
@@ -192,7 +259,27 @@ onMounted(() => {
 
 // Sign out
 const signOut = async () => {
-  // TODO: Implement sign out logic
+  nostrStorage.clearUserData()
   await navigateTo('/auth/signin')
+}
+
+// Switch account
+const switchAccount = async (pubkey: string) => {
+  const account = allAccounts.value.find(acc => acc.pubkey === pubkey)
+  if (account) {
+    // Save as current user
+    nostrStorage.saveUser({
+      pubkey: account.pubkey,
+      displayName: account.displayName,
+      name: account.name,
+      userKeys: account.userKeys,
+    })
+    
+    // Update current pubkey
+    currentPubkey.value = pubkey
+    
+    // Reload the page to refresh all data
+    window.location.reload()
+  }
 }
 </script>

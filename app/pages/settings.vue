@@ -74,6 +74,7 @@ const navItems = computed(() => [
   },
   {
     label: t('settings.lightning.title'),
+    
     to: '/settings/lightning',
     icon: 'i-heroicons-bolt',
   },

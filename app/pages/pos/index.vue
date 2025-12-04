@@ -650,17 +650,17 @@ onUnmounted(() => {
         <div class="flex items-center justify-between">
           <!-- Logo & Status -->
           <div class="flex items-center gap-2 sm:gap-4">
-            <div class="flex items-center gap-2">
+            <NuxtLink to="/" class="flex items-center gap-2">
               <div>
                 <div
-                  class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-amber-500/20"
+                  class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-600 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-amber-500/20"
                 >
                   ⚡
                 </div>
               </div>
               <div class="hidden sm:block">
                 <h1
-                  class="text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent"
+                  class="text-lg font-bold bg-linear-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent"
                 >
                   BitSpace POS
                 </h1>
@@ -668,7 +668,7 @@ onUnmounted(() => {
                   Lightning Powered
                 </p>
               </div>
-            </div>
+            </NuxtLink>
 
             <!-- Connection Status -->
             <div

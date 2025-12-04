@@ -492,7 +492,7 @@
                 {{ new Date(template.createdAt).toLocaleDateString() }}
               </div>
             </div>
-            <UDropdown :items="getTemplateActions(template)">
+            <UDropdownMenu :items="getTemplateActions(template)">
               <UButton
                 icon="i-heroicons-ellipsis-vertical"
                 color="neutral"
@@ -500,7 +500,7 @@
                 size="xs"
                 @click.stop
               />
-            </UDropdown>
+            </UDropdownMenu>
           </div>
           <div v-if="template.isDefault" class="mt-2">
             <UBadge color="primary" variant="subtle" size="xs">

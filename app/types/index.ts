@@ -367,6 +367,10 @@ export interface LoyaltyMember {
   address?: string;
   notes?: string;
   tags?: string[];
+  // Credit/Payment terms
+  defaultPaymentTermId?: string; // Reference to PaymentTerm
+  creditLimit?: number; // Maximum credit allowed
+  currentBalance?: number; // Outstanding balance
   // Loyalty data
   points: number;
   tier: 'bronze' | 'silver' | 'gold' | 'platinum';
@@ -939,6 +943,13 @@ export interface SecuritySettings {
   auditLogging: boolean;
 }
 
+export interface PaymentTerm {
+  id: string;
+  name: string;
+  days: number;
+  description: string;
+}
+
 export interface GeneralSettings {
   storeName: string;
   storeAddress?: string;
@@ -952,6 +963,7 @@ export interface GeneralSettings {
   receiptFooter?: string;
   language: string;
   timezone: string;
+  paymentTerms?: PaymentTerm[];
 }
 
 export interface StoreSettings {

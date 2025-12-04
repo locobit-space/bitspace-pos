@@ -209,7 +209,18 @@
               </div>
 
               <!-- Branches Table -->
-              <div class="overflow-x-auto">
+              <div v-if="loadingBranches" class="text-center py-8">
+                <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin text-gray-400" />
+                <p class="mt-2 text-gray-500">{{ $t('common.loading') }}</p>
+              </div>
+              
+              <div v-else-if="branches.length === 0" class="text-center py-8">
+                <UIcon name="i-heroicons-building-storefront" class="w-12 h-12 text-gray-300 mx-auto" />
+                <p class="mt-2 text-gray-500">{{ $t('settings.branches.noBranches') || 'No branches yet' }}</p>
+                <p class="text-sm text-gray-400">{{ $t('settings.branches.addFirst') || 'Add your first branch to get started' }}</p>
+              </div>
+
+              <div v-else class="overflow-x-auto">
                 <table class="w-full">
                   <thead>
                     <tr class="border-b border-gray-200 dark:border-gray-700">
@@ -226,12 +237,7 @@
                       <th
                         class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
                       >
-                        {{ $t("settings.branches.phone") }}
-                      </th>
-                      <th
-                        class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                      >
-                        {{ $t("settings.branches.status") }}
+                        {{ $t("settings.branches.address") || 'Address' }}
                       </th>
                       <th
                         class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
@@ -251,22 +257,15 @@
                           <p class="font-medium text-gray-900 dark:text-white">
                             {{ branch.name }}
                           </p>
-                          <p class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ branch.address }}
-                          </p>
                         </div>
                       </td>
-                      <td class="py-3 px-4 text-gray-900 dark:text-white">
-                        {{ branch.code }}
-                      </td>
-                      <td class="py-3 px-4 text-gray-900 dark:text-white">
-                        {{ branch.phone }}
-                      </td>
                       <td class="py-3 px-4">
-                        <UBadge
-                          :color="branch.status === 'active' ? 'green' : 'red'"
-                          :label="$t(`common.${branch.status}`)"
-                        />
+                        <UBadge color="gray" variant="soft">
+                          {{ branch.code }}
+                        </UBadge>
+                      </td>
+                      <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
+                        {{ branch.address || '-' }}
                       </td>
                       <td class="py-3 px-4">
                         <div class="flex space-x-2">
@@ -281,7 +280,7 @@
                             size="sm"
                             variant="ghost"
                             color="red"
-                            @click="branch.id !== null && deleteBranch(branch.id)"
+                            @click="branch.id && deleteBranch(branch.id)"
                           />
                         </div>
                       </td>
@@ -494,25 +493,8 @@
                 />
               </UFormField>
 
-              <UFormField :label="$t('settings.branches.phone')" name="phone">
-                <UInput
-                  v-model="branchModal.data.phone"
-                  :placeholder="$t('settings.branches.phone_placeholder')"
-                  class="w-full"
-                />
-              </UFormField>
-
-              <UFormField :label="$t('settings.branches.email')" name="email">
-                <UInput
-                  v-model="branchModal.data.email"
-                  type="email"
-                  :placeholder="$t('settings.branches.email_placeholder')"
-                  class="w-full"
-                />
-              </UFormField>
-
               <UFormField
-                :label="$t('settings.branches.address')"
+                :label="$t('settings.branches.address') || 'Address'"
                 name="address"
               >
                 <UTextarea
@@ -523,13 +505,18 @@
                 />
               </UFormField>
 
-              <UFormField :label="$t('settings.branches.status')" name="status">
-                <USelect
-                  v-model="branchModal.data.status"
-                  :items="statusOptions"
-                  label-key="name"
-                  value-key="value"
+              <UFormField
+                :label="$t('settings.branches.bolt12') || 'BOLT12 Offer'"
+                name="bolt12Offer"
+              >
+                <UInput
+                  v-model="branchModal.data.bolt12Offer"
+                  placeholder="lno1..."
+                  class="w-full"
                 />
+                <template #hint>
+                  <span class="text-xs text-gray-500">{{ $t('settings.branches.bolt12Hint') || 'Lightning BOLT12 offer for this branch' }}</span>
+                </template>
               </UFormField>
             </div>
 
@@ -657,10 +644,8 @@ const schema = z.object({
 const branchSchema = z.object({
   name: z.string().min(1, t("validation.required")),
   code: z.string().min(1, t("validation.required")),
-  phone: z.string().optional(),
-  email: z.string().email(t("validation.email")).optional(),
   address: z.string().optional(),
-  status: z.string().min(1, t("validation.required")),
+  bolt12Offer: z.string().optional(),
 });
 
 // Form state
@@ -754,38 +739,15 @@ const statusOptions = [
   { value: "inactive", name: t("common.inactive") },
 ];
 
-// Branch type definition
-interface Branch {
-  id: number | null;
-  name: string;
-  code: string;
-  phone: string;
-  email: string;
-  address: string;
-  status: string;
-}
+// Branch type definition - using type from ~/types
+import type { Branch } from "~/types";
 
-// Branches data
-const branches = ref<Branch[]>([
-  {
-    id: 1,
-    name: "Main Branch",
-    code: "MAIN",
-    phone: "+856 21 123456",
-    email: "main@company.com",
-    address: "Vientiane Capital, Laos",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Branch 2",
-    code: "BR02",
-    phone: "+856 21 654321",
-    email: "branch2@company.com",
-    address: "Luang Prabang, Laos",
-    status: "active",
-  },
-]);
+// Nostr Data Layer
+const nostrData = useNostrData();
+
+// Branches data - loaded from Nostr
+const branches = ref<Branch[]>([]);
+const loadingBranches = ref(false);
 
 // Branch modal state
 const branchModal = reactive<{
@@ -798,14 +760,28 @@ const branchModal = reactive<{
   isEdit: false,
   saving: false,
   data: {
-    id: null,
+    id: "",
     name: "",
     code: "",
-    phone: "",
-    email: "",
     address: "",
-    status: "active",
   },
+});
+
+// Load branches from Nostr on mount
+const loadBranches = async () => {
+  loadingBranches.value = true;
+  try {
+    const data = await nostrData.getAllBranches();
+    branches.value = data;
+  } catch (err) {
+    console.error("Failed to load branches:", err);
+  } finally {
+    loadingBranches.value = false;
+  }
+};
+
+onMounted(() => {
+  loadBranches();
 });
 
 function onLanguageChange() {}
@@ -838,13 +814,10 @@ const saveSettings = () => {
 const openBranchModal = () => {
   branchModal.isEdit = false;
   branchModal.data = {
-    id: null,
+    id: "",
     name: "",
     code: "",
-    phone: "",
-    email: "",
     address: "",
-    status: "active",
   };
   branchModal.open = true;
 };
@@ -858,22 +831,16 @@ const editBranch = (branch: Branch) => {
 const saveBranch = async () => {
   branchModal.saving = true;
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (branchModal.isEdit) {
-      // Update existing branch
-      const index = branches.value.findIndex(
-        (b) => b.id === branchModal.data.id
-      );
-      if (index !== -1) {
-        branches.value[index] = { ...branchModal.data };
-      }
-    } else {
-      // Add new branch
-      branchModal.data.id = Date.now();
-      branches.value.push({ ...branchModal.data });
+    // Generate ID for new branches
+    if (!branchModal.isEdit || !branchModal.data.id) {
+      branchModal.data.id = crypto.randomUUID();
     }
+
+    // Save to Nostr
+    await nostrData.saveBranch(branchModal.data);
+
+    // Reload branches
+    await loadBranches();
 
     branchModal.open = false;
 
@@ -886,17 +853,21 @@ const saveBranch = async () => {
     });
   } catch (error) {
     console.error("Save branch error:", error);
+    const toast = useToast();
+    toast.add({
+      title: t("common.error"),
+      description: String(error),
+      color: "red",
+    });
   } finally {
     branchModal.saving = false;
   }
 };
 
-const deleteBranch = async (branchId: number) => {
+const deleteBranch = async (branchId: string) => {
   if (confirm(t("common.confirm_delete"))) {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+      // For now, filter locally - TODO: implement delete in Nostr
       branches.value = branches.value.filter((b) => b.id !== branchId);
 
       // Show success notification

@@ -1,10 +1,11 @@
 <!-- pages/customers/index.vue -->
 <!-- 👥 Customer Management with Nostr + Dexie Integration -->
 <script setup lang="ts">
-import type { LoyaltyMember } from "~/types";
+import type { LoyaltyMember, PaymentTerm } from "~/types";
 
 const { t } = useI18n();
 const toast = useToast();
+const nostrData = useNostrData();
 
 // Permissions
 const { canViewCustomers, canEditCustomers } = usePermissions();
@@ -17,9 +18,44 @@ if (!canViewCustomers.value) {
 // Use the customers composable with Nostr/Dexie integration
 const customersStore = useCustomers();
 
+// Payment terms
+const paymentTerms = ref<PaymentTerm[]>([]);
+const loadingTerms = ref(false);
+
+const loadPaymentTerms = async () => {
+  loadingTerms.value = true;
+  try {
+    const settings = await nostrData.getSettings();
+    if (settings?.general?.paymentTerms?.length) {
+      paymentTerms.value = settings.general.paymentTerms;
+    } else {
+      paymentTerms.value = [
+        { id: '1', name: 'Cash', days: 0, description: 'Payment on delivery' },
+        { id: '2', name: 'Net 7', days: 7, description: 'Payment due within 7 days' },
+        { id: '3', name: 'Net 30', days: 30, description: 'Payment due within 30 days' },
+      ];
+    }
+  } catch {
+    paymentTerms.value = [];
+  } finally {
+    loadingTerms.value = false;
+  }
+};
+
+const paymentTermOptions = computed(() => [
+  { value: '', label: t('common.none') || 'None' },
+  ...paymentTerms.value.map(term => ({
+    value: term.id,
+    label: `${term.name} (${term.days} days)`,
+  })),
+]);
+
 // Initialize on mount
 onMounted(async () => {
-  await customersStore.init();
+  await Promise.all([
+    customersStore.init(),
+    loadPaymentTerms(),
+  ]);
 });
 
 // Filters
@@ -79,6 +115,8 @@ const customerForm = ref({
   address: "",
   notes: "",
   tags: [] as string[],
+  defaultPaymentTermId: "",
+  creditLimit: 0,
 });
 
 const formatCurrency = (amount: number): string => {
@@ -111,6 +149,8 @@ const openCustomerModal = (customer?: LoyaltyMember) => {
       address: customer.address || "",
       notes: customer.notes || "",
       tags: [...(customer.tags || [])],
+      defaultPaymentTermId: customer.defaultPaymentTermId || "",
+      creditLimit: customer.creditLimit || 0,
     };
   } else {
     selectedCustomer.value = null;
@@ -123,6 +163,8 @@ const openCustomerModal = (customer?: LoyaltyMember) => {
       address: "",
       notes: "",
       tags: [],
+      defaultPaymentTermId: "",
+      creditLimit: 0,
     };
   }
   showCustomerModal.value = true;
@@ -151,6 +193,8 @@ const saveCustomer = async () => {
         address: customerForm.value.address || undefined,
         notes: customerForm.value.notes || undefined,
         tags: customerForm.value.tags,
+        defaultPaymentTermId: customerForm.value.defaultPaymentTermId || undefined,
+        creditLimit: customerForm.value.creditLimit || undefined,
       });
       toast.add({
         title: t('common.success'),
@@ -169,6 +213,8 @@ const saveCustomer = async () => {
           address: customerForm.value.address || undefined,
           notes: customerForm.value.notes || undefined,
           tags: customerForm.value.tags,
+          defaultPaymentTermId: customerForm.value.defaultPaymentTermId || undefined,
+          creditLimit: customerForm.value.creditLimit || undefined,
         });
         toast.add({
           title: t('common.success'),
@@ -475,6 +521,34 @@ const stats = computed(() => customersStore.getCustomerStats());
               <UFormField :label="t('customers.address')" class="md:col-span-2">
                 <UTextarea v-model="customerForm.address" :placeholder="t('customers.addressPlaceholder')" :rows="2" />
               </UFormField>
+
+              <!-- Credit & Payment Terms Section -->
+              <div class="md:col-span-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{{ t('customers.creditSettings') || 'Credit Settings' }}</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <UFormField :label="t('settings.terms.title') || 'Payment Terms'">
+                    <USelect
+                      v-model="customerForm.defaultPaymentTermId"
+                      :items="paymentTermOptions"
+                      value-key="value"
+                      label-key="label"
+                      :placeholder="t('common.select') || 'Select'"
+                    />
+                  </UFormField>
+
+                  <UFormField :label="t('customers.creditLimit') || 'Credit Limit'">
+                    <UInput
+                      v-model.number="customerForm.creditLimit"
+                      type="number"
+                      :placeholder="'0'"
+                    >
+                      <template #trailing>
+                        <span class="text-xs text-gray-400">LAK</span>
+                      </template>
+                    </UInput>
+                  </UFormField>
+                </div>
+              </div>
 
               <UFormField :label="t('customers.notes')" class="md:col-span-2">
                 <UTextarea v-model="customerForm.notes" :placeholder="t('customers.notesPlaceholder')" :rows="2" />
