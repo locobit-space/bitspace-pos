@@ -382,13 +382,18 @@ export function useNostrData() {
     const results: Array<{ event: Event; data: T }> = [];
 
     for (const event of events) {
-      const isEncrypted = event.tags.find(t => t[0] === 'encrypted')?.[1] === 'true';
-      const data = isEncrypted 
-        ? await decryptData<T>(event.content)
-        : JSON.parse(event.content);
+      try {
+        const isEncrypted = event.tags.find(t => t[0] === 'encrypted')?.[1] === 'true';
+        const data = isEncrypted 
+          ? await decryptData<T>(event.content)
+          : JSON.parse(event.content);
 
-      if (data) {
-        results.push({ event, data });
+        // Skip if no data or no id (required for DB storage)
+        if (data && (data as { id?: string }).id) {
+          results.push({ event, data });
+        }
+      } catch {
+        // Skip invalid JSON
       }
     }
 

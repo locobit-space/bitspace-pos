@@ -195,6 +195,7 @@ export function useProductsStore() {
   }
 
   async function saveProductToLocal(product: Product): Promise<void> {
+    if (!product.id) return; // Skip invalid products
     const record: ProductRecord = {
       id: product.id,
       data: JSON.stringify(product),
@@ -211,6 +212,7 @@ export function useProductsStore() {
   }
 
   async function saveCategoryToLocal(category: Category): Promise<void> {
+    if (!category.id) return; // Skip invalid categories
     const record: CategoryRecord = {
       id: category.id,
       name: category.name,
@@ -223,6 +225,7 @@ export function useProductsStore() {
   }
 
   async function saveUnitToLocal(unit: Unit): Promise<void> {
+    if (!unit.id) return; // Skip invalid units
     const record: UnitRecord = {
       id: unit.id,
       name: unit.name,

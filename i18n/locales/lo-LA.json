@@ -1169,7 +1169,8 @@
     "viewAll": "ເບິ່ງທັງໝົດ",
     "save_all": "ບັນທຶກທັງໝົດ",
     "email": "ອີເມວ",
-    "confirm_delete": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບລາຍການນີ້?"
+    "confirm_delete": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບລາຍການນີ້?",
+    "current": "ປັດຈຸບັນ"
   },
   "account": {
     "settings": "ການຕັ້ງຄ່າບັນຊີ",
@@ -1224,6 +1225,9 @@
     "quiet_hours_start": "ເວລາເລີ່ມງຽບ",
     "quiet_hours_end": "ເວລາສິ້ນສຸດງຽບ",
     "change_avatar": "ປ່ຽນຮູບໂປຣໄຟລ໌",
-    "choose_file": "ເລືອກໄຟລ໌"
+    "choose_file": "ເລືອກໄຟລ໌",
+    "switch_account": "ສະຫຼັບບັນຊີ",
+    "saved_accounts": "ບັນຊີທີ່ບັນທຶກໄວ້",
+    "add_account": "ເພີ່ມບັນຊີ"
   }
 }

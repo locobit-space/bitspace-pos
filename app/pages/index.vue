@@ -565,7 +565,7 @@ onMounted(async () => {
                     <UIcon name="i-heroicons-receipt-percent" class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div>
-                    <p class="text-sm text-gray-900 dark:text-white">#{{ order.id.slice(-6).toUpperCase() }}</p>
+                    <p class="text-sm text-gray-900 dark:text-white">#{{ order.id?.slice(-6).toUpperCase() || '------' }}</p>
                     <p class="text-[10px] text-gray-400">{{ formatTime(order.date) }}</p>
                   </div>
                 </div>

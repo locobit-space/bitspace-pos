@@ -1404,7 +1404,7 @@ onUnmounted(() => {
             block
             size="lg"
             :disabled="pos.cartItems.value.length === 0"
-            class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white dark:text-black font-semibold shadow-sm shadow-amber-500/25"
+            class="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white dark:text-black font-semibold shadow-sm shadow-amber-500/25"
             @click="proceedToPayment('lightning')"
           >
             <span class="flex items-center gap-2">
@@ -1487,7 +1487,7 @@ onUnmounted(() => {
                 :key="type.value"
                 class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
                 :class="pos.orderType.value === type.value 
-                  ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white' 
+                  ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white' 
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
                 @click="pos.setOrderType(type.value)"
               >
@@ -1571,7 +1571,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Cart Footer - Glass effect -->
-          <div class="px-5 py-4 bg-gradient-to-t from-white via-white to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900/80 border-t border-gray-100 dark:border-gray-800">
+          <div class="px-5 py-4 bg-linear-to-t from-white via-white to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900/80 border-t border-gray-100 dark:border-gray-800">
             <!-- Summary -->
             <div class="flex justify-between items-end mb-4">
               <div>
@@ -1599,7 +1599,7 @@ onUnmounted(() => {
               <UButton
                 color="primary"
                 size="lg"
-                class="col-span-3 !bg-gradient-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white font-semibold shadow-lg shadow-amber-500/25"
+                class="col-span-3 !bg-linear-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white font-semibold shadow-lg shadow-amber-500/25"
                 :disabled="pos.cartItems.value.length === 0"
                 @click="showMobileCart = false; proceedToPayment()"
               >

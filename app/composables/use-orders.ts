@@ -128,6 +128,7 @@ export function useOrders() {
    * Save order to local DB
    */
   async function saveToLocal(order: Order): Promise<void> {
+    if (!order.id) return; // Skip invalid orders
     const localOrder: LocalOrder = {
       id: order.id,
       data: JSON.stringify(order),

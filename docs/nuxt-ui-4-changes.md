@@ -66,6 +66,8 @@ This document tracks component naming changes from Nuxt UI 3 to Nuxt UI 4 for re
 ## Files Updated
 
 - `app/pages/settings/receipt.vue` - Changed `UDropdown` to `UDropdownMenu` (2024-12-04)
+- `app/pages/products/[id]/index.vue` - Changed `UToggle` to `USwitch` (11 instances) (2024-12-04)
+- `app/pages/settings/users.vue` - Changed `UToggle` to `USwitch` (1 instance) (2024-12-04)
 
 ## Reference Links
 

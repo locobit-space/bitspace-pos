@@ -1508,7 +1508,8 @@
     "viewAll": "View All",
     "save_all": "Save All",
     "email": "Email",
-    "confirm_delete": "Are you sure you want to delete this item?"
+    "confirm_delete": "Are you sure you want to delete this item?",
+    "current": "Current"
   },
   "pos": {
     "shift": {
@@ -1737,6 +1738,9 @@
     "quiet_hours_start": "Quiet Hours Start",
     "quiet_hours_end": "Quiet Hours End",
     "change_avatar": "Change Avatar",
-    "choose_file": "Choose File"
+    "choose_file": "Choose File",
+    "switch_account": "Switch Account",
+    "saved_accounts": "Saved Accounts",
+    "add_account": "Add Account"
   }
 }

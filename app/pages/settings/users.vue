@@ -442,7 +442,7 @@
 
             <!-- Status -->
             <UFormField :label="$t('settings.users.status')">
-              <UToggle
+              <USwitch
                 v-model="userForm.isActive"
                 :label="userForm.isActive ? $t('common.active') : $t('common.inactive')"
               />

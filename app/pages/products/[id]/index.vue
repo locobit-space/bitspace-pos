@@ -363,23 +363,23 @@ const addVariant = () => {
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-gray-700 dark:text-gray-300">{{ t('products.active') || 'Active' }}</span>
-              <UToggle v-if="isEditing" v-model="editForm.isActive" />
-              <UToggle v-else :model-value="product.isActive" disabled />
+              <USwitch v-if="isEditing" v-model="editForm.isActive" />
+              <USwitch v-else :model-value="product.isActive" disabled />
             </div>
             <div class="flex items-center justify-between">
               <span class="text-gray-700 dark:text-gray-300">{{ t('products.featured') || 'Featured' }}</span>
-              <UToggle v-if="isEditing" v-model="editForm.isFeatured" />
-              <UToggle v-else :model-value="product.isFeatured" disabled />
+              <USwitch v-if="isEditing" v-model="editForm.isFeatured" />
+              <USwitch v-else :model-value="product.isFeatured" disabled />
             </div>
             <div class="flex items-center justify-between">
               <span class="text-gray-700 dark:text-gray-300">{{ t('products.availablePOS') || 'POS' }}</span>
-              <UToggle v-if="isEditing" v-model="editForm.isPOSAvailable" />
-              <UToggle v-else :model-value="product.isPOSAvailable" disabled />
+              <USwitch v-if="isEditing" v-model="editForm.isPOSAvailable" />
+              <USwitch v-else :model-value="product.isPOSAvailable" disabled />
             </div>
             <div class="flex items-center justify-between">
               <span class="text-gray-700 dark:text-gray-300">{{ t('products.availableOnline') || 'Online' }}</span>
-              <UToggle v-if="isEditing" v-model="editForm.isOnlineAvailable" />
-              <UToggle v-else :model-value="product.isOnlineAvailable" disabled />
+              <USwitch v-if="isEditing" v-model="editForm.isOnlineAvailable" />
+              <USwitch v-else :model-value="product.isOnlineAvailable" disabled />
             </div>
           </div>
         </UCard>
@@ -471,7 +471,7 @@ const addVariant = () => {
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <span class="text-gray-700 dark:text-gray-300">{{ t('inventory.trackInventory') || 'Track Inventory' }}</span>
-              <UToggle v-model="product.trackInventory" />
+              <USwitch v-model="product.trackInventory" />
             </div>
             <UFormField :label="t('inventory.lowStockThreshold') || 'Low Stock Alert'">
               <UInput v-model="product.lowStockThreshold" type="number" />
@@ -517,7 +517,7 @@ const addVariant = () => {
                 <UInput v-model="product.taxRate" type="number" />
               </UFormField>
               <UFormField :label="t('products.taxIncluded') || 'Tax Included'">
-                <UToggle v-model="product.taxIncluded" />
+                <USwitch v-model="product.taxIncluded" />
               </UFormField>
             </div>
           </div>

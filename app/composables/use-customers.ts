@@ -79,6 +79,7 @@ export function useCustomers() {
   }
 
   async function saveToLocal(customer: LoyaltyMember): Promise<void> {
+    if (!customer.id) return; // Skip invalid customers
     const record: CustomerRecord = {
       id: customer.id,
       nostrPubkey: customer.nostrPubkey,
