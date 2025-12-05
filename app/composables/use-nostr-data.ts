@@ -4,7 +4,7 @@
 // Uses centralized useEncryption module for all crypto operations
 // ============================================
 
-import { nip04, nip44, finalizeEvent, type UnsignedEvent, type Event } from 'nostr-tools';
+import { finalizeEvent, type UnsignedEvent, type Event } from 'nostr-tools';
 import type { 
   Product, 
   Category, 
@@ -73,8 +73,9 @@ export const NOSTR_KINDS = {
 // 🔑 ENCRYPTION HELPERS
 // ============================================
 
-interface EncryptedPayload {
-  v: number;           // Version (1 = NIP-04, 2 = NIP-44)
+// Encryption payload structure for versioned encryption
+interface _EncryptedPayload {
+  v: number;           // Version (1 = NIP-04, 2 = NIP-44, 3 = AES-256-GCM)
   ct: string;          // Ciphertext
   iv?: string;         // IV for NIP-04
 }
@@ -91,22 +92,59 @@ export function useNostrData() {
   const syncStatus = ref<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   const lastSyncAt = ref<string | null>(null);
 
-  // Get current user's keys
-  const getUserKeys = (): { pubkey: string; privkey: string } | null => {
+  // Get current user's keys (pubkey required, privkey optional for NIP-07 users)
+  const getUserKeys = (): { pubkey: string; privkey: string | null } | null => {
     if (!import.meta.client) return null;
     
+    // 1. Try nostrUser localStorage (users who logged in with nsec)
     const stored = localStorage.getItem('nostrUser');
-    if (!stored) return null;
-    
-    try {
-      const user = JSON.parse(stored);
-      return {
-        pubkey: user.pubkey || user.publicKey,
-        privkey: user.privkey || user.privateKey || user.nsec,
-      };
-    } catch {
-      return null;
+    if (stored) {
+      try {
+        const user = JSON.parse(stored);
+        const pubkey = user.pubkey || user.publicKey;
+        const privkey = user.privkey || user.privateKey || user.nsec;
+        if (pubkey) {
+          return { pubkey, privkey: privkey || null };
+        }
+      } catch {
+        // Continue to fallback
+      }
     }
+    
+    // 2. Try nostr-pubkey cookie (for NIP-07 extension users)
+    const nostrCookie = useCookie('nostr-pubkey');
+    if (nostrCookie.value) {
+      return { pubkey: nostrCookie.value, privkey: null };
+    }
+    
+    // 3. Try auth state (bitspace_current_user)
+    const authState = localStorage.getItem('bitspace_current_user');
+    if (authState) {
+      try {
+        const state = JSON.parse(authState);
+        const pubkey = state.user?.nostrPubkey;
+        if (pubkey) {
+          return { pubkey, privkey: null };
+        }
+      } catch {
+        // Continue
+      }
+    }
+    
+    // 4. Try nostr_user_profile
+    const profile = localStorage.getItem('nostr_user_profile');
+    if (profile) {
+      try {
+        const parsed = JSON.parse(profile);
+        if (parsed.pubkey) {
+          return { pubkey: parsed.pubkey, privkey: null };
+        }
+      } catch {
+        // Fall through
+      }
+    }
+    
+    return null;
   };
 
   // ============================================
@@ -116,11 +154,13 @@ export function useNostrData() {
   /**
    * Encrypt data for Nostr storage (self-encryption using own keys)
    * Uses the centralized encryption module with NIP-44 preferred
+   * For NIP-07 users (no privkey), falls back to NIP-07 extension or local AES
    */
   async function encryptData(data: unknown): Promise<string> {
     const keys = getUserKeys();
+    
+    // No keys at all - use local AES encryption
     if (!keys) {
-      // No keys available - use local AES encryption
       const result = await encryption.encrypt(data, { algorithm: 'aes-256-gcm' });
       if (result.success && result.data) {
         return JSON.stringify({ v: 3, ...result.data }); // v3 = local AES
@@ -128,43 +168,62 @@ export function useNostrData() {
       return JSON.stringify(data);
     }
 
-    // Use centralized encryption module for Nostr
-    try {
+    // If we have privkey, use direct Nostr encryption
+    if (keys.privkey) {
       // Try NIP-44 first (more secure)
-      const result = await encryption.encrypt(data, {
-        algorithm: 'nip-44',
-        nostrPrivkey: keys.privkey,
-        nostrPubkey: keys.pubkey,
-      });
-      
-      if (result.success && result.data) {
-        return JSON.stringify({ v: 2, ct: result.data.ciphertext });
+      try {
+        const result = await encryption.encrypt(data, {
+          algorithm: 'nip-44',
+          nostrPrivkey: keys.privkey,
+          nostrPubkey: keys.pubkey,
+        });
+        
+        if (result.success && result.data) {
+          return JSON.stringify({ v: 2, ct: result.data.ciphertext });
+        }
+      } catch {
+        // Fall through to NIP-04
       }
-    } catch {
-      // Fall through to NIP-04
+
+      // Fallback to NIP-04
+      try {
+        const result = await encryption.encrypt(data, {
+          algorithm: 'nip-04',
+          nostrPrivkey: keys.privkey,
+          nostrPubkey: keys.pubkey,
+        });
+        
+        if (result.success && result.data) {
+          return JSON.stringify({ v: 1, ct: result.data.ciphertext });
+        }
+      } catch {
+        // Last resort: plain JSON
+      }
+    }
+    
+    // NIP-07 users (have pubkey but no privkey) - try NIP-07 extension's encrypt
+    if (keys.pubkey && !keys.privkey && import.meta.client) {
+      const win = window as unknown as { nostr?: { nip04?: { encrypt: (pubkey: string, plaintext: string) => Promise<string> } } };
+      if (win.nostr?.nip04?.encrypt) {
+        try {
+          const plaintext = JSON.stringify(data);
+          const ciphertext = await win.nostr.nip04.encrypt(keys.pubkey, plaintext);
+          return JSON.stringify({ v: 1, ct: ciphertext }); // v1 = NIP-04 from extension
+        } catch (e) {
+          console.warn('[NostrData] NIP-07 encrypt failed:', e);
+          // Fall through to unencrypted
+        }
+      }
     }
 
-    // Fallback to NIP-04
-    try {
-      const result = await encryption.encrypt(data, {
-        algorithm: 'nip-04',
-        nostrPrivkey: keys.privkey,
-        nostrPubkey: keys.pubkey,
-      });
-      
-      if (result.success && result.data) {
-        return JSON.stringify({ v: 1, ct: result.data.ciphertext });
-      }
-    } catch {
-      // Last resort: plain JSON
-    }
-
+    // Fallback: store unencrypted (will be readable by everyone who knows the d-tag)
     return JSON.stringify(data);
   }
 
   /**
    * Decrypt data from Nostr storage
    * Supports all encryption versions (v1=NIP-04, v2=NIP-44, v3=AES-256-GCM)
+   * For NIP-07 users, uses the extension's decrypt method
    */
   async function decryptData<T>(encrypted: string): Promise<T | null> {
     const keys = getUserKeys();
@@ -178,25 +237,42 @@ export function useNostrData() {
         return result.success ? result.data || null : null;
       }
 
-      // Nostr encryption requires keys
+      // Nostr encryption requires at least pubkey
       if (!keys) return null;
 
-      // Version 2: NIP-44
-      if (payload.v === 2) {
-        const result = await encryption.decrypt<T>(
-          { ciphertext: payload.ct, algorithm: 'nip-44', version: 2, encryptedAt: '' },
-          { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
-        );
-        return result.success ? result.data || null : null;
+      // If we have privkey, use direct decryption
+      if (keys.privkey) {
+        // Version 2: NIP-44
+        if (payload.v === 2) {
+          const result = await encryption.decrypt<T>(
+            { ciphertext: payload.ct, algorithm: 'nip-44', version: 2, encryptedAt: '' },
+            { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
+          );
+          return result.success ? result.data || null : null;
+        }
+        
+        // Version 1: NIP-04
+        if (payload.v === 1 || payload.ct) {
+          const result = await encryption.decrypt<T>(
+            { ciphertext: payload.ct, algorithm: 'nip-04', version: 1, encryptedAt: '' },
+            { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
+          );
+          return result.success ? result.data || null : null;
+        }
       }
       
-      // Version 1: NIP-04
-      if (payload.v === 1 || payload.ct) {
-        const result = await encryption.decrypt<T>(
-          { ciphertext: payload.ct, algorithm: 'nip-04', version: 1, encryptedAt: '' },
-          { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
-        );
-        return result.success ? result.data || null : null;
+      // NIP-07 users (have pubkey but no privkey) - try extension's decrypt
+      if (keys.pubkey && !keys.privkey && import.meta.client) {
+        const win = window as unknown as { nostr?: { nip04?: { decrypt: (pubkey: string, ciphertext: string) => Promise<string> } } };
+        if (win.nostr?.nip04?.decrypt && (payload.v === 1 || payload.ct)) {
+          try {
+            const plaintext = await win.nostr.nip04.decrypt(keys.pubkey, payload.ct);
+            return JSON.parse(plaintext) as T;
+          } catch (e) {
+            console.warn('[NostrData] NIP-07 decrypt failed:', e);
+            // Fall through
+          }
+        }
       }
       
       // Not encrypted, return as-is
@@ -217,6 +293,7 @@ export function useNostrData() {
 
   /**
    * Create and sign a Nostr event
+   * Supports both direct signing (with privkey) and NIP-07 extension signing
    */
   async function createEvent(
     kind: number,
@@ -237,12 +314,32 @@ export function useNostrData() {
       pubkey: keys.pubkey,
     };
 
-    try {
-      return finalizeEvent(unsignedEvent, keys.privkey as unknown as Uint8Array);
-    } catch (e) {
-      error.value = `Failed to sign event: ${e}`;
-      return null;
+    // If we have privkey, sign directly
+    if (keys.privkey) {
+      try {
+        return finalizeEvent(unsignedEvent, hexToBytes(keys.privkey));
+      } catch (e) {
+        error.value = `Failed to sign event: ${e}`;
+        return null;
+      }
     }
+    
+    // NIP-07: Use extension to sign
+    if (import.meta.client) {
+      const win = window as unknown as { nostr?: { signEvent: (event: UnsignedEvent) => Promise<Event> } };
+      if (win.nostr?.signEvent) {
+        try {
+          const signedEvent = await win.nostr.signEvent(unsignedEvent);
+          return signedEvent as Event;
+        } catch (e) {
+          error.value = `NIP-07 signing failed: ${e}`;
+          return null;
+        }
+      }
+    }
+    
+    error.value = 'No signing method available (no privkey and no NIP-07 extension)';
+    return null;
   }
 
   /**

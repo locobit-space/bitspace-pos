@@ -1,53 +1,58 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <!-- Header -->
-    <CommonPageHeader 
-      :title="$t('settings.users.title')" 
-      :subtitle="$t('settings.users.subtitle')"
-    >
-      <template #actions>
-        <div class="flex items-center gap-4">
-          <NuxtLink 
-            to="/settings"
-            class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-          >
-            <UIcon name="i-heroicons-arrow-left" class="w-5 h-5" />
-            {{ $t('common.back') }}
-          </NuxtLink>
-          
-          <UButton
-            v-if="canManageUsers"
-            color="primary"
-            @click="openCreateModal"
-          >
-            <UIcon name="i-heroicons-plus" class="w-5 h-5 mr-2" />
-            {{ $t('settings.users.addUser') }}
-          </UButton>
-        </div>
-      </template>
-    </CommonPageHeader>
+    <!-- Loading State -->
+    <div v-if="!isReady" class="flex items-center justify-center min-h-screen">
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
+    </div>
 
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-      <!-- Current User Card -->
-      <UCard class="mb-6">
-        <template #header>
-          <div class="flex items-center gap-3">
-            <UIcon name="i-heroicons-user-circle" class="w-6 h-6 text-primary-500" />
-            <span class="font-semibold text-gray-900 dark:text-white">
-              {{ $t('settings.users.currentUser') }}
-            </span>
+    <template v-else>
+      <!-- Header -->
+      <CommonPageHeader 
+        :title="$t('settings.users.title')" 
+        :subtitle="$t('settings.users.subtitle')"
+      >
+        <template #actions>
+          <div class="flex items-center gap-4">
+            <NuxtLink 
+              to="/settings"
+              class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            >
+              <UIcon name="i-heroicons-arrow-left" class="w-5 h-5" />
+              {{ $t('common.back') }}
+            </NuxtLink>
+            <UButton
+              v-if="canManageUsers"
+              color="primary"
+              @click="openCreateModal"
+            >
+              <UIcon name="i-heroicons-plus" class="w-5 h-5 mr-2" />
+              {{ $t('settings.users.addUser') }}
+            </UButton>
           </div>
         </template>
-        
-        <div v-if="currentUser" class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <UAvatar
-              :src="currentUser.avatar"
-              :alt="currentUser.name"
-              size="lg"
-            />
-            <div>
-              <h3 class="font-semibold text-gray-900 dark:text-white">{{ currentUser.name }}</h3>
+      </CommonPageHeader>
+
+      <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Current User Card -->
+        <UCard class="mb-6">
+          <template #header>
+            <div class="flex items-center gap-3">
+              <UIcon name="i-heroicons-user-circle" class="w-6 h-6 text-primary-500" />
+              <span class="font-semibold text-gray-900 dark:text-white">
+                {{ $t('settings.users.currentUser') }}
+              </span>
+            </div>
+          </template>
+          
+          <div v-if="currentUser" class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <UAvatar
+                :src="currentUser.avatar"
+                :alt="currentUser.name"
+                size="lg"
+              />
+              <div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">{{ currentUser.name }}</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400">{{ currentUser.email }}</p>
               <!-- Show auth method badge -->
               <div class="flex items-center gap-2 mt-1">
@@ -676,6 +681,7 @@
         </UCard>
       </template>
     </UModal>
+    </template>
   </div>
 </template>
 
@@ -685,12 +691,21 @@ import { DEFAULT_PERMISSIONS } from '~/types';
 
 definePageMeta({
   layout: 'default',
+  middleware: ['auth'],
 });
 
 const { t } = useI18n();
 const toast = useToast();
 const usersComposable = useUsers();
 const staffAuth = useStaffAuth();
+
+// Wait for users composable to initialize
+const isReady = ref(false);
+
+onMounted(async () => {
+  await usersComposable.initialize();
+  isReady.value = true;
+});
 
 // State
 const showUserModal = ref(false);
@@ -1055,9 +1070,4 @@ const deleteUserConfirmed = async () => {
     deleting.value = false;
   }
 };
-
-// Initialize
-onMounted(() => {
-  usersComposable.initialize();
-});
 </script>

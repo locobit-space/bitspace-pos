@@ -1,5 +1,10 @@
 <!-- pages/inventory/index.vue -->
 <script setup lang="ts">
+definePageMeta({
+  layout: 'default',
+  middleware: ['auth'],
+});
+
 const { t } = useI18n();
 const toast = useToast();
 

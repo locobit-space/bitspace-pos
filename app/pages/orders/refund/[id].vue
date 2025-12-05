@@ -5,6 +5,7 @@ import type { Order, PaymentMethod } from '~/types';
 
 definePageMeta({
   layout: 'default',
+  middleware: ['auth'],
 });
 
 const { t } = useI18n();

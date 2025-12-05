@@ -4,6 +4,9 @@
 import { ref, computed } from 'vue';
 import type { NostrUserKeys } from '~/types';
 
+// Storage key - unified with use-users.ts
+const AUTH_STORAGE_KEY = 'bitspace_current_user';
+
 // Types
 export interface User {
   id: string;
@@ -543,7 +546,7 @@ export const useAuth = () => {
     refreshToken.value = null;
 
     // Clear localStorage
-    localStorage.removeItem('auth_state');
+    localStorage.removeItem(AUTH_STORAGE_KEY);
 
     // Redirect to login
     navigateTo('/auth/signin');
@@ -561,14 +564,14 @@ export const useAuth = () => {
       isLoading: false,
     };
 
-    localStorage.setItem('auth_state', JSON.stringify(state));
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
   };
 
   /**
    * Restore auth state from localStorage
    */
   const restoreAuthState = () => {
-    const stored = localStorage.getItem('auth_state');
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
     if (stored) {
       try {
         const state: AuthState = JSON.parse(stored);
@@ -581,7 +584,7 @@ export const useAuth = () => {
           refreshAccessToken();
         }
       } catch {
-        localStorage.removeItem('auth_state');
+        localStorage.removeItem(AUTH_STORAGE_KEY);
       }
     }
   };

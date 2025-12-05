@@ -13,6 +13,7 @@ import type {
 
 definePageMeta({
   layout: "blank",
+  middleware: ['auth'],
 });
 
 // ============================================

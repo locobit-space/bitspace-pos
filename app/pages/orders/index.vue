@@ -1,6 +1,11 @@
 <!-- pages/orders/index.vue -->
 <!-- 🧾 Orders Management - Connected to Nostr/Dexie -->
 <script setup lang="ts">
+definePageMeta({
+  layout: 'default',
+  middleware: ['auth'],
+});
+
 const { t } = useI18n();
 const currency = useCurrency();
 

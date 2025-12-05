@@ -12,27 +12,29 @@ import type {
 } from '~/types';
 import { DEFAULT_PERMISSIONS } from '~/types';
 
-// Singleton state
+// ============================================
+// 📦 STORAGE KEYS (Single Source of Truth)
+// ============================================
+const STORAGE_KEYS = {
+  USERS: 'bitspace_users',               // All staff users with roles/permissions
+  CURRENT_USER: 'bitspace_current_user', // Current logged-in staff user
+  NOSTR_PROFILE: 'nostr_user_profile',   // Nostr profile from relays (shared with use-nostr-storage)
+} as const;
+
+// Singleton state (shared across all composable instances)
 const users = ref<StoreUser[]>([]);
 const currentUser = ref<StoreUser | null>(null);
 const isInitialized = ref(false);
+let initPromise: Promise<void> | null = null;
 
 export function useUsers() {
-  const STORAGE_KEY = 'bitspace_users';
-  const CURRENT_USER_KEY = 'bitspace_current_user';
   const security = useSecurity();
-  // Staff authentication composable for hybrid auth
   const staffAuth = useStaffAuth();
-  // Note: usePermissionEvents() can be used here for Nostr-based permission grants
-  // when publishing permissions to relays for cross-device verification
 
   // ============================================
   // 🆔 USER MANAGEMENT
   // ============================================
 
-  /**
-   * Generate unique user ID
-   */
   function generateUserId(): string {
     return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -176,7 +178,7 @@ export function useUsers() {
     // Update current user if it's the same
     if (currentUser.value?.id === userId) {
       currentUser.value = users.value[index] ?? null;
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser.value));
+      saveCurrentUser(currentUser.value);
     }
 
     await security.addAuditLog(
@@ -295,11 +297,11 @@ export function useUsers() {
     if (result.success && result.user) {
       currentUser.value = result.user;
       result.user.lastLoginAt = new Date().toISOString();
-      result.user.failedLoginAttempts = 0; // Reset on success
+      result.user.failedLoginAttempts = 0;
       await saveUsers();
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(result.user));
+      saveCurrentUser(result.user);
       
-      await security.addAuditLog('login', result.user.id, `PIN login`, result.user.name);
+      await security.addAuditLog('login', result.user.id, 'PIN login', result.user.name);
       return result.user;
     }
     
@@ -317,7 +319,7 @@ export function useUsers() {
       result.user.lastLoginAt = new Date().toISOString();
       result.user.failedLoginAttempts = 0;
       await saveUsers();
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(result.user));
+      saveCurrentUser(result.user);
       
       await security.addAuditLog('login', result.user.id, `Nostr login (${result.user.npub?.slice(0, 12)}...)`, result.user.name);
     }
@@ -336,9 +338,9 @@ export function useUsers() {
       result.user.lastLoginAt = new Date().toISOString();
       result.user.failedLoginAttempts = 0;
       await saveUsers();
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(result.user));
+      saveCurrentUser(result.user);
       
-      await security.addAuditLog('login', result.user.id, `Password login`, result.user.name);
+      await security.addAuditLog('login', result.user.id, 'Password login', result.user.name);
     } else if (result.user) {
       // Update failed attempts
       const index = users.value.findIndex(u => u.id === result.user!.id);
@@ -371,9 +373,9 @@ export function useUsers() {
       currentUser.value = user;
       user.lastLoginAt = new Date().toISOString();
       await saveUsers();
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      saveCurrentUser(user);
       
-      await security.addAuditLog('login', user.id, `User switch`, user.name);
+      await security.addAuditLog('login', user.id, 'User switch', user.name);
       return user;
     }
     
@@ -389,7 +391,7 @@ export function useUsers() {
     }
     currentUser.value = null;
     staffAuth.endSession();
-    localStorage.removeItem(CURRENT_USER_KEY);
+    saveCurrentUser(null);
   }
 
   /**
@@ -555,42 +557,173 @@ export function useUsers() {
    * Save users to storage
    */
   async function saveUsers(): Promise<void> {
-    // Use security composable for encrypted storage if enabled
-    await security.encryptAndStore(STORAGE_KEY, users.value);
+    // Use plain localStorage for now (encryption requires master password setup)
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users.value));
   }
 
   /**
    * Load users from storage
    */
   async function loadUsers(): Promise<void> {
-    const stored = await security.retrieveAndDecrypt<StoreUser[]>(STORAGE_KEY);
+    // Try plain localStorage first
+    const stored = localStorage.getItem(STORAGE_KEYS.USERS);
     if (stored) {
-      users.value = stored;
+      try {
+        users.value = JSON.parse(stored);
+        return;
+      } catch { /* try encrypted */ }
     }
+    
+    // Fallback to encrypted storage
+    const encrypted = await security.retrieveAndDecrypt<StoreUser[]>(STORAGE_KEYS.USERS);
+    if (encrypted) {
+      users.value = encrypted;
+    }
+  }
+
+  /**
+   * Save current user to storage
+   */
+  function saveCurrentUser(user: StoreUser | null): void {
+    if (user) {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    }
+  }
+
+  /**
+   * Get Nostr profile data from storage
+   */
+  function getNostrProfileData(): { name?: string; avatar?: string } | null {
+    const profile = localStorage.getItem(STORAGE_KEYS.NOSTR_PROFILE);
+    if (profile) {
+      try {
+        const data = JSON.parse(profile);
+        return { name: data.name || data.display_name, avatar: data.picture };
+      } catch { /* ignore */ }
+    }
+    return null;
   }
 
   /**
    * Create default owner if no users exist
    */
   async function ensureDefaultOwner(): Promise<void> {
-    if (users.value.length === 0) {
-      const defaultOwner: StoreUser = {
-        id: generateUserId(),
-        name: 'Owner',
-        role: 'owner',
-        permissions: { ...DEFAULT_PERMISSIONS.owner },
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        // Default to PIN auth for initial owner
-        authMethod: 'pin',
-        grantedAt: new Date().toISOString(),
-      };
-      users.value.push(defaultOwner);
-      currentUser.value = defaultOwner;
-      await saveUsers();
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(defaultOwner));
+    if (users.value.length > 0) return;
+    
+    const nostrPubkeyCookie = useCookie('nostr-pubkey');
+    const nostrPubkey = nostrPubkeyCookie.value;
+    
+    let npub: string | undefined;
+    let pubkeyHex: string | undefined;
+    let ownerName = 'Owner';
+    let avatar: string | undefined;
+    
+    if (nostrPubkey) {
+      const nostrKey = useNostrKey();
+      try {
+        npub = nostrKey.hexToNpub(nostrPubkey);
+        pubkeyHex = nostrPubkey;
+        const profileData = getNostrProfileData();
+        if (profileData?.name) ownerName = profileData.name;
+        if (profileData?.avatar) avatar = profileData.avatar;
+      } catch (e) {
+        console.error('Error converting pubkey:', e);
+      }
     }
+    
+    const defaultOwner: StoreUser = {
+      id: generateUserId(),
+      name: ownerName,
+      role: 'owner',
+      permissions: { ...DEFAULT_PERMISSIONS.owner },
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      authMethod: npub ? 'nostr' : 'pin',
+      npub,
+      pubkeyHex,
+      avatar,
+      grantedAt: new Date().toISOString(),
+    };
+    
+    users.value.push(defaultOwner);
+    currentUser.value = defaultOwner;
+    await saveUsers();
+    saveCurrentUser(defaultOwner);
+  }
+
+  /**
+   * Sync Nostr owner - ensure logged-in Nostr user is linked to owner account
+   */
+  async function syncNostrOwner(): Promise<StoreUser | null> {
+    const nostrPubkeyCookie = useCookie('nostr-pubkey');
+    const nostrPubkey = nostrPubkeyCookie.value;
+    
+    if (!nostrPubkey) return null;
+    
+    const nostrKey = useNostrKey();
+    let npub: string;
+    try {
+      npub = nostrKey.hexToNpub(nostrPubkey);
+    } catch {
+      return null;
+    }
+    
+    // Check if user already exists with this npub
+    const existingUser = users.value.find(u => u.pubkeyHex === nostrPubkey || u.npub === npub);
+    
+    if (existingUser) {
+      currentUser.value = existingUser;
+      saveCurrentUser(existingUser);
+      return existingUser;
+    }
+    
+    // Check if there's a default owner without npub that we can link
+    const unlinkedOwner = users.value.find(u => u.role === 'owner' && !u.npub && !u.pubkeyHex);
+    
+    if (unlinkedOwner) {
+      const profileData = getNostrProfileData();
+      
+      unlinkedOwner.npub = npub;
+      unlinkedOwner.pubkeyHex = nostrPubkey;
+      unlinkedOwner.authMethod = 'nostr';
+      unlinkedOwner.updatedAt = new Date().toISOString();
+      
+      if (profileData?.name) unlinkedOwner.name = profileData.name;
+      if (profileData?.avatar) unlinkedOwner.avatar = profileData.avatar;
+      
+      await saveUsers();
+      currentUser.value = unlinkedOwner;
+      saveCurrentUser(unlinkedOwner);
+      return unlinkedOwner;
+    }
+    
+    // Create new owner for this Nostr user
+    const profileData = getNostrProfileData();
+    
+    const newOwner: StoreUser = {
+      id: generateUserId(),
+      name: profileData?.name || 'Owner',
+      role: 'owner',
+      permissions: { ...DEFAULT_PERMISSIONS.owner },
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      authMethod: 'nostr',
+      npub,
+      pubkeyHex: nostrPubkey,
+      avatar: profileData?.avatar,
+      grantedAt: new Date().toISOString(),
+    };
+    
+    users.value.push(newOwner);
+    await saveUsers();
+    currentUser.value = newOwner;
+    saveCurrentUser(newOwner);
+    
+    return newOwner;
   }
 
   // ============================================
@@ -598,28 +731,47 @@ export function useUsers() {
   // ============================================
 
   async function initialize(): Promise<void> {
-    if (isInitialized.value) return;
-
-    await loadUsers();
-    await ensureDefaultOwner();
-
-    // Restore current user session
-    const storedUser = localStorage.getItem(CURRENT_USER_KEY);
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        // Verify user still exists and is active
-        const user = users.value.find(u => u.id === parsed.id && u.isActive);
-        if (user) {
-          currentUser.value = user;
-        }
-      } catch {
-        // Invalid stored user
-        localStorage.removeItem(CURRENT_USER_KEY);
-      }
+    // Return existing promise if initialization is in progress
+    if (initPromise) {
+      return initPromise;
+    }
+    
+    if (isInitialized.value) {
+      return;
     }
 
-    isInitialized.value = true;
+    // Create and store the promise
+    initPromise = (async () => {
+      await loadUsers();
+      await ensureDefaultOwner();
+
+      // Check if Nostr user is logged in and sync their owner account
+      const nostrPubkeyCookie = useCookie('nostr-pubkey');
+      
+      if (nostrPubkeyCookie.value) {
+        await syncNostrOwner();
+      } else {
+        // Restore current user session from localStorage
+        const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            const user = users.value.find(u => u.id === parsed.id && u.isActive);
+            if (user) {
+              currentUser.value = user;
+            } else {
+              localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+            }
+          } catch {
+            localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+          }
+        }
+      }
+
+      isInitialized.value = true;
+    })();
+    
+    return initPromise;
   }
 
   // Auto-initialize
@@ -632,6 +784,7 @@ export function useUsers() {
     users: computed(() => users.value),
     currentUser: computed(() => currentUser.value),
     isLoggedIn: computed(() => currentUser.value !== null),
+    isInitialized: computed(() => isInitialized.value),
 
     // User management
     createUser,
@@ -664,5 +817,6 @@ export function useUsers() {
 
     // Init
     initialize,
+    syncNostrOwner,
   };
 }

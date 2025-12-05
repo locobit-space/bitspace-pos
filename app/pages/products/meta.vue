@@ -316,6 +316,8 @@ import type { Category, Unit } from '~/types';
 definePageMeta({
   title: 'Product Settings',
   description: 'Manage categories and units',
+  layout: 'default',
+  middleware: ['auth'],
 });
 
 const productsStore = useProductsStore();

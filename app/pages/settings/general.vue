@@ -550,7 +550,8 @@ const security = useSecurity();
 // Page meta
 definePageMeta({
   title: "General Settings",
-  requiresAuth: true,
+  layout: 'default',
+  middleware: ['auth'],
 });
 
 // Form refs
@@ -780,18 +781,77 @@ const loadBranches = async () => {
   }
 };
 
+function onLanguageChange() {}
+
+// Load settings from Nostr on mount
+const loadSettings = async () => {
+  try {
+    console.log('[general.vue] Loading settings from Nostr...');
+    const settings = await nostrData.getSettings();
+    console.log('[general.vue] Loaded settings:', settings);
+    if (settings) {
+      // Handle BOTH new flat structure and legacy nested structure
+      
+      // New flat structure fields
+      if (settings.companyName) state.companyName = settings.companyName;
+      if (settings.companyEmail) state.companyEmail = settings.companyEmail;
+      if (settings.companyPhone) state.companyPhone = settings.companyPhone;
+      if (settings.taxNumber) state.taxNumber = settings.taxNumber;
+      if (settings.companyAddress) state.companyAddress = settings.companyAddress;
+      if (settings.defaultCurrency) state.defaultCurrency = settings.defaultCurrency;
+      if (settings.defaultLanguage) state.defaultLanguage = settings.defaultLanguage;
+      if (settings.dateFormat) state.dateFormat = settings.dateFormat;
+      if (settings.timeFormat) state.timeFormat = settings.timeFormat;
+      if (settings.timezone) state.timezone = settings.timezone;
+      if (settings.decimalPlaces !== undefined) state.decimalPlaces = settings.decimalPlaces;
+      
+      // Legacy nested structure (from old settings format)
+      if (settings.general) {
+        if (settings.general.storeName) state.companyName = settings.general.storeName;
+        if (settings.general.storeAddress) state.companyAddress = settings.general.storeAddress;
+        if (settings.general.storePhone) state.companyPhone = settings.general.storePhone;
+        if (settings.general.defaultCurrency) state.defaultCurrency = settings.general.defaultCurrency;
+        if (settings.general.timezone) state.timezone = settings.general.timezone;
+        if (settings.general.language) {
+          // Map 'en-US' to 'en', 'lo-LA' to 'lo'
+          const langMap: Record<string, string> = { 'en-US': 'en', 'lo-LA': 'lo' };
+          state.defaultLanguage = langMap[settings.general.language] || settings.general.language;
+        }
+      }
+      
+      console.log('[general.vue] State updated, companyName:', state.companyName);
+    } else {
+      console.log('[general.vue] No settings found');
+    }
+  } catch (err) {
+    console.error('[general.vue] Failed to load settings:', err);
+  }
+};
+
+// Initialize on mount
 onMounted(() => {
   loadBranches();
+  loadSettings();
 });
-
-function onLanguageChange() {}
 
 // Methods
 const onSubmit = async () => {
   saving.value = true;
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Save to Nostr relay
+    await nostrData.saveSettings({
+      companyName: state.companyName,
+      companyEmail: state.companyEmail,
+      companyPhone: state.companyPhone,
+      taxNumber: state.taxNumber,
+      companyAddress: state.companyAddress,
+      defaultCurrency: state.defaultCurrency,
+      defaultLanguage: state.defaultLanguage,
+      dateFormat: state.dateFormat,
+      timeFormat: state.timeFormat,
+      timezone: state.timezone,
+      decimalPlaces: state.decimalPlaces,
+    });
 
     // Show success notification
     const toast = useToast();
@@ -802,6 +862,12 @@ const onSubmit = async () => {
     });
   } catch (error) {
     console.error("Save error:", error);
+    const toast = useToast();
+    toast.add({
+      title: t("common.error"),
+      description: String(error),
+      color: "red",
+    });
   } finally {
     saving.value = false;
   }

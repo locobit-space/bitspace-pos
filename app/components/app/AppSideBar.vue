@@ -61,13 +61,12 @@
                 :class="providerBadgeClass"
               >
                 {{ userProvider === 'nostr' ? '⚡ Nostr' : 
-                   userProvider === 'google' ? '🔷 Google' : '📧 Email' }}
+                   userProvider === 'password' ? '🔑 Password' : '🔢 PIN' }}
               </span>
             </div>
 
             <!-- Account Switcher Button -->
             <button
-              v-if="hasMultipleAccounts"
               class="flex w-full items-center gap-3 px-3 py-2.5 mb-4 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-50/80 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl transition-all duration-200"
               @click="openAccountSwitcher"
             >
@@ -173,7 +172,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n();
-const auth = useAuth();
+const usersComposable = useUsers();
 const colorMode = useColorMode();
 const appConfig = useAppConfig();
 const nostrStorage = useNostrStorage();
@@ -184,7 +183,8 @@ const allAccounts = ref<Array<{ pubkey: string; displayName?: string; name?: str
 const currentUserInfo = ref<{ pubkey?: string; displayName?: string; name?: string; picture?: string } | null>(null);
 
 // Load accounts on mount
-onMounted(() => {
+onMounted(async () => {
+  await usersComposable.initialize();
   allAccounts.value = nostrStorage.loadAllAccounts();
   const { userInfo } = nostrStorage.loadCurrentUser();
   if (userInfo) {
@@ -196,26 +196,26 @@ onMounted(() => {
 const userDisplayName = computed(() => {
   return currentUserInfo.value?.displayName || 
          currentUserInfo.value?.name || 
-         auth.user.value?.displayName || 
+         usersComposable.currentUser.value?.name || 
          'User';
 });
 
 const userAvatar = computed(() => {
-  return currentUserInfo.value?.picture || auth.user.value?.avatarUrl;
+  return currentUserInfo.value?.picture || usersComposable.currentUser.value?.avatar;
 });
 
 const userIdentifier = computed(() => {
-  return auth.user.value?.email || formatPubkey(currentUserInfo.value?.pubkey || auth.user.value?.nostrPubkey);
+  return usersComposable.currentUser.value?.email || formatPubkey(currentUserInfo.value?.pubkey || usersComposable.currentUser.value?.npub);
 });
 
 // Determine user provider (nostr if we have pubkey from nostrStorage)
 const userProvider = computed(() => {
   if (currentUserInfo.value?.pubkey) return 'nostr';
-  return auth.user.value?.provider || 'nostr';
+  return usersComposable.currentUser.value?.authMethod || 'nostr';
 });
 
 // Computed for account switcher
-const hasMultipleAccounts = computed(() => allAccounts.value.length > 1);
+const _hasMultipleAccounts = computed(() => allAccounts.value.length > 1);
 const accountCount = computed(() => allAccounts.value.length);
 
 // Methods for account switcher
@@ -341,8 +341,10 @@ const providerBadgeClass = computed(() => {
   switch (userProvider.value) {
     case 'nostr':
       return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
-    case 'google':
+    case 'password':
       return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'pin':
+      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
     default:
       return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
   }
@@ -356,7 +358,8 @@ const formatPubkey = (pubkey?: string) => {
 
 // Handle logout
 const handleLogout = async () => {
-  await auth.signOut();
+  await usersComposable.logout();
+  navigateTo('/auth/signin');
 };
 </script>
 

@@ -325,6 +325,11 @@
 <script setup lang="ts">
 import type { PaymentTerm } from '~/types';
 
+definePageMeta({
+  layout: 'default',
+  middleware: ['auth'],
+});
+
 const { t } = useI18n();
 const nostrData = useNostrData();
 const toast = useToast();

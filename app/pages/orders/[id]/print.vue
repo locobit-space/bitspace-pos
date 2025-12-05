@@ -407,7 +407,9 @@ onMounted(() => {
 
 // Meta
 definePageMeta({
-  title: 'Bill Print'
+  title: 'Bill Print',
+  layout: 'blank',
+  middleware: ['auth'],
 })
 
 useHead({

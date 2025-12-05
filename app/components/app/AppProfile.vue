@@ -147,13 +147,14 @@ const { t } = useI18n()
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
 const nostrStorage = useNostrStorage()
-const auth = useAuth()
+const usersComposable = useUsers()
 
 // Load accounts on mount
 const allAccounts = ref<Array<{ pubkey: string; displayName?: string; name?: string; userKeys?: unknown }>>([])
 const currentPubkey = ref<string>('')
 
-onMounted(() => {
+onMounted(async () => {
+  await usersComposable.initialize()
   // Load all accounts
   allAccounts.value = nostrStorage.loadAllAccounts()
   

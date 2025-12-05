@@ -304,7 +304,7 @@ watch(() => branchForm.value.name, (name) => {
               <p class="font-medium text-gray-900 dark:text-white text-sm">{{ t('settings.enableTips') }}</p>
               <p class="text-xs text-gray-500">{{ t('settings.enableTipsDescription') }}</p>
             </div>
-            <UToggle v-model="settingsForm.tipEnabled" />
+            <USwitch v-model="settingsForm.tipEnabled" />
           </div>
 
           <UFormField :label="t('settings.receiptFooter')">

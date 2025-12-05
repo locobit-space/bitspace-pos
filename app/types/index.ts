@@ -967,10 +967,27 @@ export interface GeneralSettings {
 }
 
 export interface StoreSettings {
-  general: GeneralSettings;
-  lightning: LightningSettings;
-  security: SecuritySettings;
-  updatedAt: string;
+  // Company/Shop Info
+  companyName?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  taxNumber?: string;
+  companyAddress?: string;
+  
+  // Regional Settings
+  defaultCurrency?: string;
+  defaultLanguage?: string;
+  dateFormat?: string;
+  timeFormat?: string;
+  timezone?: string;
+  decimalPlaces?: number;
+  
+  // Nested settings (legacy support)
+  general?: GeneralSettings;
+  lightning?: LightningSettings;
+  security?: SecuritySettings;
+  
+  updatedAt?: string;
 }
 
 // ============================================

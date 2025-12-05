@@ -1724,6 +1724,8 @@ onMounted(async () => {
 definePageMeta({
   title: "Product Manager",
   description: "Manage products, inventory, and pricing",
+  layout: 'default',
+  middleware: ['auth'],
 });
 
 useHead({

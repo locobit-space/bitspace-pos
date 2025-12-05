@@ -1,6 +1,11 @@
 <!-- pages/index.vue -->
 <!-- 📊 Dashboard - Real-time Sales KPIs & Business Overview -->
 <script setup lang="ts">
+definePageMeta({
+  layout: "default",
+  middleware: ["auth"],
+});
+
 const { t } = useI18n();
 const ordersStore = useOrders();
 const productsStore = useProducts();
@@ -9,7 +14,7 @@ const shop = useShop();
 // ============================================
 // State
 // ============================================
-const selectedPeriod = ref<'today' | 'week' | 'month'>('today');
+const selectedPeriod = ref<"today" | "week" | "month">("today");
 const isInitialLoad = ref(true);
 const isRefreshing = ref(false);
 const showSetup = ref(false);
@@ -18,27 +23,31 @@ const showSetup = ref(false);
 const currentTime = ref(new Date());
 const greeting = computed(() => {
   const hour = currentTime.value.getHours();
-  if (hour < 12) return { text: t('dashboard.greeting.morning'), emoji: '🌅' };
-  if (hour < 17) return { text: t('dashboard.greeting.afternoon'), emoji: '☀️' };
-  if (hour < 21) return { text: t('dashboard.greeting.evening'), emoji: '🌆' };
-  return { text: t('dashboard.greeting.night'), emoji: '🌙' };
+  if (hour < 12) return { text: t("dashboard.greeting.morning"), emoji: "🌅" };
+  if (hour < 17)
+    return { text: t("dashboard.greeting.afternoon"), emoji: "☀️" };
+  if (hour < 21) return { text: t("dashboard.greeting.evening"), emoji: "🌆" };
+  return { text: t("dashboard.greeting.night"), emoji: "🌙" };
 });
 
 // Finance health score
 const financeHealth = computed(() => {
   const change = todayStats.value.revenueChange;
-  if (change >= 20) return { score: 'Excellent', color: 'green', value: 95 };
-  if (change >= 10) return { score: 'Great', color: 'green', value: 85 };
-  if (change >= 0) return { score: 'Good', color: 'blue', value: 70 };
-  if (change >= -10) return { score: 'Fair', color: 'yellow', value: 55 };
-  return { score: 'Needs Attention', color: 'red', value: 40 };
+  if (change >= 20) return { score: "Excellent", color: "green", value: 95 };
+  if (change >= 10) return { score: "Great", color: "green", value: 85 };
+  if (change >= 0) return { score: "Good", color: "blue", value: 70 };
+  if (change >= -10) return { score: "Fair", color: "yellow", value: 55 };
+  return { score: "Needs Attention", color: "red", value: 40 };
 });
 
 // ============================================
 // Computed - Check states
 // ============================================
 const hasCachedData = computed(() => {
-  return ordersStore.orders.value.length > 0 || productsStore.products.value.length > 0;
+  return (
+    ordersStore.orders.value.length > 0 ||
+    productsStore.products.value.length > 0
+  );
 });
 
 const needsSetup = computed(() => {
@@ -55,70 +64,86 @@ const kpis = computed(() => {
   weekStart.setDate(today.getDate() - today.getDay());
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const startDate = selectedPeriod.value === 'today' 
-    ? today 
-    : selectedPeriod.value === 'week' 
-      ? weekStart 
+  const startDate =
+    selectedPeriod.value === "today"
+      ? today
+      : selectedPeriod.value === "week"
+      ? weekStart
       : monthStart;
 
-  const periodOrders = ordersStore.orders.value.filter(o => {
+  const periodOrders = ordersStore.orders.value.filter((o) => {
     const orderDate = new Date(o.date);
-    return orderDate >= startDate && o.status === 'completed';
+    return orderDate >= startDate && o.status === "completed";
   });
 
   const totalRevenue = periodOrders.reduce((sum, o) => sum + o.total, 0);
   const totalOrders = periodOrders.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  
+
   const cashSales = periodOrders
-    .filter(o => o.paymentMethod === 'cash')
+    .filter((o) => o.paymentMethod === "cash")
     .reduce((sum, o) => sum + o.total, 0);
   const lightningSales = periodOrders
-    .filter(o => ['lightning', 'bolt12', 'lnurl'].includes(o.paymentMethod || ''))
+    .filter((o) =>
+      ["lightning", "bolt12", "lnurl"].includes(o.paymentMethod || "")
+    )
     .reduce((sum, o) => sum + o.total, 0);
   const otherSales = totalRevenue - cashSales - lightningSales;
 
-  return { totalRevenue, totalOrders, avgOrderValue, cashSales, lightningSales, otherSales };
+  return {
+    totalRevenue,
+    totalOrders,
+    avgOrderValue,
+    cashSales,
+    lightningSales,
+    otherSales,
+  };
 });
 
 // Today's stats
 const todayStats = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  const todayOrders = ordersStore.orders.value.filter(o => {
+
+  const todayOrders = ordersStore.orders.value.filter((o) => {
     const orderDate = new Date(o.date);
-    return orderDate >= today && o.status === 'completed';
+    return orderDate >= today && o.status === "completed";
   });
 
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayOrders = ordersStore.orders.value.filter(o => {
+  const yesterdayOrders = ordersStore.orders.value.filter((o) => {
     const orderDate = new Date(o.date);
-    return orderDate >= yesterday && orderDate < today && o.status === 'completed';
+    return (
+      orderDate >= yesterday && orderDate < today && o.status === "completed"
+    );
   });
 
   const todayRevenue = todayOrders.reduce((sum, o) => sum + o.total, 0);
   const yesterdayRevenue = yesterdayOrders.reduce((sum, o) => sum + o.total, 0);
-  const revenueChange = yesterdayRevenue > 0 
-    ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 
-    : 0;
+  const revenueChange =
+    yesterdayRevenue > 0
+      ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100
+      : 0;
 
   return { revenue: todayRevenue, orders: todayOrders.length, revenueChange };
 });
 
 // Top products
 const topProducts = computed(() => {
-  const productSales = new Map<string, { name: string; quantity: number; revenue: number }>();
+  const productSales = new Map<
+    string,
+    { name: string; quantity: number; revenue: number }
+  >();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   ordersStore.orders.value
-    .filter(o => new Date(o.date) >= today && o.status === 'completed')
-    .forEach(order => {
-      order.items?.forEach(item => {
+    .filter((o) => new Date(o.date) >= today && o.status === "completed")
+    .forEach((order) => {
+      order.items?.forEach((item) => {
         const existing = productSales.get(item.productId) || {
-          name: item.product?.name || 'Unknown',
+          name: item.product?.name || "Unknown",
           quantity: 0,
           revenue: 0,
         };
@@ -137,16 +162,18 @@ const topProducts = computed(() => {
 const hourlySales = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  const hourlyData = Array(24).fill(0).map((_, hour) => ({
-    hour: hour.toString().padStart(2, '0') + ':00',
-    sales: 0,
-    orders: 0,
-  }));
+
+  const hourlyData = Array(24)
+    .fill(0)
+    .map((_, hour) => ({
+      hour: hour.toString().padStart(2, "0") + ":00",
+      sales: 0,
+      orders: 0,
+    }));
 
   ordersStore.orders.value
-    .filter(o => new Date(o.date) >= today && o.status === 'completed')
-    .forEach(order => {
+    .filter((o) => new Date(o.date) >= today && o.status === "completed")
+    .forEach((order) => {
       const hour = new Date(order.date).getHours();
       const hourData = hourlyData[hour];
       if (hourData) {
@@ -160,15 +187,17 @@ const hourlySales = computed(() => {
 
 // Peak hour
 const peakHour = computed(() => {
-  let maxHour = { hour: '-', sales: 0 };
-  hourlySales.value.forEach(h => {
+  let maxHour = { hour: "-", sales: 0 };
+  hourlySales.value.forEach((h) => {
     if (h.sales > maxHour.sales) maxHour = h;
   });
   return maxHour;
 });
 
 // Low stock & recent orders
-const lowStockProducts = computed(() => productsStore.lowStockProducts.value.slice(0, 5));
+const lowStockProducts = computed(() =>
+  productsStore.lowStockProducts.value.slice(0, 5)
+);
 const recentOrders = computed(() => {
   return [...ordersStore.orders.value]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -188,7 +217,7 @@ const handleSetupComplete = () => {
 onMounted(async () => {
   // Initialize shop config
   await shop.init();
-  
+
   // Check if setup needed
   if (needsSetup.value) {
     showSetup.value = true;
@@ -200,45 +229,48 @@ onMounted(async () => {
   if (hasCachedData.value) {
     isInitialLoad.value = false;
     isRefreshing.value = true;
-    await Promise.all([
-      ordersStore.init(),
-      productsStore.init(),
-    ]).finally(() => {
-      isRefreshing.value = false;
-    });
+    await Promise.all([ordersStore.init(), productsStore.init()]).finally(
+      () => {
+        isRefreshing.value = false;
+      }
+    );
   } else {
-    await Promise.all([
-      ordersStore.init(),
-      productsStore.init(),
-    ]);
+    await Promise.all([ordersStore.init(), productsStore.init()]);
     isInitialLoad.value = false;
   }
 });
+
 </script>
 
 <template>
   <!-- Shop Setup Wizard -->
-  <DashboardShopSetup 
-    v-if="showSetup" 
-    @complete="handleSetupComplete" 
-  />
+  <DashboardShopSetup v-if="showSetup" @complete="handleSetupComplete" />
 
   <!-- Main Dashboard -->
   <div v-else class="min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4"
+    >
       <div class="flex items-center gap-3">
         <span class="text-xl">{{ greeting.emoji }}</span>
         <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ greeting.text }}</p>
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{ greeting.text }}
+          </p>
+          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ t("dashboard.title") }}
+          </h1>
         </div>
-        <span v-if="isRefreshing" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400">
+        <span
+          v-if="isRefreshing"
+          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400"
+        >
           <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
-          {{ t('common.syncing') }}
+          {{ t("common.syncing") }}
         </span>
       </div>
-      
+
       <div class="flex items-center gap-2">
         <!-- Period Selector -->
         <div class="flex p-1 rounded-lg bg-gray-100 dark:bg-gray-800 gap-1">
@@ -246,21 +278,29 @@ onMounted(async () => {
             v-for="period in ['today', 'week', 'month'] as const"
             :key="period"
             class="px-3 py-1.5 text-xs font-medium rounded-md transition-all relative"
-            :class="selectedPeriod === period
-              ? 'bg-primary-500 text-white shadow-sm'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'"
+            :class="
+              selectedPeriod === period
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
+            "
             @click="selectedPeriod = period"
           >
             <span class="flex items-center gap-1">
-              <span v-if="period === 'today'" class="w-1.5 h-1.5 rounded-full" :class="selectedPeriod === 'today' ? 'bg-white' : 'bg-green-500'" />
+              <span
+                v-if="period === 'today'"
+                class="w-1.5 h-1.5 rounded-full"
+                :class="
+                  selectedPeriod === 'today' ? 'bg-white' : 'bg-green-500'
+                "
+              />
               {{ t(`dashboard.${period}`) }}
             </span>
           </button>
         </div>
-        
+
         <NuxtLink to="/pos">
           <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
-            {{ t('pos.terminal') }}
+            {{ t("pos.terminal") }}
           </UButton>
         </NuxtLink>
       </div>
@@ -269,8 +309,14 @@ onMounted(async () => {
     <!-- Loading Skeletons -->
     <template v-if="isInitialLoad && !hasCachedData">
       <div class="grid grid-cols-12 gap-3">
-        <div v-for="i in 4" :key="i" class="col-span-12 sm:col-span-6 lg:col-span-3">
-          <div class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+        <div
+          v-for="i in 4"
+          :key="i"
+          class="col-span-12 sm:col-span-6 lg:col-span-3"
+        >
+          <div
+            class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+          >
             <USkeleton class="h-3 w-16 mb-2" />
             <USkeleton class="h-6 w-28" />
           </div>
@@ -283,18 +329,18 @@ onMounted(async () => {
       <div class="grid grid-cols-12 gap-3">
         <!-- KPI Cards -->
         <div class="col-span-12">
-          <DashboardKPICards 
-            :kpis="kpis" 
-            :today-stats="todayStats" 
-            :selected-period="selectedPeriod" 
+          <DashboardKPICards
+            :kpis="kpis"
+            :today-stats="todayStats"
+            :selected-period="selectedPeriod"
           />
         </div>
 
         <!-- Sales Chart -->
         <div class="col-span-12 lg:col-span-8">
-          <DashboardSalesChart 
-            :hourly-sales="hourlySales" 
-            :peak-hour="peakHour" 
+          <DashboardSalesChart
+            :hourly-sales="hourlySales"
+            :peak-hour="peakHour"
           />
         </div>
 

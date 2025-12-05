@@ -10,6 +10,7 @@
 
 definePageMeta({
   layout: 'blank',
+  middleware: ['auth'],
 });
 
 const _t = useI18n();

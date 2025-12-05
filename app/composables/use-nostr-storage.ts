@@ -1,9 +1,17 @@
 import type { NostrUser, UserInfo } from "~/types";
 
+// ============================================
+// 📦 STORAGE KEYS (Aligned with use-users.ts)
+// ============================================
+const STORAGE_KEYS = {
+  NOSTR_KEYS: 'nostrUser',              // Nostr private/public keys
+  NOSTR_PROFILE: 'nostr_user_profile',  // Nostr profile data (name, picture, etc)
+  ACCOUNTS_LIST: 'userList',            // List of all Nostr accounts
+} as const;
+
 export const useNostrStorage = () => {
   const accounts = useState<UserInfo[]>("accounts", () => []);
-  const _userKey = 'nostrUser';
-  const _currentUser = 'currentUserInfo';
+
   /**
    * Save user info to local storage
    */
@@ -12,11 +20,22 @@ export const useNostrStorage = () => {
 
     // Save user keys
     if (userInfo.userKeys) {
-      localStorage.setItem(_userKey, JSON.stringify(userInfo.userKeys));
+      localStorage.setItem(STORAGE_KEYS.NOSTR_KEYS, JSON.stringify(userInfo.userKeys));
     }
 
-    // Save current user info
-    localStorage.setItem(_currentUser, JSON.stringify(userInfo));
+    // Save profile data (unified key)
+    localStorage.setItem(STORAGE_KEYS.NOSTR_PROFILE, JSON.stringify({
+      pubkey: userInfo.pubkey,
+      name: userInfo.name,
+      display_name: userInfo.displayName || userInfo.display_name,
+      picture: userInfo.picture,
+      about: userInfo.about,
+      nip05: userInfo.nip05,
+      banner: userInfo.banner,
+      lud16: userInfo.lud16,
+      website: userInfo.website,
+    }));
+    
     // Update accounts list
     updateAccountsList(userInfo);
   };
@@ -55,7 +74,7 @@ export const useNostrStorage = () => {
           };
     });
 
-    localStorage.setItem("userList", JSON.stringify(_items));
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS_LIST, JSON.stringify(_items));
     accounts.value = storedList;
   };
 
@@ -65,7 +84,7 @@ export const useNostrStorage = () => {
   const loadUser = (pubkey: string): UserInfo | null => {
     if (!import.meta.client) return null;
 
-    const storedList = JSON.parse(localStorage.getItem("userList") || "[]");
+    const storedList = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]");
     return storedList.find((item: UserInfo) => item.pubkey === pubkey) || null;
   };
 
@@ -81,12 +100,12 @@ export const useNostrStorage = () => {
     let userInfo = null;
     let user = null;
 
-    const currentUserData = localStorage.getItem(_currentUser);
-    if (currentUserData) {
-      userInfo = JSON.parse(currentUserData);
+    const profileData = localStorage.getItem(STORAGE_KEYS.NOSTR_PROFILE);
+    if (profileData) {
+      userInfo = JSON.parse(profileData);
     }
 
-    const userData = localStorage.getItem(_userKey);
+    const userData = localStorage.getItem(STORAGE_KEYS.NOSTR_KEYS);
     if (userData) {
       user = JSON.parse(userData);
     }
@@ -100,7 +119,7 @@ export const useNostrStorage = () => {
   const loadAllAccounts = (): UserInfo[] => {
     if (!import.meta.client) return [];
 
-    const items = JSON.parse(localStorage.getItem("userList") || "[]");
+    const items = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]");
     accounts.value = items;
     return items;
   };
@@ -111,17 +130,17 @@ export const useNostrStorage = () => {
   const clearUserData = () => {
     if (!import.meta.client) return;
 
-    localStorage.removeItem(_userKey);
-    localStorage.removeItem(_currentUser);
+    localStorage.removeItem(STORAGE_KEYS.NOSTR_KEYS);
+    localStorage.removeItem(STORAGE_KEYS.NOSTR_PROFILE);
   };
 
   // remove account
   const removeAccount = (pubkey: string) => {
-    const storedList = JSON.parse(localStorage.getItem("userList") || "[]");
+    const storedList = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]");
     const _items = storedList.filter(
       (item: UserInfo) => item.pubkey !== pubkey
     );
-    localStorage.setItem("userList", JSON.stringify(_items));
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS_LIST, JSON.stringify(_items));
     accounts.value = _items;
   };
 

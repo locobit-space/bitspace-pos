@@ -1,3 +1,61 @@
+<script setup lang="ts">
+definePageMeta({
+  layout: 'default',
+  middleware: ['auth'],
+});
+
+const { t } = useI18n()
+const route = useRoute()
+
+const navItems = computed(() => [
+  {
+    label: t('settings.general.title'),
+    to: '/settings/general',
+    icon: 'i-heroicons-cog-6-tooth',
+  },
+  {
+    label: t('settings.account.title'),
+    to: '/settings/account',
+    icon: 'i-heroicons-user-circle',
+  },
+  {
+    label: t('settings.lightning.title'),
+    
+    to: '/settings/lightning',
+    icon: 'i-heroicons-bolt',
+  },
+  {
+    label: t('settings.users.title'),
+    to: '/settings/users',
+    icon: 'i-heroicons-users',
+  },
+  {
+    label: t('settings.tax.title'),
+    to: '/settings/tax',
+    icon: 'i-heroicons-receipt-percent',
+  },
+  {
+    label: t('settings.receipt.title'),
+    to: '/settings/receipt',
+    icon: 'i-heroicons-document-text',
+  },
+  {
+    label: t('settings.backup.title'),
+    to: '/settings/backup',
+    icon: 'i-heroicons-cloud-arrow-up',
+  },
+  {
+    label: t('settings.auditLog.title'),
+    to: '/settings/audit-log',
+    icon: 'i-heroicons-shield-check',
+  },
+])
+
+const isActive = (path: string) => {
+  return route.path === path || route.path.startsWith(path + '/')
+}
+</script>
+
 <template>
   <div class="flex h-full">
     <!-- Sidebar Navigation -->
@@ -56,58 +114,5 @@
     </main>
   </div>
 </template>
-
-<script setup lang="ts">
-const { t } = useI18n()
-const route = useRoute()
-
-const navItems = computed(() => [
-  {
-    label: t('settings.general.title'),
-    to: '/settings/general',
-    icon: 'i-heroicons-cog-6-tooth',
-  },
-  {
-    label: t('settings.account.title'),
-    to: '/settings/account',
-    icon: 'i-heroicons-user-circle',
-  },
-  {
-    label: t('settings.lightning.title'),
-    
-    to: '/settings/lightning',
-    icon: 'i-heroicons-bolt',
-  },
-  {
-    label: t('settings.users.title'),
-    to: '/settings/users',
-    icon: 'i-heroicons-users',
-  },
-  {
-    label: t('settings.tax.title'),
-    to: '/settings/tax',
-    icon: 'i-heroicons-receipt-percent',
-  },
-  {
-    label: t('settings.receipt.title'),
-    to: '/settings/receipt',
-    icon: 'i-heroicons-document-text',
-  },
-  {
-    label: t('settings.backup.title'),
-    to: '/settings/backup',
-    icon: 'i-heroicons-cloud-arrow-up',
-  },
-  {
-    label: t('settings.auditLog.title'),
-    to: '/settings/audit-log',
-    icon: 'i-heroicons-shield-check',
-  },
-])
-
-const isActive = (path: string) => {
-  return route.path === path || route.path.startsWith(path + '/')
-}
-</script>
 
 <style scoped></style>
