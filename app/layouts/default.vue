@@ -3,7 +3,7 @@
     <aside>
       <AppSideBar />
     </aside>
-    <main class="flex-grow overflow-y-auto">
+    <main class="flex-1 overflow-y-auto relative">
       <slot />
     </main>
   </div>

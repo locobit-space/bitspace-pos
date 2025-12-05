@@ -1,0 +1,775 @@
+// composables/use-tables.ts
+// 🍽️ Table Management for Dine-In Service
+// Stores tables and reservations in Nostr relay
+
+import { ref, computed } from 'vue';
+
+// ============================================
+// TYPES
+// ============================================
+
+export type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning' | 'unavailable';
+export type TableShape = 'square' | 'round' | 'rectangle' | 'oval';
+
+export interface Table {
+  id: string;
+  number: string;
+  name?: string;
+  capacity: number;
+  minCapacity?: number;
+  shape: TableShape;
+  zone?: string; // e.g., 'indoor', 'outdoor', 'vip', 'bar'
+  status: TableStatus;
+  currentOrderId?: string;
+  occupiedAt?: string;
+  occupiedBy?: string; // staff name who seated the table
+  guestCount?: number;
+  notes?: string;
+  position?: { x: number; y: number }; // for floor plan
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TableZone {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface Reservation {
+  id: string;
+  tableId: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  customerNpub?: string;
+  guestCount: number;
+  reservedFor: string; // ISO date string
+  duration: number; // in minutes
+  notes?: string;
+  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TableSession {
+  id: string;
+  tableId: string;
+  orderId?: string;
+  guestCount: number;
+  seatedAt: string;
+  seatedBy?: string;
+  closedAt?: string;
+  closedBy?: string;
+  duration?: number; // in minutes
+  totalSpent?: number;
+}
+
+interface TableData {
+  tables: Table[];
+  zones: TableZone[];
+  reservations: Reservation[];
+  sessions: TableSession[];
+}
+
+// ============================================
+// SINGLETON STATE
+// ============================================
+
+const tables = ref<Table[]>([]);
+const zones = ref<TableZone[]>([]);
+const reservations = ref<Reservation[]>([]);
+const tableSessions = ref<TableSession[]>([]);
+const isLoading = ref(false);
+const lastSyncAt = ref<string | null>(null);
+
+// Nostr event kind for tables
+const TABLE_KIND = 30080;
+
+export function useTables() {
+  const nostrData = useNostrData();
+
+  // ============================================
+  // DATA OPERATIONS
+  // ============================================
+
+  /**
+   * Load all table data from Nostr relay
+   */
+  const loadTables = async (): Promise<void> => {
+    isLoading.value = true;
+    try {
+      const data = await nostrData.getReplaceableEvent<TableData>(TABLE_KIND, 'tables');
+      
+      if (data?.data) {
+        tables.value = data.data.tables || [];
+        zones.value = data.data.zones || [];
+        reservations.value = data.data.reservations || [];
+        tableSessions.value = data.data.sessions || [];
+        lastSyncAt.value = new Date().toISOString();
+      }
+    } catch (error) {
+      console.error('[Tables] Failed to load tables:', error);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * Save all table data to Nostr relay
+   */
+  const saveTables = async (): Promise<void> => {
+    try {
+      await nostrData.publishReplaceableEvent(
+        TABLE_KIND,
+        {
+          tables: tables.value,
+          zones: zones.value,
+          reservations: reservations.value,
+          sessions: tableSessions.value,
+        } as TableData,
+        'tables',
+        [],
+        true // encrypt
+      );
+      lastSyncAt.value = new Date().toISOString();
+    } catch (error) {
+      console.error('[Tables] Failed to save tables:', error);
+      throw error;
+    }
+  };
+
+  // ============================================
+  // TABLE CRUD OPERATIONS
+  // ============================================
+
+  /**
+   * Create a new table
+   */
+  const createTable = async (tableData: Omit<Table, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<Table> => {
+    const now = new Date().toISOString();
+    const table: Table = {
+      ...tableData,
+      id: `table_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      status: 'available',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    tables.value.push(table);
+    await saveTables();
+    return table;
+  };
+
+  /**
+   * Update a table
+   */
+  const updateTable = async (id: string, updates: Partial<Table>): Promise<Table | null> => {
+    const index = tables.value.findIndex(t => t.id === id);
+    if (index === -1) return null;
+
+    const existingTable = tables.value[index];
+    if (!existingTable) return null;
+
+    const updatedTable: Table = {
+      ...existingTable,
+      ...updates,
+      id: existingTable.id, // ensure id is not overwritten
+      updatedAt: new Date().toISOString(),
+    };
+
+    tables.value[index] = updatedTable;
+    await saveTables();
+    return updatedTable;
+  };
+
+  /**
+   * Delete a table
+   */
+  const deleteTable = async (id: string): Promise<boolean> => {
+    const index = tables.value.findIndex(t => t.id === id);
+    if (index === -1) return false;
+
+    tables.value.splice(index, 1);
+    await saveTables();
+    return true;
+  };
+
+  // ============================================
+  // TABLE STATUS OPERATIONS
+  // ============================================
+
+  /**
+   * Seat guests at a table (make it occupied)
+   */
+  const seatTable = async (
+    tableId: string,
+    guestCount: number,
+    orderId?: string,
+    staffName?: string
+  ): Promise<Table | null> => {
+    const table = tables.value.find(t => t.id === tableId);
+    if (!table || table.status !== 'available') return null;
+
+    const now = new Date().toISOString();
+    
+    // Create session
+    const session: TableSession = {
+      id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      tableId,
+      orderId,
+      guestCount,
+      seatedAt: now,
+      seatedBy: staffName,
+    };
+    tableSessions.value.push(session);
+
+    // Update table status
+    return updateTable(tableId, {
+      status: 'occupied',
+      currentOrderId: orderId,
+      occupiedAt: now,
+      occupiedBy: staffName,
+      guestCount,
+    });
+  };
+
+  /**
+   * Free a table (make it available after cleaning)
+   */
+  const freeTable = async (tableId: string, staffName?: string): Promise<Table | null> => {
+    const table = tables.value.find(t => t.id === tableId);
+    if (!table) return null;
+
+    // Close the current session if any
+    const currentSession = tableSessions.value.find(
+      s => s.tableId === tableId && !s.closedAt
+    );
+    if (currentSession) {
+      const now = new Date();
+      currentSession.closedAt = now.toISOString();
+      currentSession.closedBy = staffName;
+      currentSession.duration = Math.round(
+        (now.getTime() - new Date(currentSession.seatedAt).getTime()) / 60000
+      );
+    }
+
+    return updateTable(tableId, {
+      status: 'available',
+      currentOrderId: undefined,
+      occupiedAt: undefined,
+      occupiedBy: undefined,
+      guestCount: undefined,
+      notes: undefined,
+    });
+  };
+
+  /**
+   * Set table to cleaning status
+   */
+  const setTableCleaning = async (tableId: string): Promise<Table | null> => {
+    return updateTable(tableId, { status: 'cleaning' });
+  };
+
+  /**
+   * Reserve a table
+   */
+  const reserveTable = async (tableId: string): Promise<Table | null> => {
+    return updateTable(tableId, { status: 'reserved' });
+  };
+
+  /**
+   * Set table as unavailable
+   */
+  const setTableUnavailable = async (tableId: string, notes?: string): Promise<Table | null> => {
+    return updateTable(tableId, { status: 'unavailable', notes });
+  };
+
+  /**
+   * Link an order to a table
+   */
+  const linkOrder = async (tableId: string, orderId: string): Promise<Table | null> => {
+    // Update current session with order ID
+    const currentSession = tableSessions.value.find(
+      s => s.tableId === tableId && !s.closedAt
+    );
+    if (currentSession) {
+      currentSession.orderId = orderId;
+    }
+
+    return updateTable(tableId, { currentOrderId: orderId });
+  };
+
+  // ============================================
+  // ZONE OPERATIONS
+  // ============================================
+
+  /**
+   * Create a zone
+   */
+  const createZone = async (zoneData: Omit<TableZone, 'id'>): Promise<TableZone> => {
+    const zone: TableZone = {
+      ...zoneData,
+      id: `zone_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+
+    zones.value.push(zone);
+    await saveTables();
+    return zone;
+  };
+
+  /**
+   * Update a zone
+   */
+  const updateZone = async (id: string, updates: Partial<TableZone>): Promise<TableZone | null> => {
+    const index = zones.value.findIndex(z => z.id === id);
+    if (index === -1) return null;
+
+    const existingZone = zones.value[index];
+    if (!existingZone) return null;
+
+    const updatedZone: TableZone = {
+      ...existingZone,
+      ...updates,
+      id: existingZone.id, // ensure id is not overwritten
+    };
+
+    zones.value[index] = updatedZone;
+    await saveTables();
+    return updatedZone;
+  };
+
+  /**
+   * Delete a zone
+   */
+  const deleteZone = async (id: string): Promise<boolean> => {
+    const index = zones.value.findIndex(z => z.id === id);
+    if (index === -1) return false;
+
+    zones.value.splice(index, 1);
+    await saveTables();
+    return true;
+  };
+
+  // ============================================
+  // RESERVATION OPERATIONS
+  // ============================================
+
+  /**
+   * Create a reservation
+   */
+  const createReservation = async (
+    reservationData: Omit<Reservation, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+  ): Promise<Reservation> => {
+    const now = new Date().toISOString();
+    const reservation: Reservation = {
+      ...reservationData,
+      id: `reservation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    reservations.value.push(reservation);
+    await saveTables();
+    return reservation;
+  };
+
+  /**
+   * Update reservation
+   */
+  const updateReservation = async (
+    id: string,
+    updates: Partial<Reservation>
+  ): Promise<Reservation | null> => {
+    const index = reservations.value.findIndex(r => r.id === id);
+    if (index === -1) return null;
+
+    const existingReservation = reservations.value[index];
+    if (!existingReservation) return null;
+
+    const updatedReservation: Reservation = {
+      ...existingReservation,
+      ...updates,
+      id: existingReservation.id, // ensure id is not overwritten
+      updatedAt: new Date().toISOString(),
+    };
+
+    reservations.value[index] = updatedReservation;
+    await saveTables();
+    return updatedReservation;
+  };
+
+  /**
+   * Cancel reservation
+   */
+  const cancelReservation = async (id: string): Promise<Reservation | null> => {
+    return updateReservation(id, { status: 'cancelled' });
+  };
+
+  /**
+   * Confirm reservation
+   */
+  const confirmReservation = async (id: string): Promise<Reservation | null> => {
+    return updateReservation(id, { status: 'confirmed' });
+  };
+
+  /**
+   * Mark reservation as seated
+   */
+  const seatReservation = async (id: string): Promise<Reservation | null> => {
+    const reservation = reservations.value.find(r => r.id === id);
+    if (!reservation) return null;
+
+    // Seat the table
+    await seatTable(reservation.tableId, reservation.guestCount);
+
+    return updateReservation(id, { status: 'seated' });
+  };
+
+  /**
+   * Mark reservation as no-show
+   */
+  const markNoShow = async (id: string): Promise<Reservation | null> => {
+    return updateReservation(id, { status: 'no_show' });
+  };
+
+  // ============================================
+  // COMPUTED VALUES
+  // ============================================
+
+  /**
+   * Active tables only
+   */
+  const activeTables = computed(() => {
+    return tables.value.filter(t => t.isActive);
+  });
+
+  /**
+   * Available tables
+   */
+  const availableTables = computed(() => {
+    return activeTables.value.filter(t => t.status === 'available');
+  });
+
+  /**
+   * Occupied tables
+   */
+  const occupiedTables = computed(() => {
+    return activeTables.value.filter(t => t.status === 'occupied');
+  });
+
+  /**
+   * Tables by status
+   */
+  const tablesByStatus = computed(() => {
+    const result: Record<TableStatus, Table[]> = {
+      available: [],
+      occupied: [],
+      reserved: [],
+      cleaning: [],
+      unavailable: [],
+    };
+
+    for (const table of activeTables.value) {
+      result[table.status].push(table);
+    }
+
+    return result;
+  });
+
+  /**
+   * Tables by zone
+   */
+  const tablesByZone = computed(() => {
+    const result: Record<string, Table[]> = { '': [] }; // '' for tables with no zone
+
+    for (const zone of zones.value) {
+      result[zone.id] = [];
+    }
+
+    for (const table of activeTables.value) {
+      const zoneId = table.zone || '';
+      if (!result[zoneId]) result[zoneId] = [];
+      result[zoneId].push(table);
+    }
+
+    return result;
+  });
+
+  /**
+   * Active zones
+   */
+  const activeZones = computed(() => {
+    return zones.value
+      .filter(z => z.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+  });
+
+  /**
+   * Today's reservations
+   */
+  const todayReservations = computed(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return reservations.value.filter(r => {
+      const reservedFor = new Date(r.reservedFor);
+      return reservedFor >= today && reservedFor < tomorrow;
+    });
+  });
+
+  /**
+   * Upcoming reservations (next 24 hours)
+   */
+  const upcomingReservations = computed(() => {
+    const now = new Date();
+    const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    return reservations.value
+      .filter(r => {
+        const reservedFor = new Date(r.reservedFor);
+        return reservedFor >= now && reservedFor <= in24Hours && 
+               ['pending', 'confirmed'].includes(r.status);
+      })
+      .sort((a, b) => new Date(a.reservedFor).getTime() - new Date(b.reservedFor).getTime());
+  });
+
+  /**
+   * Table occupancy rate
+   */
+  const occupancyRate = computed(() => {
+    if (activeTables.value.length === 0) return 0;
+    return Math.round(
+      (occupiedTables.value.length / activeTables.value.length) * 100
+    );
+  });
+
+  /**
+   * Total seating capacity
+   */
+  const totalCapacity = computed(() => {
+    return activeTables.value.reduce((sum, t) => sum + t.capacity, 0);
+  });
+
+  /**
+   * Current guest count
+   */
+  const currentGuestCount = computed(() => {
+    return occupiedTables.value.reduce((sum, t) => sum + (t.guestCount || 0), 0);
+  });
+
+  // ============================================
+  // UTILITY FUNCTIONS
+  // ============================================
+
+  /**
+   * Get table by ID
+   */
+  const getTable = (id: string): Table | undefined => {
+    return tables.value.find(t => t.id === id);
+  };
+
+  /**
+   * Get table by number
+   */
+  const getTableByNumber = (number: string): Table | undefined => {
+    return tables.value.find(t => t.number === number);
+  };
+
+  /**
+   * Get available tables for a given guest count
+   */
+  const getAvailableTablesForParty = (guestCount: number): Table[] => {
+    return availableTables.value.filter(t => {
+      const min = t.minCapacity || 1;
+      return guestCount >= min && guestCount <= t.capacity;
+    });
+  };
+
+  /**
+   * Check if a table is available at a specific time
+   */
+  const isTableAvailableAt = (tableId: string, dateTime: Date, duration: number = 90): boolean => {
+    const endTime = new Date(dateTime.getTime() + duration * 60000);
+
+    // Check for overlapping reservations
+    const overlapping = reservations.value.find(r => {
+      if (r.tableId !== tableId) return false;
+      if (['cancelled', 'no_show', 'completed'].includes(r.status)) return false;
+
+      const resStart = new Date(r.reservedFor);
+      const resEnd = new Date(resStart.getTime() + r.duration * 60000);
+
+      // Check for overlap
+      return dateTime < resEnd && endTime > resStart;
+    });
+
+    return !overlapping;
+  };
+
+  // ============================================
+  // DEMO DATA
+  // ============================================
+
+  /**
+   * Create demo tables and zones
+   */
+  const createDemoData = async (): Promise<void> => {
+    // Create zones if none exist
+    if (zones.value.length === 0) {
+      await createZone({ name: 'Indoor', description: 'Main dining area', color: '#3B82F6', isActive: true, sortOrder: 1 });
+      await createZone({ name: 'Outdoor', description: 'Patio seating', color: '#10B981', isActive: true, sortOrder: 2 });
+      await createZone({ name: 'Bar', description: 'Bar counter', color: '#F59E0B', isActive: true, sortOrder: 3 });
+      await createZone({ name: 'VIP', description: 'Private dining', color: '#8B5CF6', isActive: true, sortOrder: 4 });
+    }
+
+    // Create tables if none exist
+    if (tables.value.length === 0) {
+      const indoorZone = zones.value.find(z => z.name === 'Indoor');
+      const outdoorZone = zones.value.find(z => z.name === 'Outdoor');
+      const barZone = zones.value.find(z => z.name === 'Bar');
+      const vipZone = zones.value.find(z => z.name === 'VIP');
+
+      // Indoor tables
+      for (let i = 1; i <= 8; i++) {
+        await createTable({
+          number: `T${i}`,
+          name: `Table ${i}`,
+          capacity: i <= 4 ? 4 : 6,
+          shape: 'square',
+          zone: indoorZone?.id,
+          position: { x: (i - 1) % 4 * 100, y: Math.floor((i - 1) / 4) * 100 },
+          isActive: true,
+        });
+      }
+
+      // Outdoor tables
+      for (let i = 9; i <= 12; i++) {
+        await createTable({
+          number: `T${i}`,
+          name: `Patio ${i - 8}`,
+          capacity: 4,
+          shape: 'round',
+          zone: outdoorZone?.id,
+          isActive: true,
+        });
+      }
+
+      // Bar seats
+      for (let i = 1; i <= 6; i++) {
+        await createTable({
+          number: `B${i}`,
+          name: `Bar Seat ${i}`,
+          capacity: 2,
+          minCapacity: 1,
+          shape: 'round',
+          zone: barZone?.id,
+          isActive: true,
+        });
+      }
+
+      // VIP tables
+      await createTable({
+        number: 'VIP1',
+        name: 'VIP Room 1',
+        capacity: 10,
+        minCapacity: 6,
+        shape: 'rectangle',
+        zone: vipZone?.id,
+        isActive: true,
+      });
+
+      await createTable({
+        number: 'VIP2',
+        name: 'VIP Room 2',
+        capacity: 8,
+        minCapacity: 4,
+        shape: 'oval',
+        zone: vipZone?.id,
+        isActive: true,
+      });
+    }
+  };
+
+  // ============================================
+  // INITIALIZE
+  // ============================================
+
+  const initialize = async (): Promise<void> => {
+    await loadTables();
+  };
+
+  // ============================================
+  // RETURN
+  // ============================================
+
+  return {
+    // State
+    tables,
+    zones,
+    reservations,
+    tableSessions,
+    isLoading,
+    lastSyncAt,
+
+    // Computed
+    activeTables,
+    availableTables,
+    occupiedTables,
+    tablesByStatus,
+    tablesByZone,
+    activeZones,
+    todayReservations,
+    upcomingReservations,
+    occupancyRate,
+    totalCapacity,
+    currentGuestCount,
+
+    // Actions
+    initialize,
+    loadTables,
+    saveTables,
+    
+    // Table CRUD
+    createTable,
+    updateTable,
+    deleteTable,
+
+    // Table Status
+    seatTable,
+    freeTable,
+    setTableCleaning,
+    reserveTable,
+    setTableUnavailable,
+    linkOrder,
+
+    // Zones
+    createZone,
+    updateZone,
+    deleteZone,
+
+    // Reservations
+    createReservation,
+    updateReservation,
+    cancelReservation,
+    confirmReservation,
+    seatReservation,
+    markNoShow,
+
+    // Utilities
+    getTable,
+    getTableByNumber,
+    getAvailableTablesForParty,
+    isTableAvailableAt,
+
+    // Demo
+    createDemoData,
+  };
+}

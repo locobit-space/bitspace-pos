@@ -1,12 +1,15 @@
 <!-- components/pos/CouponInput.vue -->
 <!-- 🎫 Coupon Code Input Component -->
 <script setup lang="ts">
-import type { Coupon, AppliedCoupon, CurrencyCode } from '~/types';
+import type { AppliedCoupon, CurrencyCode } from '~/types';
 
 const props = defineProps<{
   subtotal: number;
   currency: CurrencyCode;
   appliedCoupon?: AppliedCoupon | null;
+  customerId?: string;
+  cartProductIds?: string[];
+  cartCategoryIds?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -17,6 +20,7 @@ const emit = defineEmits<{
 // Composables
 const currencyHelper = useCurrency();
 const { t } = useI18n();
+const couponsComposable = useCoupons();
 
 // State
 const couponCode = ref('');
@@ -24,56 +28,10 @@ const isValidating = ref(false);
 const error = ref('');
 const showInput = ref(false);
 
-// Mock coupons - in production, load from database/API
-const availableCoupons: Coupon[] = [
-  {
-    id: 'welcome10',
-    code: 'WELCOME10',
-    name: 'Welcome 10% Off',
-    description: '10% off for new customers',
-    type: 'percentage',
-    value: 10,
-    minOrderAmount: 50000,
-    maxDiscount: 100000,
-    validFrom: '2024-01-01',
-    validUntil: '2025-12-31',
-    usageLimit: 1000,
-    usedCount: 150,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 'save20k',
-    code: 'SAVE20K',
-    name: 'Save ₭20,000',
-    description: 'Fixed ₭20,000 discount',
-    type: 'fixed',
-    value: 20000,
-    minOrderAmount: 100000,
-    validFrom: '2024-01-01',
-    validUntil: '2025-12-31',
-    usageLimit: 500,
-    usedCount: 100,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 'lightning',
-    code: 'LIGHTNING',
-    name: 'Lightning Special',
-    description: '15% off when paying with Lightning',
-    type: 'percentage',
-    value: 15,
-    validFrom: '2024-01-01',
-    validUntil: '2025-12-31',
-    usedCount: 0,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-];
+// Initialize coupons on mount
+onMounted(async () => {
+  await couponsComposable.initialize();
+});
 
 const validateCoupon = async () => {
   if (!couponCode.value.trim()) {
@@ -84,64 +42,41 @@ const validateCoupon = async () => {
   isValidating.value = true;
   error.value = '';
 
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // Small delay for UX
+  await new Promise(resolve => setTimeout(resolve, 300));
 
   const code = couponCode.value.toUpperCase().trim();
-  const coupon = availableCoupons.find(c => c.code === code);
+  
+  // Validate using the coupons composable
+  const result = couponsComposable.validateCoupon(
+    code,
+    props.subtotal,
+    props.currency,
+    props.customerId,
+    props.cartProductIds,
+    props.cartCategoryIds
+  );
 
-  if (!coupon) {
-    error.value = t('coupon.errors.invalid');
-    isValidating.value = false;
-    return;
-  }
-
-  if (!coupon.isActive) {
-    error.value = t('coupon.errors.inactive');
-    isValidating.value = false;
-    return;
-  }
-
-  const now = new Date();
-  if (new Date(coupon.validFrom) > now) {
-    error.value = t('coupon.errors.notStarted');
-    isValidating.value = false;
-    return;
-  }
-
-  if (new Date(coupon.validUntil) < now) {
-    error.value = t('coupon.errors.expired');
-    isValidating.value = false;
-    return;
-  }
-
-  if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
-    error.value = t('coupon.errors.limitReached');
-    isValidating.value = false;
-    return;
-  }
-
-  if (coupon.minOrderAmount && props.subtotal < coupon.minOrderAmount) {
-    error.value = t('coupon.errors.minOrder', { amount: currencyHelper.format(coupon.minOrderAmount, props.currency) });
-    isValidating.value = false;
-    return;
-  }
-
-  // Calculate discount
-  let discountAmount = 0;
-  if (coupon.type === 'percentage') {
-    discountAmount = Math.round((props.subtotal * coupon.value) / 100);
-    if (coupon.maxDiscount) {
-      discountAmount = Math.min(discountAmount, coupon.maxDiscount);
+  if (!result.valid) {
+    // Handle error with any extra context
+    if (result.error === 'coupon.errors.minOrder') {
+      const coupon = couponsComposable.findByCode(code);
+      if (coupon?.minOrderAmount) {
+        error.value = t(result.error, { amount: currencyHelper.format(coupon.minOrderAmount, props.currency) });
+      } else {
+        error.value = t(result.error);
+      }
+    } else {
+      error.value = t(result.error || 'coupon.errors.invalid');
     }
-  } else if (coupon.type === 'fixed') {
-    discountAmount = coupon.value;
+    isValidating.value = false;
+    return;
   }
 
   // Emit applied coupon
   emit('apply', {
-    coupon,
-    discountAmount,
+    coupon: result.coupon!,
+    discountAmount: result.discountAmount || 0,
     appliedAt: new Date().toISOString(),
   });
 

@@ -147,6 +147,143 @@
       "confirmHint": "ຫຼັງຈາກລູກຄ້າຈ່າຍແລ້ວ, ຢືນຢັນການຈ່າຍຂ້າງລຸ່ມ"
     }
   },
+  "coupon": {
+    "addCoupon": "ເພີ່ມລະຫັດສ່ວນຫຼຸດ",
+    "enterCode": "ໃສ່ລະຫັດສ່ວນຫຼຸດ",
+    "apply": "ນຳໃຊ້",
+    "applied": "ນຳໃຊ້ສ່ວນຫຼຸດແລ້ວ",
+    "removed": "ລົບສ່ວນຫຼຸດແລ້ວ",
+    "discount": "ສ່ວນຫຼຸດ",
+    "title": "ຄູປອງ",
+    "description": "ຈັດການຄູປອງສ່ວນຫຼຸດແລະໂປຣໂມຊັນ",
+    "create": "ສ້າງຄູປອງ",
+    "edit": "ແກ້ໄຂຄູປອງ",
+    "code": "ລະຫັດຄູປອງ",
+    "name": "ຊື່",
+    "type": "ປະເພດສ່ວນຫຼຸດ",
+    "value": "ມູນຄ່າ",
+    "percentage": "ເປີເຊັນ",
+    "fixed": "ຈຳນວນຄົງທີ່",
+    "freeItem": "ສິນຄ້າຟຣີ",
+    "buyXGetY": "ຊື້ X ໄດ້ Y",
+    "minOrder": "ຍອດຊື້ຂັ້ນຕ່ຳ",
+    "maxDiscount": "ສ່ວນຫຼຸດສູງສຸດ",
+    "validFrom": "ໃຊ້ໄດ້ຕັ້ງແຕ່",
+    "validUntil": "ໃຊ້ໄດ້ຈົນຮອດ",
+    "usageLimit": "ຈຳກັດການໃຊ້",
+    "customerLimit": "ຈຳກັດຕໍ່ລູກຄ້າ",
+    "usedCount": "ໃຊ້ແລ້ວ",
+    "remaining": "ເຫຼືອ",
+    "status": "ສະຖານະ",
+    "active": "ເປີດໃຊ້",
+    "inactive": "ປິດ",
+    "expired": "ໝົດອາຍຸ",
+    "applicableProducts": "ສິນຄ້າທີ່ໃຊ້ໄດ້",
+    "applicableCategories": "ໝວດໝູ່ທີ່ໃຊ້ໄດ້",
+    "allProducts": "ສິນຄ້າທັງໝົດ",
+    "noLimit": "ບໍ່ຈຳກັດ",
+    "errors": {
+      "empty": "ກະລຸນາໃສ່ລະຫັດສ່ວນຫຼຸດ",
+      "invalid": "ລະຫັດສ່ວນຫຼຸດບໍ່ຖືກຕ້ອງ",
+      "inactive": "ສ່ວນຫຼຸດນີ້ບໍ່ໄດ້ເປີດໃຊ້ແລ້ວ",
+      "notStarted": "ສ່ວນຫຼຸດນີ້ຍັງບໍ່ເລີ່ມໃຊ້",
+      "notYetValid": "ສ່ວນຫຼຸດນີ້ຍັງບໍ່ເລີ່ມໃຊ້",
+      "expired": "ສ່ວນຫຼຸດນີ້ໝົດອາຍຸແລ້ວ",
+      "limitReached": "ສ່ວນຫຼຸດນີ້ໃຊ້ເຕັມຈຳນວນແລ້ວ",
+      "usageLimit": "ສ່ວນຫຼຸດນີ້ໃຊ້ເຕັມຈຳນວນແລ້ວ",
+      "customerLimit": "ທ່ານໃຊ້ສ່ວນຫຼຸດນີ້ຄົບຈຳນວນແລ້ວ",
+      "minOrder": "ຍອດຊື້ຕ່ຳສຸດແມ່ນ {amount}",
+      "notApplicable": "ສ່ວນຫຼຸດນີ້ໃຊ້ບໍ່ໄດ້ກັບສິນຄ້າໃນກະຕ່າ",
+      "alreadyApplied": "ມີສ່ວນຫຼຸດນຳໃຊ້ຢູ່ແລ້ວ"
+    }
+  },
+  "tables": {
+    "title": "ໂຕະ",
+    "description": "ຈັດການໂຕະຮ້ານອາຫານແລະການຈອງ",
+    "table": "ໂຕະ",
+    "tables": "ໂຕະ",
+    "zones": "ໂຊນ",
+    "reservations": "ການຈອງ",
+    "floorPlan": "ແຜນຜັງຊັ້ນ",
+    "status": {
+      "available": "ວ່າງ",
+      "occupied": "ມີຄົນນັ່ງ",
+      "reserved": "ຈອງແລ້ວ",
+      "cleaning": "ກຳລັງທຳຄວາມສະອາດ",
+      "unavailable": "ບໍ່ພ້ອມ"
+    },
+    "shape": {
+      "square": "ສີ່ຫຼ່ຽມ",
+      "round": "ວົງມົນ",
+      "rectangle": "ສີ່ຫຼ່ຽມຍາວ",
+      "oval": "ຮູບໄຂ່"
+    },
+    "actions": {
+      "seat": "ນຳແຂກນັ່ງ",
+      "free": "ໂຕະວ່າງ",
+      "clean": "ກຳນົດທຳຄວາມສະອາດ",
+      "reserve": "ຈອງໂຕະ",
+      "linkOrder": "ເຊື່ອມອໍເດີ້"
+    },
+    "info": {
+      "number": "ເລກໂຕະ",
+      "name": "ຊື່ໂຕະ",
+      "capacity": "ຄວາມຈຸ",
+      "minCapacity": "ແຂກຕ່ຳສຸດ",
+      "zone": "ໂຊນ",
+      "guestCount": "ຈຳນວນແຂກ",
+      "occupiedAt": "ນັ່ງເວລາ",
+      "occupiedBy": "ນຳນັ່ງໂດຍ"
+    },
+    "reservation": {
+      "title": "ການຈອງ",
+      "new": "ຈອງໃໝ່",
+      "edit": "ແກ້ໄຂການຈອງ",
+      "customer": "ຊື່ລູກຄ້າ",
+      "phone": "ເບີໂທ",
+      "email": "ອີເມວ",
+      "guests": "ຈຳນວນແຂກ",
+      "dateTime": "ວັນ & ເວລາ",
+      "duration": "ໄລຍະເວລາ",
+      "notes": "ຄຳຂໍພິເສດ",
+      "status": {
+        "pending": "ລໍຖ້າ",
+        "confirmed": "ຢືນຢັນແລ້ວ",
+        "seated": "ນັ່ງແລ້ວ",
+        "completed": "ສຳເລັດ",
+        "cancelled": "ຍົກເລີກ",
+        "noShow": "ບໍ່ມາ"
+      },
+      "confirm": "ຢືນຢັນ",
+      "cancel": "ຍົກເລີກ",
+      "markSeated": "ໝາຍວ່ານັ່ງແລ້ວ",
+      "markNoShow": "ໝາຍວ່າບໍ່ມາ"
+    },
+    "stats": {
+      "occupancy": "ອັດຕາການນັ່ງ",
+      "totalCapacity": "ຄວາມຈຸທັງໝົດ",
+      "currentGuests": "ແຂກປັດຈຸບັນ",
+      "todayReservations": "ການຈອງມື້ນີ້",
+      "upcomingReservations": "ການຈອງທີ່ຈະມາ"
+    },
+    "zone": {
+      "create": "ສ້າງໂຊນ",
+      "edit": "ແກ້ໄຂໂຊນ",
+      "name": "ຊື່ໂຊນ",
+      "color": "ສີ",
+      "noZone": "ບໍ່ມີໂຊນ"
+    },
+    "messages": {
+      "created": "ສ້າງໂຕະແລ້ວ",
+      "updated": "ອັບເດດໂຕະແລ້ວ",
+      "deleted": "ລຶບໂຕະແລ້ວ",
+      "seated": "ນຳແຂກນັ່ງໂຕະແລ້ວ",
+      "freed": "ໂຕະວ່າງແລ້ວ",
+      "reservationCreated": "ສ້າງການຈອງແລ້ວ",
+      "reservationConfirmed": "ຢືນຢັນການຈອງແລ້ວ",
+      "reservationCancelled": "ຍົກເລີກການຈອງແລ້ວ"
+    }
+  },
   "currency": {
     "lak": "ກີບ",
     "thb": "ບາດ",
@@ -1291,5 +1428,72 @@
     "nsec_warning_4": "ຢ່າແບ່ງປັນຜ່ານພາບໜ້າຈໍ, ແຊັດ, ຫຼືອີເມວ",
     "nsec_confirm_type": "ພິມ 'I UNDERSTAND' ເພື່ອເປີດເຜີຍກະແຈ:",
     "reveal_key": "ເປີດເຜີຍກະແຈ"
+  },
+  "notifications": {
+    "title": "ການແຈ້ງເຕືອນ",
+    "pageDescription": "ຈັດການ ແລະ ເບິ່ງການແຈ້ງເຕືອນທັງໝົດ",
+    "noNotifications": "ບໍ່ມີການແຈ້ງເຕືອນ",
+    "empty": "ຍັງບໍ່ມີການແຈ້ງເຕືອນ",
+    "emptyTitle": "ບໍ່ມີການແຈ້ງເຕືອນໃໝ່!",
+    "emptyDescription": "ທ່ານບໍ່ມີການແຈ້ງເຕືອນໃນຂະນະນີ້. ການແຈ້ງເຕືອນໃໝ່ຈະປະກົດຢູ່ນີ້ເມື່ອທ່ານໄດ້ຮັບການຈ່າຍເງິນ, ອໍເດີ້, ຫຼື ການເຕືອນ.",
+    "markAllRead": "ໝາຍວ່າອ່ານແລ້ວທັງໝົດ",
+    "markRead": "ໝາຍວ່າອ່ານແລ້ວ",
+    "read": "ອ່ານແລ້ວ",
+    "delete": "ລຶບ",
+    "clearAll": "ລຶບທັງໝົດ",
+    "viewAll": "ເບິ່ງການແຈ້ງເຕືອນທັງໝົດ",
+    "clearConfirmTitle": "ລຶບການແຈ້ງເຕືອນທັງໝົດບໍ?",
+    "clearConfirmMessage": "ນີ້ຈະລຶບການແຈ້ງເຕືອນທັງໝົດຢ່າງຖາວອນ. ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້.",
+    "settings": "ການຕັ້ງຄ່າການແຈ້ງເຕືອນ",
+    "stats": {
+      "total": "ທັງໝົດ",
+      "unread": "ຍັງບໍ່ໄດ້ອ່ານ",
+      "payments": "ການຈ່າຍເງິນ",
+      "stockAlerts": "ການເຕືອນສິນຄ້າ"
+    },
+    "filters": {
+      "all": "ທັງໝົດ",
+      "unread": "ຍັງບໍ່ໄດ້ອ່ານ",
+      "payments": "ການຈ່າຍເງິນ",
+      "orders": "ອໍເດີ້",
+      "stock": "ສິນຄ້າ",
+      "loyalty": "ສະມາຊິກ",
+      "ai": "AI Insights"
+    },
+    "types": {
+      "payment": "ການຈ່າຍເງິນ",
+      "order": "ອໍເດີ້",
+      "stock": "ສິນຄ້າ",
+      "loyalty": "ສະມາຊິກ",
+      "ai": "AI Insight"
+    },
+    "payment": {
+      "received": "ໄດ້ຮັບການຈ່າຍເງິນ",
+      "receivedDesc": "ໄດ້ຮັບການຈ່າຍເງິນ {amount} ຜ່ານ {method}",
+      "failed": "ການຈ່າຍເງິນບໍ່ສຳເລັດ",
+      "failedDesc": "ການຈ່າຍເງິນ {amount} ບໍ່ສຳເລັດ"
+    },
+    "order": {
+      "new": "ອໍເດີ້ໃໝ່",
+      "newDesc": "ໄດ້ຮັບອໍເດີ້ #{orderId}",
+      "ready": "ອໍເດີ້ພ້ອມແລ້ວ",
+      "readyDesc": "ອໍເດີ້ #{orderId} ພ້ອມໃຫ້ມາຮັບແລ້ວ",
+      "completed": "ອໍເດີ້ສຳເລັດ",
+      "completedDesc": "ອໍເດີ້ #{orderId} ສຳເລັດແລ້ວ"
+    },
+    "inventory": {
+      "lowStock": "ສິນຄ້າໃກ້ໝົດ",
+      "lowStockDesc": "{productName} ໃກ້ຈະໝົດແລ້ວ (ເຫຼືອ {quantity})",
+      "outOfStock": "ສິນຄ້າໝົດ",
+      "outOfStockDesc": "{productName} ໝົດແລ້ວ"
+    },
+    "system": {
+      "syncComplete": "ຊິ້ງຂໍ້ມູນສຳເລັດ",
+      "syncCompleteDesc": "ຂໍ້ມູນທັງໝົດໄດ້ຖືກຊິ້ງແລ້ວ",
+      "syncFailed": "ຊິ້ງຂໍ້ມູນບໍ່ສຳເລັດ",
+      "syncFailedDesc": "ບໍ່ສາມາດຊິ້ງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່.",
+      "offline": "ໂໝດອອຟໄລນ໌",
+      "offlineDesc": "ທ່ານກຳລັງເຮັດວຽກແບບອອຟໄລນ໌"
+    }
   }
 }

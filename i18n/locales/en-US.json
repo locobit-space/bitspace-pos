@@ -183,15 +183,134 @@
     "applied": "Coupon Applied",
     "removed": "Coupon Removed",
     "discount": "Discount",
+    "title": "Coupons",
+    "description": "Manage discount coupons and promotions",
+    "create": "Create Coupon",
+    "edit": "Edit Coupon",
+    "code": "Coupon Code",
+    "name": "Name",
+    "type": "Discount Type",
+    "value": "Value",
+    "percentage": "Percentage",
+    "fixed": "Fixed Amount",
+    "freeItem": "Free Item",
+    "buyXGetY": "Buy X Get Y",
+    "minOrder": "Minimum Order",
+    "maxDiscount": "Maximum Discount",
+    "validFrom": "Valid From",
+    "validUntil": "Valid Until",
+    "usageLimit": "Total Usage Limit",
+    "customerLimit": "Per Customer Limit",
+    "usedCount": "Times Used",
+    "remaining": "Remaining",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "expired": "Expired",
+    "applicableProducts": "Applicable Products",
+    "applicableCategories": "Applicable Categories",
+    "allProducts": "All Products",
+    "noLimit": "No Limit",
     "errors": {
       "empty": "Please enter a coupon code",
       "invalid": "Invalid coupon code",
       "inactive": "This coupon is no longer active",
       "notStarted": "This coupon is not yet valid",
+      "notYetValid": "This coupon is not yet valid",
       "expired": "This coupon has expired",
       "limitReached": "This coupon has reached its usage limit",
+      "usageLimit": "This coupon has reached its usage limit",
+      "customerLimit": "You have reached the usage limit for this coupon",
       "minOrder": "Minimum order amount is {amount}",
+      "notApplicable": "This coupon is not applicable to your cart items",
       "alreadyApplied": "A coupon is already applied"
+    }
+  },
+  "tables": {
+    "title": "Tables",
+    "description": "Manage restaurant tables and reservations",
+    "table": "Table",
+    "tables": "Tables",
+    "zones": "Zones",
+    "reservations": "Reservations",
+    "floorPlan": "Floor Plan",
+    "status": {
+      "available": "Available",
+      "occupied": "Occupied",
+      "reserved": "Reserved",
+      "cleaning": "Cleaning",
+      "unavailable": "Unavailable"
+    },
+    "shape": {
+      "square": "Square",
+      "round": "Round",
+      "rectangle": "Rectangle",
+      "oval": "Oval"
+    },
+    "actions": {
+      "seat": "Seat Guests",
+      "free": "Free Table",
+      "clean": "Set Cleaning",
+      "reserve": "Make Reserved",
+      "linkOrder": "Link Order"
+    },
+    "info": {
+      "number": "Table Number",
+      "name": "Table Name",
+      "capacity": "Capacity",
+      "minCapacity": "Min. Guests",
+      "zone": "Zone",
+      "guestCount": "Guests",
+      "occupiedAt": "Seated At",
+      "occupiedBy": "Seated By"
+    },
+    "reservation": {
+      "title": "Reservation",
+      "new": "New Reservation",
+      "edit": "Edit Reservation",
+      "customer": "Customer Name",
+      "phone": "Phone",
+      "email": "Email",
+      "guests": "Number of Guests",
+      "dateTime": "Date & Time",
+      "duration": "Duration",
+      "notes": "Special Requests",
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "seated": "Seated",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "noShow": "No Show"
+      },
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "markSeated": "Mark as Seated",
+      "markNoShow": "Mark as No Show"
+    },
+    "stats": {
+      "occupancy": "Occupancy Rate",
+      "totalCapacity": "Total Capacity",
+      "currentGuests": "Current Guests",
+      "todayReservations": "Today's Reservations",
+      "upcomingReservations": "Upcoming Reservations"
+    },
+    "zone": {
+      "create": "Create Zone",
+      "edit": "Edit Zone",
+      "name": "Zone Name",
+      "color": "Color",
+      "noZone": "No Zone"
+    },
+    "messages": {
+      "created": "Table created",
+      "updated": "Table updated",
+      "deleted": "Table deleted",
+      "seated": "Guests seated at table",
+      "freed": "Table is now available",
+      "reservationCreated": "Reservation created",
+      "reservationConfirmed": "Reservation confirmed",
+      "reservationCancelled": "Reservation cancelled"
     }
   },
   "currency": {
@@ -1917,5 +2036,72 @@
     "nsec_warning_4": "Never share on screenshots, chats, or emails",
     "nsec_confirm_type": "Type 'I UNDERSTAND' to reveal your key:",
     "reveal_key": "Reveal Key"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "pageDescription": "Manage and view all your notifications",
+    "noNotifications": "No notifications",
+    "empty": "No notifications yet",
+    "emptyTitle": "All caught up!",
+    "emptyDescription": "You don't have any notifications right now. New notifications will appear here when you receive payments, orders, or alerts.",
+    "markAllRead": "Mark all read",
+    "markRead": "Mark as read",
+    "read": "Read",
+    "delete": "Delete",
+    "clearAll": "Clear all",
+    "viewAll": "View all notifications",
+    "clearConfirmTitle": "Clear all notifications?",
+    "clearConfirmMessage": "This will permanently delete all notifications. This action cannot be undone.",
+    "settings": "Notification settings",
+    "stats": {
+      "total": "Total",
+      "unread": "Unread",
+      "payments": "Payments",
+      "stockAlerts": "Stock Alerts"
+    },
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "payments": "Payments",
+      "orders": "Orders",
+      "stock": "Stock",
+      "loyalty": "Loyalty",
+      "ai": "AI Insights"
+    },
+    "types": {
+      "payment": "Payment",
+      "order": "Order",
+      "stock": "Stock",
+      "loyalty": "Loyalty",
+      "ai": "AI Insight"
+    },
+    "payment": {
+      "received": "Payment Received",
+      "receivedDesc": "Payment of {amount} received via {method}",
+      "failed": "Payment Failed",
+      "failedDesc": "Payment of {amount} failed"
+    },
+    "order": {
+      "new": "New Order",
+      "newDesc": "Order #{orderId} received",
+      "ready": "Order Ready",
+      "readyDesc": "Order #{orderId} is ready for pickup",
+      "completed": "Order Completed",
+      "completedDesc": "Order #{orderId} has been completed"
+    },
+    "inventory": {
+      "lowStock": "Low Stock Alert",
+      "lowStockDesc": "{productName} is running low ({quantity} remaining)",
+      "outOfStock": "Out of Stock",
+      "outOfStockDesc": "{productName} is out of stock"
+    },
+    "system": {
+      "syncComplete": "Sync Complete",
+      "syncCompleteDesc": "All data has been synced",
+      "syncFailed": "Sync Failed",
+      "syncFailedDesc": "Failed to sync data. Please try again.",
+      "offline": "Offline Mode",
+      "offlineDesc": "You are now working offline"
+    }
   }
 }
