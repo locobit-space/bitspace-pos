@@ -679,6 +679,9 @@ const nostrUser = useNostrUser();
 const nostrRelay = useNostrRelay();
 const { $nostr } = useNuxtApp();
 
+// Users composable for syncing profile to current user
+const { refreshCurrentUserProfile } = useUsers();
+
 // Page meta
 definePageMeta({
   title: "Account Settings",
@@ -1086,6 +1089,9 @@ const updateProfile = async () => {
       
       // Update current user info reactive state so UI updates immediately
       currentUserInfo.value = updatedUserInfo;
+      
+      // Sync profile to bitspace_current_user (staff user system)
+      refreshCurrentUserProfile();
 
       toast.add({
         title: t("account.profile_published") || "Profile published to Nostr",

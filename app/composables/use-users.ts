@@ -593,6 +593,42 @@ export function useUsers() {
   }
 
   /**
+   * Refresh current user's profile from Nostr storage
+   * Call this after profile is updated in account settings
+   */
+  function refreshCurrentUserProfile(): void {
+    if (!currentUser.value) return;
+    
+    const profileData = getNostrProfileData();
+    if (!profileData) return;
+    
+    // Only update if pubkeys match
+    const profile = localStorage.getItem(STORAGE_KEYS.NOSTR_PROFILE);
+    if (profile) {
+      try {
+        const data = JSON.parse(profile);
+        if (data.pubkey && data.pubkey === currentUser.value.pubkeyHex) {
+          // Update current user with new profile data
+          if (profileData.name) currentUser.value.name = profileData.name;
+          if (profileData.avatar) currentUser.value.avatar = profileData.avatar;
+          
+          // Save to storage and users list
+          saveCurrentUser(currentUser.value);
+          
+          // Also update in users list
+          const userIndex = users.value.findIndex(u => u.id === currentUser.value?.id);
+          if (userIndex !== -1) {
+            users.value[userIndex] = { ...currentUser.value };
+            saveUsers();
+          }
+          
+          console.log('[useUsers] Refreshed current user profile:', currentUser.value.name);
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  /**
    * Get Nostr profile data from storage
    */
   function getNostrProfileData(): { name?: string; avatar?: string } | null {
@@ -814,6 +850,9 @@ export function useUsers() {
     isOwner,
     isAdminOrOwner,
     requirePermission,
+
+    // Profile sync
+    refreshCurrentUserProfile,
 
     // Init
     initialize,

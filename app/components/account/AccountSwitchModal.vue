@@ -42,7 +42,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-gray-900 dark:text-white truncate">
-                {{ currentAccount?.displayName || currentAccount?.name || $t('account.unnamed') }}
+                {{ currentAccount?.name || currentAccount?.display_name || $t('account.unnamed') }}
               </p>
               <p class="text-sm text-gray-500 dark:text-gray-400 font-mono truncate">
                 {{ formatPubkey(currentAccount?.pubkey) }}
@@ -81,7 +81,7 @@
               </div>
               <div class="flex-1 min-w-0 text-left">
                 <p class="font-medium text-gray-900 dark:text-white truncate">
-                  {{ account.displayName || account.name || $t('account.unnamed') }}
+                  {{ account?.name || account.display_name || $t('account.unnamed') }}
                 </p>
                 <p class="text-sm text-gray-500 dark:text-gray-400 font-mono truncate">
                   {{ formatPubkey(account.pubkey) }}

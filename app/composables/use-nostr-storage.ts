@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   NOSTR_KEYS: 'nostrUser',              // Nostr private/public keys
   NOSTR_PROFILE: 'nostr_user_profile',  // Nostr profile data (name, picture, etc)
   ACCOUNTS_LIST: 'userList',            // List of all Nostr accounts
+  CURRENT_USER: 'bitspace_current_user', // Current logged-in staff user (shared with use-users.ts)
 } as const;
 
 export const useNostrStorage = () => {
@@ -14,6 +15,7 @@ export const useNostrStorage = () => {
 
   /**
    * Save user info to local storage
+   * Also updates bitspace_current_user if the pubkey matches
    */
   const saveUser = (userInfo: UserInfo) => {
     if (!import.meta.client) return;
@@ -36,8 +38,50 @@ export const useNostrStorage = () => {
       website: userInfo.website,
     }));
     
+    // Update bitspace_current_user if it exists and matches the pubkey
+    updateCurrentUserProfile(userInfo);
+    
     // Update accounts list
     updateAccountsList(userInfo);
+  };
+
+  /**
+   * Update the current staff user's profile info when Nostr profile changes
+   */
+  const updateCurrentUserProfile = (userInfo: UserInfo) => {
+    if (!import.meta.client) return;
+    
+    const currentUserData = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    if (!currentUserData) return;
+    
+    try {
+      const currentUser = JSON.parse(currentUserData);
+      
+      // Check if the current user matches by pubkey (user.nostrPubkey or nested user.user.nostrPubkey)
+      const currentPubkey = currentUser.nostrPubkey || currentUser.user?.nostrPubkey;
+      
+      if (currentPubkey && currentPubkey === userInfo.pubkey) {
+        // Update the staff user's name and avatar from Nostr profile
+        if (currentUser.user) {
+          // AuthState structure: { user: { ... }, accessToken, ... }
+          currentUser.user.displayName = userInfo.displayName || userInfo.display_name || userInfo.name || currentUser.user.displayName;
+          if (userInfo.picture) {
+            currentUser.user.avatar = userInfo.picture;
+          }
+        } else if (currentUser.name !== undefined) {
+          // Direct StoreUser structure
+          currentUser.name = userInfo.displayName || userInfo.display_name || userInfo.name || currentUser.name;
+          if (userInfo.picture) {
+            currentUser.avatar = userInfo.picture;
+          }
+        }
+        
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        console.log('[NostrStorage] Updated bitspace_current_user with new profile:', userInfo.name);
+      }
+    } catch (e) {
+      console.error('[NostrStorage] Failed to update current user profile:', e);
+    }
   };
 
   /**

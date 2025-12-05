@@ -102,7 +102,7 @@ export function useNostrData() {
       try {
         const user = JSON.parse(stored);
         const pubkey = user.pubkey || user.publicKey;
-        const privkey = user.privkey || user.privateKey || user.nsec;
+        const privkey = user.privateKey || user.privkey || user.nsec;
         if (pubkey) {
           return { pubkey, privkey: privkey || null };
         }
