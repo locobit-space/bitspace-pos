@@ -216,6 +216,9 @@ const nostrStorage = useNostrStorage()
 const nostrUser = useNostrUser()
 const toast = useToast()
 
+// Users composable for syncing Nostr owner to staff system
+const { syncNostrOwner } = useUsers()
+
 // State
 const showImportModal = ref(false)
 const importNsec = ref('')
@@ -278,7 +281,14 @@ const switchToAccount = async (account: UserInfo) => {
     nip05: account.nip05,
   })
 
+  // Set nostr-pubkey cookie for middleware and staff user sync
+  const nostrCookie = useCookie('nostr-pubkey', { maxAge: 60 * 60 * 24 * 30 }) // 30 days
+  nostrCookie.value = account.pubkey
+
   currentPubkey.value = account.pubkey
+  
+  // Sync with staff user system (bitspace_current_user)
+  await syncNostrOwner()
   
   toast.add({
     title: t('account.switched'),
@@ -322,6 +332,18 @@ const handleImport = async () => {
     const success = await nostrUser.setupUser(importNsec.value.trim())
     
     if (success) {
+      // Get the pubkey of the imported account
+      const { userInfo } = nostrStorage.loadCurrentUser()
+      
+      // Set nostr-pubkey cookie for middleware and staff user sync
+      if (userInfo?.pubkey) {
+        const nostrCookie = useCookie('nostr-pubkey', { maxAge: 60 * 60 * 24 * 30 }) // 30 days
+        nostrCookie.value = userInfo.pubkey
+        
+        // Sync with staff user system (bitspace_current_user)
+        await syncNostrOwner()
+      }
+      
       toast.add({
         title: t('account.imported'),
         description: t('account.importSuccess'),

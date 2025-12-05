@@ -7,6 +7,8 @@ definePageMeta({
 
 const auth = useAuth();
 const router = useRouter();
+const nostrUser = useNostrUser();
+const { syncNostrOwner } = useUsers();
 
 // Form state
 const email = ref('');
@@ -46,6 +48,8 @@ const handleNostrSignIn = async () => {
   try {
     const success = await auth.signInWithNostr();
     if (success) {
+      // Sync with staff user system
+      await syncNostrOwner();
       router.push('/');
     }
   } catch (e) {
@@ -119,6 +123,8 @@ const handleNpubSignIn = async () => {
   
   const success = await auth.signInWithNpub(manualNpub.value);
   if (success) {
+    // Sync with staff user system
+    await syncNostrOwner();
     router.push('/');
   }
 };
@@ -132,43 +138,38 @@ const handleNsecSignIn = async () => {
   
   try {
     const nsec = manualNsec.value.trim();
-    let privateKeyHex: string;
     
-    // Import nostr-tools for key handling
-    const { getPublicKey } = await import('nostr-tools/pure');
-    const { decode } = await import('nostr-tools/nip19');
-    const { bytesToHex, hexToBytes } = await import('@noble/hashes/utils');
+    // Set up the user with nostrUser composable (same as AccountSwitchModal)
+    // This will save keys to localStorage and fetch profile from relays
+    const setupSuccess = await nostrUser.setupUser(nsec);
     
-    // Decode nsec to hex private key
-    if (nsec.startsWith('nsec1')) {
-      const decoded = decode(nsec);
-      if (decoded.type !== 'nsec') {
-        throw new Error('Invalid nsec format');
-      }
-      privateKeyHex = bytesToHex(decoded.data);
-    } else if (/^[0-9a-f]{64}$/i.test(nsec)) {
-      // Already hex format
-      privateKeyHex = nsec.toLowerCase();
-    } else {
+    if (!setupSuccess) {
       throw new Error('Invalid private key format. Use nsec1... or 64-char hex.');
     }
     
-    // Derive public key from private key
-    const pubkeyHex = getPublicKey(hexToBytes(privateKeyHex));
+    // Get the derived pubkey from storage
+    const nostrStorage = useNostrStorage();
+    const { userInfo } = nostrStorage.loadCurrentUser();
     
+    if (!userInfo?.pubkey) {
+      throw new Error('Failed to derive public key');
+    }
+    
+    const pubkeyHex = userInfo.pubkey;
     console.log('[Nsec] Derived pubkey:', pubkeyHex.slice(0, 16) + '...');
     
-    // Store private key securely (in memory only for this session)
-    // WARNING: This is less secure than using an extension
-    sessionStorage.setItem('nostr_privkey', privateKeyHex);
+    // Set cookie for middleware
+    const nostrCookie = useCookie('nostr-pubkey', { maxAge: 60 * 60 * 24 * 30 });
+    nostrCookie.value = pubkeyHex;
     
-    // Sign in with the derived public key
-    const success = await auth.signInWithNpub(pubkeyHex);
-    if (success) {
-      // Clear the input
-      manualNsec.value = '';
-      router.push('/');
-    }
+    // Sync with staff user system (creates/links owner account)
+    await syncNostrOwner();
+    
+    // Clear the input
+    manualNsec.value = '';
+    
+    // Navigate to home
+    router.push('/');
   } catch (e) {
     console.error('[Nsec] Error:', e);
     nostrError.value = e instanceof Error ? e.message : 'Invalid private key';
