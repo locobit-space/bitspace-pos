@@ -556,6 +556,9 @@ export interface ProductModifierGroup {
   modifiers: ProductModifier[];
 }
 
+// Product Type - determines stock behavior
+export type ProductType = 'good' | 'service' | 'digital' | 'subscription' | 'bundle';
+
 export interface Product {
   id: string;
   name: string;
@@ -565,6 +568,7 @@ export interface Product {
   unitId: string;
   price: number;
   prices?: MultiPrice; // Multi-currency support
+  costPrice?: number; // Cost price for inventory valuation
   stock: number;
   minStock: number;
   branchId: string;
@@ -572,6 +576,9 @@ export interface Product {
   image?: string;
   createdAt: string;
   updatedAt: string;
+  // Product Type & Stock Tracking
+  productType?: ProductType; // Default: 'good'
+  trackStock?: boolean; // Default: true for 'good', false for 'service'/'digital'
   // Variants & Modifiers
   hasVariants?: boolean;
   variants?: ProductVariant[];
@@ -603,6 +610,7 @@ export interface Branch {
   nostrPubkey?: string;
   bolt12Offer?: string;
   address?: string;
+  status?: 'active' | 'inactive';
 }
 
 // Order Types (dine-in, take-away, delivery)
@@ -733,14 +741,19 @@ export interface Cart {
 // 🔔 NOTIFICATION TYPES
 // ============================================
 
+export type NotificationPriority = 'low' | 'medium' | 'high' | 'critical';
+
 export interface POSNotification {
   id: string;
-  type: 'payment' | 'order' | 'stock' | 'loyalty' | 'ai_insight';
+  type: 'payment' | 'order' | 'stock' | 'loyalty' | 'ai_insight' | 'alert' | 'system';
   title: string;
   message: string;
   data?: Record<string, unknown>;
   read: boolean;
   createdAt: string;
+  priority?: NotificationPriority;
+  actionUrl?: string; // Link to navigate when clicked
+  expiresAt?: string; // Auto-dismiss after this time
   nostrEventId?: string;
 }
 

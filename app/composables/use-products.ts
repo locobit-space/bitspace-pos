@@ -355,8 +355,20 @@ export function useProductsStore() {
         nostrData.getAllBranches(),
       ]);
 
-      // Merge with local (Nostr takes precedence for synced items)
+      // Merge with local - preserve local stock if we have local adjustments
       for (const product of nostrProducts) {
+        const existingRecord = await db.products.get(product.id);
+        if (existingRecord) {
+          // Check if local has unsynced stock changes
+          const localProduct = JSON.parse(existingRecord.data) as Product;
+          
+          // If local stock differs from Nostr and local is not synced,
+          // preserve local stock (it's more recent)
+          if (!existingRecord.synced || existingRecord.stock !== product.stock) {
+            // Keep local stock value - it may have been adjusted locally
+            product.stock = existingRecord.stock ?? localProduct.stock;
+          }
+        }
         await saveProductToLocal(product);
       }
       for (const category of nostrCategories) {
@@ -416,6 +428,18 @@ export function useProductsStore() {
   }
 
   // ============================================
+  // 🔄 REFRESH
+  // ============================================
+
+  /**
+   * Refresh products from local database
+   * Called when stock is updated from inventory page
+   */
+  async function refreshProducts(): Promise<void> {
+    products.value = await loadProductsFromLocal();
+  }
+
+  // ============================================
   // 🚀 INITIALIZATION
   // ============================================
 
@@ -427,7 +451,7 @@ export function useProductsStore() {
 
     try {
       // Load from local DB first (fast)
-      products.value = await loadProductsFromLocal();
+      await refreshProducts();
       categories.value = await loadCategoriesFromLocal();
       units.value = await loadUnitsFromLocal();
       branches.value = await loadBranchesFromLocal();
@@ -952,6 +976,7 @@ export function useProductsStore() {
 
     // Init
     init,
+    refreshProducts,
 
     // Product CRUD
     addProduct,

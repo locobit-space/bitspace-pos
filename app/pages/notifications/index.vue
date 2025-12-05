@@ -444,6 +444,8 @@ function getIcon(type: POSNotification["type"]): string {
     stock: "i-heroicons-archive-box",
     loyalty: "i-heroicons-star",
     ai_insight: "i-heroicons-sparkles",
+    alert: "i-heroicons-exclamation-triangle",
+    system: "i-heroicons-cog-6-tooth",
   };
   return icons[type] || "i-heroicons-bell";
 }
@@ -455,6 +457,8 @@ function getIconClass(type: POSNotification["type"]): string {
     stock: "text-yellow-600 dark:text-yellow-400",
     loyalty: "text-purple-600 dark:text-purple-400",
     ai_insight: "text-cyan-600 dark:text-cyan-400",
+    alert: "text-orange-600 dark:text-orange-400",
+    system: "text-gray-600 dark:text-gray-400",
   };
   return classes[type] || "text-gray-600 dark:text-gray-400";
 }
@@ -466,6 +470,8 @@ function getIconBgClass(type: POSNotification["type"]): string {
     stock: "bg-yellow-100 dark:bg-yellow-900/30",
     loyalty: "bg-purple-100 dark:bg-purple-900/30",
     ai_insight: "bg-cyan-100 dark:bg-cyan-900/30",
+    alert: "bg-orange-100 dark:bg-orange-900/30",
+    system: "bg-gray-100 dark:bg-gray-800",
   };
   return classes[type] || "bg-gray-100 dark:bg-gray-800";
 }
@@ -477,22 +483,26 @@ function getTypeLabel(type: POSNotification["type"]): string {
     stock: t("notifications.types.stock"),
     loyalty: t("notifications.types.loyalty"),
     ai_insight: t("notifications.types.ai"),
+    alert: t("notifications.types.alert") || "Alert",
+    system: t("notifications.types.system") || "System",
   };
   return labels[type] || type;
 }
 
 function getTypeColor(
   type: POSNotification["type"]
-): "green" | "blue" | "yellow" | "purple" | "cyan" {
+): "green" | "blue" | "yellow" | "purple" | "cyan" | "orange" | "gray" {
   const colors: Record<
     POSNotification["type"],
-    "green" | "blue" | "yellow" | "purple" | "cyan"
+    "green" | "blue" | "yellow" | "purple" | "cyan" | "orange" | "gray"
   > = {
     payment: "green",
     order: "blue",
     stock: "yellow",
     loyalty: "purple",
     ai_insight: "cyan",
+    alert: "orange",
+    system: "gray",
   };
   return colors[type] || "cyan";
 }

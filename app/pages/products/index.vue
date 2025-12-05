@@ -380,6 +380,18 @@
                 />
               </UFormField>
 
+              <!-- Product Type -->
+              <UFormField :label="$t('products.productType') || 'Product Type'" name="productType">
+                <USelect
+                  v-model="productForm.productType"
+                  :items="productTypeOptions"
+                  label-key="label"
+                  value-key="value"
+                  :placeholder="$t('products.selectProductType') || 'Select type'"
+                  @update:model-value="onProductTypeChange"
+                />
+              </UFormField>
+
               <!-- Category (Optional) -->
               <UFormField
                 :label="$t('products.category')"
@@ -429,26 +441,61 @@
                 </div>
               </UFormField>
 
-              <!-- Stock (Optional) -->
-              <UFormField :label="$t('products.stock')" name="stock">
-                <UInput
-                  v-model="productForm.stock"
-                  type="number"
-                  :placeholder="$t('products.stockPlaceholder') || '0'"
-                />
+              <!-- Stock (Optional) - Only show if trackStock is enabled -->
+              <template v-if="productForm.trackStock">
+                <UFormField :label="$t('products.stock')" name="stock">
+                  <UInput
+                    v-model="productForm.stock"
+                    type="number"
+                    :placeholder="$t('products.stockPlaceholder') || '0'"
+                  />
+                </UFormField>
+
+                <!-- Min Stock (Optional) -->
+                <UFormField
+                  :label="$t('products.minStock')"
+                  name="minStock"
+                >
+                  <UInput
+                    v-model="productForm.minStock"
+                    type="number"
+                    :placeholder="$t('products.minStockPlaceholder') || '0'"
+                  />
+                </UFormField>
+              </template>
+
+              <!-- Track Stock Toggle - Only show for goods/bundles -->
+              <UFormField 
+                v-if="productForm.productType === 'good' || productForm.productType === 'bundle'"
+                :label="$t('products.trackStock') || 'Track Stock'" 
+                name="trackStock"
+                class="md:col-span-2"
+              >
+                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div>
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ $t('products.trackStockLabel') || 'Enable inventory tracking' }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ $t('products.trackStockHint') || 'When disabled, low stock alerts will be skipped for this product' }}
+                    </p>
+                  </div>
+                  <USwitch v-model="productForm.trackStock" />
+                </div>
               </UFormField>
 
-              <!-- Min Stock (Optional) -->
-              <UFormField
-                :label="$t('products.minStock')"
-                name="minStock"
+              <!-- Info for non-stock products -->
+              <div 
+                v-if="productForm.productType === 'service' || productForm.productType === 'digital' || productForm.productType === 'subscription'"
+                class="md:col-span-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
               >
-                <UInput
-                  v-model="productForm.minStock"
-                  type="number"
-                  :placeholder="$t('products.minStockPlaceholder') || '0'"
-                />
-              </UFormField>
+                <div class="flex items-start gap-2">
+                  <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                  <p class="text-sm text-blue-700 dark:text-blue-300">
+                    {{ $t('products.noStockTracking') || 'Stock tracking is not available for this product type. Services, digital products, and subscriptions do not require inventory management.' }}
+                  </p>
+                </div>
+              </div>
 
               <!-- Branch (Optional) -->
               <UFormField :label="$t('common.branch')" name="branchId">
@@ -1108,6 +1155,8 @@ interface ProductForm {
   branchId: string;
   status: "active" | "inactive";
   image: string;
+  productType: 'good' | 'service' | 'digital' | 'subscription' | 'bundle';
+  trackStock: boolean;
 }
 
 // Validation Schema - Only name and price required
@@ -1121,7 +1170,18 @@ const productSchema = z.object({
   minStock: z.number().min(0).optional(),
   branchId: z.string().optional(),
   status: z.enum(["active", "inactive"]).optional(),
+  productType: z.enum(["good", "service", "digital", "subscription", "bundle"]).optional(),
+  trackStock: z.boolean().optional(),
 });
+
+// Product Type Options
+const productTypeOptions = [
+  { value: 'good', label: 'Physical Good', icon: '📦' },
+  { value: 'service', label: 'Service', icon: '🛠️' },
+  { value: 'digital', label: 'Digital Product', icon: '💾' },
+  { value: 'subscription', label: 'Subscription', icon: '🔄' },
+  { value: 'bundle', label: 'Bundle', icon: '🎁' },
+];
 // Categories loaded from store (Dexie/Nostr)
 
 // Units loaded from store (Dexie/Nostr)
@@ -1224,6 +1284,8 @@ const productForm = ref<ProductForm>({
   branchId: "",
   status: "active",
   image: "📦",
+  productType: "good",
+  trackStock: true,
 });
 
 // Options
@@ -1298,6 +1360,17 @@ const resetFilters = () => {
   currentPage.value = 1;
 };
 
+// Handle product type change - auto-set trackStock based on type
+const onProductTypeChange = (type: string) => {
+  if (type === 'service' || type === 'digital' || type === 'subscription') {
+    productForm.value.trackStock = false;
+    productForm.value.stock = 0;
+    productForm.value.minStock = 0;
+  } else {
+    productForm.value.trackStock = true;
+  }
+};
+
 const openProductModal = (product?: Product) => {
   if (product) {
     selectedProduct.value = product;
@@ -1313,6 +1386,8 @@ const openProductModal = (product?: Product) => {
       branchId: product.branchId || "",
       status: product.status || "active",
       image: product.image || "📦",
+      productType: product.productType || "good",
+      trackStock: product.trackStock !== false, // Default true if not set
     };
   } else {
     selectedProduct.value = null;
@@ -1328,6 +1403,8 @@ const openProductModal = (product?: Product) => {
       branchId: "",
       status: "active",
       image: "📦",
+      productType: "good",
+      trackStock: true,
     };
   }
   showProductModal.value = true;
@@ -1354,6 +1431,11 @@ const saveProduct = async () => {
     // Auto-generate SKU if empty
     const sku = productForm.value.sku || `SKU-${Date.now().toString(36).toUpperCase()}`;
 
+    // Determine if stock should be tracked based on product type
+    const shouldTrackStock = productForm.value.productType === 'good' || productForm.value.productType === 'bundle'
+      ? productForm.value.trackStock
+      : false; // Services, digital, subscription don't track stock by default
+
     // Prepare product data with defaults for optional fields
     const productData = {
       name: productForm.value.name,
@@ -1362,11 +1444,13 @@ const saveProduct = async () => {
       categoryId: productForm.value.categoryId || 'all',
       unitId: productForm.value.unitId || 'piece',
       price: productForm.value.price || 0,
-      stock: productForm.value.stock || 0,
-      minStock: productForm.value.minStock || 0,
+      stock: shouldTrackStock ? (productForm.value.stock || 0) : 0,
+      minStock: shouldTrackStock ? (productForm.value.minStock || 0) : 0,
       branchId: productForm.value.branchId || 'main',
       status: productForm.value.status || 'active',
       image: productForm.value.image || '📦',
+      productType: productForm.value.productType || 'good',
+      trackStock: shouldTrackStock,
     };
 
     if (selectedProduct.value) {

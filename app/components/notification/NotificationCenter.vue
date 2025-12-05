@@ -86,30 +86,54 @@
             class="group p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
             :class="{
               'bg-primary-50/50 dark:bg-primary-900/10': !notification.read,
+              'bg-red-50/50 dark:bg-red-900/10': notification.priority === 'critical' && !notification.read,
+              'bg-orange-50/50 dark:bg-orange-900/10': notification.priority === 'high' && !notification.read,
             }"
-            @click="markAsRead(notification.id)"
+            @click="handleNotificationClick(notification)"
           >
             <div class="flex items-start gap-3">
-              <!-- Icon -->
+              <!-- Icon with priority ring -->
               <div
-                class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-                :class="getIconBgClass(notification.type)"
+                class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center relative"
+                :class="[getIconBgClass(notification.type, notification.priority)]"
               >
                 <Icon
                   :name="getIcon(notification.type)"
                   size="20"
-                  :class="getIconClass(notification.type)"
+                  :class="getIconClass(notification.type, notification.priority)"
+                />
+                <!-- Priority indicator -->
+                <span
+                  v-if="notification.priority === 'critical'"
+                  class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"
+                />
+                <span
+                  v-else-if="notification.priority === 'high'"
+                  class="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full"
                 />
               </div>
 
               <!-- Content -->
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between gap-2">
-                  <p
-                    class="font-medium text-gray-900 dark:text-white text-sm truncate"
-                  >
-                    {{ notification.title }}
-                  </p>
+                  <div class="flex items-center gap-2">
+                    <p
+                      class="font-medium text-gray-900 dark:text-white text-sm truncate"
+                      :class="{
+                        'text-red-600 dark:text-red-400': notification.priority === 'critical',
+                        'text-orange-600 dark:text-orange-400': notification.priority === 'high',
+                      }"
+                    >
+                      {{ notification.title }}
+                    </p>
+                    <!-- Priority badge -->
+                    <UBadge
+                      v-if="notification.priority && notification.priority !== 'low'"
+                      :label="$t(`notifications.priority.${notification.priority}`)"
+                      size="xs"
+                      :color="getPriorityColor(notification.priority)"
+                    />
+                  </div>
                   <UButton
                     icon="i-heroicons-x-mark"
                     variant="ghost"
@@ -131,7 +155,12 @@
               <!-- Unread indicator -->
               <div
                 v-if="!notification.read"
-                class="shrink-0 w-2 h-2 rounded-full bg-primary-500"
+                class="shrink-0 w-2 h-2 rounded-full"
+                :class="{
+                  'bg-red-500': notification.priority === 'critical',
+                  'bg-orange-500': notification.priority === 'high',
+                  'bg-primary-500': !notification.priority || notification.priority === 'low' || notification.priority === 'medium',
+                }"
               />
             </div>
           </div>
@@ -156,9 +185,10 @@
 </template>
 
 <script setup lang="ts">
-import type { POSNotification } from "~/types";
+import type { POSNotification, NotificationPriority } from "~/types";
 
 const { t } = useI18n();
+const router = useRouter();
 const {
   notifications,
   unreadCount,
@@ -168,6 +198,14 @@ const {
   clearAll,
 } = useNotifications();
 
+// Handle notification click - mark as read and navigate if has actionUrl
+function handleNotificationClick(notification: POSNotification) {
+  markAsRead(notification.id);
+  if (notification.actionUrl) {
+    router.push(notification.actionUrl);
+  }
+}
+
 // Icon helpers
 function getIcon(type: POSNotification["type"]): string {
   const icons: Record<POSNotification["type"], string> = {
@@ -176,30 +214,54 @@ function getIcon(type: POSNotification["type"]): string {
     stock: "i-heroicons-archive-box",
     loyalty: "i-heroicons-star",
     ai_insight: "i-heroicons-sparkles",
+    alert: "i-heroicons-exclamation-triangle",
+    system: "i-heroicons-cog-6-tooth",
   };
   return icons[type] || "i-heroicons-bell";
 }
 
-function getIconClass(type: POSNotification["type"]): string {
+function getIconClass(type: POSNotification["type"], priority?: NotificationPriority): string {
+  // Override colors for high priority
+  if (priority === 'critical') return "text-red-600 dark:text-red-400";
+  if (priority === 'high') return "text-orange-600 dark:text-orange-400";
+
   const classes: Record<POSNotification["type"], string> = {
     payment: "text-green-600 dark:text-green-400",
     order: "text-blue-600 dark:text-blue-400",
     stock: "text-yellow-600 dark:text-yellow-400",
     loyalty: "text-purple-600 dark:text-purple-400",
     ai_insight: "text-cyan-600 dark:text-cyan-400",
+    alert: "text-orange-600 dark:text-orange-400",
+    system: "text-gray-600 dark:text-gray-400",
   };
   return classes[type] || "text-gray-600 dark:text-gray-400";
 }
 
-function getIconBgClass(type: POSNotification["type"]): string {
+function getIconBgClass(type: POSNotification["type"], priority?: NotificationPriority): string {
+  // Override colors for high priority
+  if (priority === 'critical') return "bg-red-100 dark:bg-red-900/30";
+  if (priority === 'high') return "bg-orange-100 dark:bg-orange-900/30";
+
   const classes: Record<POSNotification["type"], string> = {
     payment: "bg-green-100 dark:bg-green-900/30",
     order: "bg-blue-100 dark:bg-blue-900/30",
     stock: "bg-yellow-100 dark:bg-yellow-900/30",
     loyalty: "bg-purple-100 dark:bg-purple-900/30",
     ai_insight: "bg-cyan-100 dark:bg-cyan-900/30",
+    alert: "bg-orange-100 dark:bg-orange-900/30",
+    system: "bg-gray-100 dark:bg-gray-800",
   };
   return classes[type] || "bg-gray-100 dark:bg-gray-800";
+}
+
+function getPriorityColor(priority: NotificationPriority): 'red' | 'orange' | 'yellow' | 'gray' {
+  const colors: Record<NotificationPriority, 'red' | 'orange' | 'yellow' | 'gray'> = {
+    critical: 'red',
+    high: 'orange',
+    medium: 'yellow',
+    low: 'gray',
+  };
+  return colors[priority] || 'gray';
 }
 
 // Format relative time

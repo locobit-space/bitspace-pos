@@ -1,10 +1,16 @@
 // ============================================
 // 📦 INVENTORY COMPOSABLE
-// Stock Management with Dexie + Nostr Sync
+// Multi-Branch Stock Management with Dexie + Nostr Sync
 // ============================================
 
-import type { Product } from '~/types';
-import { db, type StockAdjustmentRecord } from '~/db/db';
+import type { Product, Branch } from '~/types';
+import { 
+  db, 
+  type StockAdjustmentRecord, 
+  type SupplierRecord, 
+  type BranchRecord,
+  type PurchaseOrderRecord,
+} from '~/db/db';
 
 // ============================================
 // 📋 TYPES
@@ -25,6 +31,9 @@ export interface InventoryItem {
   minStock: number;
   maxStock: number;
   reorderPoint: number;
+  reservedStock: number;
+  availableStock: number;
+  costPrice: number;
   lastRestocked: string;
   lastUpdated: string;
   status: 'in-stock' | 'low-stock' | 'out-of-stock' | 'overstocked';
@@ -35,6 +44,8 @@ export interface StockMovement {
   id: string;
   productId: string;
   productName: string;
+  branchId: string;
+  branchName: string;
   type: 'in' | 'out' | 'adjustment' | 'transfer';
   quantity: number;
   previousStock: number;
@@ -50,28 +61,71 @@ export interface StockMovement {
 export interface Supplier {
   id: string;
   name: string;
+  code: string;
   contactPerson: string;
   email: string;
   phone: string;
   address: string;
-  products: string[];
+  taxId?: string;
+  bankAccount?: string;
+  paymentTerms?: string;
+  leadTimeDays?: number;
+  notes?: string;
+  productIds: string[];
   lastOrderDate?: string;
   status: 'active' | 'inactive';
+  synced: boolean;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  branchId: string;
+  branchName: string;
+  status: PurchaseOrderRecord['status'];
+  items: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    receivedQty: number;
+  }[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  notes?: string;
+  expectedDate?: string;
+  receivedDate?: string;
+  createdBy: string;
+  createdAt: string;
 }
 
 // Singleton state
 const inventoryItems = ref<InventoryItem[]>([]);
 const stockMovements = ref<StockMovement[]>([]);
 const suppliers = ref<Supplier[]>([]);
+const branches = ref<Branch[]>([]);
+const purchaseOrders = ref<PurchaseOrder[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const isInitialized = ref(false);
 const syncPending = ref(0);
+const currentBranchId = ref<string>('all');
+
+// Nostr Event Kinds
+const NOSTR_KINDS = {
+  SUPPLIER: 30700,
+  BRANCH_STOCK: 30701,
+  PURCHASE_ORDER: 30702,
+  STOCK_TRANSFER: 30703,
+};
 
 export function useInventory() {
   const nostrData = useNostrData();
   const offline = useOffline();
   const productsStore = useProductsStore();
+  const notifications = useNotifications();
 
   // ============================================
   // 📊 COMPUTED
@@ -91,10 +145,28 @@ export function useInventory() {
     inventoryItems.value.filter(item => item.status === 'out-of-stock').length
   );
 
-  const totalProducts = computed(() => inventoryItems.value.length);
+  const totalProducts = computed(() => {
+    const uniqueProducts = new Set(inventoryItems.value.map(i => i.productId));
+    return uniqueProducts.size;
+  });
 
   const activeSuppliers = computed(() =>
     suppliers.value.filter(s => s.status === 'active')
+  );
+
+  const activeBranches = computed(() =>
+    branches.value.filter(b => b.status !== 'inactive')
+  );
+
+  const filteredInventory = computed(() => {
+    if (currentBranchId.value === 'all') return inventoryItems.value;
+    return inventoryItems.value.filter(item => item.branchId === currentBranchId.value);
+  });
+
+  const pendingOrders = computed(() =>
+    purchaseOrders.value.filter(o => 
+      ['pending', 'approved', 'ordered', 'partial'].includes(o.status)
+    )
   );
 
   // ============================================
@@ -112,12 +184,103 @@ export function useInventory() {
     return 'in-stock';
   }
 
-  function generateId(): string {
-    return `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  function generateId(prefix: string = 'inv'): string {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   // ============================================
-  // 💾 LOCAL DB OPERATIONS
+  // 🏢 BRANCH OPERATIONS
+  // ============================================
+
+  async function loadBranches(): Promise<void> {
+    try {
+      const branchRecords = await db.branches.toArray();
+      
+      if (branchRecords.length === 0) {
+        // Create default branch if none exist
+        const defaultBranch: BranchRecord = {
+          id: 'main',
+          name: 'Main Branch',
+          code: 'MAIN',
+          synced: false,
+        };
+        await db.branches.put(defaultBranch);
+        branches.value = [{
+          id: defaultBranch.id,
+          name: defaultBranch.name,
+          code: defaultBranch.code,
+        }];
+      } else {
+        branches.value = branchRecords.map(b => ({
+          id: b.id,
+          name: b.name,
+          code: b.code,
+          address: b.address,
+          nostrPubkey: b.nostrPubkey,
+          bolt12Offer: b.bolt12Offer,
+          status: 'active' as const,
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to load branches:', e);
+    }
+  }
+
+  async function addBranch(branch: Omit<Branch, 'id'>): Promise<Branch | null> {
+    try {
+      const newBranch: BranchRecord = {
+        id: generateId('branch'),
+        name: branch.name,
+        code: branch.code || branch.name.toUpperCase().substring(0, 4),
+        address: branch.address,
+        nostrPubkey: branch.nostrPubkey,
+        bolt12Offer: branch.bolt12Offer,
+        synced: false,
+      };
+
+      await db.branches.put(newBranch);
+      
+      // Sync to Nostr
+      if (offline.isOnline.value) {
+        await syncBranchToNostr(newBranch);
+      }
+
+      await loadBranches();
+      return branches.value.find(b => b.id === newBranch.id) || null;
+    } catch (e) {
+      error.value = `Failed to add branch: ${e}`;
+      return null;
+    }
+  }
+
+  async function syncBranchToNostr(branch: BranchRecord): Promise<boolean> {
+    try {
+      const event = await nostrData.publishReplaceableEvent(
+        30600, // BRANCH kind
+        JSON.stringify({
+          id: branch.id,
+          name: branch.name,
+          code: branch.code,
+          address: branch.address,
+          nostrPubkey: branch.nostrPubkey,
+          bolt12Offer: branch.bolt12Offer,
+        }),
+        branch.id // dTag
+      );
+
+      if (event) {
+        await db.branches.update(branch.id, { synced: true, nostrEventId: event.id });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync branch to Nostr:', e);
+      return false;
+    }
+  }
+
+  // ============================================
+  // 📦 MULTI-BRANCH STOCK OPERATIONS
   // ============================================
 
   async function loadFromLocal(): Promise<void> {
@@ -126,39 +289,80 @@ export function useInventory() {
       const productRecords = await db.products.toArray();
       const categoryRecords = await db.categories.toArray();
       const unitRecords = await db.units.toArray();
-      const branchRecords = await db.branches.toArray();
+      const branchStockRecords = await db.branchStock.toArray();
 
       // Create lookup maps
       const categoryMap = new Map(categoryRecords.map(c => [c.id, c.name]));
       const unitMap = new Map(unitRecords.map(u => [u.id, u.symbol]));
-      const branchMap = new Map(branchRecords.map(b => [b.id, b.name]));
+      const branchMap = new Map(branches.value.map(b => [b.id, b.name]));
 
-      // Convert products to inventory items
-      inventoryItems.value = productRecords.map(record => {
+      // Build inventory items (one per product per branch)
+      const items: InventoryItem[] = [];
+
+      for (const record of productRecords) {
         const product: Product = JSON.parse(record.data);
-        const maxStock = product.minStock ? product.minStock * 5 : 100;
         
-        return {
-          id: `inv_${product.id}`,
-          productId: product.id,
-          productName: product.name,
-          sku: product.sku,
-          categoryId: product.categoryId,
-          categoryName: categoryMap.get(product.categoryId) || 'Uncategorized',
-          branchId: product.branchId,
-          branchName: branchMap.get(product.branchId) || 'Main Branch',
-          unitId: product.unitId,
-          unitSymbol: unitMap.get(product.unitId) || 'pc',
-          currentStock: product.stock,
-          minStock: product.minStock,
-          maxStock,
-          reorderPoint: Math.ceil(product.minStock * 1.5),
-          lastRestocked: product.updatedAt,
-          lastUpdated: product.updatedAt,
-          status: calculateStockStatus(product.stock, product.minStock, maxStock),
-          value: product.stock * product.price,
-        };
-      });
+        // If no branch stock exists, create from product defaults
+        const productBranchStocks = branchStockRecords.filter(bs => bs.productId === product.id);
+        
+        if (productBranchStocks.length === 0) {
+          // Create default branch stock for main branch
+          const maxStock = product.minStock ? product.minStock * 5 : 100;
+          items.push({
+            id: `inv_${product.id}_main`,
+            productId: product.id,
+            productName: product.name,
+            sku: product.sku,
+            categoryId: product.categoryId,
+            categoryName: categoryMap.get(product.categoryId) || 'Uncategorized',
+            branchId: product.branchId || 'main',
+            branchName: branchMap.get(product.branchId || 'main') || 'Main Branch',
+            unitId: product.unitId,
+            unitSymbol: unitMap.get(product.unitId) || 'pc',
+            currentStock: product.stock,
+            minStock: product.minStock,
+            maxStock,
+            reorderPoint: Math.ceil(product.minStock * 1.5),
+            reservedStock: 0,
+            availableStock: product.stock,
+            costPrice: product.costPrice || product.price * 0.6,
+            lastRestocked: product.updatedAt,
+            lastUpdated: product.updatedAt,
+            status: calculateStockStatus(product.stock, product.minStock, maxStock),
+            value: product.stock * (product.costPrice || product.price * 0.6),
+          });
+        } else {
+          // Create inventory item for each branch stock
+          for (const bs of productBranchStocks) {
+            const availableStock = bs.currentStock - bs.reservedStock;
+            items.push({
+              id: bs.id,
+              productId: product.id,
+              productName: product.name,
+              sku: product.sku,
+              categoryId: product.categoryId,
+              categoryName: categoryMap.get(product.categoryId) || 'Uncategorized',
+              branchId: bs.branchId,
+              branchName: branchMap.get(bs.branchId) || 'Unknown Branch',
+              unitId: product.unitId,
+              unitSymbol: unitMap.get(product.unitId) || 'pc',
+              currentStock: bs.currentStock,
+              minStock: bs.minStock,
+              maxStock: bs.maxStock,
+              reorderPoint: bs.reorderPoint,
+              reservedStock: bs.reservedStock,
+              availableStock,
+              costPrice: bs.costPrice,
+              lastRestocked: bs.lastRestocked ? new Date(bs.lastRestocked).toISOString() : '',
+              lastUpdated: new Date(bs.updatedAt).toISOString(),
+              status: calculateStockStatus(bs.currentStock, bs.minStock, bs.maxStock),
+              value: bs.currentStock * bs.costPrice,
+            });
+          }
+        }
+      }
+
+      inventoryItems.value = items;
 
       // Load stock movements
       const adjustments = await db.stockAdjustments
@@ -171,6 +375,8 @@ export function useInventory() {
         id: adj.id,
         productId: adj.productId,
         productName: productRecords.find(p => p.id === adj.productId)?.name || 'Unknown',
+        branchId: (adj as StockAdjustmentRecord & { branchId?: string }).branchId || 'main',
+        branchName: branchMap.get((adj as StockAdjustmentRecord & { branchId?: string }).branchId || 'main') || 'Main Branch',
         type: adj.adjustment > 0 ? 'in' : adj.adjustment < 0 ? 'out' : 'adjustment',
         quantity: Math.abs(adj.adjustment),
         previousStock: adj.previousStock,
@@ -181,26 +387,317 @@ export function useInventory() {
         createdAt: new Date(adj.createdAt).toISOString(),
       }));
 
-      // Load suppliers from localStorage (for now - can add Nostr later)
-      const storedSuppliers = localStorage.getItem('bitspace_suppliers');
-      if (storedSuppliers) {
-        suppliers.value = JSON.parse(storedSuppliers);
-      }
+      // Load suppliers from DB
+      await loadSuppliers();
+
+      // Load purchase orders
+      await loadPurchaseOrders();
+
     } catch (e) {
       console.error('Failed to load inventory from local DB:', e);
       error.value = `Failed to load inventory: ${e}`;
     }
   }
 
-  async function saveStockAdjustmentToLocal(adjustment: StockAdjustmentRecord): Promise<void> {
-    await db.stockAdjustments.put(adjustment);
+  // ============================================
+  // 👥 SUPPLIER OPERATIONS (with Nostr)
+  // ============================================
+
+  async function loadSuppliers(): Promise<void> {
+    try {
+      const supplierRecords = await db.suppliers.toArray();
+      suppliers.value = supplierRecords.map(s => ({
+        id: s.id,
+        name: s.name,
+        code: s.code,
+        contactPerson: s.contactPerson || '',
+        email: s.email || '',
+        phone: s.phone || '',
+        address: s.address || '',
+        taxId: s.taxId,
+        bankAccount: s.bankAccount,
+        paymentTerms: s.paymentTerms,
+        leadTimeDays: s.leadTimeDays,
+        notes: s.notes,
+        productIds: s.productIds || [],
+        lastOrderDate: s.updatedAt ? new Date(s.updatedAt).toISOString() : undefined,
+        status: s.status,
+        synced: s.synced,
+      }));
+    } catch (e) {
+      console.error('Failed to load suppliers:', e);
+    }
+  }
+
+  async function addSupplier(supplier: Omit<Supplier, 'id' | 'synced'>): Promise<Supplier | null> {
+    try {
+      const newSupplier: SupplierRecord = {
+        id: generateId('sup'),
+        name: supplier.name,
+        code: supplier.code || supplier.name.toUpperCase().substring(0, 4),
+        contactPerson: supplier.contactPerson,
+        email: supplier.email,
+        phone: supplier.phone,
+        address: supplier.address,
+        taxId: supplier.taxId,
+        bankAccount: supplier.bankAccount,
+        paymentTerms: supplier.paymentTerms,
+        leadTimeDays: supplier.leadTimeDays,
+        notes: supplier.notes,
+        productIds: supplier.productIds || [],
+        status: supplier.status || 'active',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        synced: false,
+      };
+
+      await db.suppliers.put(newSupplier);
+
+      // Sync to Nostr
+      if (offline.isOnline.value) {
+        const synced = await syncSupplierToNostr(newSupplier);
+        if (!synced) {
+          syncPending.value++;
+        }
+      } else {
+        syncPending.value++;
+      }
+
+      await loadSuppliers();
+      return suppliers.value.find(s => s.id === newSupplier.id) || null;
+    } catch (e) {
+      error.value = `Failed to add supplier: ${e}`;
+      return null;
+    }
+  }
+
+  async function updateSupplier(id: string, updates: Partial<Supplier>): Promise<boolean> {
+    try {
+      const existing = await db.suppliers.get(id);
+      if (!existing) {
+        error.value = 'Supplier not found';
+        return false;
+      }
+
+      const updated: SupplierRecord = {
+        ...existing,
+        ...updates,
+        updatedAt: Date.now(),
+        synced: false,
+      };
+
+      await db.suppliers.put(updated);
+
+      // Sync to Nostr
+      if (offline.isOnline.value) {
+        await syncSupplierToNostr(updated);
+      } else {
+        syncPending.value++;
+      }
+
+      await loadSuppliers();
+      return true;
+    } catch (e) {
+      error.value = `Failed to update supplier: ${e}`;
+      return false;
+    }
+  }
+
+  async function deleteSupplier(id: string): Promise<boolean> {
+    try {
+      await db.suppliers.delete(id);
+      await loadSuppliers();
+      return true;
+    } catch (e) {
+      error.value = `Failed to delete supplier: ${e}`;
+      return false;
+    }
+  }
+
+  async function syncSupplierToNostr(supplier: SupplierRecord): Promise<boolean> {
+    try {
+      const event = await nostrData.publishReplaceableEvent(
+        NOSTR_KINDS.SUPPLIER,
+        JSON.stringify({
+          id: supplier.id,
+          name: supplier.name,
+          code: supplier.code,
+          contactPerson: supplier.contactPerson,
+          email: supplier.email,
+          phone: supplier.phone,
+          address: supplier.address,
+          taxId: supplier.taxId,
+          bankAccount: supplier.bankAccount,
+          paymentTerms: supplier.paymentTerms,
+          leadTimeDays: supplier.leadTimeDays,
+          notes: supplier.notes,
+          productIds: supplier.productIds,
+          status: supplier.status,
+        }),
+        supplier.id // dTag
+      );
+
+      if (event) {
+        await db.suppliers.update(supplier.id, { synced: true, nostrEventId: event.id });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync supplier to Nostr:', e);
+      return false;
+    }
+  }
+
+  function getSupplier(id: string): Supplier | undefined {
+    return suppliers.value.find(s => s.id === id);
   }
 
   // ============================================
-  // 📡 NOSTR SYNC
+  // 📦 STOCK OPERATIONS
   // ============================================
 
-  async function syncToNostr(adjustment: StockAdjustmentRecord): Promise<boolean> {
+  async function adjustStock(
+    productId: string,
+    branchId: string,
+    adjustment: number,
+    reason: 'sale' | 'purchase' | 'adjustment' | 'count' | 'waste' | 'return' | 'transfer',
+    notes?: string
+  ): Promise<boolean> {
+    try {
+      const branchStockId = `${productId}_${branchId}`;
+      let branchStock = await db.branchStock.get(branchStockId);
+      
+      // If no branch stock exists, create from product
+      if (!branchStock) {
+        const productRecord = await db.products.get(productId);
+        if (!productRecord) {
+          error.value = 'Product not found';
+          return false;
+        }
+        const product: Product = JSON.parse(productRecord.data);
+        
+        branchStock = {
+          id: branchStockId,
+          productId,
+          branchId,
+          currentStock: product.stock,
+          minStock: product.minStock,
+          maxStock: product.minStock * 5 || 100,
+          reorderPoint: Math.ceil(product.minStock * 1.5),
+          reservedStock: 0,
+          costPrice: product.costPrice || product.price * 0.6,
+          updatedAt: Date.now(),
+          synced: false,
+        };
+        await db.branchStock.put(branchStock);
+      }
+
+      const previousStock = branchStock.currentStock;
+      const newStock = Math.max(0, previousStock + adjustment);
+
+      // Update branch stock
+      await db.branchStock.update(branchStockId, {
+        currentStock: newStock,
+        updatedAt: Date.now(),
+        synced: false,
+        ...(reason === 'purchase' ? { lastRestocked: Date.now() } : {}),
+        ...(reason === 'count' ? { lastCountedAt: Date.now() } : {}),
+      });
+
+      // Also update main product stock (sum of all branches)
+      await updateProductTotalStock(productId);
+
+      // Create stock adjustment record
+      const adjustmentRecord: StockAdjustmentRecord & { branchId: string } = {
+        id: generateId('adj'),
+        productId,
+        branchId,
+        previousStock,
+        newStock,
+        adjustment,
+        reason,
+        notes,
+        staffId: 'current_user', // TODO: Get from auth
+        createdAt: Date.now(),
+        synced: false,
+      };
+
+      await db.stockAdjustments.put(adjustmentRecord);
+
+      // Sync to Nostr if online
+      if (offline.isOnline.value) {
+        const synced = await syncStockAdjustmentToNostr(adjustmentRecord);
+        if (!synced) {
+          syncPending.value++;
+        }
+      } else {
+        syncPending.value++;
+      }
+
+      // Reload inventory
+      await loadFromLocal();
+
+      // Also refresh products store so stock is updated everywhere
+      await productsStore.refreshProducts();
+
+      // Check if this product is now low stock and notify
+      const updatedBranchStock = await db.branchStock.get(branchStockId);
+      if (updatedBranchStock && updatedBranchStock.currentStock <= updatedBranchStock.minStock) {
+        const productRecord = await db.products.get(productId);
+        const branchRecord = await db.branches.get(branchId);
+        if (productRecord) {
+          notifications.notifyLowStock(
+            productRecord.name,
+            updatedBranchStock.currentStock,
+            updatedBranchStock.minStock,
+            productId,
+            branchRecord?.name
+          );
+        }
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Failed to adjust stock:', e);
+      error.value = `Failed to adjust stock: ${e}`;
+      return false;
+    }
+  }
+
+  async function updateProductTotalStock(productId: string): Promise<void> {
+    const allBranchStocks = await db.branchStock
+      .where('productId')
+      .equals(productId)
+      .toArray();
+    
+    const totalStock = allBranchStocks.reduce((sum, bs) => sum + bs.currentStock, 0);
+    
+    const productRecord = await db.products.get(productId);
+    if (productRecord) {
+      const product: Product = JSON.parse(productRecord.data);
+      product.stock = totalStock;
+      product.updatedAt = new Date().toISOString();
+      
+      await db.products.update(productId, {
+        data: JSON.stringify(product),
+        stock: totalStock,
+        updatedAt: Date.now(),
+        synced: false,
+      });
+
+      // Sync updated product to Nostr to persist stock change
+      if (offline.isOnline.value) {
+        try {
+          await nostrData.saveProduct(product);
+          await db.products.update(productId, { synced: true });
+        } catch (e) {
+          console.error('Failed to sync product stock to Nostr:', e);
+        }
+      }
+    }
+  }
+
+  async function syncStockAdjustmentToNostr(adjustment: StockAdjustmentRecord & { branchId?: string }): Promise<boolean> {
     try {
       const event = await nostrData.recordStockAdjustment({
         id: adjustment.id,
@@ -209,7 +706,7 @@ export function useInventory() {
         newStock: adjustment.newStock,
         adjustment: adjustment.adjustment,
         reason: adjustment.reason as 'sale' | 'purchase' | 'adjustment' | 'count' | 'waste' | 'return',
-        notes: adjustment.notes,
+        notes: `Branch: ${adjustment.branchId || 'main'}${adjustment.notes ? ` - ${adjustment.notes}` : ''}`,
         staffId: adjustment.staffId,
         createdAt: new Date(adjustment.createdAt).toISOString(),
       });
@@ -228,117 +725,16 @@ export function useInventory() {
     }
   }
 
-  // ============================================
-  // 🚀 INITIALIZATION
-  // ============================================
-
-  async function init(): Promise<void> {
-    if (isInitialized.value) return;
-
-    isLoading.value = true;
-    error.value = null;
-
-    try {
-      // Initialize products store first
-      await productsStore.init();
-
-      // Load inventory data
-      await loadFromLocal();
-
-      // Count pending syncs
-      const unsyncedCount = await db.stockAdjustments.filter(a => !a.synced).count();
-      syncPending.value = unsyncedCount;
-
-      isInitialized.value = true;
-    } catch (e) {
-      error.value = `Failed to initialize inventory: ${e}`;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // ============================================
-  // 📦 STOCK OPERATIONS
-  // ============================================
-
-  /**
-   * Adjust stock for a product
-   */
-  async function adjustStock(
-    productId: string,
-    adjustment: number,
-    reason: 'sale' | 'purchase' | 'adjustment' | 'count' | 'waste' | 'return',
-    notes?: string
-  ): Promise<boolean> {
-    try {
-      // Get current product
-      const productRecord = await db.products.get(productId);
-      if (!productRecord) {
-        error.value = 'Product not found';
-        return false;
-      }
-
-      const product: Product = JSON.parse(productRecord.data);
-      const previousStock = product.stock;
-      const newStock = Math.max(0, previousStock + adjustment);
-
-      // Update product stock
-      product.stock = newStock;
-      product.updatedAt = new Date().toISOString();
-
-      await db.products.update(productId, {
-        data: JSON.stringify(product),
-        stock: newStock,
-        updatedAt: Date.now(),
-        synced: false,
-      });
-
-      // Create stock adjustment record
-      const adjustmentRecord: StockAdjustmentRecord = {
-        id: generateId(),
-        productId,
-        previousStock,
-        newStock,
-        adjustment,
-        reason,
-        notes,
-        staffId: 'current_user', // TODO: Get from useUsers()
-        createdAt: Date.now(),
-        synced: false,
-      };
-
-      await saveStockAdjustmentToLocal(adjustmentRecord);
-
-      // Sync to Nostr if online
-      if (offline.isOnline.value) {
-        const synced = await syncToNostr(adjustmentRecord);
-        if (!synced) {
-          syncPending.value++;
-        }
-      } else {
-        syncPending.value++;
-      }
-
-      // Reload inventory
-      await loadFromLocal();
-
-      return true;
-    } catch (e) {
-      console.error('Failed to adjust stock:', e);
-      error.value = `Failed to adjust stock: ${e}`;
-      return false;
-    }
-  }
-
   /**
    * Add stock (purchase/restock)
    */
   async function addStock(
     productId: string,
     quantity: number,
+    branchId: string = 'main',
     notes?: string
   ): Promise<boolean> {
-    return adjustStock(productId, quantity, 'purchase', notes);
+    return adjustStock(productId, branchId, quantity, 'purchase', notes);
   }
 
   /**
@@ -347,30 +743,11 @@ export function useInventory() {
   async function removeStock(
     productId: string,
     quantity: number,
+    branchId: string = 'main',
     reason: 'sale' | 'waste' | 'return' = 'sale',
     notes?: string
   ): Promise<boolean> {
-    return adjustStock(productId, -quantity, reason, notes);
-  }
-
-  /**
-   * Set stock to specific value (count/adjustment)
-   */
-  async function setStock(
-    productId: string,
-    newStock: number,
-    notes?: string
-  ): Promise<boolean> {
-    const productRecord = await db.products.get(productId);
-    if (!productRecord) {
-      error.value = 'Product not found';
-      return false;
-    }
-
-    const product: Product = JSON.parse(productRecord.data);
-    const adjustment = newStock - product.stock;
-    
-    return adjustStock(productId, adjustment, 'count', notes);
+    return adjustStock(productId, branchId, -quantity, reason, notes);
   }
 
   /**
@@ -383,59 +760,228 @@ export function useInventory() {
     quantity: number,
     notes?: string
   ): Promise<boolean> {
-    // For multi-branch support, we'd need to handle this differently
-    // For now, just record the adjustment with branch info in notes
-    const transferNotes = `Transfer from ${fromBranchId} to ${toBranchId}${notes ? `: ${notes}` : ''}`;
+    try {
+      // Verify source has enough stock
+      const fromBranchStockId = `${productId}_${fromBranchId}`;
+      const fromStock = await db.branchStock.get(fromBranchStockId);
+      
+      if (!fromStock || fromStock.currentStock < quantity) {
+        error.value = 'Insufficient stock for transfer';
+        return false;
+      }
+
+      // Remove from source branch
+      const removeSuccess = await adjustStock(
+        productId,
+        fromBranchId,
+        -quantity,
+        'transfer',
+        `Transfer to ${toBranchId}: ${notes || ''}`
+      );
+
+      if (!removeSuccess) return false;
+
+      // Add to destination branch
+      const addSuccess = await adjustStock(
+        productId,
+        toBranchId,
+        quantity,
+        'transfer',
+        `Transfer from ${fromBranchId}: ${notes || ''}`
+      );
+
+      return addSuccess;
+    } catch (e) {
+      error.value = `Failed to transfer stock: ${e}`;
+      return false;
+    }
+  }
+
+  /**
+   * Set stock to specific value (count/adjustment)
+   */
+  async function setStock(
+    productId: string,
+    newStock: number,
+    branchId: string = 'main',
+    notes?: string
+  ): Promise<boolean> {
+    const branchStockId = `${productId}_${branchId}`;
+    const branchStock = await db.branchStock.get(branchStockId);
+    const currentStock = branchStock?.currentStock || 0;
+    const adjustment = newStock - currentStock;
     
-    // Record as adjustment with transfer info
-    return adjustStock(productId, 0, 'adjustment', transferNotes);
+    return adjustStock(productId, branchId, adjustment, 'count', notes);
   }
 
   // ============================================
-  // 👥 SUPPLIER OPERATIONS
+  // 📋 PURCHASE ORDER OPERATIONS
   // ============================================
 
-  async function addSupplier(supplier: Omit<Supplier, 'id'>): Promise<Supplier> {
-    const newSupplier: Supplier = {
-      ...supplier,
-      id: `sup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
+  async function loadPurchaseOrders(): Promise<void> {
+    try {
+      const poRecords = await db.purchaseOrders.toArray();
 
-    suppliers.value.push(newSupplier);
-    localStorage.setItem('bitspace_suppliers', JSON.stringify(suppliers.value));
-
-    return newSupplier;
+      purchaseOrders.value = poRecords.map(po => {
+        const supplier = suppliers.value.find(s => s.id === po.supplierId);
+        const branch = branches.value.find(b => b.id === po.branchId);
+        
+        return {
+          id: po.id,
+          supplierId: po.supplierId,
+          supplierName: supplier?.name || 'Unknown',
+          branchId: po.branchId,
+          branchName: branch?.name || 'Unknown',
+          status: po.status,
+          items: JSON.parse(po.items || '[]'),
+          subtotal: po.subtotal,
+          tax: po.tax,
+          total: po.total,
+          notes: po.notes,
+          expectedDate: po.expectedDate ? new Date(po.expectedDate).toISOString() : undefined,
+          receivedDate: po.receivedDate ? new Date(po.receivedDate).toISOString() : undefined,
+          createdBy: po.createdBy,
+          createdAt: new Date(po.createdAt).toISOString(),
+        };
+      }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (e) {
+      console.error('Failed to load purchase orders:', e);
+    }
   }
 
-  async function updateSupplier(id: string, updates: Partial<Supplier>): Promise<boolean> {
-    const index = suppliers.value.findIndex(s => s.id === id);
-    if (index === -1) return false;
+  async function createPurchaseOrder(
+    supplierId: string,
+    branchId: string,
+    items: PurchaseOrder['items'],
+    notes?: string
+  ): Promise<PurchaseOrder | null> {
+    try {
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+      const tax = subtotal * 0.1; // 10% tax
+      
+      const po: PurchaseOrderRecord = {
+        id: generateId('po'),
+        supplierId,
+        branchId,
+        status: 'draft',
+        items: JSON.stringify(items),
+        subtotal,
+        tax,
+        total: subtotal + tax,
+        notes,
+        createdBy: 'current_user', // TODO: Get from auth
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        synced: false,
+      };
 
-    suppliers.value[index] = { ...suppliers.value[index], ...updates };
-    localStorage.setItem('bitspace_suppliers', JSON.stringify(suppliers.value));
+      await db.purchaseOrders.put(po);
 
-    return true;
+      // Sync to Nostr
+      if (offline.isOnline.value) {
+        await syncPurchaseOrderToNostr(po);
+      } else {
+        syncPending.value++;
+      }
+
+      await loadPurchaseOrders();
+      return purchaseOrders.value.find(p => p.id === po.id) || null;
+    } catch (e) {
+      error.value = `Failed to create purchase order: ${e}`;
+      return null;
+    }
   }
 
-  async function deleteSupplier(id: string): Promise<boolean> {
-    const index = suppliers.value.findIndex(s => s.id === id);
-    if (index === -1) return false;
+  async function receivePurchaseOrder(
+    poId: string,
+    receivedItems: { productId: string; receivedQty: number }[]
+  ): Promise<boolean> {
+    try {
+      const po = await db.purchaseOrders.get(poId);
+      if (!po) {
+        error.value = 'Purchase order not found';
+        return false;
+      }
 
-    suppliers.value.splice(index, 1);
-    localStorage.setItem('bitspace_suppliers', JSON.stringify(suppliers.value));
+      const items: PurchaseOrder['items'] = JSON.parse(po.items);
+      let allReceived = true;
 
-    return true;
+      for (const receivedItem of receivedItems) {
+        const item = items.find(i => i.productId === receivedItem.productId);
+        if (item) {
+          item.receivedQty = (item.receivedQty || 0) + receivedItem.receivedQty;
+          if (item.receivedQty < item.quantity) {
+            allReceived = false;
+          }
+
+          // Add stock for received quantity
+          await addStock(
+            receivedItem.productId,
+            receivedItem.receivedQty,
+            po.branchId,
+            `PO#${poId}`
+          );
+        }
+      }
+
+      await db.purchaseOrders.update(poId, {
+        items: JSON.stringify(items),
+        status: allReceived ? 'received' : 'partial',
+        receivedDate: allReceived ? Date.now() : undefined,
+        updatedAt: Date.now(),
+        synced: false,
+      });
+
+      await loadPurchaseOrders();
+      return true;
+    } catch (e) {
+      error.value = `Failed to receive purchase order: ${e}`;
+      return false;
+    }
   }
 
-  function getSupplier(id: string): Supplier | undefined {
-    return suppliers.value.find(s => s.id === id);
+  async function syncPurchaseOrderToNostr(po: PurchaseOrderRecord): Promise<boolean> {
+    try {
+      const event = await nostrData.publishReplaceableEvent(
+        NOSTR_KINDS.PURCHASE_ORDER,
+        JSON.stringify({
+          id: po.id,
+          supplierId: po.supplierId,
+          branchId: po.branchId,
+          status: po.status,
+          items: po.items,
+          subtotal: po.subtotal,
+          tax: po.tax,
+          total: po.total,
+          notes: po.notes,
+          expectedDate: po.expectedDate,
+          receivedDate: po.receivedDate,
+          createdBy: po.createdBy,
+        }),
+        po.id // dTag
+      );
+
+      if (event) {
+        await db.purchaseOrders.update(po.id, { synced: true, nostrEventId: event.id });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync purchase order to Nostr:', e);
+      return false;
+    }
   }
 
   // ============================================
   // 🔍 QUERY OPERATIONS
   // ============================================
 
-  function getInventoryItem(productId: string): InventoryItem | undefined {
+  function getInventoryItem(productId: string, branchId?: string): InventoryItem | undefined {
+    if (branchId) {
+      return inventoryItems.value.find(
+        item => item.productId === productId && item.branchId === branchId
+      );
+    }
     return inventoryItems.value.find(item => item.productId === productId);
   }
 
@@ -451,17 +997,24 @@ export function useInventory() {
     return inventoryItems.value.filter(item => item.status === status);
   }
 
-  function getLowStockItems(): InventoryItem[] {
-    return inventoryItems.value.filter(item => 
+  function getLowStockItems(branchId?: string): InventoryItem[] {
+    let items = inventoryItems.value.filter(item => 
       item.status === 'low-stock' || item.status === 'out-of-stock'
     );
+    if (branchId) {
+      items = items.filter(item => item.branchId === branchId);
+    }
+    return items;
   }
 
-  function getStockMovements(productId?: string, limit = 50): StockMovement[] {
+  function getStockMovements(productId?: string, branchId?: string, limit = 50): StockMovement[] {
     let movements = stockMovements.value;
     
     if (productId) {
       movements = movements.filter(m => m.productId === productId);
+    }
+    if (branchId) {
+      movements = movements.filter(m => m.branchId === branchId);
     }
 
     return movements.slice(0, limit);
@@ -471,7 +1024,7 @@ export function useInventory() {
   // 📊 ANALYTICS
   // ============================================
 
-  function getInventoryStats(): {
+  function getInventoryStats(branchId?: string): {
     totalProducts: number;
     totalValue: number;
     lowStock: number;
@@ -479,37 +1032,100 @@ export function useInventory() {
     overstocked: number;
     inStock: number;
   } {
+    let items = inventoryItems.value;
+    if (branchId) {
+      items = items.filter(i => i.branchId === branchId);
+    }
+
     return {
-      totalProducts: inventoryItems.value.length,
-      totalValue: totalInventoryValue.value,
-      lowStock: inventoryItems.value.filter(i => i.status === 'low-stock').length,
-      outOfStock: inventoryItems.value.filter(i => i.status === 'out-of-stock').length,
-      overstocked: inventoryItems.value.filter(i => i.status === 'overstocked').length,
-      inStock: inventoryItems.value.filter(i => i.status === 'in-stock').length,
+      totalProducts: items.length,
+      totalValue: items.reduce((sum, i) => sum + i.value, 0),
+      lowStock: items.filter(i => i.status === 'low-stock').length,
+      outOfStock: items.filter(i => i.status === 'out-of-stock').length,
+      overstocked: items.filter(i => i.status === 'overstocked').length,
+      inStock: items.filter(i => i.status === 'in-stock').length,
     };
+  }
+
+  function getBranchStats(): { branchId: string; branchName: string; stats: ReturnType<typeof getInventoryStats> }[] {
+    return branches.value.map(branch => ({
+      branchId: branch.id,
+      branchName: branch.name,
+      stats: getInventoryStats(branch.id),
+    }));
   }
 
   // ============================================
   // 🔄 SYNC OPERATIONS
   // ============================================
 
-  async function syncPendingAdjustments(): Promise<{ synced: number; failed: number }> {
+  async function syncPendingData(): Promise<{ synced: number; failed: number }> {
     let synced = 0;
     let failed = 0;
 
-    const unsynced = await db.stockAdjustments.filter(a => !a.synced).toArray();
+    // Sync pending stock adjustments
+    const unsyncedAdjustments = await db.stockAdjustments.filter(a => !a.synced).toArray();
+    for (const adjustment of unsyncedAdjustments) {
+      const success = await syncStockAdjustmentToNostr(adjustment as StockAdjustmentRecord & { branchId?: string });
+      if (success) synced++;
+      else failed++;
+    }
 
-    for (const adjustment of unsynced) {
-      const success = await syncToNostr(adjustment);
-      if (success) {
-        synced++;
-      } else {
-        failed++;
-      }
+    // Sync pending suppliers
+    const unsyncedSuppliers = await db.suppliers.filter(s => !s.synced).toArray();
+    for (const supplier of unsyncedSuppliers) {
+      const success = await syncSupplierToNostr(supplier);
+      if (success) synced++;
+      else failed++;
+    }
+
+    // Sync pending purchase orders
+    const unsyncedPOs = await db.purchaseOrders.filter(po => !po.synced).toArray();
+    for (const po of unsyncedPOs) {
+      const success = await syncPurchaseOrderToNostr(po);
+      if (success) synced++;
+      else failed++;
     }
 
     syncPending.value = failed;
     return { synced, failed };
+  }
+
+  // ============================================
+  // 🚀 INITIALIZATION
+  // ============================================
+
+  async function init(): Promise<void> {
+    if (isInitialized.value) return;
+
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      // Initialize products store first
+      await productsStore.init();
+
+      // Load branches
+      await loadBranches();
+
+      // Load inventory data
+      await loadFromLocal();
+
+      // Count pending syncs
+      const unsyncedAdjustments = await db.stockAdjustments.filter(a => !a.synced).count();
+      const unsyncedSuppliers = await db.suppliers.filter(s => !s.synced).count();
+      const unsyncedPOs = await db.purchaseOrders.filter(po => !po.synced).count();
+      syncPending.value = unsyncedAdjustments + unsyncedSuppliers + unsyncedPOs;
+
+      isInitialized.value = true;
+
+      // Check for low stock and create notifications
+      await notifications.checkLowStock();
+    } catch (e) {
+      error.value = `Failed to initialize inventory: ${e}`;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   // ============================================
@@ -521,6 +1137,8 @@ export function useInventory() {
       inventory: inventoryItems.value,
       movements: stockMovements.value,
       suppliers: suppliers.value,
+      branches: branches.value,
+      purchaseOrders: purchaseOrders.value,
       exportedAt: new Date().toISOString(),
     }, null, 2);
   }
@@ -530,10 +1148,13 @@ export function useInventory() {
     inventoryItems,
     stockMovements,
     suppliers,
+    branches,
+    purchaseOrders,
     isLoading,
     error,
     isInitialized,
     syncPending,
+    currentBranchId,
 
     // Computed
     totalInventoryValue,
@@ -541,9 +1162,16 @@ export function useInventory() {
     outOfStockCount,
     totalProducts,
     activeSuppliers,
+    activeBranches,
+    filteredInventory,
+    pendingOrders,
 
     // Init
     init,
+
+    // Branch Operations
+    loadBranches,
+    addBranch,
 
     // Stock Operations
     adjustStock,
@@ -557,6 +1185,12 @@ export function useInventory() {
     updateSupplier,
     deleteSupplier,
     getSupplier,
+    loadSuppliers,
+
+    // Purchase Order Operations
+    createPurchaseOrder,
+    receivePurchaseOrder,
+    loadPurchaseOrders,
 
     // Query
     getInventoryItem,
@@ -568,9 +1202,10 @@ export function useInventory() {
 
     // Analytics
     getInventoryStats,
+    getBranchStats,
 
     // Sync
-    syncPendingAdjustments,
+    syncPendingData,
 
     // Export
     exportInventory,

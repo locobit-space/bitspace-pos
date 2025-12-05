@@ -3,12 +3,15 @@
 // Real-time notifications for POS events
 // ============================================
 
-import type { POSNotification } from '~/types';
+import type { POSNotification, NotificationPriority } from '~/types';
+import { db } from '~/db/db';
 
 // Singleton state (shared across all composable instances)
 const notifications = ref<POSNotification[]>([]);
 const unreadCount = ref(0);
 const isNotificationCenterOpen = ref(false);
+const lastLowStockCheck = ref<number>(0);
+const LOW_STOCK_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes between checks
 
 export const useNotifications = () => {
   const sound = useSound();
@@ -63,12 +66,14 @@ export const useNotifications = () => {
         sound.playNotification();
         break;
       case 'stock':
+      case 'alert':
         sound.playLowStockAlert();
         break;
       case 'loyalty':
         sound.playCashRegister();
         break;
       case 'ai_insight':
+      case 'system':
         sound.playNotification();
         break;
       default:
@@ -89,6 +94,8 @@ export const useNotifications = () => {
       stock: 'yellow',
       loyalty: 'purple',
       ai_insight: 'cyan',
+      alert: 'orange',
+      system: 'gray',
     };
 
     const iconMap: Record<POSNotification['type'], string> = {
@@ -97,12 +104,17 @@ export const useNotifications = () => {
       stock: 'i-heroicons-archive-box',
       loyalty: 'i-heroicons-star',
       ai_insight: 'i-heroicons-sparkles',
+      alert: 'i-heroicons-exclamation-triangle',
+      system: 'i-heroicons-cog-6-tooth',
     };
+
+    // Use red for critical priority
+    const color = notification.priority === 'critical' ? 'red' : colorMap[notification.type];
 
     toast.add({
       title: notification.title,
       description: notification.message,
-      color: colorMap[notification.type],
+      color,
       icon: iconMap[notification.type] || 'i-heroicons-bell',
     });
   }
@@ -214,15 +226,187 @@ export const useNotifications = () => {
   }
 
   /**
-   * Notify low stock
+   * Notify low stock (with priority)
    */
-  function notifyLowStock(productName: string, currentStock: number, minStock: number) {
+  function notifyLowStock(
+    productName: string, 
+    currentStock: number, 
+    minStock: number,
+    productId?: string,
+    branchName?: string
+  ) {
+    // Calculate priority based on how low the stock is
+    let priority: NotificationPriority = 'medium';
+    if (currentStock === 0) {
+      priority = 'critical';
+    } else if (currentStock <= minStock * 0.25) {
+      priority = 'high';
+    } else if (currentStock <= minStock * 0.5) {
+      priority = 'medium';
+    } else {
+      priority = 'low';
+    }
+
+    const branchInfo = branchName ? ` (${branchName})` : '';
+    
     addNotification({
       type: 'stock',
-      title: t('notifications.lowStock'),
-      message: t('notifications.lowStockMessage', { product: productName, stock: currentStock }),
-      data: { productName, currentStock, minStock },
+      title: currentStock === 0 
+        ? t('notifications.outOfStock')
+        : t('notifications.lowStock'),
+      message: currentStock === 0
+        ? t('notifications.outOfStockMessage', { product: productName }) + branchInfo
+        : t('notifications.lowStockMessage', { product: productName, stock: currentStock }) + branchInfo,
+      data: { productName, currentStock, minStock, productId, branchName },
+      priority,
+      actionUrl: '/inventory',
     });
+  }
+
+  /**
+   * Check all products for low stock and create notifications
+   * Call this on app init and after stock changes
+   */
+  async function checkLowStock(force: boolean = false): Promise<number> {
+    // Throttle checks to avoid spamming
+    const now = Date.now();
+    if (!force && now - lastLowStockCheck.value < LOW_STOCK_CHECK_INTERVAL) {
+      return 0;
+    }
+    lastLowStockCheck.value = now;
+
+    try {
+      // Get all branch stock records
+      const branchStocks = await db.branchStock.toArray();
+      const products = await db.products.toArray();
+      const branches = await db.branches.toArray();
+
+      // Create maps for quick lookups (parse product data to check trackStock)
+      const productMap = new Map<string, { id: string; name: string; trackStock: boolean; productType: string; stock: number }>();
+      for (const p of products) {
+        try {
+          const data = JSON.parse(p.data);
+          productMap.set(p.id, {
+            id: p.id,
+            name: p.name,
+            trackStock: data.trackStock !== false, // Default true if not set
+            productType: data.productType || 'good',
+            stock: p.stock,
+          });
+        } catch {
+          productMap.set(p.id, { id: p.id, name: p.name, trackStock: true, productType: 'good', stock: p.stock });
+        }
+      }
+      const branchMap = new Map(branches.map(b => [b.id, b.name]));
+
+      // Track which products already have unread low stock notifications
+      const existingAlerts = new Set(
+        notifications.value
+          .filter(n => n.type === 'stock' && !n.read && n.data?.productId)
+          .map(n => `${n.data?.productId}_${n.data?.branchName || ''}`)
+      );
+
+      let alertCount = 0;
+
+      // Check branch-specific stock
+      for (const bs of branchStocks) {
+        if (bs.currentStock <= bs.minStock) {
+          const alertKey = `${bs.productId}_${branchMap.get(bs.branchId) || ''}`;
+          if (!existingAlerts.has(alertKey)) {
+            const product = productMap.get(bs.productId);
+            // Skip if product doesn't track stock or is a service/digital/subscription
+            if (product && product.trackStock && product.productType !== 'service' && product.productType !== 'digital' && product.productType !== 'subscription') {
+              notifyLowStock(
+                product.name,
+                bs.currentStock,
+                bs.minStock,
+                bs.productId,
+                branchMap.get(bs.branchId)
+              );
+              alertCount++;
+            }
+          }
+        }
+      }
+
+      // Also check products without branch stock (legacy/main stock)
+      for (const [productId, product] of productMap) {
+        // Skip if product doesn't track stock
+        if (!product.trackStock || product.productType === 'service' || product.productType === 'digital' || product.productType === 'subscription') {
+          continue;
+        }
+        
+        if (product.stock <= 0) {
+          const alertKey = `${productId}_`;
+          if (!existingAlerts.has(alertKey) && !branchStocks.some(bs => bs.productId === productId)) {
+            // Only notify if there's no branch stock tracking for this product
+            notifyLowStock(product.name, product.stock, 1, productId);
+            alertCount++;
+          }
+        }
+      }
+
+      return alertCount;
+    } catch (e) {
+      console.error('Failed to check low stock:', e);
+      return 0;
+    }
+  }
+
+  /**
+   * Get low stock summary for quick stats (only for products that track stock)
+   */
+  async function getLowStockSummary(): Promise<{
+    outOfStock: number;
+    critical: number;
+    low: number;
+    total: number;
+  }> {
+    try {
+      const branchStocks = await db.branchStock.toArray();
+      const products = await db.products.toArray();
+      
+      // Build a set of products that track stock
+      const trackedProducts = new Set<string>();
+      for (const p of products) {
+        try {
+          const data = JSON.parse(p.data);
+          const trackStock = data.trackStock !== false;
+          const productType = data.productType || 'good';
+          if (trackStock && productType !== 'service' && productType !== 'digital' && productType !== 'subscription') {
+            trackedProducts.add(p.id);
+          }
+        } catch {
+          trackedProducts.add(p.id); // Default to tracked if parse fails
+        }
+      }
+      
+      let outOfStock = 0;
+      let critical = 0;
+      let low = 0;
+
+      for (const bs of branchStocks) {
+        // Skip products that don't track stock
+        if (!trackedProducts.has(bs.productId)) continue;
+        
+        if (bs.currentStock === 0) {
+          outOfStock++;
+        } else if (bs.currentStock <= bs.minStock * 0.25) {
+          critical++;
+        } else if (bs.currentStock <= bs.minStock) {
+          low++;
+        }
+      }
+
+      return {
+        outOfStock,
+        critical,
+        low,
+        total: outOfStock + critical + low,
+      };
+    } catch {
+      return { outOfStock: 0, critical: 0, low: 0, total: 0 };
+    }
   }
 
   /**
@@ -285,5 +469,9 @@ export const useNotifications = () => {
     notifyLowStock,
     notifyLoyaltyPoints,
     notifyAIInsight,
+
+    // Low stock monitoring
+    checkLowStock,
+    getLowStockSummary,
   };
 };

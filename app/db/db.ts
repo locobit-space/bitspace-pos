@@ -321,6 +321,67 @@ export interface LowStockAlertRecord {
   synced: boolean;
 }
 
+// NEW: Suppliers
+export interface SupplierRecord {
+  id: string;
+  name: string;
+  code: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  taxId?: string;
+  bankAccount?: string;
+  paymentTerms?: string; // e.g., "NET30", "COD"
+  leadTimeDays?: number;
+  notes?: string;
+  productIds: string[]; // Products supplied
+  status: 'active' | 'inactive';
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// NEW: Branch Stock (multi-branch stock tracking)
+export interface BranchStockRecord {
+  id: string; // format: `${productId}_${branchId}`
+  productId: string;
+  branchId: string;
+  currentStock: number;
+  minStock: number;
+  maxStock: number;
+  reorderPoint: number;
+  reservedStock: number; // Stock reserved for pending orders
+  lastRestocked?: number;
+  lastCountedAt?: number;
+  costPrice: number; // Cost can differ per branch
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// NEW: Purchase Orders
+export interface PurchaseOrderRecord {
+  id: string;
+  supplierId: string;
+  branchId: string;
+  status: 'draft' | 'pending' | 'approved' | 'ordered' | 'partial' | 'received' | 'cancelled';
+  items: string; // JSON array of { productId, quantity, unitPrice, receivedQty }
+  subtotal: number;
+  tax: number;
+  total: number;
+  notes?: string;
+  expectedDate?: number;
+  receivedDate?: number;
+  createdBy: string;
+  approvedBy?: string;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
 // ============================================
 // Database Class
 // ============================================
@@ -349,6 +410,10 @@ export class POSDatabase extends Dexie {
   ingredientStockAdjustments!: Table<IngredientStockAdjustmentRecord, string>;
   productionPlans!: Table<ProductionPlanRecord, string>;
   lowStockAlerts!: Table<LowStockAlertRecord, string>;
+  // Inventory & Supply Chain tables
+  suppliers!: Table<SupplierRecord, string>;
+  branchStock!: Table<BranchStockRecord, string>;
+  purchaseOrders!: Table<PurchaseOrderRecord, string>;
 
   constructor() {
     super("POSDatabase");
@@ -415,6 +480,35 @@ export class POSDatabase extends Dexie {
       ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
       productionPlans: "id, date, status, createdAt, synced",
       lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+    });
+
+    // Version 5: Multi-Branch Inventory & Supply Chain
+    this.version(5).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products: "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      // New in v5 - Supply Chain & Multi-Branch
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
     });
   }
 }
