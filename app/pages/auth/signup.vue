@@ -78,12 +78,54 @@ const handleGoogleSignUp = () => {
   auth.signInWithGoogle();
 };
 
-// Sign up with Nostr
+// Sign up with Nostr extension
 const handleNostrSignUp = async () => {
   const success = await auth.signInWithNostr();
   if (success) {
     router.push("/");
   }
+};
+
+// Create new Nostr account (generate keys)
+const nostrUser = useNostrUser();
+const isCreatingNostr = ref(false);
+const newAccountKeys = ref<{ npub: string; nsec: string } | null>(null);
+const showKeysModal = ref(false);
+const keysCopied = ref({ npub: false, nsec: false });
+
+const handleCreateNostrAccount = async () => {
+  isCreatingNostr.value = true;
+  
+  try {
+    // Generate new Nostr keys
+    const newUser = nostrUser.createUser();
+    
+    if (newUser) {
+      // Show the keys to user before saving
+      newAccountKeys.value = {
+        npub: newUser.npub,
+        nsec: newUser.nsec,
+      };
+      showKeysModal.value = true;
+    }
+  } catch (e) {
+    auth.error.value = e instanceof Error ? e.message : 'Failed to create account';
+  } finally {
+    isCreatingNostr.value = false;
+  }
+};
+
+const confirmAccountCreation = () => {
+  showKeysModal.value = false;
+  router.push("/");
+};
+
+const copyToClipboard = async (text: string, type: 'npub' | 'nsec') => {
+  await navigator.clipboard.writeText(text);
+  keysCopied.value[type] = true;
+  setTimeout(() => {
+    keysCopied.value[type] = false;
+  }, 2000);
 };
 
 // Check if already authenticated
@@ -137,8 +179,61 @@ onMounted(() => {
             {{ auth.error.value }}
           </div>
 
-          <!-- Quick Sign Up Options -->
+          <!-- Primary: Create Nostr Account -->
+          <div class="mb-6">
+            <div class="text-center mb-4">
+              <div class="w-14 h-14 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="text-2xl">⚡</span>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Create Nostr Account</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Generate a new identity - no email required
+              </p>
+            </div>
+
+            <UButton
+              block
+              size="lg"
+              color="primary"
+              :loading="isCreatingNostr"
+              @click="handleCreateNostrAccount"
+            >
+              <template #leading>
+                <span class="text-lg">🔑</span>
+              </template>
+              Generate New Nostr Keys
+            </UButton>
+
+            <p class="text-xs text-gray-500 text-center mt-2">
+              ✨ Decentralized • Private • Works with Lightning
+            </p>
+          </div>
+
+          <!-- Or connect with extension -->
+          <div class="relative mb-6">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-200 dark:border-gray-800" />
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-white dark:bg-gray-900 text-gray-500">or connect existing</span>
+            </div>
+          </div>
+
+          <!-- Secondary: Connect with Extension/Import -->
           <div class="space-y-3 mb-6">
+            <UButton
+              block
+              size="lg"
+              color="neutral"
+              variant="outline"
+              @click="handleNostrSignUp"
+            >
+              <template #leading>
+                <span class="text-lg">🔌</span>
+              </template>
+              Connect with Nostr Extension
+            </UButton>
+
             <UButton
               block
               size="lg"
@@ -167,19 +262,6 @@ onMounted(() => {
                 </svg>
               </template>
               Continue with Google
-            </UButton>
-
-            <UButton
-              block
-              size="lg"
-              color="neutral"
-              variant="outline"
-              @click="handleNostrSignUp"
-            >
-              <template #leading>
-                <span class="text-lg">🔑</span>
-              </template>
-              Continue with Nostr
             </UButton>
           </div>
 
@@ -359,5 +441,97 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- New Account Keys Modal -->
+    <UModal v-model:open="showKeysModal" :closeable="false">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="text-center">
+              <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="text-3xl">🎉</span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Account Created!</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Save your keys securely - you'll need them to recover your account
+              </p>
+            </div>
+          </template>
+
+          <div class="space-y-4">
+            <!-- Warning -->
+            <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <p class="text-sm text-amber-600 dark:text-amber-400 flex items-start gap-2">
+                <span class="text-lg">⚠️</span>
+                <span>
+                  <strong class="block">Save these keys now!</strong>
+                  Your private key (nsec) will not be shown again. Store it securely.
+                </span>
+              </p>
+            </div>
+
+            <!-- Public Key (npub) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Public Key (npub) - Share this
+              </label>
+              <div class="flex gap-2">
+                <UInput
+                  :model-value="newAccountKeys?.npub"
+                  readonly
+                  class="flex-1 font-mono text-xs"
+                />
+                <UButton
+                  :icon="keysCopied.npub ? 'i-heroicons-check' : 'i-heroicons-clipboard'"
+                  :color="keysCopied.npub ? 'success' : 'neutral'"
+                  variant="outline"
+                  @click="copyToClipboard(newAccountKeys?.npub || '', 'npub')"
+                />
+              </div>
+            </div>
+
+            <!-- Private Key (nsec) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Private Key (nsec) - Keep this secret!
+              </label>
+              <div class="flex gap-2">
+                <UInput
+                  :model-value="newAccountKeys?.nsec"
+                  readonly
+                  type="password"
+                  class="flex-1 font-mono text-xs"
+                />
+                <UButton
+                  :icon="keysCopied.nsec ? 'i-heroicons-check' : 'i-heroicons-clipboard'"
+                  :color="keysCopied.nsec ? 'success' : 'neutral'"
+                  variant="outline"
+                  @click="copyToClipboard(newAccountKeys?.nsec || '', 'nsec')"
+                />
+              </div>
+              <p class="text-xs text-red-400 mt-1">
+                🔐 Never share your nsec with anyone!
+              </p>
+            </div>
+          </div>
+
+          <template #footer>
+            <div class="space-y-3">
+              <UButton
+                block
+                color="primary"
+                size="lg"
+                @click="confirmAccountCreation"
+              >
+                I've Saved My Keys - Continue
+              </UButton>
+              <p class="text-xs text-gray-500 text-center">
+                You can find your keys later in Settings → Account
+              </p>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
   </div>
 </template>

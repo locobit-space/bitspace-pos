@@ -2,6 +2,7 @@
 // 🔐 Hybrid Authentication - Hasura Auth + Nostr
 
 import { ref, computed } from 'vue';
+import type { NostrUserKeys } from '~/types';
 
 // Types
 export interface User {
@@ -14,6 +15,7 @@ export interface User {
   role: 'admin' | 'manager' | 'cashier' | 'viewer';
   branchId?: string;
   createdAt: string;
+  userKeys?: NostrUserKeys;  // Optional - only for Nostr users
 }
 
 export interface AuthState {

@@ -15,7 +15,7 @@ const rememberMe = ref(false);
 const showPassword = ref(false);
 
 // UI state
-const activeTab = ref<'email' | 'nostr'>('email');
+const activeTab = ref<'email' | 'nostr'>('nostr');
 const hasNostr = ref(false);
 const nostrConnecting = ref(false);
 const showManualNpub = ref(false);
@@ -245,19 +245,19 @@ onMounted(() => {
         <div class="flex border-b border-gray-200 dark:border-gray-800">
           <button
             class="flex-1 py-4 text-center font-medium transition-colors"
+            :class="activeTab === 'nostr' ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
+            @click="activeTab = 'nostr'"
+          >
+            <span class="mr-2">⚡</span>
+            Nostr
+          </button>
+          <button
+            class="flex-1 py-4 text-center font-medium transition-colors"
             :class="activeTab === 'email' ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
             @click="activeTab = 'email'"
           >
             <span class="mr-2">📧</span>
             Email
-          </button>
-          <button
-            class="flex-1 py-4 text-center font-medium transition-colors"
-            :class="activeTab === 'nostr' ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
-            @click="activeTab = 'nostr'"
-          >
-            <span class="mr-2">🔑</span>
-            Nostr
           </button>
         </div>
 

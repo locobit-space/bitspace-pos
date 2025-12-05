@@ -1090,7 +1090,7 @@ interface Unit {
   symbol: string;
 }
 
-interface Branch {
+interface _Branch {
   id: string;
   name: string;
   code: string;
@@ -1126,17 +1126,13 @@ const productSchema = z.object({
 
 // Units loaded from store (Dexie/Nostr)
 
-const mockBranches: Branch[] = [
-  { id: "1", name: "ສາຂາໃຈກາງ / Central Branch", code: "CB001" },
-  { id: "2", name: "ສາຂາຫ້ວຍໂຮ້ງ / Huay Hong Branch", code: "HH001" },
-  { id: "3", name: "ສາຂາດົງໂດກ / Dongdok Branch", code: "DD001" },
-];
+// Branches loaded from store (Dexie/Nostr)
 
 // Reactive Data from Store (Dexie + Nostr with encryption)
 const products = computed(() => productsStore.products.value);
 const categories = computed(() => productsStore.categories.value);
 const units = computed(() => productsStore.units.value);
-const branches = ref<Branch[]>(mockBranches);
+const branches = computed(() => productsStore.branches.value);
 
 // Filters
 const selectedBranch = ref<string>("all");
@@ -1740,117 +1736,4 @@ useHead({
     },
   ],
 });
-
-// I18n Keys for reference
-/*
-en_US.json:
-{
-  "common": {
-    "add": "Add",
-    "edit": "Edit",
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "save": "Save",
-    "create": "Create",
-    "update": "Update",
-    "close": "Close",
-    "reset": "Reset",
-    "search": "Search",
-    "export": "Export",
-    "import": "Import",
-    "actions": "Actions",
-    "status": "Status",
-    "active": "Active",
-    "inactive": "Inactive",
-    "branch": "Branch",
-    "selectBranch": "Select Branch",
-    "selectStatus": "Select Status",
-    "showing": "Showing",
-    "of": "of",
-    "confirmDelete": "Confirm Delete"
-  },
-  "products": {
-    "title": "Product Manager",
-    "subtitle": "Manage your products, inventory, and pricing",
-    "list": "Products",
-    "addProduct": "Add Product",
-    "editProduct": "Edit Product",
-    "viewProduct": "View Product",
-    "name": "Product Name",
-    "sku": "SKU",
-    "category": "Category",
-    "price": "Price",
-    "stock": "Stock",
-    "minStock": "Min Stock",
-    "unit": "Unit",
-    "image": "Image",
-    "description": "Description",
-    "selectCategory": "Select Category",
-    "selectUnit": "Select Unit",
-    "namePlaceholder": "Enter product name",
-    "skuPlaceholder": "Enter SKU code",
-    "pricePlaceholder": "0.00",
-    "stockPlaceholder": "0",
-    "minStockPlaceholder": "0",
-    "descriptionPlaceholder": "Enter product description",
-    "searchPlaceholder": "Search products by name, SKU, or description",
-    "deleteConfirmation": "Are you sure you want to delete '{name}'? This action cannot be undone."
-  }
-}
-
-lo_LA.json:
-{
-  "common": {
-    "add": "ເພີ່ມ",
-    "edit": "ແກ້ໄຂ",
-    "delete": "ລຶບ",
-    "cancel": "ຍົກເລີກ",
-    "save": "ບັນທຶກ",
-    "create": "ສ້າງ",
-    "update": "ອັບເດດ",
-    "close": "ປິດ",
-    "reset": "ຣີເຊັດ",
-    "search": "ຄົ້ນຫາ",
-    "export": "ສົ່ງອອກ",
-    "import": "ນຳເຂົ້າ",
-    "actions": "ການດຳເນີນການ",
-    "status": "ສະຖານະ",
-    "active": "ເຮັດວຽກ",
-    "inactive": "ບໍ່ເຮັດວຽກ",
-    "branch": "ສາຂາ",
-    "selectBranch": "ເລືອກສາຂາ",
-    "selectStatus": "ເລືອກສະຖານະ",
-    "showing": "ສະແດງ",
-    "of": "ຂອງ",
-    "confirmDelete": "ຢືນຢັນການລຶບ"
-  },
-  "products": {
-    "title": "ຈັດການສິນຄ້າ",
-    "subtitle": "ຈັດການສິນຄ້າ, ສິນຄ້າຄົງເຫລືອ, ແລະ ລາຄາຂອງທ່ານ",
-    "list": "ລາຍການສິນຄ້າ",
-    "addProduct": "ເພີ່ມສິນຄ້າ",
-    "editProduct": "ແກ້ໄຂສິນຄ້າ",
-    "viewProduct": "ເບິ່ງສິນຄ້າ",
-    "name": "ຊື່ສິນຄ້າ",
-    "sku": "ລະຫັດສິນຄ້າ",
-    "category": "ປະເພດສິນຄ້າ",
-    "price": "ລາຄາ",
-    "stock": "ຈຳນວນຄົງເຫລືອ",
-    "minStock": "ຈຳນວນຕໍ່າສຸດ",
-    "unit": "ຫົວໜ່ວຍ",
-    "image": "ຮູບພາບ",
-    "description": "ຄຳອະທິບາຍ",
-    "selectCategory": "ເລືອກປະເພດສິນຄ້າ",
-    "selectUnit": "ເລືອກຫົວໜ່ວຍ",
-    "namePlaceholder": "ພິມຊື່ສິນຄ້າ",
-    "skuPlaceholder": "ພິມລະຫັດສິນຄ້າ",
-    "pricePlaceholder": "0.00",
-    "stockPlaceholder": "0",
-    "minStockPlaceholder": "0",
-    "descriptionPlaceholder": "ພິມຄຳອະທິບາຍສິນຄ້າ",
-    "searchPlaceholder": "ຄົ້ນຫາສິນຄ້າໂດຍຊື່, ລະຫັດ, ຫລື ຄຳອະທິບາຍ",
-    "deleteConfirmation": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບ '{name}'? ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້."
-  }
-}
-*/
 </script>

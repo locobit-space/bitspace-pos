@@ -322,9 +322,17 @@ export function useNostrData() {
     } = {}
   ): Promise<Event[]> {
     const keys = getUserKeys();
+    
+    // IMPORTANT: Always filter by current user's pubkey to avoid getting other users' data
+    // If no keys available, return empty array instead of querying all authors
+    if (!keys && !options.authors) {
+      console.warn('No user keys available and no authors specified - skipping query to avoid fetching other users data');
+      return [];
+    }
+    
     const filter: Record<string, unknown> = {
       kinds,
-      authors: options.authors || (keys ? [keys.pubkey] : undefined),
+      authors: options.authors || [keys!.pubkey],
     };
 
     if (options.dTags) {

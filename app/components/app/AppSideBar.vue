@@ -28,8 +28,8 @@
         <button
           class="flex p-2 w-full transition-all px-3 justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 items-center"
         >
-          <div v-if="auth.user.value?.avatarUrl" class="w-8 h-8 rounded-full overflow-hidden">
-            <img :src="auth.user.value.avatarUrl" alt="Profile" class="w-full h-full object-cover" />
+          <div v-if="userAvatar" class="w-8 h-8 rounded-full overflow-hidden">
+            <img :src="userAvatar" alt="Profile" class="w-full h-full object-cover">
           </div>
           <div v-else class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
             <Icon name="i-heroicons-user" size="18" class="text-primary-600 dark:text-primary-400" />
@@ -41,18 +41,18 @@
             <!-- User Info with gradient accent -->
             <div class="relative px-3 py-3 mb-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary-100 dark:border-primary-800/30">
               <div class="flex items-center gap-3">
-                <div v-if="auth.user.value?.avatarUrl" class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-md">
-                  <img :src="auth.user.value.avatarUrl" alt="Profile" class="w-full h-full object-cover" />
+                <div v-if="userAvatar" class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-md">
+                  <img :src="userAvatar" alt="Profile" class="w-full h-full object-cover">
                 </div>
                 <div v-else class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-md">
                   <Icon name="i-heroicons-user" size="20" class="text-white" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {{ auth.user.value?.displayName || 'User' }}
+                    {{ userDisplayName }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {{ auth.user.value?.email || formatPubkey(auth.user.value?.nostrPubkey) }}
+                    {{ userIdentifier }}
                   </p>
                 </div>
               </div>
@@ -60,10 +60,23 @@
                 class="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-medium shadow-sm"
                 :class="providerBadgeClass"
               >
-                {{ auth.user.value?.provider === 'nostr' ? '⚡ Nostr' : 
-                   auth.user.value?.provider === 'google' ? '🔷 Google' : '📧 Email' }}
+                {{ userProvider === 'nostr' ? '⚡ Nostr' : 
+                   userProvider === 'google' ? '🔷 Google' : '📧 Email' }}
               </span>
             </div>
+
+            <!-- Account Switcher Button -->
+            <button
+              v-if="hasMultipleAccounts"
+              class="flex w-full items-center gap-3 px-3 py-2.5 mb-4 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-50/80 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl transition-all duration-200"
+              @click="openAccountSwitcher"
+            >
+              <Icon name="i-heroicons-arrows-right-left" size="18" class="text-primary-500" />
+              {{ $t('account.switchAccount') }}
+              <span class="ml-auto text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full">
+                {{ accountCount }}
+              </span>
+            </button>
 
             <!-- Quick Settings with glass cards -->
             <div class="space-y-4 mb-4">
@@ -153,6 +166,9 @@
       </UPopover>
     </div>
   </div>
+
+  <!-- Account Switch Modal -->
+  <AccountSwitchModal v-model:open="showAccountSwitcher" @switched="onAccountSwitched" />
 </template>
 
 <script setup lang="ts">
@@ -160,6 +176,56 @@ const { t } = useI18n();
 const auth = useAuth();
 const colorMode = useColorMode();
 const appConfig = useAppConfig();
+const nostrStorage = useNostrStorage();
+
+// Account switcher state
+const showAccountSwitcher = ref(false);
+const allAccounts = ref<Array<{ pubkey: string; displayName?: string; name?: string; picture?: string }>>([]); 
+const currentUserInfo = ref<{ pubkey?: string; displayName?: string; name?: string; picture?: string } | null>(null);
+
+// Load accounts on mount
+onMounted(() => {
+  allAccounts.value = nostrStorage.loadAllAccounts();
+  const { userInfo } = nostrStorage.loadCurrentUser();
+  if (userInfo) {
+    currentUserInfo.value = userInfo;
+  }
+});
+
+// Computed for user display
+const userDisplayName = computed(() => {
+  return currentUserInfo.value?.displayName || 
+         currentUserInfo.value?.name || 
+         auth.user.value?.displayName || 
+         'User';
+});
+
+const userAvatar = computed(() => {
+  return currentUserInfo.value?.picture || auth.user.value?.avatarUrl;
+});
+
+const userIdentifier = computed(() => {
+  return auth.user.value?.email || formatPubkey(currentUserInfo.value?.pubkey || auth.user.value?.nostrPubkey);
+});
+
+// Determine user provider (nostr if we have pubkey from nostrStorage)
+const userProvider = computed(() => {
+  if (currentUserInfo.value?.pubkey) return 'nostr';
+  return auth.user.value?.provider || 'nostr';
+});
+
+// Computed for account switcher
+const hasMultipleAccounts = computed(() => allAccounts.value.length > 1);
+const accountCount = computed(() => allAccounts.value.length);
+
+// Methods for account switcher
+const openAccountSwitcher = () => {
+  showAccountSwitcher.value = true;
+};
+
+const onAccountSwitched = (pubkey: string) => {
+  console.log('Switched to account:', pubkey);
+};
 
 // Dark mode
 const isDark = computed({
@@ -272,7 +338,7 @@ const items = computed(() => [
 
 // Provider badge styling
 const providerBadgeClass = computed(() => {
-  switch (auth.user.value?.provider) {
+  switch (userProvider.value) {
     case 'nostr':
       return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
     case 'google':

@@ -1071,3 +1071,48 @@ export interface AuthChallenge {
   npub: string; // Who should sign this
   isUsed: boolean;
 }
+
+// ============================================
+// 🔐 NOSTR USER & ACCOUNT TYPES
+// ============================================
+
+/**
+ * Nostr user keys for authentication and signing
+ */
+export interface NostrUserKeys {
+  pub: string;       // Public key (hex format)
+  sec: string;       // Secret key / nsec (hex or nsec format)
+  npub?: string;     // npub encoded public key
+  nsec?: string;     // nsec encoded secret key
+  privateKey?: string; // Alias for sec (hex format)
+  publicKey?: string;  // Alias for pub (hex format)
+}
+
+/**
+ * Nostr user returned from key generation or extension
+ */
+export interface NostrUser {
+  privateKey: string;
+  publicKey: string;
+  nsec: string;
+  npub: string;
+}
+
+/**
+ * User profile information stored in localStorage
+ */
+export interface UserInfo {
+  pubkey: string;                    // Public key (hex format)
+  name?: string;                     // Profile name
+  displayName?: string;              // Display name
+  display_name?: string;             // Alternative display name field
+  about?: string;                    // Bio/description
+  picture?: string;                  // Avatar URL
+  banner?: string;                   // Banner image URL
+  nip05?: string;                    // NIP-05 identifier
+  lud16?: string;                    // Lightning address
+  website?: string;                  // Website URL
+  verified?: boolean;                // NIP-05 verified
+  lastUpdated?: number | null;       // Last profile update timestamp
+  userKeys?: NostrUserKeys;          // User's cryptographic keys
+}

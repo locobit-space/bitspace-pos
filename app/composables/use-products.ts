@@ -7,8 +7,9 @@ import type {
   Product, 
   Category, 
   Unit,
+  Branch,
 } from '~/types';
-import { db, type ProductRecord, type CategoryRecord, type UnitRecord } from '~/db/db';
+import { db, type ProductRecord, type CategoryRecord, type UnitRecord, type BranchRecord } from '~/db/db';
 
 // ============================================
 // 📋 DEFAULT DATA (Initial Seed)
@@ -38,10 +39,15 @@ const DEFAULT_UNITS: Unit[] = [
   { id: 'ml', name: 'Milliliter', symbol: 'ml' },
 ];
 
+const DEFAULT_BRANCHES: Branch[] = [
+  { id: 'main', name: 'Main Branch', code: 'MAIN' },
+];
+
 // Singleton state
 const products = ref<Product[]>([]);
 const categories = ref<Category[]>([]);
 const units = ref<Unit[]>([]);
+const branches = ref<Branch[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const isInitialized = ref(false);
@@ -235,6 +241,56 @@ export function useProductsStore() {
     await db.units.put(record);
   }
 
+  async function loadBranchesFromLocal(): Promise<Branch[]> {
+    try {
+      const records = await db.branches.toArray();
+      if (records.length === 0) {
+        // Seed default branches
+        await seedDefaultBranches();
+        return DEFAULT_BRANCHES;
+      }
+      return records.map(r => ({
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        address: r.address,
+        nostrPubkey: r.nostrPubkey,
+        bolt12Offer: r.bolt12Offer,
+      }));
+    } catch (e) {
+      console.error('Failed to load branches:', e);
+      return DEFAULT_BRANCHES;
+    }
+  }
+
+  async function seedDefaultBranches(): Promise<void> {
+    for (const branch of DEFAULT_BRANCHES) {
+      await db.branches.put({
+        id: branch.id,
+        name: branch.name,
+        code: branch.code,
+        address: branch.address,
+        nostrPubkey: branch.nostrPubkey,
+        bolt12Offer: branch.bolt12Offer,
+        synced: false,
+      });
+    }
+  }
+
+  async function saveBranchToLocal(branch: Branch): Promise<void> {
+    if (!branch.id) return; // Skip invalid branches
+    const record: BranchRecord = {
+      id: branch.id,
+      name: branch.name,
+      code: branch.code,
+      address: branch.address,
+      nostrPubkey: branch.nostrPubkey,
+      bolt12Offer: branch.bolt12Offer,
+      synced: false,
+    };
+    await db.branches.put(record);
+  }
+
   // ============================================
   // 📡 NOSTR SYNC
   // ============================================
@@ -273,12 +329,30 @@ export function useProductsStore() {
     }
   }
 
+  async function syncBranchToNostr(branch: Branch): Promise<boolean> {
+    try {
+      const event = await nostrData.saveBranch(branch);
+      if (event) {
+        await db.branches.update(branch.id, {
+          synced: true,
+          nostrEventId: event.id,
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync branch to Nostr:', e);
+      return false;
+    }
+  }
+
   async function loadFromNostr(): Promise<void> {
     try {
-      const [nostrProducts, nostrCategories, nostrUnits] = await Promise.all([
+      const [nostrProducts, nostrCategories, nostrUnits, nostrBranches] = await Promise.all([
         nostrData.getAllProducts(),
         nostrData.getAllCategories(),
         nostrData.getAllUnits(),
+        nostrData.getAllBranches(),
       ]);
 
       // Merge with local (Nostr takes precedence for synced items)
@@ -291,11 +365,15 @@ export function useProductsStore() {
       for (const unit of nostrUnits) {
         await saveUnitToLocal(unit);
       }
+      for (const branch of nostrBranches) {
+        await saveBranchToLocal(branch);
+      }
 
       // Reload from local
       products.value = await loadProductsFromLocal();
       categories.value = await loadCategoriesFromLocal();
       units.value = await loadUnitsFromLocal();
+      branches.value = await loadBranchesFromLocal();
     } catch (e) {
       console.error('Failed to load from Nostr:', e);
     }
@@ -352,6 +430,7 @@ export function useProductsStore() {
       products.value = await loadProductsFromLocal();
       categories.value = await loadCategoriesFromLocal();
       units.value = await loadUnitsFromLocal();
+      branches.value = await loadBranchesFromLocal();
 
       // Load favorites
       loadFavorites();
@@ -581,6 +660,79 @@ export function useProductsStore() {
   }
 
   // ============================================
+  // 🏪 BRANCH CRUD
+  // ============================================
+
+  async function addBranch(branchData: Omit<Branch, 'id'>): Promise<Branch> {
+    const branch: Branch = {
+      ...branchData,
+      id: `branch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+
+    branches.value.push(branch);
+    await saveBranchToLocal(branch);
+
+    // Sync to Nostr
+    if (offline.isOnline.value) {
+      await syncBranchToNostr(branch);
+    }
+
+    return branch;
+  }
+
+  async function updateBranch(
+    id: string, 
+    updates: Partial<Branch>
+  ): Promise<Branch | null> {
+    const index = branches.value.findIndex(b => b.id === id);
+    if (index === -1) return null;
+
+    const existing = branches.value[index]!;
+    const updatedBranch: Branch = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+    };
+
+    branches.value[index] = updatedBranch;
+    await saveBranchToLocal(updatedBranch);
+
+    // Sync to Nostr
+    if (offline.isOnline.value) {
+      await syncBranchToNostr(updatedBranch);
+    }
+
+    return updatedBranch;
+  }
+
+  async function deleteBranch(id: string): Promise<boolean> {
+    // Prevent deleting the main branch
+    if (id === 'main') {
+      error.value = 'Cannot delete the main branch';
+      return false;
+    }
+
+    const index = branches.value.findIndex(b => b.id === id);
+    if (index === -1) return false;
+
+    // Check if any products use this branch
+    const productsInBranch = products.value.filter(p => p.branchId === id);
+    if (productsInBranch.length > 0) {
+      error.value = `Cannot delete branch: ${productsInBranch.length} products are assigned to it`;
+      return false;
+    }
+
+    branches.value.splice(index, 1);
+    await db.branches.delete(id);
+
+    return true;
+  }
+
+  function getBranch(id: string): Branch | undefined {
+    return branches.value.find(b => b.id === id);
+  }
+
+  // ============================================
   // 📦 STOCK MANAGEMENT
   // ============================================
 
@@ -780,6 +932,7 @@ export function useProductsStore() {
     products,
     categories,
     units,
+    branches,
     isLoading,
     error,
     isInitialized,
@@ -818,6 +971,12 @@ export function useProductsStore() {
     addUnit,
     updateUnit,
     getUnit,
+
+    // Branch CRUD
+    addBranch,
+    updateBranch,
+    deleteBranch,
+    getBranch,
 
     // Stock
     updateStock,

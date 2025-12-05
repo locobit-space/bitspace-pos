@@ -50,53 +50,146 @@
                 :state="profileForm"
                 @submit="updateProfile"
               >
+                <!-- Nostr Identity Section -->
+                <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <h4 class="text-sm font-medium text-purple-800 dark:text-purple-200 mb-3">
+                    {{ $t("account.nostr_identity") || "Nostr Identity" }}
+                    <span class="text-xs font-normal text-purple-600 dark:text-purple-300 ml-2">(kind:0)</span>
+                  </h4>
+                  <div class="space-y-3">
+                    <!-- Public Key (npub) -->
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-500 dark:text-gray-400 w-12">npub:</span>
+                      <code class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1 truncate">
+                        {{ userProfile.npub || "Not available" }}
+                      </code>
+                      <UButton
+                        v-if="userProfile.npub"
+                        icon="i-heroicons-clipboard-document"
+                        size="xs"
+                        variant="ghost"
+                        @click="copyToClipboard(userProfile.npub)"
+                      />
+                    </div>
+                    
+                    <!-- Private Key (nsec) - Backup Section -->
+                    <div class="border-t border-purple-200 dark:border-purple-700 pt-3 mt-3">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-red-600 dark:text-red-400">
+                          🔐 {{ $t("account.backup_key") || "Backup Private Key" }}
+                        </span>
+                      </div>
+                      <div v-if="userNsec" class="space-y-2">
+                        <div v-if="!showNsec" class="flex items-center gap-2">
+                          <span class="text-xs text-gray-500 dark:text-gray-400 w-12">nsec:</span>
+                          <code class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1">
+                            ••••••••••••••••••••••••••••••••••••••••••••
+                          </code>
+                          <UButton
+                            icon="i-heroicons-eye"
+                            size="xs"
+                            variant="outline"
+                            color="red"
+                            @click="showNsecConfirmModal = true"
+                          >
+                            {{ $t("account.reveal") || "Reveal" }}
+                          </UButton>
+                        </div>
+                        <div v-else class="space-y-2">
+                          <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400 w-12">nsec:</span>
+                            <code class="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 px-2 py-1 rounded flex-1 break-all border border-red-200 dark:border-red-800">
+                              {{ userNsec }}
+                            </code>
+                          </div>
+                          <div class="flex gap-2">
+                            <UButton
+                              icon="i-heroicons-clipboard-document"
+                              size="xs"
+                              variant="outline"
+                              color="red"
+                              @click="copyNsec"
+                            >
+                              {{ $t("common.copy") || "Copy" }}
+                            </UButton>
+                            <UButton
+                              icon="i-heroicons-eye-slash"
+                              size="xs"
+                              variant="ghost"
+                              @click="hideNsec"
+                            >
+                              {{ $t("account.hide") || "Hide" }}
+                            </UButton>
+                          </div>
+                        </div>
+                      </div>
+                      <p v-else class="text-xs text-gray-500 dark:text-gray-400 italic">
+                        {{ $t("account.no_nsec_available") || "No private key available (using NIP-07 extension)" }}
+                      </p>
+                      <p class="text-xs text-red-500 dark:text-red-400 mt-2">
+                        ⚠️ {{ $t("account.nsec_warning") || "Never share your nsec! Anyone with this key has full control of your account." }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <UFormField
-                    name="firstName"
-                    :label="$t('account.first_name')"
+                    name="name"
+                    :label="$t('account.name') || 'Name'"
                   >
-                    <UInput v-model="profileForm.firstName" />
+                    <UInput v-model="profileForm.name" placeholder="Your name" />
                   </UFormField>
 
-                  <UFormField name="lastName" :label="$t('account.last_name')">
-                    <UInput v-model="profileForm.lastName" />
+                  <UFormField name="displayName" :label="$t('account.display_name') || 'Display Name'">
+                    <UInput v-model="profileForm.displayName" placeholder="Display name" />
                   </UFormField>
 
-                  <UFormField name="email" :label="$t('account.email')">
-                    <UInput v-model="profileForm.email" type="email" />
+                  <UFormField name="nip05" :label="$t('account.nip05') || 'NIP-05 (Nostr Address)'">
+                    <UInput v-model="profileForm.nip05" placeholder="you@example.com" />
                   </UFormField>
 
-                  <UFormField name="phone" :label="$t('account.phone')">
-                    <UInput v-model="profileForm.phone" />
+                  <UFormField name="lud16" :label="$t('account.lightning_address') || 'Lightning Address'">
+                    <UInput v-model="profileForm.lud16" placeholder="you@getalby.com" />
                   </UFormField>
 
-                  <UFormField name="position" :label="$t('account.position')">
-                    <UInput v-model="profileForm.position" />
+                  <UFormField name="website" :label="$t('account.website') || 'Website'">
+                    <UInput v-model="profileForm.website" placeholder="https://yoursite.com" />
                   </UFormField>
 
-                  <UFormField name="branch" :label="$t('account.branch')">
-                    <USelect
-                      v-model="profileForm.branchId"
-                      :items="branchOptions"
-                      label-key="label"
-                      value-key="value"
-                    />
+                  <UFormField name="picture" :label="$t('account.picture_url') || 'Profile Picture URL'">
+                    <UInput v-model="profileForm.picture" placeholder="https://..." />
                   </UFormField>
                 </div>
 
                 <div class="mt-6">
-                  <UFormField name="bio" :label="$t('account.bio')">
-                    <UTextarea v-model="profileForm.bio" :rows="4" />
+                  <UFormField name="about" :label="$t('account.about') || 'About'">
+                    <UTextarea v-model="profileForm.about" :rows="4" placeholder="Tell us about yourself..." />
                   </UFormField>
                 </div>
 
-                <div class="flex justify-end mt-6">
+                <div class="mt-6">
+                  <UFormField name="banner" :label="$t('account.banner_url') || 'Banner Image URL'">
+                    <UInput v-model="profileForm.banner" placeholder="https://..." />
+                  </UFormField>
+                </div>
+
+                <div class="flex justify-between items-center mt-6">
+                  <UButton
+                    variant="outline"
+                    :loading="isLoadingProfile"
+                    @click="loadNostrProfile"
+                  >
+                    <UIcon name="i-heroicons-arrow-down-tray" class="mr-2" />
+                    {{ $t("account.load_from_nostr") || "Load from Nostr" }}
+                  </UButton>
                   <UButton
                     type="submit"
                     color="primary"
                     :loading="isUpdatingProfile"
                   >
-                    {{ $t("common.save_changes") }}
+                    <UIcon name="i-heroicons-arrow-up-tray" class="mr-2" />
+                    {{ $t("account.publish_to_nostr") || "Publish to Nostr" }}
                   </UButton>
                 </div>
               </UForm>
@@ -509,14 +602,82 @@
         </UCard>
       </template>
     </UModal>
+    <!-- Nsec Confirmation Modal -->
+    <UModal v-model:open="showNsecConfirmModal">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <UIcon name="i-heroicons-exclamation-triangle" class="text-xl" />
+              <h3 class="text-lg font-semibold">
+                {{ $t("account.nsec_confirm_title") || "⚠️ Security Warning" }}
+              </h3>
+            </div>
+          </template>
+
+          <div class="space-y-4">
+            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <p class="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
+                {{ $t("account.nsec_confirm_warning") || "Your private key (nsec) gives FULL ACCESS to your account!" }}
+              </p>
+              <ul class="text-xs text-red-600 dark:text-red-400 space-y-1 list-disc list-inside">
+                <li>{{ $t("account.nsec_warning_1") || "Anyone with this key can sign messages as you" }}</li>
+                <li>{{ $t("account.nsec_warning_2") || "They can access all your encrypted data" }}</li>
+                <li>{{ $t("account.nsec_warning_3") || "You cannot revoke access once shared" }}</li>
+                <li>{{ $t("account.nsec_warning_4") || "Never share on screenshots, chats, or emails" }}</li>
+              </ul>
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                {{ $t("account.nsec_confirm_type") || "Type 'I UNDERSTAND' to reveal your key:" }}
+              </label>
+              <UInput 
+                v-model="nsecConfirmText" 
+                placeholder="I UNDERSTAND"
+                class="font-mono"
+              />
+            </div>
+          </div>
+
+          <template #footer>
+            <div class="flex justify-end gap-3">
+              <UButton
+                color="gray"
+                variant="ghost"
+                @click="closeNsecConfirmModal"
+              >
+                {{ $t("common.cancel") || "Cancel" }}
+              </UButton>
+              <UButton
+                color="red"
+                :disabled="nsecConfirmText !== 'I UNDERSTAND'"
+                @click="confirmRevealNsec"
+              >
+                {{ $t("account.reveal_key") || "Reveal Key" }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { z } from "zod";
+import { nip19 } from "nostr-tools";
+import type { UserInfo } from "~/types";
 
 const { t } = useI18n();
 const colorMode = useColorMode();
+const toast = useToast();
+
+// Nostr composables
+const nostrStorage = useNostrStorage();
+const nostrUser = useNostrUser();
+const nostrRelay = useNostrRelay();
+const { $nostr } = useNuxtApp();
 
 // Page meta
 definePageMeta({
@@ -533,6 +694,30 @@ const isSavingNotifications = ref(false);
 const isAvatarModalOpen = ref(false);
 const isUploadingAvatar = ref(false);
 const previewAvatar = ref("");
+const isLoadingProfile = ref(false);
+const showNsec = ref(false);
+const showNsecConfirmModal = ref(false);
+const nsecConfirmText = ref("");
+
+// Current user info from Nostr
+const currentUserInfo = ref<{
+  pubkey?: string;
+  name?: string;
+  displayName?: string;
+  display_name?: string;
+  about?: string;
+  picture?: string;
+  banner?: string;
+  nip05?: string;
+  lud16?: string;
+  website?: string;
+  userKeys?: {
+    npub?: string;
+    nsec?: string;
+    publicKey?: string;
+    privateKey?: string;
+  };
+} | null>(null);
 
 // Tab configuration
 const tabItems = computed(() => [
@@ -558,25 +743,39 @@ const tabItems = computed(() => [
   },
 ]);
 
-// User profile data
-const userProfile = ref({
-  id: "1",
-  name: "John Doe",
-  email: "john.doe@example.com",
-  avatar: null,
-  createdAt: "2024-01-15",
-  branchId: "1",
+// User profile data (computed from Nostr)
+const userProfile = computed(() => {
+  // Get npub from userKeys or load from storage
+  let npub = currentUserInfo.value?.userKeys?.npub || "";
+  
+  // If no npub in currentUserInfo, try to get from storage
+  if (!npub && import.meta.client) {
+    const { user } = nostrStorage.loadCurrentUser();
+    npub = user?.npub || "";
+  }
+  
+  return {
+    id: currentUserInfo.value?.pubkey || "",
+    name: currentUserInfo.value?.displayName || currentUserInfo.value?.name || "User",
+    email: currentUserInfo.value?.nip05 || "",
+    avatar: currentUserInfo.value?.picture || null,
+    createdAt: new Date().toISOString(),
+    branchId: "1",
+    npub,
+    pubkey: currentUserInfo.value?.pubkey || "",
+  };
 });
 
-// Form schemas
+// Form schemas for Nostr profile
 const profileSchema = z.object({
-  firstName: z.string().min(1, t("validation.required")),
-  lastName: z.string().min(1, t("validation.required")),
-  email: z.string().email(t("validation.invalid_email")),
-  phone: z.string().optional(),
-  position: z.string().optional(),
-  branchId: z.string().min(1, t("validation.required")),
-  bio: z.string().optional(),
+  name: z.string().optional(),
+  displayName: z.string().optional(),
+  about: z.string().optional(),
+  picture: z.string().url().optional().or(z.literal("")),
+  banner: z.string().url().optional().or(z.literal("")),
+  nip05: z.string().optional(),
+  lud16: z.string().optional(),
+  website: z.string().url().optional().or(z.literal("")),
 });
 
 const passwordSchema = z
@@ -590,15 +789,16 @@ const passwordSchema = z
     path: ["confirmPassword"],
   });
 
-// Form states
+// Form states - Nostr profile fields
 const profileForm = reactive({
-  firstName: "John",
-  lastName: "Doe",
-  email: "john.doe@example.com",
-  phone: "+856 20 12345678",
-  position: "Store Manager",
-  branchId: "1",
-  bio: "Experienced retail manager with 5+ years in POS systems.",
+  name: "",
+  displayName: "",
+  about: "",
+  picture: "",
+  banner: "",
+  nip05: "",
+  lud16: "",
+  website: "",
 });
 
 const passwordForm = reactive({
@@ -686,17 +886,223 @@ const currencyOptions = ref([
   { label: "THB (฿)", value: "THB" },
 ]);
 
+// Get user's nsec from storage
+const userNsec = computed(() => {
+  const { userInfo, user } = nostrStorage.loadCurrentUser();
+  return userInfo?.userKeys?.nsec || user?.nsec || null;
+});
+
+// Copy to clipboard helper
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.add({
+      title: t("common.copied") || "Copied!",
+      color: "success",
+    });
+  } catch (error) {
+    console.error("Failed to copy:", error);
+  }
+};
+
+// Copy nsec with extra warning
+const copyNsec = async () => {
+  if (!userNsec.value) return;
+  
+  try {
+    await navigator.clipboard.writeText(userNsec.value);
+    toast.add({
+      title: t("account.nsec_copied") || "Private key copied!",
+      description: t("account.nsec_copied_warning") || "Keep it safe and never share it!",
+      color: "warning",
+    });
+  } catch (error) {
+    console.error("Failed to copy nsec:", error);
+  }
+};
+
+// Nsec confirmation modal functions
+const closeNsecConfirmModal = () => {
+  showNsecConfirmModal.value = false;
+  nsecConfirmText.value = "";
+};
+
+const confirmRevealNsec = () => {
+  if (nsecConfirmText.value === "I UNDERSTAND") {
+    showNsec.value = true;
+    closeNsecConfirmModal();
+    
+    // Auto-hide after 60 seconds for security
+    setTimeout(() => {
+      showNsec.value = false;
+    }, 60000);
+  }
+};
+
+const hideNsec = () => {
+  showNsec.value = false;
+};
+
+// Load profile from Nostr relays
+const loadNostrProfile = async () => {
+  if (!currentUserInfo.value?.pubkey) {
+    toast.add({
+      title: t("account.no_pubkey") || "No public key found",
+      color: "error",
+    });
+    return;
+  }
+
+  isLoadingProfile.value = true;
+  try {
+    const profile = await nostrUser.getUserInfo(currentUserInfo.value.pubkey);
+    if (profile) {
+      profileForm.name = profile.name || "";
+      profileForm.displayName = profile.displayName || "";
+      profileForm.about = profile.about || "";
+      profileForm.picture = profile.picture || "";
+      profileForm.banner = profile.banner || "";
+      profileForm.nip05 = profile.nip05 || "";
+      profileForm.lud16 = profile.lud16 || "";
+      profileForm.website = profile.website || "";
+      
+      toast.add({
+        title: t("account.profile_loaded") || "Profile loaded from Nostr",
+        color: "success",
+      });
+    } else {
+      toast.add({
+        title: t("account.profile_not_found") || "No profile found on relays",
+        color: "warning",
+      });
+    }
+  } catch (error) {
+    console.error("Failed to load profile:", error);
+    toast.add({
+      title: t("account.load_failed") || "Failed to load profile",
+      color: "error",
+    });
+  } finally {
+    isLoadingProfile.value = false;
+  }
+};
+
 // Methods
-const updateProfile = async (event: any) => {
+const updateProfile = async () => {
   isUpdatingProfile.value = true;
   try {
-    // API call to update profile
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-    // Show success toast
-    console.log("Profile updated successfully");
+    // Build Nostr kind:0 profile content
+    const profileContent = JSON.stringify({
+      name: profileForm.name,
+      display_name: profileForm.displayName,
+      about: profileForm.about,
+      picture: profileForm.picture,
+      banner: profileForm.banner,
+      nip05: profileForm.nip05,
+      lud16: profileForm.lud16,
+      website: profileForm.website,
+    });
+
+    // Get current user keys from storage
+    const { userInfo, user } = nostrStorage.loadCurrentUser();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hasNip07 = typeof window !== "undefined" && (window as any).nostr;
+    
+    if (!userInfo?.userKeys?.nsec && !user?.nsec && !hasNip07) {
+      toast.add({
+        title: t("account.no_keys") || "No signing keys available",
+        description: t("account.need_keys_to_publish") || "You need a private key or NIP-07 extension to publish",
+        color: "error",
+      });
+      return;
+    }
+
+    const pubkey = userInfo?.pubkey || user?.publicKey || "";
+
+    // Create unsigned event
+    const event = {
+      kind: 0,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: profileContent,
+      pubkey,
+    };
+
+    let signedEvent;
+
+    // Try NIP-07 extension first
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const windowNostr = (window as any).nostr;
+    if (hasNip07 && windowNostr?.signEvent) {
+      signedEvent = await windowNostr.signEvent(event);
+    } else {
+      // Sign with stored private key
+      const nsecKey = userInfo?.userKeys?.nsec || user?.nsec;
+      if (nsecKey) {
+        const decoded = nip19.decode(nsecKey);
+        if (decoded.type === "nsec") {
+          const secKey = decoded.data as Uint8Array;
+          signedEvent = $nostr.finalizeEvent(event, secKey);
+        }
+      }
+    }
+
+    if (signedEvent) {
+      // Publish to relays
+      const published = await nostrRelay.publishEvent(signedEvent);
+      
+      if (!published) {
+        toast.add({
+          title: t("account.publish_failed") || "Failed to publish to relays",
+          color: "error",
+        });
+        return;
+      }
+      
+      // Update local storage - preserve userKeys with npub
+      const userKeys = userInfo?.userKeys ? userInfo.userKeys : (user ? {
+        pub: user.publicKey,
+        sec: user.privateKey,
+        npub: user.npub,
+        nsec: user.nsec,
+        publicKey: user.publicKey,
+        privateKey: user.privateKey,
+      } : undefined);
+      
+      const updatedUserInfo: UserInfo = {
+        pubkey,
+        name: profileForm.name,
+        displayName: profileForm.displayName,
+        display_name: profileForm.displayName,
+        picture: profileForm.picture,
+        about: profileForm.about,
+        nip05: profileForm.nip05,
+        lud16: profileForm.lud16,
+        website: profileForm.website,
+        banner: profileForm.banner,
+        userKeys,
+      };
+      nostrStorage.saveUser(updatedUserInfo);
+      
+      // Update current user info reactive state so UI updates immediately
+      currentUserInfo.value = updatedUserInfo;
+
+      toast.add({
+        title: t("account.profile_published") || "Profile published to Nostr",
+        color: "success",
+      });
+    } else {
+      toast.add({
+        title: t("account.sign_failed") || "Failed to sign event",
+        color: "error",
+      });
+    }
   } catch (error) {
-    // Show error toast
-    console.error("Failed to update profile:", error);
+    console.error("Failed to publish profile:", error);
+    toast.add({
+      title: t("account.publish_failed") || "Failed to publish profile",
+      color: "error",
+    });
   } finally {
     isUpdatingProfile.value = false;
   }
@@ -834,8 +1240,35 @@ const formatDate = (dateString: string) => {
 };
 
 // Sync dark mode preference on mount and watch for external changes
-onMounted(() => {
+onMounted(async () => {
   preferences.darkMode = colorMode.preference === 'dark' || colorMode.value === 'dark';
+  
+  // Load current user info from storage
+  const { userInfo, user } = nostrStorage.loadCurrentUser();
+  if (userInfo || user) {
+    // Merge userInfo with user keys if needed
+    const mergedInfo = {
+      ...userInfo,
+      userKeys: userInfo?.userKeys || (user ? {
+        npub: user.npub,
+        nsec: user.nsec,
+        publicKey: user.publicKey,
+        privateKey: user.privateKey,
+      } : undefined),
+    };
+    
+    currentUserInfo.value = mergedInfo;
+    
+    // Pre-fill form with stored profile data
+    profileForm.name = userInfo?.name || "";
+    profileForm.displayName = userInfo?.displayName || userInfo?.display_name || "";
+    profileForm.about = userInfo?.about || "";
+    profileForm.picture = userInfo?.picture || "";
+    profileForm.banner = userInfo?.banner || "";
+    profileForm.nip05 = userInfo?.nip05 || "";
+    profileForm.lud16 = userInfo?.lud16 || "";
+    profileForm.website = userInfo?.website || "";
+  }
 });
 
 // Watch for external color mode changes (e.g., from other components)
