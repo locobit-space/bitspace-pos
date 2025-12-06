@@ -383,6 +383,143 @@ export interface PurchaseOrderRecord {
 }
 
 // ============================================
+// 📦 STOCK LOT/BATCH TRACKING RECORDS
+// FIFO/FEFO Inventory Management with Expiry
+// ============================================
+
+// Storage Position (warehouse location)
+export interface StoragePositionRecord {
+  id: string;
+  branchId: string;
+  zone: string;
+  rack?: string;
+  shelf?: string;
+  bin?: string;
+  fullCode: string;
+  description?: string;
+  capacity?: number;
+  storageType: 'ambient' | 'refrigerated' | 'frozen' | 'controlled';
+  temperatureMin?: number;
+  temperatureMax?: number;
+  isActive: boolean;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Stock Lot/Batch Record
+export interface StockLotRecord {
+  id: string;
+  productId: string;
+  branchId: string;
+  // Lot/Batch Information
+  lotNumber: string;
+  batchCode?: string;
+  // Quantity Tracking
+  initialQuantity: number;
+  currentQuantity: number;
+  reservedQuantity: number;
+  // Expiry & Dates (stored as timestamps)
+  manufacturingDate?: number;
+  expiryDate?: number;
+  bestBeforeDate?: number;
+  receivedDate: number;
+  // Status
+  status: 'available' | 'low' | 'expiring' | 'expired' | 'quarantine' | 'depleted';
+  expiryAlertSent?: boolean;
+  // Storage Location
+  positionId?: string;
+  positionCode?: string;
+  // Supplier & Cost
+  supplierId?: string;
+  supplierName?: string;
+  purchaseOrderId?: string;
+  costPrice: number;
+  totalCost: number;
+  // Quality
+  qualityGrade?: 'A' | 'B' | 'C';
+  qualityNotes?: string;
+  inspectedAt?: number;
+  inspectedBy?: string;
+  // Metadata
+  notes?: string;
+  createdBy: string;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Stock Receipt (Goods Received Note)
+export interface StockReceiptRecord {
+  id: string;
+  branchId: string;
+  supplierId?: string;
+  supplierName?: string;
+  purchaseOrderId?: string;
+  receiptNumber: string;
+  receiptDate: number;
+  deliveryNote?: string;
+  invoiceNumber?: string;
+  itemsJson: string; // JSON array of StockReceiptItem
+  totalItems: number;
+  totalQuantity: number;
+  totalValue: number;
+  status: 'draft' | 'pending_inspection' | 'inspected' | 'completed' | 'rejected';
+  inspectionNotes?: string;
+  receivedBy: string;
+  inspectedBy?: string;
+  approvedBy?: string;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Lot Stock Movement Record
+export interface LotStockMovementRecord {
+  id: string;
+  lotId: string;
+  productId: string;
+  branchId: string;
+  type: 'receipt' | 'sale' | 'transfer_in' | 'transfer_out' | 'adjustment' | 'waste' | 'return' | 'production';
+  quantity: number;
+  previousQty: number;
+  newQty: number;
+  referenceType?: 'order' | 'purchase_order' | 'transfer' | 'production' | 'manual';
+  referenceId?: string;
+  reason: string;
+  notes?: string;
+  unitCost?: number;
+  totalCost?: number;
+  fromPositionId?: string;
+  toPositionId?: string;
+  createdBy: string;
+  createdAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// Expiry Alert Record
+export interface ExpiryAlertRecord {
+  id: string;
+  lotId: string;
+  productId: string;
+  branchId: string;
+  lotNumber: string;
+  productName: string;
+  currentQuantity: number;
+  expiryDate: number;
+  daysUntilExpiry: number;
+  alertLevel: 'warning' | 'critical' | 'urgent' | 'expired';
+  acknowledged: boolean;
+  acknowledgedAt?: number;
+  acknowledgedBy?: string;
+  actionTaken?: string;
+  createdAt: number;
+}
+
+// ============================================
 // Database Class
 // ============================================
 
@@ -414,6 +551,12 @@ export class POSDatabase extends Dexie {
   suppliers!: Table<SupplierRecord, string>;
   branchStock!: Table<BranchStockRecord, string>;
   purchaseOrders!: Table<PurchaseOrderRecord, string>;
+  // Stock Lot/Batch Tracking tables
+  storagePositions!: Table<StoragePositionRecord, string>;
+  stockLots!: Table<StockLotRecord, string>;
+  stockReceipts!: Table<StockReceiptRecord, string>;
+  lotStockMovements!: Table<LotStockMovementRecord, string>;
+  expiryAlerts!: Table<ExpiryAlertRecord, string>;
 
   constructor() {
     super("POSDatabase");
@@ -509,6 +652,40 @@ export class POSDatabase extends Dexie {
       suppliers: "id, name, code, status, synced, updatedAt",
       branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
       purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+    });
+
+    // Version 6: Stock Lot/Batch Tracking with Expiry Management
+    this.version(6).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products: "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      // New in v6 - Stock Lot/Batch Tracking
+      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
     });
   }
 }

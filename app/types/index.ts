@@ -147,6 +147,177 @@ export interface LowStockAlert {
   acknowledgedBy?: string;
 }
 
+// ============================================
+// 📦 STOCK LOT/BATCH TRACKING TYPES
+// FIFO/FEFO Inventory Management with Expiry
+// ============================================
+
+/**
+ * Storage location/position in warehouse
+ */
+export interface StoragePosition {
+  id: string;
+  branchId: string;
+  zone: string;           // e.g., "A", "B", "Cold Storage", "Freezer"
+  rack?: string;          // e.g., "R1", "R2"
+  shelf?: string;         // e.g., "S1", "S2"
+  bin?: string;           // e.g., "B01", "B02"
+  fullCode: string;       // Combined: "A-R1-S2-B01"
+  description?: string;
+  capacity?: number;      // Optional capacity limit
+  storageType: 'ambient' | 'refrigerated' | 'frozen' | 'controlled';
+  temperature?: { min: number; max: number }; // Temperature range if applicable
+  isActive: boolean;
+}
+
+/**
+ * Stock Lot/Batch - Each received batch tracked separately
+ * Enables FIFO (First In First Out) or FEFO (First Expired First Out)
+ */
+export interface StockLot {
+  id: string;
+  productId: string;
+  product?: Product;
+  branchId: string;
+  // Lot/Batch Information
+  lotNumber: string;                // Supplier's batch number or internal
+  batchCode?: string;               // Internal batch code (auto-generated)
+  // Quantity Tracking
+  initialQuantity: number;          // Original received quantity
+  currentQuantity: number;          // Current remaining quantity
+  reservedQuantity: number;         // Reserved for pending orders
+  availableQuantity: number;        // currentQuantity - reservedQuantity
+  // Expiry & Dates
+  manufacturingDate?: string;       // When product was made
+  expiryDate?: string;              // Product expiration date
+  bestBeforeDate?: string;          // Best before (quality, not safety)
+  receivedDate: string;             // When received in warehouse
+  // Status & Alerts
+  status: 'available' | 'low' | 'expiring' | 'expired' | 'quarantine' | 'depleted';
+  daysUntilExpiry?: number;         // Calculated field
+  expiryAlertSent?: boolean;
+  // Storage Location
+  positionId?: string;
+  position?: StoragePosition;
+  positionCode?: string;            // Quick reference: "A-R1-S2"
+  // Supplier & Cost
+  supplierId?: string;
+  supplierName?: string;
+  purchaseOrderId?: string;
+  costPrice: number;                // Cost per unit at time of receipt
+  totalCost: number;                // initialQuantity * costPrice
+  // Quality
+  qualityGrade?: 'A' | 'B' | 'C';
+  qualityNotes?: string;
+  inspectedAt?: string;
+  inspectedBy?: string;
+  // Metadata
+  notes?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Stock Receipt/Goods Received - When receiving stock
+ */
+export interface StockReceipt {
+  id: string;
+  branchId: string;
+  supplierId?: string;
+  supplierName?: string;
+  purchaseOrderId?: string;
+  // Receipt Details
+  receiptNumber: string;            // GRN number (Goods Received Note)
+  receiptDate: string;
+  deliveryNote?: string;
+  invoiceNumber?: string;
+  // Items Received
+  items: StockReceiptItem[];
+  // Totals
+  totalItems: number;
+  totalQuantity: number;
+  totalValue: number;
+  // Status
+  status: 'draft' | 'pending_inspection' | 'inspected' | 'completed' | 'rejected';
+  inspectionNotes?: string;
+  // Metadata
+  receivedBy: string;
+  inspectedBy?: string;
+  approvedBy?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Individual item in a stock receipt
+ */
+export interface StockReceiptItem {
+  productId: string;
+  productName: string;
+  productSku: string;
+  // Quantity
+  orderedQty?: number;              // From PO if linked
+  receivedQty: number;
+  acceptedQty: number;              // After inspection
+  rejectedQty: number;
+  // Lot Details
+  lotNumber: string;
+  manufacturingDate?: string;
+  expiryDate?: string;
+  // Position
+  positionId?: string;
+  positionCode?: string;
+  // Cost
+  unitCost: number;
+  totalCost: number;
+  // Notes
+  notes?: string;
+  rejectionReason?: string;
+}
+
+/**
+ * Expiry alert configuration
+ */
+export interface ExpiryAlertConfig {
+  warningDays: number;              // Alert when X days before expiry (e.g., 30)
+  criticalDays: number;             // Critical alert (e.g., 7)
+  urgentDays: number;               // Urgent/immediate action (e.g., 3)
+  autoQuarantine: boolean;          // Auto-quarantine expired items
+  notifyEmail?: boolean;
+  notifyPush?: boolean;
+}
+
+/**
+ * Stock movement with lot tracking
+ */
+export interface LotStockMovement {
+  id: string;
+  lotId: string;
+  lot?: StockLot;
+  productId: string;
+  branchId: string;
+  type: 'receipt' | 'sale' | 'transfer_in' | 'transfer_out' | 'adjustment' | 'waste' | 'return' | 'production';
+  quantity: number;                 // Positive for in, negative for out
+  previousQty: number;
+  newQty: number;
+  // Reference
+  referenceType?: 'order' | 'purchase_order' | 'transfer' | 'production' | 'manual';
+  referenceId?: string;
+  reason: string;
+  notes?: string;
+  // Cost tracking
+  unitCost?: number;
+  totalCost?: number;
+  // Position change
+  fromPositionId?: string;
+  toPositionId?: string;
+  // Metadata
+  createdBy: string;
+  createdAt: string;
+}
+
 /**
  * Daily production plan
  */
@@ -579,6 +750,14 @@ export interface Product {
   // Product Type & Stock Tracking
   productType?: ProductType; // Default: 'good'
   trackStock?: boolean; // Default: true for 'good', false for 'service'/'digital'
+  // Expiry & Lot Tracking
+  hasExpiry?: boolean; // Does this product expire?
+  defaultShelfLifeDays?: number; // Default shelf life in days (e.g., 30, 90, 365)
+  trackLots?: boolean; // Enable lot/batch tracking (for FIFO/FEFO)
+  requiresExpiryDate?: boolean; // Must enter expiry when receiving stock
+  expiryWarningDays?: number; // Alert X days before expiry (default from system config)
+  storageType?: 'ambient' | 'refrigerated' | 'frozen' | 'controlled';
+  storageInstructions?: string;
   // Variants & Modifiers
   hasVariants?: boolean;
   variants?: ProductVariant[];

@@ -484,6 +484,92 @@
                 </div>
               </UFormField>
 
+              <!-- ============================================ -->
+              <!-- Expiry & Lot Tracking Section -->
+              <!-- ============================================ -->
+              <div 
+                v-if="productForm.productType === 'good' || productForm.productType === 'bundle'"
+                class="md:col-span-2 space-y-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl"
+              >
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-xl">📅</span>
+                  <h4 class="font-medium text-gray-900 dark:text-white">
+                    {{ $t('products.expiryTracking') || 'Expiry & Lot Tracking' }}
+                  </h4>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Has Expiry -->
+                  <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                    <div>
+                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ $t('products.hasExpiry') || 'Product expires' }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ $t('products.hasExpiryHint') || 'Enable expiry date tracking' }}
+                      </p>
+                    </div>
+                    <USwitch v-model="productForm.hasExpiry" />
+                  </div>
+
+                  <!-- Track Lots -->
+                  <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                    <div>
+                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ $t('products.trackLots') || 'Track lot/batch' }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ $t('products.trackLotsHint') || 'Enable FIFO/FEFO tracking' }}
+                      </p>
+                    </div>
+                    <USwitch v-model="productForm.trackLots" />
+                  </div>
+                </div>
+
+                <!-- Expiry Settings (shown when hasExpiry is true) -->
+                <div v-if="productForm.hasExpiry" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <UFormField :label="$t('products.defaultShelfLife') || 'Default Shelf Life (days)'">
+                    <UInput
+                      v-model.number="productForm.defaultShelfLifeDays"
+                      type="number"
+                      min="1"
+                      :placeholder="$t('products.shelfLifePlaceholder') || 'e.g., 30, 90, 365'"
+                    />
+                  </UFormField>
+
+                  <UFormField :label="$t('products.expiryWarningDays') || 'Expiry Warning (days)'">
+                    <UInput
+                      v-model.number="productForm.expiryWarningDays"
+                      type="number"
+                      min="1"
+                      :placeholder="$t('products.expiryWarningPlaceholder') || 'e.g., 30'"
+                    />
+                  </UFormField>
+
+                  <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                    <div>
+                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ $t('products.requiresExpiryDate') || 'Require expiry date' }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ $t('products.requiresExpiryHint') || 'Must enter expiry when receiving stock' }}
+                      </p>
+                    </div>
+                    <USwitch v-model="productForm.requiresExpiryDate" />
+                  </div>
+
+                  <UFormField :label="$t('products.storageType') || 'Storage Type'">
+                    <USelect
+                      v-model="productForm.storageType"
+                      :items="storageTypeOptions"
+                      label-key="label"
+                      value-key="value"
+                      :placeholder="$t('common.select') || 'Select...'"
+                    />
+                  </UFormField>
+                </div>
+              </div>
+
               <!-- Info for non-stock products -->
               <div 
                 v-if="productForm.productType === 'service' || productForm.productType === 'digital' || productForm.productType === 'subscription'"
@@ -1157,6 +1243,13 @@ interface ProductForm {
   image: string;
   productType: 'good' | 'service' | 'digital' | 'subscription' | 'bundle';
   trackStock: boolean;
+  // Expiry & Lot Tracking
+  hasExpiry: boolean;
+  defaultShelfLifeDays: number | undefined;
+  trackLots: boolean;
+  requiresExpiryDate: boolean;
+  expiryWarningDays: number | undefined;
+  storageType: 'ambient' | 'refrigerated' | 'frozen' | 'controlled' | undefined;
 }
 
 // Validation Schema - Only name and price required
@@ -1172,6 +1265,12 @@ const productSchema = z.object({
   status: z.enum(["active", "inactive"]).optional(),
   productType: z.enum(["good", "service", "digital", "subscription", "bundle"]).optional(),
   trackStock: z.boolean().optional(),
+  hasExpiry: z.boolean().optional(),
+  defaultShelfLifeDays: z.number().optional(),
+  trackLots: z.boolean().optional(),
+  requiresExpiryDate: z.boolean().optional(),
+  expiryWarningDays: z.number().optional(),
+  storageType: z.enum(["ambient", "refrigerated", "frozen", "controlled"]).optional(),
 });
 
 // Product Type Options
@@ -1181,6 +1280,14 @@ const productTypeOptions = [
   { value: 'digital', label: 'Digital Product', icon: '💾' },
   { value: 'subscription', label: 'Subscription', icon: '🔄' },
   { value: 'bundle', label: 'Bundle', icon: '🎁' },
+];
+
+// Storage Type Options
+const storageTypeOptions = [
+  { value: 'ambient', label: '🏠 Ambient (Room Temperature)' },
+  { value: 'refrigerated', label: '❄️ Refrigerated (2-8°C)' },
+  { value: 'frozen', label: '🧊 Frozen (-18°C or below)' },
+  { value: 'controlled', label: '🌡️ Controlled Temperature' },
 ];
 // Categories loaded from store (Dexie/Nostr)
 
@@ -1286,6 +1393,13 @@ const productForm = ref<ProductForm>({
   image: "📦",
   productType: "good",
   trackStock: true,
+  // Expiry tracking
+  hasExpiry: false,
+  defaultShelfLifeDays: undefined,
+  trackLots: false,
+  requiresExpiryDate: false,
+  expiryWarningDays: 7,
+  storageType: "ambient",
 });
 
 // Options
@@ -1388,6 +1502,13 @@ const openProductModal = (product?: Product) => {
       image: product.image || "📦",
       productType: product.productType || "good",
       trackStock: product.trackStock !== false, // Default true if not set
+      // Expiry tracking
+      hasExpiry: product.hasExpiry || false,
+      defaultShelfLifeDays: product.defaultShelfLifeDays,
+      trackLots: product.trackLots || false,
+      requiresExpiryDate: product.requiresExpiryDate || false,
+      expiryWarningDays: product.expiryWarningDays || 7,
+      storageType: product.storageType || "ambient",
     };
   } else {
     selectedProduct.value = null;
@@ -1405,6 +1526,13 @@ const openProductModal = (product?: Product) => {
       image: "📦",
       productType: "good",
       trackStock: true,
+      // Expiry tracking
+      hasExpiry: false,
+      defaultShelfLifeDays: undefined,
+      trackLots: false,
+      requiresExpiryDate: false,
+      expiryWarningDays: 7,
+      storageType: "ambient",
     };
   }
   showProductModal.value = true;

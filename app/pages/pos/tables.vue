@@ -63,7 +63,7 @@
 
     <!-- Floor Selector -->
     <div class="flex items-center gap-4 mb-6">
-      <UButtonGroup>
+      <UFieldGroup>
         <UButton
           v-for="floor in floors"
           :key="floor.id"
@@ -72,11 +72,11 @@
         >
           {{ floor.name }}
         </UButton>
-      </UButtonGroup>
+      </UFieldGroup>
       
       <div class="flex-1" />
       
-      <UButtonGroup>
+      <UFieldGroup>
         <UButton
           :variant="viewMode === 'grid' ? 'solid' : 'outline'"
           icon="i-heroicons-squares-2x2"
@@ -87,7 +87,7 @@
           icon="i-heroicons-list-bullet"
           @click="viewMode = 'list'"
         />
-      </UButtonGroup>
+      </UFieldGroup>
     </div>
 
     <!-- Grid View -->
@@ -163,9 +163,9 @@
               </p>
             </div>
             
-            <UDropdown :items="getTableActions(table)">
+            <UDropdownMenu :items="getTableActions(table)">
               <UButton variant="ghost" icon="i-heroicons-ellipsis-vertical" />
-            </UDropdown>
+            </UDropdownMenu>
           </div>
         </div>
       </div>
@@ -860,27 +860,27 @@ function getTableActions(table: Table) {
   
   if (table.status === 'available') {
     actions.push([
-      { label: t('pos.tables.startOrder'), icon: 'i-heroicons-shopping-cart', click: () => startOrder(table) },
-      { label: t('pos.tables.reserve'), icon: 'i-heroicons-calendar', click: () => makeReservation(table) }
+      { label: t('pos.tables.startOrder'), icon: 'i-heroicons-shopping-cart', onSelect: () => startOrder(table) },
+      { label: t('pos.tables.reserve'), icon: 'i-heroicons-calendar', onSelect: () => makeReservation(table) }
     ])
   }
   
   if (table.status === 'occupied') {
     actions.push([
-      { label: t('pos.tables.viewOrder'), icon: 'i-heroicons-eye', click: () => addToOrder(table) },
-      { label: t('pos.tables.payment'), icon: 'i-heroicons-banknotes', click: () => processPayment(table) }
+      { label: t('pos.tables.viewOrder'), icon: 'i-heroicons-eye', onSelect: () => addToOrder(table) },
+      { label: t('pos.tables.payment'), icon: 'i-heroicons-banknotes', onSelect: () => processPayment(table) }
     ])
   }
   
   if (table.status === 'reserved') {
     actions.push([
-      { label: t('pos.tables.seatGuests'), icon: 'i-heroicons-check', click: () => seatGuests(table) },
-      { label: t('pos.tables.cancelReservation'), icon: 'i-heroicons-x-mark', color: 'error' as const, click: () => cancelReservation(table) }
+      { label: t('pos.tables.seatGuests'), icon: 'i-heroicons-check', onSelect: () => seatGuests(table) },
+      { label: t('pos.tables.cancelReservation'), icon: 'i-heroicons-x-mark', color: 'error' as const, onSelect: () => cancelReservation(table) }
     ])
   }
   
   actions.push([
-    { label: t('common.edit'), icon: 'i-heroicons-pencil', click: () => openTableModal(table) }
+    { label: t('common.edit'), icon: 'i-heroicons-pencil', onSelect: () => openTableModal(table) }
   ])
   
   return actions

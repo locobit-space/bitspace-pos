@@ -38,6 +38,11 @@ export interface InventoryItem {
   lastUpdated: string;
   status: 'in-stock' | 'low-stock' | 'out-of-stock' | 'overstocked';
   value: number;
+  // Expiry tracking fields
+  hasExpiry?: boolean;
+  defaultShelfLifeDays?: number;
+  trackLots?: boolean;
+  requiresExpiryDate?: boolean;
 }
 
 export interface StockMovement {
@@ -330,6 +335,11 @@ export function useInventory() {
             lastUpdated: product.updatedAt,
             status: calculateStockStatus(product.stock, product.minStock, maxStock),
             value: product.stock * (product.costPrice || product.price * 0.6),
+            // Expiry tracking from product settings
+            hasExpiry: product.hasExpiry,
+            defaultShelfLifeDays: product.defaultShelfLifeDays,
+            trackLots: product.trackLots,
+            requiresExpiryDate: product.requiresExpiryDate,
           });
         } else {
           // Create inventory item for each branch stock
@@ -357,6 +367,11 @@ export function useInventory() {
               lastUpdated: new Date(bs.updatedAt).toISOString(),
               status: calculateStockStatus(bs.currentStock, bs.minStock, bs.maxStock),
               value: bs.currentStock * bs.costPrice,
+              // Expiry tracking from product settings
+              hasExpiry: product.hasExpiry,
+              defaultShelfLifeDays: product.defaultShelfLifeDays,
+              trackLots: product.trackLots,
+              requiresExpiryDate: product.requiresExpiryDate,
             });
           }
         }

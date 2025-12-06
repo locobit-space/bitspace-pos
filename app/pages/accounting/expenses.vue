@@ -166,12 +166,12 @@
               <p class="text-xs text-muted">{{ expense.paymentMethod }}</p>
             </div>
             
-            <UDropdown :items="getExpenseActions(expense)">
+            <UDropdownMenu :items="getExpenseActions(expense)">
               <UButton
                 variant="ghost"
                 icon="i-heroicons-ellipsis-vertical"
               />
-            </UDropdown>
+            </UDropdownMenu>
           </div>
         </div>
       </div>
@@ -688,12 +688,12 @@ function getExpenseActions(expense: Expense) {
       {
         label: t('common.edit'),
         icon: 'i-heroicons-pencil',
-        click: () => openExpenseModal(expense)
+        onSelect: () => openExpenseModal(expense)
       },
       {
         label: t('common.duplicate'),
         icon: 'i-heroicons-document-duplicate',
-        click: () => {
+        onSelect: () => {
           const duplicate = { ...expense, id: '', date: new Date().toISOString().split('T')[0] }
           openExpenseModal(duplicate as Expense)
         }
@@ -704,7 +704,7 @@ function getExpenseActions(expense: Expense) {
         label: t('common.delete'),
         icon: 'i-heroicons-trash',
         color: 'error' as const,
-        click: () => {
+        onSelect: () => {
           expenseToDelete.value = expense
           showDeleteModal.value = true
         }

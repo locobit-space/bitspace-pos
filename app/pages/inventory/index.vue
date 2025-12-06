@@ -1,5 +1,10 @@
 <!-- pages/inventory/index.vue -->
 <script setup lang="ts">
+import type { SupplierFormData } from '~/components/inventory/SupplierModal.vue';
+import type { POFormData } from '~/components/inventory/PurchaseOrderModal.vue';
+import type { AddStockFormData } from '~/components/inventory/AddStockModal.vue';
+import type { StockLot } from '~/types';
+
 definePageMeta({
   layout: 'default',
   middleware: ['auth'],
@@ -10,6 +15,7 @@ const toast = useToast();
 
 // ============================================
 // 📦 INVENTORY PAGE - Connected to Dexie + Nostr
+// With Stock Lot/Batch & Expiry Tracking
 // ============================================
 
 // Permissions
@@ -18,11 +24,18 @@ const { canEditInventory, canAdjustStock } = usePermissions();
 // Use real inventory store with Nostr sync
 const inventory = useInventory();
 
+// Stock Lots composable
+const stockLots = useStockLots();
+
 // Get data from composable
 const inventoryItems = computed(() => inventory.inventoryItems.value);
 const stockMovements = computed(() => inventory.stockMovements.value);
 const suppliers = computed(() => inventory.suppliers.value);
 const purchaseOrders = computed(() => inventory.purchaseOrders.value);
+
+// Stock Lot data
+const stockLotSummary = computed(() => stockLots.summary.value);
+const expiryAlertCount = computed(() => stockLots.expiryAlerts.value.length);
 
 // Filters
 const searchQuery = ref('');
@@ -36,12 +49,12 @@ const branches = computed(() => [
   ...inventory.branches.value.map(b => ({ id: b.id, name: b.name })),
 ]);
 
-const statusOptions = [
+const statusOptions = computed(() => [
   { value: 'all', label: t('common.all') || 'All' },
   { value: 'in-stock', label: t('inventory.inStock') || 'In Stock' },
   { value: 'low-stock', label: t('inventory.lowStock') || 'Low Stock' },
   { value: 'out-of-stock', label: t('inventory.outOfStock') || 'Out of Stock' },
-];
+]);
 
 // Computed
 const filteredInventory = computed(() => {
@@ -65,25 +78,14 @@ const showTransferModal = ref(false);
 const showAddStockModal = ref(false);
 const showSupplierModal = ref(false);
 const showPurchaseOrderModal = ref(false);
+const showReceiveStockModal = ref(false);
+
 // Type from composable
 type InventoryItem = typeof inventoryItems.value[number];
 const selectedItem = ref<InventoryItem | null>(null);
+const selectedLot = ref<StockLot | null>(null);
 const adjusting = ref(false);
 const editingSupplier = ref<typeof suppliers.value[number] | null>(null);
-
-// Adjustment form
-const adjustmentForm = ref({
-  quantity: 0,
-  type: 'adjustment' as 'in' | 'out' | 'adjustment',
-  reason: '',
-});
-
-// Transfer form
-const transferForm = ref({
-  quantity: 0,
-  toBranch: '',
-  notes: '',
-});
 
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('lo-LA', {
@@ -105,27 +107,29 @@ const getStatusColor = (status: string): 'green' | 'yellow' | 'red' | 'blue' | '
 
 const openAdjustModal = (item: InventoryItem) => {
   selectedItem.value = item;
-  adjustmentForm.value = { quantity: 0, type: 'adjustment', reason: '' };
   showAdjustModal.value = true;
 };
 
 const openTransferModal = (item: InventoryItem) => {
   selectedItem.value = item;
-  transferForm.value = { quantity: 0, toBranch: '', notes: '' };
   showTransferModal.value = true;
 };
 
-const saveAdjustment = async () => {
+// ============================================
+// 📝 MODAL HANDLERS
+// ============================================
+
+const handleAdjustment = async (data: { quantity: number; type: 'in' | 'out' | 'adjustment'; reason: string }) => {
   if (!selectedItem.value) return;
   
   adjusting.value = true;
   try {
-    let adjustment = adjustmentForm.value.quantity;
+    let adjustment = data.quantity;
     let reason: 'purchase' | 'sale' | 'adjustment' | 'waste' | 'return' | 'count' = 'adjustment';
     
-    if (adjustmentForm.value.type === 'in') {
+    if (data.type === 'in') {
       reason = 'purchase';
-    } else if (adjustmentForm.value.type === 'out') {
+    } else if (data.type === 'out') {
       adjustment = -adjustment;
       reason = 'sale';
     }
@@ -135,7 +139,7 @@ const saveAdjustment = async () => {
       selectedItem.value.branchId,
       adjustment,
       reason,
-      adjustmentForm.value.reason
+      data.reason
     );
     
     if (success) {
@@ -159,7 +163,7 @@ const saveAdjustment = async () => {
   }
 };
 
-const saveTransfer = async () => {
+const handleTransfer = async (data: { quantity: number; toBranch: string; notes: string }) => {
   if (!selectedItem.value) return;
   
   adjusting.value = true;
@@ -167,15 +171,15 @@ const saveTransfer = async () => {
     const success = await inventory.transferStock(
       selectedItem.value.productId,
       selectedItem.value.branchId,
-      transferForm.value.toBranch,
-      transferForm.value.quantity,
-      transferForm.value.notes
+      data.toBranch,
+      data.quantity,
+      data.notes
     );
     
     if (success) {
       toast.add({
         title: t('inventory.stockTransferred') || 'Stock Transferred',
-        description: `${transferForm.value.quantity} units transferred`,
+        description: `${data.quantity} units transferred`,
         icon: 'i-heroicons-check-circle',
         color: 'green',
       });
@@ -193,16 +197,8 @@ const saveTransfer = async () => {
   }
 };
 
-// Add Stock form
-const addStockForm = ref({
-  productId: '',
-  branchId: 'main',
-  quantity: 0,
-  notes: '',
-});
-
-const saveAddStock = async () => {
-  if (!addStockForm.value.productId || addStockForm.value.quantity <= 0) {
+const handleAddStock = async (data: AddStockFormData) => {
+  if (!data.productId || data.quantity <= 0) {
     toast.add({
       title: t('common.error') || 'Error',
       description: t('inventory.selectProductAndQuantity') || 'Please select a product and enter quantity',
@@ -214,22 +210,41 @@ const saveAddStock = async () => {
 
   adjusting.value = true;
   try {
+    // Add stock to inventory
     const success = await inventory.addStock(
-      addStockForm.value.productId,
-      addStockForm.value.quantity,
-      addStockForm.value.branchId,
-      addStockForm.value.notes
+      data.productId,
+      data.quantity,
+      data.branchId,
+      data.notes
     );
 
     if (success) {
+      // If lot tracking info provided, create a stock lot
+      if (data.lotNumber || data.expiryDate) {
+        const product = inventoryItems.value.find(item => item.productId === data.productId);
+        
+        await stockLots.createStockLot({
+          productId: data.productId,
+          branchId: data.branchId || 'main',
+          lotNumber: data.lotNumber || `LOT-${Date.now()}`,
+          quantity: data.quantity,
+          costPrice: data.unitCost || product?.costPrice || 0,
+          expiryDate: data.expiryDate,
+          manufacturingDate: data.manufacturingDate,
+          notes: data.notes,
+          createdBy: 'system', // TODO: Get current user
+        });
+      }
+
       toast.add({
         title: t('inventory.stockAdded') || 'Stock Added',
-        description: `Added ${addStockForm.value.quantity} units`,
+        description: data.lotNumber 
+          ? `Added ${data.quantity} units (Lot: ${data.lotNumber})`
+          : `Added ${data.quantity} units`,
         icon: 'i-heroicons-check-circle',
         color: 'green',
       });
       showAddStockModal.value = false;
-      addStockForm.value = { productId: '', branchId: 'main', quantity: 0, notes: '' };
     } else {
       toast.add({
         title: t('common.error') || 'Error',
@@ -240,6 +255,117 @@ const saveAddStock = async () => {
     }
   } finally {
     adjusting.value = false;
+  }
+};
+
+const handleSaveSupplier = async (data: SupplierFormData, isEdit: boolean) => {
+  if (!data.name) {
+    toast.add({
+      title: t('common.error') || 'Error',
+      description: t('inventory.supplierNameRequired') || 'Supplier name is required',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'red',
+    });
+    return;
+  }
+
+  adjusting.value = true;
+  try {
+    let success = false;
+    if (isEdit && editingSupplier.value) {
+      success = await inventory.updateSupplier(editingSupplier.value.id, {
+        ...data,
+        status: 'active' as const,
+        productIds: editingSupplier.value.productIds,
+      });
+    } else {
+      const result = await inventory.addSupplier({
+        ...data,
+        status: 'active' as const,
+        productIds: [],
+      });
+      success = !!result;
+    }
+
+    if (success) {
+      toast.add({
+        title: isEdit ? t('inventory.supplierUpdated') : t('inventory.supplierAdded'),
+        description: data.name,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
+      showSupplierModal.value = false;
+    } else {
+      toast.add({
+        title: t('common.error') || 'Error',
+        description: inventory.error.value || 'Failed to save supplier',
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'red',
+      });
+    }
+  } finally {
+    adjusting.value = false;
+  }
+};
+
+const handleSavePurchaseOrder = async (data: POFormData) => {
+  if (!data.supplierId || data.items.length === 0) {
+    toast.add({
+      title: t('common.error'),
+      description: t('inventory.poRequiredFields'),
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'red',
+    });
+    return;
+  }
+
+  adjusting.value = true;
+  try {
+    const items = data.items.map(item => ({
+      ...item,
+      receivedQty: 0,
+    }));
+    
+    const result = await inventory.createPurchaseOrder(
+      data.supplierId,
+      data.branchId,
+      items,
+      data.notes
+    );
+
+    if (result) {
+      toast.add({
+        title: t('inventory.poCreated'),
+        description: `PO#${result.id}`,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
+      showPurchaseOrderModal.value = false;
+    }
+  } finally {
+    adjusting.value = false;
+  }
+};
+
+// ============================================
+// 👥 SUPPLIER MANAGEMENT
+// ============================================
+
+const openSupplierModal = (supplier?: typeof suppliers.value[number]) => {
+  editingSupplier.value = supplier || null;
+  showSupplierModal.value = true;
+};
+
+const deleteSupplier = async (id: string) => {
+  if (!confirm(t('inventory.confirmDeleteSupplier'))) return;
+  
+  const success = await inventory.deleteSupplier(id);
+  if (success) {
+    toast.add({
+      title: t('inventory.supplierDeleted'),
+      icon: 'i-heroicons-check-circle',
+      color: 'green',
+    });
   }
 };
 
@@ -272,191 +398,79 @@ const exportInventory = async () => {
 };
 
 // ============================================
-// 👥 SUPPLIER MANAGEMENT
+// 📦 STOCK LOT HANDLERS
 // ============================================
 
-const supplierForm = ref({
-  name: '',
-  code: '',
-  contactPerson: '',
-  email: '',
-  phone: '',
-  address: '',
-  paymentTerms: '',
-  leadTimeDays: 7,
-  notes: '',
-});
-
-const openSupplierModal = (supplier?: typeof suppliers.value[number]) => {
-  if (supplier) {
-    editingSupplier.value = supplier;
-    supplierForm.value = {
-      name: supplier.name,
-      code: supplier.code,
-      contactPerson: supplier.contactPerson,
-      email: supplier.email,
-      phone: supplier.phone,
-      address: supplier.address,
-      paymentTerms: supplier.paymentTerms || '',
-      leadTimeDays: supplier.leadTimeDays || 7,
-      notes: supplier.notes || '',
-    };
-  } else {
-    editingSupplier.value = null;
-    supplierForm.value = {
-      name: '',
-      code: '',
-      contactPerson: '',
-      email: '',
-      phone: '',
-      address: '',
-      paymentTerms: '',
-      leadTimeDays: 7,
-      notes: '',
-    };
-  }
-  showSupplierModal.value = true;
-};
-
-const saveSupplier = async () => {
-  if (!supplierForm.value.name) {
-    toast.add({
-      title: t('common.error') || 'Error',
-      description: t('inventory.supplierNameRequired') || 'Supplier name is required',
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red',
-    });
-    return;
-  }
-
-  adjusting.value = true;
-  try {
-    let success = false;
-    if (editingSupplier.value) {
-      success = await inventory.updateSupplier(editingSupplier.value.id, {
-        ...supplierForm.value,
-        status: 'active' as const,
-        productIds: editingSupplier.value.productIds,
-      });
-    } else {
-      const result = await inventory.addSupplier({
-        ...supplierForm.value,
-        status: 'active' as const,
-        productIds: [],
-      });
-      success = !!result;
-    }
-
-    if (success) {
-      toast.add({
-        title: editingSupplier.value ? t('inventory.supplierUpdated') : t('inventory.supplierAdded'),
-        description: supplierForm.value.name,
-        icon: 'i-heroicons-check-circle',
-        color: 'green',
-      });
-      showSupplierModal.value = false;
-    } else {
-      toast.add({
-        title: t('common.error') || 'Error',
-        description: inventory.error.value || 'Failed to save supplier',
-        icon: 'i-heroicons-exclamation-circle',
-        color: 'red',
-      });
-    }
-  } finally {
-    adjusting.value = false;
-  }
-};
-
-const deleteSupplier = async (id: string) => {
-  if (!confirm(t('inventory.confirmDeleteSupplier'))) return;
+const handleReceiveStockSuccess = async (_receipt: unknown) => {
+  // Refresh inventory data
+  await inventory.init();
+  await stockLots.loadStockLots();
   
-  const success = await inventory.deleteSupplier(id);
-  if (success) {
-    toast.add({
-      title: t('inventory.supplierDeleted'),
-      icon: 'i-heroicons-check-circle',
-      color: 'green',
-    });
-  }
-};
-
-// ============================================
-// 📋 PURCHASE ORDER MANAGEMENT
-// ============================================
-
-const poForm = ref({
-  supplierId: '',
-  branchId: 'main',
-  items: [] as { productId: string; productName: string; quantity: number; unitPrice: number }[],
-  notes: '',
-});
-
-const openPurchaseOrderModal = () => {
-  poForm.value = {
-    supplierId: '',
-    branchId: 'main',
-    items: [],
-    notes: '',
-  };
-  showPurchaseOrderModal.value = true;
-};
-
-const addPOItem = () => {
-  poForm.value.items.push({
-    productId: '',
-    productName: '',
-    quantity: 1,
-    unitPrice: 0,
+  toast.add({
+    title: t('inventory.stockReceived') || 'Stock Received',
+    description: t('inventory.stockLotsCreated') || 'Stock lots created successfully',
+    icon: 'i-heroicons-check-circle',
+    color: 'green',
   });
 };
 
-const removePOItem = (index: number) => {
-  poForm.value.items.splice(index, 1);
+const handleLotAdjust = (lot: StockLot) => {
+  selectedLot.value = lot;
+  // Find the inventory item for this product
+  const item = inventoryItems.value.find(i => i.productId === lot.productId);
+  if (item) {
+    selectedItem.value = item;
+    showAdjustModal.value = true;
+  }
 };
 
-const savePurchaseOrder = async () => {
-  if (!poForm.value.supplierId || poForm.value.items.length === 0) {
-    toast.add({
-      title: t('common.error'),
-      description: t('inventory.poRequiredFields'),
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red',
-    });
-    return;
-  }
+const handleLotMove = async (_lot: StockLot) => {
+  // TODO: Implement position transfer modal
+  toast.add({
+    title: t('common.info') || 'Info',
+    description: t('inventory.positionTransferComingSoon') || 'Position transfer coming soon',
+    icon: 'i-heroicons-information-circle',
+    color: 'blue',
+  });
+};
 
-  adjusting.value = true;
-  try {
-    const items = poForm.value.items.map(item => ({
-      ...item,
-      receivedQty: 0,
-    }));
-    
-    const result = await inventory.createPurchaseOrder(
-      poForm.value.supplierId,
-      poForm.value.branchId,
-      items,
-      poForm.value.notes
+const handleLotQuarantine = async (lot: StockLot) => {
+  const confirmed = confirm(
+    lot.status === 'quarantine'
+      ? (t('inventory.confirmReleaseQuarantine') || 'Release this lot from quarantine?')
+      : (t('inventory.confirmQuarantine') || 'Quarantine this lot?')
+  );
+  
+  if (!confirmed) return;
+
+  if (lot.status !== 'quarantine') {
+    const success = await stockLots.quarantineLot(
+      lot.id,
+      'Manual quarantine',
+      'staff_1' // TODO: Get from auth
     );
-
-    if (result) {
+    
+    if (success) {
       toast.add({
-        title: t('inventory.poCreated'),
-        description: `PO#${result.id}`,
-        icon: 'i-heroicons-check-circle',
-        color: 'green',
+        title: t('inventory.lotQuarantined') || 'Lot Quarantined',
+        description: lot.lotNumber,
+        icon: 'i-heroicons-shield-exclamation',
+        color: 'amber',
       });
-      showPurchaseOrderModal.value = false;
     }
-  } finally {
-    adjusting.value = false;
   }
+};
+
+const handleLotView = (lot: StockLot) => {
+  selectedLot.value = lot;
+  // TODO: Open lot details modal
+  console.log('View lot:', lot);
 };
 
 // Initialize inventory on mount
 onMounted(async () => {
   await inventory.init();
+  await stockLots.init();
 });
 </script>
 
@@ -492,6 +506,8 @@ onMounted(async () => {
           variant="link"
           :items="[
             { label: t('inventory.inventory'), value: 'inventory' },
+            { label: t('inventory.stockLots') || 'Stock Lots', value: 'lots', icon: 'i-heroicons-archive-box' },
+            { label: t('inventory.expiryAlerts') || 'Expiry', value: 'expiry', icon: 'i-heroicons-clock' },
             { label: t('inventory.movements'), value: 'movements' },
             { label: t('inventory.suppliers'), value: 'suppliers' },
             { label: t('inventory.purchaseOrders'), value: 'purchaseOrders' },
@@ -500,82 +516,77 @@ onMounted(async () => {
       </template>
     </CommonPageHeader>
 
+    <!-- Expiry Alert Banner (shown when there are critical alerts) -->
+    <div 
+      v-if="expiryAlertCount > 0 && activeTab !== 'expiry'"
+      class="mx-4 p-4 bg-linear-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between"
+    >
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+          <span class="text-xl">⚠️</span>
+        </div>
+        <div>
+          <p class="font-medium text-amber-700 dark:text-amber-400">
+            {{ expiryAlertCount }} {{ t('inventory.stockExpiryWarning') || 'items expiring soon' }}
+          </p>
+          <p class="text-sm text-amber-600/75 dark:text-amber-500/75">
+            {{ t('inventory.reviewExpiryAlerts') || 'Review expiry alerts to prevent waste' }}
+          </p>
+        </div>
+      </div>
+      <UButton
+        color="amber"
+        variant="soft"
+        @click="activeTab = 'expiry'"
+      >
+        {{ t('inventory.viewAlerts') || 'View Alerts' }}
+      </UButton>
+    </div>
+
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-            <Icon name="i-heroicons-cube" class="w-6 h-6 text-blue-500 dark:text-blue-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('inventory.totalProducts') }}</p>
-            <p class="text-2xl font-bold">{{ inventoryItems.length }}</p>
-          </div>
-        </div>
-      </UCard>
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-            <Icon name="i-heroicons-currency-dollar" class="w-6 h-6 text-green-500 dark:text-green-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('inventory.totalValue') }}</p>
-            <p class="text-2xl font-bold">{{ formatCurrency(totalInventoryValue) }}</p>
-          </div>
-        </div>
-      </UCard>
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-full">
-            <Icon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-yellow-500 dark:text-yellow-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('inventory.lowStockItems') }}</p>
-            <p class="text-2xl font-bold">{{ lowStockCount }}</p>
-          </div>
-        </div>
-      </UCard>
-      <UCard>
-        <div class="flex items-center">
-          <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-            <Icon name="i-heroicons-truck" class="w-6 h-6 text-purple-500 dark:text-purple-400" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('inventory.activeSuppliers') }}</p>
-            <p class="text-2xl font-bold">{{ suppliers.filter(s => s.status === 'active').length }}</p>
-          </div>
-        </div>
-      </UCard>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 px-4">
+      <CommonStatCard
+        icon="i-heroicons-cube"
+        icon-color="blue"
+        :label="t('inventory.totalProducts')"
+        :value="inventoryItems.length"
+      />
+      <CommonStatCard
+        icon="i-heroicons-currency-dollar"
+        icon-color="green"
+        :label="t('inventory.totalValue')"
+        :value="formatCurrency(totalInventoryValue)"
+      />
+      <CommonStatCard
+        icon="i-heroicons-exclamation-triangle"
+        icon-color="yellow"
+        :label="t('inventory.lowStockItems')"
+        :value="lowStockCount"
+      />
+      <CommonStatCard
+        icon="i-heroicons-clock"
+        icon-color="yellow"
+        :label="t('inventory.expiringStock') || 'Expiring'"
+        :value="stockLotSummary.expiringCount"
+      />
+      <CommonStatCard
+        icon="i-heroicons-truck"
+        icon-color="purple"
+        :label="t('inventory.activeSuppliers')"
+        :value="suppliers.filter(s => s.status === 'active').length"
+      />
     </div>
 
     <!-- Inventory Tab -->
     <template v-if="activeTab === 'inventory'">
       <!-- Filters -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
-        <UInput
-          v-model="searchQuery"
-          icon="i-heroicons-magnifying-glass"
-          :placeholder="t('inventory.searchPlaceholder')"
-        />
-        <USelect
-          v-model="selectedBranch"
-          :items="branches"
-          value-key="id"
-          label-key="name"
-        />
-        <USelect
-          v-model="selectedStatus"
-          :items="statusOptions"
-          value-key="value"
-          label-key="label"
-        />
-        <UButton
-          color="gray"
-          variant="ghost"
-          icon="i-heroicons-funnel"
-          :label="t('common.moreFilters')"
-        />
-      </div>
+      <InventoryFilters
+        v-model:search="searchQuery"
+        v-model:branch="selectedBranch"
+        v-model:status="selectedStatus"
+        :branches="branches"
+        :status-options="statusOptions"
+      />
 
       <!-- Inventory Table -->
       <div class="overflow-x-auto">
@@ -741,7 +752,7 @@ onMounted(async () => {
             <div class="flex gap-1">
               <UButton color="gray" variant="ghost" size="xs" icon="i-heroicons-pencil" @click="openSupplierModal(supplier)" />
               <UButton color="red" variant="ghost" size="xs" icon="i-heroicons-trash" @click="deleteSupplier(supplier.id)" />
-              <UButton color="primary" variant="ghost" size="xs" icon="i-heroicons-shopping-cart" @click="openPurchaseOrderModal()" />
+              <UButton color="primary" variant="ghost" size="xs" icon="i-heroicons-shopping-cart" @click="showPurchaseOrderModal = true" />
             </div>
           </div>
         </UCard>
@@ -762,7 +773,7 @@ onMounted(async () => {
     <!-- Purchase Orders Tab -->
     <template v-if="activeTab === 'purchaseOrders'">
       <div class="px-4 mb-4">
-        <UButton color="primary" icon="i-heroicons-plus" :label="t('inventory.createPO')" @click="openPurchaseOrderModal()" />
+        <UButton color="primary" icon="i-heroicons-plus" :label="t('inventory.createPO')" @click="showPurchaseOrderModal = true" />
       </div>
 
       <div class="overflow-x-auto">
@@ -812,305 +823,103 @@ onMounted(async () => {
       </div>
     </template>
 
-    <!-- Stock Adjustment Modal -->
-    <UModal v-model:open="showAdjustModal">
-      <template #content>
-        <UCard v-if="selectedItem">
-          <template #header>
-            <h3 class="text-lg font-medium">{{ t('inventory.adjustStock') }}</h3>
-          </template>
-
-          <div class="space-y-4">
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <p class="font-medium">{{ selectedItem.productName }}</p>
-              <p class="text-sm text-gray-500">{{ t('inventory.currentStock') }}: {{ selectedItem.currentStock }} {{ selectedItem.unitSymbol }}</p>
+    <!-- Stock Lots Tab -->
+    <template v-if="activeTab === 'lots'">
+      <div class="px-4 space-y-4">
+        <!-- Quick Actions -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('inventory.stockLots') || 'Stock Lots' }}
+            </h3>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span>{{ stockLotSummary.totalLots }} {{ t('common.lots') || 'lots' }}</span>
+              <span>•</span>
+              <span>{{ stockLotSummary.totalQuantity }} {{ t('common.units') || 'units' }}</span>
+              <span>•</span>
+              <span>{{ formatCurrency(stockLotSummary.totalValue) }}</span>
             </div>
-
-            <UFormField :label="t('inventory.adjustmentType')">
-              <USelect
-                v-model="adjustmentForm.type"
-                :items="[
-                  { value: 'in', label: t('inventory.stockIn') },
-                  { value: 'out', label: t('inventory.stockOut') },
-                  { value: 'adjustment', label: t('inventory.adjustment') },
-                ]"
-                value-key="value"
-                label-key="label"
-              />
-            </UFormField>
-
-            <UFormField :label="t('inventory.quantity')">
-              <UInput v-model.number="adjustmentForm.quantity" type="number" min="0" />
-            </UFormField>
-
-            <UFormField :label="t('inventory.reason')">
-              <UTextarea v-model="adjustmentForm.reason" :rows="2" />
-            </UFormField>
           </div>
+          <UButton
+            v-if="canEditInventory"
+            color="primary"
+            icon="i-heroicons-plus"
+            @click="showReceiveStockModal = true"
+          >
+            {{ t('inventory.receiveStock') || 'Receive Stock' }}
+          </UButton>
+        </div>
 
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton color="gray" variant="outline" :label="t('common.cancel')" @click="showAdjustModal = false" />
-              <UButton color="primary" :loading="adjusting" :label="t('common.save')" @click="saveAdjustment" />
-            </div>
-          </template>
-        </UCard>
-      </template>
-    </UModal>
+        <!-- Stock Lots List Component -->
+        <InventoryStockLotsList
+          :branch-id="selectedBranch !== 'all' ? selectedBranch : undefined"
+          @adjust="handleLotAdjust"
+          @move="handleLotMove"
+          @quarantine="handleLotQuarantine"
+          @view="handleLotView"
+        />
+      </div>
+    </template>
+
+    <!-- Expiry Alerts Tab -->
+    <template v-if="activeTab === 'expiry'">
+      <div class="px-4">
+        <InventoryStockExpiryAlerts
+          @view-lot="handleLotView"
+          @quarantine="handleLotQuarantine"
+        />
+      </div>
+    </template>
+
+    <!-- Stock Adjustment Modal -->
+    <InventoryStockAdjustmentModal
+      v-model:open="showAdjustModal"
+      :item="selectedItem"
+      :loading="adjusting"
+      @save="handleAdjustment"
+    />
 
     <!-- Stock Transfer Modal -->
-    <UModal v-model:open="showTransferModal">
-      <template #content>
-        <UCard v-if="selectedItem">
-          <template #header>
-            <h3 class="text-lg font-medium">{{ t('inventory.transferStock') }}</h3>
-          </template>
-
-          <div class="space-y-4">
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <p class="font-medium">{{ selectedItem.productName }}</p>
-              <p class="text-sm text-gray-500">{{ t('inventory.from') }}: {{ selectedItem.branchName }}</p>
-              <p class="text-sm text-gray-500">{{ t('inventory.available') }}: {{ selectedItem.currentStock }} {{ selectedItem.unitSymbol }}</p>
-            </div>
-
-            <UFormField :label="t('inventory.toBranch')">
-              <USelect
-                v-model="transferForm.toBranch"
-                :items="branches.filter(b => b.id && b.id !== selectedItem?.branchId)"
-                value-key="id"
-                label-key="name"
-              />
-            </UFormField>
-
-            <UFormField :label="t('inventory.quantity')">
-              <UInput v-model.number="transferForm.quantity" type="number" min="0" :max="selectedItem.currentStock" />
-            </UFormField>
-
-            <UFormField :label="t('common.notes')">
-              <UTextarea v-model="transferForm.notes" :rows="2" />
-            </UFormField>
-          </div>
-
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton color="gray" variant="outline" :label="t('common.cancel')" @click="showTransferModal = false" />
-              <UButton color="primary" :loading="adjusting" :label="t('inventory.transfer')" @click="saveTransfer" />
-            </div>
-          </template>
-        </UCard>
-      </template>
-    </UModal>
+    <InventoryStockTransferModal
+      v-model:open="showTransferModal"
+      :item="selectedItem"
+      :branches="branches"
+      :loading="adjusting"
+      @save="handleTransfer"
+    />
 
     <!-- Add Stock Modal -->
-    <UModal v-model:open="showAddStockModal">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-medium">{{ t('inventory.addStock') }}</h3>
-          </template>
-
-          <div class="space-y-4">
-            <UFormField :label="t('products.product')">
-              <USelectMenu
-                v-model="addStockForm.productId"
-                :items="inventoryItems.map(item => ({ value: item.productId, label: `${item.productName} (${item.sku})`, stock: item.currentStock, unit: item.unitSymbol }))"
-                value-key="value"
-                :placeholder="t('inventory.selectProduct')"
-                searchable
-              >
-                <template #item="{ item }">
-                  <div class="flex items-center justify-between w-full">
-                    <span>{{ item.label }}</span>
-                    <span class="text-xs text-gray-500">{{ item.stock }} {{ item.unit }}</span>
-                  </div>
-                </template>
-              </USelectMenu>
-            </UFormField>
-
-            <UFormField :label="t('common.branch')">
-              <USelect
-                v-model="addStockForm.branchId"
-                :items="branches.filter(b => b.id !== 'all')"
-                value-key="id"
-                label-key="name"
-              />
-            </UFormField>
-
-            <UFormField :label="t('inventory.quantity')">
-              <UInput v-model.number="addStockForm.quantity" type="number" min="1" :placeholder="t('inventory.enterQuantity')" />
-            </UFormField>
-
-            <UFormField :label="t('common.notes')">
-              <UTextarea v-model="addStockForm.notes" :rows="2" :placeholder="t('inventory.purchaseNotes')" />
-            </UFormField>
-          </div>
-
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton color="gray" variant="outline" :label="t('common.cancel')" @click="showAddStockModal = false" />
-              <UButton 
-                color="primary" 
-                :loading="adjusting" 
-                :disabled="!addStockForm.productId || addStockForm.quantity <= 0"
-                :label="t('inventory.addStock')" 
-                @click="saveAddStock" 
-              />
-            </div>
-          </template>
-        </UCard>
-      </template>
-    </UModal>
+    <InventoryAddStockModal
+      v-model:open="showAddStockModal"
+      :branches="branches"
+      :inventory-items="inventoryItems"
+      :loading="adjusting"
+      @save="handleAddStock"
+    />
 
     <!-- Supplier Modal -->
-    <UModal v-model:open="showSupplierModal">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-medium">
-              {{ editingSupplier ? t('inventory.editSupplier') : t('inventory.addSupplier') }}
-            </h3>
-          </template>
-
-          <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="t('inventory.supplierName')" required>
-                <UInput v-model="supplierForm.name" :placeholder="t('inventory.enterSupplierName')" />
-              </UFormField>
-              <UFormField :label="t('inventory.supplierCode')">
-                <UInput v-model="supplierForm.code" :placeholder="t('inventory.autoGenerated')" />
-              </UFormField>
-            </div>
-
-            <UFormField :label="t('inventory.contactPerson')">
-              <UInput v-model="supplierForm.contactPerson" :placeholder="t('inventory.enterContactPerson')" />
-            </UFormField>
-
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="t('common.email')">
-                <UInput v-model="supplierForm.email" type="email" />
-              </UFormField>
-              <UFormField :label="t('common.phone')">
-                <UInput v-model="supplierForm.phone" type="tel" />
-              </UFormField>
-            </div>
-
-            <UFormField :label="t('common.address')">
-              <UTextarea v-model="supplierForm.address" :rows="2" />
-            </UFormField>
-
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="t('inventory.paymentTerms')">
-                <UInput v-model="supplierForm.paymentTerms" :placeholder="t('inventory.paymentTermsPlaceholder')" />
-              </UFormField>
-              <UFormField :label="t('inventory.leadTime')">
-                <UInput v-model.number="supplierForm.leadTimeDays" type="number" min="0" />
-              </UFormField>
-            </div>
-
-            <UFormField :label="t('common.notes')">
-              <UTextarea v-model="supplierForm.notes" :rows="2" />
-            </UFormField>
-          </div>
-
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton color="gray" variant="outline" :label="t('common.cancel')" @click="showSupplierModal = false" />
-              <UButton 
-                color="primary" 
-                :loading="adjusting" 
-                :disabled="!supplierForm.name"
-                :label="t('common.save')" 
-                @click="saveSupplier" 
-              />
-            </div>
-          </template>
-        </UCard>
-      </template>
-    </UModal>
+    <InventorySupplierModal
+      v-model:open="showSupplierModal"
+      :supplier="editingSupplier"
+      :loading="adjusting"
+      @save="handleSaveSupplier"
+    />
 
     <!-- Purchase Order Modal -->
-    <UModal v-model:open="showPurchaseOrderModal" size="lg">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-medium">{{ t('inventory.createPO') }}</h3>
-          </template>
+    <InventoryPurchaseOrderModal
+      v-model:open="showPurchaseOrderModal"
+      :suppliers="suppliers"
+      :branches="branches"
+      :inventory-items="inventoryItems"
+      :loading="adjusting"
+      @save="handleSavePurchaseOrder"
+    />
 
-          <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="t('inventory.supplier')" required>
-                <USelect
-                  v-model="poForm.supplierId"
-                  :items="suppliers.filter(s => s.status === 'active').map(s => ({ value: s.id, label: s.name }))"
-                  value-key="value"
-                  label-key="label"
-                  :placeholder="t('inventory.selectSupplier')"
-                />
-              </UFormField>
-              <UFormField :label="t('common.branch')" required>
-                <USelect
-                  v-model="poForm.branchId"
-                  :items="branches.filter(b => b.id !== 'all')"
-                  value-key="id"
-                  label-key="name"
-                />
-              </UFormField>
-            </div>
-
-            <!-- PO Items -->
-            <div class="border rounded-lg p-4 dark:border-gray-700">
-              <div class="flex justify-between items-center mb-4">
-                <h4 class="font-medium">{{ t('inventory.items') }}</h4>
-                <UButton size="sm" color="primary" variant="ghost" icon="i-heroicons-plus" @click="addPOItem">
-                  {{ t('inventory.addItem') }}
-                </UButton>
-              </div>
-
-              <div v-for="(item, index) in poForm.items" :key="index" class="flex gap-4 items-center mb-2">
-                <div class="flex-1">
-                  <USelectMenu
-                    v-model="item.productId"
-                    :items="inventoryItems.map(i => ({ value: i.productId, label: `${i.productName} (${i.sku})` }))"
-                    value-key="value"
-                    label-key="label"
-                    searchable
-                    :placeholder="t('inventory.selectProduct')"
-                    @update:model-value="(val) => item.productName = inventoryItems.find(i => i.productId === val)?.productName || ''"
-                  />
-                </div>
-                <div class="w-24">
-                  <UInput v-model.number="item.quantity" type="number" min="1" placeholder="Qty" />
-                </div>
-                <div class="w-32">
-                  <UInput v-model.number="item.unitPrice" type="number" min="0" placeholder="Price" />
-                </div>
-                <UButton color="red" variant="ghost" size="sm" icon="i-heroicons-trash" @click="removePOItem(index)" />
-              </div>
-
-              <div v-if="poForm.items.length === 0" class="text-center py-4 text-gray-500">
-                {{ t('inventory.noItemsAdded') }}
-              </div>
-            </div>
-
-            <UFormField :label="t('common.notes')">
-              <UTextarea v-model="poForm.notes" :rows="2" />
-            </UFormField>
-          </div>
-
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton color="gray" variant="outline" :label="t('common.cancel')" @click="showPurchaseOrderModal = false" />
-              <UButton 
-                color="primary" 
-                :loading="adjusting" 
-                :disabled="!poForm.supplierId || poForm.items.length === 0"
-                :label="t('inventory.createPO')" 
-                @click="savePurchaseOrder" 
-              />
-            </div>
-          </template>
-        </UCard>
-      </template>
-    </UModal>
+    <!-- Receive Stock Modal (with Lot Tracking) -->
+    <InventoryReceiveStockModal
+      v-model:open="showReceiveStockModal"
+      :branch-id="selectedBranch !== 'all' ? selectedBranch : 'main'"
+      @success="handleReceiveStockSuccess"
+    />
   </div>
 </template>

@@ -253,17 +253,17 @@ const salesChartSeries = computed(() => [
     >
       <template #right>
         <div class="flex gap-2">
-          <UDropdown
+          <UDropdownMenu
             :items="[
               [
-                { label: 'PDF', icon: 'i-heroicons-document', click: () => exportReport('pdf') },
-                { label: 'Excel', icon: 'i-heroicons-table-cells', click: () => exportReport('excel') },
-                { label: 'CSV', icon: 'i-heroicons-document-text', click: () => exportReport('csv') },
+                { label: 'PDF', icon: 'i-heroicons-document', onSelect: () => exportReport('pdf') },
+                { label: 'Excel', icon: 'i-heroicons-table-cells', onSelect: () => exportReport('excel') },
+                { label: 'CSV', icon: 'i-heroicons-document-text', onSelect: () => exportReport('csv') },
               ],
             ]"
           >
             <UButton color="gray" variant="outline" icon="i-heroicons-arrow-down-tray" :label="t('common.export')" trailing-icon="i-heroicons-chevron-down" />
-          </UDropdown>
+          </UDropdownMenu>
           <UButton color="primary" icon="i-heroicons-arrow-path" :loading="loading" :label="t('reports.generate')" @click="generateReport" />
         </div>
       </template>

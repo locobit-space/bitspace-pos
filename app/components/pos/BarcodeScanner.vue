@@ -70,7 +70,7 @@
 
     <!-- Mode Toggle -->
     <div class="flex justify-center gap-2 mt-4">
-      <UButtonGroup>
+      <UFieldGroup>
         <UButton
           :variant="inputMode === 'keyboard' ? 'solid' : 'outline'"
           size="sm"
@@ -87,7 +87,7 @@
         >
           {{ $t('pos.scanner.camera') }}
         </UButton>
-      </UButtonGroup>
+      </UFieldGroup>
     </div>
 
     <!-- Last Scanned -->

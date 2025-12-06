@@ -876,7 +876,7 @@ onUnmounted(() => {
             class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200"
             :class="
               productsStore.selectedCategory.value === cat.id
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white dark:text-black shadow-lg shadow-amber-500/25'
+                ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white dark:text-black shadow-lg shadow-amber-500/25'
                 : 'bg-gray-200/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
             "
             @click="productsStore.selectedCategory.value = cat.id"
@@ -971,7 +971,7 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <button
       v-if="pos.cartItems.value.length > 0"
-      class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white rounded-2xl shadow-[0_8px_30px_rgba(251,146,60,0.5)] dark:shadow-[0_8px_30px_rgba(251,146,60,0.35)] ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-all duration-200 hover:shadow-[0_12px_40px_rgba(251,146,60,0.6)] dark:hover:shadow-[0_12px_40px_rgba(251,146,60,0.45)]"
+      class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-5 py-3.5 bg-linear-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white rounded-2xl shadow-[0_8px_30px_rgba(251,146,60,0.5)] dark:shadow-[0_8px_30px_rgba(251,146,60,0.35)] ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-all duration-200 hover:shadow-[0_12px_40px_rgba(251,146,60,0.6)] dark:hover:shadow-[0_12px_40px_rgba(251,146,60,0.45)]"
       @click="showMobileCart = true"
     >
       <span class="text-xl drop-shadow-sm">🛒</span>
@@ -1025,7 +1025,7 @@ onUnmounted(() => {
             :key="type.value"
             class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
             :class="pos.orderType.value === type.value 
-              ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25' 
+              ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25' 
               : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
             @click="pos.setOrderType(type.value)"
           >
@@ -1322,7 +1322,7 @@ onUnmounted(() => {
                     (tip.value === 0
                       ? 0
                       : Math.round((pos.subtotal.value * tip.value) / 100))
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 scale-105'
+                      ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 scale-105'
                       : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                   "
                   @click="pos.setTipPercentage(tip.value)"
@@ -1464,7 +1464,7 @@ onUnmounted(() => {
           <!-- Cart Header - Cleaner -->
           <div class="px-5 pb-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
+              <div class="w-11 h-11 rounded-2xl bg-linear-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
                 <span class="text-xl">🛒</span>
               </div>
               <div>
@@ -2310,7 +2310,7 @@ onUnmounted(() => {
                 </UButton>
                 <UButton
                   color="primary"
-                  class="flex-1 bg-gradient-to-r from-amber-500 to-orange-500"
+                  class="flex-1 bg-linear-to-r from-amber-500 to-orange-500"
                   @click="addProductWithOptions"
                 >
                   Add to Cart
@@ -2396,7 +2396,7 @@ onUnmounted(() => {
       <template #content>
         <div class="p-6 max-h-[80vh] overflow-auto">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl">
+            <div class="w-10 h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl">
               🍽️
             </div>
             <div>
@@ -2427,7 +2427,7 @@ onUnmounted(() => {
               class="relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :class="[
                 table.name === pos.tableNumber.value
-                  ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-500/50'
+                  ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-500/50'
                   : table.status === 'available'
                     ? 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 ring-1 ring-gray-200 dark:ring-gray-700 hover:ring-amber-500/50'
                     : table.status === 'reserved'

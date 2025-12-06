@@ -273,30 +273,14 @@ onMounted(async () => {
 
       <div class="flex items-center gap-2">
         <!-- Period Selector -->
-        <div class="flex p-1 rounded-lg bg-gray-100 dark:bg-gray-800 gap-1">
-          <button
-            v-for="period in ['today', 'week', 'month'] as const"
-            :key="period"
-            class="px-3 py-1.5 text-xs font-medium rounded-md transition-all relative"
-            :class="
-              selectedPeriod === period
-                ? 'bg-primary-500 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
-            "
-            @click="selectedPeriod = period"
-          >
-            <span class="flex items-center gap-1">
-              <span
-                v-if="period === 'today'"
-                class="w-1.5 h-1.5 rounded-full"
-                :class="
-                  selectedPeriod === 'today' ? 'bg-white' : 'bg-green-500'
-                "
-              />
-              {{ t(`dashboard.${period}`) }}
-            </span>
-          </button>
-        </div>
+        <CommonButtonGroup
+          v-model="selectedPeriod"
+          :items="[
+            { value: 'today', label: t('dashboard.today'), indicator: { show: true } },
+            { value: 'week', label: t('dashboard.week') },
+            { value: 'month', label: t('dashboard.month') },
+          ]"
+        />
 
         <NuxtLink to="/pos">
           <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
