@@ -159,6 +159,11 @@
             <th
               class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
             >
+              {{ $t("products.barcode") }}
+            </th>
+            <th
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               {{ $t("products.category") }}
             </th>
             <th
@@ -187,7 +192,8 @@
           <tr
             v-for="product in paginatedProducts"
             :key="product.id"
-            class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+            @click="viewProduct(product)"
           >
             <td class="py-3 px-4">
               <div
@@ -233,6 +239,15 @@
               </code>
             </td>
             <td class="py-3 px-4">
+              <code
+                v-if="product.barcode"
+                class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+              >
+                {{ product.barcode }}
+              </code>
+              <span v-else class="text-gray-400 text-sm">-</span>
+            </td>
+            <td class="py-3 px-4">
               <span class="text-sm text-gray-600 dark:text-gray-400">
                 {{ getCategoryName(product.categoryId) }}
               </span>
@@ -267,7 +282,7 @@
                 :label="$t(`common.${product.status}`)"
               />
             </td>
-            <td class="py-3 px-4">
+            <td class="py-3 px-4" @click.stop>
               <div class="flex items-center gap-2">
                 <UButton
                   color="gray"
@@ -328,367 +343,19 @@
       </div>
     </div>
 
-    <!-- Product Modal -->
-    <UModal v-model:open="showProductModal">
-      <template #header>
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{
-            selectedProduct?.id
-              ? $t("products.editProduct")
-              : $t("products.addProduct")
-          }}
-        </h3>
-      </template>
-
-      <template #body>
-        <div class="max-h-[60vh] overflow-y-auto">
-          <UForm
-            :schema="productSchema"
-            :state="productForm"
-            class="space-y-4"
-            @submit="saveProduct"
-          >
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Product Name (Required) -->
-              <UFormField
-                :label="$t('products.name')"
-                name="name"
-                required
-                class="md:col-span-2"
-              >
-                <UInput
-                  v-model="productForm.name"
-                  :placeholder="$t('products.namePlaceholder')"
-                />
-              </UFormField>
-
-              <!-- Price (Required) -->
-              <UFormField :label="$t('products.price')" name="price" required>
-                <UInput
-                  v-model="productForm.price"
-                  type="number"
-                  step="0.01"
-                  :placeholder="$t('products.pricePlaceholder')"
-                />
-              </UFormField>
-
-              <!-- SKU (Optional) -->
-              <UFormField :label="$t('products.sku')" name="sku">
-                <UInput
-                  v-model="productForm.sku"
-                  :placeholder="$t('products.skuPlaceholder') || 'Auto-generated if empty'"
-                />
-              </UFormField>
-
-              <!-- Product Type -->
-              <UFormField :label="$t('products.productType') || 'Product Type'" name="productType">
-                <USelect
-                  v-model="productForm.productType"
-                  :items="productTypeOptions"
-                  label-key="label"
-                  value-key="value"
-                  :placeholder="$t('products.selectProductType') || 'Select type'"
-                  @update:model-value="onProductTypeChange"
-                />
-              </UFormField>
-
-              <!-- Category (Optional) -->
-              <UFormField
-                :label="$t('products.category')"
-                name="categoryId"
-              >
-                <div class="flex gap-1">
-                  <USelect
-                    v-model="productForm.categoryId"
-                    :items="categoryOptions"
-                    label-key="name"
-                    value-key="id"
-                    :placeholder="$t('products.selectCategory')"
-                    class="flex-1"
-                  />
-                  <UTooltip :text="$t('common.add') + ' ' + $t('products.category')">
-                    <UButton
-                      icon="i-heroicons-plus"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      @click="openCategoryModal()"
-                    />
-                  </UTooltip>
-                </div>
-              </UFormField>
-
-              <!-- Unit (Optional) -->
-              <UFormField :label="$t('products.unit')" name="unitId">
-                <div class="flex gap-1">
-                  <USelect
-                    v-model="productForm.unitId"
-                    :items="unitOptions"
-                    label-key="name"
-                    value-key="id"
-                    :placeholder="$t('products.selectUnit')"
-                    class="flex-1"
-                  />
-                  <UTooltip :text="$t('common.add') + ' ' + $t('products.unit')">
-                    <UButton
-                      icon="i-heroicons-plus"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      @click="openUnitModal()"
-                    />
-                  </UTooltip>
-                </div>
-              </UFormField>
-
-              <!-- Stock (Optional) - Only show if trackStock is enabled -->
-              <template v-if="productForm.trackStock">
-                <UFormField :label="$t('products.stock')" name="stock">
-                  <UInput
-                    v-model="productForm.stock"
-                    type="number"
-                    :placeholder="$t('products.stockPlaceholder') || '0'"
-                  />
-                </UFormField>
-
-                <!-- Min Stock (Optional) -->
-                <UFormField
-                  :label="$t('products.minStock')"
-                  name="minStock"
-                >
-                  <UInput
-                    v-model="productForm.minStock"
-                    type="number"
-                    :placeholder="$t('products.minStockPlaceholder') || '0'"
-                  />
-                </UFormField>
-              </template>
-
-              <!-- Track Stock Toggle - Only show for goods/bundles -->
-              <UFormField 
-                v-if="productForm.productType === 'good' || productForm.productType === 'bundle'"
-                :label="$t('products.trackStock') || 'Track Stock'" 
-                name="trackStock"
-                class="md:col-span-2"
-              >
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div>
-                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {{ $t('products.trackStockLabel') || 'Enable inventory tracking' }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ $t('products.trackStockHint') || 'When disabled, low stock alerts will be skipped for this product' }}
-                    </p>
-                  </div>
-                  <USwitch v-model="productForm.trackStock" />
-                </div>
-              </UFormField>
-
-              <!-- ============================================ -->
-              <!-- Expiry & Lot Tracking Section -->
-              <!-- ============================================ -->
-              <div 
-                v-if="productForm.productType === 'good' || productForm.productType === 'bundle'"
-                class="md:col-span-2 space-y-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl"
-              >
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="text-xl">📅</span>
-                  <h4 class="font-medium text-gray-900 dark:text-white">
-                    {{ $t('products.expiryTracking') || 'Expiry & Lot Tracking' }}
-                  </h4>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <!-- Has Expiry -->
-                  <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
-                    <div>
-                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {{ $t('products.hasExpiry') || 'Product expires' }}
-                      </p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $t('products.hasExpiryHint') || 'Enable expiry date tracking' }}
-                      </p>
-                    </div>
-                    <USwitch v-model="productForm.hasExpiry" />
-                  </div>
-
-                  <!-- Track Lots -->
-                  <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
-                    <div>
-                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {{ $t('products.trackLots') || 'Track lot/batch' }}
-                      </p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $t('products.trackLotsHint') || 'Enable FIFO/FEFO tracking' }}
-                      </p>
-                    </div>
-                    <USwitch v-model="productForm.trackLots" />
-                  </div>
-                </div>
-
-                <!-- Expiry Settings (shown when hasExpiry is true) -->
-                <div v-if="productForm.hasExpiry" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <UFormField :label="$t('products.defaultShelfLife') || 'Default Shelf Life (days)'">
-                    <UInput
-                      v-model.number="productForm.defaultShelfLifeDays"
-                      type="number"
-                      min="1"
-                      :placeholder="$t('products.shelfLifePlaceholder') || 'e.g., 30, 90, 365'"
-                    />
-                  </UFormField>
-
-                  <UFormField :label="$t('products.expiryWarningDays') || 'Expiry Warning (days)'">
-                    <UInput
-                      v-model.number="productForm.expiryWarningDays"
-                      type="number"
-                      min="1"
-                      :placeholder="$t('products.expiryWarningPlaceholder') || 'e.g., 30'"
-                    />
-                  </UFormField>
-
-                  <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
-                    <div>
-                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {{ $t('products.requiresExpiryDate') || 'Require expiry date' }}
-                      </p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $t('products.requiresExpiryHint') || 'Must enter expiry when receiving stock' }}
-                      </p>
-                    </div>
-                    <USwitch v-model="productForm.requiresExpiryDate" />
-                  </div>
-
-                  <UFormField :label="$t('products.storageType') || 'Storage Type'">
-                    <USelect
-                      v-model="productForm.storageType"
-                      :items="storageTypeOptions"
-                      label-key="label"
-                      value-key="value"
-                      :placeholder="$t('common.select') || 'Select...'"
-                    />
-                  </UFormField>
-                </div>
-              </div>
-
-              <!-- Info for non-stock products -->
-              <div 
-                v-if="productForm.productType === 'service' || productForm.productType === 'digital' || productForm.productType === 'subscription'"
-                class="md:col-span-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
-              >
-                <div class="flex items-start gap-2">
-                  <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                  <p class="text-sm text-blue-700 dark:text-blue-300">
-                    {{ $t('products.noStockTracking') || 'Stock tracking is not available for this product type. Services, digital products, and subscriptions do not require inventory management.' }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Branch (Optional) -->
-              <UFormField :label="$t('common.branch')" name="branchId">
-                <USelect
-                  v-model="productForm.branchId"
-                  :items="branchOptions"
-                  label-key="name"
-                  value-key="id"
-                  :placeholder="$t('common.selectBranch')"
-                />
-              </UFormField>
-
-              <!-- Status (Optional) -->
-              <UFormField :label="$t('common.status')" name="status">
-                <USelect
-                  v-model="productForm.status"
-                  :items="statusOptions"
-                  label-key="label"
-                  value-key="value"
-                  :placeholder="$t('common.selectStatus')"
-                />
-              </UFormField>
-
-              <!-- Image/Emoji (Optional) -->
-              <UFormField :label="$t('products.image') || 'Image'" name="image" class="md:col-span-2">
-                <div class="space-y-3">
-                  <!-- Preview -->
-                  <div class="flex items-center gap-3">
-                    <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600">
-                      <img
-                        v-if="productForm.image && productForm.image.startsWith('http')"
-                        :src="productForm.image"
-                        alt="Preview"
-                        class="w-full h-full object-cover"
-                      >
-                      <span v-else-if="productForm.image" class="text-3xl">{{ productForm.image }}</span>
-                      <UIcon v-else name="i-heroicons-photo" class="w-8 h-8 text-gray-400" />
-                    </div>
-                    <div class="flex-1">
-                      <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">{{ $t('products.imageHint') || 'Select an emoji or paste image URL' }}</p>
-                      <UInput
-                        v-model="productForm.image"
-                        :placeholder="$t('products.imageUrlPlaceholder') || 'https://example.com/image.jpg'"
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-                  
-                  <!-- Emoji Quick Select -->
-                  <div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ $t('common.quickSelect') || 'Quick Select' }}</p>
-                    <div class="flex flex-wrap gap-1.5">
-                      <button
-                        v-for="emoji in productEmojis"
-                        :key="emoji"
-                        type="button"
-                        class="w-9 h-9 rounded-lg text-xl flex items-center justify-center transition-all"
-                        :class="productForm.image === emoji 
-                          ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25 scale-110 ring-2 ring-primary-500' 
-                          : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'"
-                        @click="productForm.image = emoji"
-                      >
-                        {{ emoji }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </UFormField>
-
-              <!-- Description (Optional) -->
-              <UFormField
-                :label="$t('products.description')"
-                name="description"
-                class="md:col-span-2"
-              >
-                <UTextarea
-                  v-model="productForm.description"
-                  :placeholder="$t('products.descriptionPlaceholder')"
-                  :rows="3"
-                  class="w-full"
-                />
-              </UFormField>
-            </div>
-
-            <!-- Footer Actions inside form for submit -->
-            <div class="flex justify-end gap-3 pt-4">
-              <UButton
-                color="gray"
-                variant="outline"
-                :label="$t('common.cancel')"
-                @click="showProductModal = false"
-              />
-              <UButton
-                type="submit"
-                color="primary"
-                :loading="saving"
-                :label="
-                  selectedProduct?.id
-                    ? $t('common.update')
-                    : $t('common.create')
-                "
-              />
-            </div>
-          </UForm>
-        </div>
-      </template>
-    </UModal>
+    <!-- Product Modal - Using Component -->
+    <ProductsProductModal
+      v-model:open="showProductModal"
+      :product="selectedProduct"
+      :categories="categories"
+      :units="units"
+      :branches="branches"
+      :loading="saving"
+      @save="handleProductSave"
+      @cancel="showProductModal = false"
+      @add-category="openCategoryModal()"
+      @add-unit="openUnitModal()"
+    />
 
     <!-- Delete Confirmation Modal -->
     <UModal v-model:open="showDeleteModal">
@@ -1252,8 +919,8 @@ interface ProductForm {
   storageType: 'ambient' | 'refrigerated' | 'frozen' | 'controlled' | undefined;
 }
 
-// Validation Schema - Only name and price required
-const productSchema = z.object({
+// Validation Schema - Only name and price required (used by ProductModal)
+const _productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   sku: z.string().optional(),
   categoryId: z.string().optional(),
@@ -1272,28 +939,6 @@ const productSchema = z.object({
   expiryWarningDays: z.number().optional(),
   storageType: z.enum(["ambient", "refrigerated", "frozen", "controlled"]).optional(),
 });
-
-// Product Type Options
-const productTypeOptions = [
-  { value: 'good', label: 'Physical Good', icon: '📦' },
-  { value: 'service', label: 'Service', icon: '🛠️' },
-  { value: 'digital', label: 'Digital Product', icon: '💾' },
-  { value: 'subscription', label: 'Subscription', icon: '🔄' },
-  { value: 'bundle', label: 'Bundle', icon: '🎁' },
-];
-
-// Storage Type Options
-const storageTypeOptions = [
-  { value: 'ambient', label: '🏠 Ambient (Room Temperature)' },
-  { value: 'refrigerated', label: '❄️ Refrigerated (2-8°C)' },
-  { value: 'frozen', label: '🧊 Frozen (-18°C or below)' },
-  { value: 'controlled', label: '🌡️ Controlled Temperature' },
-];
-// Categories loaded from store (Dexie/Nostr)
-
-// Units loaded from store (Dexie/Nostr)
-
-// Branches loaded from store (Dexie/Nostr)
 
 // Reactive Data from Store (Dexie + Nostr with encryption)
 const products = computed(() => productsStore.products.value);
@@ -1349,8 +994,8 @@ const deletingCategory = ref<boolean>(false);
 // Common icons for categories
 const commonIcons = ['📦', '🍹', '🍜', '🍰', '🍿', '☕', '🍺', '🍔', '🍕', '🌮', '🍣', '🥗', '🍪', '🎂', '🍦', '🧃', '🥤', '🍵', '🛒', '⭐'];
 
-// Product emojis for image field (more comprehensive list)
-const productEmojis = [
+// Product emojis for image field (used by ProductModal internally)
+const _productEmojis = [
   '📦', '🍹', '🍜', '🍰', '☕', '🍺', '🍔', '🛒',
   '🍕', '🌮', '🍣', '🥗', '🍪', '🎂', '🍦', '🧃',
   '🥤', '🍵', '🍿', '🥡', '🍱', '🍛', '🍝', '🥪',
@@ -1419,7 +1064,7 @@ const categoryOptions = computed(() => [
   ...categories.value,
 ]);
 
-const unitOptions = computed(() => units.value);
+const _unitOptions = computed(() => units.value);
 
 // Computed Properties
 const filteredProducts = computed(() => {
@@ -1474,8 +1119,8 @@ const resetFilters = () => {
   currentPage.value = 1;
 };
 
-// Handle product type change - auto-set trackStock based on type
-const onProductTypeChange = (type: string) => {
+// Handle product type change - auto-set trackStock based on type (kept for form)
+const _onProductTypeChange = (type: string) => {
   if (type === 'service' || type === 'digital' || type === 'subscription') {
     productForm.value.trackStock = false;
     productForm.value.stock = 0;
@@ -1543,8 +1188,7 @@ const editProduct = (product: Product) => {
 };
 
 const viewProduct = (product: Product) => {
-  viewingProduct.value = product;
-  showViewModal.value = true;
+  navigateTo(`/products/${product.id}`);
 };
 
 const deleteProduct = (product: Product) => {
@@ -1552,7 +1196,100 @@ const deleteProduct = (product: Product) => {
   showDeleteModal.value = true;
 };
 
-const saveProduct = async () => {
+// Handler for ProductModal save event
+const handleProductSave = async (data: {
+  name: string;
+  sku: string;
+  description: string;
+  categoryId: string;
+  unitId: string;
+  price: number;
+  stock: number;
+  minStock: number;
+  branchId: string;
+  status: 'active' | 'inactive';
+  image: string;
+  productType: 'good' | 'service' | 'digital' | 'subscription' | 'bundle';
+  trackStock: boolean;
+  hasExpiry: boolean;
+  defaultShelfLifeDays: number | undefined;
+  trackLots: boolean;
+  requiresExpiryDate: boolean;
+  expiryWarningDays: number | undefined;
+  storageType: 'ambient' | 'refrigerated' | 'frozen' | 'controlled' | undefined;
+}) => {
+  try {
+    saving.value = true;
+
+    // Auto-generate SKU if empty
+    const sku = data.sku || `SKU-${Date.now().toString(36).toUpperCase()}`;
+
+    // Determine if stock should be tracked based on product type
+    const shouldTrackStock = data.productType === 'good' || data.productType === 'bundle'
+      ? data.trackStock
+      : false;
+
+    // Prepare product data
+    const productData = {
+      name: data.name,
+      sku,
+      description: data.description || undefined,
+      categoryId: data.categoryId || 'all',
+      unitId: data.unitId || 'piece',
+      price: data.price || 0,
+      stock: shouldTrackStock ? (data.stock || 0) : 0,
+      minStock: shouldTrackStock ? (data.minStock || 0) : 0,
+      branchId: data.branchId || 'main',
+      status: data.status || 'active',
+      image: data.image || '📦',
+      productType: data.productType || 'good',
+      trackStock: shouldTrackStock,
+      // Expiry tracking fields
+      hasExpiry: data.hasExpiry,
+      defaultShelfLifeDays: data.defaultShelfLifeDays,
+      trackLots: data.trackLots,
+      requiresExpiryDate: data.requiresExpiryDate,
+      expiryWarningDays: data.expiryWarningDays,
+      storageType: data.storageType,
+    };
+
+    if (selectedProduct.value) {
+      await productsStore.updateProduct(selectedProduct.value.id, productData);
+      toast.add({
+        title: 'Product updated',
+        description: `${data.name} synced to Nostr (encrypted)`,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
+    } else {
+      await productsStore.addProduct({
+        ...productData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as Omit<Product, 'id'>);
+      toast.add({
+        title: 'Product created',
+        description: `${data.name} saved & encrypted to Nostr`,
+        icon: 'i-heroicons-check-circle',
+        color: 'green',
+      });
+    }
+
+    showProductModal.value = false;
+  } catch (error) {
+    console.error("Error saving product:", error);
+    toast.add({
+      title: 'Error',
+      description: 'Failed to save product',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'red',
+    });
+  } finally {
+    saving.value = false;
+  }
+};
+
+const _saveProduct = async () => {
   try {
     saving.value = true;
 

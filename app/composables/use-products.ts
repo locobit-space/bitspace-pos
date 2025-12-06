@@ -206,6 +206,7 @@ export function useProductsStore() {
       id: product.id,
       data: JSON.stringify(product),
       sku: product.sku,
+      barcode: product.barcode,
       name: product.name,
       categoryId: product.categoryId,
       status: product.status,
@@ -483,11 +484,13 @@ export function useProductsStore() {
   async function addProduct(
     productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Product> {
+    const currentUser = getCurrentUser();
     const product: Product = {
       ...productData,
       id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      createdBy: currentUser?.id,
     };
 
     // Add to state
@@ -495,6 +498,13 @@ export function useProductsStore() {
 
     // Save to local DB
     await saveProductToLocal(product);
+
+    // Log activity
+    await logProductActivity({
+      productId: product.id,
+      action: 'create',
+      notes: `Product "${product.name}" created`,
+    });
 
     // Sync to Nostr
     if (offline.isOnline.value) {
@@ -515,18 +525,72 @@ export function useProductsStore() {
     if (index === -1) return null;
 
     const existing = products.value[index]!;
+    const currentUser = getCurrentUser();
+    
+    // Track changes for logging
+    const changes: { field: string; oldValue: unknown; newValue: unknown }[] = [];
+    for (const key of Object.keys(updates) as (keyof Product)[]) {
+      if (existing[key] !== updates[key]) {
+        changes.push({
+          field: key,
+          oldValue: existing[key],
+          newValue: updates[key],
+        });
+      }
+    }
+
     const updatedProduct: Product = {
       ...existing,
       ...updates,
       id: existing.id, // Ensure ID doesn't change
       createdAt: existing.createdAt,
       updatedAt: new Date().toISOString(),
+      updatedBy: currentUser?.id,
     };
 
     products.value[index] = updatedProduct;
 
     // Save to local DB
     await saveProductToLocal(updatedProduct);
+
+    // Log activity
+    if (changes.length > 0) {
+      // Check for specific change types
+      const priceChange = changes.find(c => c.field === 'price');
+      const statusChange = changes.find(c => c.field === 'status');
+      const stockChange = changes.find(c => c.field === 'stock');
+
+      if (priceChange) {
+        await logProductActivity({
+          productId: id,
+          action: 'price_change',
+          priceBefore: priceChange.oldValue as number,
+          priceAfter: priceChange.newValue as number,
+          changes,
+        });
+      } else if (statusChange) {
+        await logProductActivity({
+          productId: id,
+          action: 'status_change',
+          changes,
+          notes: `Status changed from "${statusChange.oldValue}" to "${statusChange.newValue}"`,
+        });
+      } else if (stockChange) {
+        await logProductActivity({
+          productId: id,
+          action: 'stock_adjust',
+          stockBefore: stockChange.oldValue as number,
+          stockAfter: stockChange.newValue as number,
+          changes,
+        });
+      } else {
+        await logProductActivity({
+          productId: id,
+          action: 'update',
+          changes,
+        });
+      }
+    }
 
     // Sync to Nostr
     if (offline.isOnline.value) {
@@ -542,11 +606,20 @@ export function useProductsStore() {
 
     // Soft delete - mark as inactive
     const product = products.value[index]!;
+    const previousStatus = product.status;
     product.status = 'inactive';
     product.updatedAt = new Date().toISOString();
 
     // Update local DB
     await saveProductToLocal(product);
+
+    // Log activity
+    await logProductActivity({
+      productId: id,
+      action: 'delete',
+      notes: `Product "${product.name}" deleted (soft delete)`,
+      changes: [{ field: 'status', oldValue: previousStatus, newValue: 'inactive' }],
+    });
 
     // Remove from active list
     products.value.splice(index, 1);
@@ -565,6 +638,25 @@ export function useProductsStore() {
 
   function getProductBySku(sku: string): Product | undefined {
     return products.value.find(p => p.sku === sku);
+  }
+
+  function getProductByBarcode(barcode: string): Product | undefined {
+    return products.value.find(p => p.barcode === barcode);
+  }
+
+  /**
+   * Find product by SKU or Barcode (for barcode scanner)
+   * Returns product if found by either field
+   */
+  function findProductByCode(code: string): Product | undefined {
+    const trimmedCode = code.trim();
+    // First check barcode (exact match)
+    let product = products.value.find(p => p.barcode === trimmedCode);
+    // Then check SKU
+    if (!product) {
+      product = products.value.find(p => p.sku === trimmedCode);
+    }
+    return product;
   }
 
   function getProductsByCategory(categoryId: string): Product[] {
@@ -842,6 +934,123 @@ export function useProductsStore() {
   }
 
   // ============================================
+  // 📝 PRODUCT ACTIVITY LOGGING
+  // ============================================
+
+  interface ActivityLogOptions {
+    productId: string;
+    action: 'create' | 'update' | 'delete' | 'price_change' | 'stock_adjust' | 'status_change' | 'restore';
+    changes?: { field: string; oldValue: unknown; newValue: unknown }[];
+    stockBefore?: number;
+    stockAfter?: number;
+    stockReason?: string;
+    priceBefore?: number;
+    priceAfter?: number;
+    referenceType?: string;
+    referenceId?: string;
+    notes?: string;
+  }
+
+  /**
+   * Log a product activity (audit trail)
+   */
+  async function logProductActivity(options: ActivityLogOptions): Promise<void> {
+    const currentUser = getCurrentUser();
+    
+    const log = {
+      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      productId: options.productId,
+      action: options.action,
+      userId: currentUser?.id || 'system',
+      userName: currentUser?.name || 'System',
+      userRole: currentUser?.role || 'system',
+      timestamp: Date.now(),
+      changesJson: options.changes ? JSON.stringify(options.changes) : undefined,
+      stockBefore: options.stockBefore,
+      stockAfter: options.stockAfter,
+      stockReason: options.stockReason,
+      priceBefore: options.priceBefore,
+      priceAfter: options.priceAfter,
+      referenceType: options.referenceType,
+      referenceId: options.referenceId,
+      notes: options.notes,
+      synced: false,
+    };
+
+    await db.productActivityLogs.put(log);
+
+    // Sync to Nostr if online
+    if (offline.isOnline.value) {
+      try {
+        await nostrData.saveProductActivityLog?.(log);
+      } catch (e) {
+        console.error('Failed to sync activity log to Nostr:', e);
+      }
+    }
+  }
+
+  /**
+   * Get activity logs for a product
+   */
+  async function getProductActivityLogs(productId: string, limit = 100): Promise<Array<{
+    id: string;
+    action: string;
+    userName?: string;
+    userRole?: string;
+    timestamp: string;
+    changes?: { field: string; oldValue: unknown; newValue: unknown }[];
+    stockBefore?: number;
+    stockAfter?: number;
+    stockReason?: string;
+    priceBefore?: number;
+    priceAfter?: number;
+    notes?: string;
+  }>> {
+    const records = await db.productActivityLogs
+      .where('productId')
+      .equals(productId)
+      .reverse()
+      .limit(limit)
+      .toArray();
+
+    return records.map(r => ({
+      id: r.id,
+      action: r.action,
+      userName: r.userName,
+      userRole: r.userRole,
+      timestamp: new Date(r.timestamp).toISOString(),
+      changes: r.changesJson ? JSON.parse(r.changesJson) : undefined,
+      stockBefore: r.stockBefore,
+      stockAfter: r.stockAfter,
+      stockReason: r.stockReason,
+      priceBefore: r.priceBefore,
+      priceAfter: r.priceAfter,
+      notes: r.notes,
+    }));
+  }
+
+  /**
+   * Get current user from auth (placeholder - integrate with actual auth)
+   */
+  function getCurrentUser(): { id: string; name: string; role: string } | null {
+    // TODO: Integrate with use-users or use-staff-auth
+    try {
+      const stored = localStorage.getItem('bitspace_current_user');
+      if (stored) {
+        const user = JSON.parse(stored);
+        return {
+          id: user.id || user.user?.id || 'unknown',
+          name: user.name || user.user?.name || 'Unknown User',
+          role: user.role || user.user?.role || 'staff',
+        };
+      }
+    } catch {
+      // Ignore
+    }
+    return null;
+  }
+
+  // ============================================
   // ⭐ FAVORITES
   // ============================================
 
@@ -984,6 +1193,8 @@ export function useProductsStore() {
     deleteProduct,
     getProduct,
     getProductBySku,
+    getProductByBarcode,
+    findProductByCode,
     getProductsByCategory,
 
     // Category CRUD
@@ -1009,6 +1220,10 @@ export function useProductsStore() {
     increaseStock,
     setStock,
     getStockHistory,
+
+    // Activity Logs
+    logProductActivity,
+    getProductActivityLogs,
 
     // Favorites
     toggleFavorite,

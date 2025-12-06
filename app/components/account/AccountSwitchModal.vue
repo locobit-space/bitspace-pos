@@ -5,7 +5,7 @@
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg">
+              <div class="w-10 h-10 rounded-xl bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg">
                 <Icon name="i-heroicons-user-group" size="20" class="text-white" />
               </div>
               <div>
@@ -32,9 +32,9 @@
             {{ $t('account.currentAccount') }}
           </p>
           <div 
-            class="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border-2 border-primary-200 dark:border-primary-700"
+            class="flex items-center gap-4 p-4 rounded-xl bg-linear-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border-2 border-primary-200 dark:border-primary-700"
           >
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-primary-200 dark:ring-primary-700 shadow-md">
+            <div class="w-12 h-12 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-primary-200 dark:ring-primary-700 shadow-md">
               <span v-if="currentAccount?.picture">
                 <img :src="currentAccount.picture" alt="" class="w-12 h-12 rounded-full object-cover" />
               </span>
@@ -120,6 +120,7 @@
               icon="i-heroicons-plus-circle"
               variant="outline"
               class="flex-1"
+              block
               @click="addNewAccount"
             >
               {{ $t('account.addAccount') }}
@@ -128,6 +129,7 @@
               icon="i-heroicons-key"
               variant="soft"
               class="flex-1"
+              block
               @click="importWithNsec"
             >
               {{ $t('account.importNsec') }}
@@ -144,7 +146,7 @@
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <div class="w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center">
               <Icon name="i-heroicons-key" size="20" class="text-white" />
             </div>
             <div>
@@ -164,7 +166,7 @@
               v-model="importNsec"
               :placeholder="$t('account.nsecPlaceholder')"
               :rows="3"
-              class="font-mono text-sm"
+              class="font-mono text-sm w-full"
             />
           </UFormField>
           

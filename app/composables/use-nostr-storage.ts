@@ -1,4 +1,5 @@
 import type { NostrUser, UserInfo } from "~/types";
+import type { EncryptedEnvelope } from "~/composables/use-encryption";
 
 // ============================================
 // 📦 STORAGE KEYS (Aligned with use-users.ts)
@@ -8,6 +9,7 @@ const STORAGE_KEYS = {
   NOSTR_PROFILE: 'nostr_user_profile',  // Nostr profile data (name, picture, etc)
   ACCOUNTS_LIST: 'userList',            // List of all Nostr accounts
   CURRENT_USER: 'bitspace_current_user', // Current logged-in staff user (shared with use-users.ts)
+  ENCRYPTED_DATA_PREFIX: 'encrypted:',   // Prefix for encrypted data storage
 } as const;
 
 export const useNostrStorage = () => {
@@ -188,6 +190,88 @@ export const useNostrStorage = () => {
     accounts.value = _items;
   };
 
+  // ============================================
+  // 🔐 ENCRYPTED DATA STORAGE (for Nostr sync)
+  // ============================================
+
+  /**
+   * Save encrypted data to local storage
+   * In production, this would publish to Nostr relays
+   * @param key - Unique identifier (e.g., 'company:encryption:key')
+   * @param data - Encrypted envelope to store
+   */
+  const saveEncryptedData = async (key: string, data: EncryptedEnvelope): Promise<boolean> => {
+    if (!import.meta.client) return false;
+
+    try {
+      const storageKey = `${STORAGE_KEYS.ENCRYPTED_DATA_PREFIX}${key}`;
+      localStorage.setItem(storageKey, JSON.stringify({
+        data,
+        savedAt: new Date().toISOString(),
+        version: 1,
+      }));
+
+      // TODO: In production, also publish to Nostr relays as kind 30078 event
+      // const event = {
+      //   kind: 30078,
+      //   tags: [['d', key], ['client', 'bitspace-pos']],
+      //   content: JSON.stringify(data),
+      // };
+      // await publishToRelays(event);
+
+      console.log(`[NostrStorage] Saved encrypted data: ${key}`);
+      return true;
+    } catch (error) {
+      console.error('[NostrStorage] Failed to save encrypted data:', error);
+      return false;
+    }
+  };
+
+  /**
+   * Load encrypted data from local storage
+   * In production, this would fetch from Nostr relays
+   * @param key - Unique identifier
+   * @returns Encrypted envelope or null
+   */
+  const loadEncryptedData = async (key: string): Promise<EncryptedEnvelope | null> => {
+    if (!import.meta.client) return null;
+
+    try {
+      const storageKey = `${STORAGE_KEYS.ENCRYPTED_DATA_PREFIX}${key}`;
+      const stored = localStorage.getItem(storageKey);
+      
+      if (!stored) {
+        // TODO: In production, try fetching from Nostr relays
+        // const event = await fetchFromRelays({ kinds: [30078], '#d': [key] });
+        // if (event) return JSON.parse(event.content);
+        return null;
+      }
+
+      const parsed = JSON.parse(stored);
+      return parsed.data as EncryptedEnvelope;
+    } catch (error) {
+      console.error('[NostrStorage] Failed to load encrypted data:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Delete encrypted data from storage
+   * @param key - Unique identifier
+   */
+  const deleteEncryptedData = (key: string): boolean => {
+    if (!import.meta.client) return false;
+
+    try {
+      const storageKey = `${STORAGE_KEYS.ENCRYPTED_DATA_PREFIX}${key}`;
+      localStorage.removeItem(storageKey);
+      return true;
+    } catch (error) {
+      console.error('[NostrStorage] Failed to delete encrypted data:', error);
+      return false;
+    }
+  };
+
   return {
     accounts,
     saveUser,
@@ -197,5 +281,9 @@ export const useNostrStorage = () => {
     clearUserData,
     updateAccountsList,
     removeAccount,
+    // Encrypted data methods
+    saveEncryptedData,
+    loadEncryptedData,
+    deleteEncryptedData,
   };
 };

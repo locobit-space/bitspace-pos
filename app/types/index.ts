@@ -730,10 +730,48 @@ export interface ProductModifierGroup {
 // Product Type - determines stock behavior
 export type ProductType = 'good' | 'service' | 'digital' | 'subscription' | 'bundle';
 
+/**
+ * Product Activity Log - Track all changes to products
+ */
+export interface ProductActivityLog {
+  id: string;
+  productId: string;
+  action: 'create' | 'update' | 'delete' | 'price_change' | 'stock_adjust' | 'status_change' | 'restore';
+  userId: string;
+  userName?: string;
+  userRole?: string;
+  timestamp: string;
+  // Change details
+  changes?: {
+    field: string;
+    oldValue: unknown;
+    newValue: unknown;
+  }[];
+  // For stock adjustments
+  stockBefore?: number;
+  stockAfter?: number;
+  stockReason?: string;
+  // For price changes
+  priceBefore?: number;
+  priceAfter?: number;
+  // Reference
+  referenceType?: 'order' | 'purchase' | 'adjustment' | 'transfer' | 'manual';
+  referenceId?: string;
+  // Metadata
+  notes?: string;
+  ipAddress?: string;
+  deviceInfo?: string;
+  // Nostr sync
+  nostrEventId?: string;
+  syncedAt?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   sku: string;
+  barcode?: string; // EAN-13, UPC-A, Code128, QR code
+  barcodeType?: 'ean13' | 'upca' | 'code128' | 'qr' | 'custom';
   description?: string;
   categoryId: string;
   unitId: string;
@@ -745,8 +783,24 @@ export interface Product {
   branchId: string;
   status: "active" | "inactive";
   image?: string;
+  // Gallery images
+  images?: string[];
+  // Additional info
+  brand?: string;
+  manufacturer?: string;
+  weight?: number;
+  weightUnit?: 'g' | 'kg' | 'oz' | 'lb';
+  dimensions?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit?: 'cm' | 'in';
+  };
+  // Timestamps
   createdAt: string;
   updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
   // Product Type & Stock Tracking
   productType?: ProductType; // Default: 'good'
   trackStock?: boolean; // Default: true for 'good', false for 'service'/'digital'
@@ -766,6 +820,11 @@ export interface Product {
   upsellProducts?: string[];
   complementaryProducts?: string[];
   popularityScore?: number;
+  // Tags for better search
+  tags?: string[];
+  // Tax
+  taxable?: boolean;
+  taxRate?: number;
 }
 
 export interface Category {

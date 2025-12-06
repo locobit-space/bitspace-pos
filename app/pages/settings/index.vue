@@ -169,6 +169,24 @@
     <div>
       <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">System</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <NuxtLink to="/settings/security" class="block">
+          <div class="h-full bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800 hover:border-red-300 dark:hover:border-red-700 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <UIcon name="i-heroicons-key" class="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 class="font-medium text-gray-900 dark:text-white text-sm">
+                  {{ $t("settings.security.title") }}
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Encryption keys
+                </p>
+              </div>
+            </div>
+          </div>
+        </NuxtLink>
+
         <NuxtLink to="/settings/backup" class="block">
           <div class="h-full bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800 hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors">
             <div class="flex items-center gap-3">

@@ -108,12 +108,35 @@ export interface ProductRecord {
   id: string;
   data: string; // JSON string of full product
   sku: string;
+  barcode?: string; // EAN-13, UPC-A, Code128, QR code
   name: string;
   categoryId: string;
   status: string;
   price: number;
   stock: number;
   updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// NEW: Product Activity Logs (audit trail)
+export interface ProductActivityLogRecord {
+  id: string;
+  productId: string;
+  action: 'create' | 'update' | 'delete' | 'price_change' | 'stock_adjust' | 'status_change' | 'restore';
+  userId: string;
+  userName?: string;
+  userRole?: string;
+  timestamp: number;
+  changesJson?: string; // JSON array of { field, oldValue, newValue }
+  stockBefore?: number;
+  stockAfter?: number;
+  stockReason?: string;
+  priceBefore?: number;
+  priceAfter?: number;
+  referenceType?: string;
+  referenceId?: string;
+  notes?: string;
   nostrEventId?: string;
   synced: boolean;
 }
@@ -540,6 +563,7 @@ export class POSDatabase extends Dexie {
   stockAdjustments!: Table<StockAdjustmentRecord, string>;
   branches!: Table<BranchRecord, string>;
   staff!: Table<StaffRecord, string>;
+  productActivityLogs!: Table<ProductActivityLogRecord, string>;
   // Recipe & Ingredient tables
   ingredients!: Table<IngredientRecord, string>;
   ingredientCategories!: Table<IngredientCategoryRecord, string>;
@@ -686,6 +710,41 @@ export class POSDatabase extends Dexie {
       stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
       lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
       expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+    });
+
+    // Version 7: Product Activity Logs & Barcode Support
+    this.version(7).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products: "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      // New in v7 - Product Activity Logs
+      productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
     });
   }
 }
