@@ -96,12 +96,13 @@ const storageTypes = [
 // Computed
 const categoryOptions = computed(() => [
   { id: 'all', name: t('common.all') || 'All Categories' },
-  ...ingredientsStore.categories.value.filter(c => c.id),
+  // Map categories without 'icon' property to prevent USelect from trying to render emoji as Icon
+  ...ingredientsStore.categories.value.filter(c => c.id).map(c => ({ id: c.id, name: c.name })),
 ]);
 
-// Category options for form (exclude empty ids)
+// Category options for form (exclude empty ids, strip icon to prevent USelect icon rendering issues)
 const formCategoryOptions = computed(() => 
-  ingredientsStore.categories.value.filter(c => c.id && c.id !== '')
+  ingredientsStore.categories.value.filter(c => c.id && c.id !== '').map(c => ({ id: c.id, name: c.name }))
 );
 
 const filteredIngredients = computed(() => {

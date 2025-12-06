@@ -44,7 +44,9 @@ const sizeClasses = {
       @click="modelValue = item.value"
     >
       <span class="flex items-center gap-1">
-        <Icon v-if="item.icon" :name="item.icon" class="w-4 h-4" />
+        <!-- Handle emoji vs icon identifiers -->
+        <span v-if="item.icon && !item.icon.startsWith('i-')" class="text-sm">{{ item.icon }}</span>
+        <Icon v-else-if="item.icon" :name="item.icon" class="w-4 h-4" />
         <span
           v-if="item.indicator?.show"
           class="w-1.5 h-1.5 rounded-full"

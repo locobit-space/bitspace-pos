@@ -1061,7 +1061,8 @@ const branchOptions = computed(() => [
 
 const categoryOptions = computed(() => [
   { id: "all", name: "All Categories" },
-  ...categories.value,
+  // Map categories without 'icon' property to prevent USelect from trying to render emoji as Icon
+  ...categories.value.map(cat => ({ id: cat.id, name: cat.name })),
 ]);
 
 const _unitOptions = computed(() => units.value);

@@ -18,8 +18,13 @@ const props = withDefaults(defineProps<Props>(), {
   trend: null,
 });
 
-const colorClasses = computed(() => {
-  const colors: Record<string, { bg: string; icon: string }> = {
+// Check if the icon is an emoji (not starting with 'i-')
+const isEmoji = computed(() => !props.icon?.startsWith('i-'));
+
+type IconColor = 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'gray';
+
+const colorClasses = computed((): { bg: string; icon: string } => {
+  const colors: Record<IconColor, { bg: string; icon: string }> = {
     blue: { bg: 'bg-blue-100 dark:bg-blue-900', icon: 'text-blue-500 dark:text-blue-400' },
     green: { bg: 'bg-green-100 dark:bg-green-900', icon: 'text-green-500 dark:text-green-400' },
     yellow: { bg: 'bg-yellow-100 dark:bg-yellow-900', icon: 'text-yellow-500 dark:text-yellow-400' },
@@ -27,7 +32,7 @@ const colorClasses = computed(() => {
     purple: { bg: 'bg-purple-100 dark:bg-purple-900', icon: 'text-purple-500 dark:text-purple-400' },
     gray: { bg: 'bg-gray-100 dark:bg-gray-800', icon: 'text-gray-500 dark:text-gray-400' },
   };
-  return colors[props.iconColor] || colors.blue;
+  return colors[props.iconColor];
 });
 </script>
 
@@ -35,7 +40,9 @@ const colorClasses = computed(() => {
   <UCard>
     <div class="flex items-center">
       <div :class="[colorClasses.bg, 'p-3 rounded-full']">
-        <Icon :name="icon" :class="[colorClasses.icon, 'w-6 h-6']" />
+        <!-- Render emoji as text, icon identifiers with Icon component -->
+        <span v-if="isEmoji" class="text-2xl">{{ icon }}</span>
+        <Icon v-else :name="icon" :class="[colorClasses.icon, 'w-6 h-6']" />
       </div>
       <div class="ml-4 flex-1">
         <p class="text-sm text-gray-500 dark:text-gray-400">{{ label }}</p>

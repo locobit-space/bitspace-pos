@@ -315,14 +315,14 @@
     <!-- Create/Edit User Modal -->
     <UModal v-model:open="showUserModal">
       <template #content>
-        <UCard class="max-w-lg">
+        <UCard class="max-w-lg max-h-[90vh] flex flex-col">
           <template #header>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ editingUser ? $t('settings.users.editUser') : $t('settings.users.addUser') }}
             </h3>
           </template>
 
-          <div class="space-y-4">
+          <div class="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
             <!-- Name -->
             <UFormField :label="$t('settings.users.name')" required>
               <UInput

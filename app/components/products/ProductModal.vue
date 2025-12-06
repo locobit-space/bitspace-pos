@@ -135,7 +135,8 @@ const isEditing = computed(() => !!props.product?.id);
 
 const categoryOptions = computed(() => [
   { id: 'all', name: t('common.all') || 'All' },
-  ...props.categories,
+  // Map categories without 'icon' property to prevent USelect from trying to render emoji as Icon
+  ...props.categories.map(c => ({ id: c.id, name: c.name })),
 ]);
 
 const unitOptions = computed(() => props.units);
