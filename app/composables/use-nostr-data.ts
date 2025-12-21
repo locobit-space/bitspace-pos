@@ -1161,6 +1161,7 @@ export function useNostrData() {
     queryEvents,
     getReplaceableEvent,
     getAllEventsOfKind,
+    getUserKeys,
 
     // Products
     saveProduct,

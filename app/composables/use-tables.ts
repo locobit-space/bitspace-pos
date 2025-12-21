@@ -113,6 +113,24 @@ export function useTables() {
    * Load all table data from Nostr relay
    */
   const loadTables = async (): Promise<void> => {
+    // Try to load from local storage first for immediate display
+    if (import.meta.client) {
+      const cached = localStorage.getItem("bitspace_tables_data");
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          if (tables.value.length === 0) tables.value = data.tables || [];
+          if (zones.value.length === 0) zones.value = data.zones || [];
+          if (reservations.value.length === 0)
+            reservations.value = data.reservations || [];
+          if (tableSessions.value.length === 0)
+            tableSessions.value = data.sessions || [];
+        } catch (e) {
+          console.error("[Tables] Failed to load from cache:", e);
+        }
+      }
+    }
+
     isLoading.value = true;
     try {
       const data = await nostrData.getReplaceableEvent<TableData>(
@@ -126,6 +144,14 @@ export function useTables() {
         reservations.value = data.data.reservations || [];
         tableSessions.value = data.data.sessions || [];
         lastSyncAt.value = new Date().toISOString();
+
+        // Save to local storage
+        if (import.meta.client) {
+          localStorage.setItem(
+            "bitspace_tables_data",
+            JSON.stringify(data.data)
+          );
+        }
       }
     } catch (error) {
       console.error("[Tables] Failed to load tables:", error);
@@ -152,6 +178,19 @@ export function useTables() {
         true // encrypt
       );
       lastSyncAt.value = new Date().toISOString();
+
+      // Save to local storage
+      if (import.meta.client) {
+        localStorage.setItem(
+          "bitspace_tables_data",
+          JSON.stringify({
+            tables: tables.value,
+            zones: zones.value,
+            reservations: reservations.value,
+            sessions: tableSessions.value,
+          })
+        );
+      }
     } catch (error) {
       console.error("[Tables] Failed to save tables:", error);
       throw error;
@@ -691,10 +730,28 @@ export function useTables() {
       return "";
     }
 
-    const ownerPubkey = localStorage.getItem("nostr_pubkey") || "";
+    // Get owner pubkey from Nostr store or localStorage legacy key
+    const nostrData = useNostrData();
+    const keys = nostrData.getUserKeys();
+    let ownerPubkey =
+      keys?.pubkey || localStorage.getItem("nostr_pubkey") || "";
+
+    // Fallback: check nostrUser storage key directly
+    if (!ownerPubkey) {
+      try {
+        const nostrUser = localStorage.getItem("nostrUser");
+        if (nostrUser) {
+          const parsed = JSON.parse(nostrUser);
+          if (parsed.pubkey) ownerPubkey = parsed.pubkey;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
     if (!ownerPubkey) {
       console.warn(
-        "[Tables] generateTableToken: No nostr_pubkey found in localStorage"
+        "[Tables] generateTableToken: No owner pubkey found (checked useNostrData, nostr_pubkey, nostrUser)"
       );
     }
 
@@ -722,11 +779,11 @@ export function useTables() {
         return `dev_${fallbackToken}`;
       }
 
-      // Derive key from secret + owner pubkey
+      // Derive key (use static secret only so customers can decrypt without knowing owner pubkey)
       const encoder = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey(
         "raw",
-        encoder.encode(TABLE_TOKEN_SECRET + ownerPubkey.slice(0, 32)),
+        encoder.encode(TABLE_TOKEN_SECRET),
         "PBKDF2",
         false,
         ["deriveBits", "deriveKey"]
@@ -803,18 +860,16 @@ export function useTables() {
         };
       }
 
-      const ownerPubkey = localStorage.getItem("nostr_pubkey") || "";
-
       // Check if crypto.subtle is available
       if (!crypto?.subtle) {
         return { valid: false, error: "Crypto not available" };
       }
 
-      // Derive key
+      // Derive key (use static secret only so customers can decrypt without knowing owner pubkey)
       const encoder = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey(
         "raw",
-        encoder.encode(TABLE_TOKEN_SECRET + ownerPubkey.slice(0, 32)),
+        encoder.encode(TABLE_TOKEN_SECRET),
         "PBKDF2",
         false,
         ["deriveBits", "deriveKey"]
