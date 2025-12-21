@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IngredientUnit, Recipe } from '~/types';
+import type { IngredientUnit, Recipe } from "~/types";
 
 /**
  * 🍳 RECIPES MANAGEMENT PAGE
@@ -8,8 +8,8 @@ import type { IngredientUnit, Recipe } from '~/types';
  */
 
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth'],
+  layout: "default",
+  middleware: ["auth"],
 });
 
 const { t } = useI18n();
@@ -37,15 +37,15 @@ const ingredients = computed(() => ingredientsStore.ingredients.value);
 const showRecipeModal = ref(false);
 const showDeleteModal = ref(false);
 const showDetailsModal = ref(false);
-const selectedRecipe = ref<typeof recipes.value[0] | null>(null);
-const recipeToDelete = ref<typeof recipes.value[0] | null>(null);
+const selectedRecipe = ref<(typeof recipes.value)[0] | null>(null);
+const recipeToDelete = ref<(typeof recipes.value)[0] | null>(null);
 const saving = ref(false);
 const deleting = ref(false);
 
 // Filters
-const searchQuery = ref('');
-const selectedDifficulty = ref('all');
-const activeTab = ref<'recipes' | 'analytics'>('recipes');
+const searchQuery = ref("");
+const selectedDifficulty = ref("all");
+const activeTab = ref<"recipes" | "analytics">("recipes");
 
 // Pagination
 const currentPage = ref(1);
@@ -53,17 +53,17 @@ const itemsPerPage = ref(10);
 
 // Form state
 const recipeForm = ref({
-  name: '',
-  nameLao: '',
-  description: '',
-  productId: '',
+  name: "",
+  nameLao: "",
+  description: "",
+  productId: "",
   servings: 1,
-  servingUnit: 'portion',
+  servingUnit: "portion",
   overheadCost: 0,
   sellingPrice: 0,
   prepTime: 0,
   cookTime: 0,
-  difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+  difficulty: "medium" as "easy" | "medium" | "hard",
   ingredients: [] as Array<{
     ingredientId: string;
     quantity: number;
@@ -74,39 +74,39 @@ const recipeForm = ref({
 
 // Options
 const difficultyOptions = computed(() => [
-  { value: 'all', label: t('common.all') },
-  { value: 'easy', label: t('recipes.easy') || 'Easy' },
-  { value: 'medium', label: t('recipes.medium') || 'Medium' },
-  { value: 'hard', label: t('recipes.hard') || 'Hard' },
+  { value: "all", label: t("common.all") },
+  { value: "easy", label: t("recipes.easy") || "Easy" },
+  { value: "medium", label: t("recipes.medium") || "Medium" },
+  { value: "hard", label: t("recipes.hard") || "Hard" },
 ]);
 
-const servingUnitOptions = [
-  { value: 'portion', label: 'Portion' },
-  { value: 'slice', label: 'Slice' },
-  { value: 'piece', label: 'Piece' },
-  { value: 'plate', label: 'Plate' },
-  { value: 'cup', label: 'Cup' },
-  { value: 'bowl', label: 'Bowl' },
-];
+const servingUnitOptions = computed(() => [
+  { value: "portion", label: t("recipes.servingUnits.portion") },
+  { value: "slice", label: t("recipes.servingUnits.slice") },
+  { value: "piece", label: t("recipes.servingUnits.piece") },
+  { value: "plate", label: t("recipes.servingUnits.plate") },
+  { value: "cup", label: t("recipes.servingUnits.cup") },
+  { value: "bowl", label: t("recipes.servingUnits.bowl") },
+]);
 
 const unitOptions = [
-  { value: 'g', label: 'g' },
-  { value: 'kg', label: 'kg' },
-  { value: 'ml', label: 'ml' },
-  { value: 'l', label: 'L' },
-  { value: 'piece', label: 'pc' },
-  { value: 'tbsp', label: 'tbsp' },
-  { value: 'tsp', label: 'tsp' },
+  { value: "g", label: "g" },
+  { value: "kg", label: "kg" },
+  { value: "ml", label: "ml" },
+  { value: "l", label: "L" },
+  { value: "piece", label: "pc" },
+  { value: "tbsp", label: "tbsp" },
+  { value: "tsp", label: "tsp" },
 ];
 
 // Product options for linking (filter out empty ids)
-const productOptions = computed(() => 
-  products.value.filter(p => p.status === 'active' && p.id)
+const productOptions = computed(() =>
+  products.value.filter((p) => p.status === "active" && p.id)
 );
 
 // Ingredient options (filter out empty ids)
-const ingredientOptions = computed(() => 
-  ingredients.value.filter(i => i.isActive && i.id)
+const ingredientOptions = computed(() =>
+  ingredients.value.filter((i) => i.isActive && i.id)
 );
 
 // Computed: Cost preview
@@ -115,11 +115,15 @@ const costPreview = computed(() => {
     return { totalIngredientCost: 0, costPerServing: 0, profitMargin: 0 };
   }
 
-  const ingredientsCost = recipeForm.value.ingredients.map(ing => ({
+  const ingredientsCost = recipeForm.value.ingredients.map((ing) => ({
     ingredientId: ing.ingredientId,
     quantity: ing.quantity,
     unit: ing.unit as IngredientUnit,
-    cost: ingredientsStore.calculateCost(ing.ingredientId, ing.quantity, ing.unit as IngredientUnit),
+    cost: ingredientsStore.calculateCost(
+      ing.ingredientId,
+      ing.quantity,
+      ing.unit as IngredientUnit
+    ),
     notes: ing.notes,
   }));
 
@@ -137,21 +141,26 @@ const filteredRecipes = computed(() => {
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(r =>
-      r.name.toLowerCase().includes(query) ||
-      r.nameTh?.toLowerCase().includes(query) ||
-      r.description?.toLowerCase().includes(query)
+    filtered = filtered.filter(
+      (r) =>
+        r.name.toLowerCase().includes(query) ||
+        r.nameTh?.toLowerCase().includes(query) ||
+        r.description?.toLowerCase().includes(query)
     );
   }
 
-  if (selectedDifficulty.value && selectedDifficulty.value !== 'all') {
-    filtered = filtered.filter(r => r.difficulty === selectedDifficulty.value);
+  if (selectedDifficulty.value && selectedDifficulty.value !== "all") {
+    filtered = filtered.filter(
+      (r) => r.difficulty === selectedDifficulty.value
+    );
   }
 
   return filtered;
 });
 
-const totalPages = computed(() => Math.ceil(filteredRecipes.value.length / itemsPerPage.value));
+const totalPages = computed(() =>
+  Math.ceil(filteredRecipes.value.length / itemsPerPage.value)
+);
 const paginatedRecipes = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
   return filteredRecipes.value.slice(start, start + itemsPerPage.value);
@@ -159,19 +168,19 @@ const paginatedRecipes = computed(() => {
 
 // Methods
 function resetFilters() {
-  searchQuery.value = '';
-  selectedDifficulty.value = 'all';
+  searchQuery.value = "";
+  selectedDifficulty.value = "all";
   currentPage.value = 1;
 }
 
-function openRecipeModal(recipe?: typeof recipes.value[0]) {
+function openRecipeModal(recipe?: (typeof recipes.value)[0]) {
   if (recipe) {
     selectedRecipe.value = recipe;
     recipeForm.value = {
       name: recipe.name,
-      nameLao: recipe.nameTh || '',
-      description: recipe.description || '',
-      productId: recipe.productId || '',
+      nameLao: recipe.nameTh || "",
+      description: recipe.description || "",
+      productId: recipe.productId || "",
       servings: recipe.servings,
       servingUnit: recipe.servingUnit,
       overheadCost: recipe.overheadCost,
@@ -179,7 +188,7 @@ function openRecipeModal(recipe?: typeof recipes.value[0]) {
       prepTime: recipe.prepTime,
       cookTime: recipe.cookTime,
       difficulty: recipe.difficulty,
-      ingredients: recipe.ingredients.map(ing => ({
+      ingredients: recipe.ingredients.map((ing) => ({
         ingredientId: ing.ingredientId,
         quantity: ing.quantity,
         unit: ing.unit,
@@ -189,39 +198,39 @@ function openRecipeModal(recipe?: typeof recipes.value[0]) {
   } else {
     selectedRecipe.value = null;
     recipeForm.value = {
-      name: '',
-      nameLao: '',
-      description: '',
-      productId: '',
+      name: "",
+      nameLao: "",
+      description: "",
+      productId: "",
       servings: 1,
-      servingUnit: 'portion',
+      servingUnit: "portion",
       overheadCost: 0,
       sellingPrice: 0,
       prepTime: 0,
       cookTime: 0,
-      difficulty: 'medium',
+      difficulty: "medium",
       ingredients: [],
     };
   }
   showRecipeModal.value = true;
 }
 
-function viewRecipeDetails(recipe: typeof recipes.value[0]) {
+function viewRecipeDetails(recipe: (typeof recipes.value)[0]) {
   selectedRecipe.value = recipe;
   showDetailsModal.value = true;
 }
 
-function confirmDeleteRecipe(recipe: typeof recipes.value[0]) {
+function confirmDeleteRecipe(recipe: (typeof recipes.value)[0]) {
   recipeToDelete.value = recipe;
   showDeleteModal.value = true;
 }
 
 function addIngredientRow() {
   recipeForm.value.ingredients.push({
-    ingredientId: '',
+    ingredientId: "",
     quantity: 0,
-    unit: 'g',
-    notes: '',
+    unit: "g",
+    notes: "",
   });
 }
 
@@ -230,41 +239,49 @@ function removeIngredientRow(index: number) {
 }
 
 function getIngredientName(id: string): string {
-  return ingredients.value.find(i => i.id === id)?.name || 'Unknown';
+  return ingredients.value.find((i) => i.id === id)?.name || "Unknown";
 }
 
 function getProductName(id: string): string {
-  return products.value.find(p => p.id === id)?.name || '-';
+  return products.value.find((p) => p.id === id)?.name || "-";
 }
 
 function getSuggestedPrice() {
   if (!costPreview.value.costPerServing) return;
-  
-  const suggested = recipesStore.suggestSellingPrice({
-    totalCostPerServing: costPreview.value.costPerServing,
-  } as Recipe, 60);
-  
+
+  const suggested = recipesStore.suggestSellingPrice(
+    {
+      totalCostPerServing: costPreview.value.costPerServing,
+    } as Recipe,
+    60
+  );
+
   recipeForm.value.sellingPrice = Math.ceil(suggested);
 }
 
 async function saveRecipe() {
   if (!recipeForm.value.name || !recipeForm.value.ingredients.length) {
     toast.add({
-      title: t('common.error'),
-      description: t('recipes.validation.nameRequired') || 'Recipe name is required',
-      color: 'red',
-      icon: 'i-heroicons-exclamation-circle',
+      title: t("common.error"),
+      description:
+        t("recipes.validation.nameRequired") || "Recipe name is required",
+      color: "red",
+      icon: "i-heroicons-exclamation-circle",
     });
     return;
   }
 
   saving.value = true;
   try {
-    const ingredientsData = recipeForm.value.ingredients.map(ing => ({
+    const ingredientsData = recipeForm.value.ingredients.map((ing) => ({
       ingredientId: ing.ingredientId,
       quantity: ing.quantity,
       unit: ing.unit as IngredientUnit,
-      cost: ingredientsStore.calculateCost(ing.ingredientId, ing.quantity, ing.unit as IngredientUnit),
+      cost: ingredientsStore.calculateCost(
+        ing.ingredientId,
+        ing.quantity,
+        ing.unit as IngredientUnit
+      ),
       notes: ing.notes,
     }));
 
@@ -273,7 +290,9 @@ async function saveRecipe() {
         name: recipeForm.value.name,
         nameTh: recipeForm.value.nameLao,
         description: recipeForm.value.description,
-        productId: recipeForm.value.productId ? recipeForm.value.productId : undefined,
+        productId: recipeForm.value.productId
+          ? recipeForm.value.productId
+          : undefined,
         servings: recipeForm.value.servings,
         servingUnit: recipeForm.value.servingUnit,
         ingredients: ingredientsData,
@@ -284,13 +303,24 @@ async function saveRecipe() {
         difficulty: recipeForm.value.difficulty,
       });
       toast.add({
-        title: t('common.success'),
-        description: t('recipes.messages.updated') || 'Recipe updated successfully',
-        color: 'green',
-        icon: 'i-heroicons-check-circle',
+        title: t("common.success"),
+        description:
+          t("recipes.messages.updated") || "Recipe updated successfully",
+        color: "green",
+        icon: "i-heroicons-check-circle",
       });
     } else {
-      const recipeData: Omit<Recipe, 'id' | 'totalIngredientCost' | 'costPerServing' | 'totalCostPerServing' | 'profitPerServing' | 'profitMargin' | 'createdAt' | 'updatedAt'> = {
+      const recipeData: Omit<
+        Recipe,
+        | "id"
+        | "totalIngredientCost"
+        | "costPerServing"
+        | "totalCostPerServing"
+        | "profitPerServing"
+        | "profitMargin"
+        | "createdAt"
+        | "updatedAt"
+      > = {
         name: recipeForm.value.name,
         nameTh: recipeForm.value.nameLao,
         description: recipeForm.value.description,
@@ -304,27 +334,28 @@ async function saveRecipe() {
         difficulty: recipeForm.value.difficulty,
         isActive: true,
       };
-      
+
       if (recipeForm.value.productId) {
         recipeData.productId = recipeForm.value.productId;
       }
-      
+
       await recipesStore.addRecipe(recipeData);
       toast.add({
-        title: t('common.success'),
-        description: t('recipes.messages.created') || 'Recipe created successfully',
-        color: 'green',
-        icon: 'i-heroicons-check-circle',
+        title: t("common.success"),
+        description:
+          t("recipes.messages.created") || "Recipe created successfully",
+        color: "green",
+        icon: "i-heroicons-check-circle",
       });
     }
     showRecipeModal.value = false;
   } catch (error) {
-    console.error('Error saving recipe:', error);
+    console.error("Error saving recipe:", error);
     toast.add({
-      title: t('common.error'),
-      description: 'Failed to save recipe',
-      color: 'red',
-      icon: 'i-heroicons-exclamation-circle',
+      title: t("common.error"),
+      description: "Failed to save recipe",
+      color: "red",
+      icon: "i-heroicons-exclamation-circle",
     });
   } finally {
     saving.value = false;
@@ -338,19 +369,21 @@ async function executeDeleteRecipe() {
   try {
     await recipesStore.deleteRecipe(recipeToDelete.value.id);
     toast.add({
-      title: t('common.success'),
-      description: t('recipes.messages.deleted') || 'Recipe deleted successfully',
-      color: 'green',
-      icon: 'i-heroicons-trash',
+      title: t("common.success"),
+      description:
+        t("recipes.messages.deleted") || "Recipe deleted successfully",
+      color: "green",
+      icon: "i-heroicons-trash",
     });
     showDeleteModal.value = false;
   } catch (error) {
-    console.error('Error deleting recipe:', error);
+    console.error("Error deleting recipe:", error);
     toast.add({
-      title: t('common.error'),
-      description: t('recipes.messages.deleteFailed') || 'Failed to delete recipe',
-      color: 'red',
-      icon: 'i-heroicons-exclamation-circle',
+      title: t("common.error"),
+      description:
+        t("recipes.messages.deleteFailed") || "Failed to delete recipe",
+      color: "red",
+      icon: "i-heroicons-exclamation-circle",
     });
   } finally {
     deleting.value = false;
@@ -359,9 +392,9 @@ async function executeDeleteRecipe() {
 
 // Format helpers
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK',
+  return new Intl.NumberFormat("lo-LA", {
+    style: "currency",
+    currency: "LAK",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
@@ -371,20 +404,48 @@ function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
 }
 
-type BadgeColor = 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose' | 'gray' | 'neutral' | 'primary' | 'success' | 'info' | 'warning' | 'error';
+type BadgeColor =
+  | "red"
+  | "orange"
+  | "amber"
+  | "yellow"
+  | "lime"
+  | "green"
+  | "emerald"
+  | "teal"
+  | "cyan"
+  | "sky"
+  | "blue"
+  | "indigo"
+  | "violet"
+  | "purple"
+  | "fuchsia"
+  | "pink"
+  | "rose"
+  | "gray"
+  | "neutral"
+  | "primary"
+  | "success"
+  | "info"
+  | "warning"
+  | "error";
 
 function getProfitColor(margin: number): BadgeColor {
-  if (margin >= 60) return 'green';
-  if (margin >= 40) return 'yellow';
-  return 'red';
+  if (margin >= 60) return "green";
+  if (margin >= 40) return "yellow";
+  return "red";
 }
 
 function getDifficultyColor(difficulty: string): BadgeColor {
   switch (difficulty) {
-    case 'easy': return 'green';
-    case 'medium': return 'yellow';
-    case 'hard': return 'red';
-    default: return 'gray';
+    case "easy":
+      return "green";
+    case "medium":
+      return "yellow";
+    case "hard":
+      return "red";
+    default:
+      return "gray";
   }
 }
 
@@ -400,10 +461,10 @@ watch([searchQuery, selectedDifficulty], () => {
     <div class="flex justify-between items-center px-4">
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          🍳 {{ t('recipes.title') }}
+          🍳 {{ t("recipes.title") }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ t('recipes.description') }}
+          {{ t("recipes.description") }}
         </p>
       </div>
       <UButton
@@ -417,55 +478,84 @@ watch([searchQuery, selectedDifficulty], () => {
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+      >
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xl">
+          <div
+            class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xl"
+          >
             📋
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Total Recipes</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              {{ t("recipes.stats.totalRecipes") }}
+            </div>
             <div class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ recipesStore.activeRecipes.value.length }}
             </div>
           </div>
         </div>
       </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+      >
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xl">
+          <div
+            class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xl"
+          >
             📊
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Avg. Margin</div>
-            <div class="text-2xl font-bold" :class="`text-${getProfitColor(recipesStore.averageProfitMargin.value)}-600`">
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              {{ t("recipes.stats.avgMargin") }}
+            </div>
+            <div
+              class="text-2xl font-bold"
+              :class="`text-${getProfitColor(
+                recipesStore.averageProfitMargin.value
+              )}-600`"
+            >
               {{ formatPercent(recipesStore.averageProfitMargin.value) }}
             </div>
           </div>
         </div>
       </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+      >
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xl">
+          <div
+            class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xl"
+          >
             💰
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">High Profit (&gt;50%)</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              {{ t("recipes.stats.highProfit") }}
+            </div>
             <div class="text-2xl font-bold text-green-600 dark:text-green-400">
               {{ recipesStore.highProfitRecipes.value.length }}
             </div>
           </div>
         </div>
       </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+      >
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-xl">
+          <div
+            class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-xl"
+          >
             ⚠️
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Low Margin (&lt;30%)</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              {{ t("recipes.stats.lowMargin") }}
+            </div>
             <div class="text-2xl font-bold text-red-600 dark:text-red-400">
               {{ recipesStore.lowProfitRecipes.value.length }}
             </div>
@@ -480,14 +570,14 @@ watch([searchQuery, selectedDifficulty], () => {
         :color="activeTab === 'recipes' ? 'primary' : 'neutral'"
         :variant="activeTab === 'recipes' ? 'solid' : 'ghost'"
         icon="i-heroicons-clipboard-document-list"
-        label="Recipes"
+        :label="t('recipes.tabs.recipes')"
         @click="activeTab = 'recipes'"
       />
       <UButton
         :color="activeTab === 'analytics' ? 'primary' : 'neutral'"
         :variant="activeTab === 'analytics' ? 'solid' : 'ghost'"
         icon="i-heroicons-chart-bar"
-        label="Profit Analysis"
+        :label="t('recipes.tabs.profitAnalysis')"
         @click="activeTab = 'analytics'"
       />
     </div>
@@ -526,34 +616,52 @@ watch([searchQuery, selectedDifficulty], () => {
       <div class="px-4">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-            {{ t('recipes.title') }} ({{ filteredRecipes.length }})
+            {{ t("recipes.title") }} ({{ filteredRecipes.length }})
           </h2>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700"
+        >
           <table class="w-full">
             <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                <th class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {{ t('recipes.name') }}
+              <tr
+                class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+              >
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("recipes.name") }}
                 </th>
-                <th class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {{ t('recipes.product') }}
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("recipes.product") }}
                 </th>
-                <th class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {{ t('recipes.totalCost') }}
+                <th
+                  class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("recipes.totalCost") }}
                 </th>
-                <th class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {{ t('recipes.sellingPrice') }}
+                <th
+                  class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("recipes.sellingPrice") }}
                 </th>
-                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {{ t('recipes.profitMargin') }}
+                <th
+                  class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("recipes.profitMargin") }}
                 </th>
-                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {{ t('recipes.difficulty') }}
+                <th
+                  class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("recipes.difficulty") }}
                 </th>
-                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {{ t('common.actions') }}
+                <th
+                  class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("common.actions") }}
                 </th>
               </tr>
             </thead>
@@ -567,16 +675,23 @@ watch([searchQuery, selectedDifficulty], () => {
                   <div class="font-medium text-gray-900 dark:text-white">
                     {{ recipe.name }}
                   </div>
-                  <div v-if="recipe.nameTh" class="text-sm text-gray-500 dark:text-gray-400">
+                  <div
+                    v-if="recipe.nameTh"
+                    class="text-sm text-gray-500 dark:text-gray-400"
+                  >
                     {{ recipe.nameTh }}
                   </div>
                   <div class="text-xs text-gray-400 mt-1">
-                    🧪 {{ recipe.ingredients.length }} {{ t('recipes.ingredients') }} • 
-                    🍽️ {{ recipe.servings }} {{ recipe.servingUnit }}
+                    🧪 {{ recipe.ingredients.length }}
+                    {{ t("recipes.ingredients") }} • 🍽️ {{ recipe.servings }}
+                    {{ recipe.servingUnit }}
                   </div>
                 </td>
                 <td class="py-3 px-4">
-                  <span v-if="recipe.productId" class="text-gray-700 dark:text-gray-300">
+                  <span
+                    v-if="recipe.productId"
+                    class="text-gray-700 dark:text-gray-300"
+                  >
                     {{ getProductName(recipe.productId) }}
                   </span>
                   <span v-else class="text-gray-400">-</span>
@@ -634,10 +749,10 @@ watch([searchQuery, selectedDifficulty], () => {
           <div v-if="!filteredRecipes.length" class="text-center py-12">
             <div class="text-6xl mb-4">📝</div>
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {{ t('recipes.noRecipes') }}
+              {{ t("recipes.noRecipes") }}
             </h3>
             <p class="text-gray-500 dark:text-gray-400 mb-4">
-              Create your first recipe to start tracking costs
+              {{ t("recipes.createFirstRecipe") }}
             </p>
             <UButton
               color="primary"
@@ -648,11 +763,15 @@ watch([searchQuery, selectedDifficulty], () => {
         </div>
 
         <!-- Pagination -->
-        <div v-if="filteredRecipes.length > itemsPerPage" class="flex justify-between items-center mt-4">
+        <div
+          v-if="filteredRecipes.length > itemsPerPage"
+          class="flex justify-between items-center mt-4"
+        >
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            {{ t('common.showing') }} {{ (currentPage - 1) * itemsPerPage + 1 }} - 
+            {{ t("common.showing") }}
+            {{ (currentPage - 1) * itemsPerPage + 1 }} -
             {{ Math.min(currentPage * itemsPerPage, filteredRecipes.length) }}
-            {{ t('common.of') }} {{ filteredRecipes.length }}
+            {{ t("common.of") }} {{ filteredRecipes.length }}
           </div>
           <div class="flex gap-2">
             <UButton
@@ -683,46 +802,70 @@ watch([searchQuery, selectedDifficulty], () => {
     <template v-if="activeTab === 'analytics'">
       <div class="px-4 space-y-6">
         <!-- Low Margin Recipes Alert -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+        >
+          <h3
+            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
+          >
             <span class="text-xl">⚠️</span>
-            Low Margin Recipes (&lt; 30%)
+            {{ t("recipes.lowMarginRecipes") }}
           </h3>
-          
-          <div v-if="recipesStore.lowProfitRecipes.value.length" class="space-y-3">
+
+          <div
+            v-if="recipesStore.lowProfitRecipes.value.length"
+            class="space-y-3"
+          >
             <div
               v-for="recipe in recipesStore.lowProfitRecipes.value"
               :key="recipe.id"
               class="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
             >
               <div>
-                <span class="font-medium text-gray-900 dark:text-white">{{ recipe.name }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{
+                  recipe.name
+                }}</span>
                 <span class="text-sm text-gray-500 ml-2">
-                  Cost: {{ formatCurrency(recipe.totalCostPerServing) }} / 
-                  Price: {{ formatCurrency(recipe.sellingPrice) }}
+                  {{ t("recipes.cost") }}:
+                  {{ formatCurrency(recipe.totalCostPerServing) }} /
+                  {{ t("recipes.price") }}:
+                  {{ formatCurrency(recipe.sellingPrice) }}
                 </span>
               </div>
               <div class="flex items-center gap-3">
-                <UBadge color="red" :label="formatPercent(recipe.profitMargin)" />
+                <UBadge
+                  color="red"
+                  :label="formatPercent(recipe.profitMargin)"
+                />
                 <span class="text-sm text-gray-500">
-                  Suggested: {{ formatCurrency(recipesStore.suggestSellingPrice(recipe, 60)) }}
+                  {{ t("recipes.suggested") }}:
+                  {{
+                    formatCurrency(recipesStore.suggestSellingPrice(recipe, 60))
+                  }}
                 </span>
               </div>
             </div>
           </div>
-          <p v-else class="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+          <p
+            v-else
+            class="text-gray-500 dark:text-gray-400 flex items-center gap-2"
+          >
             <span class="text-xl">✅</span>
-            All recipes have healthy profit margins!
+            {{ t("recipes.healthyMargins") }}
           </p>
         </div>
 
         <!-- Top Profit Recipes -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+        >
+          <h3
+            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
+          >
             <span class="text-xl">💰</span>
-            Top Profitable Recipes
+            {{ t("recipes.topProfitableRecipes") }}
           </h3>
-          
+
           <div class="space-y-3">
             <div
               v-for="recipe in recipesStore.getTopProfitRecipes(5)"
@@ -730,12 +873,19 @@ watch([searchQuery, selectedDifficulty], () => {
               class="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"
             >
               <div>
-                <span class="font-medium text-gray-900 dark:text-white">{{ recipe.name }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{
+                  recipe.name
+                }}</span>
                 <span class="text-sm text-gray-500 ml-2">
-                  Profit: {{ formatCurrency(recipe.profitPerServing) }} per serving
+                  {{ t("recipes.profit") }}:
+                  {{ formatCurrency(recipe.profitPerServing) }}
+                  {{ t("common.perServing") || "per serving" }}
                 </span>
               </div>
-              <UBadge color="green" :label="formatPercent(recipe.profitMargin)" />
+              <UBadge
+                color="green"
+                :label="formatPercent(recipe.profitMargin)"
+              />
             </div>
           </div>
         </div>
@@ -743,14 +893,22 @@ watch([searchQuery, selectedDifficulty], () => {
     </template>
 
     <!-- Create/Edit Recipe Modal -->
-    <UModal v-model:open="showRecipeModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
+    <UModal
+      v-model:open="showRecipeModal"
+      :overlay="true"
+      :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }"
+    >
       <template #content>
         <UCard class="max-w-3xl">
           <template #header>
             <div class="flex items-center gap-3">
               <span class="text-2xl">🍳</span>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ selectedRecipe ? t('recipes.editRecipe') : t('recipes.addRecipe') }}
+                {{
+                  selectedRecipe
+                    ? t("recipes.editRecipe")
+                    : t("recipes.addRecipe")
+                }}
               </h3>
             </div>
           </template>
@@ -792,7 +950,7 @@ watch([searchQuery, selectedDifficulty], () => {
                   min="1"
                 />
               </UFormField>
-              <UFormField label="Serving Unit">
+              <UFormField :label="t('recipes.servingUnit')">
                 <USelect
                   v-model="recipeForm.servingUnit"
                   :items="servingUnitOptions"
@@ -803,7 +961,7 @@ watch([searchQuery, selectedDifficulty], () => {
               <UFormField :label="t('recipes.difficulty')">
                 <USelect
                   v-model="recipeForm.difficulty"
-                  :items="difficultyOptions.filter(d => d.value !== 'all')"
+                  :items="difficultyOptions.filter((d) => d.value !== 'all')"
                   value-key="value"
                   label-key="label"
                 />
@@ -813,8 +971,10 @@ watch([searchQuery, selectedDifficulty], () => {
             <!-- Ingredients Section -->
             <div>
               <div class="flex justify-between items-center mb-2">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ t('recipes.ingredients') }} *
+                <label
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ t("recipes.ingredients") }} *
                 </label>
                 <UButton
                   color="primary"
@@ -825,7 +985,7 @@ watch([searchQuery, selectedDifficulty], () => {
                   @click="addIngredientRow"
                 />
               </div>
-              
+
               <div class="space-y-2">
                 <div
                   v-for="(ing, index) in recipeForm.ingredients"
@@ -837,7 +997,7 @@ watch([searchQuery, selectedDifficulty], () => {
                     :items="ingredientOptions"
                     value-key="id"
                     label-key="name"
-                    placeholder="Select ingredient..."
+                    :placeholder="t('recipes.selectIngredient')"
                     class="flex-1"
                   />
                   <UInput
@@ -845,7 +1005,7 @@ watch([searchQuery, selectedDifficulty], () => {
                     type="number"
                     min="0"
                     step="0.1"
-                    placeholder="Qty"
+                    :placeholder="t('recipes.qty')"
                     class="w-24"
                   />
                   <USelect
@@ -864,34 +1024,52 @@ watch([searchQuery, selectedDifficulty], () => {
                   />
                 </div>
 
-                <div v-if="!recipeForm.ingredients.length" class="text-center py-4 text-gray-500">
-                  Click "Add Ingredient" to start building your recipe
+                <div
+                  v-if="!recipeForm.ingredients.length"
+                  class="text-center py-4 text-gray-500"
+                >
+                  {{ t("recipes.addIngredientHint") }}
                 </div>
               </div>
             </div>
 
             <!-- Cost Preview Card -->
-            <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <div
+              class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+            >
+              <h4
+                class="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2"
+              >
                 <span>💰</span>
-                {{ t('recipes.costBreakdown') }}
+                {{ t("recipes.costBreakdown") }}
               </h4>
               <div class="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span class="text-gray-500 dark:text-gray-400">Total Cost:</span>
+                  <span class="text-gray-500 dark:text-gray-400">{{
+                    t("recipes.totalCostLabel")
+                  }}</span>
                   <div class="font-bold text-gray-900 dark:text-white">
                     {{ formatCurrency(costPreview.totalIngredientCost || 0) }}
                   </div>
                 </div>
                 <div>
-                  <span class="text-gray-500 dark:text-gray-400">Cost/Serving:</span>
+                  <span class="text-gray-500 dark:text-gray-400">{{
+                    t("recipes.costPerServingLabel")
+                  }}</span>
                   <div class="font-bold text-gray-900 dark:text-white">
                     {{ formatCurrency(costPreview.costPerServing) }}
                   </div>
                 </div>
                 <div>
-                  <span class="text-gray-500 dark:text-gray-400">Margin:</span>
-                  <div class="font-bold" :class="`text-${getProfitColor(costPreview.profitMargin)}-600`">
+                  <span class="text-gray-500 dark:text-gray-400">{{
+                    t("recipes.marginLabel")
+                  }}</span>
+                  <div
+                    class="font-bold"
+                    :class="`text-${getProfitColor(
+                      costPreview.profitMargin
+                    )}-600`"
+                  >
                     {{ formatPercent(costPreview.profitMargin) }}
                   </div>
                 </div>
@@ -900,7 +1078,7 @@ watch([searchQuery, selectedDifficulty], () => {
 
             <!-- Pricing -->
             <div class="grid grid-cols-3 gap-4">
-              <UFormField label="Overhead Cost">
+              <UFormField :label="t('recipes.overheadCost')">
                 <UInput
                   v-model.number="recipeForm.overheadCost"
                   type="number"
@@ -917,7 +1095,7 @@ watch([searchQuery, selectedDifficulty], () => {
                     step="1000"
                     class="flex-1"
                   />
-                  <UTooltip text="Suggest price for 60% margin">
+                  <UTooltip :text="t('recipes.suggestPriceTooltip')">
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -927,19 +1105,19 @@ watch([searchQuery, selectedDifficulty], () => {
                   </UTooltip>
                 </div>
               </UFormField>
-              <UFormField label="Prep + Cook Time (min)">
+              <UFormField :label="t('recipes.prepCookTime')">
                 <div class="flex gap-2">
                   <UInput
                     v-model.number="recipeForm.prepTime"
                     type="number"
                     min="0"
-                    placeholder="Prep"
+                    :placeholder="t('recipes.prep')"
                   />
                   <UInput
                     v-model.number="recipeForm.cookTime"
                     type="number"
                     min="0"
-                    placeholder="Cook"
+                    :placeholder="t('recipes.cook')"
                   />
                 </div>
               </UFormField>
@@ -967,7 +1145,9 @@ watch([searchQuery, selectedDifficulty], () => {
                 color="primary"
                 :loading="saving"
                 :disabled="!recipeForm.name || !recipeForm.ingredients.length"
-                :label="selectedRecipe ? t('common.update') : t('common.create')"
+                :label="
+                  selectedRecipe ? t('common.update') : t('common.create')
+                "
                 @click="saveRecipe"
               />
             </div>
@@ -977,7 +1157,11 @@ watch([searchQuery, selectedDifficulty], () => {
     </UModal>
 
     <!-- Recipe Details Modal -->
-    <UModal v-model:open="showDetailsModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
+    <UModal
+      v-model:open="showDetailsModal"
+      :overlay="true"
+      :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }"
+    >
       <template #content>
         <UCard v-if="selectedRecipe" class="max-w-2xl">
           <template #header>
@@ -985,7 +1169,10 @@ watch([searchQuery, selectedDifficulty], () => {
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">
                 {{ selectedRecipe.name }}
               </h3>
-              <p v-if="selectedRecipe.nameTh" class="text-gray-500 dark:text-gray-400">
+              <p
+                v-if="selectedRecipe.nameTh"
+                class="text-gray-500 dark:text-gray-400"
+              >
                 {{ selectedRecipe.nameTh }}
               </p>
             </div>
@@ -996,12 +1183,18 @@ watch([searchQuery, selectedDifficulty], () => {
             <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
               <div class="text-2xl mb-1">🍽️</div>
               <div class="font-bold">{{ selectedRecipe.servings }}</div>
-              <div class="text-sm text-gray-500">{{ selectedRecipe.servingUnit }}</div>
+              <div class="text-sm text-gray-500">
+                {{ selectedRecipe.servingUnit }}
+              </div>
             </div>
             <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
               <div class="text-2xl mb-1">⏱️</div>
-              <div class="font-bold">{{ selectedRecipe.prepTime + selectedRecipe.cookTime }}</div>
-              <div class="text-sm text-gray-500">minutes</div>
+              <div class="font-bold">
+                {{ selectedRecipe.prepTime + selectedRecipe.cookTime }}
+              </div>
+              <div class="text-sm text-gray-500">
+                {{ t("recipes.minutes") }}
+              </div>
             </div>
             <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
               <div class="text-2xl mb-1">💰</div>
@@ -1010,21 +1203,21 @@ watch([searchQuery, selectedDifficulty], () => {
                 :label="formatPercent(selectedRecipe.profitMargin)"
                 size="lg"
               />
-              <div class="text-sm text-gray-500">margin</div>
+              <div class="text-sm text-gray-500">{{ t("recipes.margin") }}</div>
             </div>
           </div>
 
           <!-- Ingredients Table -->
           <div class="mb-6">
             <h4 class="font-semibold text-gray-900 dark:text-white mb-3">
-              {{ t('recipes.ingredients') }}
+              {{ t("recipes.ingredients") }}
             </h4>
             <table class="w-full text-sm">
               <thead>
                 <tr class="border-b dark:border-gray-700">
-                  <th class="text-left py-2">{{ t('recipes.ingredient') }}</th>
-                  <th class="text-right py-2">{{ t('recipes.quantity') }}</th>
-                  <th class="text-right py-2">Cost</th>
+                  <th class="text-left py-2">{{ t("recipes.ingredient") }}</th>
+                  <th class="text-right py-2">{{ t("recipes.quantity") }}</th>
+                  <th class="text-right py-2">{{ t("recipes.cost") }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1033,13 +1226,23 @@ watch([searchQuery, selectedDifficulty], () => {
                   :key="ing.ingredientId"
                   class="border-b dark:border-gray-700"
                 >
-                  <td class="py-2">{{ getIngredientName(ing.ingredientId) }}</td>
-                  <td class="text-right py-2">{{ ing.quantity }} {{ ing.unit }}</td>
-                  <td class="text-right py-2">{{ formatCurrency(ing.cost) }}</td>
+                  <td class="py-2">
+                    {{ getIngredientName(ing.ingredientId) }}
+                  </td>
+                  <td class="text-right py-2">
+                    {{ ing.quantity }} {{ ing.unit }}
+                  </td>
+                  <td class="text-right py-2">
+                    {{ formatCurrency(ing.cost) }}
+                  </td>
                 </tr>
                 <tr class="font-bold bg-gray-50 dark:bg-gray-900">
-                  <td class="py-2" colspan="2">Total Ingredient Cost</td>
-                  <td class="text-right py-2">{{ formatCurrency(selectedRecipe.totalIngredientCost) }}</td>
+                  <td class="py-2" colspan="2">
+                    {{ t("recipes.totalIngredientCost") }}
+                  </td>
+                  <td class="text-right py-2">
+                    {{ formatCurrency(selectedRecipe.totalIngredientCost) }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -1048,28 +1251,41 @@ watch([searchQuery, selectedDifficulty], () => {
           <!-- Cost Breakdown -->
           <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
             <h4 class="font-semibold text-gray-900 dark:text-white mb-3">
-              {{ t('recipes.costBreakdown') }}
+              {{ t("recipes.costBreakdown") }}
             </h4>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
-                <span>Ingredient Cost per Serving:</span>
+                <span>{{ t("recipes.ingredientCostPerServing") }}</span>
                 <span>{{ formatCurrency(selectedRecipe.costPerServing) }}</span>
               </div>
               <div class="flex justify-between">
-                <span>Overhead per Serving:</span>
-                <span>{{ formatCurrency(selectedRecipe.overheadCost / selectedRecipe.servings) }}</span>
+                <span>{{ t("recipes.overheadPerServing") }}</span>
+                <span>{{
+                  formatCurrency(
+                    selectedRecipe.overheadCost / selectedRecipe.servings
+                  )
+                }}</span>
               </div>
               <div class="flex justify-between font-medium border-t pt-2">
-                <span>Total Cost per Serving:</span>
-                <span>{{ formatCurrency(selectedRecipe.totalCostPerServing) }}</span>
+                <span>{{ t("recipes.totalCostPerServing") }}</span>
+                <span>{{
+                  formatCurrency(selectedRecipe.totalCostPerServing)
+                }}</span>
               </div>
               <div class="flex justify-between">
-                <span>{{ t('recipes.sellingPrice') }}:</span>
+                <span>{{ t("recipes.sellingPrice") }}:</span>
                 <span>{{ formatCurrency(selectedRecipe.sellingPrice) }}</span>
               </div>
-              <div class="flex justify-between font-bold text-green-600 dark:text-green-400 text-base">
-                <span>{{ t('recipes.profit') }} per Serving:</span>
-                <span>{{ formatCurrency(selectedRecipe.profitPerServing) }}</span>
+              <div
+                class="flex justify-between font-bold text-green-600 dark:text-green-400 text-base"
+              >
+                <span
+                  >{{ t("recipes.profit") }}
+                  {{ t("common.perServing") || "per Serving" }}:</span
+                >
+                <span>{{
+                  formatCurrency(selectedRecipe.profitPerServing)
+                }}</span>
               </div>
             </div>
           </div>
@@ -1080,8 +1296,11 @@ watch([searchQuery, selectedDifficulty], () => {
                 color="neutral"
                 variant="ghost"
                 icon="i-heroicons-pencil"
-                label="Edit Recipe"
-                @click="showDetailsModal = false; openRecipeModal(selectedRecipe)"
+                :label="t('recipes.editRecipeButton')"
+                @click="
+                  showDetailsModal = false;
+                  openRecipeModal(selectedRecipe);
+                "
               />
               <UButton
                 color="neutral"
@@ -1096,22 +1315,28 @@ watch([searchQuery, selectedDifficulty], () => {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="showDeleteModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
+    <UModal
+      v-model:open="showDeleteModal"
+      :overlay="true"
+      :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }"
+    >
       <template #content>
         <UCard>
           <template #header>
-            <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+            <h3
+              class="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2"
+            >
               <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
-              {{ t('common.confirmDelete') }}
+              {{ t("common.confirmDelete") }}
             </h3>
           </template>
 
           <p class="text-gray-600 dark:text-gray-400">
-            {{ t('common.deleteConfirmMessage') }}
+            {{ t("common.deleteConfirmMessage") }}
             <strong class="text-gray-900 dark:text-white">
-              "{{ recipeToDelete?.name }}"
-            </strong>?
-            {{ t('common.cannotUndo') }}
+              "{{ recipeToDelete?.name }}" </strong
+            >?
+            {{ t("common.cannotUndo") }}
           </p>
 
           <template #footer>

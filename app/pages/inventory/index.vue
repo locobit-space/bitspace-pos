@@ -1,13 +1,13 @@
 <!-- pages/inventory/index.vue -->
 <script setup lang="ts">
-import type { SupplierFormData } from '~/components/inventory/SupplierModal.vue';
-import type { POFormData } from '~/components/inventory/PurchaseOrderModal.vue';
-import type { AddStockFormData } from '~/components/inventory/AddStockModal.vue';
-import type { StockLot } from '~/types';
+import type { SupplierFormData } from "~/components/inventory/SupplierModal.vue";
+import type { POFormData } from "~/components/inventory/PurchaseOrderModal.vue";
+import type { AddStockFormData } from "~/components/inventory/AddStockModal.vue";
+import type { StockLot } from "~/types";
 
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth'],
+  layout: "default",
+  middleware: ["auth"],
 });
 
 const { t } = useI18n();
@@ -38,32 +38,36 @@ const stockLotSummary = computed(() => stockLots.summary.value);
 const expiryAlertCount = computed(() => stockLots.expiryAlerts.value.length);
 
 // Filters
-const searchQuery = ref('');
-const selectedBranch = ref('all');
-const selectedStatus = ref('all');
-const activeTab = ref('inventory');
+const searchQuery = ref("");
+const selectedBranch = ref("all");
+const selectedStatus = ref("all");
+const activeTab = ref("inventory");
 
 // Dynamic branches from DB (with "All Branches" option)
 const branches = computed(() => [
-  { id: 'all', name: t('common.allBranches') || 'All Branches' },
-  ...inventory.branches.value.map(b => ({ id: b.id, name: b.name })),
+  { id: "all", name: t("common.allBranches") || "All Branches" },
+  ...inventory.branches.value.map((b) => ({ id: b.id, name: b.name })),
 ]);
 
 const statusOptions = computed(() => [
-  { value: 'all', label: t('common.all') || 'All' },
-  { value: 'in-stock', label: t('inventory.inStock') || 'In Stock' },
-  { value: 'low-stock', label: t('inventory.lowStock') || 'Low Stock' },
-  { value: 'out-of-stock', label: t('inventory.outOfStock') || 'Out of Stock' },
+  { value: "all", label: t("common.all") || "All" },
+  { value: "in-stock", label: t("inventory.inStock") || "In Stock" },
+  { value: "low-stock", label: t("inventory.lowStock") || "Low Stock" },
+  { value: "out-of-stock", label: t("inventory.outOfStock") || "Out of Stock" },
 ]);
 
 // Computed
 const filteredInventory = computed(() => {
   return inventoryItems.value.filter((item) => {
     const matchesSearch =
-      item.productName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      item.productName
+        .toLowerCase()
+        .includes(searchQuery.value.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const matchesBranch = selectedBranch.value === 'all' || item.branchId === selectedBranch.value;
-    const matchesStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value;
+    const matchesBranch =
+      selectedBranch.value === "all" || item.branchId === selectedBranch.value;
+    const matchesStatus =
+      selectedStatus.value === "all" || item.status === selectedStatus.value;
     return matchesSearch && matchesBranch && matchesStatus;
   });
 });
@@ -81,28 +85,30 @@ const showPurchaseOrderModal = ref(false);
 const showReceiveStockModal = ref(false);
 
 // Type from composable
-type InventoryItem = typeof inventoryItems.value[number];
+type InventoryItem = (typeof inventoryItems.value)[number];
 const selectedItem = ref<InventoryItem | null>(null);
 const selectedLot = ref<StockLot | null>(null);
 const adjusting = ref(false);
-const editingSupplier = ref<typeof suppliers.value[number] | null>(null);
+const editingSupplier = ref<(typeof suppliers.value)[number] | null>(null);
 
 const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK',
+  return new Intl.NumberFormat("lo-LA", {
+    style: "currency",
+    currency: "LAK",
     minimumFractionDigits: 0,
   }).format(amount);
 };
 
-const getStatusColor = (status: string): 'green' | 'yellow' | 'red' | 'blue' | 'gray' => {
-  const colors: Record<string, 'green' | 'yellow' | 'red' | 'blue' | 'gray'> = {
-    'in-stock': 'green',
-    'low-stock': 'yellow',
-    'out-of-stock': 'red',
-    'overstocked': 'blue',
+const getStatusColor = (
+  status: string
+): "green" | "yellow" | "red" | "blue" | "gray" => {
+  const colors: Record<string, "green" | "yellow" | "red" | "blue" | "gray"> = {
+    "in-stock": "green",
+    "low-stock": "yellow",
+    "out-of-stock": "red",
+    overstocked: "blue",
   };
-  return colors[status] || 'gray';
+  return colors[status] || "gray";
 };
 
 const openAdjustModal = (item: InventoryItem) => {
@@ -119,21 +125,31 @@ const openTransferModal = (item: InventoryItem) => {
 // 📝 MODAL HANDLERS
 // ============================================
 
-const handleAdjustment = async (data: { quantity: number; type: 'in' | 'out' | 'adjustment'; reason: string }) => {
+const handleAdjustment = async (data: {
+  quantity: number;
+  type: "in" | "out" | "adjustment";
+  reason: string;
+}) => {
   if (!selectedItem.value) return;
-  
+
   adjusting.value = true;
   try {
     let adjustment = data.quantity;
-    let reason: 'purchase' | 'sale' | 'adjustment' | 'waste' | 'return' | 'count' = 'adjustment';
-    
-    if (data.type === 'in') {
-      reason = 'purchase';
-    } else if (data.type === 'out') {
+    let reason:
+      | "purchase"
+      | "sale"
+      | "adjustment"
+      | "waste"
+      | "return"
+      | "count" = "adjustment";
+
+    if (data.type === "in") {
+      reason = "purchase";
+    } else if (data.type === "out") {
       adjustment = -adjustment;
-      reason = 'sale';
+      reason = "sale";
     }
-    
+
     const success = await inventory.adjustStock(
       selectedItem.value.productId,
       selectedItem.value.branchId,
@@ -141,21 +157,21 @@ const handleAdjustment = async (data: { quantity: number; type: 'in' | 'out' | '
       reason,
       data.reason
     );
-    
+
     if (success) {
       toast.add({
-        title: t('inventory.stockAdjusted') || 'Stock Adjusted',
+        title: t("inventory.stockAdjusted") || "Stock Adjusted",
         description: `${selectedItem.value.productName} stock updated`,
-        icon: 'i-heroicons-check-circle',
-        color: 'green',
+        icon: "i-heroicons-check-circle",
+        color: "green",
       });
       showAdjustModal.value = false;
     } else {
       toast.add({
-        title: t('common.error') || 'Error',
-        description: inventory.error.value || 'Failed to adjust stock',
-        icon: 'i-heroicons-exclamation-circle',
-        color: 'red',
+        title: t("common.error") || "Error",
+        description: inventory.error.value || "Failed to adjust stock",
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
       });
     }
   } finally {
@@ -163,9 +179,13 @@ const handleAdjustment = async (data: { quantity: number; type: 'in' | 'out' | '
   }
 };
 
-const handleTransfer = async (data: { quantity: number; toBranch: string; notes: string }) => {
+const handleTransfer = async (data: {
+  quantity: number;
+  toBranch: string;
+  notes: string;
+}) => {
   if (!selectedItem.value) return;
-  
+
   adjusting.value = true;
   try {
     const success = await inventory.transferStock(
@@ -175,21 +195,21 @@ const handleTransfer = async (data: { quantity: number; toBranch: string; notes:
       data.quantity,
       data.notes
     );
-    
+
     if (success) {
       toast.add({
-        title: t('inventory.stockTransferred') || 'Stock Transferred',
+        title: t("inventory.stockTransferred") || "Stock Transferred",
         description: `${data.quantity} units transferred`,
-        icon: 'i-heroicons-check-circle',
-        color: 'green',
+        icon: "i-heroicons-check-circle",
+        color: "green",
       });
       showTransferModal.value = false;
     } else {
       toast.add({
-        title: t('common.error') || 'Error',
-        description: inventory.error.value || 'Failed to transfer stock',
-        icon: 'i-heroicons-exclamation-circle',
-        color: 'red',
+        title: t("common.error") || "Error",
+        description: inventory.error.value || "Failed to transfer stock",
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
       });
     }
   } finally {
@@ -200,10 +220,12 @@ const handleTransfer = async (data: { quantity: number; toBranch: string; notes:
 const handleAddStock = async (data: AddStockFormData) => {
   if (!data.productId || data.quantity <= 0) {
     toast.add({
-      title: t('common.error') || 'Error',
-      description: t('inventory.selectProductAndQuantity') || 'Please select a product and enter quantity',
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red',
+      title: t("common.error") || "Error",
+      description:
+        t("inventory.selectProductAndQuantity") ||
+        "Please select a product and enter quantity",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
     });
     return;
   }
@@ -221,36 +243,38 @@ const handleAddStock = async (data: AddStockFormData) => {
     if (success) {
       // If lot tracking info provided, create a stock lot
       if (data.lotNumber || data.expiryDate) {
-        const product = inventoryItems.value.find(item => item.productId === data.productId);
-        
+        const product = inventoryItems.value.find(
+          (item) => item.productId === data.productId
+        );
+
         await stockLots.createStockLot({
           productId: data.productId,
-          branchId: data.branchId || 'main',
+          branchId: data.branchId || "main",
           lotNumber: data.lotNumber || `LOT-${Date.now()}`,
           quantity: data.quantity,
           costPrice: data.unitCost || product?.costPrice || 0,
           expiryDate: data.expiryDate,
           manufacturingDate: data.manufacturingDate,
           notes: data.notes,
-          createdBy: 'system', // TODO: Get current user
+          createdBy: "system", // TODO: Get current user
         });
       }
 
       toast.add({
-        title: t('inventory.stockAdded') || 'Stock Added',
-        description: data.lotNumber 
+        title: t("inventory.stockAdded") || "Stock Added",
+        description: data.lotNumber
           ? `Added ${data.quantity} units (Lot: ${data.lotNumber})`
           : `Added ${data.quantity} units`,
-        icon: 'i-heroicons-check-circle',
-        color: 'green',
+        icon: "i-heroicons-check-circle",
+        color: "green",
       });
       showAddStockModal.value = false;
     } else {
       toast.add({
-        title: t('common.error') || 'Error',
-        description: inventory.error.value || 'Failed to add stock',
-        icon: 'i-heroicons-exclamation-circle',
-        color: 'red',
+        title: t("common.error") || "Error",
+        description: inventory.error.value || "Failed to add stock",
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
       });
     }
   } finally {
@@ -261,10 +285,11 @@ const handleAddStock = async (data: AddStockFormData) => {
 const handleSaveSupplier = async (data: SupplierFormData, isEdit: boolean) => {
   if (!data.name) {
     toast.add({
-      title: t('common.error') || 'Error',
-      description: t('inventory.supplierNameRequired') || 'Supplier name is required',
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red',
+      title: t("common.error") || "Error",
+      description:
+        t("inventory.supplierNameRequired") || "Supplier name is required",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
     });
     return;
   }
@@ -275,13 +300,13 @@ const handleSaveSupplier = async (data: SupplierFormData, isEdit: boolean) => {
     if (isEdit && editingSupplier.value) {
       success = await inventory.updateSupplier(editingSupplier.value.id, {
         ...data,
-        status: 'active' as const,
+        status: "active" as const,
         productIds: editingSupplier.value.productIds,
       });
     } else {
       const result = await inventory.addSupplier({
         ...data,
-        status: 'active' as const,
+        status: "active" as const,
         productIds: [],
       });
       success = !!result;
@@ -289,18 +314,20 @@ const handleSaveSupplier = async (data: SupplierFormData, isEdit: boolean) => {
 
     if (success) {
       toast.add({
-        title: isEdit ? t('inventory.supplierUpdated') : t('inventory.supplierAdded'),
+        title: isEdit
+          ? t("inventory.supplierUpdated")
+          : t("inventory.supplierAdded"),
         description: data.name,
-        icon: 'i-heroicons-check-circle',
-        color: 'green',
+        icon: "i-heroicons-check-circle",
+        color: "green",
       });
       showSupplierModal.value = false;
     } else {
       toast.add({
-        title: t('common.error') || 'Error',
-        description: inventory.error.value || 'Failed to save supplier',
-        icon: 'i-heroicons-exclamation-circle',
-        color: 'red',
+        title: t("common.error") || "Error",
+        description: inventory.error.value || "Failed to save supplier",
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
       });
     }
   } finally {
@@ -311,21 +338,21 @@ const handleSaveSupplier = async (data: SupplierFormData, isEdit: boolean) => {
 const handleSavePurchaseOrder = async (data: POFormData) => {
   if (!data.supplierId || data.items.length === 0) {
     toast.add({
-      title: t('common.error'),
-      description: t('inventory.poRequiredFields'),
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red',
+      title: t("common.error"),
+      description: t("inventory.poRequiredFields"),
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
     });
     return;
   }
 
   adjusting.value = true;
   try {
-    const items = data.items.map(item => ({
+    const items = data.items.map((item) => ({
       ...item,
       receivedQty: 0,
     }));
-    
+
     const result = await inventory.createPurchaseOrder(
       data.supplierId,
       data.branchId,
@@ -335,10 +362,10 @@ const handleSavePurchaseOrder = async (data: POFormData) => {
 
     if (result) {
       toast.add({
-        title: t('inventory.poCreated'),
+        title: t("inventory.poCreated"),
         description: `PO#${result.id}`,
-        icon: 'i-heroicons-check-circle',
-        color: 'green',
+        icon: "i-heroicons-check-circle",
+        color: "green",
       });
       showPurchaseOrderModal.value = false;
     }
@@ -351,20 +378,20 @@ const handleSavePurchaseOrder = async (data: POFormData) => {
 // 👥 SUPPLIER MANAGEMENT
 // ============================================
 
-const openSupplierModal = (supplier?: typeof suppliers.value[number]) => {
+const openSupplierModal = (supplier?: (typeof suppliers.value)[number]) => {
   editingSupplier.value = supplier || null;
   showSupplierModal.value = true;
 };
 
 const deleteSupplier = async (id: string) => {
-  if (!confirm(t('inventory.confirmDeleteSupplier'))) return;
-  
+  if (!confirm(t("inventory.confirmDeleteSupplier"))) return;
+
   const success = await inventory.deleteSupplier(id);
   if (success) {
     toast.add({
-      title: t('inventory.supplierDeleted'),
-      icon: 'i-heroicons-check-circle',
-      color: 'green',
+      title: t("inventory.supplierDeleted"),
+      icon: "i-heroicons-check-circle",
+      color: "green",
     });
   }
 };
@@ -373,26 +400,29 @@ const deleteSupplier = async (id: string) => {
 const exportInventory = async () => {
   try {
     const data = await inventory.exportInventory();
-    const blob = new Blob([data], { type: 'application/json' });
+    const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `inventory-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `inventory-export-${
+      new Date().toISOString().split("T")[0]
+    }.json`;
     a.click();
     URL.revokeObjectURL(url);
 
     toast.add({
-      title: t('common.exported') || 'Exported',
-      description: t('inventory.exportSuccess') || 'Inventory data exported successfully',
-      icon: 'i-heroicons-check-circle',
-      color: 'green',
+      title: t("common.exported") || "Exported",
+      description:
+        t("inventory.exportSuccess") || "Inventory data exported successfully",
+      icon: "i-heroicons-check-circle",
+      color: "green",
     });
   } catch {
     toast.add({
-      title: t('common.error') || 'Error',
-      description: 'Failed to export inventory',
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red',
+      title: t("common.error") || "Error",
+      description: "Failed to export inventory",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
     });
   }
 };
@@ -405,19 +435,20 @@ const handleReceiveStockSuccess = async (_receipt: unknown) => {
   // Refresh inventory data
   await inventory.init();
   await stockLots.loadStockLots();
-  
+
   toast.add({
-    title: t('inventory.stockReceived') || 'Stock Received',
-    description: t('inventory.stockLotsCreated') || 'Stock lots created successfully',
-    icon: 'i-heroicons-check-circle',
-    color: 'green',
+    title: t("inventory.stockReceived") || "Stock Received",
+    description:
+      t("inventory.stockLotsCreated") || "Stock lots created successfully",
+    icon: "i-heroicons-check-circle",
+    color: "green",
   });
 };
 
 const handleLotAdjust = (lot: StockLot) => {
   selectedLot.value = lot;
   // Find the inventory item for this product
-  const item = inventoryItems.value.find(i => i.productId === lot.productId);
+  const item = inventoryItems.value.find((i) => i.productId === lot.productId);
   if (item) {
     selectedItem.value = item;
     showAdjustModal.value = true;
@@ -427,35 +458,38 @@ const handleLotAdjust = (lot: StockLot) => {
 const handleLotMove = async (_lot: StockLot) => {
   // TODO: Implement position transfer modal
   toast.add({
-    title: t('common.info') || 'Info',
-    description: t('inventory.positionTransferComingSoon') || 'Position transfer coming soon',
-    icon: 'i-heroicons-information-circle',
-    color: 'blue',
+    title: t("common.info") || "Info",
+    description:
+      t("inventory.positionTransferComingSoon") ||
+      "Position transfer coming soon",
+    icon: "i-heroicons-information-circle",
+    color: "blue",
   });
 };
 
 const handleLotQuarantine = async (lot: StockLot) => {
   const confirmed = confirm(
-    lot.status === 'quarantine'
-      ? (t('inventory.confirmReleaseQuarantine') || 'Release this lot from quarantine?')
-      : (t('inventory.confirmQuarantine') || 'Quarantine this lot?')
+    lot.status === "quarantine"
+      ? t("inventory.confirmReleaseQuarantine") ||
+          "Release this lot from quarantine?"
+      : t("inventory.confirmQuarantine") || "Quarantine this lot?"
   );
-  
+
   if (!confirmed) return;
 
-  if (lot.status !== 'quarantine') {
+  if (lot.status !== "quarantine") {
     const success = await stockLots.quarantineLot(
       lot.id,
-      'Manual quarantine',
-      'staff_1' // TODO: Get from auth
+      "Manual quarantine",
+      "staff_1" // TODO: Get from auth
     );
-    
+
     if (success) {
       toast.add({
-        title: t('inventory.lotQuarantined') || 'Lot Quarantined',
+        title: t("inventory.lotQuarantined") || "Lot Quarantined",
         description: lot.lotNumber,
-        icon: 'i-heroicons-shield-exclamation',
-        color: 'amber',
+        icon: "i-heroicons-shield-exclamation",
+        color: "amber",
       });
     }
   }
@@ -464,7 +498,7 @@ const handleLotQuarantine = async (lot: StockLot) => {
 const handleLotView = (lot: StockLot) => {
   selectedLot.value = lot;
   // TODO: Open lot details modal
-  console.log('View lot:', lot);
+  console.log("View lot:", lot);
 };
 
 // Initialize inventory on mount
@@ -506,8 +540,16 @@ onMounted(async () => {
           variant="link"
           :items="[
             { label: t('inventory.inventory'), value: 'inventory' },
-            { label: t('inventory.stockLots') || 'Stock Lots', value: 'lots', icon: 'i-heroicons-archive-box' },
-            { label: t('inventory.expiryAlerts') || 'Expiry', value: 'expiry', icon: 'i-heroicons-clock' },
+            {
+              label: t('inventory.stockLots'),
+              value: 'lots',
+              icon: 'i-heroicons-archive-box',
+            },
+            {
+              label: t('inventory.expiryAlerts'),
+              value: 'expiry',
+              icon: 'i-heroicons-clock',
+            },
             { label: t('inventory.movements'), value: 'movements' },
             { label: t('inventory.suppliers'), value: 'suppliers' },
             { label: t('inventory.purchaseOrders'), value: 'purchaseOrders' },
@@ -517,29 +559,27 @@ onMounted(async () => {
     </CommonPageHeader>
 
     <!-- Expiry Alert Banner (shown when there are critical alerts) -->
-    <div 
+    <div
       v-if="expiryAlertCount > 0 && activeTab !== 'expiry'"
       class="mx-4 p-4 bg-linear-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between"
     >
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+        <div
+          class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center"
+        >
           <span class="text-xl">⚠️</span>
         </div>
         <div>
           <p class="font-medium text-amber-700 dark:text-amber-400">
-            {{ expiryAlertCount }} {{ t('inventory.stockExpiryWarning') || 'items expiring soon' }}
+            {{ expiryAlertCount }} {{ t("inventory.stockExpiryWarning") }}
           </p>
           <p class="text-sm text-amber-600/75 dark:text-amber-500/75">
-            {{ t('inventory.reviewExpiryAlerts') || 'Review expiry alerts to prevent waste' }}
+            {{ t("inventory.reviewExpiryAlerts") }}
           </p>
         </div>
       </div>
-      <UButton
-        color="amber"
-        variant="soft"
-        @click="activeTab = 'expiry'"
-      >
-        {{ t('inventory.viewAlerts') || 'View Alerts' }}
+      <UButton color="amber" variant="soft" @click="activeTab = 'expiry'">
+        {{ t("inventory.viewAlerts") }}
       </UButton>
     </div>
 
@@ -566,14 +606,14 @@ onMounted(async () => {
       <CommonStatCard
         icon="i-heroicons-clock"
         icon-color="yellow"
-        :label="t('inventory.expiringStock') || 'Expiring'"
+        :label="t('inventory.expiringStock')"
         :value="stockLotSummary.expiringCount"
       />
       <CommonStatCard
         icon="i-heroicons-truck"
         icon-color="purple"
         :label="t('inventory.activeSuppliers')"
-        :value="suppliers.filter(s => s.status === 'active').length"
+        :value="suppliers.filter((s) => s.status === 'active').length"
       />
     </div>
 
@@ -593,14 +633,30 @@ onMounted(async () => {
         <table class="w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-gray-800">
-              <th class="text-left py-3 px-4 font-medium">{{ t('products.name') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('products.sku') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('common.branch') }}</th>
-              <th class="text-center py-3 px-4 font-medium">{{ t('inventory.currentStock') }}</th>
-              <th class="text-center py-3 px-4 font-medium">{{ t('inventory.minMax') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('common.status') }}</th>
-              <th class="text-right py-3 px-4 font-medium">{{ t('inventory.value') }}</th>
-              <th class="text-right py-3 px-4 font-medium">{{ t('common.actions') }}</th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("products.name") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("products.sku") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("common.branch") }}
+              </th>
+              <th class="text-center py-3 px-4 font-medium">
+                {{ t("inventory.currentStock") }}
+              </th>
+              <th class="text-center py-3 px-4 font-medium">
+                {{ t("inventory.minMax") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("common.status") }}
+              </th>
+              <th class="text-right py-3 px-4 font-medium">
+                {{ t("inventory.value") }}
+              </th>
+              <th class="text-right py-3 px-4 font-medium">
+                {{ t("common.actions") }}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -611,14 +667,21 @@ onMounted(async () => {
             >
               <td class="py-3 px-4">
                 <div>
-                  <p class="font-medium text-gray-900 dark:text-white">{{ item.productName }}</p>
+                  <p class="font-medium text-gray-900 dark:text-white">
+                    {{ item.productName }}
+                  </p>
                   <p class="text-xs text-gray-500">{{ item.categoryName }}</p>
                 </div>
               </td>
               <td class="py-3 px-4">
-                <code class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{ item.sku }}</code>
+                <code
+                  class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+                  >{{ item.sku }}</code
+                >
               </td>
-              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{{ item.branchName }}</td>
+              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                {{ item.branchName }}
+              </td>
               <td class="py-3 px-4 text-center">
                 <span
                   class="text-lg font-bold"
@@ -630,15 +693,22 @@ onMounted(async () => {
                 >
                   {{ item.currentStock }}
                 </span>
-                <span class="text-xs text-gray-500 ml-1">{{ item.unitSymbol }}</span>
+                <span class="text-xs text-gray-500 ml-1">{{
+                  item.unitSymbol
+                }}</span>
               </td>
               <td class="py-3 px-4 text-center text-sm text-gray-500">
                 {{ item.minStock }} / {{ item.maxStock }}
               </td>
               <td class="py-3 px-4">
-                <UBadge :color="getStatusColor(item.status)" :label="t(`inventory.${item.status.replace('-', '')}`)" />
+                <UBadge
+                  :color="getStatusColor(item.status)"
+                  :label="t(`inventory.${item.status.replace('-', '')}`)"
+                />
               </td>
-              <td class="py-3 px-4 text-right font-medium">{{ formatCurrency(item.value) }}</td>
+              <td class="py-3 px-4 text-right font-medium">
+                {{ formatCurrency(item.value) }}
+              </td>
               <td class="py-3 px-4">
                 <div class="flex justify-end gap-1">
                   <UButton
@@ -671,13 +741,27 @@ onMounted(async () => {
         <table class="w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-gray-800">
-              <th class="text-left py-3 px-4 font-medium">{{ t('common.date') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('products.product') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('inventory.movementType') }}</th>
-              <th class="text-center py-3 px-4 font-medium">{{ t('inventory.quantity') }}</th>
-              <th class="text-center py-3 px-4 font-medium">{{ t('inventory.stockChange') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('inventory.reason') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('common.createdBy') }}</th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("common.date") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("products.product") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("inventory.movementType") }}
+              </th>
+              <th class="text-center py-3 px-4 font-medium">
+                {{ t("inventory.quantity") }}
+              </th>
+              <th class="text-center py-3 px-4 font-medium">
+                {{ t("inventory.stockChange") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("inventory.reason") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("common.createdBy") }}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -692,18 +776,33 @@ onMounted(async () => {
               <td class="py-3 px-4 font-medium">{{ movement.productName }}</td>
               <td class="py-3 px-4">
                 <UBadge
-                  :color="movement.type === 'in' ? 'green' : movement.type === 'out' ? 'red' : 'blue'"
+                  :color="
+                    movement.type === 'in'
+                      ? 'green'
+                      : movement.type === 'out'
+                      ? 'red'
+                      : 'blue'
+                  "
                   :label="t(`inventory.${movement.type}`)"
                 />
               </td>
-              <td class="py-3 px-4 text-center font-bold" :class="movement.type === 'in' ? 'text-green-500' : 'text-red-500'">
-                {{ movement.type === 'in' ? '+' : '-' }}{{ movement.quantity }}
+              <td
+                class="py-3 px-4 text-center font-bold"
+                :class="
+                  movement.type === 'in' ? 'text-green-500' : 'text-red-500'
+                "
+              >
+                {{ movement.type === "in" ? "+" : "-" }}{{ movement.quantity }}
               </td>
               <td class="py-3 px-4 text-center text-sm">
                 {{ movement.previousStock }} → {{ movement.newStock }}
               </td>
-              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{{ movement.reason }}</td>
-              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{{ movement.createdBy }}</td>
+              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                {{ movement.reason }}
+              </td>
+              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                {{ movement.createdBy }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -713,46 +812,101 @@ onMounted(async () => {
     <!-- Suppliers Tab -->
     <template v-if="activeTab === 'suppliers'">
       <div class="px-4 mb-4 flex gap-2">
-        <UButton color="primary" icon="i-heroicons-plus" :label="t('inventory.addSupplier')" @click="openSupplierModal()" />
-        <UButton color="gray" variant="outline" icon="i-heroicons-arrow-path" :label="t('common.sync')" @click="inventory.syncPendingData()" />
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          :label="t('inventory.addSupplier')"
+          @click="openSupplierModal()"
+        />
+        <UButton
+          color="gray"
+          variant="outline"
+          icon="i-heroicons-arrow-path"
+          :label="t('common.sync')"
+          @click="inventory.syncPendingData()"
+        />
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
         <UCard v-for="supplier in suppliers" :key="supplier.id">
           <div class="flex items-start justify-between mb-4">
             <div>
-              <h3 class="font-bold text-gray-900 dark:text-white">{{ supplier.name }}</h3>
+              <h3 class="font-bold text-gray-900 dark:text-white">
+                {{ supplier.name }}
+              </h3>
               <p class="text-sm text-gray-500">{{ supplier.contactPerson }}</p>
             </div>
             <div class="flex items-center gap-2">
-              <UBadge v-if="!supplier.synced" color="yellow" label="Pending Sync" size="xs" />
-              <UBadge :color="supplier.status === 'active' ? 'green' : 'gray'" :label="t(`common.${supplier.status}`)" />
+              <UBadge
+                v-if="!supplier.synced"
+                color="yellow"
+                :label="t('inventory.pendingSync')"
+                size="xs"
+              />
+              <UBadge
+                :color="supplier.status === 'active' ? 'green' : 'gray'"
+                :label="t(`common.${supplier.status}`)"
+              />
             </div>
           </div>
 
           <div class="space-y-2 text-sm">
-            <div v-if="supplier.email" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+            <div
+              v-if="supplier.email"
+              class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
+            >
               <Icon name="i-heroicons-envelope" class="w-4 h-4" />
               {{ supplier.email }}
             </div>
-            <div v-if="supplier.phone" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+            <div
+              v-if="supplier.phone"
+              class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
+            >
               <Icon name="i-heroicons-phone" class="w-4 h-4" />
               {{ supplier.phone }}
             </div>
-            <div v-if="supplier.address" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+            <div
+              v-if="supplier.address"
+              class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
+            >
               <Icon name="i-heroicons-map-pin" class="w-4 h-4" />
               {{ supplier.address }}
             </div>
           </div>
 
-          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <div
+            class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center"
+          >
             <span class="text-xs text-gray-500">
-              {{ t('inventory.lastOrder') }}: {{ supplier.lastOrderDate ? new Date(supplier.lastOrderDate).toLocaleDateString() : '-' }}
+              {{ t("inventory.lastOrder") }}:
+              {{
+                supplier.lastOrderDate
+                  ? new Date(supplier.lastOrderDate).toLocaleDateString()
+                  : "-"
+              }}
             </span>
             <div class="flex gap-1">
-              <UButton color="gray" variant="ghost" size="xs" icon="i-heroicons-pencil" @click="openSupplierModal(supplier)" />
-              <UButton color="red" variant="ghost" size="xs" icon="i-heroicons-trash" @click="deleteSupplier(supplier.id)" />
-              <UButton color="primary" variant="ghost" size="xs" icon="i-heroicons-shopping-cart" @click="showPurchaseOrderModal = true" />
+              <UButton
+                color="gray"
+                variant="ghost"
+                size="xs"
+                icon="i-heroicons-pencil"
+                @click="openSupplierModal(supplier)"
+              />
+              <UButton
+                color="red"
+                variant="ghost"
+                size="xs"
+                icon="i-heroicons-trash"
+                @click="deleteSupplier(supplier.id)"
+              />
+              <UButton
+                color="primary"
+                variant="ghost"
+                size="xs"
+                icon="i-heroicons-shopping-cart"
+                @click="showPurchaseOrderModal = true"
+              />
             </div>
           </div>
         </UCard>
@@ -760,10 +914,13 @@ onMounted(async () => {
         <!-- Empty State -->
         <UCard v-if="suppliers.length === 0" class="col-span-full">
           <div class="text-center py-8">
-            <Icon name="i-heroicons-user-group" class="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <p class="text-gray-500">{{ t('inventory.noSuppliers') }}</p>
+            <Icon
+              name="i-heroicons-user-group"
+              class="w-12 h-12 mx-auto text-gray-400 mb-4"
+            />
+            <p class="text-gray-500">{{ t("inventory.noSuppliers") }}</p>
             <UButton color="primary" class="mt-4" @click="openSupplierModal()">
-              {{ t('inventory.addFirstSupplier') }}
+              {{ t("inventory.addFirstSupplier") }}
             </UButton>
           </div>
         </UCard>
@@ -773,20 +930,39 @@ onMounted(async () => {
     <!-- Purchase Orders Tab -->
     <template v-if="activeTab === 'purchaseOrders'">
       <div class="px-4 mb-4">
-        <UButton color="primary" icon="i-heroicons-plus" :label="t('inventory.createPO')" @click="showPurchaseOrderModal = true" />
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          :label="t('inventory.createPO')"
+          @click="showPurchaseOrderModal = true"
+        />
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-gray-800">
-              <th class="text-left py-3 px-4 font-medium">{{ t('inventory.poNumber') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('inventory.supplier') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('common.branch') }}</th>
-              <th class="text-center py-3 px-4 font-medium">{{ t('inventory.items') }}</th>
-              <th class="text-right py-3 px-4 font-medium">{{ t('common.total') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('common.status') }}</th>
-              <th class="text-left py-3 px-4 font-medium">{{ t('common.date') }}</th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("inventory.poNumber") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("inventory.supplier") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("common.branch") }}
+              </th>
+              <th class="text-center py-3 px-4 font-medium">
+                {{ t("inventory.items") }}
+              </th>
+              <th class="text-right py-3 px-4 font-medium">
+                {{ t("common.total") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("common.status") }}
+              </th>
+              <th class="text-left py-3 px-4 font-medium">
+                {{ t("common.date") }}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -796,16 +972,37 @@ onMounted(async () => {
               class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
               <td class="py-3 px-4">
-                <code class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{ po.id }}</code>
+                <code
+                  class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+                  >{{ po.id }}</code
+                >
               </td>
               <td class="py-3 px-4 font-medium">{{ po.supplierName }}</td>
-              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{{ po.branchName }}</td>
+              <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                {{ po.branchName }}
+              </td>
               <td class="py-3 px-4 text-center">{{ po.items.length }}</td>
-              <td class="py-3 px-4 text-right font-medium">{{ formatCurrency(po.total) }}</td>
+              <td class="py-3 px-4 text-right font-medium">
+                {{ formatCurrency(po.total) }}
+              </td>
               <td class="py-3 px-4">
-                <UBadge 
-                  :color="po.status === 'received' ? 'green' : po.status === 'cancelled' ? 'red' : po.status === 'partial' ? 'yellow' : 'blue'" 
-                  :label="t(`inventory.po${po.status.charAt(0).toUpperCase() + po.status.slice(1)}`)" 
+                <UBadge
+                  :color="
+                    po.status === 'received'
+                      ? 'green'
+                      : po.status === 'cancelled'
+                      ? 'red'
+                      : po.status === 'partial'
+                      ? 'yellow'
+                      : 'blue'
+                  "
+                  :label="
+                    t(
+                      `inventory.po${
+                        po.status.charAt(0).toUpperCase() + po.status.slice(1)
+                      }`
+                    )
+                  "
                 />
               </td>
               <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
@@ -817,8 +1014,11 @@ onMounted(async () => {
 
         <!-- Empty State -->
         <div v-if="purchaseOrders.length === 0" class="text-center py-12">
-          <Icon name="i-heroicons-document-text" class="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <p class="text-gray-500">{{ t('inventory.noPurchaseOrders') }}</p>
+          <Icon
+            name="i-heroicons-document-text"
+            class="w-12 h-12 mx-auto text-gray-400 mb-4"
+          />
+          <p class="text-gray-500">{{ t("inventory.noPurchaseOrders") }}</p>
         </div>
       </div>
     </template>
@@ -830,12 +1030,17 @@ onMounted(async () => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('inventory.stockLots') || 'Stock Lots' }}
+              {{ t("inventory.stockLots") }}
             </h3>
             <div class="flex items-center gap-2 text-sm text-gray-500">
-              <span>{{ stockLotSummary.totalLots }} {{ t('common.lots') || 'lots' }}</span>
+              <span
+                >{{ stockLotSummary.totalLots }} {{ t("common.lots") }}</span
+              >
               <span>•</span>
-              <span>{{ stockLotSummary.totalQuantity }} {{ t('common.units') || 'units' }}</span>
+              <span
+                >{{ stockLotSummary.totalQuantity }}
+                {{ t("common.units") }}</span
+              >
               <span>•</span>
               <span>{{ formatCurrency(stockLotSummary.totalValue) }}</span>
             </div>
@@ -846,7 +1051,7 @@ onMounted(async () => {
             icon="i-heroicons-plus"
             @click="showReceiveStockModal = true"
           >
-            {{ t('inventory.receiveStock') || 'Receive Stock' }}
+            {{ t("inventory.receiveStock") }}
           </UButton>
         </div>
 

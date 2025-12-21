@@ -1,7 +1,7 @@
 <!-- components/receipt/ReceiptActions.vue -->
 <!-- 🧾 Post-Payment Receipt Options -->
 <script setup lang="ts">
-import type { Order, PaymentMethod } from '~/types';
+import type { Order, PaymentMethod } from "~/types";
 
 const props = defineProps<{
   order: Order;
@@ -21,12 +21,12 @@ const { t } = useI18n();
 // State
 const showPreview = ref(false);
 const showQRModal = ref(false);
-const eBillUrl = ref('');
-const eBillQR = ref('');
+const eBillUrl = ref("");
+const eBillQR = ref("");
 const isPrinting = ref(false);
 const isSending = ref(false);
 const countdown = ref(10);
-const customerEmail = ref('');
+const customerEmail = ref("");
 const showEmailInput = ref(false);
 
 // Generate receipt from order
@@ -62,20 +62,22 @@ const stopCountdown = () => {
 const handlePrint = async () => {
   stopCountdown();
   isPrinting.value = true;
-  
+
   try {
     // Store receipt first for e-bill access
     receipt.storeEBill(currentReceipt.value);
-    
+
     // Try to print via browser
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (printWindow) {
-      printWindow.document.write(receipt.generateHtmlReceipt(currentReceipt.value));
+      printWindow.document.write(
+        receipt.generateHtmlReceipt(currentReceipt.value)
+      );
       printWindow.document.close();
       printWindow.print();
     }
   } catch (e) {
-    console.error('Print error:', e);
+    console.error("Print error:", e);
     // Fall back to preview
     showPreview.value = true;
   } finally {
@@ -86,13 +88,15 @@ const handlePrint = async () => {
 // Generate and show e-bill QR
 const handleEBill = () => {
   stopCountdown();
-  
+
   // Store receipt for e-bill access
   receipt.storeEBill(currentReceipt.value);
-  
+
   const url = receipt.generateEBillUrl(currentReceipt.value.id);
   eBillUrl.value = url;
-  eBillQR.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+  eBillQR.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+    url
+  )}`;
   showQRModal.value = true;
 };
 
@@ -111,24 +115,26 @@ const handleSendEmail = () => {
 
 const sendEmail = async () => {
   if (!customerEmail.value) return;
-  
+
   isSending.value = true;
-  
+
   try {
     // Store receipt first
     receipt.storeEBill(currentReceipt.value);
-    
+
     // Generate e-bill URL
     const url = receipt.generateEBillUrl(currentReceipt.value.id);
-    
+
     // In production, send via API
     // For now, open mailto
-    window.open(`mailto:${customerEmail.value}?subject=Receipt from BitSpace POS&body=View your receipt here: ${url}`);
-    
+    window.open(
+      `mailto:${customerEmail.value}?subject=Receipt from BitSpace POS&body=View your receipt here: ${url}`
+    );
+
     showEmailInput.value = false;
-    emit('done');
+    emit("done");
   } catch (e) {
-    console.error('Email error:', e);
+    console.error("Email error:", e);
   } finally {
     isSending.value = false;
   }
@@ -136,19 +142,25 @@ const sendEmail = async () => {
 
 // Skip receipt
 const handleSkip = () => {
-  emit('close');
-  emit('done');
+  emit("close");
+  emit("done");
 };
 
 // Format payment method display
 const paymentMethodDisplay = computed(() => {
   switch (props.paymentMethod) {
-    case 'lightning': return { icon: '⚡', name: 'Lightning' };
-    case 'cash': return { icon: '💵', name: 'Cash' };
-    case 'bank_transfer': return { icon: '🏦', name: 'Bank Transfer' };
-    case 'external': return { icon: '💳', name: 'Card/External' };
-    case 'qr_static': return { icon: '📱', name: 'Static QR' };
-    default: return { icon: '💰', name: 'Payment' };
+    case "lightning":
+      return { icon: "⚡", name: t("payment.methods.lightning") };
+    case "cash":
+      return { icon: "💵", name: t("payment.methods.cash") };
+    case "bank_transfer":
+      return { icon: "🏦", name: t("payment.methods.bankTransfer") };
+    case "external":
+      return { icon: "💳", name: t("receipt.cardExternal") };
+    case "qr_static":
+      return { icon: "📱", name: t("payment.methods.staticQR") };
+    default:
+      return { icon: "💰", name: t("payment.title") || "Payment" };
   }
 });
 </script>
@@ -159,18 +171,34 @@ const paymentMethodDisplay = computed(() => {
     <div class="mb-6">
       <!-- Animated Checkmark -->
       <div class="relative w-20 h-20 mx-auto mb-4">
-        <div class="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-        <div class="relative w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
-          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+        <div
+          class="absolute inset-0 bg-green-500/20 rounded-full animate-ping"
+        />
+        <div
+          class="relative w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30"
+        >
+          <svg
+            class="w-10 h-10 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="3"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
       </div>
-      
+
       <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-        {{ t('payment.success') || 'Payment Complete!' }}
+        {{ t("payment.success") }}
       </h2>
-      <p class="text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+      <p
+        class="text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2"
+      >
         <span>{{ paymentMethodDisplay.icon }}</span>
         <span>{{ paymentMethodDisplay.name }}</span>
       </p>
@@ -179,23 +207,30 @@ const paymentMethodDisplay = computed(() => {
     <!-- Order Summary -->
     <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-6">
       <div class="flex justify-between items-center mb-2">
-        <span class="text-gray-500 dark:text-gray-400 text-sm">{{ t('orders.orderId') || 'Order' }}</span>
-        <span class="font-mono text-sm text-gray-900 dark:text-white">{{ order.id }}</span>
+        <span class="text-gray-500 dark:text-gray-400 text-sm">{{
+          t("orders.orderId")
+        }}</span>
+        <span class="font-mono text-sm text-gray-900 dark:text-white">{{
+          order.id
+        }}</span>
       </div>
       <div class="text-3xl font-bold text-gray-900 dark:text-white">
-        {{ currency.format(order.total, order.currency || 'LAK') }}
+        {{ currency.format(order.total, order.currency || "LAK") }}
       </div>
-      <div v-if="order.totalSats" class="text-amber-600 dark:text-amber-400 text-sm mt-1">
-        ⚡ {{ currency.format(order.totalSats, 'SATS') }}
+      <div
+        v-if="order.totalSats"
+        class="text-amber-600 dark:text-amber-400 text-sm mt-1"
+      >
+        ⚡ {{ currency.format(order.totalSats, "SATS") }}
       </div>
     </div>
 
     <!-- Receipt Actions -->
     <div class="space-y-3 mb-6">
       <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-        🧾 {{ t('receipt.options') || 'Receipt Options' }}
+        🧾 {{ t("receipt.options") }}
       </h3>
-      
+
       <div class="grid grid-cols-2 gap-3">
         <!-- Print Receipt -->
         <button
@@ -207,13 +242,13 @@ const paymentMethodDisplay = computed(() => {
             🖨️
           </div>
           <div class="font-medium text-gray-900 dark:text-white text-sm">
-            {{ isPrinting ? 'Printing...' : t('receipt.print') || 'Print' }}
+            {{ isPrinting ? t("receipt.printing") : t("receipt.print") }}
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Thermal / Paper
+            {{ t("receipt.thermalPaper") }}
           </div>
         </button>
-        
+
         <!-- E-Bill QR -->
         <button
           class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all group"
@@ -223,13 +258,13 @@ const paymentMethodDisplay = computed(() => {
             📱
           </div>
           <div class="font-medium text-gray-900 dark:text-white text-sm">
-            {{ t('receipt.eBill') || 'E-Bill' }}
+            {{ t("receipt.eBill") }}
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Show QR to customer
+            {{ t("receipt.showQRToCustomer") }}
           </div>
         </button>
-        
+
         <!-- Send Email -->
         <button
           class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 transition-all group"
@@ -239,34 +274,42 @@ const paymentMethodDisplay = computed(() => {
             ✉️
           </div>
           <div class="font-medium text-gray-900 dark:text-white text-sm">
-            {{ t('receipt.sendEmail') || 'Email' }}
+            {{ t("receipt.sendEmail") }}
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Send to customer
+            {{ t("receipt.sendToCustomer") }}
           </div>
         </button>
-        
+
         <!-- Preview -->
         <button
           class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-all group"
-          @click="showPreview = true; stopCountdown()"
+          @click="
+            showPreview = true;
+            stopCountdown();
+          "
         >
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">
             👁️
           </div>
           <div class="font-medium text-gray-900 dark:text-white text-sm">
-            {{ t('receipt.preview') || 'Preview' }}
+            {{ t("receipt.preview") }}
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            View receipt
+            {{ t("receipt.viewReceipt") }}
           </div>
         </button>
       </div>
     </div>
 
     <!-- Email Input (when active) -->
-    <div v-if="showEmailInput" class="mb-6 p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/30">
-      <h4 class="font-medium text-gray-900 dark:text-white mb-3">Send Receipt to Email</h4>
+    <div
+      v-if="showEmailInput"
+      class="mb-6 p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/30"
+    >
+      <h4 class="font-medium text-gray-900 dark:text-white mb-3">
+        {{ t("receipt.sendReceiptToEmail") }}
+      </h4>
       <UInput
         v-model="customerEmail"
         type="email"
@@ -281,7 +324,7 @@ const paymentMethodDisplay = computed(() => {
           class="flex-1"
           @click="showEmailInput = false"
         >
-          {{ t('common.cancel') || 'Cancel' }}
+          {{ t("common.cancel") }}
         </UButton>
         <UButton
           color="green"
@@ -290,7 +333,7 @@ const paymentMethodDisplay = computed(() => {
           :disabled="!customerEmail"
           @click="sendEmail"
         >
-          {{ t('common.send') || 'Send' }}
+          {{ t("common.send") }}
         </UButton>
       </div>
     </div>
@@ -304,11 +347,15 @@ const paymentMethodDisplay = computed(() => {
         class="bg-gradient-to-r from-amber-500 to-orange-500"
         @click="handleSkip"
       >
-        {{ countdown > 0 ? `${t('receipt.newOrder') || 'New Order'} (${countdown}s)` : t('receipt.newOrder') || 'New Order' }}
+        {{
+          countdown > 0
+            ? `${t("receipt.newOrder")} (${countdown}s)`
+            : t("receipt.newOrder")
+        }}
       </UButton>
-      
+
       <p v-if="countdown > 0" class="text-xs text-gray-400">
-        Auto-continuing in {{ countdown }} seconds...
+        {{ t("receipt.autoContinuing", { seconds: countdown }) }}
       </p>
     </div>
 
@@ -317,12 +364,12 @@ const paymentMethodDisplay = computed(() => {
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 text-center">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
-            📱 Scan for E-Bill
+            📱 {{ t("receipt.scanForEBill") }}
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Customer can scan this QR to view their digital receipt
+            {{ t("receipt.scanDescription") }}
           </p>
-          
+
           <!-- QR Code -->
           <div class="bg-white p-4 rounded-xl inline-block shadow-lg mb-4">
             <img
@@ -330,17 +377,21 @@ const paymentMethodDisplay = computed(() => {
               :src="eBillQR"
               alt="E-Bill QR Code"
               class="w-48 h-48"
-            >
+            />
           </div>
-          
+
           <!-- URL Display -->
           <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">E-Bill Link:</p>
-            <p class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              {{ t("receipt.eBillLink") }}
+            </p>
+            <p
+              class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all"
+            >
               {{ eBillUrl }}
             </p>
           </div>
-          
+
           <div class="flex gap-2">
             <UButton
               color="neutral"
@@ -349,14 +400,14 @@ const paymentMethodDisplay = computed(() => {
               icon="i-heroicons-clipboard-document"
               @click="copyEBillLink"
             >
-              Copy Link
+              {{ t("common.copyLink") }}
             </UButton>
             <UButton
               color="primary"
               class="flex-1"
               @click="showQRModal = false"
             >
-              Done
+              {{ t("common.done") }}
             </UButton>
           </div>
         </div>

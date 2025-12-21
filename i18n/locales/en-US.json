@@ -1,4 +1,11 @@
 {
+  "app": {
+    "name": "BitSpace POS",
+    "tagline": "Lightning-powered Point of Sale",
+    "copyright": "BitSpace POS. Powered by ⚡ Lightning",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
   "pos": {
     "title": "BitSpace POS",
     "terminal": "POS Terminal",
@@ -76,7 +83,23 @@
     "print": "Print Receipt",
     "sendNostr": "Send via Nostr",
     "paymentProof": "Payment Proof",
-    "thankYou": "Thank you for your purchase!"
+    "thankYou": "Thank you for your purchase!",
+    "options": "Receipt Options",
+    "eBill": "E-Bill",
+    "sendEmail": "Email",
+    "preview": "Preview",
+    "newOrder": "New Order",
+    "printing": "Printing...",
+    "thermalPaper": "Thermal / Paper",
+    "showQRToCustomer": "Show QR to customer",
+    "sendToCustomer": "Send to customer",
+    "viewReceipt": "View receipt",
+    "sendReceiptToEmail": "Send Receipt to Email",
+    "autoContinuing": "Auto-continuing in {seconds} seconds...",
+    "scanForEBill": "Scan for E-Bill",
+    "scanDescription": "Customer can scan this QR to view their digital receipt",
+    "eBillLink": "E-Bill Link:",
+    "cardExternal": "Card/External"
   },
   "payment": {
     "selectMethod": "Select Payment Method",
@@ -579,7 +602,13 @@
       "inventory": "Inventory",
       "pricing": "Pricing",
       "sales": "Sales",
-      "variants": "Variants"
+      "variants": "Variants",
+      "savedAt": "Saved at",
+      "dataIntegrityHint": "Verify your data integrity with checksums"
+    },
+    "relays": {
+      "title": "Nostr Relays",
+      "subtitle": "Sync & connection"
     },
     "categories": {
       "title": "Categories",
@@ -854,7 +883,20 @@
     "reasonExpired": "Expired",
     "reasonLost": "Lost",
     "reasonAdjustment": "Adjustment",
-    "reasonTransfer": "Transfer"
+    "reasonTransfer": "Transfer",
+    "expiryAlerts": "Expiry",
+    "expiringStock": "Expiring",
+    "stockExpiryWarning": "items expiring soon",
+    "reviewExpiryAlerts": "Review expiry alerts to prevent waste",
+    "viewAlerts": "View Alerts",
+    "stockReceived": "Stock Received",
+    "stockLotsCreated": "Stock lots created successfully",
+    "positionTransferComingSoon": "Position transfer coming soon",
+    "confirmReleaseQuarantine": "Release this lot from quarantine?",
+    "confirmQuarantine": "Quarantine this lot?",
+    "lotQuarantined": "Lot Quarantined",
+    "receiveStock": "Receive Stock",
+    "pendingSync": "Pending Sync"
   },
   "recipes": {
     "title": "Recipes",
@@ -915,7 +957,52 @@
       "lowMargin": "Low Margin Recipes",
       "salesByRecipe": "Sales by Recipe",
       "profitTrend": "Profit Trend"
-    }
+    },
+    "stats": {
+      "totalRecipes": "Total Recipes",
+      "avgMargin": "Avg. Margin",
+      "highProfit": "High Profit (>50%)",
+      "lowMargin": "Low Margin (<30%)"
+    },
+    "tabs": {
+      "recipes": "Recipes",
+      "profitAnalysis": "Profit Analysis"
+    },
+    "servingUnits": {
+      "portion": "Portion",
+      "slice": "Slice",
+      "piece": "Piece",
+      "plate": "Plate",
+      "cup": "Cup",
+      "bowl": "Bowl"
+    },
+    "servingUnit": "Serving Unit",
+    "selectIngredient": "Select ingredient...",
+    "qty": "Qty",
+    "addIngredientHint": "Click 'Add Ingredient' to start building your recipe",
+    "createFirstRecipe": "Create your first recipe to start tracking costs",
+    "lowMarginRecipes": "Low Margin Recipes (< 30%)",
+    "topProfitableRecipes": "Top Profitable Recipes",
+    "healthyMargins": "All recipes have healthy profit margins!",
+    "cost": "Cost",
+    "price": "Price",
+    "suggested": "Suggested",
+    "profitPerServing": "Profit: {amount} per serving",
+    "totalCostLabel": "Total Cost:",
+    "costPerServingLabel": "Cost/Serving:",
+    "marginLabel": "Margin:",
+    "overheadCost": "Overhead Cost",
+    "suggestPriceTooltip": "Suggest price for 60% margin",
+    "prepCookTime": "Prep + Cook Time (min)",
+    "prep": "Prep",
+    "cook": "Cook",
+    "minutes": "minutes",
+    "margin": "margin",
+    "totalIngredientCost": "Total Ingredient Cost",
+    "ingredientCostPerServing": "Ingredient Cost per Serving:",
+    "overheadPerServing": "Overhead per Serving:",
+    "totalCostPerServing": "Total Cost per Serving:",
+    "editRecipeButton": "Edit Recipe"
   },
   "ingredients": {
     "title": "Ingredients",
@@ -1036,7 +1123,10 @@
   },
   "settings": {
     "title": "Settings",
+    "subtitle": "Configure your store settings",
     "description": "Configure your system preferences",
+    "sectionBusiness": "Business",
+    "sectionSystem": "System",
     "branch_selection": "Branch Selection",
     "select_branch": "Select a branch",
     "add_branch": "Add Branch",
@@ -1046,6 +1136,7 @@
     "save_all": "Save All",
     "categories": {
       "title": "Categories",
+      "subtitle": "Categories & units",
       "add": "Add Category",
       "edit": "Edit Category"
     },
@@ -1079,7 +1170,7 @@
     "receiptFooterPlaceholder": "Thank you for your business!",
     "general": {
       "title": "General Settings",
-      "subtitle": "Configure system preferences and company info",
+      "subtitle": "Store & branches",
       "description": "Configure your system preferences and company information",
       "tab": "General",
       "company_info": "Company Information",
@@ -1092,6 +1183,7 @@
     },
     "security": {
       "title": "Security Settings",
+      "subtitle": "Encryption keys",
       "description": "Manage encryption keys and security settings",
       "tab": "Security",
       "password_policy": "Password Policy",
@@ -1186,7 +1278,7 @@
     },
     "lightning": {
       "title": "Lightning Settings",
-      "subtitle": "Configure your Lightning Network payment settings",
+      "subtitle": "Bitcoin payments",
       "connectionStatus": "Connection Status",
       "connected": "Connected",
       "configured": "Configured",
@@ -1251,7 +1343,7 @@
     },
     "users": {
       "title": "User Management",
-      "subtitle": "Manage users and roles for your store",
+      "subtitle": "Staff & permissions",
       "currentUser": "Current User",
       "noPermission": "Permission Denied",
       "noPermissionDescription": "You don't have permission to manage users. Contact your store owner.",
@@ -1352,11 +1444,12 @@
     },
     "account": {
       "title": "Account Settings",
-      "subtitle": "Manage your profile and preferences",
+      "subtitle": "Profile & security",
       "description": "Manage your account settings and preferences"
     },
     "auditLog": {
       "title": "Audit Log",
+      "subtitle": "Activity logs",
       "description": "View all system activities and security events",
       "activityLog": "Activity Log",
       "filterByAction": "Filter by Action",
@@ -1399,6 +1492,7 @@
     },
     "backup": {
       "title": "Backup & Restore",
+      "subtitle": "Backup & restore",
       "description": "Manage your data backups and restore from previous saves",
       "backupStatus": "Backup Status",
       "synced": "Synced",
@@ -1455,6 +1549,7 @@
     },
     "tax": {
       "title": "Tax Configuration",
+      "subtitle": "Tax rates & rules",
       "description": "Configure tax rates and settings for your business",
       "totalRates": "Total Rates",
       "activeRates": "Active Rates",
@@ -1502,6 +1597,7 @@
     },
     "receipt": {
       "title": "Receipt Templates",
+      "subtitle": "Receipt templates",
       "description": "Customize your receipt layout and content",
       "printTest": "Print Test",
       "logo": {
@@ -1620,7 +1716,8 @@
       "createAccount": "Create Account",
       "creating": "Creating...",
       "hasAccount": "Already have an account?",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "connectExisting": "or connect existing"
     },
     "google": {
       "signIn": "Continue with Google",
@@ -1630,9 +1727,32 @@
       "signIn": "Sign in with Nostr",
       "signUp": "Sign up with Nostr",
       "connecting": "Connecting to extension...",
-      "description": "Use your Nostr key for passwordless login",
+      "description": "Decentralized, private, and secure.",
       "noExtension": "No Nostr extension detected",
-      "installInfo": "Install a NIP-07 extension like nos2x or Alby to use Nostr login"
+      "installInfo": "Install a NIP-07 extension like nos2x or Alby to use Nostr login",
+      "albyDetected": "Alby Detected",
+      "nos2xDetected": "nos2x Detected",
+      "extensionDetected": "Nostr Extension Detected",
+      "connectAlby": "Connect with Alby",
+      "connectNos2x": "Connect with nos2x",
+      "installAlby": "Install Alby",
+      "installNos2x": "Install nos2x",
+      "whyNostr": "Why Nostr?",
+      "benefit1": "No email or password required",
+      "benefit2": "You control your identity",
+      "benefit3": "Works with Lightning payments",
+      "benefit4": "Same key for loyalty rewards",
+      "manualNpub": "Enter npub manually",
+      "loginWithNsec": "Login with private key (nsec)",
+      "signInNpub": "Sign in with npub",
+      "signInNsec": "Sign in with Private Key",
+      "readOnlyWarning": "Read-only mode: Some features require extension signing",
+      "securityWarning": "Security Warning",
+      "nsecWarning": "Entering your private key here is less secure than using an extension. Only use this on trusted devices.",
+      "sessionStorageNote": "Your key will be stored in session storage and cleared when you close the browser.",
+      "createAccount": "Create Nostr Account",
+      "generateKeys": "Generate New Nostr Keys",
+      "noEmailRequired": "Generate a new identity - no email required"
     },
     "forgotPassword": {
       "title": "Forgot Password?",
@@ -1656,6 +1776,13 @@
       "weakPassword": "Password is too weak",
       "nostrFailed": "Failed to connect with Nostr",
       "generic": "Something went wrong. Please try again."
+    },
+    "password": {
+      "veryWeak": "Very Weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
     },
     "staffLogin": "Staff Login",
     "selectLoginMethod": "Select your login method",
@@ -1881,6 +2008,13 @@
     "hour": "hour",
     "hours": "hours",
     "total": "Total",
+    "perServing": "per Serving",
+    "lots": "lots",
+    "units": "units",
+    "info": "Info",
+    "done": "Done",
+    "send": "Send",
+    "copyLink": "Copy Link",
     "subtotal": "Subtotal",
     "tax": "Tax",
     "manage": "Manage",

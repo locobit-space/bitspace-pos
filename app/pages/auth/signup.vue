@@ -5,6 +5,12 @@ definePageMeta({
   layout: "blank",
 });
 
+const { t } = useI18n();
+
+useHead({
+  title: t("auth.signup.title") + " - Bitspace POS",
+});
+
 const auth = useAuth();
 const router = useRouter();
 
@@ -33,7 +39,13 @@ const passwordStrength = computed(() => {
 });
 
 const passwordStrengthLabel = computed(() => {
-  const labels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
+  const labels = [
+    t("auth.password.veryWeak"),
+    t("auth.password.weak"),
+    t("auth.password.fair"),
+    t("auth.password.good"),
+    t("auth.password.strong"),
+  ];
   return labels[passwordStrength.value - 1] || "";
 });
 
@@ -138,7 +150,25 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-gray-100 dark:bg-gray-950 flex flex-col justify-center py-12">
+  <div
+    class="min-h-screen bg-gradient-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center"
+  >
+    <!-- Background Pattern -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+      <!-- Top right glow -->
+      <div
+        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl"
+      />
+      <!-- Bottom left glow -->
+      <div
+        class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl"
+      />
+      <!-- Center subtle glow -->
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl"
+      />
+    </div>
+
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
       <!-- Back to Home -->
       <div class="mb-6">
@@ -147,7 +177,7 @@ onMounted(() => {
           class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
-          Back to Home
+          {{ t("common.back") }}
         </NuxtLink>
       </div>
 
@@ -161,10 +191,10 @@ onMounted(() => {
           </div>
         </div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          Create Account
+          {{ t("auth.signup.title") }}
         </h1>
         <p class="mt-2 text-gray-600 dark:text-gray-400">
-          Join the future of commerce
+          {{ t("auth.signup.subtitle") }}
         </p>
       </div>
 
@@ -190,10 +220,10 @@ onMounted(() => {
                 <span class="text-2xl">⚡</span>
               </div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                Create Nostr Account
+                {{ t("auth.nostr.createAccount") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Generate a new identity - no email required
+                {{ t("auth.nostr.noEmailRequired") }}
               </p>
             </div>
 
@@ -207,16 +237,19 @@ onMounted(() => {
               <template #leading>
                 <span class="text-lg">🔑</span>
               </template>
-              Generate New Nostr Keys
+              {{ t("auth.nostr.generateKeys") }}
             </UButton>
 
             <p class="text-xs text-gray-500 text-center mt-2">
-              ✨ Decentralized • Private • Works with Lightning
+              ✨ {{ t("auth.nostr.description") }}
             </p>
           </div>
 
           <!-- Or connect with extension -->
-          <USeparator label="or connect existing" class="my-4" />
+          <USeparator
+            :label="t('auth.signup.connectExisting') || 'or connect existing'"
+            class="my-4"
+          />
 
           <!-- Secondary: Connect with Extension/Import -->
           <div class="space-y-3 mb-6">

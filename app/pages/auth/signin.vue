@@ -5,6 +5,12 @@ definePageMeta({
   layout: "blank",
 });
 
+const { t } = useI18n();
+
+useHead({
+  title: t("auth.signin.title") + " - Bitspace POS",
+});
+
 const auth = useAuth();
 const router = useRouter();
 const nostrUser = useNostrUser();
@@ -250,7 +256,7 @@ onMounted(() => {
           class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
-          Back to Home
+          {{ t("common.back") }}
         </NuxtLink>
       </div>
 
@@ -264,10 +270,10 @@ onMounted(() => {
           </div>
         </div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          BitSpace POS
+          {{ t("app.name") }}
         </h1>
         <p class="mt-2 text-gray-600 dark:text-gray-400">
-          Lightning-powered Point of Sale
+          {{ t("app.tagline") }}
         </p>
       </div>
 
@@ -287,7 +293,7 @@ onMounted(() => {
             @click="activeTab = 'nostr'"
           >
             <span class="mr-2">⚡</span>
-            Nostr
+            {{ t("auth.signin.tabNostr") }}
           </button>
           <button
             class="flex-1 py-4 text-center font-medium transition-colors"
@@ -299,7 +305,7 @@ onMounted(() => {
             @click="activeTab = 'email'"
           >
             <span class="mr-2">📧</span>
-            Email
+            {{ t("auth.signin.tabEmail") }}
           </button>
         </div>
 
@@ -324,16 +330,23 @@ onMounted(() => {
               icon="material-icon-theme:google"
               @click="handleGoogleSignIn"
             >
-              Continue with Google
+              {{ t("auth.google.signIn") }}
             </UButton>
 
-            <USeparator label="or sign in with email" />
+            <USeparator
+              :label="
+                t('common.or') +
+                ' ' +
+                t('auth.signin.signIn').toLowerCase() +
+                ' with email'
+              "
+            />
 
             <form class="space-y-4" @submit.prevent="handleEmailSignIn">
               <div>
                 <label
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >Email</label
+                  >{{ t("auth.signin.email") }}</label
                 >
                 <UInput
                   v-model="email"
@@ -349,7 +362,7 @@ onMounted(() => {
                 <label
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
-                  Password
+                  {{ t("auth.signin.password") }}
                 </label>
                 <UInput
                   v-model="password"
@@ -378,15 +391,15 @@ onMounted(() => {
               <div class="flex items-center justify-between">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <UCheckbox v-model="rememberMe" />
-                  <span class="text-sm text-gray-600 dark:text-gray-400"
-                    >Remember me</span
-                  >
+                  <span class="text-sm text-gray-600 dark:text-gray-400">{{
+                    t("auth.signin.rememberMe")
+                  }}</span>
                 </label>
                 <NuxtLink
                   to="/auth/forgot-password"
                   class="text-sm text-amber-500 hover:text-amber-400"
                 >
-                  Forgot password?
+                  {{ t("auth.signin.forgotPassword") }}
                 </NuxtLink>
               </div>
 
@@ -397,7 +410,7 @@ onMounted(() => {
                 color="primary"
                 :loading="auth.isLoading.value"
               >
-                Sign In
+                {{ t("auth.signin.signIn") }}
               </UButton>
             </form>
           </div>
@@ -415,10 +428,10 @@ onMounted(() => {
                 <h3
                   class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
                 >
-                  Sign in with Nostr
+                  {{ t("auth.nostr.signIn") }}
                 </h3>
                 <p class="text-gray-600 dark:text-gray-400 text-sm">
-                  Decentralized, private, and secure.
+                  {{ t("auth.nostr.description") }}
                 </p>
               </div>
 
@@ -440,10 +453,10 @@ onMounted(() => {
                   <span v-else>🔌</span>
                   {{
                     detectedExtension === "alby"
-                      ? "Alby Detected"
+                      ? t("auth.nostr.albyDetected")
                       : detectedExtension === "nos2x"
-                      ? "nos2x Detected"
-                      : "Nostr Extension Detected"
+                      ? t("auth.nostr.nos2xDetected")
+                      : t("auth.nostr.extensionDetected")
                   }}
                 </span>
               </div>
@@ -470,7 +483,7 @@ onMounted(() => {
                   <template #leading>
                     <span class="text-lg">🐝</span>
                   </template>
-                  Connect with Alby
+                  {{ t("auth.nostr.connectAlby") }}
                 </UButton>
 
                 <!-- nos2x Button -->
@@ -485,7 +498,7 @@ onMounted(() => {
                   <template #leading>
                     <span class="text-lg">🔐</span>
                   </template>
-                  Connect with nos2x
+                  {{ t("auth.nostr.connectNos2x") }}
                 </UButton>
               </div>
 
@@ -854,14 +867,14 @@ onMounted(() => {
         >
           <div class="flex items-center justify-center gap-2 text-sm">
             <span class="text-gray-600 dark:text-gray-400">
-              Don't have an account?
+              {{ t("auth.signin.noAccount") }}
             </span>
             <NuxtLink
               to="/auth/signup"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium rounded-full transition-all duration-200 hover:scale-105"
             >
               <UIcon name="i-heroicons-user-plus" class="w-4 h-4" />
-              Create one
+              {{ t("auth.signin.createAccount") }}
             </NuxtLink>
           </div>
         </div>
@@ -878,7 +891,7 @@ onMounted(() => {
               name="i-heroicons-shield-check"
               class="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors"
             />
-            Privacy Policy
+            {{ t("app.privacyPolicy") }}
           </a>
           <span class="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
           <a
@@ -889,13 +902,13 @@ onMounted(() => {
               name="i-heroicons-document-text"
               class="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors"
             />
-            Terms of Service
+            {{ t("app.termsOfService") }}
           </a>
         </div>
 
         <!-- Copyright -->
         <p class="mt-4 text-xs text-gray-400 dark:text-gray-600">
-          © {{ new Date().getFullYear() }} BitSpace POS. Powered by ⚡ Lightning
+          © {{ new Date().getFullYear() }} {{ t("app.copyright") }}
         </p>
       </div>
     </div>
