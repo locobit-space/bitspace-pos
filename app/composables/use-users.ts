@@ -4,21 +4,16 @@
 // Supports: Nostr (npub/nsec) + Password + PIN
 // ============================================
 
-import type { 
-  StoreUser, 
-  UserRole, 
-  UserPermissions,
-  AuthMethod
-} from '~/types';
-import { DEFAULT_PERMISSIONS } from '~/types';
+import type { StoreUser, UserRole, UserPermissions, AuthMethod } from "~/types";
+import { DEFAULT_PERMISSIONS } from "~/types";
 
 // ============================================
 // 📦 STORAGE KEYS (Single Source of Truth)
 // ============================================
 const STORAGE_KEYS = {
-  USERS: 'bitspace_users',               // All staff users with roles/permissions
-  CURRENT_USER: 'bitspace_current_user', // Current logged-in staff user
-  NOSTR_PROFILE: 'nostr_user_profile',   // Nostr profile from relays (shared with use-nostr-storage)
+  USERS: "bitspace_users", // All staff users with roles/permissions
+  CURRENT_USER: "bitspace_current_user", // Current logged-in staff user
+  NOSTR_PROFILE: "nostr_user_profile", // Nostr profile from relays (shared with use-nostr-storage)
 } as const;
 
 // Singleton state (shared across all composable instances)
@@ -56,43 +51,44 @@ export function useUsers() {
   }): Promise<StoreUser | null> {
     // Check permission
     if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
-      console.error('Permission denied: Cannot manage users');
+      console.error("Permission denied: Cannot manage users");
       return null;
     }
 
     try {
       // Determine auth method
-      const authMethod: AuthMethod = userData.authMethod || 
-        (userData.npub ? 'nostr' : userData.password ? 'password' : 'pin');
-      
+      const authMethod: AuthMethod =
+        userData.authMethod ||
+        (userData.npub ? "nostr" : userData.password ? "password" : "pin");
+
       // Hash credentials based on auth method
       let hashedPin: string | undefined;
       let passwordHash: string | undefined;
       let pubkeyHex: string | undefined;
-      
+
       if (userData.pin) {
         hashedPin = await staffAuth.hashPin(userData.pin);
       }
-      
-      if (userData.password && authMethod === 'password') {
+
+      if (userData.password && authMethod === "password") {
         passwordHash = await staffAuth.setUserPassword(userData.password);
       }
-      
+
       // Convert npub to hex if provided
       if (userData.npub) {
         const nostrKey = useNostrKey();
         try {
           pubkeyHex = nostrKey.normalizeKey(userData.npub);
         } catch {
-          console.error('Invalid npub format');
+          console.error("Invalid npub format");
           return null;
         }
       }
-      
+
       const newUser: StoreUser = {
         id: generateUserId(),
-        name: userData.name,
-        email: userData.email,
+        name: userData.name.trim(),
+        email: userData.email?.trim(),
         pin: hashedPin,
         role: userData.role,
         permissions: { ...DEFAULT_PERMISSIONS[userData.role] },
@@ -114,17 +110,17 @@ export function useUsers() {
 
       users.value.push(newUser);
       await saveUsers();
-      
+
       await security.addAuditLog(
-        'role_change',
-        currentUser.value?.id || 'system',
+        "role_change",
+        currentUser.value?.id || "system",
         `Created user: ${newUser.name} with role: ${newUser.role} (auth: ${authMethod})`,
         currentUser.value?.name
       );
 
       return newUser;
     } catch (error) {
-      console.error('Failed to create user:', error);
+      console.error("Failed to create user:", error);
       return null;
     }
   }
@@ -133,24 +129,24 @@ export function useUsers() {
    * Update user
    */
   async function updateUser(
-    userId: string, 
-    updates: Partial<Omit<StoreUser, 'id' | 'createdAt'>>
+    userId: string,
+    updates: Partial<Omit<StoreUser, "id" | "createdAt">>
   ): Promise<boolean> {
     // Check permission
     if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
       // Allow users to update their own non-role fields
       if (userId !== currentUser.value.id) {
-        console.error('Permission denied: Cannot manage users');
+        console.error("Permission denied: Cannot manage users");
         return false;
       }
       // Can't change own role or permissions
       if (updates.role || updates.permissions) {
-        console.error('Permission denied: Cannot change own role');
+        console.error("Permission denied: Cannot change own role");
         return false;
       }
     }
 
-    const index = users.value.findIndex(u => u.id === userId);
+    const index = users.value.findIndex((u) => u.id === userId);
     if (index === -1) return false;
 
     const user = users.value[index];
@@ -160,21 +156,30 @@ export function useUsers() {
     if (updates.pin) {
       updates.pin = await staffAuth.hashPin(updates.pin);
     }
-    
+
     // Hash password if updating
-    if (updates.passwordHash && !updates.passwordHash.includes(':')) {
+    if (updates.passwordHash && !updates.passwordHash.includes(":")) {
       // If it doesn't contain ':', it's a plain password
-      updates.passwordHash = await staffAuth.setUserPassword(updates.passwordHash);
+      updates.passwordHash = await staffAuth.setUserPassword(
+        updates.passwordHash
+      );
     }
 
     users.value[index] = {
       ...user,
       ...updates,
+      name: updates.name ? updates.name.trim() : user.name,
+      email:
+        updates.email !== undefined
+          ? updates.email
+            ? updates.email.trim()
+            : null
+          : user.email,
       updatedAt: new Date().toISOString(),
     } as StoreUser;
 
     await saveUsers();
-    
+
     // Update current user if it's the same
     if (currentUser.value?.id === userId) {
       currentUser.value = users.value[index] ?? null;
@@ -182,8 +187,8 @@ export function useUsers() {
     }
 
     await security.addAuditLog(
-      'role_change',
-      currentUser.value?.id || 'system',
+      "role_change",
+      currentUser.value?.id || "system",
       `Updated user: ${user.name}`,
       currentUser.value?.name
     );
@@ -197,25 +202,25 @@ export function useUsers() {
   async function deleteUser(userId: string): Promise<boolean> {
     // Check permission
     if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
-      console.error('Permission denied: Cannot manage users');
+      console.error("Permission denied: Cannot manage users");
       return false;
     }
 
     // Cannot delete self
     if (currentUser.value?.id === userId) {
-      console.error('Cannot delete current user');
+      console.error("Cannot delete current user");
       return false;
     }
 
-    const user = users.value.find(u => u.id === userId);
+    const user = users.value.find((u) => u.id === userId);
     if (!user) return false;
 
-    users.value = users.value.filter(u => u.id !== userId);
+    users.value = users.value.filter((u) => u.id !== userId);
     await saveUsers();
 
     await security.addAuditLog(
-      'role_change',
-      currentUser.value?.id || 'system',
+      "role_change",
+      currentUser.value?.id || "system",
       `Deleted user: ${user.name}`,
       currentUser.value?.name
     );
@@ -227,30 +232,30 @@ export function useUsers() {
    * Get user by ID
    */
   function getUser(userId: string): StoreUser | undefined {
-    return users.value.find(u => u.id === userId);
+    return users.value.find((u) => u.id === userId);
   }
 
   /**
    * Get users by role
    */
   function getUsersByRole(role: UserRole): StoreUser[] {
-    return users.value.filter(u => u.role === role);
+    return users.value.filter((u) => u.role === role);
   }
 
   /**
    * Update user permissions
    */
   async function updateUserPermissions(
-    userId: string, 
+    userId: string,
     permissions: Partial<UserPermissions>
   ): Promise<boolean> {
     // Check permission
     if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
-      console.error('Permission denied: Cannot manage users');
+      console.error("Permission denied: Cannot manage users");
       return false;
     }
 
-    const index = users.value.findIndex(u => u.id === userId);
+    const index = users.value.findIndex((u) => u.id === userId);
     if (index === -1) return false;
 
     const user = users.value[index];
@@ -265,8 +270,8 @@ export function useUsers() {
     await saveUsers();
 
     await security.addAuditLog(
-      'role_change',
-      currentUser.value?.id || 'system',
+      "role_change",
+      currentUser.value?.id || "system",
       `Updated permissions for: ${user.name}`,
       currentUser.value?.name
     );
@@ -277,7 +282,10 @@ export function useUsers() {
   /**
    * Change user role (updates permissions to defaults)
    */
-  async function changeUserRole(userId: string, newRole: UserRole): Promise<boolean> {
+  async function changeUserRole(
+    userId: string,
+    newRole: UserRole
+  ): Promise<boolean> {
     return updateUser(userId, {
       role: newRole,
       permissions: { ...DEFAULT_PERMISSIONS[newRole] },
@@ -293,63 +301,87 @@ export function useUsers() {
    */
   async function loginWithPin(pin: string): Promise<StoreUser | null> {
     const result = await staffAuth.loginWithPin(pin, users.value);
-    
+
     if (result.success && result.user) {
       currentUser.value = result.user;
       result.user.lastLoginAt = new Date().toISOString();
       result.user.failedLoginAttempts = 0;
       await saveUsers();
       saveCurrentUser(result.user);
-      
-      await security.addAuditLog('login', result.user.id, 'PIN login', result.user.name);
+
+      await security.addAuditLog(
+        "login",
+        result.user.id,
+        "PIN login",
+        result.user.name
+      );
       return result.user;
     }
-    
+
     return null;
   }
 
   /**
    * Login with Nostr (nsec key)
    */
-  async function loginWithNostr(nsec: string): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
+  async function loginWithNostr(
+    nsec: string
+  ): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
     const result = await staffAuth.loginWithNostr(nsec, users.value);
-    
+
     if (result.success && result.user) {
       currentUser.value = result.user;
       result.user.lastLoginAt = new Date().toISOString();
       result.user.failedLoginAttempts = 0;
       await saveUsers();
       saveCurrentUser(result.user);
-      
-      await security.addAuditLog('login', result.user.id, `Nostr login (${result.user.npub?.slice(0, 12)}...)`, result.user.name);
+
+      await security.addAuditLog(
+        "login",
+        result.user.id,
+        `Nostr login (${result.user.npub?.slice(0, 12)}...)`,
+        result.user.name
+      );
     }
-    
+
     return result;
   }
 
   /**
    * Login with password (email/username + password)
    */
-  async function loginWithPassword(identifier: string, password: string): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
-    const result = await staffAuth.loginWithPassword(identifier, password, users.value);
-    
+  async function loginWithPassword(
+    identifier: string,
+    password: string
+  ): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
+    const result = await staffAuth.loginWithPassword(
+      identifier,
+      password,
+      users.value
+    );
+
     if (result.success && result.user) {
       currentUser.value = result.user;
       result.user.lastLoginAt = new Date().toISOString();
       result.user.failedLoginAttempts = 0;
       await saveUsers();
       saveCurrentUser(result.user);
-      
-      await security.addAuditLog('login', result.user.id, 'Password login', result.user.name);
+
+      await security.addAuditLog(
+        "login",
+        result.user.id,
+        "Password login",
+        result.user.name
+      );
     } else if (result.user) {
       // Update failed attempts
-      const index = users.value.findIndex(u => u.id === result.user!.id);
+      const index = users.value.findIndex((u) => u.id === result.user!.id);
       if (index !== -1) {
         users.value[index] = result.user;
         await saveUsers();
       }
     }
-    
+
     return result;
   }
 
@@ -357,28 +389,28 @@ export function useUsers() {
    * Login with user ID (for switching users - requires PIN verification)
    */
   async function loginAsUser(userId: string): Promise<StoreUser | null> {
-    const user = users.value.find(u => u.id === userId && u.isActive);
-    
+    const user = users.value.find((u) => u.id === userId && u.isActive);
+
     if (user) {
       // Check if user is revoked or expired
       if (user.revokedAt) {
-        console.error('User access has been revoked');
+        console.error("User access has been revoked");
         return null;
       }
       if (user.expiresAt && new Date(user.expiresAt) < new Date()) {
-        console.error('User access has expired');
+        console.error("User access has expired");
         return null;
       }
-      
+
       currentUser.value = user;
       user.lastLoginAt = new Date().toISOString();
       await saveUsers();
       saveCurrentUser(user);
-      
-      await security.addAuditLog('login', user.id, 'User switch', user.name);
+
+      await security.addAuditLog("login", user.id, "User switch", user.name);
       return user;
     }
-    
+
     return null;
   }
 
@@ -387,11 +419,26 @@ export function useUsers() {
    */
   async function logout(): Promise<void> {
     if (currentUser.value) {
-      await security.addAuditLog('logout', currentUser.value.id, 'Logout', currentUser.value.name);
+      await security.addAuditLog(
+        "logout",
+        currentUser.value.id,
+        "Logout",
+        currentUser.value.name
+      );
     }
     currentUser.value = null;
     staffAuth.endSession();
     saveCurrentUser(null);
+  }
+
+  /**
+   * Set current user (for when login happens externally like StaffLogin component)
+   */
+  function setCurrentUser(user: StoreUser | null): void {
+    currentUser.value = user;
+    if (user) {
+      saveCurrentUser(user);
+    }
   }
 
   /**
@@ -410,33 +457,36 @@ export function useUsers() {
   /**
    * Revoke user's access (immediate termination)
    */
-  async function revokeUserAccess(userId: string, reason?: string): Promise<boolean> {
+  async function revokeUserAccess(
+    userId: string,
+    reason?: string
+  ): Promise<boolean> {
     // Check permission
     if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
-      console.error('Permission denied: Cannot manage users');
+      console.error("Permission denied: Cannot manage users");
       return false;
     }
 
-    const user = users.value.find(u => u.id === userId);
+    const user = users.value.find((u) => u.id === userId);
     if (!user) return false;
 
     // Cannot revoke self
     if (currentUser.value?.id === userId) {
-      console.error('Cannot revoke own access');
+      console.error("Cannot revoke own access");
       return false;
     }
 
     user.revokedAt = new Date().toISOString();
-    user.revocationReason = reason || 'Access revoked by administrator';
+    user.revocationReason = reason || "Access revoked by administrator";
     user.isActive = false;
     user.updatedAt = new Date().toISOString();
 
     await saveUsers();
 
     await security.addAuditLog(
-      'permission_revoke',
-      currentUser.value?.id || 'system',
-      `Revoked access for: ${user.name}${reason ? ` - ${reason}` : ''}`,
+      "permission_revoke",
+      currentUser.value?.id || "system",
+      `Revoked access for: ${user.name}${reason ? ` - ${reason}` : ""}`,
       currentUser.value?.name
     );
 
@@ -449,11 +499,11 @@ export function useUsers() {
   async function restoreUserAccess(userId: string): Promise<boolean> {
     // Check permission
     if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
-      console.error('Permission denied: Cannot manage users');
+      console.error("Permission denied: Cannot manage users");
       return false;
     }
 
-    const user = users.value.find(u => u.id === userId);
+    const user = users.value.find((u) => u.id === userId);
     if (!user) return false;
 
     user.revokedAt = undefined;
@@ -466,8 +516,8 @@ export function useUsers() {
     await saveUsers();
 
     await security.addAuditLog(
-      'permission_grant',
-      currentUser.value?.id || 'system',
+      "permission_grant",
+      currentUser.value?.id || "system",
       `Restored access for: ${user.name}`,
       currentUser.value?.name
     );
@@ -478,14 +528,17 @@ export function useUsers() {
   /**
    * Set access expiry for a user
    */
-  async function setUserExpiry(userId: string, expiresAt: string | null): Promise<boolean> {
+  async function setUserExpiry(
+    userId: string,
+    expiresAt: string | null
+  ): Promise<boolean> {
     // Check permission
     if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
-      console.error('Permission denied: Cannot manage users');
+      console.error("Permission denied: Cannot manage users");
       return false;
     }
 
-    const user = users.value.find(u => u.id === userId);
+    const user = users.value.find((u) => u.id === userId);
     if (!user) return false;
 
     user.expiresAt = expiresAt || undefined;
@@ -494,9 +547,9 @@ export function useUsers() {
     await saveUsers();
 
     await security.addAuditLog(
-      'role_change',
-      currentUser.value?.id || 'system',
-      `Set access expiry for: ${user.name} - ${expiresAt || 'Never'}`,
+      "role_change",
+      currentUser.value?.id || "system",
+      `Set access expiry for: ${user.name} - ${expiresAt || "Never"}`,
       currentUser.value?.name
     );
 
@@ -509,7 +562,9 @@ export function useUsers() {
   function getUserByNpub(npub: string): StoreUser | undefined {
     const nostrKey = useNostrKey();
     const pubkeyHex = nostrKey.normalizeKey(npub);
-    return users.value.find(u => u.npub === npub || u.pubkeyHex === pubkeyHex);
+    return users.value.find(
+      (u) => u.npub === npub || u.pubkeyHex === pubkeyHex
+    );
   }
 
   // ============================================
@@ -528,14 +583,16 @@ export function useUsers() {
    * Check if current user is owner
    */
   function isOwner(): boolean {
-    return currentUser.value?.role === 'owner';
+    return currentUser.value?.role === "owner";
   }
 
   /**
    * Check if current user is admin or owner
    */
   function isAdminOrOwner(): boolean {
-    return currentUser.value?.role === 'owner' || currentUser.value?.role === 'admin';
+    return (
+      currentUser.value?.role === "owner" || currentUser.value?.role === "admin"
+    );
   }
 
   /**
@@ -554,41 +611,153 @@ export function useUsers() {
   // ============================================
 
   /**
-   * Save users to storage
+   * Save users to storage (local + Nostr sync)
    */
   async function saveUsers(): Promise<void> {
-    // Use plain localStorage for now (encryption requires master password setup)
+    // 1. Save to localStorage (always)
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users.value));
+    console.log(
+      "[useUsers] Saved",
+      users.value.length,
+      "users to localStorage"
+    );
+
+    // 2. Sync to Nostr relays (if owner is logged in with Nostr)
+    try {
+      const nostrData = useNostrData();
+      let syncedCount = 0;
+      for (const user of users.value) {
+        const event = await nostrData.saveStaff(user);
+        if (event) {
+          syncedCount++;
+          console.log(
+            "[useUsers] ✅ Synced user to Nostr:",
+            user.name,
+            "Event ID:",
+            event.id?.slice(0, 8)
+          );
+        } else {
+          console.warn("[useUsers] ❌ Failed to sync user:", user.name);
+        }
+      }
+      console.log(
+        "[useUsers] Synced",
+        syncedCount,
+        "/",
+        users.value.length,
+        "users to Nostr relays"
+      );
+    } catch (error) {
+      console.warn(
+        "[useUsers] Nostr sync failed (local save succeeded):",
+        error
+      );
+      // Don't throw - local save succeeded, Nostr is optional
+    }
   }
 
   /**
-   * Load users from storage
+   * Load users from storage (local + Nostr sync)
    */
   async function loadUsers(): Promise<void> {
-    // Try plain localStorage first
+    console.log("[useUsers] Starting loadUsers...");
+
+    // 1. Load from localStorage first (fast, offline-first)
     const stored = localStorage.getItem(STORAGE_KEYS.USERS);
     if (stored) {
       try {
         users.value = JSON.parse(stored);
-        return;
-      } catch { /* try encrypted */ }
+        console.log(
+          "[useUsers] Loaded",
+          users.value.length,
+          "users from localStorage"
+        );
+      } catch {
+        /* continue to try other sources */
+      }
     }
-    
-    // Fallback to encrypted storage
-    const encrypted = await security.retrieveAndDecrypt<StoreUser[]>(STORAGE_KEYS.USERS);
-    if (encrypted) {
-      users.value = encrypted;
+
+    // 2. Try to fetch from Nostr relays (for cross-device sync)
+    try {
+      console.log("[useUsers] Fetching users from Nostr relays...");
+      const nostrData = useNostrData();
+      const nostrUsers = await nostrData.getAllStaff();
+      console.log("[useUsers] Received", nostrUsers.length, "users from Nostr");
+
+      if (nostrUsers.length > 0) {
+        // Merge Nostr users with local users (Nostr takes precedence for conflicts)
+        const localMap = new Map(users.value.map((u) => [u.id, u]));
+
+        for (const nostrUser of nostrUsers) {
+          const local = localMap.get(nostrUser.id);
+          if (!local) {
+            // New user from Nostr - add to local
+            console.log(
+              "[useUsers] ➕ Adding new user from Nostr:",
+              nostrUser.name
+            );
+            users.value.push(nostrUser);
+          } else if (
+            new Date(nostrUser.updatedAt || 0) > new Date(local.updatedAt || 0)
+          ) {
+            // Nostr version is newer - update local
+            console.log(
+              "[useUsers] 🔄 Updating user from Nostr:",
+              nostrUser.name
+            );
+            const index = users.value.findIndex((u) => u.id === nostrUser.id);
+            if (index !== -1) {
+              users.value[index] = nostrUser;
+            }
+          }
+        }
+
+        // Save merged result back to localStorage
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users.value));
+        console.log(
+          "[useUsers] ✅ Merged and saved",
+          users.value.length,
+          "total users"
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "[useUsers] ❌ Nostr fetch failed (using local data):",
+        error
+      );
+      // Don't throw - local data is still usable
+    }
+
+    // 3. Fallback to encrypted storage if nothing else worked
+    if (users.value.length === 0) {
+      const encrypted = await security.retrieveAndDecrypt<StoreUser[]>(
+        STORAGE_KEYS.USERS
+      );
+      if (encrypted) {
+        users.value = encrypted;
+        console.log(
+          "[useUsers] Loaded",
+          users.value.length,
+          "users from encrypted storage"
+        );
+      }
     }
   }
 
   /**
-   * Save current user to storage
+   * Save current user to storage and set auth cookie
    */
   function saveCurrentUser(user: StoreUser | null): void {
+    const staffCookie = useCookie("staff-user-id", {
+      maxAge: 60 * 60 * 24 * 30,
+    }); // 30 days
+
     if (user) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+      staffCookie.value = user.id; // Set cookie for auth middleware
     } else {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+      staffCookie.value = null; // Clear cookie on logout
     }
   }
 
@@ -598,10 +767,10 @@ export function useUsers() {
    */
   function refreshCurrentUserProfile(): void {
     if (!currentUser.value) return;
-    
+
     const profileData = getNostrProfileData();
     if (!profileData) return;
-    
+
     // Only update if pubkeys match
     const profile = localStorage.getItem(STORAGE_KEYS.NOSTR_PROFILE);
     if (profile) {
@@ -611,20 +780,27 @@ export function useUsers() {
           // Update current user with new profile data
           if (profileData.name) currentUser.value.name = profileData.name;
           if (profileData.avatar) currentUser.value.avatar = profileData.avatar;
-          
+
           // Save to storage and users list
           saveCurrentUser(currentUser.value);
-          
+
           // Also update in users list
-          const userIndex = users.value.findIndex(u => u.id === currentUser.value?.id);
+          const userIndex = users.value.findIndex(
+            (u) => u.id === currentUser.value?.id
+          );
           if (userIndex !== -1) {
             users.value[userIndex] = { ...currentUser.value };
             saveUsers();
           }
-          
-          console.log('[useUsers] Refreshed current user profile:', currentUser.value.name);
+
+          console.log(
+            "[useUsers] Refreshed current user profile:",
+            currentUser.value.name
+          );
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -637,7 +813,9 @@ export function useUsers() {
       try {
         const data = JSON.parse(profile);
         return { name: data.name || data.display_name, avatar: data.picture };
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     return null;
   }
@@ -647,15 +825,15 @@ export function useUsers() {
    */
   async function ensureDefaultOwner(): Promise<void> {
     if (users.value.length > 0) return;
-    
-    const nostrPubkeyCookie = useCookie('nostr-pubkey');
+
+    const nostrPubkeyCookie = useCookie("nostr-pubkey");
     const nostrPubkey = nostrPubkeyCookie.value;
-    
+
     let npub: string | undefined;
     let pubkeyHex: string | undefined;
-    let ownerName = 'Owner';
+    let ownerName = "Owner";
     let avatar: string | undefined;
-    
+
     if (nostrPubkey) {
       const nostrKey = useNostrKey();
       try {
@@ -665,25 +843,25 @@ export function useUsers() {
         if (profileData?.name) ownerName = profileData.name;
         if (profileData?.avatar) avatar = profileData.avatar;
       } catch (e) {
-        console.error('Error converting pubkey:', e);
+        console.error("Error converting pubkey:", e);
       }
     }
-    
+
     const defaultOwner: StoreUser = {
       id: generateUserId(),
       name: ownerName,
-      role: 'owner',
+      role: "owner",
       permissions: { ...DEFAULT_PERMISSIONS.owner },
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      authMethod: npub ? 'nostr' : 'pin',
+      authMethod: npub ? "nostr" : "pin",
       npub,
       pubkeyHex,
       avatar,
       grantedAt: new Date().toISOString(),
     };
-    
+
     users.value.push(defaultOwner);
     currentUser.value = defaultOwner;
     await saveUsers();
@@ -694,11 +872,11 @@ export function useUsers() {
    * Sync Nostr owner - ensure logged-in Nostr user is linked to owner account
    */
   async function syncNostrOwner(): Promise<StoreUser | null> {
-    const nostrPubkeyCookie = useCookie('nostr-pubkey');
+    const nostrPubkeyCookie = useCookie("nostr-pubkey");
     const nostrPubkey = nostrPubkeyCookie.value;
-    
+
     if (!nostrPubkey) return null;
-    
+
     const nostrKey = useNostrKey();
     let npub: string;
     try {
@@ -706,59 +884,63 @@ export function useUsers() {
     } catch {
       return null;
     }
-    
+
     // Check if user already exists with this npub
-    const existingUser = users.value.find(u => u.pubkeyHex === nostrPubkey || u.npub === npub);
-    
+    const existingUser = users.value.find(
+      (u) => u.pubkeyHex === nostrPubkey || u.npub === npub
+    );
+
     if (existingUser) {
       currentUser.value = existingUser;
       saveCurrentUser(existingUser);
       return existingUser;
     }
-    
+
     // Check if there's a default owner without npub that we can link
-    const unlinkedOwner = users.value.find(u => u.role === 'owner' && !u.npub && !u.pubkeyHex);
-    
+    const unlinkedOwner = users.value.find(
+      (u) => u.role === "owner" && !u.npub && !u.pubkeyHex
+    );
+
     if (unlinkedOwner) {
       const profileData = getNostrProfileData();
-      
+
       unlinkedOwner.npub = npub;
       unlinkedOwner.pubkeyHex = nostrPubkey;
-      unlinkedOwner.authMethod = 'nostr';
+      unlinkedOwner.authMethod = "nostr";
       unlinkedOwner.updatedAt = new Date().toISOString();
-      
+
       if (profileData?.name) unlinkedOwner.name = profileData.name;
       if (profileData?.avatar) unlinkedOwner.avatar = profileData.avatar;
-      
+
       await saveUsers();
       currentUser.value = unlinkedOwner;
       saveCurrentUser(unlinkedOwner);
       return unlinkedOwner;
     }
-    
+
     // Create new owner for this Nostr user
     const profileData = getNostrProfileData();
-    
+
     const newOwner: StoreUser = {
       id: generateUserId(),
-      name: profileData?.name || 'Owner',
-      role: 'owner',
+      name: profileData?.name || "Owner",
+      role: "owner",
       permissions: { ...DEFAULT_PERMISSIONS.owner },
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      authMethod: 'nostr',
+      authMethod: "nostr",
       npub,
       pubkeyHex: nostrPubkey,
       avatar: profileData?.avatar,
       grantedAt: new Date().toISOString(),
     };
-    
+
     users.value.push(newOwner);
     await saveUsers();
     currentUser.value = newOwner;
     saveCurrentUser(newOwner);
-    
+
     return newOwner;
   }
 
@@ -771,7 +953,7 @@ export function useUsers() {
     if (initPromise) {
       return initPromise;
     }
-    
+
     if (isInitialized.value) {
       return;
     }
@@ -782,8 +964,8 @@ export function useUsers() {
       await ensureDefaultOwner();
 
       // Check if Nostr user is logged in and sync their owner account
-      const nostrPubkeyCookie = useCookie('nostr-pubkey');
-      
+      const nostrPubkeyCookie = useCookie("nostr-pubkey");
+
       if (nostrPubkeyCookie.value) {
         await syncNostrOwner();
       } else {
@@ -792,7 +974,9 @@ export function useUsers() {
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
-            const user = users.value.find(u => u.id === parsed.id && u.isActive);
+            const user = users.value.find(
+              (u) => u.id === parsed.id && u.isActive
+            );
             if (user) {
               currentUser.value = user;
             } else {
@@ -806,12 +990,12 @@ export function useUsers() {
 
       isInitialized.value = true;
     })();
-    
+
     return initPromise;
   }
 
   // Auto-initialize
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     initialize();
   }
 
@@ -839,6 +1023,7 @@ export function useUsers() {
     loginAsUser,
     logout,
     verifyPin,
+    setCurrentUser,
 
     // Access control
     revokeUserAccess,
@@ -854,8 +1039,9 @@ export function useUsers() {
     // Profile sync
     refreshCurrentUserProfile,
 
-    // Init
+    // Init & Sync
     initialize,
     syncNostrOwner,
+    refreshFromNostr: loadUsers, // Force reload from Nostr (bypasses isInitialized)
   };
 }

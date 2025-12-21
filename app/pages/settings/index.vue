@@ -217,6 +217,31 @@
             </div>
           </div>
         </button>
+
+        <NuxtLink to="/settings/tables" class="block">
+          <div
+            class="h-full bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800 hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center"
+              >
+                <UIcon
+                  name="i-heroicons-qr-code"
+                  class="w-5 h-5 text-purple-600 dark:text-purple-400"
+                />
+              </div>
+              <div>
+                <h3 class="font-medium text-gray-900 dark:text-white text-sm">
+                  {{ $t("tables.title") || "Tables" }}
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ $t("tables.description") || "QR code ordering" }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </NuxtLink>
       </div>
     </div>
 

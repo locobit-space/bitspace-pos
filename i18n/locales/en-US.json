@@ -48,6 +48,59 @@
       "end": "End Session",
       "active": "Active",
       "inactive": "Inactive"
+    },
+    "tables": {
+      "title": "Tables",
+      "description": "Manage restaurant tables and reservations",
+      "settings": "Floor Settings",
+      "addTable": "Add Table",
+      "totalTables": "Total Tables",
+      "available": "Available",
+      "occupied": "Occupied",
+      "reserved": "Reserved",
+      "totalSeats": "Total Seats",
+      "seats": "Seats",
+      "walkIn": "Walk-in",
+      "startOrder": "Start Order",
+      "reserve": "Reserve Table",
+      "addItems": "Add Items",
+      "payment": "Proceed to Payment",
+      "seatGuests": "Seat Guests",
+      "cancelReservation": "Cancel Reservation",
+      "currentOrder": "Current Order",
+      "customer": "Customer",
+      "items": "Items",
+      "duration": "Duration",
+      "total": "Total",
+      "reservationDetails": "Reservation Details",
+      "phone": "Phone",
+      "time": "Time",
+      "partySize": "Party Size",
+      "guests": "Guests",
+      "notes": "Notes",
+      "printQR": "Print QR",
+      "editTable": "Edit Table",
+      "tableName": "Table Name",
+      "tableNamePlaceholder": "e.g. Table 1 of Window Seat",
+      "floor": "Floor",
+      "shape": "Shape",
+      "minSeats": "Minimum Seats",
+      "makeReservation": "Make Reservation",
+      "customerNamePlaceholder": "Name",
+      "phonePlaceholder": "Phone number",
+      "date": "Date",
+      "notesPlaceholder": "Additional notes",
+      "confirmReservation": "Confirm Reservation",
+      "floorSettings": "Floor Settings",
+      "manageFloors": "Manage Floors",
+      "addFloor": "Add Floor",
+      "status": {
+        "available": "Available",
+        "occupied": "Occupied",
+        "reserved": "Reserved",
+        "cleaning": "Cleaning",
+        "unavailable": "Unavailable"
+      }
     }
   },
   "loyalty": {
@@ -250,91 +303,8 @@
     }
   },
   "tables": {
-    "title": "Tables",
-    "description": "Manage restaurant tables and reservations",
-    "table": "Table",
-    "tables": "Tables",
-    "zones": "Zones",
-    "reservations": "Reservations",
-    "floorPlan": "Floor Plan",
-    "status": {
-      "available": "Available",
-      "occupied": "Occupied",
-      "reserved": "Reserved",
-      "cleaning": "Cleaning",
-      "unavailable": "Unavailable"
-    },
-    "shape": {
-      "square": "Square",
-      "round": "Round",
-      "rectangle": "Rectangle",
-      "oval": "Oval"
-    },
-    "actions": {
-      "seat": "Seat Guests",
-      "free": "Free Table",
-      "clean": "Set Cleaning",
-      "reserve": "Make Reserved",
-      "linkOrder": "Link Order"
-    },
-    "info": {
-      "number": "Table Number",
-      "name": "Table Name",
-      "capacity": "Capacity",
-      "minCapacity": "Min. Guests",
-      "zone": "Zone",
-      "guestCount": "Guests",
-      "occupiedAt": "Seated At",
-      "occupiedBy": "Seated By"
-    },
-    "reservation": {
-      "title": "Reservation",
-      "new": "New Reservation",
-      "edit": "Edit Reservation",
-      "customer": "Customer Name",
-      "phone": "Phone",
-      "email": "Email",
-      "guests": "Number of Guests",
-      "dateTime": "Date & Time",
-      "duration": "Duration",
-      "notes": "Special Requests",
-      "status": {
-        "pending": "Pending",
-        "confirmed": "Confirmed",
-        "seated": "Seated",
-        "completed": "Completed",
-        "cancelled": "Cancelled",
-        "noShow": "No Show"
-      },
-      "confirm": "Confirm",
-      "cancel": "Cancel",
-      "markSeated": "Mark as Seated",
-      "markNoShow": "Mark as No Show"
-    },
-    "stats": {
-      "occupancy": "Occupancy Rate",
-      "totalCapacity": "Total Capacity",
-      "currentGuests": "Current Guests",
-      "todayReservations": "Today's Reservations",
-      "upcomingReservations": "Upcoming Reservations"
-    },
-    "zone": {
-      "create": "Create Zone",
-      "edit": "Edit Zone",
-      "name": "Zone Name",
-      "color": "Color",
-      "noZone": "No Zone"
-    },
-    "messages": {
-      "created": "Table created",
-      "updated": "Table updated",
-      "deleted": "Table deleted",
-      "seated": "Guests seated at table",
-      "freed": "Table is now available",
-      "reservationCreated": "Reservation created",
-      "reservationConfirmed": "Reservation confirmed",
-      "reservationCancelled": "Reservation cancelled"
-    }
+    "scanToOrder": "Scan to view menu & order",
+    "orderingUrl": "Menu URL"
   },
   "currency": {
     "lak": "Lao Kip",
@@ -865,7 +835,6 @@
     "balance": "Balance",
     "type": "Type",
     "selectProduct": "Select a product",
-    "enterQuantity": "Enter quantity",
     "purchaseNotes": "Purchase notes (optional)",
     "selectProductAndQuantity": "Please select a product and enter quantity",
     "exportSuccess": "Inventory data exported successfully",
@@ -1174,12 +1143,38 @@
       "description": "Configure your system preferences and company information",
       "tab": "General",
       "company_info": "Company Information",
-      "system_settings": "System Settings"
+      "system_settings": "System Settings",
+      "company_name": "Company Name",
+      "company_name_placeholder": "Enter company name",
+      "company_email": "Company Email",
+      "company_email_placeholder": "info@company.com",
+      "company_phone": "Phone Number",
+      "company_phone_placeholder": "+856 21 123456",
+      "tax_number": "Tax Number",
+      "tax_number_placeholder": "TAX123456",
+      "company_address": "Address",
+      "company_address_placeholder": "Enter company address",
+      "default_currency": "Default Currency",
+      "default_language": "Default Language",
+      "date_format": "Date Format",
+      "time_format": "Time Format",
+      "timezone": "Timezone",
+      "decimal_places": "Decimal Places"
     },
     "branches": {
       "title": "Branch Management",
       "tab": "Branches",
-      "branch": "Branch"
+      "branch": "Branch",
+      "name": "Branch Name",
+      "name_placeholder": "Enter branch name",
+      "code": "Branch Code",
+      "code_placeholder": "e.g. HQ, BRANCH1",
+      "address": "Address",
+      "address_placeholder": "Enter branch address",
+      "bolt12": "BOLT12 Offer",
+      "bolt12Hint": "Lightning BOLT12 offer for this branch",
+      "noBranches": "No branches yet",
+      "addFirst": "Add your first branch to get started"
     },
     "security": {
       "title": "Security Settings",
@@ -1368,6 +1363,8 @@
         "cashier": "Cashier",
         "staff": "Staff"
       },
+      "authMethodLabel": "Login Method",
+      "passwordStrong": "Strong Password",
       "roleDescriptions": "Role Descriptions",
       "roleDesc": {
         "owner": "Full access to all features including user management, settings, and financial data",
@@ -1376,7 +1373,9 @@
         "staff": "Basic POS access only. Can create orders and view products."
       },
       "editPermissions": "Edit Permissions",
+      "noPin": "No PIN",
       "permissions": {
+        "title": "User Permissions",
         "pos": "POS Operations",
         "canCreateOrders": "Create Orders",
         "canVoidOrders": "Void Orders",
@@ -1697,6 +1696,7 @@
       "subtitle": "Sign in to BitSpace POS",
       "tabEmail": "Email",
       "tabNostr": "Nostr",
+      "tabStaff": "Staff",
       "email": "Email address",
       "password": "Password",
       "rememberMe": "Remember me",
@@ -1808,7 +1808,19 @@
     "signatureVerificationFailed": "Failed to verify signature",
     "userRejectedSignature": "User rejected the signature request",
     "nip07Failed": "Failed to connect to browser extension",
-    "securityReminder": "Always log out when leaving the terminal unattended"
+    "securityReminder": "Always log out when leaving the terminal unattended",
+    "selectProfile": "Select your profile to login",
+    "join": {
+      "processing": "Processing Invite...",
+      "pleaseWait": "Please wait",
+      "invalidInvite": "Invalid Invite",
+      "noInviteData": "No invite data provided",
+      "importFailed": "Failed to set up account",
+      "welcome": "Welcome!",
+      "accountReady": "Your account has been set up",
+      "proceedToLogin": "Proceed to Login",
+      "goToSignin": "Go to Sign In"
+    }
   },
   "accounting": {
     "title": "Accounting",
@@ -1980,6 +1992,7 @@
     "actions": "Actions",
     "active": "Active",
     "inactive": "Inactive",
+    "disabled": "Disabled",
     "status": "Status",
     "success": "Success",
     "error": "Error",

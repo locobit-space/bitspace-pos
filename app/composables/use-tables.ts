@@ -2,14 +2,19 @@
 // 🍽️ Table Management for Dine-In Service
 // Stores tables and reservations in Nostr relay
 
-import { ref, computed } from 'vue';
+import { ref, computed } from "vue";
 
 // ============================================
 // TYPES
 // ============================================
 
-export type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning' | 'unavailable';
-export type TableShape = 'square' | 'round' | 'rectangle' | 'oval';
+export type TableStatus =
+  | "available"
+  | "occupied"
+  | "reserved"
+  | "cleaning"
+  | "unavailable";
+export type TableShape = "square" | "round" | "rectangle" | "oval";
 
 export interface Table {
   id: string;
@@ -26,6 +31,7 @@ export interface Table {
   guestCount?: number;
   notes?: string;
   position?: { x: number; y: number }; // for floor plan
+  qrOrderingEnabled?: boolean; // Enable QR code ordering for this table
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,7 +57,13 @@ export interface Reservation {
   reservedFor: string; // ISO date string
   duration: number; // in minutes
   notes?: string;
-  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
+  status:
+    | "pending"
+    | "confirmed"
+    | "seated"
+    | "completed"
+    | "cancelled"
+    | "no_show";
   createdAt: string;
   updatedAt: string;
 }
@@ -103,8 +115,11 @@ export function useTables() {
   const loadTables = async (): Promise<void> => {
     isLoading.value = true;
     try {
-      const data = await nostrData.getReplaceableEvent<TableData>(TABLE_KIND, 'tables');
-      
+      const data = await nostrData.getReplaceableEvent<TableData>(
+        TABLE_KIND,
+        "tables"
+      );
+
       if (data?.data) {
         tables.value = data.data.tables || [];
         zones.value = data.data.zones || [];
@@ -113,7 +128,7 @@ export function useTables() {
         lastSyncAt.value = new Date().toISOString();
       }
     } catch (error) {
-      console.error('[Tables] Failed to load tables:', error);
+      console.error("[Tables] Failed to load tables:", error);
     } finally {
       isLoading.value = false;
     }
@@ -132,13 +147,13 @@ export function useTables() {
           reservations: reservations.value,
           sessions: tableSessions.value,
         } as TableData,
-        'tables',
+        "tables",
         [],
         true // encrypt
       );
       lastSyncAt.value = new Date().toISOString();
     } catch (error) {
-      console.error('[Tables] Failed to save tables:', error);
+      console.error("[Tables] Failed to save tables:", error);
       throw error;
     }
   };
@@ -150,12 +165,14 @@ export function useTables() {
   /**
    * Create a new table
    */
-  const createTable = async (tableData: Omit<Table, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<Table> => {
+  const createTable = async (
+    tableData: Omit<Table, "id" | "status" | "createdAt" | "updatedAt">
+  ): Promise<Table> => {
     const now = new Date().toISOString();
     const table: Table = {
       ...tableData,
       id: `table_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      status: 'available',
+      status: "available",
       createdAt: now,
       updatedAt: now,
     };
@@ -168,8 +185,11 @@ export function useTables() {
   /**
    * Update a table
    */
-  const updateTable = async (id: string, updates: Partial<Table>): Promise<Table | null> => {
-    const index = tables.value.findIndex(t => t.id === id);
+  const updateTable = async (
+    id: string,
+    updates: Partial<Table>
+  ): Promise<Table | null> => {
+    const index = tables.value.findIndex((t) => t.id === id);
     if (index === -1) return null;
 
     const existingTable = tables.value[index];
@@ -191,7 +211,7 @@ export function useTables() {
    * Delete a table
    */
   const deleteTable = async (id: string): Promise<boolean> => {
-    const index = tables.value.findIndex(t => t.id === id);
+    const index = tables.value.findIndex((t) => t.id === id);
     if (index === -1) return false;
 
     tables.value.splice(index, 1);
@@ -212,11 +232,11 @@ export function useTables() {
     orderId?: string,
     staffName?: string
   ): Promise<Table | null> => {
-    const table = tables.value.find(t => t.id === tableId);
-    if (!table || table.status !== 'available') return null;
+    const table = tables.value.find((t) => t.id === tableId);
+    if (!table || table.status !== "available") return null;
 
     const now = new Date().toISOString();
-    
+
     // Create session
     const session: TableSession = {
       id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -230,7 +250,7 @@ export function useTables() {
 
     // Update table status
     return updateTable(tableId, {
-      status: 'occupied',
+      status: "occupied",
       currentOrderId: orderId,
       occupiedAt: now,
       occupiedBy: staffName,
@@ -241,13 +261,16 @@ export function useTables() {
   /**
    * Free a table (make it available after cleaning)
    */
-  const freeTable = async (tableId: string, staffName?: string): Promise<Table | null> => {
-    const table = tables.value.find(t => t.id === tableId);
+  const freeTable = async (
+    tableId: string,
+    staffName?: string
+  ): Promise<Table | null> => {
+    const table = tables.value.find((t) => t.id === tableId);
     if (!table) return null;
 
     // Close the current session if any
     const currentSession = tableSessions.value.find(
-      s => s.tableId === tableId && !s.closedAt
+      (s) => s.tableId === tableId && !s.closedAt
     );
     if (currentSession) {
       const now = new Date();
@@ -259,7 +282,7 @@ export function useTables() {
     }
 
     return updateTable(tableId, {
-      status: 'available',
+      status: "available",
       currentOrderId: undefined,
       occupiedAt: undefined,
       occupiedBy: undefined,
@@ -272,30 +295,36 @@ export function useTables() {
    * Set table to cleaning status
    */
   const setTableCleaning = async (tableId: string): Promise<Table | null> => {
-    return updateTable(tableId, { status: 'cleaning' });
+    return updateTable(tableId, { status: "cleaning" });
   };
 
   /**
    * Reserve a table
    */
   const reserveTable = async (tableId: string): Promise<Table | null> => {
-    return updateTable(tableId, { status: 'reserved' });
+    return updateTable(tableId, { status: "reserved" });
   };
 
   /**
    * Set table as unavailable
    */
-  const setTableUnavailable = async (tableId: string, notes?: string): Promise<Table | null> => {
-    return updateTable(tableId, { status: 'unavailable', notes });
+  const setTableUnavailable = async (
+    tableId: string,
+    notes?: string
+  ): Promise<Table | null> => {
+    return updateTable(tableId, { status: "unavailable", notes });
   };
 
   /**
    * Link an order to a table
    */
-  const linkOrder = async (tableId: string, orderId: string): Promise<Table | null> => {
+  const linkOrder = async (
+    tableId: string,
+    orderId: string
+  ): Promise<Table | null> => {
     // Update current session with order ID
     const currentSession = tableSessions.value.find(
-      s => s.tableId === tableId && !s.closedAt
+      (s) => s.tableId === tableId && !s.closedAt
     );
     if (currentSession) {
       currentSession.orderId = orderId;
@@ -311,7 +340,9 @@ export function useTables() {
   /**
    * Create a zone
    */
-  const createZone = async (zoneData: Omit<TableZone, 'id'>): Promise<TableZone> => {
+  const createZone = async (
+    zoneData: Omit<TableZone, "id">
+  ): Promise<TableZone> => {
     const zone: TableZone = {
       ...zoneData,
       id: `zone_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -325,8 +356,11 @@ export function useTables() {
   /**
    * Update a zone
    */
-  const updateZone = async (id: string, updates: Partial<TableZone>): Promise<TableZone | null> => {
-    const index = zones.value.findIndex(z => z.id === id);
+  const updateZone = async (
+    id: string,
+    updates: Partial<TableZone>
+  ): Promise<TableZone | null> => {
+    const index = zones.value.findIndex((z) => z.id === id);
     if (index === -1) return null;
 
     const existingZone = zones.value[index];
@@ -347,7 +381,7 @@ export function useTables() {
    * Delete a zone
    */
   const deleteZone = async (id: string): Promise<boolean> => {
-    const index = zones.value.findIndex(z => z.id === id);
+    const index = zones.value.findIndex((z) => z.id === id);
     if (index === -1) return false;
 
     zones.value.splice(index, 1);
@@ -363,13 +397,18 @@ export function useTables() {
    * Create a reservation
    */
   const createReservation = async (
-    reservationData: Omit<Reservation, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+    reservationData: Omit<
+      Reservation,
+      "id" | "status" | "createdAt" | "updatedAt"
+    >
   ): Promise<Reservation> => {
     const now = new Date().toISOString();
     const reservation: Reservation = {
       ...reservationData,
-      id: `reservation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      status: 'pending',
+      id: `reservation_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`,
+      status: "pending",
       createdAt: now,
       updatedAt: now,
     };
@@ -386,7 +425,7 @@ export function useTables() {
     id: string,
     updates: Partial<Reservation>
   ): Promise<Reservation | null> => {
-    const index = reservations.value.findIndex(r => r.id === id);
+    const index = reservations.value.findIndex((r) => r.id === id);
     if (index === -1) return null;
 
     const existingReservation = reservations.value[index];
@@ -408,34 +447,36 @@ export function useTables() {
    * Cancel reservation
    */
   const cancelReservation = async (id: string): Promise<Reservation | null> => {
-    return updateReservation(id, { status: 'cancelled' });
+    return updateReservation(id, { status: "cancelled" });
   };
 
   /**
    * Confirm reservation
    */
-  const confirmReservation = async (id: string): Promise<Reservation | null> => {
-    return updateReservation(id, { status: 'confirmed' });
+  const confirmReservation = async (
+    id: string
+  ): Promise<Reservation | null> => {
+    return updateReservation(id, { status: "confirmed" });
   };
 
   /**
    * Mark reservation as seated
    */
   const seatReservation = async (id: string): Promise<Reservation | null> => {
-    const reservation = reservations.value.find(r => r.id === id);
+    const reservation = reservations.value.find((r) => r.id === id);
     if (!reservation) return null;
 
     // Seat the table
     await seatTable(reservation.tableId, reservation.guestCount);
 
-    return updateReservation(id, { status: 'seated' });
+    return updateReservation(id, { status: "seated" });
   };
 
   /**
    * Mark reservation as no-show
    */
   const markNoShow = async (id: string): Promise<Reservation | null> => {
-    return updateReservation(id, { status: 'no_show' });
+    return updateReservation(id, { status: "no_show" });
   };
 
   // ============================================
@@ -446,21 +487,21 @@ export function useTables() {
    * Active tables only
    */
   const activeTables = computed(() => {
-    return tables.value.filter(t => t.isActive);
+    return tables.value.filter((t) => t.isActive);
   });
 
   /**
    * Available tables
    */
   const availableTables = computed(() => {
-    return activeTables.value.filter(t => t.status === 'available');
+    return activeTables.value.filter((t) => t.status === "available");
   });
 
   /**
    * Occupied tables
    */
   const occupiedTables = computed(() => {
-    return activeTables.value.filter(t => t.status === 'occupied');
+    return activeTables.value.filter((t) => t.status === "occupied");
   });
 
   /**
@@ -486,14 +527,14 @@ export function useTables() {
    * Tables by zone
    */
   const tablesByZone = computed(() => {
-    const result: Record<string, Table[]> = { '': [] }; // '' for tables with no zone
+    const result: Record<string, Table[]> = { "": [] }; // '' for tables with no zone
 
     for (const zone of zones.value) {
       result[zone.id] = [];
     }
 
     for (const table of activeTables.value) {
-      const zoneId = table.zone || '';
+      const zoneId = table.zone || "";
       if (!result[zoneId]) result[zoneId] = [];
       result[zoneId].push(table);
     }
@@ -506,7 +547,7 @@ export function useTables() {
    */
   const activeZones = computed(() => {
     return zones.value
-      .filter(z => z.isActive)
+      .filter((z) => z.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder);
   });
 
@@ -519,7 +560,7 @@ export function useTables() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    return reservations.value.filter(r => {
+    return reservations.value.filter((r) => {
       const reservedFor = new Date(r.reservedFor);
       return reservedFor >= today && reservedFor < tomorrow;
     });
@@ -533,12 +574,18 @@ export function useTables() {
     const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
     return reservations.value
-      .filter(r => {
+      .filter((r) => {
         const reservedFor = new Date(r.reservedFor);
-        return reservedFor >= now && reservedFor <= in24Hours && 
-               ['pending', 'confirmed'].includes(r.status);
+        return (
+          reservedFor >= now &&
+          reservedFor <= in24Hours &&
+          ["pending", "confirmed"].includes(r.status)
+        );
       })
-      .sort((a, b) => new Date(a.reservedFor).getTime() - new Date(b.reservedFor).getTime());
+      .sort(
+        (a, b) =>
+          new Date(a.reservedFor).getTime() - new Date(b.reservedFor).getTime()
+      );
   });
 
   /**
@@ -562,7 +609,10 @@ export function useTables() {
    * Current guest count
    */
   const currentGuestCount = computed(() => {
-    return occupiedTables.value.reduce((sum, t) => sum + (t.guestCount || 0), 0);
+    return occupiedTables.value.reduce(
+      (sum, t) => sum + (t.guestCount || 0),
+      0
+    );
   });
 
   // ============================================
@@ -573,21 +623,21 @@ export function useTables() {
    * Get table by ID
    */
   const getTable = (id: string): Table | undefined => {
-    return tables.value.find(t => t.id === id);
+    return tables.value.find((t) => t.id === id);
   };
 
   /**
    * Get table by number
    */
   const getTableByNumber = (number: string): Table | undefined => {
-    return tables.value.find(t => t.number === number);
+    return tables.value.find((t) => t.number === number);
   };
 
   /**
    * Get available tables for a given guest count
    */
   const getAvailableTablesForParty = (guestCount: number): Table[] => {
-    return availableTables.value.filter(t => {
+    return availableTables.value.filter((t) => {
       const min = t.minCapacity || 1;
       return guestCount >= min && guestCount <= t.capacity;
     });
@@ -596,13 +646,18 @@ export function useTables() {
   /**
    * Check if a table is available at a specific time
    */
-  const isTableAvailableAt = (tableId: string, dateTime: Date, duration: number = 90): boolean => {
+  const isTableAvailableAt = (
+    tableId: string,
+    dateTime: Date,
+    duration: number = 90
+  ): boolean => {
     const endTime = new Date(dateTime.getTime() + duration * 60000);
 
     // Check for overlapping reservations
-    const overlapping = reservations.value.find(r => {
+    const overlapping = reservations.value.find((r) => {
       if (r.tableId !== tableId) return false;
-      if (['cancelled', 'no_show', 'completed'].includes(r.status)) return false;
+      if (["cancelled", "no_show", "completed"].includes(r.status))
+        return false;
 
       const resStart = new Date(r.reservedFor);
       const resEnd = new Date(resStart.getTime() + r.duration * 60000);
@@ -615,6 +670,39 @@ export function useTables() {
   };
 
   // ============================================
+  // QR CODE ORDERING
+  // ============================================
+
+  /**
+   * Get the table ordering URL for customers
+   */
+  const getTableOrderingUrl = (tableId: string): string => {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    return `${baseUrl}/menu/${tableId}`;
+  };
+
+  /**
+   * Generate QR code image URL for a table
+   * Uses a public QR code API
+   */
+  const generateTableQR = (tableId: string, size: number = 200): string => {
+    const url = getTableOrderingUrl(tableId);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
+      url
+    )}`;
+  };
+
+  /**
+   * Toggle QR ordering for a table
+   */
+  const toggleTableQROrdering = async (
+    tableId: string,
+    enabled: boolean
+  ): Promise<Table | null> => {
+    return updateTable(tableId, { qrOrderingEnabled: enabled });
+  };
+
+  // ============================================
   // DEMO DATA
   // ============================================
 
@@ -624,18 +712,42 @@ export function useTables() {
   const createDemoData = async (): Promise<void> => {
     // Create zones if none exist
     if (zones.value.length === 0) {
-      await createZone({ name: 'Indoor', description: 'Main dining area', color: '#3B82F6', isActive: true, sortOrder: 1 });
-      await createZone({ name: 'Outdoor', description: 'Patio seating', color: '#10B981', isActive: true, sortOrder: 2 });
-      await createZone({ name: 'Bar', description: 'Bar counter', color: '#F59E0B', isActive: true, sortOrder: 3 });
-      await createZone({ name: 'VIP', description: 'Private dining', color: '#8B5CF6', isActive: true, sortOrder: 4 });
+      await createZone({
+        name: "Indoor",
+        description: "Main dining area",
+        color: "#3B82F6",
+        isActive: true,
+        sortOrder: 1,
+      });
+      await createZone({
+        name: "Outdoor",
+        description: "Patio seating",
+        color: "#10B981",
+        isActive: true,
+        sortOrder: 2,
+      });
+      await createZone({
+        name: "Bar",
+        description: "Bar counter",
+        color: "#F59E0B",
+        isActive: true,
+        sortOrder: 3,
+      });
+      await createZone({
+        name: "VIP",
+        description: "Private dining",
+        color: "#8B5CF6",
+        isActive: true,
+        sortOrder: 4,
+      });
     }
 
     // Create tables if none exist
     if (tables.value.length === 0) {
-      const indoorZone = zones.value.find(z => z.name === 'Indoor');
-      const outdoorZone = zones.value.find(z => z.name === 'Outdoor');
-      const barZone = zones.value.find(z => z.name === 'Bar');
-      const vipZone = zones.value.find(z => z.name === 'VIP');
+      const indoorZone = zones.value.find((z) => z.name === "Indoor");
+      const outdoorZone = zones.value.find((z) => z.name === "Outdoor");
+      const barZone = zones.value.find((z) => z.name === "Bar");
+      const vipZone = zones.value.find((z) => z.name === "VIP");
 
       // Indoor tables
       for (let i = 1; i <= 8; i++) {
@@ -643,9 +755,12 @@ export function useTables() {
           number: `T${i}`,
           name: `Table ${i}`,
           capacity: i <= 4 ? 4 : 6,
-          shape: 'square',
+          shape: "square",
           zone: indoorZone?.id,
-          position: { x: (i - 1) % 4 * 100, y: Math.floor((i - 1) / 4) * 100 },
+          position: {
+            x: ((i - 1) % 4) * 100,
+            y: Math.floor((i - 1) / 4) * 100,
+          },
           isActive: true,
         });
       }
@@ -656,7 +771,7 @@ export function useTables() {
           number: `T${i}`,
           name: `Patio ${i - 8}`,
           capacity: 4,
-          shape: 'round',
+          shape: "round",
           zone: outdoorZone?.id,
           isActive: true,
         });
@@ -669,7 +784,7 @@ export function useTables() {
           name: `Bar Seat ${i}`,
           capacity: 2,
           minCapacity: 1,
-          shape: 'round',
+          shape: "round",
           zone: barZone?.id,
           isActive: true,
         });
@@ -677,21 +792,21 @@ export function useTables() {
 
       // VIP tables
       await createTable({
-        number: 'VIP1',
-        name: 'VIP Room 1',
+        number: "VIP1",
+        name: "VIP Room 1",
         capacity: 10,
         minCapacity: 6,
-        shape: 'rectangle',
+        shape: "rectangle",
         zone: vipZone?.id,
         isActive: true,
       });
 
       await createTable({
-        number: 'VIP2',
-        name: 'VIP Room 2',
+        number: "VIP2",
+        name: "VIP Room 2",
         capacity: 8,
         minCapacity: 4,
-        shape: 'oval',
+        shape: "oval",
         zone: vipZone?.id,
         isActive: true,
       });
@@ -736,7 +851,7 @@ export function useTables() {
     initialize,
     loadTables,
     saveTables,
-    
+
     // Table CRUD
     createTable,
     updateTable,
@@ -768,6 +883,11 @@ export function useTables() {
     getTableByNumber,
     getAvailableTablesForParty,
     isTableAvailableAt,
+
+    // QR Ordering
+    getTableOrderingUrl,
+    generateTableQR,
+    toggleTableQROrdering,
 
     // Demo
     createDemoData,

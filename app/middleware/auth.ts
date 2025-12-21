@@ -1,36 +1,39 @@
 /**
  * 🛡️ Auth Middleware
- * 
+ *
  * Protects routes requiring authentication.
- * Supports both Hasura Auth (JWT) and Nostr (NIP-07) authentication.
+ * Supports both Hasura Auth (JWT), Nostr (NIP-07), and Staff (PIN/password) authentication.
  */
 
 export default defineNuxtRouteMiddleware((to, _from) => {
   // Skip auth pages
   const publicPaths = [
-    '/auth/signin',
-    '/auth/signup',
-    '/auth/callback',
-    '/auth/forgot-password',
-    '/auth/reset-password',
-    '/auth/verify-email',
+    "/auth/signin",
+    "/auth/signup",
+    "/auth/callback",
+    "/auth/forgot-password",
+    "/auth/reset-password",
+    "/auth/verify-email",
+    "/auth/join", // Staff invite join page
   ];
 
-  if (publicPaths.some(path => to.path.startsWith(path))) {
+  if (publicPaths.some((path) => to.path.startsWith(path))) {
     return;
   }
 
-  // Check authentication
-  const hasuraToken = useCookie('hasura-auth-token');
-  const nostrPubkey = useCookie('nostr-pubkey');
+  // Check authentication from all sources
+  const hasuraToken = useCookie("hasura-auth-token");
+  const nostrPubkey = useCookie("nostr-pubkey");
+  const staffUserId = useCookie("staff-user-id"); // Staff login cookie
 
-  const isAuthenticated = !!hasuraToken.value || !!nostrPubkey.value;
+  const isAuthenticated =
+    !!hasuraToken.value || !!nostrPubkey.value || !!staffUserId.value;
 
   if (!isAuthenticated && to.meta.auth !== false) {
     // Redirect to sign in with return URL
     return navigateTo({
-      path: '/auth/signin',
+      path: "/auth/signin",
       query: { redirect: to.fullPath },
     });
   }
-})
+});

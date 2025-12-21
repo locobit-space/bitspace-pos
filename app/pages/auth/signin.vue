@@ -14,7 +14,12 @@ useHead({
 const auth = useAuth();
 const router = useRouter();
 const nostrUser = useNostrUser();
-const { syncNostrOwner } = useUsers();
+const usersComposable = useUsers();
+const { syncNostrOwner } = usersComposable;
+
+// Staff users state
+const staffUsers = computed(() => usersComposable.users.value);
+const isLoadingUsers = ref(true);
 
 // Form state
 const email = ref("");
@@ -23,7 +28,8 @@ const rememberMe = ref(false);
 const showPassword = ref(false);
 
 // UI state
-const activeTab = ref<"email" | "nostr">("nostr");
+const activeTab = ref<"email" | "nostr" | "staff">("nostr");
+const showPinPad = ref(false);
 const hasNostr = ref(false);
 const nostrConnecting = ref(false);
 const showManualNpub = ref(false);
@@ -33,11 +39,60 @@ const manualNsec = ref("");
 const detectedExtension = ref<"alby" | "nos2x" | "unknown" | null>(null);
 const nostrError = ref<string | null>(null);
 
-// Sign in with email
+// Company code state
+const companyCodeInput = ref("");
+const isLoadingCompanyCode = ref(false);
+const companyCodeError = ref<string | null>(null);
+const company = useCompany();
+const nostrData = useNostrData();
+
+// Sign in with email (local staff first, then cloud fallback)
 const handleEmailSignIn = async () => {
-  const success = await auth.signInWithEmail(email.value, password.value);
-  if (success) {
-    router.push("/");
+  // Clear any previous errors
+  auth.error.value = null;
+
+  // 1. Try local staff login first
+  const localResult = await usersComposable.loginWithPassword(
+    email.value,
+    password.value
+  );
+
+  if (localResult.success && localResult.user) {
+    await handleStaffLogin(localResult.user, "password");
+    return;
+  }
+
+  // 2. If local user exists but credentials wrong, show that error
+  if (localResult.error && localResult.error !== "Invalid credentials") {
+    auth.error.value = localResult.error;
+    return;
+  }
+
+  // 3. Check if this email exists locally (user exists but wrong password)
+  const allUsers = usersComposable.users.value;
+  const localUserExists = allUsers.some(
+    (u) =>
+      u.email?.toLowerCase().trim() === email.value.toLowerCase().trim() ||
+      u.name.toLowerCase().trim() === email.value.toLowerCase().trim()
+  );
+
+  if (localUserExists) {
+    // User exists locally but password/credentials wrong
+    auth.error.value = localResult.error || "Invalid credentials";
+    return;
+  }
+
+  // 4. Fallback to Hasura/Cloud login only if no local user found
+  try {
+    const success = await auth.signInWithEmail(email.value, password.value);
+    if (success) {
+      router.push("/");
+    }
+  } catch (e) {
+    // Network error - user might not have internet
+    console.error("Cloud login failed:", e);
+    auth.error.value =
+      "User not found. Create an account or check your credentials.";
   }
 };
 
@@ -46,7 +101,114 @@ const handleGoogleSignIn = () => {
   auth.signInWithGoogle();
 };
 
-// Sign in with Nostr
+// Handle company code submit (for cross-device staff login)
+const handleCompanyCodeSubmit = async () => {
+  if (companyCodeInput.value.length !== 6) return;
+
+  isLoadingCompanyCode.value = true;
+  companyCodeError.value = null;
+
+  try {
+    // Get owner pubkey from storage OR discover it via company index
+    let ownerPubkey = company.ownerPubkey.value;
+
+    if (!ownerPubkey) {
+      // Try to discover owner pubkey from company index event
+      console.log("[Signin] No stored owner pubkey, attempting discovery...");
+      ownerPubkey = await nostrData.discoverOwnerByCompanyCode(
+        companyCodeInput.value
+      );
+
+      if (!ownerPubkey) {
+        companyCodeError.value = "Invalid code. Check with your manager.";
+        return;
+      }
+    }
+
+    console.log(
+      "[Signin] Fetching staff with company code:",
+      companyCodeInput.value
+    );
+
+    // Fetch staff from Nostr using company code
+    const staff = await nostrData.fetchStaffByCompanyCode(
+      companyCodeInput.value,
+      ownerPubkey
+    );
+
+    if (staff.length === 0) {
+      companyCodeError.value = "Invalid code or no staff found.";
+      return;
+    }
+
+    // Save company code for future use
+    await company.setCompanyCode(companyCodeInput.value, ownerPubkey);
+
+    // Merge fetched users with local storage
+    const STORAGE_KEY = "bitspace_users";
+    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const existingIds = new Set(existing.map((u: { id: string }) => u.id));
+
+    for (const user of staff) {
+      if (!existingIds.has(user.id)) {
+        existing.push(user);
+      }
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+
+    // Reinitialize users composable to pick up new users
+    await usersComposable.refreshFromNostr();
+
+    console.log("[Signin] Loaded", staff.length, "staff from company code");
+    companyCodeInput.value = ""; // Clear input
+  } catch (e) {
+    console.error("[Signin] Company code error:", e);
+    companyCodeError.value = "Failed to connect. Check code and try again.";
+  } finally {
+    isLoadingCompanyCode.value = false;
+  }
+};
+
+// Handle QR code scan result
+const invite = useInvite();
+
+const handleQrScanned = async (data: string) => {
+  console.log("[Signin] QR scanned:", data);
+
+  try {
+    // Parse the invite link
+    const result = await invite.parseInviteLink(data);
+
+    if (!result.success || !result.data) {
+      companyCodeError.value = result.error || "Invalid QR code";
+      return;
+    }
+
+    // Import the user
+    const imported = await invite.importFromInvite(result.data);
+
+    if (!imported) {
+      companyCodeError.value = "Failed to import user data";
+      return;
+    }
+
+    // Refresh users
+    await usersComposable.refreshFromNostr();
+
+    console.log("[Signin] QR import successful:", result.data.user.name);
+
+    // If we have users now, they'll show up in the staff list
+  } catch (error) {
+    console.error("[Signin] QR scan error:", error);
+    companyCodeError.value = "Failed to process QR code";
+  }
+};
+
+const handleQrError = (message: string) => {
+  console.error("[Signin] QR error:", message);
+  companyCodeError.value = message;
+};
 const handleNostrSignIn = async () => {
   nostrConnecting.value = true;
   nostrError.value = null;
@@ -181,6 +343,23 @@ const handleNsecSignIn = async () => {
     // Sync with staff user system (creates/links owner account)
     await syncNostrOwner();
 
+    // Initialize company code for owner (generates if not exists)
+    const companyCode = await company.initializeCompany(pubkeyHex);
+    console.log("[Nsec] Company code:", companyCode);
+
+    // Publish company index for cross-device discovery
+    const codeHash = await company.hashCompanyCode(companyCode);
+    await nostrData.publishCompanyIndex(codeHash);
+
+    // IMPORTANT: Re-fetch users from Nostr now that we have keys
+    // This enables staff logins on new devices!
+    await usersComposable.refreshFromNostr();
+    console.log(
+      "[Nsec] Synced",
+      usersComposable.users.value.length,
+      "users from Nostr"
+    );
+
     // Clear the input
     manualNsec.value = "";
 
@@ -194,10 +373,35 @@ const handleNsecSignIn = async () => {
   }
 };
 
+// Handle staff login success
+const handleStaffLogin = async (
+  user: { id: string; name: string },
+  _method: string
+) => {
+  console.log("[Staff] Login success:", user.name);
+
+  // Make sure the user is set as current in useUsers composable
+  // (StaffLogin component uses staffAuth which doesn't update useUsers)
+  const fullUser = usersComposable.users.value.find((u) => u.id === user.id);
+  if (fullUser) {
+    usersComposable.setCurrentUser(fullUser);
+  }
+
+  // Navigate to home
+  router.push("/");
+};
+
 // Check if already authenticated and check Nostr extension
-onMounted(() => {
+onMounted(async () => {
   if (auth.isAuthenticated.value) {
     router.push("/");
+  }
+
+  // Initialize users for staff login
+  try {
+    await usersComposable.initialize();
+  } finally {
+    isLoadingUsers.value = false;
   }
 
   // Check for Nostr extension after a short delay (extensions may load async)
@@ -282,6 +486,7 @@ onMounted(() => {
         class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
       >
         <!-- Tabs -->
+        <!-- Tabs -->
         <div class="flex border-b border-gray-200 dark:border-gray-800">
           <button
             class="flex-1 py-4 text-center font-medium transition-colors"
@@ -306,6 +511,21 @@ onMounted(() => {
           >
             <span class="mr-2">📧</span>
             {{ t("auth.signin.tabEmail") }}
+          </button>
+          <button
+            class="flex-1 py-4 text-center font-medium transition-colors"
+            :class="
+              activeTab === 'staff'
+                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            "
+            @click="
+              activeTab = 'staff';
+              showPinPad = false;
+            "
+          >
+            <span class="mr-2">👤</span>
+            {{ t("auth.signin.tabStaff") || "Staff" }}
           </button>
         </div>
 
@@ -415,8 +635,179 @@ onMounted(() => {
             </form>
           </div>
 
+          <!-- Staff Login -->
+          <div v-else-if="activeTab === 'staff'" class="space-y-4">
+            <div v-if="isLoadingUsers" class="text-center py-8">
+              <UIcon
+                name="i-heroicons-arrow-path"
+                class="w-8 h-8 animate-spin text-primary-500 mx-auto"
+              />
+              <p class="text-gray-500 mt-2">{{ t("common.loading") }}</p>
+            </div>
+
+            <div v-else-if="staffUsers.length === 0" class="text-center py-4">
+              <!-- Company Code Input -->
+              <div v-if="!companyCodeInput" class="space-y-4">
+                <div
+                  class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3"
+                >
+                  <span class="text-3xl opacity-50">🏪</span>
+                </div>
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
+                >
+                  {{
+                    t("auth.signin.enterCompanyCode") || "Enter Company Code"
+                  }}
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                  {{
+                    t("auth.signin.companyCodeHint") ||
+                    "Get the 6-digit code from your manager"
+                  }}
+                </p>
+
+                <div class="max-w-xs mx-auto">
+                  <UInput
+                    v-model="companyCodeInput"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="6"
+                    size="lg"
+                    class="text-center text-2xl tracking-[0.5em] font-mono"
+                    :placeholder="'000000'"
+                    @keyup.enter="handleCompanyCodeSubmit"
+                  />
+                </div>
+
+                <UButton
+                  :loading="isLoadingCompanyCode"
+                  :disabled="companyCodeInput.length !== 6"
+                  color="primary"
+                  class="mt-4"
+                  @click="handleCompanyCodeSubmit"
+                >
+                  {{ t("auth.signin.connectWithCode") || "Connect" }}
+                </UButton>
+
+                <div v-if="companyCodeError" class="mt-2">
+                  <UAlert color="error" :title="companyCodeError" />
+                </div>
+              </div>
+
+              <!-- OR Divider -->
+              <div class="relative my-4">
+                <div class="absolute inset-0 flex items-center">
+                  <div
+                    class="w-full border-t border-gray-200 dark:border-gray-700"
+                  />
+                </div>
+                <div class="relative flex justify-center text-sm">
+                  <span class="bg-white dark:bg-gray-900 px-2 text-gray-500">
+                    {{ t("common.or") || "or" }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- QR Scanner Button -->
+              <AuthQrScanner
+                @scanned="handleQrScanned"
+                @error="handleQrError"
+              />
+
+              <!-- Fallback: Create account link for owners -->
+              <div
+                class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800"
+              >
+                <p class="text-gray-500 text-sm">
+                  {{ t("auth.signin.noCodeQuestion") || "Don't have a code?" }}
+                </p>
+                <UButton variant="link" size="sm" @click="activeTab = 'nostr'">
+                  {{ t("auth.signin.loginAsOwner") || "Login as Owner" }}
+                </UButton>
+              </div>
+            </div>
+
+            <div v-else>
+              <!-- Staff Login Button (Click to reveal PIN pad) -->
+              <!-- Staff User Grid -->
+              <div v-if="!showPinPad">
+                <div class="text-center mb-6">
+                  <h3
+                    class="text-lg font-semibold text-gray-900 dark:text-white"
+                  >
+                    {{ t("auth.staffLogin") || "Who is working?" }}
+                  </h3>
+                  <p class="text-sm text-gray-500 mt-1">
+                    {{
+                      t("auth.selectProfile") || "Select your profile to login"
+                    }}
+                  </p>
+                </div>
+
+                <div
+                  class="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto p-1 custom-scrollbar"
+                >
+                  <button
+                    v-for="user in staffUsers"
+                    :key="user.id"
+                    class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all group"
+                    @click="showPinPad = true"
+                  >
+                    <div
+                      class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:bg-white dark:group-hover:bg-gray-800 transition-colors"
+                    >
+                      <UIcon
+                        name="i-heroicons-user"
+                        class="w-6 h-6 text-gray-500 group-hover:text-primary-500 transition-colors"
+                      />
+                    </div>
+                    <span
+                      class="font-medium text-gray-900 dark:text-white text-sm line-clamp-1"
+                    >
+                      {{ user.name }}
+                    </span>
+                    <span
+                      class="text-xs text-gray-500 group-hover:text-primary-600 dark:group-hover:text-primary-400"
+                    >
+                      {{
+                        user.role === "admin"
+                          ? t("settings.users.roleAdmin") || "Admin"
+                          : t("settings.users.roleStaff") || "Staff"
+                      }}
+                    </span>
+                  </button>
+
+                  <!-- Add Quick Login Button if list is long -->
+                  <!-- Or just keep it clean with user grid -->
+                </div>
+              </div>
+
+              <!-- PIN Pad Component -->
+              <div v-else>
+                <div class="mb-4">
+                  <UButton
+                    variant="ghost"
+                    icon="i-heroicons-arrow-left"
+                    class="mb-2"
+                    @click="showPinPad = false"
+                  >
+                    {{ t("common.back") }}
+                  </UButton>
+                </div>
+                <AuthStaffLogin
+                  :users="staffUsers"
+                  :show-nostr="true"
+                  :show-password="true"
+                  @login="handleStaffLogin"
+                />
+              </div>
+            </div>
+          </div>
+
           <!-- Nostr Sign In -->
-          <div v-else class="space-y-4">
+          <div v-else-if="activeTab == 'nostr'" class="space-y-4">
             <!-- Nostr Extension Available -->
             <template v-if="hasNostr">
               <div class="text-center py-4">
@@ -613,6 +1004,7 @@ onMounted(() => {
                     type="password"
                     placeholder="nsec1... or 64-char hex private key"
                     size="lg"
+                    class="w-full"
                   />
 
                   <UButton
