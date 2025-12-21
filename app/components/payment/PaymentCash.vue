@@ -122,20 +122,17 @@ const confirmPayment = () => {
 const processPayment = () => {
   isProcessing.value = true;
 
-  // Small delay for UX feedback
-  setTimeout(() => {
-    sound.playCashRegister();
-    step.value = "complete";
-    isProcessing.value = false;
+  // Play sound
+  sound.playCashRegister();
+  step.value = "complete";
 
-    // Emit after showing success briefly
-    setTimeout(() => {
-      emit("paid", {
-        amountTendered: amountTendered.value,
-        change: change.value,
-      });
-    }, 1500);
-  }, 500);
+  // Emit IMMEDIATELY - don't wait, so modal close doesn't bypass
+  emit("paid", {
+    amountTendered: amountTendered.value,
+    change: change.value,
+  });
+
+  isProcessing.value = false;
 };
 
 const goBack = () => {

@@ -13,7 +13,7 @@ import type {
 
 definePageMeta({
   layout: "blank",
-  middleware: ['auth'],
+  middleware: ["auth"],
 });
 
 // ============================================
@@ -50,7 +50,7 @@ const isProcessing = ref(false);
 
 // Completed order for receipt
 const completedOrder = ref<Order | null>(null);
-const completedPaymentMethod = ref<PaymentMethod>('cash');
+const completedPaymentMethod = ref<PaymentMethod>("cash");
 
 // Default payment method (when clicking specific payment buttons)
 const defaultPaymentMethod = ref<PaymentMethod | null>(null);
@@ -87,12 +87,14 @@ const heldOrders = ref<
 >([]);
 
 // Tables data (loaded from localStorage)
-const tables = ref<Array<{
-  id: string;
-  name: string;
-  status: 'available' | 'occupied' | 'reserved';
-  seats: number;
-}>>([]);
+const tables = ref<
+  Array<{
+    id: string;
+    name: string;
+    status: "available" | "occupied" | "reserved";
+    seats: number;
+  }>
+>([]);
 
 // Tax settings
 const taxEnabled = ref(false);
@@ -105,10 +107,10 @@ let timeInterval: ReturnType<typeof setInterval>;
 
 // Order types for selector
 const orderTypes: Array<{ value: OrderType; label: string; icon: string }> = [
-  { value: 'dine_in', label: 'Dine In', icon: '🍽️' },
-  { value: 'take_away', label: 'Take Away', icon: '🥡' },
-  { value: 'delivery', label: 'Delivery', icon: '🛵' },
-  { value: 'pickup', label: 'Pickup', icon: '🏃' },
+  { value: "dine_in", label: "Dine In", icon: "🍽️" },
+  { value: "take_away", label: "Take Away", icon: "🥡" },
+  { value: "delivery", label: "Delivery", icon: "🛵" },
+  { value: "pickup", label: "Pickup", icon: "🏃" },
 ];
 
 // ============================================
@@ -116,13 +118,15 @@ const orderTypes: Array<{ value: OrderType; label: string; icon: string }> = [
 // ============================================
 
 // Available tables for switching
-const availableTables = computed(() => 
-  tables.value.filter(t => t.status === 'available' || t.name === pos.tableNumber.value)
+const availableTables = computed(() =>
+  tables.value.filter(
+    (t) => t.status === "available" || t.name === pos.tableNumber.value
+  )
 );
 
 // Current table info
-const currentTable = computed(() => 
-  tables.value.find(t => t.name === pos.tableNumber.value)
+const currentTable = computed(() =>
+  tables.value.find((t) => t.name === pos.tableNumber.value)
 );
 
 const formattedTime = computed(() => {
@@ -366,10 +370,10 @@ const proceedToPayment = (method?: PaymentMethod) => {
   sound.playNotification();
   defaultPaymentMethod.value = method || null;
   showPaymentModal.value = true;
-  
+
   // Notify customer display that payment is pending
   pos.setPaymentState({
-    status: 'pending',
+    status: "pending",
     amount: totalWithTax.value,
     satsAmount: totalSatsWithTax.value,
   });
@@ -429,21 +433,21 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
     // Store completed order for receipt modal
     completedOrder.value = order;
     completedPaymentMethod.value = method;
-    
+
     // Generate e-bill for customer display
     const generatedReceipt = receipt.generateReceipt(order, order.paymentProof);
     receipt.storeEBill(generatedReceipt);
     const eBillUrl = receipt.generateEBillUrl(generatedReceipt.id);
-    
+
     pos.clearCart();
     showPaymentModal.value = false;
-    
+
     // Show receipt options
     showReceiptModal.value = true;
-    
+
     // Notify customer display that payment is complete with e-bill
-    pos.setPaymentState({ 
-      status: 'paid',
+    pos.setPaymentState({
+      status: "paid",
       eBillUrl: eBillUrl,
       eBillId: generatedReceipt.id,
       amount: order.total,
@@ -452,7 +456,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
   } catch (e) {
     console.error("Payment error:", e);
     sound.playError();
-    pos.setPaymentState({ status: 'cancelled' });
+    pos.setPaymentState({ status: "cancelled" });
   } finally {
     isProcessing.value = false;
   }
@@ -461,7 +465,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 const cancelPayment = () => {
   showPaymentModal.value = false;
   isProcessing.value = false;
-  pos.setPaymentState({ status: 'idle' });
+  pos.setPaymentState({ status: "idle" });
 };
 
 // ============================================
@@ -469,11 +473,13 @@ const cancelPayment = () => {
 // ============================================
 const taxAmount = computed(() => {
   if (!taxEnabled.value) return 0;
-  
+
   if (taxInclusive.value) {
     // Tax is already included in price, calculate it for display
     // If price includes 10% tax: taxAmount = price - (price / 1.10)
-    return Math.round(pos.subtotal.value - (pos.subtotal.value / (1 + taxRatePercent.value / 100)));
+    return Math.round(
+      pos.subtotal.value - pos.subtotal.value / (1 + taxRatePercent.value / 100)
+    );
   } else {
     // Tax is added on top
     return Math.round(pos.subtotal.value * (taxRatePercent.value / 100));
@@ -508,7 +514,7 @@ const formattedTotalSatsWithTax = computed(() =>
 
 const loadTaxSettings = () => {
   try {
-    const stored = localStorage.getItem('pos_tax_settings');
+    const stored = localStorage.getItem("pos_tax_settings");
     if (stored) {
       const settings = JSON.parse(stored);
       taxEnabled.value = settings.enabled ?? false;
@@ -516,16 +522,19 @@ const loadTaxSettings = () => {
       taxInclusive.value = settings.inclusive ?? false;
     }
   } catch (e) {
-    console.error('Failed to load tax settings:', e);
+    console.error("Failed to load tax settings:", e);
   }
 };
 
 const saveTaxSettings = () => {
-  localStorage.setItem('pos_tax_settings', JSON.stringify({
-    enabled: taxEnabled.value,
-    rate: taxRatePercent.value,
-    inclusive: taxInclusive.value,
-  }));
+  localStorage.setItem(
+    "pos_tax_settings",
+    JSON.stringify({
+      enabled: taxEnabled.value,
+      rate: taxRatePercent.value,
+      inclusive: taxInclusive.value,
+    })
+  );
 };
 
 // Watch tax settings changes and save
@@ -534,22 +543,26 @@ watch([taxEnabled, taxRatePercent, taxInclusive], () => {
 });
 
 // ============================================
-// Table Switching Functions  
+// Table Switching Functions
 // ============================================
 const loadTables = () => {
   try {
-    const stored = localStorage.getItem('tables');
+    const stored = localStorage.getItem("tables");
     if (stored) {
       tables.value = JSON.parse(stored);
     }
   } catch (e) {
-    console.error('Failed to load tables:', e);
+    console.error("Failed to load tables:", e);
   }
 };
 
-const switchTable = (table: typeof tables.value[0]) => {
+const switchTable = (table: (typeof tables.value)[0]) => {
   // If there's an existing table with items, hold the current order
-  if (pos.tableNumber.value && pos.cartItems.value.length > 0 && pos.tableNumber.value !== table.name) {
+  if (
+    pos.tableNumber.value &&
+    pos.cartItems.value.length > 0 &&
+    pos.tableNumber.value !== table.name
+  ) {
     heldOrders.value.push({
       id: Date.now().toString(),
       items: [...pos.cartItems.value],
@@ -562,10 +575,12 @@ const switchTable = (table: typeof tables.value[0]) => {
 
   // Switch to new table
   pos.tableNumber.value = table.name;
-  pos.setOrderType('dine_in');
-  
+  pos.setOrderType("dine_in");
+
   // Check if there's a held order for this table and restore it
-  const heldIndex = heldOrders.value.findIndex(o => o.tableNumber === table.name);
+  const heldIndex = heldOrders.value.findIndex(
+    (o) => o.tableNumber === table.name
+  );
   if (heldIndex !== -1) {
     const held = heldOrders.value[heldIndex];
     if (held) {
@@ -579,19 +594,19 @@ const switchTable = (table: typeof tables.value[0]) => {
       heldOrders.value.splice(heldIndex, 1);
     }
   }
-  
+
   // Update table status
-  const tableIndex = tables.value.findIndex(t => t.id === table.id);
+  const tableIndex = tables.value.findIndex((t) => t.id === table.id);
   if (tableIndex !== -1 && tables.value[tableIndex]) {
-    tables.value[tableIndex].status = 'occupied';
-    localStorage.setItem('tables', JSON.stringify(tables.value));
+    tables.value[tableIndex].status = "occupied";
+    localStorage.setItem("tables", JSON.stringify(tables.value));
   }
-  
+
   showTableSwitcher.value = false;
 };
 
 const clearTableSelection = () => {
-  pos.tableNumber.value = '';
+  pos.tableNumber.value = "";
 };
 
 // ============================================
@@ -611,17 +626,18 @@ onMounted(async () => {
 
   // Load tables from localStorage
   loadTables();
-  
+
   // Load tax settings
   loadTaxSettings();
 
   // Handle table context from query params
   if (route.query.tableId) {
-    pos.tableNumber.value = route.query.tableName as string || route.query.tableId as string;
-    pos.setOrderType('dine_in');
-    
+    pos.tableNumber.value =
+      (route.query.tableName as string) || (route.query.tableId as string);
+    pos.setOrderType("dine_in");
+
     // If action is 'pay', open payment modal
-    if (route.query.action === 'pay' && pos.cartItems.value.length > 0) {
+    if (route.query.action === "pay" && pos.cartItems.value.length > 0) {
       setTimeout(() => proceedToPayment(), 500);
     }
   }
@@ -698,9 +714,11 @@ onUnmounted(() => {
             </div>
 
             <!-- Mobile status indicator -->
-            <span 
+            <span
               class="sm:hidden flex h-2.5 w-2.5 rounded-full"
-              :class="offline.isOnline.value ? 'bg-emerald-500' : 'bg-amber-500'"
+              :class="
+                offline.isOnline.value ? 'bg-emerald-500' : 'bg-amber-500'
+              "
             />
 
             <!-- Pending Sync -->
@@ -977,7 +995,9 @@ onUnmounted(() => {
       <span class="text-xl drop-shadow-sm">🛒</span>
       <span class="font-bold text-white/90">{{ pos.itemCount.value }}</span>
       <span class="w-px h-4 bg-white/30" />
-      <span class="font-semibold">{{ currency.format(pos.total.value, pos.selectedCurrency.value) }}</span>
+      <span class="font-semibold">{{
+        currency.format(pos.total.value, pos.selectedCurrency.value)
+      }}</span>
     </button>
 
     <!-- ============================================ -->
@@ -1024,9 +1044,11 @@ onUnmounted(() => {
             v-for="type in orderTypes"
             :key="type.value"
             class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
-            :class="pos.orderType.value === type.value 
-              ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25' 
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+            :class="
+              pos.orderType.value === type.value
+                ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            "
             @click="pos.setOrderType(type.value)"
           >
             <span class="text-lg">{{ type.icon }}</span>
@@ -1040,15 +1062,22 @@ onUnmounted(() => {
           <div v-if="tables.length > 0" class="flex gap-2">
             <button
               class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all"
-              :class="currentTable 
-                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30 hover:ring-emerald-500/50' 
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+              :class="
+                currentTable
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30 hover:ring-emerald-500/50'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              "
               @click="showTableSwitcher = true"
             >
               <UIcon name="i-heroicons-table-cells" class="w-4 h-4" />
-              <span v-if="currentTable" class="font-medium">{{ currentTable.name }}</span>
+              <span v-if="currentTable" class="font-medium">{{
+                currentTable.name
+              }}</span>
               <span v-else>Select Table</span>
-              <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 ml-auto opacity-50" />
+              <UIcon
+                name="i-heroicons-chevron-down"
+                class="w-4 h-4 ml-auto opacity-50"
+              />
             </button>
             <button
               v-if="pos.tableNumber.value"
@@ -1117,7 +1146,10 @@ onUnmounted(() => {
         </div>
 
         <!-- Cart Items List -->
-        <div v-else class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+        <div
+          v-else
+          class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700/50"
+        >
           <div
             v-for="(item, index) in pos.cartItems.value"
             :key="`${item.product.id}-${index}`"
@@ -1125,7 +1157,9 @@ onUnmounted(() => {
           >
             <div class="flex gap-3">
               <!-- Product Image -->
-              <div class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0">
+              <div
+                class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0"
+              >
                 {{ item.product.image || "📦" }}
               </div>
 
@@ -1185,7 +1219,9 @@ onUnmounted(() => {
 
                 <!-- Quantity Controls & Total -->
                 <div class="flex items-center justify-between mt-2">
-                  <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
+                  <div
+                    class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5"
+                  >
                     <button
                       class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 transition-colors"
                       @click="handleQuantityChange(index, -1)"
@@ -1245,25 +1281,29 @@ onUnmounted(() => {
           @click="showExtras = !showExtras"
         >
           <div class="flex items-center gap-3">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Extras</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Extras</span
+            >
             <!-- Active indicators -->
             <div class="flex items-center gap-1.5">
-              <span 
-                v-if="appliedCoupon" 
+              <span
+                v-if="appliedCoupon"
                 class="px-1.5 py-0.5 text-[10px] font-semibold bg-green-500/20 text-green-600 dark:text-green-400 rounded"
               >
                 🎟️ {{ appliedCoupon.coupon.code }}
               </span>
-              <span 
-                v-if="pos.tipAmount.value > 0" 
+              <span
+                v-if="pos.tipAmount.value > 0"
                 class="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded"
               >
                 ⚡ Tip
               </span>
             </div>
           </div>
-          <UIcon 
-            :name="showExtras ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" 
+          <UIcon
+            :name="
+              showExtras ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'
+            "
             class="w-4 h-4 text-gray-400 transition-transform"
           />
         </button>
@@ -1276,13 +1316,17 @@ onUnmounted(() => {
               <!-- Coupon Button -->
               <button
                 class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                :class="appliedCoupon 
-                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/30' 
-                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'"
+                :class="
+                  appliedCoupon
+                    ? 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/30'
+                    : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                "
                 @click="appliedCoupon ? handleCouponRemove() : null"
               >
                 <span>🎟️</span>
-                <span v-if="appliedCoupon">{{ appliedCoupon.coupon.code }} ✓</span>
+                <span v-if="appliedCoupon"
+                  >{{ appliedCoupon.coupon.code }} ✓</span
+                >
                 <span v-else>Coupon</span>
               </button>
 
@@ -1309,7 +1353,9 @@ onUnmounted(() => {
 
             <!-- Tip Options -->
             <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+              <p
+                class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1"
+              >
                 <span>⚡</span> Quick Tip
               </p>
               <div class="grid grid-cols-5 gap-1.5">
@@ -1353,12 +1399,15 @@ onUnmounted(() => {
             class="flex justify-between text-gray-500 dark:text-gray-400"
           >
             <span class="flex items-center gap-1">
-              <span>🧾</span> 
+              <span>🧾</span>
               <span>VAT {{ taxRatePercent }}%</span>
-              <span v-if="taxInclusive" class="text-xs opacity-60">(incl.)</span>
+              <span v-if="taxInclusive" class="text-xs opacity-60"
+                >(incl.)</span
+              >
             </span>
             <span :class="taxInclusive ? '' : ''">
-              {{ taxInclusive ? '' : '+' }}{{ currency.format(taxAmount, pos.selectedCurrency.value) }}
+              {{ taxInclusive ? "" : "+"
+              }}{{ currency.format(taxAmount, pos.selectedCurrency.value) }}
             </span>
           </div>
           <div
@@ -1368,16 +1417,25 @@ onUnmounted(() => {
             <span class="flex items-center gap-1">
               <span>🎟️</span> {{ appliedCoupon.coupon.code }}
             </span>
-            <span>-{{ currency.format(appliedCoupon.discountAmount, pos.selectedCurrency.value) }}</span>
+            <span
+              >-{{
+                currency.format(
+                  appliedCoupon.discountAmount,
+                  pos.selectedCurrency.value
+                )
+              }}</span
+            >
           </div>
           <div
             v-if="pos.tipAmount.value > 0"
             class="flex justify-between text-amber-600 dark:text-amber-400"
           >
-            <span class="flex items-center gap-1">
-              <span>⚡</span> Tip
-            </span>
-            <span>+{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
+            <span class="flex items-center gap-1"> <span>⚡</span> Tip </span>
+            <span
+              >+{{
+                currency.format(pos.tipAmount.value, pos.selectedCurrency.value)
+              }}</span
+            >
           </div>
         </div>
 
@@ -1444,35 +1502,44 @@ onUnmounted(() => {
     <!-- MOBILE CART SLIDE-UP PANEL -->
     <!-- ============================================ -->
     <Transition name="slide-up">
-      <div
-        v-if="showMobileCart"
-        class="lg:hidden fixed inset-0 z-50"
-      >
+      <div v-if="showMobileCart" class="lg:hidden fixed inset-0 z-50">
         <!-- Backdrop with blur -->
-        <div 
+        <div
           class="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-md"
           @click="showMobileCart = false"
         />
-        
+
         <!-- Cart Panel - Glass effect -->
-        <div class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+        <div
+          class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.4)]"
+        >
           <!-- Drag Handle -->
           <div class="flex justify-center pt-3 pb-2">
-            <div class="w-10 h-1 bg-gray-300/80 dark:bg-gray-600 rounded-full" />
+            <div
+              class="w-10 h-1 bg-gray-300/80 dark:bg-gray-600 rounded-full"
+            />
           </div>
-          
+
           <!-- Cart Header - Cleaner -->
           <div class="px-5 pb-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-2xl bg-linear-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
+              <div
+                class="w-11 h-11 rounded-2xl bg-linear-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center"
+              >
                 <span class="text-xl">🛒</span>
               </div>
               <div>
-                <h2 class="font-bold text-gray-900 dark:text-white">Your Order</h2>
-                <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">{{ pos.itemCount.value }} items</p>
+                <h2 class="font-bold text-gray-900 dark:text-white">
+                  Your Order
+                </h2>
+                <p
+                  class="text-xs text-amber-600 dark:text-amber-400 font-medium"
+                >
+                  {{ pos.itemCount.value }} items
+                </p>
               </div>
             </div>
-            <button 
+            <button
               class="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200/80 dark:hover:bg-gray-700 transition-colors"
               @click="showMobileCart = false"
             >
@@ -1487,9 +1554,11 @@ onUnmounted(() => {
                 v-for="type in orderTypes"
                 :key="type.value"
                 class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
-                :class="pos.orderType.value === type.value 
-                  ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white' 
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+                :class="
+                  pos.orderType.value === type.value
+                    ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                "
                 @click="pos.setOrderType(type.value)"
               >
                 <span class="text-lg">{{ type.icon }}</span>
@@ -1499,9 +1568,16 @@ onUnmounted(() => {
           </div>
 
           <!-- Cart Items (Scrollable) -->
-          <div class="flex-1 overflow-y-auto px-4 pb-3 bg-gray-50/50 dark:bg-gray-950/50">
-            <div v-if="pos.cartItems.value.length === 0" class="flex flex-col items-center justify-center py-16 text-gray-400">
-              <div class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center mb-4">
+          <div
+            class="flex-1 overflow-y-auto px-4 pb-3 bg-gray-50/50 dark:bg-gray-950/50"
+          >
+            <div
+              v-if="pos.cartItems.value.length === 0"
+              class="flex flex-col items-center justify-center py-16 text-gray-400"
+            >
+              <div
+                class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center mb-4"
+              >
                 <span class="text-4xl">🛒</span>
               </div>
               <p class="font-medium text-gray-500">Cart is empty</p>
@@ -1515,50 +1591,79 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-3">
                   <!-- Product Icon -->
-                  <div class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0">
-                    {{ item.product.image || '📦' }}
+                  <div
+                    class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0"
+                  >
+                    {{ item.product.image || "📦" }}
                   </div>
-                  
+
                   <!-- Product Info -->
                   <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-sm text-gray-900 dark:text-white truncate">{{ item.product.name }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ currency.format(item.price, pos.selectedCurrency.value) }}</p>
+                    <p
+                      class="font-semibold text-sm text-gray-900 dark:text-white truncate"
+                    >
+                      {{ item.product.name }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {{
+                        currency.format(item.price, pos.selectedCurrency.value)
+                      }}
+                    </p>
                   </div>
-                  
+
                   <!-- Quantity Controls -->
-                  <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
-                    <button 
+                  <div
+                    class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5"
+                  >
+                    <button
                       class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
                       @click="handleQuantityChange(index, -1)"
-                    >−</button>
-                    <span class="w-7 text-center font-bold text-sm text-gray-900 dark:text-white">{{ item.quantity }}</span>
-                    <button 
+                    >
+                      −
+                    </button>
+                    <span
+                      class="w-7 text-center font-bold text-sm text-gray-900 dark:text-white"
+                      >{{ item.quantity }}</span
+                    >
+                    <button
                       class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
                       @click="handleQuantityChange(index, 1)"
-                    >+</button>
+                    >
+                      +
+                    </button>
                   </div>
-                  
+
                   <!-- Total Price -->
-                  <p class="font-bold text-amber-600 dark:text-amber-400 text-sm min-w-[4rem] text-right tabular-nums">
-                    {{ currency.format(item.total, pos.selectedCurrency.value) }}
+                  <p
+                    class="font-bold text-amber-600 dark:text-amber-400 text-sm min-w-[4rem] text-right tabular-nums"
+                  >
+                    {{
+                      currency.format(item.total, pos.selectedCurrency.value)
+                    }}
                   </p>
                 </div>
-                
+
                 <!-- Item Notes & Actions Row -->
-                <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                <div
+                  class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/50"
+                >
                   <!-- Notes display or add button -->
                   <button
                     class="flex items-center gap-1.5 text-xs transition-colors"
-                    :class="item.notes 
-                      ? 'text-yellow-600 dark:text-yellow-400' 
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+                    :class="
+                      item.notes
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    "
                     @click="openItemNotes(index)"
                   >
                     <span>📝</span>
-                    <span v-if="item.notes" class="truncate max-w-[150px]">{{ item.notes }}</span>
+                    <span v-if="item.notes" class="truncate max-w-[150px]">{{
+                      item.notes
+                    }}</span>
                     <span v-else>Add note</span>
                   </button>
-                  
+
                   <!-- Remove button -->
                   <button
                     class="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
@@ -1572,17 +1677,32 @@ onUnmounted(() => {
           </div>
 
           <!-- Cart Footer - Glass effect -->
-          <div class="px-5 py-4 bg-linear-to-t from-white via-white to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900/80 border-t border-gray-100 dark:border-gray-800">
+          <div
+            class="px-5 py-4 bg-linear-to-t from-white via-white to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900/80 border-t border-gray-100 dark:border-gray-800"
+          >
             <!-- Summary -->
             <div class="flex justify-between items-end mb-4">
               <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Total</p>
-                <p class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{{ formattedTotalWithTax }}</p>
+                <p
+                  class="text-xs text-gray-400 uppercase tracking-wide font-medium"
+                >
+                  Total
+                </p>
+                <p
+                  class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight"
+                >
+                  {{ formattedTotalWithTax }}
+                </p>
               </div>
               <div class="text-right">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full">
+                <div
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full"
+                >
                   <span class="text-amber-500">⚡</span>
-                  <span class="text-sm font-semibold text-amber-600 dark:text-amber-400">{{ formattedTotalSatsWithTax }}</span>
+                  <span
+                    class="text-sm font-semibold text-amber-600 dark:text-amber-400"
+                    >{{ formattedTotalSatsWithTax }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -1593,7 +1713,10 @@ onUnmounted(() => {
                 variant="soft"
                 size="lg"
                 class="col-span-2 !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-800 dark:hover:!bg-gray-700 !text-gray-600 dark:!text-gray-300 font-semibold"
-                @click="pos.clearCart(); showMobileCart = false"
+                @click="
+                  pos.clearCart();
+                  showMobileCart = false;
+                "
               >
                 Clear
               </UButton>
@@ -1602,7 +1725,10 @@ onUnmounted(() => {
                 size="lg"
                 class="col-span-3 !bg-linear-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white font-semibold shadow-lg shadow-amber-500/25"
                 :disabled="pos.cartItems.value.length === 0"
-                @click="showMobileCart = false; proceedToPayment()"
+                @click="
+                  showMobileCart = false;
+                  proceedToPayment();
+                "
               >
                 <span class="flex items-center gap-2">
                   <span>Pay Now</span>
@@ -1620,7 +1746,7 @@ onUnmounted(() => {
     <!-- ============================================ -->
 
     <!-- Payment Modal -->
-    <UModal v-model:open="showPaymentModal">
+    <UModal v-model:open="showPaymentModal" :dismissable="!isProcessing">
       <template #content>
         <div
           class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto"
@@ -1642,15 +1768,16 @@ onUnmounted(() => {
     <!-- Receipt Actions Modal -->
     <UModal v-model:open="showReceiptModal" :dismissable="false">
       <template #content>
-        <div
-          class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg"
-        >
+        <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg">
           <ReceiptActions
             v-if="showReceiptModal && completedOrder"
             :order="completedOrder"
             :payment-method="completedPaymentMethod"
             @close="showReceiptModal = false"
-            @done="showReceiptModal = false; completedOrder = null"
+            @done="
+              showReceiptModal = false;
+              completedOrder = null;
+            "
           />
         </div>
       </template>
@@ -1946,24 +2073,31 @@ onUnmounted(() => {
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                   <span>🧾</span>
-                  <span class="font-medium text-gray-900 dark:text-white">Tax / VAT</span>
+                  <span class="font-medium text-gray-900 dark:text-white"
+                    >Tax / VAT</span
+                  >
                 </div>
                 <USwitch v-model="taxEnabled" />
               </div>
-              
+
               <Transition name="collapse">
                 <div v-if="taxEnabled" class="space-y-3 pt-2">
                   <!-- Tax Rate -->
                   <div>
-                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tax Rate (%)</label>
+                    <label
+                      class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5"
+                      >Tax Rate (%)</label
+                    >
                     <div class="flex gap-2">
                       <button
                         v-for="rate in [5, 7, 10, 15, 20]"
                         :key="rate"
                         class="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all"
-                        :class="taxRatePercent === rate 
-                          ? 'bg-primary-500 text-white shadow-md' 
-                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                        :class="
+                          taxRatePercent === rate
+                            ? 'bg-primary-500 text-white shadow-md'
+                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        "
                         @click="taxRatePercent = rate"
                       >
                         {{ rate }}%
@@ -1986,16 +2120,21 @@ onUnmounted(() => {
                       </UInput>
                     </div>
                   </div>
-                  
+
                   <!-- Tax Mode -->
                   <div>
-                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tax Mode</label>
+                    <label
+                      class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5"
+                      >Tax Mode</label
+                    >
                     <div class="grid grid-cols-2 gap-2">
                       <button
                         class="py-2 px-3 rounded-lg text-sm font-medium transition-all"
-                        :class="!taxInclusive 
-                          ? 'bg-primary-500 text-white shadow-md' 
-                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                        :class="
+                          !taxInclusive
+                            ? 'bg-primary-500 text-white shadow-md'
+                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        "
                         @click="taxInclusive = false"
                       >
                         <div class="flex flex-col items-center gap-0.5">
@@ -2005,9 +2144,11 @@ onUnmounted(() => {
                       </button>
                       <button
                         class="py-2 px-3 rounded-lg text-sm font-medium transition-all"
-                        :class="taxInclusive 
-                          ? 'bg-primary-500 text-white shadow-md' 
-                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                        :class="
+                          taxInclusive
+                            ? 'bg-primary-500 text-white shadow-md'
+                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        "
                         @click="taxInclusive = true"
                       >
                         <div class="flex flex-col items-center gap-0.5">
@@ -2017,9 +2158,10 @@ onUnmounted(() => {
                       </button>
                     </div>
                     <p class="text-xs text-gray-400 mt-2">
-                      {{ taxInclusive 
-                        ? 'Prices already include tax (e.g., ₭110,000 includes ₭10,000 tax)' 
-                        : 'Tax added to subtotal (e.g., ₭100,000 + ₭10,000 tax = ₭110,000)' 
+                      {{
+                        taxInclusive
+                          ? "Prices already include tax (e.g., ₭110,000 includes ₭10,000 tax)"
+                          : "Tax added to subtotal (e.g., ₭100,000 + ₭10,000 tax = ₭110,000)"
                       }}
                     </p>
                   </div>
@@ -2396,7 +2538,9 @@ onUnmounted(() => {
       <template #content>
         <div class="p-6 max-h-[80vh] overflow-auto">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl">
+            <div
+              class="w-10 h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl"
+            >
               🍽️
             </div>
             <div>
@@ -2410,54 +2554,94 @@ onUnmounted(() => {
           </div>
 
           <!-- Current table badge -->
-          <div v-if="currentTable" class="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500/30">
-            <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+          <div
+            v-if="currentTable"
+            class="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500/30"
+          >
+            <div
+              class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400"
+            >
               <UIcon name="i-heroicons-check-circle" class="w-5 h-5" />
               <span class="font-medium">Current: {{ currentTable.name }}</span>
-              <span class="text-sm opacity-75">({{ currentTable.seats }} seats)</span>
+              <span class="text-sm opacity-75"
+                >({{ currentTable.seats }} seats)</span
+              >
             </div>
           </div>
 
           <!-- Tables grid -->
-          <div v-if="tables.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          <div
+            v-if="tables.length > 0"
+            class="grid grid-cols-3 sm:grid-cols-4 gap-3"
+          >
             <button
               v-for="table in tables"
               :key="table.id"
-              :disabled="table.status === 'occupied' && table.name !== pos.tableNumber.value"
+              :disabled="
+                table.status === 'occupied' &&
+                table.name !== pos.tableNumber.value
+              "
               class="relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :class="[
                 table.name === pos.tableNumber.value
                   ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-500/50'
                   : table.status === 'available'
-                    ? 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 ring-1 ring-gray-200 dark:ring-gray-700 hover:ring-amber-500/50'
-                    : table.status === 'reserved'
-                      ? 'bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500/30'
-                      : 'bg-gray-100 dark:bg-gray-800/50 ring-1 ring-gray-200 dark:ring-gray-700'
+                  ? 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 ring-1 ring-gray-200 dark:ring-gray-700 hover:ring-amber-500/50'
+                  : table.status === 'reserved'
+                  ? 'bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500/30'
+                  : 'bg-gray-100 dark:bg-gray-800/50 ring-1 ring-gray-200 dark:ring-gray-700',
               ]"
               @click="switchTable(table)"
             >
               <!-- Table icon based on status -->
               <div class="text-2xl">
-                {{ table.status === 'reserved' ? '📋' : table.status === 'occupied' ? '🍽️' : '🪑' }}
+                {{
+                  table.status === "reserved"
+                    ? "📋"
+                    : table.status === "occupied"
+                    ? "🍽️"
+                    : "🪑"
+                }}
               </div>
-              
+
               <!-- Table name -->
-              <span class="font-semibold text-sm" :class="table.name === pos.tableNumber.value ? 'text-white' : 'text-gray-900 dark:text-white'">
+              <span
+                class="font-semibold text-sm"
+                :class="
+                  table.name === pos.tableNumber.value
+                    ? 'text-white'
+                    : 'text-gray-900 dark:text-white'
+                "
+              >
                 {{ table.name }}
               </span>
-              
+
               <!-- Seats -->
-              <span class="text-xs" :class="table.name === pos.tableNumber.value ? 'text-white/75' : 'text-gray-500'">
+              <span
+                class="text-xs"
+                :class="
+                  table.name === pos.tableNumber.value
+                    ? 'text-white/75'
+                    : 'text-gray-500'
+                "
+              >
                 {{ table.seats }} seats
               </span>
 
               <!-- Status badge -->
               <span
-                v-if="table.status !== 'available' && table.name !== pos.tableNumber.value"
+                v-if="
+                  table.status !== 'available' &&
+                  table.name !== pos.tableNumber.value
+                "
                 class="absolute top-1 right-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-                :class="table.status === 'reserved' ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'"
+                :class="
+                  table.status === 'reserved'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-500 text-white'
+                "
               >
-                {{ table.status === 'reserved' ? 'Reserved' : 'In use' }}
+                {{ table.status === "reserved" ? "Reserved" : "In use" }}
               </span>
 
               <!-- Current indicator -->
@@ -2473,7 +2657,9 @@ onUnmounted(() => {
           <!-- Empty state -->
           <div v-else class="text-center py-8">
             <div class="text-4xl mb-3">🪑</div>
-            <p class="text-gray-500 dark:text-gray-400 mb-2">No tables configured</p>
+            <p class="text-gray-500 dark:text-gray-400 mb-2">
+              No tables configured
+            </p>
             <p class="text-sm text-gray-400 dark:text-gray-500">
               Go to Tables page to set up your floor plan
             </p>
@@ -2488,7 +2674,9 @@ onUnmounted(() => {
           </div>
 
           <!-- Actions -->
-          <div class="flex gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div
+            class="flex gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700"
+          >
             <UButton
               color="neutral"
               variant="outline"

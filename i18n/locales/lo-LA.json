@@ -162,6 +162,10 @@
       "lightningDesc": "ຈ່າຍ Bitcoin ໄວທັນໃຈ",
       "cash": "ເງິນສົດ",
       "cashDesc": "ຈ່າຍດ້ວຍເງິນສົດ",
+      "bankTransfer": "ໂອນເງິນຜ່ານທະນາຄານ",
+      "bankTransferDesc": "ຈ່າຍຜ່ານບັນຊີທະນາຄານ",
+      "external": "ການຈ່າຍອື່ນ",
+      "externalDesc": "PromptPay, WeChat, Alipay, ແລະອື່ນໆ",
       "staticQR": "QR ຄົງທີ່",
       "staticQRDesc": "BOLT12 - QR ດຽວສຳລັບທຸກຈຳນວນ"
     },
@@ -216,6 +220,31 @@
       "complete": "ສຳເລັດການຈ່າຍ",
       "received": "ຈ່າຍເງິນສຳເລັດ!",
       "insufficientAmount": "ຈຳນວນບໍ່ພໍ"
+    },
+    "bankTransfer": {
+      "title": "ໂອນເງິນຜ່ານທະນາຄານ",
+      "selectBank": "ເລືອກບັນຊີທະນາຄານເພື່ອຮັບເງິນ",
+      "transferTo": "ໂອນເຂົ້າບັນຊີນີ້",
+      "accountNumber": "ເລກບັນຊີ",
+      "accountName": "ຊື່ບັນຊີ",
+      "amount": "ຈຳນວນເງິນໂອນ",
+      "reference": "ເລກອ້າງອີງ",
+      "referencePlaceholder": "ໃສ່ລະຫັດທຸລະກຳຫຼືເລກອ້າງອີງ",
+      "referenceHint": "ໃສ່ເລກອ້າງອີງການໂອນເພື່ອກວດສອບ",
+      "scanQR": "ຫຼືສະແກນ QR ເພື່ອຈ່າຍ",
+      "confirm": "ຢືນຢັນການໂອນ",
+      "recorded": "ບັນທຶກການຈ່າຍແລ້ວ",
+      "recordedDesc": "ການໂອນເງິນໄດ້ບັນທຶກແລ້ວ. ກະລຸນາກວດສອບການຈ່າຍ."
+    },
+    "external": {
+      "title": "ການຈ່າຍພາຍນອກ",
+      "selectProvider": "ເລືອກຜູ້ໃຫ້ບໍລິການຈ່າຍເງິນ",
+      "collectAmount": "ເກັບເງິນຈຳນວນນີ້",
+      "reference": "ເລກອ້າງອີງ",
+      "referencePlaceholder": "ໃສ່ເລກອ້າງອີງທຸລະກຳ (ບໍ່ບັງຄັບ)",
+      "confirmReceived": "ຢືນຢັນວ່າຮັບເງິນແລ້ວ",
+      "confirmHint": "ຢືນຢັນຫຼັງຈາກກວດສອບວ່າໄດ້ຮັບເງິນແລ້ວເທົ່ານັ້ນ",
+      "complete": "ບັນທຶກການຈ່າຍແລ້ວ!"
     },
     "staticQR": {
       "title": "ຈ່າຍຜ່ານ QR ຄົງທີ່",

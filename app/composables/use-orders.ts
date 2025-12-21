@@ -4,13 +4,13 @@
 // + Auto Ingredient Deduction
 // ============================================
 
-import type { 
-  Order, 
-  PaymentStatus, 
+import type {
+  Order,
+  PaymentStatus,
   PaymentMethod,
-  CurrencyCode 
-} from '~/types';
-import { db, type LocalOrder } from '~/db/db';
+  CurrencyCode,
+} from "~/types";
+import { db, type LocalOrder } from "~/db/db";
 
 // Singleton state
 const orders = ref<Order[]>([]);
@@ -21,7 +21,7 @@ const syncPending = ref(0);
 export function useOrders() {
   const nostrData = useNostrData();
   const offline = useOffline();
-  
+
   // Lazy load recipes to avoid circular dependency
   const getRecipesStore = () => {
     try {
@@ -30,30 +30,30 @@ export function useOrders() {
       return null;
     }
   };
-  
+
   // ============================================
   // 📊 COMPUTED
   // ============================================
 
-  const pendingOrders = computed(() => 
-    orders.value.filter(o => o.status === 'pending')
+  const pendingOrders = computed(() =>
+    orders.value.filter((o) => o.status === "pending")
   );
 
-  const completedOrders = computed(() => 
-    orders.value.filter(o => o.status === 'completed')
+  const completedOrders = computed(() =>
+    orders.value.filter((o) => o.status === "completed")
   );
 
   const todayOrders = computed(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return orders.value.filter(o => new Date(o.date) >= today);
+    return orders.value.filter((o) => new Date(o.date) >= today);
   });
 
-  const todayTotal = computed(() => 
+  const todayTotal = computed(() =>
     todayOrders.value.reduce((sum, o) => sum + o.total, 0)
   );
 
-  const todayTotalSats = computed(() => 
+  const todayTotalSats = computed(() =>
     todayOrders.value.reduce((sum, o) => sum + (o.totalSats || 0), 0)
   );
 
@@ -67,14 +67,14 @@ export function useOrders() {
   async function loadFromLocal(): Promise<Order[]> {
     try {
       const localOrders = await db.localOrders
-        .orderBy('createdAt')
+        .orderBy("createdAt")
         .reverse()
         .limit(500)
         .toArray();
 
-      return localOrders.map(lo => JSON.parse(lo.data) as Order);
+      return localOrders.map((lo) => JSON.parse(lo.data) as Order);
     } catch (e) {
-      console.error('Failed to load orders from local DB:', e);
+      console.error("Failed to load orders from local DB:", e);
       return [];
     }
   }
@@ -82,11 +82,13 @@ export function useOrders() {
   /**
    * Load orders from Nostr
    */
-  async function loadFromNostr(options: { since?: number; limit?: number } = {}): Promise<Order[]> {
+  async function loadFromNostr(
+    options: { since?: number; limit?: number } = {}
+  ): Promise<Order[]> {
     try {
       return await nostrData.getAllOrders(options);
     } catch (e) {
-      console.error('Failed to load orders from Nostr:', e);
+      console.error("Failed to load orders from Nostr:", e);
       return [];
     }
   }
@@ -108,10 +110,7 @@ export function useOrders() {
       }
 
       // Count pending syncs
-      const pending = await db.localOrders
-        .where('syncedAt')
-        .equals(0)
-        .count();
+      const pending = await db.localOrders.where("syncedAt").equals(0).count();
       syncPending.value = pending;
     } catch (e) {
       error.value = `Failed to initialize orders: ${e}`;
@@ -133,7 +132,7 @@ export function useOrders() {
       id: order.id,
       data: JSON.stringify(order),
       status: order.status,
-      paymentMethod: order.paymentMethod || 'unknown',
+      paymentMethod: order.paymentMethod || "unknown",
       total: order.total,
       totalSats: order.totalSats || 0,
       createdAt: new Date(order.date).getTime(),
@@ -159,31 +158,38 @@ export function useOrders() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to save order to Nostr:', e);
+      console.error("Failed to save order to Nostr:", e);
       return false;
     }
   }
 
   /**
    * Create new order
+   * Local save is awaited (critical), Nostr sync is fire-and-forget (resilient)
    */
   async function createOrder(order: Order): Promise<Order> {
-    // Add to state
+    // Add to state immediately
     orders.value.unshift(order);
 
-    // Save to local DB
+    // Save to local DB first (critical - must complete)
     await saveToLocal(order);
 
-    // Sync to Nostr if online
+    // Queue for Nostr sync (fire-and-forget - will retry if failed)
+    syncPending.value++;
+
+    // Trigger background sync without blocking
     if (offline.isOnline.value) {
-      const synced = await saveToNostr(order);
-      if (!synced) {
-        syncPending.value++;
-      }
-    } else {
-      syncPending.value++;
+      saveToNostr(order)
+        .then((synced) => {
+          if (synced) {
+            syncPending.value = Math.max(0, syncPending.value - 1);
+          }
+        })
+        .catch((e) => {
+          console.warn("[Orders] Background sync failed, will retry:", e);
+        });
     }
-    
+
     return order;
   }
 
@@ -191,11 +197,11 @@ export function useOrders() {
    * Update order status
    */
   async function updateOrderStatus(
-    orderId: string, 
+    orderId: string,
     status: PaymentStatus,
     additionalData?: Partial<Order>
   ): Promise<Order | null> {
-    const index = orders.value.findIndex(o => o.id === orderId);
+    const index = orders.value.findIndex((o) => o.id === orderId);
     if (index === -1) return null;
 
     const order = orders.value[index]!;
@@ -230,7 +236,7 @@ export function useOrders() {
       preimage?: string;
     }
   ): Promise<Order | null> {
-    const order = orders.value.find(o => o.id === orderId);
+    const order = orders.value.find((o) => o.id === orderId);
     if (!order) return null;
 
     // Try to deduct ingredients for items with recipes
@@ -245,36 +251,44 @@ export function useOrders() {
       }
     }
 
-    return updateOrderStatus(orderId, 'completed', {
+    return updateOrderStatus(orderId, "completed", {
       paymentMethod,
-      paymentProof: paymentProof ? {
-        id: `proof_${Date.now()}`,
-        orderId,
-        paymentHash: paymentProof.paymentHash || '',
-        preimage: paymentProof.preimage || '',
-        amount: 0,
-        receivedAt: new Date().toISOString(),
-        method: paymentMethod,
-        isOffline: !offline.isOnline.value,
-      } : undefined,
+      paymentProof: paymentProof
+        ? {
+            id: `proof_${Date.now()}`,
+            orderId,
+            paymentHash: paymentProof.paymentHash || "",
+            preimage: paymentProof.preimage || "",
+            amount: 0,
+            receivedAt: new Date().toISOString(),
+            method: paymentMethod,
+            isOffline: !offline.isOnline.value,
+          }
+        : undefined,
     });
   }
 
   /**
    * Void/cancel order
    */
-  async function voidOrder(orderId: string, reason?: string): Promise<Order | null> {
-    return updateOrderStatus(orderId, 'failed', {
-      notes: reason ? `Voided: ${reason}` : 'Order voided',
+  async function voidOrder(
+    orderId: string,
+    reason?: string
+  ): Promise<Order | null> {
+    return updateOrderStatus(orderId, "failed", {
+      notes: reason ? `Voided: ${reason}` : "Order voided",
     });
   }
 
   /**
    * Refund order
    */
-  async function refundOrder(orderId: string, reason?: string): Promise<Order | null> {
-    return updateOrderStatus(orderId, 'refunded', {
-      notes: reason ? `Refunded: ${reason}` : 'Order refunded',
+  async function refundOrder(
+    orderId: string,
+    reason?: string
+  ): Promise<Order | null> {
+    return updateOrderStatus(orderId, "refunded", {
+      notes: reason ? `Refunded: ${reason}` : "Order refunded",
     });
   }
 
@@ -284,7 +298,7 @@ export function useOrders() {
   async function deleteOrder(orderId: string): Promise<boolean> {
     try {
       // Remove from local state
-      const index = orders.value.findIndex(o => o.id === orderId);
+      const index = orders.value.findIndex((o) => o.id === orderId);
       if (index !== -1) {
         orders.value.splice(index, 1);
       }
@@ -297,8 +311,8 @@ export function useOrders() {
 
       return true;
     } catch (e) {
-      console.error('Failed to delete order:', e);
-      error.value = 'Failed to delete order';
+      console.error("Failed to delete order:", e);
+      error.value = "Failed to delete order";
       return false;
     }
   }
@@ -316,7 +330,7 @@ export function useOrders() {
     try {
       // Get unsynced orders
       const unsyncedOrders = await db.localOrders
-        .filter(o => !o.syncedAt || o.syncedAt === 0)
+        .filter((o) => !o.syncedAt || o.syncedAt === 0)
         .toArray();
 
       for (const localOrder of unsyncedOrders) {
@@ -329,19 +343,19 @@ export function useOrders() {
 
       // Fetch new orders from Nostr
       const lastSynced = await db.localOrders
-        .orderBy('createdAt')
+        .orderBy("createdAt")
         .reverse()
         .first();
-      
-      const since = lastSynced 
+
+      const since = lastSynced
         ? Math.floor(lastSynced.createdAt / 1000) - 3600 // 1 hour buffer
         : undefined;
 
       const nostrOrders = await loadFromNostr({ since });
-      
+
       // Merge with local
       for (const nostrOrder of nostrOrders) {
-        const exists = orders.value.find(o => o.id === nostrOrder.id);
+        const exists = orders.value.find((o) => o.id === nostrOrder.id);
         if (!exists) {
           orders.value.push(nostrOrder);
           await saveToLocal(nostrOrder);
@@ -349,14 +363,14 @@ export function useOrders() {
       }
 
       // Sort by date
-      orders.value.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+      orders.value.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
 
       syncPending.value = Math.max(0, syncPending.value - synced);
       return synced;
     } catch (e) {
-      console.error('Sync failed:', e);
+      console.error("Sync failed:", e);
       return 0;
     }
   }
@@ -371,7 +385,7 @@ export function useOrders() {
 
     try {
       const unsyncedOrders = await db.localOrders
-        .filter(o => !o.syncedAt || o.syncedAt === 0)
+        .filter((o) => !o.syncedAt || o.syncedAt === 0)
         .toArray();
 
       for (const localOrder of unsyncedOrders) {
@@ -400,14 +414,14 @@ export function useOrders() {
    * Get order by ID
    */
   function getOrder(id: string): Order | undefined {
-    return orders.value.find(o => o.id === id);
+    return orders.value.find((o) => o.id === id);
   }
 
   /**
    * Get orders by date range
    */
   function getOrdersByDateRange(startDate: Date, endDate: Date): Order[] {
-    return orders.value.filter(o => {
+    return orders.value.filter((o) => {
       const date = new Date(o.date);
       return date >= startDate && date <= endDate;
     });
@@ -417,14 +431,14 @@ export function useOrders() {
    * Get orders by customer
    */
   function getOrdersByCustomer(customerPubkey: string): Order[] {
-    return orders.value.filter(o => o.customerPubkey === customerPubkey);
+    return orders.value.filter((o) => o.customerPubkey === customerPubkey);
   }
 
   /**
    * Get orders by payment method
    */
   function getOrdersByPaymentMethod(method: PaymentMethod): Order[] {
-    return orders.value.filter(o => o.paymentMethod === method);
+    return orders.value.filter((o) => o.paymentMethod === method);
   }
 
   /**
@@ -432,10 +446,11 @@ export function useOrders() {
    */
   function searchOrders(query: string): Order[] {
     const q = query.toLowerCase();
-    return orders.value.filter(o => 
-      o.id.toLowerCase().includes(q) ||
-      o.customer.toLowerCase().includes(q) ||
-      o.items.some(i => i.product.name.toLowerCase().includes(q))
+    return orders.value.filter(
+      (o) =>
+        o.id.toLowerCase().includes(q) ||
+        o.customer.toLowerCase().includes(q) ||
+        o.items.some((i) => i.product.name.toLowerCase().includes(q))
     );
   }
 
@@ -446,7 +461,10 @@ export function useOrders() {
   /**
    * Get sales summary for a period
    */
-  function getSalesSummary(startDate: Date, endDate: Date): {
+  function getSalesSummary(
+    startDate: Date,
+    endDate: Date
+  ): {
     totalOrders: number;
     totalSales: number;
     totalSats: number;
@@ -454,10 +472,12 @@ export function useOrders() {
     byPaymentMethod: Record<string, { count: number; total: number }>;
     byHour: Record<number, { count: number; total: number }>;
   } {
-    const periodOrders = getOrdersByDateRange(startDate, endDate)
-      .filter(o => o.status === 'completed');
+    const periodOrders = getOrdersByDateRange(startDate, endDate).filter(
+      (o) => o.status === "completed"
+    );
 
-    const byPaymentMethod: Record<string, { count: number; total: number }> = {};
+    const byPaymentMethod: Record<string, { count: number; total: number }> =
+      {};
     const byHour: Record<number, { count: number; total: number }> = {};
 
     let totalSales = 0;
@@ -468,7 +488,7 @@ export function useOrders() {
       totalSats += order.totalSats || 0;
 
       // By payment method
-      const method = order.paymentMethod || 'unknown';
+      const method = order.paymentMethod || "unknown";
       if (!byPaymentMethod[method]) {
         byPaymentMethod[method] = { count: 0, total: 0 };
       }
@@ -488,7 +508,8 @@ export function useOrders() {
       totalOrders: periodOrders.length,
       totalSales,
       totalSats,
-      avgOrderValue: periodOrders.length > 0 ? totalSales / periodOrders.length : 0,
+      avgOrderValue:
+        periodOrders.length > 0 ? totalSales / periodOrders.length : 0,
       byPaymentMethod,
       byHour,
     };
@@ -497,16 +518,24 @@ export function useOrders() {
   /**
    * Get top selling products
    */
-  function getTopProducts(startDate: Date, endDate: Date, limit = 10): Array<{
+  function getTopProducts(
+    startDate: Date,
+    endDate: Date,
+    limit = 10
+  ): Array<{
     productId: string;
     productName: string;
     quantity: number;
     revenue: number;
   }> {
-    const periodOrders = getOrdersByDateRange(startDate, endDate)
-      .filter(o => o.status === 'completed');
+    const periodOrders = getOrdersByDateRange(startDate, endDate).filter(
+      (o) => o.status === "completed"
+    );
 
-    const productStats: Record<string, { name: string; quantity: number; revenue: number }> = {};
+    const productStats: Record<
+      string,
+      { name: string; quantity: number; revenue: number }
+    > = {};
 
     for (const order of periodOrders) {
       for (const item of order.items) {
@@ -547,24 +576,28 @@ export function useOrders() {
     totals: { subtotal: string; tax: string; tip?: string; total: string };
   } {
     const formatPrice = (amount: number, currency: CurrencyCode) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency === 'SATS' ? 'USD' : currency,
-        minimumFractionDigits: currency === 'LAK' ? 0 : 2,
-      }).format(amount).replace('$', currency === 'SATS' ? '₿' : '');
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currency === "SATS" ? "USD" : currency,
+        minimumFractionDigits: currency === "LAK" ? 0 : 2,
+      })
+        .format(amount)
+        .replace("$", currency === "SATS" ? "₿" : "");
     };
 
     const subtotal = order.items.reduce((sum, i) => sum + i.total, 0);
     const tax = 0; // TODO: Calculate from settings
-    
+
     return {
       header: [
         order.id,
         new Date(order.date).toLocaleString(),
         `Customer: ${order.customer}`,
       ],
-      items: order.items.map(item => ({
-        name: item.product.name + (item.selectedVariant ? ` (${item.selectedVariant.shortName})` : ''),
+      items: order.items.map((item) => ({
+        name:
+          item.product.name +
+          (item.selectedVariant ? ` (${item.selectedVariant.shortName})` : ""),
         qty: item.quantity,
         price: formatPrice(item.price, order.currency),
         total: formatPrice(item.total, order.currency),
@@ -576,9 +609,11 @@ export function useOrders() {
         total: formatPrice(order.total, order.currency),
       },
       footer: [
-        order.paymentMethod === 'lightning' ? '⚡ Paid with Lightning' : `Paid with ${order.paymentMethod}`,
-        order.totalSats ? `${order.totalSats.toLocaleString()} sats` : '',
-        'Thank you for your purchase!',
+        order.paymentMethod === "lightning"
+          ? "⚡ Paid with Lightning"
+          : `Paid with ${order.paymentMethod}`,
+        order.totalSats ? `${order.totalSats.toLocaleString()} sats` : "",
+        "Thank you for your purchase!",
       ].filter(Boolean),
     };
   }
