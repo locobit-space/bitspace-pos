@@ -118,9 +118,15 @@
                 {{ $t("settings.users.companyCode") || "Company Code" }}
               </span>
             </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t("common.enabled") || "Enabled" }}
+              </span>
+              <USwitch v-model="isCompanyCodeEnabled" size="md" />
+            </div>
           </template>
 
-          <div class="text-center py-4">
+          <div v-if="isCompanyCodeEnabled" class="text-center py-4">
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {{
                 $t("settings.users.companyCodeDescription") ||
@@ -1007,6 +1013,10 @@ const isReady = ref(false);
 // Company code state
 const company = useCompany();
 const companyCode = computed(() => company.companyCode.value);
+const isCompanyCodeEnabled = computed({
+  get: () => company.isCompanyCodeEnabled.value,
+  set: (val) => company.toggleCompanyCode(val),
+});
 const isOwner = computed(() => usersComposable.isOwner());
 
 // Copy company code to clipboard

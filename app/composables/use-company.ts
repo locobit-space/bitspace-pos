@@ -10,12 +10,14 @@ const STORAGE_KEYS = {
   COMPANY_CODE: "bitspace_company_code",
   COMPANY_CODE_HASH: "bitspace_company_code_hash",
   COMPANY_OWNER_PUBKEY: "bitspace_company_owner_pubkey",
+  IS_ENABLED: "bitspace_company_code_enabled",
 } as const;
 
 // Singleton state
 const companyCode = ref<string | null>(null);
 const companyCodeHash = ref<string | null>(null);
 const ownerPubkey = ref<string | null>(null);
+const isCompanyCodeEnabled = ref(false); // Default off
 const isInitialized = ref(false);
 
 export function useCompany() {
@@ -229,10 +231,14 @@ export function useCompany() {
     const storedPubkey = localStorage.getItem(
       STORAGE_KEYS.COMPANY_OWNER_PUBKEY
     );
+    const storedEnabled = localStorage.getItem(STORAGE_KEYS.IS_ENABLED);
 
     if (storedCode) companyCode.value = storedCode;
     if (storedHash) companyCodeHash.value = storedHash;
     if (storedPubkey) ownerPubkey.value = storedPubkey;
+
+    // Default to false if not set, otherwise parse value
+    isCompanyCodeEnabled.value = storedEnabled === "true";
 
     isInitialized.value = true;
   }
@@ -285,6 +291,14 @@ export function useCompany() {
     loadCompanyCode();
   }
 
+  /**
+   * Toggle company code feature
+   */
+  function toggleCompanyCode(enabled: boolean): void {
+    isCompanyCodeEnabled.value = enabled;
+    localStorage.setItem(STORAGE_KEYS.IS_ENABLED, String(enabled));
+  }
+
   return {
     // State
     companyCode: computed(() => companyCode.value),
@@ -292,6 +306,7 @@ export function useCompany() {
     ownerPubkey: computed(() => ownerPubkey.value),
     hasCompanyCode: computed(() => !!companyCode.value),
     isInitialized: computed(() => isInitialized.value),
+    isCompanyCodeEnabled: computed(() => isCompanyCodeEnabled.value), // Export state
 
     // Code management
     generateCompanyCode,
@@ -301,6 +316,7 @@ export function useCompany() {
     clearCompanyCode,
     validateCode,
     initializeCompany,
+    toggleCompanyCode, // Export function
 
     // Encryption
     deriveKeyFromCode,

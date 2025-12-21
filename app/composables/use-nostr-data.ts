@@ -164,7 +164,8 @@ export function useNostrData() {
 
     // PRIORITY 1: Use company code encryption if available (v4)
     // This allows any device with the company code to decrypt
-    if (company.companyCode.value) {
+    // BUT only if the feature is explicitly enabled
+    if (company.isCompanyCodeEnabled.value && company.companyCode.value) {
       try {
         const encrypted = await company.encryptWithCode(
           data,
