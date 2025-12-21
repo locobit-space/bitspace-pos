@@ -95,11 +95,11 @@ const keysCopied = ref({ npub: false, nsec: false });
 
 const handleCreateNostrAccount = async () => {
   isCreatingNostr.value = true;
-  
+
   try {
     // Generate new Nostr keys
     const newUser = nostrUser.createUser();
-    
+
     if (newUser) {
       // Show the keys to user before saving
       newAccountKeys.value = {
@@ -109,7 +109,8 @@ const handleCreateNostrAccount = async () => {
       showKeysModal.value = true;
     }
   } catch (e) {
-    auth.error.value = e instanceof Error ? e.message : 'Failed to create account';
+    auth.error.value =
+      e instanceof Error ? e.message : "Failed to create account";
   } finally {
     isCreatingNostr.value = false;
   }
@@ -120,7 +121,7 @@ const confirmAccountCreation = () => {
   router.push("/");
 };
 
-const copyToClipboard = async (text: string, type: 'npub' | 'nsec') => {
+const copyToClipboard = async (text: string, type: "npub" | "nsec") => {
   await navigator.clipboard.writeText(text);
   keysCopied.value[type] = true;
   setTimeout(() => {
@@ -137,13 +138,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    class=" bg-gray-100 dark:bg-gray-950 flex flex-col justify-center py-12"
-  >
+  <div class="bg-gray-100 dark:bg-gray-950 flex flex-col justify-center py-12">
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
       <!-- Back to Home -->
       <div class="mb-6">
-        <NuxtLink to="/" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+        <NuxtLink
+          to="/"
+          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           Back to Home
         </NuxtLink>
@@ -182,10 +184,14 @@ onMounted(() => {
           <!-- Primary: Create Nostr Account -->
           <div class="mb-6">
             <div class="text-center mb-4">
-              <div class="w-14 h-14 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div
+                class="w-14 h-14 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+              >
                 <span class="text-2xl">⚡</span>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Create Nostr Account</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Create Nostr Account
+              </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Generate a new identity - no email required
               </p>
@@ -210,14 +216,7 @@ onMounted(() => {
           </div>
 
           <!-- Or connect with extension -->
-          <div class="relative mb-6">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-200 dark:border-gray-800" />
-            </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white dark:bg-gray-900 text-gray-500">or connect existing</span>
-            </div>
-          </div>
+          <USeparator label="or connect existing" class="my-4" />
 
           <!-- Secondary: Connect with Extension/Import -->
           <div class="space-y-3 mb-6">
@@ -239,28 +238,9 @@ onMounted(() => {
               size="lg"
               color="neutral"
               variant="outline"
+              icon="material-icon-theme:google"
               @click="handleGoogleSignUp"
             >
-              <template #leading>
-                <svg class="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-              </template>
               Continue with Google
             </UButton>
           </div>
@@ -279,7 +259,7 @@ onMounted(() => {
           </div>
 
           <!-- Email Sign Up Form -->
-          <form @submit.prevent="handleSignUp" class="space-y-4">
+          <form class="space-y-4" @submit.prevent="handleSignUp">
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
@@ -290,6 +270,7 @@ onMounted(() => {
                 type="text"
                 placeholder="John Doe"
                 size="lg"
+                class="w-full"
               />
             </div>
 
@@ -304,6 +285,7 @@ onMounted(() => {
                 placeholder="you@example.com"
                 size="lg"
                 required
+                class="w-full"
               />
             </div>
 
@@ -318,6 +300,7 @@ onMounted(() => {
                 placeholder="Create a strong password"
                 size="lg"
                 required
+                class="w-full"
               >
                 <template #trailing>
                   <UButton
@@ -368,6 +351,7 @@ onMounted(() => {
                 placeholder="Confirm your password"
                 size="lg"
                 required
+                class="w-full"
               />
               <p
                 v-if="
@@ -448,31 +432,43 @@ onMounted(() => {
         <UCard>
           <template #header>
             <div class="text-center">
-              <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div
+                class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+              >
                 <span class="text-3xl">🎉</span>
               </div>
-              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Account Created!</h3>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                Account Created!
+              </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Save your keys securely - you'll need them to recover your account
+                Save your keys securely - you'll need them to recover your
+                account
               </p>
             </div>
           </template>
 
           <div class="space-y-4">
             <!-- Warning -->
-            <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-              <p class="text-sm text-amber-600 dark:text-amber-400 flex items-start gap-2">
+            <div
+              class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg"
+            >
+              <p
+                class="text-sm text-amber-600 dark:text-amber-400 flex items-start gap-2"
+              >
                 <span class="text-lg">⚠️</span>
                 <span>
                   <strong class="block">Save these keys now!</strong>
-                  Your private key (nsec) will not be shown again. Store it securely.
+                  Your private key (nsec) will not be shown again. Store it
+                  securely.
                 </span>
               </p>
             </div>
 
             <!-- Public Key (npub) -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Public Key (npub) - Share this
               </label>
               <div class="flex gap-2">
@@ -482,7 +478,11 @@ onMounted(() => {
                   class="flex-1 font-mono text-xs"
                 />
                 <UButton
-                  :icon="keysCopied.npub ? 'i-heroicons-check' : 'i-heroicons-clipboard'"
+                  :icon="
+                    keysCopied.npub
+                      ? 'i-heroicons-check'
+                      : 'i-heroicons-clipboard'
+                  "
                   :color="keysCopied.npub ? 'success' : 'neutral'"
                   variant="outline"
                   @click="copyToClipboard(newAccountKeys?.npub || '', 'npub')"
@@ -492,7 +492,9 @@ onMounted(() => {
 
             <!-- Private Key (nsec) -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Private Key (nsec) - Keep this secret!
               </label>
               <div class="flex gap-2">
@@ -503,7 +505,11 @@ onMounted(() => {
                   class="flex-1 font-mono text-xs"
                 />
                 <UButton
-                  :icon="keysCopied.nsec ? 'i-heroicons-check' : 'i-heroicons-clipboard'"
+                  :icon="
+                    keysCopied.nsec
+                      ? 'i-heroicons-check'
+                      : 'i-heroicons-clipboard'
+                  "
                   :color="keysCopied.nsec ? 'success' : 'neutral'"
                   variant="outline"
                   @click="copyToClipboard(newAccountKeys?.nsec || '', 'nsec')"
