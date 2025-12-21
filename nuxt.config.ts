@@ -18,7 +18,94 @@ export default defineNuxtConfig({
     "@nuxt/icon",
     "@nuxt/image",
     "@nuxt/test-utils",
+    "@vite-pwa/nuxt",
   ],
+
+  // PWA Configuration for offline mode
+  pwa: {
+    registerType: "autoUpdate",
+    manifest: {
+      name: "BitSpace POS",
+      short_name: "BitSpace",
+      description: "Lightning-powered Point of Sale",
+      theme_color: "#f59e0b",
+      background_color: "#111827",
+      display: "standalone",
+      orientation: "any",
+      start_url: "/",
+      icons: [
+        {
+          src: "/icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+        },
+        {
+          src: "/icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+        },
+        {
+          src: "/icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
+        },
+      ],
+    },
+    workbox: {
+      navigateFallback: "/",
+      globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2,woff,ttf}"],
+      cleanupOutdatedCaches: true,
+      runtimeCaching: [
+        {
+          // Cache QR code API responses
+          urlPattern: /^https:\/\/api\.qrserver\.com\/.*/i,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "qr-codes-cache",
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+            },
+            cacheableResponse: {
+              statuses: [0, 200],
+            },
+          },
+        },
+        {
+          // Cache Google Fonts
+          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "google-fonts-cache",
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+            },
+          },
+        },
+        {
+          // Cache font files
+          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "gstatic-fonts-cache",
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+            },
+          },
+        },
+      ],
+    },
+    client: {
+      installPrompt: true,
+    },
+    devOptions: {
+      enabled: true, // Enable in dev for testing
+      type: "module",
+    },
+  },
 
   ui: {
     theme: {
