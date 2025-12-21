@@ -681,21 +681,47 @@ export function useTables() {
    */
   const generateTableToken = async (tableId: string): Promise<string> => {
     const table = tables.value.find((t) => t.id === tableId);
-    if (!table) return "";
+    if (!table) {
+      console.warn(
+        "[Tables] generateTableToken: Table not found:",
+        tableId,
+        "Available tables:",
+        tables.value.map((t) => t.id)
+      );
+      return "";
+    }
 
     const ownerPubkey = localStorage.getItem("nostr_pubkey") || "";
+    if (!ownerPubkey) {
+      console.warn(
+        "[Tables] generateTableToken: No nostr_pubkey found in localStorage"
+      );
+    }
 
     // Token data
     const tokenData = {
       tid: tableId,
       tnum: table.number,
       tname: table.name || "",
-      opk: ownerPubkey.slice(0, 16), // First 16 chars of owner pubkey
+      opk: ownerPubkey, // Full owner pubkey for Nostr queries
       iat: Date.now(),
       exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     };
 
     try {
+      // Check if crypto.subtle is available (requires HTTPS or localhost)
+      if (!crypto?.subtle) {
+        console.warn(
+          "[Tables] crypto.subtle not available - using base64 fallback (development mode)"
+        );
+        // Fallback: base64 encode the token data (NOT SECURE - only for development)
+        const fallbackToken = btoa(JSON.stringify(tokenData))
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=/g, "");
+        return `dev_${fallbackToken}`;
+      }
+
       // Derive key from secret + owner pubkey
       const encoder = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey(
@@ -752,10 +778,37 @@ export function useTables() {
     tableId?: string;
     tableNumber?: string;
     tableName?: string;
+    ownerPubkey?: string;
     error?: string;
   }> => {
     try {
+      // Handle development fallback tokens (dev_ prefix)
+      if (token.startsWith("dev_")) {
+        const base64Data = token.slice(4).replace(/-/g, "+").replace(/_/g, "/");
+        let padded = base64Data;
+        while (padded.length % 4) padded += "=";
+        const tokenData = JSON.parse(atob(padded));
+
+        // Check expiration
+        if (tokenData.exp && tokenData.exp < Date.now()) {
+          return { valid: false, error: "Token expired" };
+        }
+
+        return {
+          valid: true,
+          tableId: tokenData.tid,
+          tableNumber: tokenData.tnum,
+          tableName: tokenData.tname,
+          ownerPubkey: tokenData.opk,
+        };
+      }
+
       const ownerPubkey = localStorage.getItem("nostr_pubkey") || "";
+
+      // Check if crypto.subtle is available
+      if (!crypto?.subtle) {
+        return { valid: false, error: "Crypto not available" };
+      }
 
       // Derive key
       const encoder = new TextEncoder();
@@ -812,6 +865,7 @@ export function useTables() {
         tableId: tokenData.tid,
         tableNumber: tokenData.tnum,
         tableName: tokenData.tname,
+        ownerPubkey: tokenData.opk,
       };
     } catch (e) {
       console.error("[Tables] Token validation failed:", e);

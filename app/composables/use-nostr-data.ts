@@ -554,7 +554,7 @@ export function useNostrData() {
    */
   async function getAllEventsOfKind<T>(
     kind: number,
-    options: { since?: number; limit?: number } = {}
+    options: { since?: number; limit?: number; authors?: string[] } = {}
   ): Promise<Array<{ event: Event; data: T }>> {
     const events = await queryEvents([kind], options);
     const results: Array<{ event: Event; data: T }> = [];
@@ -600,6 +600,35 @@ export function useNostrData() {
   async function getAllProducts(): Promise<Product[]> {
     const results = await getAllEventsOfKind<Product>(NOSTR_KINDS.PRODUCT);
     return results.map((r) => r.data);
+  }
+
+  /**
+   * Get products for a specific owner (for public menu access)
+   * This is used when a customer scans a QR code and needs to load the store's products
+   */
+  async function getProductsForOwner(ownerPubkey: string): Promise<Product[]> {
+    console.log("[NostrData] Getting products for owner:", ownerPubkey);
+    const results = await getAllEventsOfKind<Product>(NOSTR_KINDS.PRODUCT, {
+      authors: [ownerPubkey],
+    });
+    console.log("[NostrData] Found products for owner:", results.length);
+    return results
+      .map((r) => r.data)
+      .filter((p) => p.status === "active" && p.isPublic !== false);
+  }
+
+  /**
+   * Get categories for a specific owner (for public menu access)
+   */
+  async function getCategoriesForOwner(
+    ownerPubkey: string
+  ): Promise<Category[]> {
+    const results = await getAllEventsOfKind<Category>(NOSTR_KINDS.CATEGORY, {
+      authors: [ownerPubkey],
+    });
+    return results
+      .map((r) => r.data)
+      .filter((c) => !(c as Category & { deleted?: boolean }).deleted);
   }
 
   async function deleteProduct(id: string): Promise<boolean> {
@@ -1137,11 +1166,13 @@ export function useNostrData() {
     saveProduct,
     getProduct,
     getAllProducts,
+    getProductsForOwner,
     deleteProduct,
 
     // Categories
     saveCategory,
     getAllCategories,
+    getCategoriesForOwner,
 
     // Units
     saveUnit,
