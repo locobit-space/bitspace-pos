@@ -584,10 +584,17 @@
         <div class="text-center">
           <div class="bg-white p-6 rounded-xl inline-block shadow-lg mb-4">
             <img
-              :src="generateQRCode(selectedTable.id)"
+              v-if="currentQRCodeUrl"
+              :src="currentQRCodeUrl"
               :alt="`QR Code for ${selectedTable.name || selectedTable.number}`"
               class="w-64 h-64"
             />
+            <div v-else class="w-64 h-64 flex items-center justify-center">
+              <UIcon
+                name="i-heroicons-arrow-path"
+                class="w-8 h-8 animate-spin text-gray-400"
+              />
+            </div>
           </div>
 
           <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -604,7 +611,7 @@
             <p
               class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all"
             >
-              {{ getTableOrderingUrl(selectedTable.id) }}
+              {{ currentOrderingUrl || "Loading..." }}
             </p>
           </div>
         </div>
@@ -938,18 +945,28 @@ const processPayment = async (table: any) => {
   });
 };
 
-const getTableOrderingUrl = (tableId: string) => {
-  return tablesStore.getTableOrderingUrl(tableId);
-};
+// QR code reactive refs
+const currentOrderingUrl = ref<string>("");
+const currentQRCodeUrl = ref<string>("");
 
-const generateQRCode = (tableId: string) => {
-  return tablesStore.generateTableQR(tableId, 250);
-};
+// Watch selected table and generate URLs
+watch(
+  () => selectedTable.value?.id,
+  async (tableId) => {
+    if (tableId) {
+      currentOrderingUrl.value = await tablesStore.getTableOrderingUrl(tableId);
+      currentQRCodeUrl.value = await tablesStore.generateTableQR(tableId, 250);
+    } else {
+      currentOrderingUrl.value = "";
+      currentQRCodeUrl.value = "";
+    }
+  },
+  { immediate: true }
+);
 
 const copyQRUrl = async () => {
-  if (!selectedTable.value) return;
-  const url = getTableOrderingUrl(selectedTable.value.id);
-  await navigator.clipboard.writeText(url);
+  if (!selectedTable.value || !currentOrderingUrl.value) return;
+  await navigator.clipboard.writeText(currentOrderingUrl.value);
   toast.add({
     title: t("common.success"),
     description: t("common.copied"),
@@ -957,12 +974,15 @@ const copyQRUrl = async () => {
   });
 };
 
-const printQR = () => {
+const printQR = async () => {
   // Print logic using window.open like in settings/tables
   const table = selectedTable.value;
   if (!table) return;
 
-  const qrUrl = tablesStore.generateTableQR(table.id, 400);
+  // Use cached URL or generate new one
+  const qrUrl =
+    currentQRCodeUrl.value ||
+    (await tablesStore.generateTableQR(table.id, 400));
   const tableName = table.name || table.number;
 
   const printWindow = window.open("", "_blank");

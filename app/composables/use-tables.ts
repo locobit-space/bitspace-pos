@@ -673,20 +673,170 @@ export function useTables() {
   // QR CODE ORDERING
   // ============================================
 
+  // Secret for table token encryption (derived from owner pubkey)
+  const TABLE_TOKEN_SECRET = "bitspace-table-token-v1";
+
   /**
-   * Get the table ordering URL for customers
+   * Generate an encrypted table token for secure QR ordering
    */
-  const getTableOrderingUrl = (tableId: string): string => {
+  const generateTableToken = async (tableId: string): Promise<string> => {
+    const table = tables.value.find((t) => t.id === tableId);
+    if (!table) return "";
+
+    const ownerPubkey = localStorage.getItem("nostr_pubkey") || "";
+
+    // Token data
+    const tokenData = {
+      tid: tableId,
+      tnum: table.number,
+      tname: table.name || "",
+      opk: ownerPubkey.slice(0, 16), // First 16 chars of owner pubkey
+      iat: Date.now(),
+      exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    };
+
+    try {
+      // Derive key from secret + owner pubkey
+      const encoder = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(TABLE_TOKEN_SECRET + ownerPubkey.slice(0, 32)),
+        "PBKDF2",
+        false,
+        ["deriveBits", "deriveKey"]
+      );
+
+      const key = await crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: encoder.encode("table-token-salt"),
+          iterations: 10000,
+          hash: "SHA-256",
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt"]
+      );
+
+      // Encrypt
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        encoder.encode(JSON.stringify(tokenData))
+      );
+
+      // Combine IV + ciphertext and encode as base64url
+      const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+      combined.set(iv);
+      combined.set(new Uint8Array(ciphertext), iv.length);
+
+      return btoa(String.fromCharCode(...combined))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+    } catch (e) {
+      console.error("[Tables] Token generation failed:", e);
+      return "";
+    }
+  };
+
+  /**
+   * Validate and decrypt a table token
+   */
+  const validateTableToken = async (
+    token: string
+  ): Promise<{
+    valid: boolean;
+    tableId?: string;
+    tableNumber?: string;
+    tableName?: string;
+    error?: string;
+  }> => {
+    try {
+      const ownerPubkey = localStorage.getItem("nostr_pubkey") || "";
+
+      // Derive key
+      const encoder = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(TABLE_TOKEN_SECRET + ownerPubkey.slice(0, 32)),
+        "PBKDF2",
+        false,
+        ["deriveBits", "deriveKey"]
+      );
+
+      const key = await crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: encoder.encode("table-token-salt"),
+          iterations: 10000,
+          hash: "SHA-256",
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
+
+      // Decode base64url
+      let base64 = token.replace(/-/g, "+").replace(/_/g, "/");
+      while (base64.length % 4) base64 += "=";
+      const combined = new Uint8Array(
+        atob(base64)
+          .split("")
+          .map((c) => c.charCodeAt(0))
+      );
+
+      // Extract IV and ciphertext
+      const iv = combined.slice(0, 12);
+      const ciphertext = combined.slice(12);
+
+      // Decrypt
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        key,
+        ciphertext
+      );
+
+      const tokenData = JSON.parse(new TextDecoder().decode(decrypted));
+
+      // Check expiration
+      if (tokenData.exp && tokenData.exp < Date.now()) {
+        return { valid: false, error: "Token expired" };
+      }
+
+      return {
+        valid: true,
+        tableId: tokenData.tid,
+        tableNumber: tokenData.tnum,
+        tableName: tokenData.tname,
+      };
+    } catch (e) {
+      console.error("[Tables] Token validation failed:", e);
+      return { valid: false, error: "Invalid token" };
+    }
+  };
+
+  /**
+   * Get the table ordering URL for customers (with encrypted token)
+   */
+  const getTableOrderingUrl = async (tableId: string): Promise<string> => {
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    return `${baseUrl}/menu/${tableId}`;
+    const token = await generateTableToken(tableId);
+    return `${baseUrl}/order?t=${token}`;
   };
 
   /**
    * Generate QR code image URL for a table
    * Uses a public QR code API
    */
-  const generateTableQR = (tableId: string, size: number = 200): string => {
-    const url = getTableOrderingUrl(tableId);
+  const generateTableQR = async (
+    tableId: string,
+    size: number = 200
+  ): Promise<string> => {
+    const url = await getTableOrderingUrl(tableId);
     return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
       url
     )}`;
@@ -885,6 +1035,8 @@ export function useTables() {
     isTableAvailableAt,
 
     // QR Ordering
+    generateTableToken,
+    validateTableToken,
     getTableOrderingUrl,
     generateTableQR,
     toggleTableQROrdering,
