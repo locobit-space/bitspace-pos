@@ -719,14 +719,12 @@ const shapeOptions = [
 
 // Computed
 const currentFloorTables = computed(() => {
-  let filtered = tables.value;
-  if (currentFloor.value || activeZones.value.length > 0) {
-    filtered = tables.value.filter(
-      (t) =>
-        t.isActive &&
-        (t.zone === currentFloor.value ||
-          (!t.zone && currentFloor.value === ""))
-    );
+  // Start with all tables
+  let filtered = tables.value.filter((t) => t.isActive);
+
+  // Only filter by zone if a specific floor is selected (not empty/"all")
+  if (currentFloor.value && currentFloor.value !== "") {
+    filtered = filtered.filter((t) => t.zone === currentFloor.value);
   }
 
   return filtered.map((t) => {

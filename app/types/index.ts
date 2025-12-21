@@ -11,7 +11,19 @@
 /**
  * Unit of measurement for ingredients
  */
-export type IngredientUnit = 'g' | 'kg' | 'ml' | 'l' | 'piece' | 'pack' | 'tray' | 'bottle' | 'can' | 'cup' | 'tbsp' | 'tsp';
+export type IngredientUnit =
+  | "g"
+  | "kg"
+  | "ml"
+  | "l"
+  | "piece"
+  | "pack"
+  | "tray"
+  | "bottle"
+  | "can"
+  | "cup"
+  | "tbsp"
+  | "tsp";
 
 /**
  * Raw ingredient/material used in recipes
@@ -34,7 +46,7 @@ export interface Ingredient {
   lastPurchasePrice?: number;
   categoryId?: string; // Ingredient category (e.g., "dry", "dairy", "fresh")
   expiryDays?: number; // Days until expiry
-  storageType: 'ambient' | 'refrigerated' | 'frozen';
+  storageType: "ambient" | "refrigerated" | "frozen";
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -100,7 +112,7 @@ export interface Recipe {
   // Management
   prepTime: number; // Minutes
   cookTime: number; // Minutes
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   categoryId?: string;
   tags?: string[];
   isActive: boolean;
@@ -115,7 +127,7 @@ export interface IngredientStockAdjustment {
   id: string;
   ingredientId: string;
   ingredient?: Ingredient;
-  type: 'purchase' | 'usage' | 'waste' | 'return' | 'adjustment' | 'count';
+  type: "purchase" | "usage" | "waste" | "return" | "adjustment" | "count";
   previousStock: number;
   adjustment: number; // Positive for increase, negative for decrease
   newStock: number;
@@ -123,7 +135,7 @@ export interface IngredientStockAdjustment {
   totalCost?: number; // Total cost of adjustment
   reason: string;
   referenceId?: string; // Order ID or Purchase ID
-  referenceType?: 'order' | 'purchase' | 'production' | 'manual';
+  referenceType?: "order" | "purchase" | "production" | "manual";
   notes?: string;
   staffId: string;
   createdAt: string;
@@ -141,7 +153,7 @@ export interface LowStockAlert {
   deficitAmount: number;
   suggestedPurchaseQty: number;
   estimatedCost: number;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: "low" | "medium" | "high" | "critical";
   createdAt: string;
   acknowledgedAt?: string;
   acknowledgedBy?: string;
@@ -158,14 +170,14 @@ export interface LowStockAlert {
 export interface StoragePosition {
   id: string;
   branchId: string;
-  zone: string;           // e.g., "A", "B", "Cold Storage", "Freezer"
-  rack?: string;          // e.g., "R1", "R2"
-  shelf?: string;         // e.g., "S1", "S2"
-  bin?: string;           // e.g., "B01", "B02"
-  fullCode: string;       // Combined: "A-R1-S2-B01"
+  zone: string; // e.g., "A", "B", "Cold Storage", "Freezer"
+  rack?: string; // e.g., "R1", "R2"
+  shelf?: string; // e.g., "S1", "S2"
+  bin?: string; // e.g., "B01", "B02"
+  fullCode: string; // Combined: "A-R1-S2-B01"
   description?: string;
-  capacity?: number;      // Optional capacity limit
-  storageType: 'ambient' | 'refrigerated' | 'frozen' | 'controlled';
+  capacity?: number; // Optional capacity limit
+  storageType: "ambient" | "refrigerated" | "frozen" | "controlled";
   temperature?: { min: number; max: number }; // Temperature range if applicable
   isActive: boolean;
 }
@@ -180,34 +192,40 @@ export interface StockLot {
   product?: Product;
   branchId: string;
   // Lot/Batch Information
-  lotNumber: string;                // Supplier's batch number or internal
-  batchCode?: string;               // Internal batch code (auto-generated)
+  lotNumber: string; // Supplier's batch number or internal
+  batchCode?: string; // Internal batch code (auto-generated)
   // Quantity Tracking
-  initialQuantity: number;          // Original received quantity
-  currentQuantity: number;          // Current remaining quantity
-  reservedQuantity: number;         // Reserved for pending orders
-  availableQuantity: number;        // currentQuantity - reservedQuantity
+  initialQuantity: number; // Original received quantity
+  currentQuantity: number; // Current remaining quantity
+  reservedQuantity: number; // Reserved for pending orders
+  availableQuantity: number; // currentQuantity - reservedQuantity
   // Expiry & Dates
-  manufacturingDate?: string;       // When product was made
-  expiryDate?: string;              // Product expiration date
-  bestBeforeDate?: string;          // Best before (quality, not safety)
-  receivedDate: string;             // When received in warehouse
+  manufacturingDate?: string; // When product was made
+  expiryDate?: string; // Product expiration date
+  bestBeforeDate?: string; // Best before (quality, not safety)
+  receivedDate: string; // When received in warehouse
   // Status & Alerts
-  status: 'available' | 'low' | 'expiring' | 'expired' | 'quarantine' | 'depleted';
-  daysUntilExpiry?: number;         // Calculated field
+  status:
+    | "available"
+    | "low"
+    | "expiring"
+    | "expired"
+    | "quarantine"
+    | "depleted";
+  daysUntilExpiry?: number; // Calculated field
   expiryAlertSent?: boolean;
   // Storage Location
   positionId?: string;
   position?: StoragePosition;
-  positionCode?: string;            // Quick reference: "A-R1-S2"
+  positionCode?: string; // Quick reference: "A-R1-S2"
   // Supplier & Cost
   supplierId?: string;
   supplierName?: string;
   purchaseOrderId?: string;
-  costPrice: number;                // Cost per unit at time of receipt
-  totalCost: number;                // initialQuantity * costPrice
+  costPrice: number; // Cost per unit at time of receipt
+  totalCost: number; // initialQuantity * costPrice
   // Quality
-  qualityGrade?: 'A' | 'B' | 'C';
+  qualityGrade?: "A" | "B" | "C";
   qualityNotes?: string;
   inspectedAt?: string;
   inspectedBy?: string;
@@ -228,7 +246,7 @@ export interface StockReceipt {
   supplierName?: string;
   purchaseOrderId?: string;
   // Receipt Details
-  receiptNumber: string;            // GRN number (Goods Received Note)
+  receiptNumber: string; // GRN number (Goods Received Note)
   receiptDate: string;
   deliveryNote?: string;
   invoiceNumber?: string;
@@ -239,7 +257,12 @@ export interface StockReceipt {
   totalQuantity: number;
   totalValue: number;
   // Status
-  status: 'draft' | 'pending_inspection' | 'inspected' | 'completed' | 'rejected';
+  status:
+    | "draft"
+    | "pending_inspection"
+    | "inspected"
+    | "completed"
+    | "rejected";
   inspectionNotes?: string;
   // Metadata
   receivedBy: string;
@@ -258,9 +281,9 @@ export interface StockReceiptItem {
   productName: string;
   productSku: string;
   // Quantity
-  orderedQty?: number;              // From PO if linked
+  orderedQty?: number; // From PO if linked
   receivedQty: number;
-  acceptedQty: number;              // After inspection
+  acceptedQty: number; // After inspection
   rejectedQty: number;
   // Lot Details
   lotNumber: string;
@@ -281,10 +304,10 @@ export interface StockReceiptItem {
  * Expiry alert configuration
  */
 export interface ExpiryAlertConfig {
-  warningDays: number;              // Alert when X days before expiry (e.g., 30)
-  criticalDays: number;             // Critical alert (e.g., 7)
-  urgentDays: number;               // Urgent/immediate action (e.g., 3)
-  autoQuarantine: boolean;          // Auto-quarantine expired items
+  warningDays: number; // Alert when X days before expiry (e.g., 30)
+  criticalDays: number; // Critical alert (e.g., 7)
+  urgentDays: number; // Urgent/immediate action (e.g., 3)
+  autoQuarantine: boolean; // Auto-quarantine expired items
   notifyEmail?: boolean;
   notifyPush?: boolean;
 }
@@ -298,12 +321,25 @@ export interface LotStockMovement {
   lot?: StockLot;
   productId: string;
   branchId: string;
-  type: 'receipt' | 'sale' | 'transfer_in' | 'transfer_out' | 'adjustment' | 'waste' | 'return' | 'production';
-  quantity: number;                 // Positive for in, negative for out
+  type:
+    | "receipt"
+    | "sale"
+    | "transfer_in"
+    | "transfer_out"
+    | "adjustment"
+    | "waste"
+    | "return"
+    | "production";
+  quantity: number; // Positive for in, negative for out
   previousQty: number;
   newQty: number;
   // Reference
-  referenceType?: 'order' | 'purchase_order' | 'transfer' | 'production' | 'manual';
+  referenceType?:
+    | "order"
+    | "purchase_order"
+    | "transfer"
+    | "production"
+    | "manual";
   referenceId?: string;
   reason: string;
   notes?: string;
@@ -326,7 +362,7 @@ export interface ProductionPlan {
   date: string;
   items: ProductionPlanItem[];
   totalIngredientCost: number;
-  status: 'planned' | 'in-progress' | 'completed' | 'cancelled';
+  status: "planned" | "in-progress" | "completed" | "cancelled";
   notes?: string;
   createdBy: string;
   createdAt: string;
@@ -339,7 +375,7 @@ export interface ProductionPlanItem {
   quantity: number; // How many batches
   totalServings: number; // quantity * recipe.servings
   ingredientCost: number;
-  status: 'pending' | 'in-progress' | 'completed';
+  status: "pending" | "in-progress" | "completed";
 }
 
 /**
@@ -379,7 +415,7 @@ export interface IngredientUsageReport {
 // 💰 MULTI-CURRENCY TYPES
 // ============================================
 
-export type CurrencyCode = 'LAK' | 'THB' | 'USD' | 'BTC' | 'SATS';
+export type CurrencyCode = "LAK" | "THB" | "USD" | "BTC" | "SATS";
 
 export interface Currency {
   code: CurrencyCode;
@@ -393,7 +429,7 @@ export interface ExchangeRate {
   from: CurrencyCode;
   to: CurrencyCode;
   rate: number;
-  source: 'api' | 'manual' | 'oracle';
+  source: "api" | "manual" | "oracle";
   updatedAt: string;
 }
 
@@ -409,16 +445,24 @@ export interface MultiPrice {
 // ⚡ LIGHTNING PAYMENT TYPES
 // ============================================
 
-export type PaymentMethod = 'lightning' | 'bolt12' | 'lnurl' | 'onchain' | 'cash' | 'qr_static' | 'bank_transfer' | 'external';
+export type PaymentMethod =
+  | "lightning"
+  | "bolt12"
+  | "lnurl"
+  | "onchain"
+  | "cash"
+  | "qr_static"
+  | "bank_transfer"
+  | "external";
 
-export type PaymentStatus = 
-  | 'pending' 
-  | 'processing' 
-  | 'completed' 
-  | 'failed' 
-  | 'expired' 
-  | 'refunded'
-  | 'offline_pending'; // For offline mode
+export type PaymentStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "expired"
+  | "refunded"
+  | "offline_pending"; // For offline mode
 
 export interface LightningInvoice {
   id: string;
@@ -480,7 +524,7 @@ export interface NostrProfile {
 
 export interface NostrMerchant extends NostrProfile {
   businessName: string;
-  businessType: 'restaurant' | 'retail' | 'service' | 'other';
+  businessType: "restaurant" | "retail" | "service" | "other";
   branches: Branch[];
   bolt12Offer?: string;
   catalog?: ProductCatalog;
@@ -544,7 +588,7 @@ export interface LoyaltyMember {
   currentBalance?: number; // Outstanding balance
   // Loyalty data
   points: number;
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+  tier: "bronze" | "silver" | "gold" | "platinum";
   totalSpent: number;
   totalOrders?: number;
   visitCount: number;
@@ -557,7 +601,7 @@ export interface ZapReward {
   id: string;
   memberId: string;
   amount: number; // in sats
-  reason: 'purchase' | 'referral' | 'loyalty' | 'promotion';
+  reason: "purchase" | "referral" | "loyalty" | "promotion";
   orderId?: string;
   zapEventId?: string;
   createdAt: string;
@@ -584,7 +628,7 @@ export interface RewardTier {
 // 🎫 COUPON & DISCOUNT TYPES
 // ============================================
 
-export type CouponType = 'percentage' | 'fixed' | 'free_item' | 'buy_x_get_y';
+export type CouponType = "percentage" | "fixed" | "free_item" | "buy_x_get_y";
 
 export interface Coupon {
   id: string;
@@ -644,7 +688,7 @@ export interface ExternalPaymentProvider {
 // ============================================
 
 export interface SalesInsight {
-  type: 'upsell' | 'trend' | 'alert' | 'recommendation';
+  type: "upsell" | "trend" | "alert" | "recommendation";
   title: string;
   description: string;
   confidence: number;
@@ -657,7 +701,7 @@ export interface ProductRecommendation {
   product: Product;
   reason: string;
   score: number;
-  basedOn: 'history' | 'popular' | 'complementary' | 'seasonal';
+  basedOn: "history" | "popular" | "complementary" | "seasonal";
 }
 
 export interface StaffPerformance {
@@ -680,7 +724,7 @@ export interface OfflineTransaction {
   paymentProof: PaymentProof;
   order: Order;
   createdAt: string;
-  syncStatus: 'pending' | 'syncing' | 'synced' | 'failed';
+  syncStatus: "pending" | "syncing" | "synced" | "failed";
   syncAttempts: number;
   lastSyncAttempt?: string;
   errorMessage?: string;
@@ -702,7 +746,7 @@ export interface ProductVariant {
   name: string; // e.g., "Small", "Medium", "Large"
   shortName: string; // e.g., "S", "M", "L"
   priceModifier: number; // Additional price (can be negative for discounts)
-  priceModifierType: 'fixed' | 'percentage';
+  priceModifierType: "fixed" | "percentage";
   sku?: string;
   stock?: number;
   isDefault?: boolean;
@@ -713,14 +757,14 @@ export interface ProductModifier {
   id: string;
   name: string; // e.g., "Extra Shot", "No Ice", "Less Sugar"
   price: number; // Additional price
-  category: 'addon' | 'removal' | 'preference';
+  category: "addon" | "removal" | "preference";
   isDefault?: boolean;
 }
 
 export interface ProductModifierGroup {
   id: string;
   name: string; // e.g., "Size", "Sugar Level", "Ice Level", "Add-ons"
-  type: 'single' | 'multiple'; // single = radio, multiple = checkbox
+  type: "single" | "multiple"; // single = radio, multiple = checkbox
   required: boolean;
   minSelect?: number;
   maxSelect?: number;
@@ -728,7 +772,12 @@ export interface ProductModifierGroup {
 }
 
 // Product Type - determines stock behavior
-export type ProductType = 'good' | 'service' | 'digital' | 'subscription' | 'bundle';
+export type ProductType =
+  | "good"
+  | "service"
+  | "digital"
+  | "subscription"
+  | "bundle";
 
 /**
  * Product Activity Log - Track all changes to products
@@ -736,7 +785,14 @@ export type ProductType = 'good' | 'service' | 'digital' | 'subscription' | 'bun
 export interface ProductActivityLog {
   id: string;
   productId: string;
-  action: 'create' | 'update' | 'delete' | 'price_change' | 'stock_adjust' | 'status_change' | 'restore';
+  action:
+    | "create"
+    | "update"
+    | "delete"
+    | "price_change"
+    | "stock_adjust"
+    | "status_change"
+    | "restore";
   userId: string;
   userName?: string;
   userRole?: string;
@@ -755,7 +811,7 @@ export interface ProductActivityLog {
   priceBefore?: number;
   priceAfter?: number;
   // Reference
-  referenceType?: 'order' | 'purchase' | 'adjustment' | 'transfer' | 'manual';
+  referenceType?: "order" | "purchase" | "adjustment" | "transfer" | "manual";
   referenceId?: string;
   // Metadata
   notes?: string;
@@ -771,7 +827,7 @@ export interface Product {
   name: string;
   sku: string;
   barcode?: string; // EAN-13, UPC-A, Code128, QR code
-  barcodeType?: 'ean13' | 'upca' | 'code128' | 'qr' | 'custom';
+  barcodeType?: "ean13" | "upca" | "code128" | "qr" | "custom";
   description?: string;
   categoryId: string;
   unitId: string;
@@ -789,12 +845,12 @@ export interface Product {
   brand?: string;
   manufacturer?: string;
   weight?: number;
-  weightUnit?: 'g' | 'kg' | 'oz' | 'lb';
+  weightUnit?: "g" | "kg" | "oz" | "lb";
   dimensions?: {
     length?: number;
     width?: number;
     height?: number;
-    unit?: 'cm' | 'in';
+    unit?: "cm" | "in";
   };
   // Timestamps
   createdAt: string;
@@ -810,7 +866,7 @@ export interface Product {
   trackLots?: boolean; // Enable lot/batch tracking (for FIFO/FEFO)
   requiresExpiryDate?: boolean; // Must enter expiry when receiving stock
   expiryWarningDays?: number; // Alert X days before expiry (default from system config)
-  storageType?: 'ambient' | 'refrigerated' | 'frozen' | 'controlled';
+  storageType?: "ambient" | "refrigerated" | "frozen" | "controlled";
   storageInstructions?: string;
   // Variants & Modifiers
   hasVariants?: boolean;
@@ -825,6 +881,8 @@ export interface Product {
   // Tax
   taxable?: boolean;
   taxRate?: number;
+  // Public menu visibility
+  isPublic?: boolean; // If true, visible on customer menu (unencrypted)
 }
 
 export interface Category {
@@ -848,11 +906,11 @@ export interface Branch {
   nostrPubkey?: string;
   bolt12Offer?: string;
   address?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
 }
 
 // Order Types (dine-in, take-away, delivery)
-export type OrderType = 'dine_in' | 'take_away' | 'delivery' | 'pickup';
+export type OrderType = "dine_in" | "take_away" | "delivery" | "pickup";
 
 export interface Order {
   id: string;
@@ -879,7 +937,7 @@ export interface Order {
   customerPhone?: string; // For delivery/pickup
   scheduledTime?: string; // For scheduled pickup/delivery
   // Kitchen display
-  kitchenStatus?: 'new' | 'preparing' | 'ready' | 'served';
+  kitchenStatus?: "new" | "preparing" | "ready" | "served";
   kitchenNotes?: string;
   preparedAt?: string;
   servedAt?: string;
@@ -900,7 +958,7 @@ export interface OrderItem {
   // Custom notes (e.g., "no onions", "extra spicy")
   notes?: string;
   // Kitchen tracking
-  kitchenStatus?: 'pending' | 'preparing' | 'ready';
+  kitchenStatus?: "pending" | "preparing" | "ready";
 }
 
 // ============================================
@@ -950,7 +1008,7 @@ export interface POSSession {
   totalOrders: number;
   cashSales: number;
   lightningSales: number;
-  status: 'active' | 'closed';
+  status: "active" | "closed";
 }
 
 export interface CartItem {
@@ -979,11 +1037,18 @@ export interface Cart {
 // 🔔 NOTIFICATION TYPES
 // ============================================
 
-export type NotificationPriority = 'low' | 'medium' | 'high' | 'critical';
+export type NotificationPriority = "low" | "medium" | "high" | "critical";
 
 export interface POSNotification {
   id: string;
-  type: 'payment' | 'order' | 'stock' | 'loyalty' | 'ai_insight' | 'alert' | 'system';
+  type:
+    | "payment"
+    | "order"
+    | "stock"
+    | "loyalty"
+    | "ai_insight"
+    | "alert"
+    | "system";
   title: string;
   message: string;
   data?: Record<string, unknown>;
@@ -999,10 +1064,10 @@ export interface POSNotification {
 // 👤 USER & ROLE MANAGEMENT TYPES
 // ============================================
 
-export type UserRole = 'owner' | 'admin' | 'cashier' | 'staff';
+export type UserRole = "owner" | "admin" | "cashier" | "staff";
 
 // Authentication method - supports hybrid auth
-export type AuthMethod = 'nostr' | 'password' | 'pin';
+export type AuthMethod = "nostr" | "password" | "pin";
 
 export interface UserPermissions {
   // POS Operations
@@ -1127,25 +1192,25 @@ export interface StoreUser {
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
-  
+
   // ============================================
   // 🔐 HYBRID AUTHENTICATION FIELDS
   // ============================================
-  
+
   // Primary authentication method
   authMethod: AuthMethod;
-  
+
   // Nostr authentication (for tech-savvy users)
   npub?: string; // Nostr public key (npub format)
   pubkeyHex?: string; // Nostr public key (hex format)
-  
+
   // Password authentication (for traditional users)
   passwordHash?: string; // Hashed password
-  
+
   // ============================================
   // 🛡️ PERMISSION & ACCESS CONTROL
   // ============================================
-  
+
   // Permission event tracking (for Nostr-based revocation)
   permissionGrantId?: string; // ID of the permission grant event
   grantedBy?: string; // npub of who granted access
@@ -1153,7 +1218,7 @@ export interface StoreUser {
   expiresAt?: string; // Auto-expiry date (optional)
   revokedAt?: string; // If access was revoked
   revocationReason?: string; // Why access was revoked
-  
+
   // Security
   failedLoginAttempts?: number;
   lockedUntil?: string; // Account lockout
@@ -1165,7 +1230,15 @@ export interface StoreUser {
 // ⚙️ STORE SETTINGS TYPES
 // ============================================
 
-export type LightningProvider = 'lnbits' | 'alby' | 'alby-hub' | 'blink' | 'nwc' | 'lnd' | 'cln' | 'lnurl';
+export type LightningProvider =
+  | "lnbits"
+  | "alby"
+  | "alby-hub"
+  | "blink"
+  | "nwc"
+  | "lnd"
+  | "cln"
+  | "lnurl";
 
 export interface LightningSettings {
   provider: LightningProvider;
@@ -1181,7 +1254,7 @@ export interface LightningSettings {
   bolt12Offer?: string; // Static QR
   isConfigured: boolean;
   lastTestedAt?: string;
-  testStatus?: 'success' | 'failed' | 'pending';
+  testStatus?: "success" | "failed" | "pending";
 }
 
 export interface SecuritySettings {
@@ -1224,7 +1297,7 @@ export interface StoreSettings {
   companyPhone?: string;
   taxNumber?: string;
   companyAddress?: string;
-  
+
   // Regional Settings
   defaultCurrency?: string;
   defaultLanguage?: string;
@@ -1232,12 +1305,12 @@ export interface StoreSettings {
   timeFormat?: string;
   timezone?: string;
   decimalPlaces?: number;
-  
+
   // Nested settings (legacy support)
   general?: GeneralSettings;
   lightning?: LightningSettings;
   security?: SecuritySettings;
-  
+
   updatedAt?: string;
 }
 
@@ -1253,7 +1326,15 @@ export interface EncryptedData {
 
 export interface SecurityAuditLog {
   id: string;
-  action: 'login' | 'logout' | 'settings_change' | 'refund' | 'void' | 'role_change' | 'permission_grant' | 'permission_revoke';
+  action:
+    | "login"
+    | "logout"
+    | "settings_change"
+    | "refund"
+    | "void"
+    | "role_change"
+    | "permission_grant"
+    | "permission_revoke";
   userId: string;
   userName: string;
   details: string;
@@ -1348,12 +1429,12 @@ export interface AuthChallenge {
  * Nostr user keys for authentication and signing
  */
 export interface NostrUserKeys {
-  pub: string;       // Public key (hex format)
-  sec: string;       // Secret key / nsec (hex or nsec format)
-  npub?: string;     // npub encoded public key
-  nsec?: string;     // nsec encoded secret key
+  pub: string; // Public key (hex format)
+  sec: string; // Secret key / nsec (hex or nsec format)
+  npub?: string; // npub encoded public key
+  nsec?: string; // nsec encoded secret key
   privateKey?: string; // Alias for sec (hex format)
-  publicKey?: string;  // Alias for pub (hex format)
+  publicKey?: string; // Alias for pub (hex format)
 }
 
 /**
@@ -1370,17 +1451,17 @@ export interface NostrUser {
  * User profile information stored in localStorage
  */
 export interface UserInfo {
-  pubkey: string;                    // Public key (hex format)
-  name?: string;                     // Profile name
-  displayName?: string;              // Display name
-  display_name?: string;             // Alternative display name field
-  about?: string;                    // Bio/description
-  picture?: string;                  // Avatar URL
-  banner?: string;                   // Banner image URL
-  nip05?: string;                    // NIP-05 identifier
-  lud16?: string;                    // Lightning address
-  website?: string;                  // Website URL
-  verified?: boolean;                // NIP-05 verified
-  lastUpdated?: number | null;       // Last profile update timestamp
-  userKeys?: NostrUserKeys;          // User's cryptographic keys
+  pubkey: string; // Public key (hex format)
+  name?: string; // Profile name
+  displayName?: string; // Display name
+  display_name?: string; // Alternative display name field
+  about?: string; // Bio/description
+  picture?: string; // Avatar URL
+  banner?: string; // Banner image URL
+  nip05?: string; // NIP-05 identifier
+  lud16?: string; // Lightning address
+  website?: string; // Website URL
+  verified?: boolean; // NIP-05 verified
+  lastUpdated?: number | null; // Last profile update timestamp
+  userKeys?: NostrUserKeys; // User's cryptographic keys
 }

@@ -3,44 +3,81 @@
 // Product & Category Management with Dexie + Nostr
 // ============================================
 
-import type { 
-  Product, 
-  Category, 
-  Unit,
-  Branch,
-} from '~/types';
-import { db, type ProductRecord, type CategoryRecord, type UnitRecord, type BranchRecord } from '~/db/db';
+import type { Product, Category, Unit, Branch } from "~/types";
+import {
+  db,
+  type ProductRecord,
+  type CategoryRecord,
+  type UnitRecord,
+  type BranchRecord,
+} from "~/db/db";
 
 // ============================================
 // 📋 DEFAULT DATA (Initial Seed)
 // ============================================
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'all', name: 'All Items', description: 'All products', icon: '📦', sortOrder: 0 },
-  { id: 'drinks', name: 'Drinks', description: 'Beverages', icon: '🍹', sortOrder: 1 },
-  { id: 'food', name: 'Food', description: 'Main dishes', icon: '🍜', sortOrder: 2 },
-  { id: 'desserts', name: 'Desserts', description: 'Sweet treats', icon: '🍰', sortOrder: 3 },
-  { id: 'snacks', name: 'Snacks', description: 'Light bites', icon: '🍿', sortOrder: 4 },
-  { id: 'favorites', name: 'Favorites', description: 'Most popular items', icon: '⭐', sortOrder: 5 },
+  {
+    id: "all",
+    name: "All Items",
+    description: "All products",
+    icon: "📦",
+    sortOrder: 0,
+  },
+  {
+    id: "drinks",
+    name: "Drinks",
+    description: "Beverages",
+    icon: "🍹",
+    sortOrder: 1,
+  },
+  {
+    id: "food",
+    name: "Food",
+    description: "Main dishes",
+    icon: "🍜",
+    sortOrder: 2,
+  },
+  {
+    id: "desserts",
+    name: "Desserts",
+    description: "Sweet treats",
+    icon: "🍰",
+    sortOrder: 3,
+  },
+  {
+    id: "snacks",
+    name: "Snacks",
+    description: "Light bites",
+    icon: "🍿",
+    sortOrder: 4,
+  },
+  {
+    id: "favorites",
+    name: "Favorites",
+    description: "Most popular items",
+    icon: "⭐",
+    sortOrder: 5,
+  },
 ];
 
 const DEFAULT_UNITS: Unit[] = [
-  { id: 'piece', name: 'Piece', symbol: 'pc' },
-  { id: 'cup', name: 'Cup', symbol: 'cup' },
-  { id: 'bottle', name: 'Bottle', symbol: 'btl' },
-  { id: 'glass', name: 'Glass', symbol: 'gl' },
-  { id: 'bowl', name: 'Bowl', symbol: 'bwl' },
-  { id: 'plate', name: 'Plate', symbol: 'plt' },
-  { id: 'basket', name: 'Basket', symbol: 'bsk' },
-  { id: 'scoop', name: 'Scoop', symbol: 'scp' },
-  { id: 'kg', name: 'Kilogram', symbol: 'kg' },
-  { id: 'g', name: 'Gram', symbol: 'g' },
-  { id: 'l', name: 'Liter', symbol: 'L' },
-  { id: 'ml', name: 'Milliliter', symbol: 'ml' },
+  { id: "piece", name: "Piece", symbol: "pc" },
+  { id: "cup", name: "Cup", symbol: "cup" },
+  { id: "bottle", name: "Bottle", symbol: "btl" },
+  { id: "glass", name: "Glass", symbol: "gl" },
+  { id: "bowl", name: "Bowl", symbol: "bwl" },
+  { id: "plate", name: "Plate", symbol: "plt" },
+  { id: "basket", name: "Basket", symbol: "bsk" },
+  { id: "scoop", name: "Scoop", symbol: "scp" },
+  { id: "kg", name: "Kilogram", symbol: "kg" },
+  { id: "g", name: "Gram", symbol: "g" },
+  { id: "l", name: "Liter", symbol: "L" },
+  { id: "ml", name: "Milliliter", symbol: "ml" },
 ];
 
 const DEFAULT_BRANCHES: Branch[] = [
-  { id: 'main', name: 'Main Branch', code: 'MAIN' },
+  { id: "main", name: "Main Branch", code: "MAIN" },
 ];
 
 // Singleton state
@@ -54,8 +91,8 @@ const isInitialized = ref(false);
 const syncPending = ref(0);
 
 // UI State
-const searchQuery = ref('');
-const selectedCategory = ref<string>('all');
+const searchQuery = ref("");
+const selectedCategory = ref<string>("all");
 const favoriteIds = ref<Set<string>>(new Set());
 
 /**
@@ -74,43 +111,61 @@ export function useProductsStore() {
     let result = [...products.value];
 
     // Category filter
-    if (selectedCategory.value === 'favorites') {
-      result = result.filter(p => favoriteIds.value.has(p.id));
-    } else if (selectedCategory.value !== 'all') {
-      result = result.filter(p => p.categoryId === selectedCategory.value);
+    if (selectedCategory.value === "favorites") {
+      result = result.filter((p) => favoriteIds.value.has(p.id));
+    } else if (selectedCategory.value !== "all") {
+      result = result.filter((p) => p.categoryId === selectedCategory.value);
     }
 
     // Search filter
     if (searchQuery.value.trim()) {
       const query = searchQuery.value.toLowerCase().trim();
-      result = result.filter(p => 
-        p.name.toLowerCase().includes(query) || 
-        p.sku.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query)
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.sku.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query)
       );
     }
 
     // Only active products
-    result = result.filter(p => p.status === 'active');
+    result = result.filter((p) => p.status === "active");
 
     return result;
   });
 
-  const activeProducts = computed(() => 
-    products.value.filter(p => p.status === 'active')
+  const activeProducts = computed(() =>
+    products.value.filter((p) => p.status === "active")
   );
 
-  const lowStockProducts = computed(() => 
-    products.value.filter(p => p.stock <= p.minStock && p.status === 'active')
+  const lowStockProducts = computed(() =>
+    products.value.filter((p) => p.stock <= p.minStock && p.status === "active")
   );
 
-  const outOfStockProducts = computed(() => 
-    products.value.filter(p => p.stock <= 0 && p.status === 'active')
+  const outOfStockProducts = computed(() =>
+    products.value.filter((p) => p.stock <= 0 && p.status === "active")
   );
 
   const productsByCategory = computed(() => {
     const grouped: Record<string, Product[]> = {};
     for (const product of activeProducts.value) {
+      if (!grouped[product.categoryId]) {
+        grouped[product.categoryId] = [];
+      }
+      grouped[product.categoryId]!.push(product);
+    }
+    return grouped;
+  });
+
+  // Public products for customer menu (visible to customers)
+  const publicProducts = computed(() =>
+    products.value.filter((p) => p.status === "active" && p.isPublic !== false)
+  );
+
+  // Public products grouped by category
+  const publicProductsByCategory = computed(() => {
+    const grouped: Record<string, Product[]> = {};
+    for (const product of publicProducts.value) {
       if (!grouped[product.categoryId]) {
         grouped[product.categoryId] = [];
       }
@@ -126,25 +181,25 @@ export function useProductsStore() {
   async function loadProductsFromLocal(): Promise<Product[]> {
     try {
       const records = await db.products
-        .where('status')
-        .equals('active')
+        .where("status")
+        .equals("active")
         .toArray();
-      return records.map(r => JSON.parse(r.data) as Product);
+      return records.map((r) => JSON.parse(r.data) as Product);
     } catch (e) {
-      console.error('Failed to load products from local DB:', e);
+      console.error("Failed to load products from local DB:", e);
       return [];
     }
   }
 
   async function loadCategoriesFromLocal(): Promise<Category[]> {
     try {
-      const records = await db.categories.orderBy('sortOrder').toArray();
+      const records = await db.categories.orderBy("sortOrder").toArray();
       if (records.length === 0) {
         // Seed default categories
         await seedDefaultCategories();
         return DEFAULT_CATEGORIES;
       }
-      return records.map(r => ({
+      return records.map((r) => ({
         id: r.id,
         name: r.name,
         description: r.description,
@@ -152,7 +207,7 @@ export function useProductsStore() {
         sortOrder: r.sortOrder,
       }));
     } catch (e) {
-      console.error('Failed to load categories:', e);
+      console.error("Failed to load categories:", e);
       return DEFAULT_CATEGORIES;
     }
   }
@@ -165,13 +220,13 @@ export function useProductsStore() {
         await seedDefaultUnits();
         return DEFAULT_UNITS;
       }
-      return records.map(r => ({
+      return records.map((r) => ({
         id: r.id,
         name: r.name,
         symbol: r.symbol,
       }));
     } catch (e) {
-      console.error('Failed to load units:', e);
+      console.error("Failed to load units:", e);
       return DEFAULT_UNITS;
     }
   }
@@ -250,7 +305,7 @@ export function useProductsStore() {
         await seedDefaultBranches();
         return DEFAULT_BRANCHES;
       }
-      return records.map(r => ({
+      return records.map((r) => ({
         id: r.id,
         name: r.name,
         code: r.code,
@@ -259,7 +314,7 @@ export function useProductsStore() {
         bolt12Offer: r.bolt12Offer,
       }));
     } catch (e) {
-      console.error('Failed to load branches:', e);
+      console.error("Failed to load branches:", e);
       return DEFAULT_BRANCHES;
     }
   }
@@ -308,7 +363,7 @@ export function useProductsStore() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to sync product to Nostr:', e);
+      console.error("Failed to sync product to Nostr:", e);
       return false;
     }
   }
@@ -325,7 +380,7 @@ export function useProductsStore() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to sync category to Nostr:', e);
+      console.error("Failed to sync category to Nostr:", e);
       return false;
     }
   }
@@ -342,19 +397,20 @@ export function useProductsStore() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to sync branch to Nostr:', e);
+      console.error("Failed to sync branch to Nostr:", e);
       return false;
     }
   }
 
   async function loadFromNostr(): Promise<void> {
     try {
-      const [nostrProducts, nostrCategories, nostrUnits, nostrBranches] = await Promise.all([
-        nostrData.getAllProducts(),
-        nostrData.getAllCategories(),
-        nostrData.getAllUnits(),
-        nostrData.getAllBranches(),
-      ]);
+      const [nostrProducts, nostrCategories, nostrUnits, nostrBranches] =
+        await Promise.all([
+          nostrData.getAllProducts(),
+          nostrData.getAllCategories(),
+          nostrData.getAllUnits(),
+          nostrData.getAllBranches(),
+        ]);
 
       // Merge with local - preserve local stock if we have local adjustments
       for (const product of nostrProducts) {
@@ -362,10 +418,13 @@ export function useProductsStore() {
         if (existingRecord) {
           // Check if local has unsynced stock changes
           const localProduct = JSON.parse(existingRecord.data) as Product;
-          
+
           // If local stock differs from Nostr and local is not synced,
           // preserve local stock (it's more recent)
-          if (!existingRecord.synced || existingRecord.stock !== product.stock) {
+          if (
+            !existingRecord.synced ||
+            existingRecord.stock !== product.stock
+          ) {
             // Keep local stock value - it may have been adjusted locally
             product.stock = existingRecord.stock ?? localProduct.stock;
           }
@@ -388,7 +447,7 @@ export function useProductsStore() {
       units.value = await loadUnitsFromLocal();
       branches.value = await loadBranchesFromLocal();
     } catch (e) {
-      console.error('Failed to load from Nostr:', e);
+      console.error("Failed to load from Nostr:", e);
     }
   }
 
@@ -397,7 +456,9 @@ export function useProductsStore() {
     let failed = 0;
 
     // Sync unsynced products
-    const unsyncedProducts = await db.products.filter(p => !p.synced).toArray();
+    const unsyncedProducts = await db.products
+      .filter((p) => !p.synced)
+      .toArray();
     for (const record of unsyncedProducts) {
       const product = JSON.parse(record.data) as Product;
       if (await syncProductToNostr(product)) {
@@ -408,7 +469,9 @@ export function useProductsStore() {
     }
 
     // Sync unsynced categories
-    const unsyncedCategories = await db.categories.filter(c => !c.synced).toArray();
+    const unsyncedCategories = await db.categories
+      .filter((c) => !c.synced)
+      .toArray();
     for (const record of unsyncedCategories) {
       const category: Category = {
         id: record.id,
@@ -446,7 +509,7 @@ export function useProductsStore() {
 
   async function init(): Promise<void> {
     if (isInitialized.value) return;
-    
+
     isLoading.value = true;
     error.value = null;
 
@@ -466,7 +529,7 @@ export function useProductsStore() {
       }
 
       // Count pending syncs
-      const unsyncedCount = await db.products.filter(p => !p.synced).count();
+      const unsyncedCount = await db.products.filter((p) => !p.synced).count();
       syncPending.value = unsyncedCount;
 
       isInitialized.value = true;
@@ -482,7 +545,7 @@ export function useProductsStore() {
   // ============================================
 
   async function addProduct(
-    productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
+    productData: Omit<Product, "id" | "createdAt" | "updatedAt">
   ): Promise<Product> {
     const currentUser = getCurrentUser();
     const product: Product = {
@@ -502,7 +565,7 @@ export function useProductsStore() {
     // Log activity
     await logProductActivity({
       productId: product.id,
-      action: 'create',
+      action: "create",
       notes: `Product "${product.name}" created`,
     });
 
@@ -518,17 +581,18 @@ export function useProductsStore() {
   }
 
   async function updateProduct(
-    id: string, 
+    id: string,
     updates: Partial<Product>
   ): Promise<Product | null> {
-    const index = products.value.findIndex(p => p.id === id);
+    const index = products.value.findIndex((p) => p.id === id);
     if (index === -1) return null;
 
     const existing = products.value[index]!;
     const currentUser = getCurrentUser();
-    
+
     // Track changes for logging
-    const changes: { field: string; oldValue: unknown; newValue: unknown }[] = [];
+    const changes: { field: string; oldValue: unknown; newValue: unknown }[] =
+      [];
     for (const key of Object.keys(updates) as (keyof Product)[]) {
       if (existing[key] !== updates[key]) {
         changes.push({
@@ -556,14 +620,14 @@ export function useProductsStore() {
     // Log activity
     if (changes.length > 0) {
       // Check for specific change types
-      const priceChange = changes.find(c => c.field === 'price');
-      const statusChange = changes.find(c => c.field === 'status');
-      const stockChange = changes.find(c => c.field === 'stock');
+      const priceChange = changes.find((c) => c.field === "price");
+      const statusChange = changes.find((c) => c.field === "status");
+      const stockChange = changes.find((c) => c.field === "stock");
 
       if (priceChange) {
         await logProductActivity({
           productId: id,
-          action: 'price_change',
+          action: "price_change",
           priceBefore: priceChange.oldValue as number,
           priceAfter: priceChange.newValue as number,
           changes,
@@ -571,14 +635,14 @@ export function useProductsStore() {
       } else if (statusChange) {
         await logProductActivity({
           productId: id,
-          action: 'status_change',
+          action: "status_change",
           changes,
           notes: `Status changed from "${statusChange.oldValue}" to "${statusChange.newValue}"`,
         });
       } else if (stockChange) {
         await logProductActivity({
           productId: id,
-          action: 'stock_adjust',
+          action: "stock_adjust",
           stockBefore: stockChange.oldValue as number,
           stockAfter: stockChange.newValue as number,
           changes,
@@ -586,7 +650,7 @@ export function useProductsStore() {
       } else {
         await logProductActivity({
           productId: id,
-          action: 'update',
+          action: "update",
           changes,
         });
       }
@@ -601,13 +665,13 @@ export function useProductsStore() {
   }
 
   async function deleteProduct(id: string): Promise<boolean> {
-    const index = products.value.findIndex(p => p.id === id);
+    const index = products.value.findIndex((p) => p.id === id);
     if (index === -1) return false;
 
     // Soft delete - mark as inactive
     const product = products.value[index]!;
     const previousStatus = product.status;
-    product.status = 'inactive';
+    product.status = "inactive";
     product.updatedAt = new Date().toISOString();
 
     // Update local DB
@@ -616,9 +680,11 @@ export function useProductsStore() {
     // Log activity
     await logProductActivity({
       productId: id,
-      action: 'delete',
+      action: "delete",
       notes: `Product "${product.name}" deleted (soft delete)`,
-      changes: [{ field: 'status', oldValue: previousStatus, newValue: 'inactive' }],
+      changes: [
+        { field: "status", oldValue: previousStatus, newValue: "inactive" },
+      ],
     });
 
     // Remove from active list
@@ -633,15 +699,15 @@ export function useProductsStore() {
   }
 
   function getProduct(id: string): Product | undefined {
-    return products.value.find(p => p.id === id);
+    return products.value.find((p) => p.id === id);
   }
 
   function getProductBySku(sku: string): Product | undefined {
-    return products.value.find(p => p.sku === sku);
+    return products.value.find((p) => p.sku === sku);
   }
 
   function getProductByBarcode(barcode: string): Product | undefined {
-    return products.value.find(p => p.barcode === barcode);
+    return products.value.find((p) => p.barcode === barcode);
   }
 
   /**
@@ -651,17 +717,17 @@ export function useProductsStore() {
   function findProductByCode(code: string): Product | undefined {
     const trimmedCode = code.trim();
     // First check barcode (exact match)
-    let product = products.value.find(p => p.barcode === trimmedCode);
+    let product = products.value.find((p) => p.barcode === trimmedCode);
     // Then check SKU
     if (!product) {
-      product = products.value.find(p => p.sku === trimmedCode);
+      product = products.value.find((p) => p.sku === trimmedCode);
     }
     return product;
   }
 
   function getProductsByCategory(categoryId: string): Product[] {
-    if (categoryId === 'all') return activeProducts.value;
-    return activeProducts.value.filter(p => p.categoryId === categoryId);
+    if (categoryId === "all") return activeProducts.value;
+    return activeProducts.value.filter((p) => p.categoryId === categoryId);
   }
 
   // ============================================
@@ -669,7 +735,7 @@ export function useProductsStore() {
   // ============================================
 
   async function addCategory(
-    categoryData: Omit<Category, 'id'>
+    categoryData: Omit<Category, "id">
   ): Promise<Category> {
     const category: Category = {
       ...categoryData,
@@ -688,10 +754,10 @@ export function useProductsStore() {
   }
 
   async function updateCategory(
-    id: string, 
+    id: string,
     updates: Partial<Category>
   ): Promise<Category | null> {
-    const index = categories.value.findIndex(c => c.id === id);
+    const index = categories.value.findIndex((c) => c.id === id);
     if (index === -1) return null;
 
     const existing = categories.value[index]!;
@@ -713,15 +779,15 @@ export function useProductsStore() {
 
   async function deleteCategory(id: string): Promise<boolean> {
     // Don't delete built-in categories
-    if (['all', 'favorites'].includes(id)) return false;
+    if (["all", "favorites"].includes(id)) return false;
 
-    const index = categories.value.findIndex(c => c.id === id);
+    const index = categories.value.findIndex((c) => c.id === id);
     if (index === -1) return false;
 
     // Check if category has products
-    const hasProducts = products.value.some(p => p.categoryId === id);
+    const hasProducts = products.value.some((p) => p.categoryId === id);
     if (hasProducts) {
-      error.value = 'Cannot delete category with products';
+      error.value = "Cannot delete category with products";
       return false;
     }
 
@@ -732,14 +798,14 @@ export function useProductsStore() {
   }
 
   function getCategory(id: string): Category | undefined {
-    return categories.value.find(c => c.id === id);
+    return categories.value.find((c) => c.id === id);
   }
 
   // ============================================
   // 📐 UNIT CRUD
   // ============================================
 
-  async function addUnit(unitData: Omit<Unit, 'id'>): Promise<Unit> {
+  async function addUnit(unitData: Omit<Unit, "id">): Promise<Unit> {
     const unit: Unit = {
       ...unitData,
       id: `unit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -752,10 +818,10 @@ export function useProductsStore() {
   }
 
   async function updateUnit(
-    id: string, 
+    id: string,
     updates: Partial<Unit>
   ): Promise<Unit | null> {
-    const index = units.value.findIndex(u => u.id === id);
+    const index = units.value.findIndex((u) => u.id === id);
     if (index === -1) return null;
 
     const existing = units.value[index]!;
@@ -772,14 +838,14 @@ export function useProductsStore() {
   }
 
   function getUnit(id: string): Unit | undefined {
-    return units.value.find(u => u.id === id);
+    return units.value.find((u) => u.id === id);
   }
 
   // ============================================
   // 🏪 BRANCH CRUD
   // ============================================
 
-  async function addBranch(branchData: Omit<Branch, 'id'>): Promise<Branch> {
+  async function addBranch(branchData: Omit<Branch, "id">): Promise<Branch> {
     const branch: Branch = {
       ...branchData,
       id: `branch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -797,10 +863,10 @@ export function useProductsStore() {
   }
 
   async function updateBranch(
-    id: string, 
+    id: string,
     updates: Partial<Branch>
   ): Promise<Branch | null> {
-    const index = branches.value.findIndex(b => b.id === id);
+    const index = branches.value.findIndex((b) => b.id === id);
     if (index === -1) return null;
 
     const existing = branches.value[index]!;
@@ -823,16 +889,16 @@ export function useProductsStore() {
 
   async function deleteBranch(id: string): Promise<boolean> {
     // Prevent deleting the main branch
-    if (id === 'main') {
-      error.value = 'Cannot delete the main branch';
+    if (id === "main") {
+      error.value = "Cannot delete the main branch";
       return false;
     }
 
-    const index = branches.value.findIndex(b => b.id === id);
+    const index = branches.value.findIndex((b) => b.id === id);
     if (index === -1) return false;
 
     // Check if any products use this branch
-    const productsInBranch = products.value.filter(p => p.branchId === id);
+    const productsInBranch = products.value.filter((p) => p.branchId === id);
     if (productsInBranch.length > 0) {
       error.value = `Cannot delete branch: ${productsInBranch.length} products are assigned to it`;
       return false;
@@ -845,7 +911,7 @@ export function useProductsStore() {
   }
 
   function getBranch(id: string): Branch | undefined {
-    return branches.value.find(b => b.id === id);
+    return branches.value.find((b) => b.id === id);
   }
 
   // ============================================
@@ -853,12 +919,18 @@ export function useProductsStore() {
   // ============================================
 
   async function updateStock(
-    productId: string, 
+    productId: string,
     adjustment: number,
-    reason: 'sale' | 'purchase' | 'adjustment' | 'count' | 'waste' | 'return' = 'adjustment',
+    reason:
+      | "sale"
+      | "purchase"
+      | "adjustment"
+      | "count"
+      | "waste"
+      | "return" = "adjustment",
     notes?: string
   ): Promise<boolean> {
-    const product = products.value.find(p => p.id === productId);
+    const product = products.value.find((p) => p.id === productId);
     if (!product) return false;
 
     const previousStock = product.stock;
@@ -876,7 +948,7 @@ export function useProductsStore() {
       adjustment,
       reason,
       notes,
-      staffId: 'current_user', // TODO: Get from auth
+      staffId: "current_user", // TODO: Get from auth
       createdAt: new Date().toISOString(),
     };
 
@@ -894,37 +966,53 @@ export function useProductsStore() {
     return true;
   }
 
-  async function decreaseStock(productId: string, quantity: number): Promise<boolean> {
-    return updateStock(productId, -quantity, 'sale');
+  async function decreaseStock(
+    productId: string,
+    quantity: number
+  ): Promise<boolean> {
+    return updateStock(productId, -quantity, "sale");
   }
 
-  async function increaseStock(productId: string, quantity: number, reason: 'purchase' | 'return' = 'purchase'): Promise<boolean> {
+  async function increaseStock(
+    productId: string,
+    quantity: number,
+    reason: "purchase" | "return" = "purchase"
+  ): Promise<boolean> {
     return updateStock(productId, quantity, reason);
   }
 
-  async function setStock(productId: string, newStock: number, notes?: string): Promise<boolean> {
-    const product = products.value.find(p => p.id === productId);
+  async function setStock(
+    productId: string,
+    newStock: number,
+    notes?: string
+  ): Promise<boolean> {
+    const product = products.value.find((p) => p.id === productId);
     if (!product) return false;
 
     const adjustment = newStock - product.stock;
-    return updateStock(productId, adjustment, 'count', notes);
+    return updateStock(productId, adjustment, "count", notes);
   }
 
-  async function getStockHistory(productId: string, limit = 50): Promise<Array<{
-    id: string;
-    adjustment: number;
-    reason: string;
-    notes?: string;
-    createdAt: string;
-  }>> {
+  async function getStockHistory(
+    productId: string,
+    limit = 50
+  ): Promise<
+    Array<{
+      id: string;
+      adjustment: number;
+      reason: string;
+      notes?: string;
+      createdAt: string;
+    }>
+  > {
     const records = await db.stockAdjustments
-      .where('productId')
+      .where("productId")
       .equals(productId)
       .reverse()
       .limit(limit)
       .toArray();
 
-    return records.map(r => ({
+    return records.map((r) => ({
       id: r.id,
       adjustment: r.adjustment,
       reason: r.reason,
@@ -939,7 +1027,14 @@ export function useProductsStore() {
 
   interface ActivityLogOptions {
     productId: string;
-    action: 'create' | 'update' | 'delete' | 'price_change' | 'stock_adjust' | 'status_change' | 'restore';
+    action:
+      | "create"
+      | "update"
+      | "delete"
+      | "price_change"
+      | "stock_adjust"
+      | "status_change"
+      | "restore";
     changes?: { field: string; oldValue: unknown; newValue: unknown }[];
     stockBefore?: number;
     stockAfter?: number;
@@ -954,18 +1049,22 @@ export function useProductsStore() {
   /**
    * Log a product activity (audit trail)
    */
-  async function logProductActivity(options: ActivityLogOptions): Promise<void> {
+  async function logProductActivity(
+    options: ActivityLogOptions
+  ): Promise<void> {
     const currentUser = getCurrentUser();
-    
+
     const log = {
       id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       productId: options.productId,
       action: options.action,
-      userId: currentUser?.id || 'system',
-      userName: currentUser?.name || 'System',
-      userRole: currentUser?.role || 'system',
+      userId: currentUser?.id || "system",
+      userName: currentUser?.name || "System",
+      userRole: currentUser?.role || "system",
       timestamp: Date.now(),
-      changesJson: options.changes ? JSON.stringify(options.changes) : undefined,
+      changesJson: options.changes
+        ? JSON.stringify(options.changes)
+        : undefined,
       stockBefore: options.stockBefore,
       stockAfter: options.stockAfter,
       stockReason: options.stockReason,
@@ -984,7 +1083,7 @@ export function useProductsStore() {
       try {
         await nostrData.saveProductActivityLog?.(log);
       } catch (e) {
-        console.error('Failed to sync activity log to Nostr:', e);
+        console.error("Failed to sync activity log to Nostr:", e);
       }
     }
   }
@@ -992,28 +1091,33 @@ export function useProductsStore() {
   /**
    * Get activity logs for a product
    */
-  async function getProductActivityLogs(productId: string, limit = 100): Promise<Array<{
-    id: string;
-    action: string;
-    userName?: string;
-    userRole?: string;
-    timestamp: string;
-    changes?: { field: string; oldValue: unknown; newValue: unknown }[];
-    stockBefore?: number;
-    stockAfter?: number;
-    stockReason?: string;
-    priceBefore?: number;
-    priceAfter?: number;
-    notes?: string;
-  }>> {
+  async function getProductActivityLogs(
+    productId: string,
+    limit = 100
+  ): Promise<
+    Array<{
+      id: string;
+      action: string;
+      userName?: string;
+      userRole?: string;
+      timestamp: string;
+      changes?: { field: string; oldValue: unknown; newValue: unknown }[];
+      stockBefore?: number;
+      stockAfter?: number;
+      stockReason?: string;
+      priceBefore?: number;
+      priceAfter?: number;
+      notes?: string;
+    }>
+  > {
     const records = await db.productActivityLogs
-      .where('productId')
+      .where("productId")
       .equals(productId)
       .reverse()
       .limit(limit)
       .toArray();
 
-    return records.map(r => ({
+    return records.map((r) => ({
       id: r.id,
       action: r.action,
       userName: r.userName,
@@ -1035,13 +1139,13 @@ export function useProductsStore() {
   function getCurrentUser(): { id: string; name: string; role: string } | null {
     // TODO: Integrate with use-users or use-staff-auth
     try {
-      const stored = localStorage.getItem('bitspace_current_user');
+      const stored = localStorage.getItem("bitspace_current_user");
       if (stored) {
         const user = JSON.parse(stored);
         return {
-          id: user.id || user.user?.id || 'unknown',
-          name: user.name || user.user?.name || 'Unknown User',
-          role: user.role || user.user?.role || 'staff',
+          id: user.id || user.user?.id || "unknown",
+          name: user.name || user.user?.name || "Unknown User",
+          role: user.role || user.user?.role || "staff",
         };
       }
     } catch {
@@ -1068,11 +1172,14 @@ export function useProductsStore() {
   }
 
   function saveFavorites(): void {
-    localStorage.setItem('pos_favorites', JSON.stringify([...favoriteIds.value]));
+    localStorage.setItem(
+      "pos_favorites",
+      JSON.stringify([...favoriteIds.value])
+    );
   }
 
   function loadFavorites(): void {
-    const stored = localStorage.getItem('pos_favorites');
+    const stored = localStorage.getItem("pos_favorites");
     if (stored) {
       try {
         favoriteIds.value = new Set(JSON.parse(stored));
@@ -1088,10 +1195,11 @@ export function useProductsStore() {
 
   function searchProducts(query: string): Product[] {
     const q = query.toLowerCase();
-    return activeProducts.value.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.sku.toLowerCase().includes(q) ||
-      p.description?.toLowerCase().includes(q)
+    return activeProducts.value.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
     );
   }
 
@@ -1130,7 +1238,7 @@ export function useProductsStore() {
     // Import categories first
     if (data.categories) {
       for (const cat of data.categories) {
-        if (!categories.value.find(c => c.id === cat.id)) {
+        if (!categories.value.find((c) => c.id === cat.id)) {
           await addCategory(cat);
           categoryCount++;
         }
@@ -1140,7 +1248,7 @@ export function useProductsStore() {
     // Import units
     if (data.units) {
       for (const unit of data.units) {
-        if (!units.value.find(u => u.id === unit.id)) {
+        if (!units.value.find((u) => u.id === unit.id)) {
           await addUnit(unit);
           unitCount++;
         }
@@ -1150,14 +1258,18 @@ export function useProductsStore() {
     // Import products
     if (data.products) {
       for (const prod of data.products) {
-        if (!products.value.find(p => p.id === prod.id)) {
+        if (!products.value.find((p) => p.id === prod.id)) {
           await addProduct(prod);
           productCount++;
         }
       }
     }
 
-    return { products: productCount, categories: categoryCount, units: unitCount };
+    return {
+      products: productCount,
+      categories: categoryCount,
+      units: unitCount,
+    };
   }
 
   return {
@@ -1182,6 +1294,8 @@ export function useProductsStore() {
     lowStockProducts,
     outOfStockProducts,
     productsByCategory,
+    publicProducts,
+    publicProductsByCategory,
 
     // Init
     init,

@@ -86,12 +86,13 @@ const heldOrders = ref<
   }>
 >([]);
 
-// Tables data (loaded from localStorage)
+// Tables data (loaded from localStorage or tablesStore)
 const tables = ref<
   Array<{
     id: string;
     name: string;
-    status: "available" | "occupied" | "reserved";
+    number?: string;
+    status: "available" | "occupied" | "reserved" | "cleaning" | "unavailable";
     seats: number;
   }>
 >([]);
@@ -545,11 +546,24 @@ watch([taxEnabled, taxRatePercent, taxInclusive], () => {
 // ============================================
 // Table Switching Functions
 // ============================================
-const loadTables = () => {
+const loadTables = async () => {
   try {
-    const stored = localStorage.getItem("tables");
-    if (stored) {
-      tables.value = JSON.parse(stored);
+    // Use tablesStore from composable as primary source
+    const tablesStore = useTables();
+    if (tablesStore.tables.value && tablesStore.tables.value.length > 0) {
+      tables.value = tablesStore.tables.value.map((t) => ({
+        id: t.id,
+        name: t.name || t.number,
+        number: t.number,
+        status: t.status,
+        seats: t.capacity,
+      }));
+    } else {
+      // Fallback to localStorage
+      const stored = localStorage.getItem("tables");
+      if (stored) {
+        tables.value = JSON.parse(stored);
+      }
     }
   } catch (e) {
     console.error("Failed to load tables:", e);
@@ -624,16 +638,25 @@ onMounted(async () => {
     pos.startSession("main", "staff-1", 0);
   }
 
-  // Load tables from localStorage
-  loadTables();
+  // Load tables from tablesStore
+  await loadTables();
 
   // Load tax settings
   loadTaxSettings();
 
   // Handle table context from query params
   if (route.query.tableId) {
-    pos.tableNumber.value =
-      (route.query.tableName as string) || (route.query.tableId as string);
+    const tableId = route.query.tableId as string;
+    // Find table by ID to get its name (dropdown uses name, not id)
+    const foundTable = tables.value.find(
+      (t) => t.id === tableId || t.name === tableId || t.number === tableId
+    );
+    if (foundTable) {
+      pos.tableNumber.value = foundTable.name || foundTable.number;
+    } else {
+      // Fallback: use tableName from query or tableId
+      pos.tableNumber.value = (route.query.tableName as string) || tableId;
+    }
     pos.setOrderType("dine_in");
 
     // If action is 'pay', open payment modal
