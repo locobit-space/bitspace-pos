@@ -59,15 +59,21 @@
     </div>
 
     <!-- Floor Selector -->
-    <div class="flex items-center gap-4 mb-6">
+    <div class="flex items-center gap-4 mb-6 overflow-x-auto pb-2">
       <UFieldGroup>
         <UButton
-          v-for="floor in floors"
-          :key="floor.id"
-          :variant="currentFloor === floor.id ? 'solid' : 'outline'"
-          @click="currentFloor = floor.id"
+          :variant="!currentFloor ? 'solid' : 'outline'"
+          @click="currentFloor = ''"
         >
-          {{ floor.name }}
+          All
+        </UButton>
+        <UButton
+          v-for="zone in activeZones"
+          :key="zone.id"
+          :variant="currentFloor === zone.id ? 'solid' : 'outline'"
+          @click="currentFloor = zone.id"
+        >
+          {{ zone.name }}
         </UButton>
       </UFieldGroup>
 
@@ -95,7 +101,7 @@
       <UCard
         v-for="table in currentFloorTables"
         :key="table.id"
-        class="cursor-pointer hover:shadow-lg transition-shadow"
+        class="cursor-pointer hover:shadow-lg transition-shadow relative"
         :class="getTableCardClass(table)"
         @click="selectTable(table)"
       >
@@ -107,9 +113,9 @@
             <UIcon :name="getTableIcon(table)" class="text-2xl" />
           </div>
 
-          <p class="font-bold text-lg">{{ table.name }}</p>
+          <p class="font-bold text-lg">{{ table.name || table.number }}</p>
           <p class="text-sm text-muted">
-            {{ table.seats }} {{ $t("pos.tables.seats") }}
+            {{ table.capacity }} {{ $t("pos.tables.seats") }}
           </p>
 
           <UBadge
@@ -125,9 +131,11 @@
             class="mt-2 text-xs text-muted"
           >
             <p>
-              {{ table.currentOrder?.customerName || $t("pos.tables.walkIn") }}
+              {{ $t("pos.tables.occupied") }}
             </p>
-            <p>{{ formatCurrency(table.currentOrder?.total || 0) }}</p>
+            <p v-if="table.currentOrderId">
+              Order #{{ table.currentOrderId.slice(-4) }}
+            </p>
           </div>
 
           <div
@@ -158,10 +166,10 @@
               <UIcon :name="getTableIcon(table)" class="text-xl" />
             </div>
             <div>
-              <p class="font-medium">{{ table.name }}</p>
+              <p class="font-medium">{{ table.name || table.number }}</p>
               <p class="text-sm text-muted">
-                {{ table.seats }} {{ $t("pos.tables.seats") }} ·
-                {{ getFloorName(table.floorId) }}
+                {{ table.capacity }} {{ $t("pos.tables.seats") }} ·
+                {{ getFloorName(table.zone) }}
               </p>
             </div>
           </div>
@@ -171,9 +179,6 @@
               <UBadge :color="getStatusColor(table.status)" variant="subtle">
                 {{ $t(`pos.tables.status.${table.status}`) }}
               </UBadge>
-              <p v-if="table.currentOrder" class="text-sm font-medium mt-1">
-                {{ formatCurrency(table.currentOrder.total) }}
-              </p>
             </div>
 
             <UDropdownMenu :items="getTableActions(table)">
@@ -186,237 +191,227 @@
 
     <!-- Table Detail Modal -->
     <UModal v-model:open="showDetailModal">
-      <template #content>
-        <UCard>
-          <template #header>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-lg flex items-center justify-center"
-                :class="selectedTable ? getTableIconClass(selectedTable) : ''"
-              >
-                <UIcon
-                  :name="
-                    selectedTable
-                      ? getTableIcon(selectedTable)
-                      : 'i-heroicons-squares-2x2'
-                  "
-                />
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-lg flex items-center justify-center"
+            :class="selectedTable ? getTableIconClass(selectedTable) : ''"
+          >
+            <UIcon
+              :name="
+                selectedTable
+                  ? getTableIcon(selectedTable)
+                  : 'i-heroicons-squares-2x2'
+              "
+            />
+          </div>
+          <div>
+            <h3 class="font-semibold">
+              {{ selectedTable?.name || selectedTable?.number }}
+            </h3>
+            <p class="text-sm text-muted">
+              {{ selectedTable?.capacity }} {{ $t("pos.tables.seats") }}
+            </p>
+          </div>
+        </div>
+      </template>
+      <template #body>
+        <div v-if="selectedTable" class="space-y-4">
+          <!-- Status Actions -->
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-if="selectedTable.status === 'available'"
+              color="primary"
+              icon="i-heroicons-shopping-cart"
+              @click="startOrder(selectedTable)"
+            >
+              {{ $t("pos.tables.startOrder") }}
+            </UButton>
+
+            <UButton
+              v-if="selectedTable.status === 'available'"
+              variant="outline"
+              icon="i-heroicons-calendar"
+              @click="makeReservation(selectedTable)"
+            >
+              {{ $t("pos.tables.reserve") }}
+            </UButton>
+
+            <UButton
+              v-if="selectedTable.status === 'occupied'"
+              variant="outline"
+              icon="i-heroicons-plus"
+              @click="addToOrder(selectedTable)"
+            >
+              {{ $t("pos.tables.addItems") }}
+            </UButton>
+
+            <UButton
+              v-if="selectedTable.status === 'occupied'"
+              color="success"
+              icon="i-heroicons-banknotes"
+              @click="processPayment(selectedTable)"
+            >
+              {{ $t("pos.tables.payment") }}
+            </UButton>
+
+            <!-- Simple free table action for development -->
+            <UButton
+              v-if="selectedTable.status !== 'available'"
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-arrow-path"
+              @click="tablesStore.freeTable(selectedTable.id)"
+            >
+              Free Table
+            </UButton>
+
+            <UButton
+              v-if="selectedTable.status === 'reserved'"
+              variant="outline"
+              icon="i-heroicons-check"
+              @click="seatGuests(selectedTable)"
+            >
+              {{ $t("pos.tables.seatGuests") }}
+            </UButton>
+
+            <UButton
+              v-if="selectedTable.status === 'reserved'"
+              variant="outline"
+              color="error"
+              icon="i-heroicons-x-mark"
+              @click="cancelReservation(selectedTable)"
+            >
+              {{ $t("pos.tables.cancelReservation") }}
+            </UButton>
+          </div>
+
+          <!-- Current Order Details -->
+          <div v-if="selectedTable.currentOrder">
+            <h4 class="font-medium mb-3">
+              {{ $t("pos.tables.currentOrder") }}
+            </h4>
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-muted">{{ $t("pos.tables.customer") }}</span>
+                <span>{{
+                  selectedTable.currentOrder.customerName ||
+                  $t("pos.tables.walkIn")
+                }}</span>
               </div>
-              <div>
-                <h3 class="font-semibold">{{ selectedTable?.name }}</h3>
-                <p class="text-sm text-muted">
-                  {{ selectedTable?.seats }} {{ $t("pos.tables.seats") }}
-                </p>
+              <div class="flex justify-between text-sm">
+                <span class="text-muted">{{ $t("pos.tables.items") }}</span>
+                <span>{{ selectedTable.currentOrder.items }} items</span>
               </div>
-            </div>
-          </template>
-
-          <div v-if="selectedTable" class="space-y-4">
-            <!-- Status Actions -->
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                v-if="selectedTable.status === 'available'"
-                color="primary"
-                icon="i-heroicons-shopping-cart"
-                @click="startOrder(selectedTable)"
-              >
-                {{ $t("pos.tables.startOrder") }}
-              </UButton>
-
-              <UButton
-                v-if="selectedTable.status === 'available'"
-                variant="outline"
-                icon="i-heroicons-calendar"
-                @click="makeReservation(selectedTable)"
-              >
-                {{ $t("pos.tables.reserve") }}
-              </UButton>
-
-              <UButton
-                v-if="selectedTable.status === 'occupied'"
-                variant="outline"
-                icon="i-heroicons-plus"
-                @click="addToOrder(selectedTable)"
-              >
-                {{ $t("pos.tables.addItems") }}
-              </UButton>
-
-              <UButton
-                v-if="selectedTable.status === 'occupied'"
-                color="success"
-                icon="i-heroicons-banknotes"
-                @click="processPayment(selectedTable)"
-              >
-                {{ $t("pos.tables.payment") }}
-              </UButton>
-
-              <UButton
-                v-if="selectedTable.status === 'reserved'"
-                variant="outline"
-                icon="i-heroicons-check"
-                @click="seatGuests(selectedTable)"
-              >
-                {{ $t("pos.tables.seatGuests") }}
-              </UButton>
-
-              <UButton
-                v-if="selectedTable.status === 'reserved'"
-                variant="outline"
-                color="error"
-                icon="i-heroicons-x-mark"
-                @click="cancelReservation(selectedTable)"
-              >
-                {{ $t("pos.tables.cancelReservation") }}
-              </UButton>
-            </div>
-
-            <!-- Current Order Details -->
-            <div v-if="selectedTable.currentOrder">
-              <h4 class="font-medium mb-3">
-                {{ $t("pos.tables.currentOrder") }}
-              </h4>
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted">{{
-                    $t("pos.tables.customer")
-                  }}</span>
-                  <span>{{
-                    selectedTable.currentOrder.customerName ||
-                    $t("pos.tables.walkIn")
-                  }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted">{{ $t("pos.tables.items") }}</span>
-                  <span>{{ selectedTable.currentOrder.items }} items</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted">{{
-                    $t("pos.tables.duration")
-                  }}</span>
-                  <span>{{ selectedTable.currentOrder.duration }}</span>
-                </div>
-                <div class="flex justify-between font-bold border-t pt-2 mt-2">
-                  <span>{{ $t("pos.tables.total") }}</span>
-                  <span>{{
-                    formatCurrency(selectedTable.currentOrder.total)
-                  }}</span>
-                </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-muted">{{ $t("pos.tables.duration") }}</span>
+                <span>{{ selectedTable.currentOrder.duration }}</span>
               </div>
-            </div>
-
-            <!-- Reservation Details -->
-            <div v-if="selectedTable.reservation">
-              <h4 class="font-medium mb-3">
-                {{ $t("pos.tables.reservationDetails") }}
-              </h4>
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted">{{
-                    $t("pos.tables.customer")
-                  }}</span>
-                  <span>{{ selectedTable.reservation.customerName }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted">{{ $t("pos.tables.phone") }}</span>
-                  <span>{{ selectedTable.reservation.phone }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted">{{ $t("pos.tables.time") }}</span>
-                  <span>{{ formatTime(selectedTable.reservation.time) }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted">{{
-                    $t("pos.tables.partySize")
-                  }}</span>
-                  <span
-                    >{{ selectedTable.reservation.partySize }}
-                    {{ $t("pos.tables.guests") }}</span
-                  >
-                </div>
-                <div v-if="selectedTable.reservation.notes" class="text-sm">
-                  <span class="text-muted">{{ $t("pos.tables.notes") }}:</span>
-                  <p class="mt-1">{{ selectedTable.reservation.notes }}</p>
-                </div>
+              <div class="flex justify-between font-bold border-t pt-2 mt-2">
+                <span>{{ $t("pos.tables.total") }}</span>
+                <span>{{
+                  formatCurrency(selectedTable.currentOrder.total)
+                }}</span>
               </div>
             </div>
           </div>
 
-          <template #footer>
-            <div class="flex justify-between">
-              <div class="flex gap-2">
-                <UButton
-                  variant="ghost"
-                  @click="openTableModal(selectedTable || undefined)"
-                >
-                  {{ $t("common.edit") }}
-                </UButton>
-                <UButton
-                  v-if="selectedTable"
-                  variant="ghost"
-                  icon="i-heroicons-qr-code"
-                  @click="
-                    showQRModal = true;
-                    showDetailModal = false;
-                  "
-                >
-                  {{ $t("pos.tables.printQR") || "Print QR" }}
-                </UButton>
+          <!-- Reservation Details -->
+          <div v-if="selectedTable.reservation">
+            <h4 class="font-medium mb-3">
+              {{ $t("pos.tables.reservationDetails") }}
+            </h4>
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-muted">{{ $t("pos.tables.customer") }}</span>
+                <span>{{ selectedTable.reservation.customerName }}</span>
               </div>
-              <UButton variant="ghost" @click="showDetailModal = false">
-                {{ $t("common.close") }}
-              </UButton>
+              <div class="flex justify-between text-sm">
+                <span class="text-muted">{{ $t("pos.tables.phone") }}</span>
+                <span>{{ selectedTable.reservation.phone }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-muted">{{ $t("pos.tables.time") }}</span>
+                <span>{{ formatTime(selectedTable.reservation.time) }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-muted">{{ $t("pos.tables.partySize") }}</span>
+                <span
+                  >{{ selectedTable.reservation.partySize }}
+                  {{ $t("pos.tables.guests") }}</span
+                >
+              </div>
+              <div v-if="selectedTable.reservation.notes" class="text-sm">
+                <span class="text-muted">{{ $t("pos.tables.notes") }}:</span>
+                <p class="mt-1">{{ selectedTable.reservation.notes }}</p>
+              </div>
             </div>
-          </template>
-        </UCard>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-between">
+          <div class="flex gap-2">
+            <UButton
+              variant="ghost"
+              @click="openTableModal(selectedTable || undefined)"
+            >
+              {{ $t("common.edit") }}
+            </UButton>
+            <UButton
+              v-if="selectedTable"
+              variant="ghost"
+              icon="i-heroicons-qr-code"
+              @click="
+                showQRModal = true;
+                showDetailModal = false;
+              "
+            >
+              {{ $t("pos.tables.printQR") || "Print QR" }}
+            </UButton>
+          </div>
+          <UButton variant="ghost" @click="showDetailModal = false">
+            {{ $t("common.close") }}
+          </UButton>
+        </div>
       </template>
     </UModal>
 
     <!-- Add/Edit Table Modal -->
     <UModal v-model:open="showTableModal">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold">
-              {{
-                editingTable
-                  ? $t("pos.tables.editTable")
-                  : $t("pos.tables.addTable")
-              }}
-            </h3>
-          </template>
+      <template #header>
+        <h3 class="font-semibold">
+          {{
+            editingTable
+              ? $t("pos.tables.editTable")
+              : $t("pos.tables.addTable")
+          }}
+        </h3>
+      </template>
+      <template #body>
+        <div class="space-y-4">
+          <UFormField :label="$t('pos.tables.tableNumber')">
+            <UInput
+              v-model="tableForm.number"
+              placeholder="Auto-generated if empty"
+            />
+          </UFormField>
 
-          <div class="space-y-4">
-            <UFormField :label="$t('pos.tables.tableName')" required>
-              <UInput
-                v-model="tableForm.name"
-                :placeholder="$t('pos.tables.tableNamePlaceholder')"
-              />
-            </UFormField>
+          <UFormField :label="$t('pos.tables.tableName')" required>
+            <UInput
+              v-model="tableForm.name"
+              :placeholder="$t('pos.tables.tableNamePlaceholder')"
+            />
+          </UFormField>
 
+          <div class="grid grid-cols-2 gap-4">
             <UFormField :label="$t('pos.tables.seats')" required>
               <UInput
                 v-model.number="tableForm.seats"
                 type="number"
                 min="1"
                 max="20"
-              />
-            </UFormField>
-
-            <UFormField :label="$t('pos.tables.floor')">
-              <USelect
-                v-model="tableForm.floorId"
-                :items="floors"
-                value-key="id"
-                label-key="name"
-              />
-            </UFormField>
-
-            <UFormField :label="$t('pos.tables.shape')">
-              <USelect
-                v-model="tableForm.shape"
-                :items="shapeOptions"
-                value-key="value"
-                label-key="label"
               />
             </UFormField>
 
@@ -429,197 +424,212 @@
             </UFormField>
           </div>
 
-          <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton variant="ghost" @click="showTableModal = false">
-                {{ $t("common.cancel") }}
-              </UButton>
-              <UButton :loading="savingTable" @click="saveTable">
-                {{ editingTable ? $t("common.update") : $t("common.create") }}
-              </UButton>
-            </div>
-          </template>
-        </UCard>
+          <UFormField :label="$t('pos.tables.floor')">
+            <USelect
+              v-model="tableForm.floorId"
+              :items="activeZones"
+              value-key="id"
+              label-key="name"
+              placeholder="Select Zone"
+            />
+          </UFormField>
+
+          <UFormField :label="$t('pos.tables.shape')">
+            <USelect
+              v-model="tableForm.shape"
+              :items="shapeOptions"
+              value-key="value"
+              label-key="label"
+            />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" @click="showTableModal = false">
+            {{ $t("common.cancel") }}
+          </UButton>
+          <UButton :loading="savingTable" @click="saveTable">
+            {{ editingTable ? $t("common.update") : $t("common.create") }}
+          </UButton>
+        </div>
       </template>
     </UModal>
 
     <!-- Reservation Modal -->
     <UModal v-model:open="showReservationModal">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold">
-              {{ $t("pos.tables.makeReservation") }}
-            </h3>
-          </template>
+      <template #header>
+        <h3 class="font-semibold">
+          {{ $t("pos.tables.makeReservation") }}
+        </h3>
+      </template>
 
-          <div class="space-y-4">
-            <UFormField :label="$t('pos.tables.customer')" required>
-              <UInput
-                v-model="reservationForm.customerName"
-                :placeholder="$t('pos.tables.customerNamePlaceholder')"
-              />
+      <template #body>
+        <div class="space-y-4">
+          <UFormField :label="$t('pos.tables.customer')" required>
+            <UInput
+              v-model="reservationForm.customerName"
+              :placeholder="$t('pos.tables.customerNamePlaceholder')"
+            />
+          </UFormField>
+
+          <UFormField :label="$t('pos.tables.phone')" required>
+            <UInput
+              v-model="reservationForm.phone"
+              type="tel"
+              :placeholder="$t('pos.tables.phonePlaceholder')"
+            />
+          </UFormField>
+
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField :label="$t('pos.tables.date')" required>
+              <UInput v-model="reservationForm.date" type="date" />
             </UFormField>
 
-            <UFormField :label="$t('pos.tables.phone')" required>
-              <UInput
-                v-model="reservationForm.phone"
-                type="tel"
-                :placeholder="$t('pos.tables.phonePlaceholder')"
-              />
-            </UFormField>
-
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="$t('pos.tables.date')" required>
-                <UInput v-model="reservationForm.date" type="date" />
-              </UFormField>
-
-              <UFormField :label="$t('pos.tables.time')" required>
-                <UInput v-model="reservationForm.time" type="time" />
-              </UFormField>
-            </div>
-
-            <UFormField :label="$t('pos.tables.partySize')" required>
-              <UInput
-                v-model.number="reservationForm.partySize"
-                type="number"
-                min="1"
-              />
-            </UFormField>
-
-            <UFormField :label="$t('pos.tables.notes')">
-              <UTextarea
-                v-model="reservationForm.notes"
-                :placeholder="$t('pos.tables.notesPlaceholder')"
-                :rows="2"
-              />
+            <UFormField :label="$t('pos.tables.time')" required>
+              <UInput v-model="reservationForm.time" type="time" />
             </UFormField>
           </div>
 
-          <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton variant="ghost" @click="showReservationModal = false">
-                {{ $t("common.cancel") }}
-              </UButton>
-              <UButton :loading="savingReservation" @click="saveReservation">
-                {{ $t("pos.tables.confirmReservation") }}
-              </UButton>
-            </div>
-          </template>
-        </UCard>
+          <UFormField :label="$t('pos.tables.partySize')" required>
+            <UInput
+              v-model.number="reservationForm.partySize"
+              type="number"
+              min="1"
+            />
+          </UFormField>
+
+          <UFormField :label="$t('pos.tables.notes')">
+            <UTextarea
+              v-model="reservationForm.notes"
+              :placeholder="$t('pos.tables.notesPlaceholder')"
+              :rows="2"
+            />
+          </UFormField>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" @click="showReservationModal = false">
+            {{ $t("common.cancel") }}
+          </UButton>
+          <UButton :loading="savingReservation" @click="saveReservation">
+            {{ $t("pos.tables.confirmReservation") }}
+          </UButton>
+        </div>
       </template>
     </UModal>
 
     <!-- Settings Modal -->
     <UModal v-model:open="showSettingsModal">
-      <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold">{{ $t("pos.tables.floorSettings") }}</h3>
-          </template>
-
-          <div class="space-y-4">
-            <h4 class="font-medium">{{ $t("pos.tables.manageFloors") }}</h4>
-
-            <div
-              v-for="floor in floors"
-              :key="floor.id"
-              class="flex items-center gap-2"
-            >
-              <UInput v-model="floor.name" class="flex-1" />
-              <UButton
-                v-if="floors.length > 1"
-                variant="ghost"
-                color="error"
-                icon="i-heroicons-trash"
-                @click="removeFloor(floor.id)"
-              />
-            </div>
-
+      <template #header>
+        <h3 class="font-semibold">{{ $t("pos.tables.floorSettings") }}</h3>
+      </template>
+      <template #body>
+        <div class="space-y-4">
+          <h4 class="font-medium">{{ $t("pos.tables.manageFloors") }}</h4>
+          <div
+            v-if="activeZones.length === 0"
+            class="text-gray-500 text-sm italic"
+          >
+            No zones created yet.
+          </div>
+          <div
+            v-for="zone in activeZones"
+            :key="zone.id"
+            class="flex items-center gap-2"
+          >
+            <UInput
+              v-model="zone.name"
+              class="flex-1"
+              @change="updateZoneName(zone)"
+              placeholder="Zone Name"
+            />
             <UButton
-              variant="outline"
-              icon="i-heroicons-plus"
-              size="sm"
-              @click="addFloor"
-            >
-              {{ $t("pos.tables.addFloor") }}
-            </UButton>
+              variant="ghost"
+              color="error"
+              icon="i-heroicons-trash"
+              @click="removeFloor(zone.id)"
+            />
           </div>
 
-          <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton variant="ghost" @click="showSettingsModal = false">
-                {{ $t("common.close") }}
-              </UButton>
-              <UButton @click="saveFloors">
-                {{ $t("common.save") }}
-              </UButton>
-            </div>
-          </template>
-        </UCard>
+          <UButton
+            variant="outline"
+            icon="i-heroicons-plus"
+            size="sm"
+            @click="addFloor"
+          >
+            {{ $t("pos.tables.addFloor") }}
+          </UButton>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton @click="showSettingsModal = false">
+            {{ $t("common.done") }}
+          </UButton>
+        </div>
       </template>
     </UModal>
 
     <!-- QR Code Modal -->
     <UModal v-model:open="showQRModal">
-      <template #content>
-        <UCard v-if="selectedTable">
-          <template #header>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-              📱 {{ selectedTable.name }} - QR Code
-            </h3>
-          </template>
-
-          <div class="text-center">
-            <div class="bg-white p-6 rounded-xl inline-block shadow-lg mb-4">
-              <img
-                :src="generateQRCode(selectedTable.id)"
-                :alt="`QR Code for ${selectedTable.name}`"
-                class="w-64 h-64"
-              />
-            </div>
-
-            <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {{ selectedTable.name }}
-            </p>
-            <p class="text-sm text-gray-500 mb-4">
-              {{ $t("tables.scanToOrder") || "Scan to view menu & order" }}
-            </p>
-
-            <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
-              <p class="text-xs text-gray-500 mb-1">
-                {{ $t("tables.orderingUrl") || "Menu URL" }}
-              </p>
-              <p
-                class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all"
-              >
-                {{ getTableOrderingUrl(selectedTable.id) }}
-              </p>
-            </div>
+      <template #header>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+          📱 {{ selectedTable.name || selectedTable.number }} - QR Code
+        </h3>
+      </template>
+      <template #body>
+        <div class="text-center">
+          <div class="bg-white p-6 rounded-xl inline-block shadow-lg mb-4">
+            <img
+              :src="generateQRCode(selectedTable.id)"
+              :alt="`QR Code for ${selectedTable.name || selectedTable.number}`"
+              class="w-64 h-64"
+            />
           </div>
 
-          <template #footer>
-            <div class="flex gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                class="flex-1"
-                icon="i-heroicons-clipboard-document"
-                @click="copyQRUrl"
-              >
-                {{ $t("common.copyLink") || "Copy Link" }}
-              </UButton>
-              <UButton
-                color="primary"
-                class="flex-1"
-                icon="i-heroicons-printer"
-                @click="printQR"
-              >
-                {{ $t("common.print") || "Print" }}
-              </UButton>
-            </div>
-          </template>
-        </UCard>
+          <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            {{ selectedTable.name || selectedTable.number }}
+          </p>
+          <p class="text-sm text-gray-500 mb-4">
+            {{ $t("tables.scanToOrder") || "Scan to view menu & order" }}
+          </p>
+
+          <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
+            <p class="text-xs text-gray-500 mb-1">
+              {{ $t("tables.orderingUrl") || "Menu URL" }}
+            </p>
+            <p
+              class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all"
+            >
+              {{ getTableOrderingUrl(selectedTable.id) }}
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex gap-2">
+          <UButton
+            color="neutral"
+            variant="outline"
+            class="flex-1"
+            icon="i-heroicons-clipboard-document"
+            @click="copyQRUrl"
+          >
+            {{ $t("common.copyLink") || "Copy Link" }}
+          </UButton>
+          <UButton
+            color="primary"
+            class="flex-1"
+            icon="i-heroicons-printer"
+            @click="printQR"
+          >
+            {{ $t("common.print") || "Print" }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </UContainer>
@@ -636,40 +646,13 @@ const toast = useToast();
 const { format } = useCurrency();
 const router = useRouter();
 
-interface Table {
-  id: string;
-  name: string;
-  seats: number;
-  minSeats: number;
-  floorId: string;
-  shape: "round" | "square" | "rectangle";
-  status: "available" | "occupied" | "reserved" | "unavailable";
-  currentOrder?: {
-    id: string;
-    customerName?: string;
-    items: number;
-    total: number;
-    duration: string;
-    startTime: Date;
-  };
-  reservation?: {
-    id: string;
-    customerName: string;
-    phone: string;
-    time: string;
-    partySize: number;
-    notes?: string;
-  };
-}
-
-interface Floor {
-  id: string;
-  name: string;
-}
+// Use tables composable
+const tablesStore = useTables();
+const { tables, activeZones } = tablesStore;
 
 // State
 const viewMode = ref<"grid" | "list">("grid");
-const currentFloor = ref("floor-1");
+const currentFloor = ref(""); // Now represents Zone ID
 const showDetailModal = ref(false);
 const showTableModal = ref(false);
 const showReservationModal = ref(false);
@@ -677,21 +660,37 @@ const showSettingsModal = ref(false);
 const showQRModal = ref(false);
 const savingTable = ref(false);
 const savingReservation = ref(false);
-const selectedTable = ref<Table | null>(null);
-const editingTable = ref<Table | null>(null);
-const reservingTable = ref<Table | null>(null);
+const selectedTable = ref<any | null>(null); // Using any safely for now as simple ref
+const editingTable = ref<any | null>(null);
+const reservingTable = ref<any | null>(null);
 
-const floors = ref<Floor[]>([
-  { id: "floor-1", name: "Main Floor" },
-  { id: "floor-2", name: "Outdoor" },
-  { id: "floor-3", name: "Private Room" },
-]);
+// Initialize
+onMounted(async () => {
+  await tablesStore.initialize();
+  // Set default floor to first zone if available
+  if (activeZones.value.length > 0 && !currentFloor.value) {
+    currentFloor.value = activeZones.value[0].id;
+  }
+});
 
+// Watch for zones to set initial floor
+watch(
+  activeZones,
+  (newZones) => {
+    if (newZones.length > 0 && !currentFloor.value) {
+      currentFloor.value = newZones[0].id;
+    }
+  },
+  { immediate: true }
+);
+
+// Form state
 const tableForm = reactive({
+  number: "",
   name: "",
   seats: 4,
   minSeats: 1,
-  floorId: "floor-1",
+  floorId: "",
   shape: "square" as "round" | "square" | "rectangle",
 });
 
@@ -704,189 +703,267 @@ const reservationForm = reactive({
   notes: "",
 });
 
-// Mock tables data
-const tables = ref<Table[]>([
-  {
-    id: "1",
-    name: "T1",
-    seats: 2,
-    minSeats: 1,
-    floorId: "floor-1",
-    shape: "round",
-    status: "available",
-  },
-  {
-    id: "2",
-    name: "T2",
-    seats: 4,
-    minSeats: 2,
-    floorId: "floor-1",
-    shape: "square",
-    status: "occupied",
-    currentOrder: {
-      id: "ord-1",
-      customerName: "John",
-      items: 5,
-      total: 150000,
-      duration: "45m",
-      startTime: new Date(),
-    },
-  },
-  {
-    id: "3",
-    name: "T3",
-    seats: 4,
-    minSeats: 2,
-    floorId: "floor-1",
-    shape: "square",
-    status: "available",
-  },
-  {
-    id: "4",
-    name: "T4",
-    seats: 6,
-    minSeats: 4,
-    floorId: "floor-1",
-    shape: "rectangle",
-    status: "reserved",
-    reservation: {
-      id: "res-1",
-      customerName: "Smith Family",
-      phone: "+856 20 1234567",
-      time: "19:00",
-      partySize: 5,
-    },
-  },
-  {
-    id: "5",
-    name: "T5",
-    seats: 2,
-    minSeats: 1,
-    floorId: "floor-1",
-    shape: "round",
-    status: "occupied",
-    currentOrder: {
-      id: "ord-2",
-      items: 3,
-      total: 80000,
-      duration: "20m",
-      startTime: new Date(),
-    },
-  },
-  {
-    id: "6",
-    name: "T6",
-    seats: 8,
-    minSeats: 6,
-    floorId: "floor-1",
-    shape: "rectangle",
-    status: "available",
-  },
-  {
-    id: "7",
-    name: "O1",
-    seats: 4,
-    minSeats: 2,
-    floorId: "floor-2",
-    shape: "round",
-    status: "available",
-  },
-  {
-    id: "8",
-    name: "O2",
-    seats: 4,
-    minSeats: 2,
-    floorId: "floor-2",
-    shape: "round",
-    status: "occupied",
-    currentOrder: {
-      id: "ord-3",
-      customerName: "Tourist Group",
-      items: 8,
-      total: 250000,
-      duration: "1h 15m",
-      startTime: new Date(),
-    },
-  },
-  {
-    id: "9",
-    name: "P1",
-    seats: 10,
-    minSeats: 6,
-    floorId: "floor-3",
-    shape: "rectangle",
-    status: "reserved",
-    reservation: {
-      id: "res-2",
-      customerName: "Company Meeting",
-      phone: "+856 20 9876543",
-      time: "18:30",
-      partySize: 8,
-      notes: "Business dinner, vegetarian options needed",
-    },
-  },
-]);
-
-const shapeOptions = computed(() => [
-  { value: "round", label: t("pos.tables.shapeRound") },
-  { value: "square", label: t("pos.tables.shapeSquare") },
-  { value: "rectangle", label: t("pos.tables.shapeRectangle") },
-]);
+const shapeOptions = [
+  { value: "square", label: t("tables.shapes.square") || "Square" },
+  { value: "round", label: t("tables.shapes.round") || "Round" },
+  { value: "rectangle", label: t("tables.shapes.rectangle") || "Rectangle" },
+  { value: "oval", label: t("tables.shapes.oval") || "Oval" },
+];
 
 // Computed
-const stats = computed(() => {
-  const all = tables.value;
-  return {
-    total: all.length,
-    available: all.filter((t) => t.status === "available").length,
-    occupied: all.filter((t) => t.status === "occupied").length,
-    reserved: all.filter((t) => t.status === "reserved").length,
-    totalSeats: all.reduce((sum, t) => sum + t.seats, 0),
-  };
+const currentFloorTables = computed(() => {
+  let filtered = tables.value;
+  if (currentFloor.value || activeZones.value.length > 0) {
+    filtered = tables.value.filter(
+      (t) =>
+        t.isActive &&
+        (t.zone === currentFloor.value ||
+          (!t.zone && currentFloor.value === ""))
+    );
+  }
+
+  return filtered.map((t) => {
+    // Find active reservation
+    const res = tablesStore.reservations.value.find(
+      (r) =>
+        r.tableId === t.id &&
+        ["confirmed", "pending", "seated"].includes(r.status)
+    );
+
+    return {
+      ...t,
+      reservation: res
+        ? {
+            id: res.id,
+            customerName: res.customerName,
+            phone: res.customerPhone,
+            time: res.reservedFor,
+            partySize: res.guestCount,
+            notes: res.notes,
+          }
+        : undefined,
+      currentOrder: t.currentOrderId
+        ? {
+            id: t.currentOrderId,
+            customerName: t.occupiedBy || "Guest",
+            total: 0,
+            items: 0,
+            duration: t.occupiedAt
+              ? Math.round(
+                  (Date.now() - new Date(t.occupiedAt).getTime()) / 60000
+                ) + "m"
+              : "0m",
+          }
+        : undefined,
+    };
+  });
 });
 
-const currentFloorTables = computed(() => {
-  return tables.value.filter((t) => t.floorId === currentFloor.value);
-});
+const stats = computed(() => ({
+  total: tables.value.filter((t) => t.isActive).length,
+  available: tables.value.filter((t) => t.isActive && t.status === "available")
+    .length,
+  occupied: tables.value.filter((t) => t.isActive && t.status === "occupied")
+    .length,
+  reserved: tables.value.filter((t) => t.isActive && t.status === "reserved")
+    .length,
+  totalSeats: tables.value
+    .filter((t) => t.isActive)
+    .reduce((sum, t) => sum + t.capacity, 0),
+}));
 
 // Methods
-function formatCurrency(amount: number): string {
-  return format(amount, "LAK");
-}
+const getTableIcon = (table: any) => {
+  if (table.shape === "round") return "i-heroicons-stop-circle";
+  if (table.shape === "rectangle" || table.shape === "oval")
+    return "i-heroicons-stop";
+  return "i-heroicons-stop"; // Square default
+};
 
-function formatTime(time?: string): string {
-  if (!time) return "";
-  return time;
-}
+const getTableIconClass = (table: any) => {
+  const colors: Record<string, string> = {
+    available:
+      "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+    occupied: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+    reserved:
+      "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    cleaning:
+      "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400",
+    unavailable:
+      "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  };
+  return colors[table.status] || colors.available;
+};
 
-// QR Code Functions
-function getTableOrderingUrl(tableId: string): string {
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  return `${baseUrl}/menu/${tableId}`;
-}
+const getTableCardClass = (table: any) => {
+  const borders: Record<string, string> = {
+    available: "hover:ring-green-500",
+    occupied: "ring-2 ring-red-500 hover:ring-red-600",
+    reserved: "ring-1 ring-blue-500 hover:ring-blue-600",
+    cleaning: "ring-1 ring-yellow-500 hover:ring-yellow-600",
+    unavailable: "opacity-75",
+  };
+  return borders[table.status] || "";
+};
 
-function generateQRCode(tableId: string): string {
-  const url = getTableOrderingUrl(tableId);
-  return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-    url
-  )}`;
-}
+const getStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    available: "green",
+    occupied: "red",
+    reserved: "blue",
+    cleaning: "yellow",
+    unavailable: "gray",
+  };
+  return colors[status] || "gray";
+};
 
-async function copyQRUrl() {
+const getFloorName = (zoneId: string) => {
+  const zone = activeZones.value.find((z) => z.id === zoneId);
+  return zone ? zone.name : "No Zone";
+};
+
+const formatCurrency = (value: number) => {
+  return format(value);
+};
+
+const formatTime = (timeStr: string) => {
+  if (!timeStr) return "";
+  // Check if it's already a time string like "19:00"
+  if (timeStr.includes(":") && timeStr.length <= 5) return timeStr;
+
+  try {
+    return new Date(timeStr).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return timeStr;
+  }
+};
+
+// Actions
+const selectTable = (table: any) => {
+  selectedTable.value = table;
+  showDetailModal.value = true;
+};
+
+const openTableModal = (table?: any) => {
+  editingTable.value = table || null;
+  if (table) {
+    tableForm.number = table.number;
+    tableForm.name = table.name || "";
+    tableForm.seats = table.capacity;
+    tableForm.minSeats = table.minCapacity || 1;
+    tableForm.shape = table.shape;
+    tableForm.floorId = table.zone || "";
+  } else {
+    tableForm.number = "";
+    tableForm.name = "";
+    tableForm.seats = 4;
+    tableForm.minSeats = 1;
+    tableForm.shape = "square";
+    tableForm.floorId = currentFloor.value || activeZones.value[0]?.id || "";
+  }
+  showTableModal.value = true;
+};
+
+const saveTable = async () => {
+  savingTable.value = true;
+  try {
+    const data = {
+      number: tableForm.number || `T${tables.value.length + 1}`, // Fallback if number not manual
+      name: tableForm.name,
+      capacity: tableForm.seats,
+      minCapacity: tableForm.minSeats,
+      shape: tableForm.shape,
+      zone: tableForm.floorId,
+      isActive: true,
+      qrOrderingEnabled: true,
+    };
+
+    if (editingTable.value) {
+      await tablesStore.updateTable(editingTable.value.id, data);
+      toast.add({
+        title: t("common.success"),
+        description: t("pos.tables.updated") || "Table updated",
+        color: "green",
+      });
+    } else {
+      await tablesStore.createTable(data);
+      toast.add({
+        title: t("common.success"),
+        description: t("pos.tables.created") || "Table created",
+        color: "green",
+      });
+    }
+    showTableModal.value = false;
+  } catch (error) {
+    toast.add({
+      title: t("common.error"),
+      description: String(error),
+      color: "red",
+    });
+  } finally {
+    savingTable.value = false;
+  }
+};
+
+const deleteTable = async (table: any) => {
+  if (!confirm(t("tables.confirmDelete") || "Delete this table?")) return;
+  await tablesStore.deleteTable(table.id);
+  toast.add({
+    title: t("common.success"),
+    description: t("tables.deleted") || "Table deleted",
+    color: "green",
+  });
+};
+
+// Status Actions
+const startOrder = async (table: any) => {
+  router.push(`/pos?orderType=dine_in&tableId=${table.id}`);
+};
+
+const addToOrder = async (table: any) => {
+  router.push(
+    `/pos?orderType=dine_in&tableId=${table.id}&orderId=${table.currentOrderId}`
+  );
+};
+
+const processPayment = async (table: any) => {
+  // Logic to open payment modal or navigate
+  toast.add({
+    title: "Info",
+    description: "Payment flow integration pending",
+    color: "blue",
+  });
+};
+
+const getTableOrderingUrl = (tableId: string) => {
+  return tablesStore.getTableOrderingUrl(tableId);
+};
+
+const generateQRCode = (tableId: string) => {
+  return tablesStore.generateTableQR(tableId, 250);
+};
+
+const copyQRUrl = async () => {
   if (!selectedTable.value) return;
   const url = getTableOrderingUrl(selectedTable.value.id);
   await navigator.clipboard.writeText(url);
   toast.add({
     title: t("common.success"),
-    description: t("common.copied") || "Copied to clipboard",
-    color: "success",
+    description: t("common.copied"),
+    color: "green",
   });
-}
+};
 
-function printQR() {
-  if (!selectedTable.value) return;
-  const qrUrl = generateQRCode(selectedTable.value.id);
-  const tableName = selectedTable.value.name;
+const printQR = () => {
+  // Print logic using window.open like in settings/tables
+  const table = selectedTable.value;
+  if (!table) return;
+
+  const qrUrl = tablesStore.generateTableQR(table.id, 400);
+  const tableName = table.name || table.number;
 
   const printWindow = window.open("", "_blank");
   if (printWindow) {
@@ -896,204 +973,23 @@ function printQR() {
       <head>
         <title>Table QR - ${tableName}</title>
         <style>
-          body { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            font-family: system-ui, sans-serif;
-          }
-          .qr-container { text-align: center; padding: 40px; }
+          body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
           .qr-code { width: 300px; height: 300px; }
           .table-name { font-size: 32px; font-weight: bold; margin-top: 20px; }
-          .instructions { font-size: 18px; color: #666; margin-top: 10px; }
         </style>
       </head>
       <body>
-        <div class="qr-container">
-          <img class="qr-code" src="${qrUrl}" alt="Table QR Code" />
-          <div class="table-name">${tableName}</div>
-          <div class="instructions">${
-            t("tables.scanToOrder") || "Scan to view menu & order"
-          }</div>
-        </div>
+        <img class="qr-code" src="${qrUrl}" />
+        <div class="table-name">${tableName}</div>
       </body>
       </html>
     `);
     printWindow.document.close();
     printWindow.print();
   }
-}
+};
 
-function getFloorName(floorId: string): string {
-  return floors.value.find((f) => f.id === floorId)?.name || "";
-}
-
-function getStatusColor(
-  status: string
-): "success" | "primary" | "warning" | "error" | "neutral" {
-  const colors: Record<
-    string,
-    "success" | "primary" | "warning" | "error" | "neutral"
-  > = {
-    available: "success",
-    occupied: "primary",
-    reserved: "warning",
-    unavailable: "neutral",
-  };
-  return colors[status] || "neutral";
-}
-
-function getTableIcon(table: Table): string {
-  const icons: Record<string, string> = {
-    round: "i-heroicons-stop-circle",
-    square: "i-heroicons-stop",
-    rectangle: "i-heroicons-rectangle-group",
-  };
-  return icons[table.shape] || "i-heroicons-stop";
-}
-
-function getTableIconClass(table: Table): string {
-  const classes: Record<string, string> = {
-    available:
-      "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400",
-    occupied: "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400",
-    reserved:
-      "bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400",
-    unavailable:
-      "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  };
-  return classes[table.status] ?? classes.available ?? "";
-}
-
-function getTableCardClass(table: Table): string {
-  if (table.status === "occupied") return "border-blue-500 border-2";
-  if (table.status === "reserved") return "border-orange-500 border-2";
-  return "";
-}
-
-function selectTable(table: Table) {
-  selectedTable.value = table;
-  showDetailModal.value = true;
-}
-
-function openTableModal(table?: Table) {
-  if (table) {
-    editingTable.value = table;
-    tableForm.name = table.name;
-    tableForm.seats = table.seats;
-    tableForm.minSeats = table.minSeats;
-    tableForm.floorId = table.floorId;
-    tableForm.shape = table.shape;
-  } else {
-    editingTable.value = null;
-    tableForm.name = "";
-    tableForm.seats = 4;
-    tableForm.minSeats = 1;
-    tableForm.floorId = currentFloor.value;
-    tableForm.shape = "square";
-  }
-  showDetailModal.value = false;
-  showTableModal.value = true;
-}
-
-async function saveTable() {
-  if (!tableForm.name) {
-    toast.add({ title: t("pos.tables.nameRequired"), color: "error" });
-    return;
-  }
-
-  savingTable.value = true;
-
-  try {
-    if (editingTable.value) {
-      const index = tables.value.findIndex(
-        (t) => t.id === editingTable.value?.id
-      );
-      const existingTable = tables.value[index];
-      if (index !== -1 && existingTable) {
-        tables.value[index] = {
-          id: existingTable.id,
-          status: existingTable.status,
-          currentOrder: existingTable.currentOrder,
-          reservation: existingTable.reservation,
-          name: tableForm.name,
-          seats: tableForm.seats,
-          minSeats: tableForm.minSeats,
-          floorId: tableForm.floorId,
-          shape: tableForm.shape,
-        };
-      }
-      toast.add({ title: t("pos.tables.tableUpdated"), color: "success" });
-    } else {
-      tables.value.push({
-        id: Date.now().toString(),
-        name: tableForm.name,
-        seats: tableForm.seats,
-        minSeats: tableForm.minSeats,
-        floorId: tableForm.floorId,
-        shape: tableForm.shape,
-        status: "available",
-      });
-      toast.add({ title: t("pos.tables.tableCreated"), color: "success" });
-    }
-
-    localStorage.setItem("tables", JSON.stringify(tables.value));
-    showTableModal.value = false;
-  } catch (error) {
-    console.error("Failed to save table:", error);
-  } finally {
-    savingTable.value = false;
-  }
-}
-
-function startOrder(table: Table) {
-  // Navigate to POS with table context - set table as occupied
-  const index = tables.value.findIndex((t) => t.id === table.id);
-  const tableToUpdate = tables.value[index];
-  if (index !== -1 && tableToUpdate) {
-    tableToUpdate.status = "occupied";
-    tableToUpdate.currentOrder = {
-      id: `order-${Date.now()}`,
-      customerName: table.reservation?.customerName,
-      items: 0,
-      total: 0,
-      duration: "0m",
-      startTime: new Date(),
-    };
-    tableToUpdate.reservation = undefined;
-    localStorage.setItem("tables", JSON.stringify(tables.value));
-  }
-
-  router.push({
-    path: "/pos",
-    query: { tableId: table.id, tableName: table.name },
-  });
-}
-
-function addToOrder(table: Table) {
-  if (table.currentOrder) {
-    // Go to POS with existing table order
-    router.push({
-      path: "/pos",
-      query: { tableId: table.id, tableName: table.name },
-    });
-  }
-}
-
-function processPayment(table: Table) {
-  if (table.currentOrder) {
-    // Go to POS to process payment for this table
-    router.push({
-      path: "/pos",
-      query: { tableId: table.id, tableName: table.name, action: "pay" },
-    });
-  }
-}
-
-function makeReservation(table: Table) {
+function makeReservation(table: any) {
   reservingTable.value = table;
   reservationForm.customerName = "";
   reservationForm.phone = "";
@@ -1119,62 +1015,47 @@ async function saveReservation() {
 
   try {
     if (reservingTable.value) {
-      const index = tables.value.findIndex(
-        (t) => t.id === reservingTable.value?.id
+      const dateTime = new Date(
+        `${reservationForm.date}T${reservationForm.time}`
       );
-      const tableToUpdate = tables.value[index];
-      if (index !== -1 && tableToUpdate) {
-        tableToUpdate.status = "reserved";
-        tableToUpdate.reservation = {
-          id: Date.now().toString(),
-          customerName: reservationForm.customerName,
-          phone: reservationForm.phone,
-          time: reservationForm.time,
-          partySize: reservationForm.partySize,
-          notes: reservationForm.notes,
-        };
-      }
+      await tablesStore.createReservation({
+        tableId: reservingTable.value.id,
+        customerName: reservationForm.customerName,
+        customerPhone: reservationForm.phone,
+        guestCount: reservationForm.partySize,
+        reservedFor: dateTime.toISOString(),
+        duration: 90,
+        notes: reservationForm.notes,
+      });
+      // Optionally update table status if for now
+      await tablesStore.reserveTable(reservingTable.value.id);
     }
 
-    localStorage.setItem("tables", JSON.stringify(tables.value));
     toast.add({ title: t("pos.tables.reservationCreated"), color: "success" });
     showReservationModal.value = false;
   } catch (error) {
     console.error("Failed to save reservation:", error);
+    toast.add({ title: t("common.error"), color: "error" });
   } finally {
     savingReservation.value = false;
   }
 }
 
-function seatGuests(table: Table) {
-  const index = tables.value.findIndex((t) => t.id === table.id);
-  const tableToUpdate = tables.value[index];
-  if (index !== -1 && tableToUpdate) {
-    tableToUpdate.status = "occupied";
-    tableToUpdate.currentOrder = {
-      id: Date.now().toString(),
-      customerName: table.reservation?.customerName,
-      items: 0,
-      total: 0,
-      duration: "0m",
-      startTime: new Date(),
-    };
-    tableToUpdate.reservation = undefined;
-
-    localStorage.setItem("tables", JSON.stringify(tables.value));
+async function seatGuests(table: any) {
+  if (!table) return;
+  try {
+    await tablesStore.seatTable(table.id, table.reservation?.partySize || 2);
     toast.add({ title: t("pos.tables.guestsSeated"), color: "success" });
     showDetailModal.value = false;
+  } catch (e) {
+    toast.add({ title: t("common.error"), color: "error" });
   }
 }
 
-function cancelReservation(table: Table) {
-  const index = tables.value.findIndex((t) => t.id === table.id);
-  const tableToUpdate = tables.value[index];
-  if (index !== -1 && tableToUpdate) {
-    tableToUpdate.status = "available";
-    tableToUpdate.reservation = undefined;
-
-    localStorage.setItem("tables", JSON.stringify(tables.value));
+async function cancelReservation(table: any) {
+  if (table.reservation?.id) {
+    await tablesStore.cancelReservation(table.reservation.id);
+    await tablesStore.updateTable(table.id, { status: "available" });
     toast.add({
       title: t("pos.tables.reservationCancelled"),
       color: "success",
@@ -1183,7 +1064,7 @@ function cancelReservation(table: Table) {
   }
 }
 
-function getTableActions(table: Table) {
+function getTableActions(table: any) {
   const actions = [];
 
   if (table.status === "available") {
@@ -1243,47 +1124,29 @@ function getTableActions(table: Table) {
   return actions;
 }
 
-function addFloor() {
-  floors.value.push({
-    id: `floor-${Date.now()}`,
-    name: `Floor ${floors.value.length + 1}`,
+async function addFloor() {
+  await tablesStore.createZone({
+    name: `Zone ${activeZones.value.length + 1}`,
+    isActive: true,
+    sortOrder: activeZones.value.length + 1,
   });
 }
 
-function removeFloor(floorId: string) {
-  const index = floors.value.findIndex((f) => f.id === floorId);
-  if (index !== -1) {
-    floors.value.splice(index, 1);
-    if (
-      currentFloor.value === floorId &&
-      floors.value.length > 0 &&
-      floors.value[0]
-    ) {
-      currentFloor.value = floors.value[0].id;
-    }
+async function updateZoneName(zone: any) {
+  if (zone && zone.id) {
+    await tablesStore.updateZone(zone.id, { name: zone.name });
+    toast.add({ title: t("common.success"), color: "success" });
   }
 }
 
-function saveFloors() {
-  localStorage.setItem("tableFloors", JSON.stringify(floors.value));
+async function removeFloor(floorId: string) {
+  if (confirm(t("common.confirmDelete"))) {
+    await tablesStore.deleteZone(floorId);
+  }
+}
+
+async function saveFloors() {
   toast.add({ title: t("pos.tables.floorsSaved"), color: "success" });
   showSettingsModal.value = false;
 }
-
-// Load data on mount
-onMounted(() => {
-  const savedTables = localStorage.getItem("tables");
-  if (savedTables) {
-    tables.value = JSON.parse(savedTables);
-  }
-
-  const savedFloors = localStorage.getItem("tableFloors");
-  if (savedFloors) {
-    floors.value = JSON.parse(savedFloors);
-  }
-
-  if (floors.value.length > 0 && floors.value[0]) {
-    currentFloor.value = floors.value[0].id;
-  }
-});
 </script>

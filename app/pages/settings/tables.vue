@@ -16,6 +16,7 @@ const tables = useTables();
 // State
 const showTableModal = ref(false);
 const showQRModal = ref(false);
+const showZoneModal = ref(false);
 const selectedTable = ref<(typeof tables.tables.value)[number] | null>(null);
 const selectedQRTable = ref<(typeof tables.tables.value)[number] | null>(null);
 const saving = ref(false);
@@ -246,6 +247,29 @@ const getStatusColor = (status: string): BadgeColor => {
   };
   return colors[status] || "gray";
 };
+
+// Zone Management
+const addZone = async () => {
+  await tables.createZone({
+    name: `Zone ${tables.activeZones.value.length + 1}`,
+    isActive: true,
+    sortOrder: tables.activeZones.value.length + 1,
+  });
+};
+
+const updateZoneName = async (zone: any) => {
+  if (zone && zone.id) {
+    await tables.updateZone(zone.id, { name: zone.name });
+    toast.add({ title: t("common.success"), color: "green" });
+  }
+};
+
+const removeZone = async (zoneId: string) => {
+  if (confirm(t("common.confirmDelete"))) {
+    await tables.deleteZone(zoneId);
+    toast.add({ title: t("common.success"), color: "green" });
+  }
+};
 </script>
 
 <template>
@@ -267,6 +291,14 @@ const getStatusColor = (status: string): BadgeColor => {
             @click="createDemoTables"
           >
             {{ t("tables.createDemo") || "Create Demo Tables" }}
+          </UButton>
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-heroicons-map"
+            @click="showZoneModal = true"
+          >
+            {{ t("tables.manageZones") || "Manage Zones" }}
           </UButton>
           <UButton
             color="primary"
@@ -483,16 +515,16 @@ const getStatusColor = (status: string): BadgeColor => {
                 label-key="label"
               />
             </UFormField>
-
             <UFormField :label="t('tables.zone') || 'Zone'">
               <USelect
                 v-model="tableForm.zone"
                 :items="[
-                  { id: '', name: t('common.none') || 'None' },
+                  { id: '-', name: t('common.none') || 'None' },
                   ...tables.activeZones.value,
                 ]"
                 value-key="id"
                 label-key="name"
+                class="w-full"
               />
             </UFormField>
 
@@ -609,6 +641,62 @@ const getStatusColor = (status: string): BadgeColor => {
             </div>
           </template>
         </UCard>
+      </template>
+    </UModal>
+
+    <!-- Zone Management Modal -->
+    <UModal v-model:open="showZoneModal">
+      <template #header>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+          {{ t("tables.floorSettings") || "Zone Settings" }}
+        </h3>
+      </template>
+      <template #body>
+        <div class="space-y-4">
+          <h4 class="font-medium">
+            {{ t("pos.tables.manageFloors") || "Manage Zones" }}
+          </h4>
+          <div
+            v-if="tables.activeZones.value.length === 0"
+            class="text-gray-500 text-sm italic"
+          >
+            No zones created yet.
+          </div>
+          <div
+            v-for="zone in tables.activeZones.value"
+            :key="zone.id"
+            class="flex items-center gap-2"
+          >
+            <UInput
+              v-model="zone.name"
+              class="flex-1"
+              @change="updateZoneName(zone)"
+              placeholder="Zone Name"
+            />
+            <UButton
+              variant="ghost"
+              color="error"
+              icon="i-heroicons-trash"
+              @click="removeZone(zone.id)"
+            />
+          </div>
+
+          <UButton
+            variant="outline"
+            icon="i-heroicons-plus"
+            size="sm"
+            @click="addZone"
+          >
+            {{ t("pos.tables.addFloor") || "Add Zone" }}
+          </UButton>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton @click="showZoneModal = false">
+            {{ t("common.done") }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </div>
