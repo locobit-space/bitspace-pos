@@ -963,28 +963,32 @@ export function useUsers() {
       await loadUsers();
       await ensureDefaultOwner();
 
-      // Check if Nostr user is logged in and sync their owner account
-      const nostrPubkeyCookie = useCookie("nostr-pubkey");
+      // 1. Try to restore active session first (Staff or Owner)
+      const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      let sessionRestored = false;
 
-      if (nostrPubkeyCookie.value) {
-        await syncNostrOwner();
-      } else {
-        // Restore current user session from localStorage
-        const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-        if (storedUser) {
-          try {
-            const parsed = JSON.parse(storedUser);
-            const user = users.value.find(
-              (u) => u.id === parsed.id && u.isActive
-            );
-            if (user) {
-              currentUser.value = user;
-            } else {
-              localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-            }
-          } catch {
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          const user = users.value.find(
+            (u) => u.id === parsed.id && u.isActive
+          );
+          if (user) {
+            currentUser.value = user;
+            sessionRestored = true;
+          } else {
             localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
           }
+        } catch {
+          localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        }
+      }
+
+      // 2. If no active session, check for Nostr Owner auto-login
+      if (!sessionRestored) {
+        const nostrPubkeyCookie = useCookie("nostr-pubkey");
+        if (nostrPubkeyCookie.value) {
+          await syncNostrOwner();
         }
       }
 

@@ -135,28 +135,70 @@
             </p>
 
             <div class="flex items-center justify-center gap-4">
-              <div
-                class="text-4xl font-mono font-bold tracking-[0.5em] text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-6 py-3 rounded-lg"
-              >
-                {{ companyCode }}
+              <!-- Display Mode -->
+              <template v-if="!isEditingCode">
+                <div
+                  class="text-4xl font-mono font-bold tracking-[0.5em] text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-6 py-3 rounded-lg"
+                >
+                  {{ companyCode }}
+                </div>
+                <UButton
+                  color="gray"
+                  variant="ghost"
+                  icon="i-heroicons-clipboard-document"
+                  @click="copyCompanyCode"
+                />
+              </template>
+
+              <!-- Edit Mode -->
+              <div v-else class="flex items-center gap-2 max-w-sm w-full">
+                <UInput
+                  v-model="editingCodeValue"
+                  class="flex-1 font-mono text-center"
+                  size="lg"
+                  :placeholder="$t('settings.users.enterCompanyCode')"
+                  @keyup.enter="saveCompanyCode"
+                />
               </div>
-              <UButton
-                color="gray"
-                variant="ghost"
-                icon="i-heroicons-clipboard-document"
-                @click="copyCompanyCode"
-              />
             </div>
 
-            <UButton
-              color="gray"
-              variant="link"
-              size="sm"
-              class="mt-4"
-              @click="regenerateCompanyCode"
-            >
-              {{ $t("settings.users.regenerateCode") || "Generate New Code" }}
-            </UButton>
+            <!-- Action Buttons -->
+            <div class="mt-4 flex items-center justify-center gap-4">
+              <template v-if="!isEditingCode">
+                <UButton
+                  color="gray"
+                  variant="link"
+                  size="sm"
+                  @click="startEditingCode"
+                >
+                  {{ $t("settings.users.editCode") || "Edit Code" }}
+                </UButton>
+                <span class="text-gray-300 dark:text-gray-700">|</span>
+                <UButton
+                  color="gray"
+                  variant="link"
+                  size="sm"
+                  @click="regenerateCompanyCode"
+                >
+                  {{
+                    $t("settings.users.regenerateCode") || "Generate New Code"
+                  }}
+                </UButton>
+              </template>
+
+              <template v-else>
+                <UButton
+                  color="gray"
+                  variant="ghost"
+                  @click="cancelEditingCode"
+                >
+                  {{ $t("common.cancel") }}
+                </UButton>
+                <UButton color="primary" @click="saveCompanyCode">
+                  {{ $t("common.save") }}
+                </UButton>
+              </template>
+            </div>
           </div>
         </UCard>
 
@@ -1018,6 +1060,38 @@ const isCompanyCodeEnabled = computed({
   set: (val) => company.toggleCompanyCode(val),
 });
 const isOwner = computed(() => usersComposable.isOwner());
+
+// Manual Edit State
+const isEditingCode = ref(false);
+const editingCodeValue = ref("");
+
+const startEditingCode = () => {
+  editingCodeValue.value = companyCode.value || "";
+  isEditingCode.value = true;
+};
+
+const cancelEditingCode = () => {
+  isEditingCode.value = false;
+  editingCodeValue.value = "";
+};
+
+const saveCompanyCode = async () => {
+  if (!editingCodeValue.value) return;
+
+  const ownerPubkey = currentUser.value?.pubkeyHex;
+  if (ownerPubkey) {
+    await company.setCompanyCode(editingCodeValue.value, ownerPubkey);
+    // Re-save all users to update the company tag
+    await usersComposable.refreshFromNostr();
+
+    isEditingCode.value = false;
+    toast.add({
+      title: t("common.saved") || "Saved",
+      description: t("settings.users.codeUpdated") || "Company code updated",
+      color: "green",
+    });
+  }
+};
 
 // Copy company code to clipboard
 const copyCompanyCode = () => {
