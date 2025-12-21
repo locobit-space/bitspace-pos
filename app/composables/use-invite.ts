@@ -134,6 +134,12 @@ export function useInvite() {
     expiryDays: number = 7
   ): Promise<string> {
     // Create invite data (exclude sensitive fields)
+    // Get owner pubkey from company or localStorage (for when company code is disabled)
+    const ownerPubkeyValue =
+      company.ownerPubkey.value ||
+      localStorage.getItem("nostr_pubkey") ||
+      undefined;
+
     const inviteData: InviteData = {
       user: {
         id: user.id,
@@ -148,7 +154,7 @@ export function useInvite() {
         avatar: user.avatar,
       },
       companyCode: company.companyCode.value || undefined,
-      ownerPubkey: company.ownerPubkey.value || undefined,
+      ownerPubkey: ownerPubkeyValue,
       expiresAt: new Date(
         Date.now() + expiryDays * 24 * 60 * 60 * 1000
       ).toISOString(),
@@ -245,9 +251,15 @@ export function useInvite() {
       // Save
       localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 
-      // Also save company info if provided
+      // Save company code if provided (optional)
       if (data.companyCode && data.ownerPubkey) {
         await company.setCompanyCode(data.companyCode, data.ownerPubkey);
+      }
+
+      // Always save owner pubkey for Nostr sync (even without company code)
+      if (data.ownerPubkey) {
+        localStorage.setItem("nostr_pubkey", data.ownerPubkey);
+        localStorage.setItem("nostr_owner_pubkey", data.ownerPubkey);
       }
 
       console.log("[Invite] User imported successfully:", data.user.name);
