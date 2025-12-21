@@ -186,6 +186,20 @@
               </div>
             </div>
 
+            <!-- Language Selector -->
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <UIcon
+                  name="i-heroicons-language"
+                  class="w-5 h-5 text-gray-600 dark:text-gray-400"
+                />
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  {{ $t("account.language") }}
+                </span>
+              </div>
+              <CommonSwitchLanguage />
+            </div>
+
             <!-- Divider -->
             <div
               class="h-px bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-3"
@@ -253,7 +267,6 @@ const usersComposable = useUsers();
 const colorMode = useColorMode();
 const appConfig = useAppConfig();
 const nostrStorage = useNostrStorage();
-
 // Account switcher state
 const showAccountSwitcher = ref(false);
 const allAccounts = ref<

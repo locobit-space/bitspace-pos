@@ -6,7 +6,6 @@
       size="lg"
       class="rounded-full"
     />
-
     <template #content>
       <div class="w-72 p-4">
         <!-- User Info -->
@@ -54,7 +53,6 @@
             </button>
           </div>
         </div>
-
         <!-- Add Account Button -->
         <div class="py-2 border-b border-gray-200 dark:border-gray-700">
           <NuxtLink
@@ -68,6 +66,23 @@
 
         <!-- Quick Settings -->
         <div class="py-4 border-b border-gray-200 dark:border-gray-700 space-y-4">
+          <!-- Language Selector -->
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <UIcon name="i-heroicons-language" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <span class="text-sm text-gray-700 dark:text-gray-300">
+                {{ $t('account.language') }}
+              </span>
+            </div>
+            <USelectMenu
+              v-model="selectedLocale"
+              :items="availableLocales"
+              value-key="code"
+              label-key="name"
+              class="w-full"
+            />
+          </div>
+
           <!-- Dark/Light Mode Toggle -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -143,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-const { t } = useI18n()
+const { t, locale, locales } = useI18n()
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
 const nostrStorage = useNostrStorage()
@@ -249,12 +264,27 @@ const setThemeColor = (color: string) => {
   localStorage.setItem('theme-color', color)
 }
 
-// Load saved color on mount
+// Language
+const availableLocales = computed(() => locales.value)
+const selectedLocale = computed({
+  get: () => locale.value,
+  set: (value: string) => {
+    locale.value = value
+    localStorage.setItem('locale', value)
+  }
+})
+
+// Load saved settings on mount
 onMounted(() => {
   const savedColor = localStorage.getItem('theme-color')
   if (savedColor) {
     selectedColor.value = savedColor
     appConfig.ui.colors.primary = savedColor
+  }
+  
+  const savedLocale = localStorage.getItem('locale')
+  if (savedLocale) {
+    locale.value = savedLocale
   }
 })
 

@@ -296,11 +296,11 @@ function getStockStatusColor(ingredient: typeof ingredientsStore.ingredients.val
 function getStockStatusText(ingredient: typeof ingredientsStore.ingredients.value[0]): string {
   const status = ingredientsStore.getStockStatus(ingredient);
   switch (status) {
-    case 'ok': return 'In Stock';
-    case 'low': return 'Low Stock';
-    case 'critical': return 'Critical';
-    case 'out': return 'Out of Stock';
-    default: return 'Unknown';
+    case 'ok': return t('ingredients.statusInStock');
+    case 'low': return t('ingredients.statusLowStock');
+    case 'critical': return t('ingredients.statusCritical');
+    case 'out': return t('ingredients.statusOutOfStock');
+    default: return t('ingredients.statusUnknown');
   }
 }
 
@@ -358,7 +358,7 @@ watch([searchQuery, selectedCategory], () => {
             📦
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Total Items</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.totalItems') }}</div>
             <div class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ ingredientsStore.activeIngredients.value.length }}
             </div>
@@ -372,7 +372,7 @@ watch([searchQuery, selectedCategory], () => {
             💰
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Inventory Value</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.inventoryValue') }}</div>
             <div class="text-2xl font-bold text-primary-600">
               {{ formatCurrency(ingredientsStore.totalInventoryValue.value) }}
             </div>
@@ -386,7 +386,7 @@ watch([searchQuery, selectedCategory], () => {
             ⚠️
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Low Stock</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.lowStock') }}</div>
             <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {{ ingredientsStore.lowStockIngredients.value.length }}
             </div>
@@ -400,7 +400,7 @@ watch([searchQuery, selectedCategory], () => {
             ❌
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Out of Stock</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.outOfStock') }}</div>
             <div class="text-2xl font-bold text-red-600 dark:text-red-400">
               {{ ingredientsStore.outOfStockIngredients.value.length }}
             </div>
@@ -414,7 +414,7 @@ watch([searchQuery, selectedCategory], () => {
             🔔
           </div>
           <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">Pending Alerts</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.pendingAlerts') }}</div>
             <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {{ ingredientsStore.pendingAlerts.value.length }}
             </div>
@@ -429,16 +429,16 @@ watch([searchQuery, selectedCategory], () => {
         :color="activeTab === 'list' ? 'primary' : 'neutral'"
         :variant="activeTab === 'list' ? 'solid' : 'ghost'"
         icon="i-heroicons-cube"
-        label="Ingredients"
+        :label="t('ingredients.tabList')"
         @click="activeTab = 'list'"
       />
       <UButton
         :color="activeTab === 'alerts' ? 'primary' : 'neutral'"
         :variant="activeTab === 'alerts' ? 'solid' : 'ghost'"
         icon="i-heroicons-exclamation-triangle"
+        :label="t('ingredients.tabAlerts')"
         @click="activeTab = 'alerts'"
       >
-        Alerts
         <template v-if="ingredientsStore.pendingAlerts.value.length" #trailing>
           <UBadge color="red" size="xs" :label="String(ingredientsStore.pendingAlerts.value.length)" />
         </template>
@@ -447,7 +447,7 @@ watch([searchQuery, selectedCategory], () => {
         :color="activeTab === 'usage' ? 'primary' : 'neutral'"
         :variant="activeTab === 'usage' ? 'solid' : 'ghost'"
         icon="i-heroicons-chart-bar"
-        label="Usage History"
+        :label="t('ingredients.tabUsageHistory')"
         @click="activeTab = 'usage'"
       />
     </div>
@@ -500,7 +500,7 @@ watch([searchQuery, selectedCategory], () => {
                 <th class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.stock') }}</th>
                 <th class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.cost') }}</th>
                 <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.status') }}</th>
-                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Storage</th>
+                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.storage') }}</th>
                 <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('common.actions') }}</th>
               </tr>
             </thead>
@@ -564,7 +564,7 @@ watch([searchQuery, selectedCategory], () => {
               {{ t('ingredients.noIngredients') }}
             </h3>
             <p class="text-gray-500 dark:text-gray-400 mb-4">
-              Add your first ingredient to start tracking
+              {{ t('ingredients.addFirstIngredient') }}
             </p>
             <UButton
               color="primary"
@@ -613,7 +613,7 @@ watch([searchQuery, selectedCategory], () => {
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <span class="text-xl">⚠️</span>
-              Low Stock Alerts
+              {{ t('ingredients.lowStockAlerts') }}
             </h3>
           </div>
           
@@ -630,7 +630,7 @@ watch([searchQuery, selectedCategory], () => {
                   size="xs"
                 />
                 <div>
-                  <div class="font-medium text-gray-900 dark:text-white">{{ alert.ingredient?.name || 'Unknown' }}</div>
+                  <div class="font-medium text-gray-900 dark:text-white">{{ alert.ingredient?.name || t('ingredients.unknown') }}</div>
                   <div class="text-sm text-gray-500 dark:text-gray-400">
                     Current: {{ alert.currentStock.toFixed(2) }} {{ alert.ingredient?.baseUnit }} 
                     (Min: {{ alert.minStock }})
@@ -639,14 +639,14 @@ watch([searchQuery, selectedCategory], () => {
               </div>
               <div class="flex items-center gap-4">
                 <div class="text-right text-sm">
-                  <div>Suggested order: <span class="font-medium">{{ alert.suggestedPurchaseQty.toFixed(2) }} {{ alert.ingredient?.baseUnit }}</span></div>
-                  <div class="text-gray-500">Est. cost: {{ formatCurrency(alert.estimatedCost) }}</div>
+                  <div>{{ t('ingredients.suggestedOrder') }}: <span class="font-medium">{{ alert.suggestedPurchaseQty.toFixed(2) }} {{ alert.ingredient?.baseUnit }}</span></div>
+                  <div class="text-gray-500">{{ t('ingredients.estimatedCost') }}: {{ formatCurrency(alert.estimatedCost) }}</div>
                 </div>
                 <UButton
                   color="neutral"
                   variant="outline"
                   size="sm"
-                  label="Dismiss"
+                  :label="t('ingredients.dismiss')"
                   @click="acknowledgeAlert(alert.id)"
                 />
               </div>
@@ -655,8 +655,8 @@ watch([searchQuery, selectedCategory], () => {
 
           <div v-else class="p-12 text-center">
             <div class="text-6xl mb-4">✅</div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">All Clear!</h3>
-            <p class="text-gray-500 dark:text-gray-400">No low stock alerts at the moment</p>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{{ t('ingredients.allClear') }}</h3>
+            <p class="text-gray-500 dark:text-gray-400">{{ t('ingredients.noLowStockAlerts') }}</p>
           </div>
         </div>
       </div>
@@ -669,7 +669,7 @@ watch([searchQuery, selectedCategory], () => {
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <span class="text-xl">📊</span>
-              Recent Stock Movements
+              {{ t('ingredients.recentStockMovements') }}
             </h3>
           </div>
           
@@ -713,8 +713,8 @@ watch([searchQuery, selectedCategory], () => {
 
           <div v-else class="p-12 text-center">
             <div class="text-6xl mb-4">📭</div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No history yet</h3>
-            <p class="text-gray-500 dark:text-gray-400">Stock adjustments will appear here</p>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{{ t('ingredients.noHistoryYet') }}</h3>
+            <p class="text-gray-500 dark:text-gray-400">{{ t('ingredients.stockAdjustmentsAppearHere') }}</p>
           </div>
         </div>
       </div>
@@ -750,7 +750,7 @@ watch([searchQuery, selectedCategory], () => {
             </div>
 
             <div class="grid grid-cols-3 gap-4">
-              <UFormField label="Recipe Unit">
+              <UFormField :label="t('ingredients.recipeUnit')">
                 <USelect
                   v-model="formData.unit"
                   :items="unitOptions"
@@ -758,7 +758,7 @@ watch([searchQuery, selectedCategory], () => {
                   label-key="label"
                 />
               </UFormField>
-              <UFormField label="Purchase Unit">
+              <UFormField :label="t('ingredients.purchaseUnit')">
                 <USelect
                   v-model="formData.baseUnit"
                   :items="baseUnitOptions"
@@ -766,7 +766,7 @@ watch([searchQuery, selectedCategory], () => {
                   label-key="label"
                 />
               </UFormField>
-              <UFormField label="Conversion">
+              <UFormField :label="t('ingredients.conversion')">
                 <UInput
                   v-model.number="formData.conversionFactor"
                   type="number"
@@ -797,7 +797,7 @@ watch([searchQuery, selectedCategory], () => {
             </div>
 
             <div class="grid grid-cols-3 gap-4">
-              <UFormField label="Initial Stock">
+              <UFormField :label="t('ingredients.initialStock')">
                 <UInput
                   v-model.number="formData.currentStock"
                   type="number"
@@ -805,7 +805,7 @@ watch([searchQuery, selectedCategory], () => {
                   step="0.1"
                 />
               </UFormField>
-              <UFormField label="Min Stock">
+              <UFormField :label="t('ingredients.minStock')">
                 <UInput
                   v-model.number="formData.minStock"
                   type="number"
@@ -813,7 +813,7 @@ watch([searchQuery, selectedCategory], () => {
                   step="0.1"
                 />
               </UFormField>
-              <UFormField label="Max Stock">
+              <UFormField :label="t('ingredients.maxStock')">
                 <UInput
                   v-model.number="formData.maxStock"
                   type="number"
@@ -823,7 +823,7 @@ watch([searchQuery, selectedCategory], () => {
               </UFormField>
             </div>
 
-            <UFormField label="Storage Type">
+            <UFormField :label="t('ingredients.storageType')">
               <div class="flex gap-4">
                 <label
                   v-for="storage in storageTypes"
@@ -870,7 +870,7 @@ watch([searchQuery, selectedCategory], () => {
           <template #header>
             <div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                Adjust Stock
+                {{ t('ingredients.adjustStock') }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {{ selectedIngredient.name }} - Current: {{ selectedIngredient.currentStock.toFixed(2) }} {{ selectedIngredient.baseUnit }}
@@ -879,7 +879,7 @@ watch([searchQuery, selectedCategory], () => {
           </template>
 
           <div class="space-y-4">
-            <UFormField label="Adjustment Type">
+            <UFormField :label="t('ingredients.adjustmentType')">
               <USelect
                 v-model="stockForm.type"
                 :items="stockAdjustmentTypes"
@@ -888,7 +888,7 @@ watch([searchQuery, selectedCategory], () => {
               />
             </UFormField>
 
-            <UFormField :label="stockForm.type === 'count' ? 'New Stock Level' : 'Quantity'">
+            <UFormField :label="stockForm.type === 'count' ? t('ingredients.newStockLevel') : t('ingredients.quantity')">
               <UInput
                 v-model.number="stockForm.adjustment"
                 type="number"
@@ -896,7 +896,7 @@ watch([searchQuery, selectedCategory], () => {
               />
             </UFormField>
 
-            <UFormField v-if="stockForm.type === 'purchase'" label="Unit Cost">
+            <UFormField v-if="stockForm.type === 'purchase'" :label="t('ingredients.unitCost')">
               <UInput
                 v-model.number="stockForm.unitCost"
                 type="number"
@@ -905,7 +905,7 @@ watch([searchQuery, selectedCategory], () => {
               />
             </UFormField>
 
-            <UFormField label="Notes">
+            <UFormField :label="t('ingredients.notes')">
               <UTextarea
                 v-model="stockForm.notes"
                 :rows="2"
@@ -925,7 +925,7 @@ watch([searchQuery, selectedCategory], () => {
               <UButton
                 color="primary"
                 :loading="saving"
-                label="Save Adjustment"
+                :label="t('ingredients.saveAdjustment')"
                 @click="saveStockAdjustment"
               />
             </div>
@@ -952,44 +952,44 @@ watch([searchQuery, selectedCategory], () => {
           <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-                <div class="text-sm text-gray-500 dark:text-gray-400">Code</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.code') }}</div>
                 <div class="font-mono font-medium text-gray-900 dark:text-white">{{ selectedIngredient.code }}</div>
               </div>
               <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-                <div class="text-sm text-gray-500 dark:text-gray-400">Category</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('common.category') }}</div>
                 <div class="font-medium text-gray-900 dark:text-white">
-                  {{ ingredientsStore.getCategory(selectedIngredient.categoryId || '')?.name || 'Uncategorized' }}
+                  {{ ingredientsStore.getCategory(selectedIngredient.categoryId || '')?.name || t('ingredients.uncategorized') }}
                 </div>
               </div>
             </div>
 
             <div class="grid grid-cols-3 gap-4">
               <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-500 dark:text-gray-400">Current Stock</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.currentStock') }}</div>
                 <div class="font-bold text-lg text-gray-900 dark:text-white">{{ selectedIngredient.currentStock.toFixed(2) }}</div>
                 <div class="text-xs text-gray-500">{{ selectedIngredient.baseUnit }}</div>
               </div>
               <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-500 dark:text-gray-400">Min Stock</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.minStock') }}</div>
                 <div class="font-bold text-lg text-gray-900 dark:text-white">{{ selectedIngredient.minStock.toFixed(2) }}</div>
                 <div class="text-xs text-gray-500">{{ selectedIngredient.baseUnit }}</div>
               </div>
               <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-500 dark:text-gray-400">Max Stock</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.maxStock') }}</div>
                 <div class="font-bold text-lg text-gray-900 dark:text-white">{{ selectedIngredient.maxStock.toFixed(2) }}</div>
                 <div class="text-xs text-gray-500">{{ selectedIngredient.baseUnit }}</div>
               </div>
             </div>
 
             <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-              <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">Cost Information</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ t('ingredients.costInformation') }}</div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <div class="text-xs text-gray-500">Per {{ selectedIngredient.baseUnit }}</div>
+                  <div class="text-xs text-gray-500">{{ t('ingredients.perUnit', { unit: selectedIngredient.baseUnit }) }}</div>
                   <div class="font-bold text-gray-900 dark:text-white">{{ formatCurrency(selectedIngredient.costPerBaseUnit) }}</div>
                 </div>
                 <div>
-                  <div class="text-xs text-gray-500">Per {{ selectedIngredient.unit }}</div>
+                  <div class="text-xs text-gray-500">{{ t('ingredients.perUnit', { unit: selectedIngredient.unit }) }}</div>
                   <div class="font-bold text-gray-900 dark:text-white">{{ formatCurrency(selectedIngredient.costPerUnit) }}</div>
                 </div>
               </div>
@@ -997,7 +997,7 @@ watch([searchQuery, selectedCategory], () => {
 
             <div class="flex justify-between items-center">
               <div class="text-sm text-gray-500 dark:text-gray-400">
-                Storage: {{ getStorageIcon(selectedIngredient.storageType) }} {{ selectedIngredient.storageType }}
+                {{ t('ingredients.storage') }}: {{ getStorageIcon(selectedIngredient.storageType) }} {{ selectedIngredient.storageType }}
               </div>
               <UBadge
                 :color="getStockStatusColor(selectedIngredient)"
@@ -1013,7 +1013,7 @@ watch([searchQuery, selectedCategory], () => {
                 color="primary"
                 variant="ghost"
                 icon="i-heroicons-arrow-path"
-                label="Adjust Stock"
+                :label="t('ingredients.adjustStock')"
                 @click="openStockModal(selectedIngredient); showDetailsModal = false"
               />
               <UButton

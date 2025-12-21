@@ -197,7 +197,7 @@
           </template>
 
           <!-- Security Tab -->
-          <template #security="{ item }">
+          <template #security>
             <div class="space-y-8">
               <!-- Change Password -->
               <div>
@@ -266,7 +266,7 @@
                   </div>
                   <USwitch
                     v-model="securitySettings.twoFactorEnabled"
-                    @change="toggleTwoFactor"
+                    @update:model-value="toggleTwoFactor"
                   />
                 </div>
 
@@ -332,7 +332,7 @@
           </template>
 
           <!-- Preferences Tab -->
-          <template #preferences="{ item }">
+          <template #preferences>
             <div class="space-y-8">
               <!-- Language & Region -->
               <div>
@@ -346,7 +346,7 @@
                       :items="languageOptions"
                       label-key="label"
                       value-key="value"
-                      @change="changeLanguage"
+                      @update:model-value="changeLanguage"
                     />
                   </UFormField>
 
@@ -394,7 +394,7 @@
                     </div>
                     <USwitch
                       v-model="preferences.darkMode"
-                      @change="toggleDarkMode"
+                      @update:model-value="toggleDarkMode"
                     />
                   </div>
 
@@ -426,7 +426,7 @@
           </template>
 
           <!-- Notifications Tab -->
-          <template #notifications="{ item }">
+          <template #notifications>
             <div class="space-y-8">
               <!-- Email Notifications -->
               <div>
@@ -835,7 +835,7 @@ const activeSessions = ref([
 
 // Preferences
 const preferences = reactive({
-  language: "lo_LA",
+  language: "lo",
   timezone: "Asia/Vientiane",
   dateFormat: "DD/MM/YYYY",
   currency: "LAK",
@@ -860,16 +860,9 @@ const notifications = reactive({
   },
 });
 
-// Options
-const branchOptions = ref([
-  { label: "Main Branch - Vientiane", value: "1" },
-  { label: "Branch 2 - Luang Prabang", value: "2" },
-  { label: "Branch 3 - Savannakhet", value: "3" },
-]);
-
 const languageOptions = ref([
-  { label: "ລາວ (Lao)", value: "lo_LA" },
-  { label: "English", value: "en_US" },
+  { label: "ລາວ (Lao)", value: "lo" },
+  { label: "English", value: "en" },
 ]);
 
 const timezoneOptions = ref([

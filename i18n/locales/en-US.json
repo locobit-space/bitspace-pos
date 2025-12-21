@@ -1920,7 +1920,25 @@
     "refresh": "Refresh",
     "select": "Select",
     "other": "Other",
-    "custom": "Custom"
+    "custom": "Custom",
+    "qty": "Qty",
+    "quantity": "Quantity",
+    "price": "Price",
+    "amount": "Amount",
+    "discount": "Discount",
+    "items": "Items",
+    "noData": "No data available",
+    "noResults": "No results found",
+    "tryDifferent": "Try a different search",
+    "allClear": "All Clear!",
+    "noHistory": "No history yet",
+    "dismiss": "Dismiss",
+    "continue": "Continue",
+    "apply": "Apply",
+    "remove": "Remove",
+    "view": "View",
+    "details": "Details",
+    "summary": "Summary"
   },
   "pos": {
     "shift": {
