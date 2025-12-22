@@ -121,6 +121,10 @@ const pendingOrdersList = computed(() =>
 // Selected pending order for payment
 const selectedPendingOrder = ref<Order | null>(null);
 
+// Editing existing order state
+const editingOrderId = ref<string | null>(null);
+const isEditingOrder = computed(() => !!editingOrderId.value);
+
 // Split bill computed values
 const splitAmountPerPerson = computed(() => {
   if (!splitOrder.value || splitCount.value < 2) return 0;
@@ -343,6 +347,11 @@ const holdOrder = () => {
 const sendToKitchen = async () => {
   if (pos.cartItems.value.length === 0) return;
 
+  if (isEditingOrder.value) {
+    await updateExistingOrder();
+    return;
+  }
+
   isProcessing.value = true;
   
   try {
@@ -365,6 +374,18 @@ const sendToKitchen = async () => {
 
     // Save order to local DB and sync to Nostr
     await ordersStore.createOrder(order);
+
+    // Update table status to 'occupied' if a table is selected
+    if (pos.tableNumber.value) {
+      const table = tables.value.find(t => t.name === pos.tableNumber.value || t.number === pos.tableNumber.value);
+      if (table && table.status === 'available') {
+        // Use seatTable to properly set status and link order
+        await tablesStore.seatTable(table.id, 1, order.id, 'staff');
+      } else if (table) {
+        // Table already occupied, just link the new order
+        await tablesStore.updateTable(table.id, { currentOrderId: order.id });
+      }
+    }
 
     // Update POS session
     pos.updateSessionTotals(order);
@@ -396,6 +417,103 @@ const sendToKitchen = async () => {
   } finally {
     isProcessing.value = false;
   }
+};
+
+const updateExistingOrder = async () => {
+  if (!editingOrderId.value) return;
+  isProcessing.value = true;
+  
+  try {
+    const updates: Partial<Order> = {
+      items: pos.cartItems.value.map((item, idx) => ({
+        id: item.id || `ITEM-${Date.now()}-${idx}`,
+        productId: item.product.id,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.total,
+        product: item.product,
+        selectedVariant: item.selectedVariant,
+        selectedModifiers: item.selectedModifiers,
+        notes: item.notes,
+        kitchenStatus: item.kitchenStatus || "new",
+        createdAt: new Date().toISOString(), // This might reset createdAt for existing items if not careful, but OrderItem type requires it. Ideally we should store original createdAt in CartItem if we want to preserve it.
+        updatedAt: new Date().toISOString()
+      })),
+      total: pos.total.value,
+      totalSats: pos.totalSats.value,
+      notes: pos.customerNote.value || undefined,
+    };
+    
+    await ordersStore.updateOrder(editingOrderId.value, updates);
+    
+    const toast = useToast();
+    toast.add({
+      title: t("common.success"),
+      description: "Order updated successfully",
+      color: "green"
+    });
+    
+    pos.clearCart();
+    editingOrderId.value = null;
+    
+    // If we were on a table, maybe go back to tables? 
+    // Or just stay on empty POS.
+    // Optionally redirect back to tables if tableId was set
+    if (route.query.redirect === 'tables') {
+      navigateTo('/pos/tables');
+    }
+    
+  } catch (e) {
+    console.error("Failed to update order:", e);
+    const toast = useToast();
+    toast.add({
+      title: t("common.error"),
+      description: String(e),
+      color: "red"
+    });
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+/**
+ * Load a pending order into the cart for editing (adding more items)
+ */
+const loadOrderForEditing = (order: Order) => {
+  // Set editing mode
+  editingOrderId.value = order.id;
+  
+  // Clear current cart
+  pos.clearCart();
+  
+  // Map order items to cart items
+  const items = order.items.map(item => ({
+    id: item.id,
+    kitchenStatus: item.kitchenStatus,
+    product: item.product,
+    quantity: item.quantity,
+    price: item.price,
+    total: item.total,
+    selectedVariant: item.selectedVariant,
+    selectedModifiers: item.selectedModifiers,
+    notes: item.notes
+  }));
+  
+  pos.cartItems.value = items;
+  pos.tableNumber.value = order.tableNumber || "";
+  pos.orderType.value = order.orderType || "dine_in";
+  if (order.notes) pos.customerNote.value = order.notes;
+  
+  // Close the pending orders modal
+  showPendingOrdersModal.value = false;
+  
+  // Show feedback
+  const toast = useToast();
+  toast.add({
+    title: t("pos.editingOrder") || "Editing Order",
+    description: `${t("pos.addMoreItems") || "Add items and click Update Order"} - #${order.id}`,
+    color: "blue"
+  });
 };
 
 const recallOrder = (orderId: string) => {
@@ -945,6 +1063,44 @@ onMounted(async () => {
     // If action is 'pay', open payment modal
     if (route.query.action === "pay" && pos.cartItems.value.length > 0) {
       setTimeout(() => proceedToPayment(), 500);
+    }
+  }
+  
+  // Handle editing existing order
+  if (route.query.orderId) {
+    const orderId = route.query.orderId as string;
+    // Wait for orders to load (init called above)
+    // Find order
+    const order = ordersStore.orders.value.find(o => o.id === orderId);
+    if (order) {
+      editingOrderId.value = order.id;
+      pos.clearCart();
+      
+      // Map items to cart
+      // We need to cast or map explicitly to match CartItem extended interface
+      const items = order.items.map(item => ({
+        id: item.id,
+        kitchenStatus: item.kitchenStatus,
+        product: item.product,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.total,
+        selectedVariant: item.selectedVariant,
+        selectedModifiers: item.selectedModifiers,
+        notes: item.notes
+      }));
+      
+      pos.cartItems.value = items;
+      pos.tableNumber.value = order.tableNumber || "";
+      pos.orderType.value = order.orderType || "dine_in";
+      if (order.notes) pos.customerNote.value = order.notes;
+      
+      const toast = useToast();
+      toast.add({
+        title: "Editing Order",
+        description: `Loaded order #${order.id}`,
+        color: "blue"
+      });
     }
   }
 
@@ -1878,8 +2034,8 @@ onUnmounted(() => {
           >
             <span class="flex items-center gap-2">
               <span class="text-lg">🔥</span>
-              <span>{{ t("pos.sendToKitchen") || "Send to Kitchen" }}</span>
-              <span class="text-xs opacity-75">({{ t("pos.payLater") || "Pay Later" }})</span>
+              <span>{{ isEditingOrder ? "Update Order" : (t("pos.sendToKitchen") || "Send to Kitchen") }}</span>
+              <span class="text-xs opacity-75">({{ isEditingOrder ? "Save Changes" : (t("pos.payLater") || "Pay Later") }})</span>
             </span>
           </UButton>
         </div>
@@ -2100,7 +2256,8 @@ onUnmounted(() => {
                 color="neutral"
                 variant="soft"
                 size="lg"
-                class="col-span-2 !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-800 dark:hover:!bg-gray-700 !text-gray-600 dark:!text-gray-300 font-semibold"
+                block
+                class="col-span-1  !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-800 dark:hover:!bg-gray-700 !text-gray-600 dark:!text-gray-300 font-semibold"
                 @click="
                   pos.clearCart();
                   showMobileCart = false;
@@ -2111,7 +2268,8 @@ onUnmounted(() => {
               <UButton
                 color="primary"
                 size="lg"
-                class="col-span-3 !bg-linear-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white font-semibold shadow-lg shadow-amber-500/25"
+                block
+                class="col-span-2 !bg-linear-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white font-semibold shadow-lg shadow-amber-500/25"
                 :disabled="pos.cartItems.value.length === 0"
                 @click="
                   showMobileCart = false;
@@ -2121,6 +2279,26 @@ onUnmounted(() => {
                 <span class="flex items-center gap-2">
                   <span>Pay Now</span>
                   <span class="text-amber-200">→</span>
+                </span>
+              </UButton>
+              <!-- Pay Later -->
+              <UButton
+                color="emerald"
+                variant="soft"
+                size="lg"
+                block
+                class="col-span-2 !text-emerald-700 dark:!text-emerald-300 font-semibold"
+                :disabled="pos.cartItems.value.length === 0"
+                :loading="isProcessing"
+                @click="
+                  showMobileCart = false;
+                  sendToKitchen();
+                "
+              >
+                <span class="flex items-center gap-2">
+                  <span class="text-lg">🔥</span>
+                  <span>{{ isEditingOrder ? "Update Order" : (t("pos.sendToKitchen") || "Send to Kitchen") }}</span>
+                  <span class="text-xs opacity-75">({{ isEditingOrder ? "Save" : (t("pos.payLater") || "Pay Later") }})</span>
                 </span>
               </UButton>
             </div>
@@ -2426,7 +2604,16 @@ onUnmounted(() => {
 
               <div class="flex gap-2">
                 <UButton
-                  class="flex-1"
+                  size="sm"
+                  color="emerald"
+                  variant="soft"
+                  @click="loadOrderForEditing(order)"
+                >
+                  <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
+                  {{ t("common.edit") || "Edit" }}
+                </UButton>
+                <UButton
+                  block
                   size="sm"
                   color="primary"
                   @click="selectPendingOrderForPayment(order)"
@@ -2438,6 +2625,7 @@ onUnmounted(() => {
                   size="sm"
                   color="amber"
                   variant="soft"
+                  class="text-nowrap"
                   @click="openSplitBill(order)"
                 >
                   <UIcon name="i-heroicons-scissors" class="w-4 h-4" />

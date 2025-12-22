@@ -372,6 +372,78 @@ export function useTables() {
     return updateTable(tableId, { currentOrderId: orderId });
   };
 
+  /**
+   * Move table (transfer order and status)
+   */
+  const moveTable = async (fromTableId: string, toTableId: string): Promise<boolean> => {
+    const fromTable = tables.value.find(t => t.id === fromTableId);
+    const toTable = tables.value.find(t => t.id === toTableId);
+    
+    if (!fromTable || !toTable) return false;
+    if (toTable.status !== 'available') return false; // Target must be available
+    
+    // Update target table with source info
+    await updateTable(toTableId, {
+      status: fromTable.status,
+      currentOrderId: fromTable.currentOrderId,
+      occupiedAt: fromTable.occupiedAt,
+      occupiedBy: fromTable.occupiedBy,
+      guestCount: fromTable.guestCount,
+      notes: fromTable.notes,
+    });
+    
+    // Update linked order with new table number if order exists
+    if (fromTable.currentOrderId) {
+      const ordersStore = useOrders(); // Lazy load
+      // We assume ordersStore has updateOrder
+      await ordersStore.updateOrder(fromTable.currentOrderId, {
+        tableNumber: toTable.number 
+      });
+    }
+    
+    // Reset source table
+    await updateTable(fromTableId, {
+      status: 'available',
+      currentOrderId: undefined,
+      occupiedAt: undefined,
+      occupiedBy: undefined,
+      guestCount: undefined,
+      notes: undefined,
+    });
+    
+    return true;
+  };
+
+  /**
+   * Merge bill (transfer items from source to target)
+   */
+  const mergeBill = async (fromTableId: string, toTableId: string): Promise<boolean> => {
+    const fromTable = tables.value.find(t => t.id === fromTableId);
+    const toTable = tables.value.find(t => t.id === toTableId);
+    
+    if (!fromTable || !toTable) return false;
+    if (!fromTable.currentOrderId || !toTable.currentOrderId) return false; // Both must have orders
+    
+    // Perform order merge
+    const ordersStore = useOrders();
+    const result = await ordersStore.mergeOrders(fromTable.currentOrderId, toTable.currentOrderId);
+    
+    if (result) {
+      // Free the source table
+      await updateTable(fromTableId, {
+        status: 'available',
+        currentOrderId: undefined,
+        occupiedAt: undefined,
+        occupiedBy: undefined,
+        guestCount: undefined,
+        notes: undefined,
+      });
+      return true;
+    }
+    
+    return false;
+  };
+
   // ============================================
   // ZONE OPERATIONS
   // ============================================
@@ -1162,6 +1234,8 @@ export function useTables() {
     reserveTable,
     setTableUnavailable,
     linkOrder,
+    moveTable,
+    mergeBill,
 
     // Zones
     createZone,

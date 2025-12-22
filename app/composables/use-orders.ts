@@ -372,27 +372,91 @@ export function useOrders() {
    * Delete order (local only, marks as deleted in Nostr)
    */
   async function deleteOrder(orderId: string): Promise<boolean> {
-    try {
-      // Remove from local state
-      const index = orders.value.findIndex((o) => o.id === orderId);
-      if (index !== -1) {
-        orders.value.splice(index, 1);
-      }
+    const index = orders.value.findIndex((o) => o.id === orderId);
+    if (index === -1) return false;
 
-      // Remove from local DB
-      await db.localOrders.delete(orderId);
+    // Remove from local state
+    const order = orders.value[index];
+    orders.value.splice(index, 1);
 
-      // TODO: In Nostr, we could publish a deletion event
-      // For now, just remove locally
+    // Remove from local DB
+    await db.localOrders.delete(orderId);
 
-      return true;
-    } catch (e) {
-      console.error("Failed to delete order:", e);
-      error.value = "Failed to delete order";
-      return false;
+    // Publish deletion event to Nostr
+    if (offline.isOnline.value) {
+      await nostrData.deleteOrder(orderId);
     }
+    
+    return true;
   }
 
+  /**
+   * Update full order details
+   */
+  async function updateOrder(orderId: string, updates: Partial<Order>): Promise<Order | null> {
+    const order = orders.value.find(o => o.id === orderId);
+    if (!order) return null;
+    
+    const updatedOrder: Order = {
+      ...order,
+      ...updates
+    };
+    
+    // Calculate new total if items changed
+    if (updates.items) {
+      updatedOrder.total = updates.items.reduce((sum, item) => sum + item.total, 0);
+    }
+    
+    // Update local state and DB
+    const index = orders.value.findIndex(o => o.id === orderId);
+    if (index !== -1) orders.value[index] = updatedOrder;
+    await saveToLocal(updatedOrder);
+    
+    // Sync to Nostr
+    if (offline.isOnline.value) {
+      saveToNostr(updatedOrder); // Fire and forget
+    }
+    
+    return updatedOrder;
+  }
+
+  /**
+   * Merge two orders (combine items)
+   * Source order is cancelled/deleted after merge
+   */
+  async function mergeOrders(sourceOrderId: string, targetOrderId: string): Promise<Order | null> {
+    const sourceOrder = orders.value.find(o => o.id === sourceOrderId);
+    const targetOrder = orders.value.find(o => o.id === targetOrderId);
+    
+    if (!sourceOrder || !targetOrder) return null;
+    
+    // Clone items from source to avoid reference issues
+    const newItems = sourceOrder.items.map(item => ({
+      ...item,
+      id: `merged_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, // Generate new IDs
+    }));
+    
+    // Combine items
+    const combinedItems = [...targetOrder.items, ...newItems];
+    
+    // Calculate new totals
+    const newTotal = combinedItems.reduce((sum, item) => sum + item.total, 0);
+    const newTips = (targetOrder.tip || 0) + (sourceOrder.tip || 0);
+    
+    // Update target order
+    const updatedTarget = await updateOrder(targetOrderId, {
+      items: combinedItems,
+      total: newTotal,
+      tip: newTips,
+      notes: (targetOrder.notes ? targetOrder.notes + '\n' : '') + 
+             (sourceOrder.notes ? `Merged from #${sourceOrder.id.slice(-4)}: ${sourceOrder.notes}` : `Merged from #${sourceOrder.id.slice(-4)}`)
+    });
+    
+    // Delete source order
+    await deleteOrder(sourceOrderId);
+    
+    return updatedTarget;
+  }
   // ============================================
   // 🔄 SYNC OPERATIONS
   // ============================================
@@ -730,6 +794,8 @@ export function useOrders() {
     // CRUD
     createOrder,
     updateOrderStatus,
+    updateOrder, // Export updateOrder
+    mergeOrders, // Export mergeOrders
     completeOrder,
     voidOrder,
     refundOrder,

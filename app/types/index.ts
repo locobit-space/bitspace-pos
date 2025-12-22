@@ -958,7 +958,7 @@ export interface OrderItem {
   // Custom notes (e.g., "no onions", "extra spicy")
   notes?: string;
   // Kitchen tracking
-  kitchenStatus?: "pending" | "preparing" | "ready";
+  kitchenStatus?: "new" | "pending" | "preparing" | "cooking" | "ready" | "served" | "cancelled";
 }
 
 // ============================================
@@ -1012,6 +1012,8 @@ export interface POSSession {
 }
 
 export interface CartItem {
+  id?: string; // Optional: ID from existing order (for editing)
+  kitchenStatus?: "new" | "pending" | "preparing" | "cooking" | "ready" | "served" | "cancelled";
   product: Product;
   quantity: number;
   price: number; // Base price + variant + modifiers

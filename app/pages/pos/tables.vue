@@ -101,7 +101,7 @@
       <UCard
         v-for="table in currentFloorTables"
         :key="table.id"
-        class="cursor-pointer hover:shadow-lg transition-shadow relative"
+        class="cursor-pointer hover:shadow-lg transition-shadow relative !overflow-visible"
         :class="getTableCardClass(table)"
         @click="selectTable(table)"
       >
@@ -111,6 +111,19 @@
             :class="getTableIconClass(table)"
           >
             <UIcon :name="getTableIcon(table)" class="text-2xl" />
+          </div>
+
+          <!-- Actions Dropdown (Absolute Top Right) -->
+          <div class="absolute top-2 right-2" @click.stop>
+            <UDropdownMenu :items="getTableActions(table)" :ui="{ width: 'w-48' }">
+              <UButton 
+                variant="ghost" 
+                color="gray" 
+                icon="i-heroicons-ellipsis-vertical" 
+                size="xs" 
+                class="rounded-full"
+              />
+            </UDropdownMenu>
           </div>
 
           <p class="font-bold text-lg">{{ table.name || table.number }}</p>
@@ -647,6 +660,56 @@
         </div>
       </template>
     </UModal>
+
+    <!-- Move/Merge Table Modal -->
+    <UModal v-model:open="showTableSelectionModal">
+      <template #header>
+        <h3 class="text-lg font-bold">
+          {{ tableSelectionMode === 'move' ? 'Move Table' : 'Merge Bill' }}
+        </h3>
+        <p class="text-sm text-gray-500">
+          Select a target table to {{ tableSelectionMode === 'move' ? 'move to' : 'merge with' }}.
+        </p>
+      </template>
+
+      <template #body>
+        <USelect
+          v-model="selectedTargetTableId"
+          :options="targetTablesOptions"
+          option-attribute="label"
+          value-attribute="value"
+          placeholder="Select a table..."
+          class="w-full"
+        />
+        
+        <div v-if="selectedTargetTableId" class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+           <p class="text-sm">
+             <span class="font-bold">Summary:</span>
+             <br/>
+             Action: {{ tableSelectionMode === 'move' ? 'Move' : 'Merge' }}
+             <br/>
+             From: {{ sourceTableForAction?.name || sourceTableForAction?.number }}
+             <br/>
+             To: {{ tablesStore.getTable(selectedTargetTableId)?.name || tablesStore.getTable(selectedTargetTableId)?.number }}
+           </p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+           <UButton variant="ghost" @click="showTableSelectionModal = false">
+             Cancel
+           </UButton>
+           <UButton 
+             :color="tableSelectionMode === 'move' ? 'primary' : 'orange'" 
+             @click="confirmTableAction"
+             :disabled="!selectedTargetTableId"
+           >
+             Confirm {{ tableSelectionMode === 'move' ? 'Move' : 'Merge' }}
+           </UButton>
+        </div>
+      </template>
+    </UModal>
   </UContainer>
 </template>
 
@@ -938,7 +1001,7 @@ const startOrder = async (table: any) => {
 
 const addToOrder = async (table: any) => {
   router.push(
-    `/pos?orderType=dine_in&tableId=${table.id}&orderId=${table.currentOrderId}`
+    `/pos?orderType=dine_in&tableId=${table.id}&orderId=${table.currentOrderId}&redirect=tables`
   );
 };
 
@@ -996,7 +1059,6 @@ const printQR = async () => {
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
-      <head>
         <title>Table QR - ${tableName}</title>
         <style>
           body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
@@ -1090,6 +1152,79 @@ async function cancelReservation(table: any) {
   }
 }
 
+  /*
+   * Move / Merge Table Logic
+   */
+  const showTableSelectionModal = ref(false);
+  const tableSelectionMode = ref<"move" | "merge">("move");
+  const sourceTableForAction = ref<any>(null);
+  const selectedTargetTableId = ref<string>("");
+
+  const targetTablesOptions = computed(() => {
+    if (!sourceTableForAction.value) return [];
+    
+    if (tableSelectionMode.value === "move") {
+      // For move, show all available tables
+      return tablesStore.availableTables.value.map(t => ({
+        label: `${t.name || t.number} (${t.capacity} seats)`,
+        value: t.id,
+        description: t.zone ? tablesStore.activeZones.value.find(z => z.id === t.zone)?.name : undefined
+      }));
+    } else {
+      // For merge, show all occupied tables except self
+      return tablesStore.occupiedTables.value
+        .filter(t => t.id !== sourceTableForAction.value?.id)
+        .map(t => ({
+          label: `${t.name || t.number} - Order #${t.currentOrderId?.slice(-4) || '??'}`,
+          value: t.id,
+          description: t.zone ? tablesStore.activeZones.value.find(z => z.id === t.zone)?.name : undefined
+        }));
+    }
+  });
+
+  const initiateMoveTable = (table: any) => {
+    sourceTableForAction.value = table;
+    tableSelectionMode.value = "move";
+    selectedTargetTableId.value = "";
+    showTableSelectionModal.value = true;
+  };
+
+  const initiateMergeBill = (table: any) => {
+    sourceTableForAction.value = table;
+    tableSelectionMode.value = "merge";
+    selectedTargetTableId.value = "";
+    showTableSelectionModal.value = true;
+  };
+
+  const confirmTableAction = async () => {
+    if (!sourceTableForAction.value || !selectedTargetTableId.value) return;
+    
+    try {
+      if (tableSelectionMode.value === "move") {
+        await tablesStore.moveTable(sourceTableForAction.value.id, selectedTargetTableId.value);
+        toast.add({
+          title: t("common.success"),
+          description: "Table moved successfully",
+          color: "green"
+        });
+      } else {
+        await tablesStore.mergeBill(sourceTableForAction.value.id, selectedTargetTableId.value);
+        toast.add({
+          title: t("common.success"),
+          description: "Bill merged successfully",
+          color: "green"
+        });
+      }
+      showTableSelectionModal.value = false;
+    } catch (e) {
+      toast.add({
+        title: t("common.error"),
+        description: `Action failed: ${e}`,
+        color: "red"
+      });
+    }
+  };
+
 function getTableActions(table: any) {
   const actions = [];
 
@@ -1120,6 +1255,18 @@ function getTableActions(table: any) {
         icon: "i-heroicons-banknotes",
         onSelect: () => processPayment(table),
       },
+    ]);
+    actions.push([
+      {
+         label: t("pos.tables.moveTable") || "Move Table",
+         icon: "i-heroicons-arrow-right-circle",
+         onSelect: () => initiateMoveTable(table)
+      },
+      {
+         label: t("pos.tables.mergeBill") || "Merge Bill",
+         icon: "i-heroicons-arrows-pointing-in",
+         onSelect: () => initiateMergeBill(table)
+      }
     ]);
   }
 
