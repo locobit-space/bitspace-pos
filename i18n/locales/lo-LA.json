@@ -1755,7 +1755,13 @@
     "updated": "ອັບເດດໂຕະແລ້ວ",
     "created": "ສ້າງໂຕະແລ້ວ",
     "deleted": "ລຶບໂຕະແລ້ວ",
-    "demoCreated": "ສ້າງໂຕະທົດລອງແລ້ວ"
+    "demoCreated": "ສ້າງໂຕະທົດລອງແລ້ວ",
+    "timer": {
+      "occupiedFor": "ນັ່ງມາ",
+      "longWait": "ລໍຖ້າດົນ",
+      "quickTurn": "ໝູນວຽນໄວ",
+      "normalPace": "ປົກກະຕິ"
+    }
   },
 
   "common": {

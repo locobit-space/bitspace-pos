@@ -371,7 +371,13 @@
     "updated": "Table updated",
     "created": "Table created",
     "deleted": "Table deleted",
-    "demoCreated": "Demo tables created"
+    "demoCreated": "Demo tables created",
+    "timer": {
+      "occupiedFor": "Occupied for",
+      "longWait": "Long wait",
+      "quickTurn": "Quick turnaround",
+      "normalPace": "Normal pace"
+    }
   },
   "currency": {
     "lak": "Lao Kip",

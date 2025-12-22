@@ -1081,6 +1081,45 @@ export function useTables() {
   };
 
   // ============================================
+  // TABLE TIMER HELPERS
+  // ============================================
+
+  /**
+   * Get how many minutes a table has been occupied
+   */
+  const getTableOccupiedMinutes = (tableId: string): number => {
+    const table = tables.value.find((t) => t.id === tableId);
+    if (!table || table.status !== "occupied" || !table.occupiedAt) {
+      return 0;
+    }
+    const occupiedTime = new Date(table.occupiedAt).getTime();
+    return Math.floor((Date.now() - occupiedTime) / 60000);
+  };
+
+  /**
+   * Get timer color based on duration thresholds
+   * Green: 0-30 min, Yellow: 30-60 min, Red: 60+ min
+   */
+  const getTimerColor = (minutes: number): "green" | "yellow" | "red" => {
+    if (minutes >= 60) return "red";
+    if (minutes >= 30) return "yellow";
+    return "green";
+  };
+
+  /**
+   * Format duration in minutes to readable string
+   * e.g., "5m", "45m", "1h 15m"
+   */
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  // ============================================
   // RETURN
   // ============================================
 
@@ -1152,5 +1191,10 @@ export function useTables() {
 
     // Demo
     createDemoData,
+
+    // Timer Helpers
+    getTableOccupiedMinutes,
+    getTimerColor,
+    formatDuration,
   };
 }

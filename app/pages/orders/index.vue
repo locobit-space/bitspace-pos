@@ -354,8 +354,8 @@ onMounted(async () => {
         {{ t("common.of") }} {{ filteredOrders.length }} {{ t("common.entries") }}
       </span>
       <UPagination
-        v-model="currentPage"
-        :page-count="itemsPerPage"
+        v-model:page="currentPage"
+        :items-per-page="itemsPerPage"
         :total="filteredOrders.length"
       />
     </div>

@@ -128,12 +128,20 @@
 
           <div
             v-if="table.status === 'occupied'"
-            class="mt-2 text-xs text-muted"
+            class="mt-2"
           >
-            <p>
-              {{ $t("pos.tables.occupied") }}
-            </p>
-            <p v-if="table.currentOrderId">
+            <!-- Timer Badge -->
+            <div 
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold"
+              :class="{
+                'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'green',
+                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'yellow',
+                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'red',
+              }"
+            >
+              ⏱️ {{ tablesStore.formatDuration(tablesStore.getTableOccupiedMinutes(table.id)) || '0m' }}
+            </div>
+            <p v-if="table.currentOrderId" class="text-xs text-muted mt-1">
               Order #{{ table.currentOrderId.slice(-4) }}
             </p>
           </div>

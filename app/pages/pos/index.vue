@@ -22,6 +22,7 @@ definePageMeta({
 const pos = usePOS();
 const productsStore = useProducts();
 const ordersStore = useOrders();
+const tablesStore = useTables();
 const lightning = useLightning();
 const currency = useCurrency();
 const offline = useOffline();
@@ -3218,6 +3219,20 @@ onUnmounted(() => {
                 "
               >
                 {{ table.status === "reserved" ? "Reserved" : "In use" }}
+              </span>
+
+              <!-- Timer badge for occupied tables -->
+              <span
+                v-if="table.status === 'occupied' && tablesStore.getTableOccupiedMinutes(table.id) > 0"
+                class="absolute bottom-1 right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
+                :class="{
+                  'bg-green-500/90 text-white': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'green',
+                  'bg-yellow-500/90 text-white': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'yellow',
+                  'bg-red-500/90 text-white': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'red',
+                }"
+                :key="currentTime.getTime()"
+              >
+                ⏱️ {{ tablesStore.formatDuration(tablesStore.getTableOccupiedMinutes(table.id)) }}
               </span>
 
               <!-- Current indicator -->
