@@ -110,7 +110,22 @@
     "collectPayment": "Collect Payment",
     "orderNumber": "Order",
     "paymentComplete": "Payment Complete!",
-    "orderSentToKitchen": "Order Sent to Kitchen!"
+    "orderSentToKitchen": "Order Sent to Kitchen!",
+    "splitBill": "Split Bill",
+    "numberOfPeople": "Number of People",
+    "people": "people",
+    "amountPerPerson": "Amount per person",
+    "paymentProgress": "Payment Progress",
+    "paid": "paid",
+    "remaining": "remaining",
+    "moreToGo": "more to go",
+    "splitComplete": "Split Bill Complete!",
+    "portionPaid": "Portion Paid!",
+    "payNextPortion": "Pay Next Portion",
+    "startSplitPayment": "Start Payment"
+  },
+  "kitchen": {
+    "orderReady": "🔔 Order Ready!"
   },
   "loyalty": {
     "title": "Loyalty Program",

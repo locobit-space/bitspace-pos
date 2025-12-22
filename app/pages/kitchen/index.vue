@@ -146,6 +146,20 @@ const updateKitchenStatus = async (
         : {}),
     });
 
+    // Broadcast to POS when order is ready
+    if (kitchenStatus === "ready") {
+      try {
+        const readyChannel = new BroadcastChannel('bitspace-kitchen-ready');
+        readyChannel.postMessage({ 
+          type: 'order-ready', 
+          order: JSON.parse(JSON.stringify({ ...order, kitchenStatus: 'ready' }))
+        });
+        readyChannel.close();
+      } catch (e) {
+        console.warn('BroadcastChannel not available:', e);
+      }
+    }
+
     // Play sound
     if (soundEnabled.value) {
       if (kitchenStatus === "ready") {

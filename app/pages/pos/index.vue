@@ -45,6 +45,10 @@ const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
 const showTableSwitcher = ref(false); // Table switcher modal
 const showPendingOrdersModal = ref(false); // Pending orders for payment
+const showSplitBillModal = ref(false); // Split bill modal
+const splitOrder = ref<Order | null>(null); // Order being split
+const splitCount = ref(2); // Number of people splitting
+const splitPaidCount = ref(0); // Number of portions already paid
 const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref("");
 const isProcessing = ref(false);
@@ -115,6 +119,21 @@ const pendingOrdersList = computed(() =>
 
 // Selected pending order for payment
 const selectedPendingOrder = ref<Order | null>(null);
+
+// Split bill computed values
+const splitAmountPerPerson = computed(() => {
+  if (!splitOrder.value || splitCount.value < 2) return 0;
+  return Math.ceil(splitOrder.value.total / splitCount.value);
+});
+
+const splitRemainingAmount = computed(() => {
+  if (!splitOrder.value || splitCount.value < 2) return 0;
+  return splitOrder.value.total - (splitPaidCount.value * splitAmountPerPerson.value);
+});
+
+const splitRemainingSplits = computed(() => {
+  return splitCount.value - splitPaidCount.value;
+});
 
 // Tax settings
 const taxEnabled = ref(false);
@@ -650,6 +669,91 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
 };
 
 // ============================================
+// Split Bill Functions
+// ============================================
+/**
+ * Open split bill modal for a pending order
+ */
+const openSplitBill = (order: Order) => {
+  splitOrder.value = order;
+  splitCount.value = 2;
+  splitPaidCount.value = 0;
+  showPendingOrdersModal.value = false;
+  showSplitBillModal.value = true;
+};
+
+/**
+ * Pay one portion of a split bill
+ */
+const paySplitPortion = async (method: PaymentMethod, proof: unknown) => {
+  if (!splitOrder.value) return;
+  
+  isProcessing.value = true;
+  
+  try {
+    splitPaidCount.value++;
+    
+    // Check if all portions are paid
+    if (splitPaidCount.value >= splitCount.value) {
+      // All paid - mark order as completed
+      await ordersStore.updateOrderStatus(splitOrder.value.id, "completed", {
+        paymentMethod: method,
+      });
+      
+      // Play success sound and show notification
+      sound.playOrderComplete();
+      
+      const toast = useToast();
+      toast.add({
+        title: t("pos.splitComplete") || "Split Bill Complete!",
+        description: `${splitCount.value} people paid ${currency.format(splitAmountPerPerson.value, splitOrder.value.currency || 'LAK')} each`,
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+      
+      closeSplitBill();
+    } else {
+      // More portions to pay
+      sound.playCashRegister();
+      
+      const toast = useToast();
+      toast.add({
+        title: t("pos.portionPaid") || "Portion Paid!",
+        description: `${splitRemainingSplits.value} ${t("pos.moreToGo") || "more to go"} (${currency.format(splitRemainingAmount.value, splitOrder.value.currency || 'LAK')} ${t("pos.remaining") || "remaining"})`,
+        icon: "i-heroicons-check",
+        color: "blue",
+      });
+      
+      showPaymentModal.value = false;
+    }
+  } catch (e) {
+    console.error("Failed to process split payment:", e);
+    splitPaidCount.value = Math.max(0, splitPaidCount.value - 1);
+    
+    const toast = useToast();
+    toast.add({
+      title: t("common.error") || "Error",
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+/**
+ * Close split bill and reset state
+ */
+const closeSplitBill = () => {
+  showSplitBillModal.value = false;
+  showPaymentModal.value = false;
+  splitOrder.value = null;
+  splitCount.value = 2;
+  splitPaidCount.value = 0;
+};
+
+// ============================================
 // Tax Calculation
 // ============================================
 const taxAmount = computed(() => {
@@ -846,10 +950,57 @@ onMounted(async () => {
   timeInterval = setInterval(() => {
     currentTime.value = new Date();
   }, 60000);
+  
+  // Listen for kitchen order-ready notifications
+  if (import.meta.client) {
+    orderReadyChannel = new BroadcastChannel('bitspace-kitchen-ready');
+    orderReadyChannel.onmessage = (event) => {
+      if (event.data?.type === 'order-ready' && event.data?.order) {
+        const order = event.data.order;
+        const dedupKey = `order_ready_notified_${order.id}`;
+        
+        // Deduplicate using sessionStorage - persists across hot-reloads
+        const lastNotified = sessionStorage.getItem(dedupKey);
+        const now = Date.now();
+        
+        if (lastNotified && (now - parseInt(lastNotified)) < 10000) {
+          // Skip if notified within last 10 seconds
+          return;
+        }
+        
+        // Mark as notified
+        sessionStorage.setItem(dedupKey, now.toString());
+        
+        // Clean up old entries after 15 seconds
+        setTimeout(() => {
+          sessionStorage.removeItem(dedupKey);
+        }, 15000);
+        
+        // Play ready notification sound
+        sound.playNotification();
+        
+        // Show toast notification
+        const toast = useToast();
+        toast.add({
+          title: "🔔 Order Ready!",
+          description: `${order.id}${order.tableNumber ? ` - Table ${order.tableNumber}` : ''}`,
+          icon: "i-heroicons-bell-alert",
+          color: "green",
+        });
+        
+        // Refresh orders to update pending count
+        ordersStore.init();
+      }
+    };
+  }
 });
+
+// Order ready channel for kitchen notifications
+let orderReadyChannel: BroadcastChannel | null = null;
 
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval);
+  if (orderReadyChannel) orderReadyChannel.close();
 });
 </script>
 
@@ -1989,13 +2140,13 @@ onUnmounted(() => {
         >
           <PaymentSelector
             v-if="showPaymentModal"
-            :amount="selectedPendingOrder ? selectedPendingOrder.total : totalWithTax"
-            :sats-amount="selectedPendingOrder ? currency.toSats(selectedPendingOrder.total, selectedPendingOrder.currency || 'LAK') : totalSatsWithTax"
-            :currency="selectedPendingOrder ? (selectedPendingOrder.currency || pos.selectedCurrency.value) : pos.selectedCurrency.value"
-            :order-id="selectedPendingOrder ? selectedPendingOrder.id : ('ORD-' + Date.now().toString(36).toUpperCase())"
+            :amount="splitOrder ? splitAmountPerPerson : (selectedPendingOrder ? selectedPendingOrder.total : totalWithTax)"
+            :sats-amount="splitOrder ? currency.toSats(splitAmountPerPerson, splitOrder.currency || 'LAK') : (selectedPendingOrder ? currency.toSats(selectedPendingOrder.total, selectedPendingOrder.currency || 'LAK') : totalSatsWithTax)"
+            :currency="splitOrder ? (splitOrder.currency || pos.selectedCurrency.value) : (selectedPendingOrder ? (selectedPendingOrder.currency || pos.selectedCurrency.value) : pos.selectedCurrency.value)"
+            :order-id="splitOrder ? `${splitOrder.id}-${splitPaidCount + 1}` : (selectedPendingOrder ? selectedPendingOrder.id : ('ORD-' + Date.now().toString(36).toUpperCase()))"
             :default-method="defaultPaymentMethod || undefined"
-            @paid="(method, proof) => selectedPendingOrder ? payPendingOrder(method, proof) : handlePaymentComplete(method, proof)"
-            @cancel="cancelPayment"
+            @paid="(method, proof) => splitOrder ? paySplitPortion(method, proof) : (selectedPendingOrder ? payPendingOrder(method, proof) : handlePaymentComplete(method, proof))"
+            @cancel="splitOrder ? () => { showPaymentModal = false; showSplitBillModal = true; } : cancelPayment"
           />
         </div>
       </template>
@@ -2272,16 +2423,132 @@ onUnmounted(() => {
                 </p>
               </div>
 
-              <UButton
-                block
-                size="sm"
-                color="primary"
-                @click="selectPendingOrderForPayment(order)"
-              >
-                <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
-                {{ t("pos.collectPayment") || "Collect Payment" }}
-              </UButton>
+              <div class="flex gap-2">
+                <UButton
+                  class="flex-1"
+                  size="sm"
+                  color="primary"
+                  @click="selectPendingOrderForPayment(order)"
+                >
+                  <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
+                  {{ t("pos.collectPayment") || "Pay" }}
+                </UButton>
+                <UButton
+                  size="sm"
+                  color="amber"
+                  variant="soft"
+                  @click="openSplitBill(order)"
+                >
+                  <UIcon name="i-heroicons-scissors" class="w-4 h-4" />
+                  {{ t("pos.splitBill") || "Split" }}
+                </UButton>
+              </div>
             </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Split Bill Modal -->
+    <UModal v-model:open="showSplitBillModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px]">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span>✂️</span> {{ t("pos.splitBill") || "Split Bill" }}
+          </h3>
+          
+          <!-- Order Info -->
+          <div v-if="splitOrder" class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm text-gray-500">{{ splitOrder.id }}</span>
+              <span v-if="splitOrder.tableNumber" class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                🪑 {{ splitOrder.tableNumber }}
+              </span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ currency.format(splitOrder.total, splitOrder.currency || pos.selectedCurrency.value) }}
+            </div>
+          </div>
+
+          <!-- Split Count Selector -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {{ t("pos.numberOfPeople") || "Number of People" }}
+            </label>
+            <div class="flex items-center gap-3">
+              <UButton 
+                icon="i-heroicons-minus" 
+                color="neutral" 
+                variant="soft"
+                :disabled="splitCount <= 2 || splitPaidCount > 0"
+                @click="splitCount = Math.max(2, splitCount - 1)"
+              />
+              <div class="flex-1 text-center">
+                <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ splitCount }}</span>
+                <span class="text-sm text-gray-500 ml-2">{{ t("pos.people") || "people" }}</span>
+              </div>
+              <UButton 
+                icon="i-heroicons-plus" 
+                color="neutral" 
+                variant="soft"
+                :disabled="splitCount >= 10 || splitPaidCount > 0"
+                @click="splitCount = Math.min(10, splitCount + 1)"
+              />
+            </div>
+          </div>
+
+          <!-- Amount Per Person -->
+          <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-4 text-center">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
+              {{ t("pos.amountPerPerson") || "Amount per person" }}
+            </div>
+            <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              {{ currency.format(splitAmountPerPerson, splitOrder?.currency || pos.selectedCurrency.value) }}
+            </div>
+          </div>
+
+          <!-- Payment Progress -->
+          <div v-if="splitPaidCount > 0" class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t("pos.paymentProgress") || "Payment Progress" }}
+              </span>
+              <span class="text-sm text-gray-500">
+                {{ splitPaidCount }}/{{ splitCount }} {{ t("pos.paid") || "paid" }}
+              </span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+              <div 
+                class="bg-green-500 h-3 rounded-full transition-all duration-300"
+                :style="{ width: `${(splitPaidCount / splitCount) * 100}%` }"
+              />
+            </div>
+            <div class="text-xs text-gray-500 mt-1 text-center">
+              {{ currency.format(splitRemainingAmount, splitOrder?.currency || 'LAK') }} {{ t("pos.remaining") || "remaining" }}
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3">
+            <UButton
+              block
+              color="neutral"
+              variant="soft"
+              @click="closeSplitBill"
+            >
+              {{ t("common.cancel") || "Cancel" }}
+            </UButton>
+            <UButton
+              block
+              color="primary"
+              :loading="isProcessing"
+              @click="() => { showSplitBillModal = false; showPaymentModal = true; }"
+            >
+              {{ splitPaidCount > 0 
+                ? (t("pos.payNextPortion") || `Pay Portion ${splitPaidCount + 1}`) 
+                : (t("pos.startSplitPayment") || "Start Payment") 
+              }}
+            </UButton>
           </div>
         </div>
       </template>
