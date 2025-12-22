@@ -377,7 +377,7 @@ const sendToKitchen = async () => {
 
     // Update table status to 'occupied' if a table is selected
     if (pos.tableNumber.value) {
-      const table = tables.value.find(t => t.name === pos.tableNumber.value || t.number === pos.tableNumber.value);
+      const table = tablesStore.tables.value.find(t => t.name === pos.tableNumber.value || t.number === pos.tableNumber.value);
       if (table && table.status === 'available') {
         // Use seatTable to properly set status and link order
         await tablesStore.seatTable(table.id, 1, order.id, 'staff');
@@ -661,6 +661,15 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
     const eBillUrl = receipt.generateEBillUrl(generatedReceipt.id);
 
     pos.clearCart();
+    
+    // Reset table to available if this was a table order
+    if (order.tableNumber) {
+      const table = tablesStore.tables.value.find(t => t.name === order.tableNumber || t.number === order.tableNumber);
+      if (table) {
+        await tablesStore.freeTable(table.id);
+      }
+    }
+    
     showPaymentModal.value = false;
 
     // Show receipt options
@@ -767,11 +776,19 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     
     const toast = useToast();
     toast.add({
-      title: t("pos.paymentComplete") || "Payment Complete!",
+      title: t("payment.success") || "Payment Complete!",
       description: `${t("pos.orderNumber") || "Order"}: ${order.id}`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
+    
+    // Reset table to available if this was a table order
+    if (order.tableNumber) {
+      const table = tablesStore.tables.value.find(t => t.name === order.tableNumber || t.number === order.tableNumber);
+      if (table) {
+        await tablesStore.freeTable(table.id);
+      }
+    }
     
   } catch (e) {
     console.error("Failed to process pending order payment:", e);

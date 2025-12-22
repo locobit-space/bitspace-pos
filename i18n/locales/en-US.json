@@ -153,7 +153,12 @@
         "reserved": "Reserved",
         "cleaning": "Cleaning",
         "unavailable": "Unavailable"
-      }
+      },
+      "viewOrder": "View/Edit Order",
+      "moveTable": "Move Table",
+      "mergeBill": "Merge Bill",
+      "completeOrder": "Complete Order",
+      "tableFreed": "Table is now available"
     },
     "sendToKitchen": "Send to Kitchen",
     "payLater": "Pay Later",
@@ -636,7 +641,16 @@
       "completed": "Completed",
       "cancelled": "Cancelled",
       "refunded": "Refunded"
-    }
+    },
+    "notFound": "Order Not Found",
+    "notFoundDescription": "The order you're looking for doesn't exist",
+    "backToOrders": "Back to Orders",
+    "table": "Table",
+    "unknownProduct": "Unknown Product",
+    "walkInCustomer": "Walk-in Customer",
+    "paymentHash": "Payment Hash",
+    "preimage": "Preimage",
+    "history": "Order History"
   },
   "products": {
     "title": "Products",
@@ -2227,7 +2241,16 @@
     "start": "Start",
     "recall": "Recall",
     "bump": "Bump",
-    "lastUpdate": "Last update"
+    "lastUpdate": "Last update",
+    "statusUpdated": "Kitchen status updated",
+    "markedAs": "Order marked as {status}",
+    "status": {
+      "title": "Kitchen Status",
+      "new": "🆕 New",
+      "preparing": "👨‍🍳 Preparing",
+      "ready": "✅ Ready",
+      "served": "🍽️ Served"
+    }
   },
   "refund": {
     "title": "Process Refund",

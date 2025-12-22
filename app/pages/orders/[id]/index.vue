@@ -38,10 +38,10 @@ const statusOptions = [
 ];
 
 const kitchenStatusOptions = [
-  { value: "new", label: "🆕 New", color: "blue" },
-  { value: "preparing", label: "👨‍🍳 Preparing", color: "yellow" },
-  { value: "ready", label: "✅ Ready", color: "green" },
-  { value: "served", label: "🍽️ Served", color: "gray" },
+  { value: "new", label: t("kitchen.status.new") || "🆕 New", color: "blue" },
+  { value: "preparing", label: t("kitchen.status.preparing") || "👨‍🍳 Preparing", color: "yellow" },
+  { value: "ready", label: t("kitchen.status.ready") || "✅ Ready", color: "green" },
+  { value: "served", label: t("kitchen.status.served") || "🍽️ Served", color: "gray" },
 ];
 
 const statusColors: Record<string, string> = {
@@ -129,8 +129,8 @@ const updateKitchenStatus = async (newStatus: string) => {
     order.value.kitchenStatus = newStatus as any;
 
     toast.add({
-      title: "Kitchen status updated",
-      description: `Order marked as ${newStatus}`,
+      title: t("kitchen.statusUpdated") || "Kitchen status updated",
+      description: t("kitchen.markedAs", { status: newStatus }) || `Order marked as ${newStatus}`,
       color: "green",
     });
   } catch (e) {
@@ -223,12 +223,12 @@ onMounted(async () => {
     <div v-else-if="!order" class="text-center py-16">
       <div class="text-6xl mb-4">🔍</div>
       <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
-        Order Not Found
+        {{ t("orders.notFound") || "Order Not Found" }}
       </h2>
       <p class="text-gray-500 mb-4">
-        The order you're looking for doesn't exist
+        {{ t("orders.notFoundDescription") || "The order you're looking for doesn't exist" }}
       </p>
-      <UButton to="/orders" color="primary">Back to Orders</UButton>
+      <UButton to="/orders" color="primary">{{ t("orders.backToOrders") || "Back to Orders" }}</UButton>
     </div>
 
     <template v-else>
@@ -256,7 +256,7 @@ onMounted(async () => {
               >
                 {{
                   kitchenStatusOptions.find(
-                    (k) => k.value === order.kitchenStatus
+                    (k) => k.value === order?.kitchenStatus
                   )?.label || order.kitchenStatus
                 }}
               </span>
@@ -264,7 +264,7 @@ onMounted(async () => {
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {{ formatDate(order.date) }}
               <span v-if="order.tableNumber">
-                • Table: {{ order.tableNumber }}</span
+                • {{ t("orders.table") || "Table" }}: {{ order.tableNumber }}</span
               >
               <span v-if="order.orderType">
                 • {{ order.orderType.replace("_", " ") }}</span
@@ -296,9 +296,9 @@ onMounted(async () => {
       <!-- Kitchen Status Quick Actions -->
       <div
         v-if="order.orderType === 'dine_in' || order.kitchenStatus"
-        class="bg-white dark:bg-gray-800 rounded-xl p-4 border"
+        class="bg-white dark:bg-gray-800 rounded-xl border-gray-200 p-4 border dark:border-gray-700"
       >
-        <h3 class="font-semibold mb-3">🍳 Kitchen Status</h3>
+        <h3 class="font-semibold mb-3">🍳 {{ t("kitchen.status.title") || "Kitchen Status" }}</h3>
         <div class="flex gap-2 flex-wrap">
           <UButton
             v-for="status in kitchenStatusOptions"
@@ -332,7 +332,7 @@ onMounted(async () => {
         </UCard>
         <UCard>
           <div class="text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">⚡ Sats</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">⚡ {{ t("common.sats") || "Sats" }}</p>
             <p class="text-xl font-bold text-amber-600 dark:text-amber-400">
               {{ order.totalSats?.toLocaleString() || "—" }}
             </p>
@@ -350,7 +350,7 @@ onMounted(async () => {
         </UCard>
         <UCard>
           <div class="text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">Payment</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t("pos.payment") || "Payment" }}</p>
             <p
               class="text-xl font-bold text-gray-900 dark:text-white capitalize"
             >
@@ -421,7 +421,7 @@ onMounted(async () => {
 
               <div class="flex-1 min-w-0">
                 <p class="font-medium text-gray-900 dark:text-white">
-                  {{ item.product?.name || "Unknown Product" }}
+                  {{ item.product?.name || t("orders.unknownProduct") || "Unknown Product" }}
                 </p>
                 <p class="text-sm text-gray-500">
                   {{ formatCurrency(item.price) }} × {{ item.quantity }}
@@ -472,7 +472,7 @@ onMounted(async () => {
               </div>
               <div>
                 <p class="font-medium text-gray-900 dark:text-white">
-                  {{ order.customer || "Walk-in Customer" }}
+                  {{ order.customer || t("orders.walkInCustomer") || "Walk-in Customer" }}
                 </p>
                 <p v-if="order.customerPhone" class="text-sm text-gray-500">
                   {{ order.customerPhone }}
@@ -606,7 +606,7 @@ onMounted(async () => {
 
             <div v-if="order.paymentProof" class="space-y-4">
               <div>
-                <p class="text-sm text-gray-500 mb-1">Payment Hash</p>
+                <p class="text-sm text-gray-500 mb-1">{{ t("orders.paymentHash") || "Payment Hash" }}</p>
                 <p
                   class="font-mono text-sm break-all bg-gray-50 dark:bg-gray-800 p-2 rounded"
                 >
@@ -614,7 +614,7 @@ onMounted(async () => {
                 </p>
               </div>
               <div v-if="order.paymentProof.preimage">
-                <p class="text-sm text-gray-500 mb-1">Preimage</p>
+                <p class="text-sm text-gray-500 mb-1">{{ t("orders.preimage") || "Preimage" }}</p>
                 <p
                   class="font-mono text-sm break-all bg-gray-50 dark:bg-gray-800 p-2 rounded"
                 >

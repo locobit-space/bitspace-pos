@@ -382,10 +382,9 @@ export function useOrders() {
     // Remove from local DB
     await db.localOrders.delete(orderId);
 
-    // Publish deletion event to Nostr
-    if (offline.isOnline.value) {
-      await nostrData.deleteOrder(orderId);
-    }
+    // Note: For Nostr, we would typically publish a deletion event (kind 5)
+    // but since nostrData doesn't have deleteOrder yet, we skip this for now
+    // The order is effectively soft-deleted from this client
     
     return true;
   }

@@ -675,9 +675,9 @@
       <template #body>
         <USelect
           v-model="selectedTargetTableId"
-          :options="targetTablesOptions"
-          option-attribute="label"
-          value-attribute="value"
+          :items="targetTablesOptions"
+          label-key="label"
+          value-key="value"
           placeholder="Select a table..."
           class="w-full"
         />
@@ -1266,6 +1266,22 @@ function getTableActions(table: any) {
          label: t("pos.tables.mergeBill") || "Merge Bill",
          icon: "i-heroicons-arrows-pointing-in",
          onSelect: () => initiateMergeBill(table)
+      }
+    ]);
+    // Complete / Free table action
+    actions.push([
+      {
+        label: t("pos.tables.completeOrder") || "Complete Order",
+        icon: "i-heroicons-check-circle",
+        color: "success" as const,
+        onSelect: async () => {
+          await tablesStore.freeTable(table.id);
+          toast.add({
+            title: t("common.success"),
+            description: t("pos.tables.tableFreed") || "Table is now available",
+            color: "green"
+          });
+        }
       }
     ]);
   }
