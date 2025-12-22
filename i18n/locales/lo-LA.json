@@ -101,7 +101,16 @@
         "cleaning": "ກຳລັງທຳຄວາມສະອາດ",
         "unavailable": "ບໍ່ພ້ອມ"
       }
-    }
+    },
+    "sendToKitchen": "ສົ່ງໄປຄົວ",
+    "payLater": "ຈ່າຍທີຫຼັງ",
+    "pendingBills": "ບິນລໍຖ້າ",
+    "awaitingPayment": "ລໍຖ້າຈ່າຍເງິນ",
+    "noPendingBills": "ບໍ່ມີບິນລໍຖ້າ",
+    "collectPayment": "ເກັບເງິນ",
+    "orderNumber": "ອໍເດີ້",
+    "paymentComplete": "ຈ່າຍເງິນສຳເລັດ!",
+    "orderSentToKitchen": "ສົ່ງອໍເດີ້ໄປຄົວແລ້ວ!"
   },
   "loyalty": {
     "title": "ໂປຣແກຣມຄວາມສັດຊື່",

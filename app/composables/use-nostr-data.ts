@@ -584,12 +584,20 @@ export function useNostrData() {
   // ============================================
 
   async function saveProduct(product: Product): Promise<Event | null> {
-    return publishReplaceableEvent(NOSTR_KINDS.PRODUCT, product, product.id, [
-      ["name", product.name],
-      ["sku", product.sku],
-      ["category", product.categoryId],
-      ["status", product.status],
-    ]);
+    // Products are saved UNENCRYPTED so customers can read them from public QR menu
+    return publishReplaceableEvent(
+      NOSTR_KINDS.PRODUCT,
+      product,
+      product.id,
+      [
+        ["name", product.name],
+        ["sku", product.sku],
+        ["category", product.categoryId],
+        ["status", product.status],
+        ["public", product.isPublic !== false ? "true" : "false"],
+      ],
+      false // DO NOT ENCRYPT - products need to be publicly readable
+    );
   }
 
   async function getProduct(id: string): Promise<Product | null> {
@@ -607,11 +615,9 @@ export function useNostrData() {
    * This is used when a customer scans a QR code and needs to load the store's products
    */
   async function getProductsForOwner(ownerPubkey: string): Promise<Product[]> {
-    console.log("[NostrData] Getting products for owner:", ownerPubkey);
     const results = await getAllEventsOfKind<Product>(NOSTR_KINDS.PRODUCT, {
       authors: [ownerPubkey],
     });
-    console.log("[NostrData] Found products for owner:", results.length);
     return results
       .map((r) => r.data)
       .filter((p) => p.status === "active" && p.isPublic !== false);
@@ -647,11 +653,13 @@ export function useNostrData() {
   // ============================================
 
   async function saveCategory(category: Category): Promise<Event | null> {
+    // Categories are saved UNENCRYPTED so customers can read them from public QR menu
     return publishReplaceableEvent(
       NOSTR_KINDS.CATEGORY,
       category,
       category.id,
-      [["name", category.name]]
+      [["name", category.name]],
+      false // DO NOT ENCRYPT - categories need to be publicly readable
     );
   }
 
@@ -733,6 +741,102 @@ export function useNostrData() {
   async function getOrdersByCustomer(customerPubkey: string): Promise<Order[]> {
     const allOrders = await getAllOrders();
     return allOrders.filter((o) => o.customerPubkey === customerPubkey);
+  }
+
+  /**
+   * Save order as anonymous customer using ephemeral keypair
+   * This allows customers who scanned QR code (no login) to publish orders
+   * The order is tagged with owner's pubkey so admin can subscribe to it
+   */
+  async function saveOrderAsAnonymous(
+    order: Order, 
+    ownerPubkey: string
+  ): Promise<Event | null> {
+    if (!import.meta.client) return null;
+    
+    try {
+      // Generate ephemeral keypair for this session
+      const { $nostr } = useNuxtApp();
+      const ephemeralKeys = $nostr.generateKeys();
+      
+      // Create order event with owner tag
+      const content = JSON.stringify(order);
+      const tags = [
+        ["d", order.id],
+        ["p", ownerPubkey], // Tag owner so they can subscribe
+        ["status", order.status],
+        ["table", order.tableNumber || ""],
+        ["t", order.date],
+        ["amount", order.total.toString()],
+        ["type", "customer-order"], // Mark as customer order
+        ["encrypted", "false"],
+      ];
+      
+      const unsignedEvent: UnsignedEvent = {
+        kind: NOSTR_KINDS.ORDER,
+        created_at: Math.floor(Date.now() / 1000),
+        tags,
+        content,
+        pubkey: ephemeralKeys.publicKey,
+      };
+      
+      // Sign with ephemeral key
+      const signedEvent = finalizeEvent(unsignedEvent, hexToBytes(ephemeralKeys.privateKey));
+      
+      // Publish to relay
+      const success = await relay.publishEvent(signedEvent);
+      if (!success) {
+        console.error("[NostrData] Failed to publish anonymous order");
+        return null;
+      }
+      
+      console.log("[NostrData] Anonymous order published:", order.id);
+      return signedEvent;
+    } catch (e) {
+      console.error("[NostrData] Failed to save anonymous order:", e);
+      return null;
+    }
+  }
+
+  /**
+   * Get orders for a store (tagged with owner pubkey)
+   * Used by admin/kitchen to fetch customer orders
+   */
+  async function getOrdersForStore(ownerPubkey: string): Promise<Order[]> {
+    try {
+      // Query for orders tagged with this owner's pubkey
+      const filter = {
+        kinds: [NOSTR_KINDS.ORDER],
+        "#p": [ownerPubkey],
+        limit: 100,
+      };
+      
+      const events = await relay.queryEvents(filter as Parameters<typeof relay.queryEvents>[0]);
+      const orders: Order[] = [];
+      
+      for (const event of events) {
+        try {
+          const isEncrypted = event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+          const data = isEncrypted 
+            ? await decryptData<Order>(event.content)
+            : JSON.parse(event.content);
+          
+          if (data && data.id) {
+            orders.push(data);
+          }
+        } catch {
+          // Skip invalid events
+        }
+      }
+      
+      // Sort by date descending
+      return orders.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+    } catch (e) {
+      console.error("[NostrData] Failed to get store orders:", e);
+      return [];
+    }
   }
 
   // ============================================
@@ -1181,10 +1285,12 @@ export function useNostrData() {
 
     // Orders
     saveOrder,
+    saveOrderAsAnonymous,
     getOrder,
     getAllOrders,
     getOrdersByStatus,
     getOrdersByCustomer,
+    getOrdersForStore,
 
     // Customers
     saveCustomer,

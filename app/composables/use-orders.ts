@@ -30,6 +30,13 @@ export function useOrders() {
       return null;
     }
   };
+  
+  // Get current user's pubkey for store order queries
+  const getUserPubkey = (): string | null => {
+    if (!import.meta.client) return null;
+    const nostrPubkeyCookie = useCookie("nostr-pubkey");
+    return nostrPubkeyCookie.value || null;
+  };
 
   // ============================================
   // 📊 COMPUTED
@@ -104,6 +111,9 @@ export function useOrders() {
       // Load from local DB first (fast)
       orders.value = await loadFromLocal();
 
+      // Check for pending orders from customer order pages (localStorage broadcast)
+      await pickupPendingCustomerOrders();
+
       // Then sync with Nostr if online
       if (offline.isOnline.value) {
         await syncWithNostr();
@@ -112,10 +122,76 @@ export function useOrders() {
       // Count pending syncs
       const pending = await db.localOrders.where("syncedAt").equals(0).count();
       syncPending.value = pending;
+
+      // Listen for new orders from customer tabs (same browser)
+      if (import.meta.client) {
+        window.addEventListener('storage', handleStorageEvent);
+        window.addEventListener('bitspace-new-order', handleNewOrderEvent as EventListener);
+      }
     } catch (e) {
       error.value = `Failed to initialize orders: ${e}`;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /**
+   * Pick up pending orders from localStorage (broadcast by customer order pages)
+   */
+  async function pickupPendingCustomerOrders(): Promise<void> {
+    if (!import.meta.client) return;
+    
+    const PENDING_ORDERS_KEY = "bitspace_pending_orders";
+    try {
+      const stored = localStorage.getItem(PENDING_ORDERS_KEY);
+      if (!stored) return;
+      
+      const pendingOrders: Order[] = JSON.parse(stored);
+      let importedCount = 0;
+      
+      for (const order of pendingOrders) {
+        // Check if order already exists
+        const exists = orders.value.find(o => o.id === order.id);
+        if (!exists) {
+          // Add to state and save to local DB
+          orders.value.unshift(order);
+          await saveToLocal(order);
+          importedCount++;
+          
+          // Try to sync to Nostr
+          if (offline.isOnline.value) {
+            saveToNostr(order).catch(() => {});
+          }
+        }
+      }
+      
+      // Clear pending orders after pickup
+      if (importedCount > 0) {
+        localStorage.removeItem(PENDING_ORDERS_KEY);
+      }
+    } catch (e) {
+      console.error("Failed to pickup pending customer orders:", e);
+    }
+  }
+
+  /**
+   * Handle storage event from other tabs
+   */
+  function handleStorageEvent(event: StorageEvent): void {
+    if (event.key === "bitspace_pending_orders" && event.newValue) {
+      pickupPendingCustomerOrders();
+    }
+  }
+
+  /**
+   * Handle custom event from same tab
+   */
+  function handleNewOrderEvent(event: CustomEvent<Order>): void {
+    const order = event.detail;
+    const exists = orders.value.find(o => o.id === order.id);
+    if (!exists) {
+      orders.value.unshift(order);
+      saveToLocal(order);
     }
   }
 
@@ -359,6 +435,20 @@ export function useOrders() {
         if (!exists) {
           orders.value.push(nostrOrder);
           await saveToLocal(nostrOrder);
+        }
+      }
+      
+      // Also fetch customer orders tagged to this store (via #p tag)
+      // This gets orders from customers who scanned QR and used ephemeral keys
+      const userPubkey = getUserPubkey();
+      if (userPubkey) {
+        const storeOrders = await nostrData.getOrdersForStore(userPubkey);
+        for (const storeOrder of storeOrders) {
+          const exists = orders.value.find((o) => o.id === storeOrder.id);
+          if (!exists) {
+            orders.value.push(storeOrder);
+            await saveToLocal(storeOrder);
+          }
         }
       }
 

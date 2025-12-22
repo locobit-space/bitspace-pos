@@ -37,46 +37,72 @@
       </UCard>
     </div>
 
-    <!-- Order Submitted State -->
+    <!-- Order Submitted State with Tracking -->
     <div
       v-else-if="orderSubmitted"
       class="flex items-center justify-center min-h-screen p-4"
     >
       <UCard class="max-w-md w-full">
-        <div class="text-center py-8">
+        <div class="text-center py-6">
           <div
-            class="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center animate-bounce"
+            class="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
+            :class="getOrderStatusBgClass(currentOrderStatus)"
           >
             <UIcon
-              name="i-heroicons-check-circle"
-              class="w-16 h-16 text-green-500"
+              :name="getOrderStatusIcon(currentOrderStatus)"
+              class="w-12 h-12"
+              :class="getOrderStatusIconClass(currentOrderStatus)"
             />
           </div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {{ $t("order.orderPlaced") || "Order Placed!" }}
+            {{ getOrderStatusTitle(currentOrderStatus) }}
           </h1>
           <p class="text-gray-500 mb-4">
-            {{
-              $t("order.orderPlacedDesc") ||
-              "Your order has been sent to the kitchen"
-            }}
+            {{ getOrderStatusDescription(currentOrderStatus) }}
           </p>
 
           <!-- Order Number -->
-          <div class="bg-primary-50 dark:bg-primary-900/30 rounded-xl p-6 mb-6">
+          <div class="bg-primary-50 dark:bg-primary-900/30 rounded-xl p-4 mb-4">
             <p class="text-sm text-gray-500 mb-1">
               {{ $t("order.orderNumber") || "Order #" }}
             </p>
             <p
-              class="text-3xl font-bold text-primary-600 dark:text-primary-400"
+              class="text-2xl font-bold text-primary-600 dark:text-primary-400"
             >
               {{ submittedOrderId?.slice(-6).toUpperCase() }}
             </p>
           </div>
 
+          <!-- Order Status Timeline -->
+          <div class="mb-6">
+            <div class="flex justify-between items-center px-4">
+              <div
+                v-for="(step, index) in orderStatusSteps"
+                :key="step.key"
+                class="flex flex-col items-center flex-1"
+              >
+                <div
+                  class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-300"
+                  :class="
+                    getStepClass(step.key, index)
+                  "
+                >
+                  {{ step.icon }}
+                </div>
+                <span class="text-xs mt-1 text-gray-500">{{ step.label }}</span>
+                <div
+                  v-if="index < orderStatusSteps.length - 1"
+                  class="absolute h-1 bg-gray-200 dark:bg-gray-700"
+                  style="width: 60px; top: 20px"
+                  :class="{ 'bg-primary-500': isStepCompleted(step.key) }"
+                />
+              </div>
+            </div>
+          </div>
+
           <!-- Table Info -->
           <div
-            class="flex items-center justify-center gap-2 text-gray-500 mb-6"
+            class="flex items-center justify-center gap-2 text-gray-500 mb-4"
           >
             <UIcon name="i-heroicons-map-pin" class="w-4 h-4" />
             <span>{{
@@ -90,6 +116,17 @@
               <UIcon name="i-heroicons-plus" class="w-5 h-5 mr-2" />
               {{ $t("order.orderMore") || "Order More" }}
             </UButton>
+            <UButton
+              v-if="orderHistory.length > 0"
+              color="neutral"
+              variant="soft"
+              size="lg"
+              block
+              @click="showOrderHistoryModal = true"
+            >
+              <UIcon name="i-heroicons-clock" class="w-5 h-5 mr-2" />
+              {{ $t("order.viewHistory") || "View Order History" }}
+            </UButton>
           </div>
         </div>
       </UCard>
@@ -99,44 +136,59 @@
     <template v-else-if="tableInfo">
       <!-- Header -->
       <div
-        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm"
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm safe-area-top"
       >
-        <div class="container mx-auto px-4 py-4">
+        <div class="container mx-auto px-4 py-3">
           <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-                📍 {{ tableInfo.tableName || `Table ${tableInfo.tableNumber}` }}
-              </h1>
-              <p class="text-sm text-gray-500">
-                {{ $t("order.browseMenu") || "Browse our menu" }}
-              </p>
+            <div class="flex items-center gap-3">
+              <div>
+                <h1 class="text-lg font-bold text-gray-900 dark:text-white">
+                  📍 {{ tableInfo.tableName || `Table ${tableInfo.tableNumber}` }}
+                </h1>
+                <p class="text-xs text-gray-500">
+                  {{ $t("order.browseMenu") || "Browse our menu" }}
+                </p>
+              </div>
             </div>
             <div class="flex items-center gap-2">
+              <!-- Order History Button -->
+              <UButton
+                v-if="orderHistory.length > 0"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                icon="i-heroicons-clock"
+                @click="showOrderHistoryModal = true"
+              />
+              <!-- Cart Button -->
               <UButton
                 v-if="cart.length > 0"
                 color="primary"
                 variant="solid"
+                size="sm"
+                class="min-h-[44px] min-w-[44px]"
                 @click="showCartModal = true"
               >
-                🛒 {{ cartItemCount }} · {{ formatPrice(cartTotal) }}
+                🛒 {{ cartItemCount }}
               </UButton>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Category Tabs -->
+      <!-- Category Tabs - Horizontal Scroll -->
       <div
-        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-[72px] z-10"
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-[60px] z-10"
       >
         <div class="container mx-auto px-4">
-          <div class="flex gap-2 overflow-x-auto py-3 scrollbar-hide">
+          <div class="flex gap-2 overflow-x-auto py-3 scrollbar-hide -mx-4 px-4">
             <UButton
               v-for="category in menuCategories"
               :key="category.id"
               :color="selectedCategory === category.id ? 'primary' : 'neutral'"
               :variant="selectedCategory === category.id ? 'solid' : 'ghost'"
               size="sm"
+              class="flex-shrink-0 min-h-[44px] min-w-[44px]"
               @click="selectedCategory = category.id"
             >
               {{ category.icon }} {{ category.name }}
@@ -146,27 +198,28 @@
       </div>
 
       <!-- Menu Content -->
-      <div class="container mx-auto px-4 py-6 pb-24">
-        <!-- Products Grid -->
+      <div class="container mx-auto px-4 py-4 pb-40">
+        <!-- Products Grid - Mobile Optimized -->
         <div
           v-if="filteredMenuProducts.length > 0"
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
         >
-          <UCard
+          <div
             v-for="product in filteredMenuProducts"
             :key="product.id"
-            class="hover:shadow-lg transition-all cursor-pointer transform hover:scale-[1.02]"
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform touch-manipulation"
             @click="addToCart(product)"
           >
             <!-- Product Image -->
             <div
-              class="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg mb-3 overflow-hidden relative"
+              class="aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden relative"
             >
               <img
                 v-if="product.image"
                 :src="product.image"
                 :alt="product.name"
                 class="w-full h-full object-cover"
+                loading="lazy"
               />
               <div
                 v-else
@@ -178,50 +231,24 @@
               <!-- Quantity Badge -->
               <div
                 v-if="getCartQuantity(product.id) > 0"
-                class="absolute top-2 right-2 bg-primary-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg"
+                class="absolute top-2 right-2 bg-primary-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg text-sm"
               >
                 {{ getCartQuantity(product.id) }}
               </div>
             </div>
 
             <!-- Product Info -->
-            <div class="flex items-start justify-between">
-              <div class="flex-1 min-w-0">
-                <h3
-                  class="font-semibold text-gray-900 dark:text-white truncate"
-                >
-                  {{ product.name }}
-                </h3>
-                <p
-                  v-if="product.description"
-                  class="text-sm text-gray-500 line-clamp-2"
-                >
-                  {{ product.description }}
-                </p>
-              </div>
-              <div class="ml-2 text-right">
-                <p class="font-bold text-primary-600 dark:text-primary-400">
-                  {{ formatPrice(product.price) }}
-                </p>
-              </div>
+            <div class="p-3">
+              <h3
+                class="font-semibold text-gray-900 dark:text-white text-sm line-clamp-1"
+              >
+                {{ product.name }}
+              </h3>
+              <p class="font-bold text-primary-600 dark:text-primary-400 text-sm mt-1">
+                {{ formatPrice(product.price) }}
+              </p>
             </div>
-
-            <!-- Add Button -->
-            <UButton
-              color="primary"
-              :variant="getCartQuantity(product.id) > 0 ? 'solid' : 'soft'"
-              size="sm"
-              block
-              class="mt-3"
-            >
-              <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
-              {{
-                getCartQuantity(product.id) > 0
-                  ? $t("order.addAnother") || "Add Another"
-                  : $t("order.addToCart") || "Add"
-              }}
-            </UButton>
-          </UCard>
+          </div>
         </div>
 
         <!-- Empty State -->
@@ -241,16 +268,44 @@
         </div>
       </div>
 
-      <!-- Cart Button (Fixed at bottom) -->
+      <!-- Bottom Action Bar - Mobile Optimized -->
       <div
-        v-if="cart.length > 0"
-        class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-lg z-20"
+        class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-20 safe-area-bottom"
       >
-        <div class="container mx-auto">
+        <div class="container mx-auto p-3">
+          <!-- Quick Actions Row -->
+          <div class="flex gap-2 mb-3">
+            <UButton
+              color="amber"
+              variant="soft"
+              size="sm"
+              class="flex-1 min-h-[44px]"
+              :loading="isCallingWaiter"
+              @click="callWaiter"
+            >
+              <UIcon name="i-heroicons-bell-alert" class="w-4 h-4 mr-1" />
+              {{ $t("order.callWaiter") || "Call Waiter" }}
+            </UButton>
+            <UButton
+              color="emerald"
+              variant="soft"
+              size="sm"
+              class="flex-1 min-h-[44px]"
+              :loading="isRequestingBill"
+              @click="requestBill"
+            >
+              <UIcon name="i-heroicons-receipt-percent" class="w-4 h-4 mr-1" />
+              {{ $t("order.requestBill") || "Request Bill" }}
+            </UButton>
+          </div>
+
+          <!-- View Cart Button -->
           <UButton
+            v-if="cart.length > 0"
             color="primary"
             size="lg"
             block
+            class="min-h-[52px]"
             @click="showCartModal = true"
           >
             <div class="flex items-center justify-between w-full">
@@ -266,10 +321,10 @@
         </div>
       </div>
 
-      <!-- Cart Modal -->
+      <!-- Cart Modal - Bottom Sheet Style -->
       <UModal v-model:open="showCartModal">
         <template #content>
-          <UCard class="max-h-[90vh] overflow-hidden flex flex-col">
+          <UCard class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl">
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
@@ -308,7 +363,7 @@
                 >
                   <!-- Product Image -->
                   <div
-                    class="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0"
+                    class="w-14 h-14 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0"
                   >
                     <img
                       v-if="item.product.image"
@@ -318,7 +373,7 @@
                     />
                     <div
                       v-else
-                      class="w-full h-full flex items-center justify-center text-2xl"
+                      class="w-full h-full flex items-center justify-center text-xl"
                     >
                       🍽️
                     </div>
@@ -327,11 +382,11 @@
                   <!-- Product Info -->
                   <div class="flex-1 min-w-0">
                     <h4
-                      class="font-medium text-gray-900 dark:text-white truncate"
+                      class="font-medium text-gray-900 dark:text-white text-sm truncate"
                     >
                       {{ item.product.name }}
                     </h4>
-                    <p class="text-sm text-primary-600 dark:text-primary-400">
+                    <p class="text-xs text-primary-600 dark:text-primary-400">
                       {{ formatPrice(item.product.price) }}
                     </p>
 
@@ -345,15 +400,16 @@
                   </div>
 
                   <!-- Quantity Controls -->
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1">
                     <UButton
                       color="gray"
                       variant="soft"
                       size="xs"
                       icon="i-heroicons-minus"
+                      class="min-h-[36px] min-w-[36px]"
                       @click="decreaseQuantity(index)"
                     />
-                    <span class="w-8 text-center font-bold">{{
+                    <span class="w-6 text-center font-bold text-sm">{{
                       item.quantity
                     }}</span>
                     <UButton
@@ -361,22 +417,16 @@
                       variant="soft"
                       size="xs"
                       icon="i-heroicons-plus"
+                      class="min-h-[36px] min-w-[36px]"
                       @click="increaseQuantity(index)"
                     />
-                  </div>
-
-                  <!-- Item Total -->
-                  <div class="text-right w-20">
-                    <p class="font-bold text-gray-900 dark:text-white">
-                      {{ formatPrice(item.product.price * item.quantity) }}
-                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             <template #footer v-if="cart.length > 0">
-              <div class="space-y-4">
+              <div class="space-y-3">
                 <!-- Totals -->
                 <div class="flex justify-between text-lg font-bold">
                   <span>{{ $t("order.total") || "Total" }}</span>
@@ -390,6 +440,7 @@
                   color="primary"
                   size="lg"
                   block
+                  class="min-h-[52px]"
                   :loading="isSubmitting"
                   @click="submitOrder"
                 >
@@ -404,12 +455,97 @@
           </UCard>
         </template>
       </UModal>
+
+      <!-- Order History Modal -->
+      <UModal v-model:open="showOrderHistoryModal">
+        <template #content>
+          <UCard class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl">
+            <template #header>
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold">
+                  📋 {{ $t("order.orderHistory") || "Order History" }}
+                </h3>
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-heroicons-x-mark"
+                  @click="showOrderHistoryModal = false"
+                />
+              </div>
+            </template>
+
+            <div class="overflow-y-auto max-h-[60vh] -mx-4 px-4">
+              <div v-if="orderHistory.length === 0" class="text-center py-8">
+                <UIcon
+                  name="i-heroicons-document-text"
+                  class="w-16 h-16 text-gray-300 mx-auto mb-4"
+                />
+                <p class="text-gray-500">
+                  {{ $t("order.noHistory") || "No order history yet" }}
+                </p>
+              </div>
+
+              <div v-else class="space-y-3">
+                <div
+                  v-for="historyOrder in orderHistory"
+                  :key="historyOrder.id"
+                  class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <!-- Order Header -->
+                  <div class="flex items-center justify-between mb-2">
+                    <div>
+                      <span class="font-bold text-sm">
+                        #{{ historyOrder.id.slice(-6).toUpperCase() }}
+                      </span>
+                      <span class="text-xs text-gray-500 ml-2">
+                        {{ formatOrderTime(historyOrder.date) }}
+                      </span>
+                    </div>
+                    <UBadge
+                      :color="getStatusColor(historyOrder.kitchenStatus)"
+                      size="xs"
+                    >
+                      {{ getStatusLabel(historyOrder.kitchenStatus) }}
+                    </UBadge>
+                  </div>
+
+                  <!-- Order Items -->
+                  <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {{ historyOrder.items.map(i => `${i.quantity}x ${i.product.name}`).join(', ') }}
+                  </div>
+
+                  <!-- Order Total & Reorder -->
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-primary-600 dark:text-primary-400">
+                      {{ formatPrice(historyOrder.total) }}
+                    </span>
+                    <UButton
+                      color="primary"
+                      variant="soft"
+                      size="xs"
+                      class="min-h-[36px]"
+                      @click="reorderFromHistory(historyOrder)"
+                    >
+                      <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-1" />
+                      {{ $t("order.reorder") || "Reorder" }}
+                    </UButton>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </UCard>
+        </template>
+      </UModal>
+
+      <!-- Call Waiter Success Toast -->
+      <!-- Request Bill Success Toast -->
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Product, Category } from "~/types";
+import type { Product, Category, Order } from "~/types";
 
 definePageMeta({
   layout: "blank",
@@ -435,14 +571,67 @@ const tableInfo = ref<{
 const selectedCategory = ref("all");
 const cart = ref<{ product: Product; quantity: number; notes?: string }[]>([]);
 const showCartModal = ref(false);
+const showOrderHistoryModal = ref(false);
 const isSubmitting = ref(false);
 const orderSubmitted = ref(false);
 const submittedOrderId = ref<string | null>(null);
+const currentOrderStatus = ref<"new" | "preparing" | "ready" | "served">("new");
+
+// Service action states
+const isCallingWaiter = ref(false);
+const isRequestingBill = ref(false);
 
 // Local state for customer menu (loaded from owner's Nostr data)
 const ownerProducts = ref<Product[]>([]);
 const ownerCategories = ref<Category[]>([]);
+const ownerPubkey = ref<string | null>(null);
 const nostrData = useNostrData();
+
+// Order history from localStorage
+const orderHistory = ref<Order[]>([]);
+const ORDER_HISTORY_KEY = "bitspace_customer_orders";
+const PENDING_ORDERS_KEY = "bitspace_pending_orders"; // For admin to pick up
+
+// BroadcastChannel for instant cross-tab communication
+let orderChannel: BroadcastChannel | null = null;
+if (import.meta.client) {
+  orderChannel = new BroadcastChannel('bitspace-orders');
+}
+
+// Broadcast new order to other tabs (admin/kitchen tabs)
+const broadcastOrderToAdmin = (order: Order) => {
+  if (!import.meta.client) return;
+  
+  try {
+    // Serialize order to plain object (removes Vue reactive proxies)
+    const plainOrder = JSON.parse(JSON.stringify(order));
+    
+    // Method 1: BroadcastChannel (instant, same-origin only)
+    if (orderChannel) {
+      orderChannel.postMessage({ type: 'new-order', order: plainOrder });
+    }
+    
+    // Method 2: localStorage (fallback, triggers storage event in other tabs)
+    const existing = localStorage.getItem(PENDING_ORDERS_KEY);
+    const pendingOrders: Order[] = existing ? JSON.parse(existing) : [];
+    pendingOrders.unshift(plainOrder);
+    if (pendingOrders.length > 100) pendingOrders.splice(100);
+    localStorage.setItem(PENDING_ORDERS_KEY, JSON.stringify(pendingOrders));
+    
+    // Method 3: IndexedDB is already shared across tabs via ordersStore.createOrder()
+    
+  } catch (e) {
+    console.error('Failed to broadcast order:', e);
+  }
+};
+
+// Order status steps for timeline
+const orderStatusSteps = [
+  { key: "new", icon: "📝", label: t("order.statusNew") || "Placed" },
+  { key: "preparing", icon: "👨‍🍳", label: t("order.statusPreparing") || "Preparing" },
+  { key: "ready", icon: "✅", label: t("order.statusReady") || "Ready" },
+  { key: "served", icon: "🍽️", label: t("order.statusServed") || "Served" },
+];
 
 // Menu categories (with "All" option)
 const menuCategories = computed(() => {
@@ -485,6 +674,141 @@ const getCartQuantity = (productId: string) => {
   return item?.quantity || 0;
 };
 
+// Order status helpers
+const getStepClass = (stepKey: string, index: number) => {
+  const statusOrder = ["new", "preparing", "ready", "served"];
+  const currentIndex = statusOrder.indexOf(currentOrderStatus.value);
+  const stepIndex = statusOrder.indexOf(stepKey);
+  
+  if (stepIndex < currentIndex) {
+    return "bg-primary-500 text-white";
+  } else if (stepIndex === currentIndex) {
+    return "bg-primary-500 text-white animate-pulse";
+  }
+  return "bg-gray-200 dark:bg-gray-700 text-gray-500";
+};
+
+const isStepCompleted = (stepKey: string) => {
+  const statusOrder = ["new", "preparing", "ready", "served"];
+  const currentIndex = statusOrder.indexOf(currentOrderStatus.value);
+  const stepIndex = statusOrder.indexOf(stepKey);
+  return stepIndex <= currentIndex;
+};
+
+const getOrderStatusBgClass = (status: string) => {
+  switch (status) {
+    case "new":
+      return "bg-blue-100 dark:bg-blue-900/30";
+    case "preparing":
+      return "bg-amber-100 dark:bg-amber-900/30 animate-pulse";
+    case "ready":
+      return "bg-green-100 dark:bg-green-900/30";
+    case "served":
+      return "bg-primary-100 dark:bg-primary-900/30";
+    default:
+      return "bg-gray-100 dark:bg-gray-900/30";
+  }
+};
+
+const getOrderStatusIcon = (status: string) => {
+  switch (status) {
+    case "new":
+      return "i-heroicons-document-check";
+    case "preparing":
+      return "i-heroicons-fire";
+    case "ready":
+      return "i-heroicons-check-circle";
+    case "served":
+      return "i-heroicons-hand-thumb-up";
+    default:
+      return "i-heroicons-clock";
+  }
+};
+
+const getOrderStatusIconClass = (status: string) => {
+  switch (status) {
+    case "new":
+      return "text-blue-500";
+    case "preparing":
+      return "text-amber-500";
+    case "ready":
+      return "text-green-500";
+    case "served":
+      return "text-primary-500";
+    default:
+      return "text-gray-500";
+  }
+};
+
+const getOrderStatusTitle = (status: string) => {
+  switch (status) {
+    case "new":
+      return t("order.orderPlaced") || "Order Placed!";
+    case "preparing":
+      return t("order.orderPreparing") || "Being Prepared...";
+    case "ready":
+      return t("order.orderReady") || "Order Ready!";
+    case "served":
+      return t("order.orderServed") || "Enjoy Your Meal!";
+    default:
+      return t("order.orderPlaced") || "Order Placed!";
+  }
+};
+
+const getOrderStatusDescription = (status: string) => {
+  switch (status) {
+    case "new":
+      return t("order.orderPlacedDesc") || "Your order has been sent to the kitchen";
+    case "preparing":
+      return t("order.orderPreparingDesc") || "The chef is preparing your order";
+    case "ready":
+      return t("order.orderReadyDesc") || "Your order is ready for pickup or delivery";
+    case "served":
+      return t("order.orderServedDesc") || "Thank you for dining with us!";
+    default:
+      return "";
+  }
+};
+
+const getStatusColor = (status?: string) => {
+  switch (status) {
+    case "new":
+      return "info" as const;
+    case "pending":
+      return "info" as const;
+    case "preparing":
+      return "warning" as const;
+    case "ready":
+      return "success" as const;
+    case "served":
+      return "primary" as const;
+    default:
+      return "neutral" as const;
+  }
+};
+
+const getStatusLabel = (status?: string) => {
+  switch (status) {
+    case "new":
+      return t("order.statusNew") || "New";
+    case "pending":
+      return t("order.statusPending") || "Pending";
+    case "preparing":
+      return t("order.statusPreparing") || "Preparing";
+    case "ready":
+      return t("order.statusReady") || "Ready";
+    case "served":
+      return t("order.statusServed") || "Served";
+    default:
+      return status || "Unknown";
+  }
+};
+
+const formatOrderTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
 // Cart actions
 const addToCart = (product: Product) => {
   const existing = cart.value.find((item) => item.product.id === product.id);
@@ -520,6 +844,154 @@ const clearCart = () => {
   showCartModal.value = false;
 };
 
+// Service actions
+const callWaiter = async () => {
+  isCallingWaiter.value = true;
+  try {
+    // Create a service request order
+    const serviceRequest = {
+      id: `SVC-${Date.now().toString(36).slice(-4).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      customer: "Customer",
+      branch: "main",
+      date: new Date().toISOString(),
+      total: 0,
+      totalSats: 0,
+      currency: "LAK" as const,
+      status: "pending" as const,
+      orderType: "dine_in" as const,
+      tableNumber: tableInfo.value?.tableName || tableInfo.value?.tableNumber || "",
+      items: [],
+      kitchenStatus: "new" as const,
+      kitchenNotes: "🔔 CALL WAITER - Customer needs assistance",
+    };
+
+    await ordersStore.createOrder(serviceRequest);
+
+    toast.add({
+      title: t("order.waiterCalled") || "Waiter Called!",
+      description: t("order.waiterCalledDesc") || "Staff will be with you shortly",
+      icon: "i-heroicons-bell-alert",
+      color: "amber",
+    });
+  } catch (e) {
+    console.error("Failed to call waiter:", e);
+    toast.add({
+      title: t("common.error") || "Error",
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
+  } finally {
+    isCallingWaiter.value = false;
+  }
+};
+
+const requestBill = async () => {
+  isRequestingBill.value = true;
+  try {
+    // Create a bill request order
+    const billRequest = {
+      id: `BIL-${Date.now().toString(36).slice(-4).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      customer: "Customer",
+      branch: "main",
+      date: new Date().toISOString(),
+      total: 0,
+      totalSats: 0,
+      currency: "LAK" as const,
+      status: "pending" as const,
+      orderType: "dine_in" as const,
+      tableNumber: tableInfo.value?.tableName || tableInfo.value?.tableNumber || "",
+      items: [],
+      kitchenStatus: "new" as const,
+      kitchenNotes: "💰 BILL REQUEST - Customer wants to pay",
+    };
+
+    await ordersStore.createOrder(billRequest);
+
+    toast.add({
+      title: t("order.billRequested") || "Bill Requested!",
+      description: t("order.billRequestedDesc") || "Staff will bring your bill shortly",
+      icon: "i-heroicons-receipt-percent",
+      color: "emerald",
+    });
+  } catch (e) {
+    console.error("Failed to request bill:", e);
+    toast.add({
+      title: t("common.error") || "Error",
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
+  } finally {
+    isRequestingBill.value = false;
+  }
+};
+
+// Re-order from history
+const reorderFromHistory = (historyOrder: Order) => {
+  // Clear current cart
+  cart.value = [];
+  
+  // Add items from history order
+  for (const item of historyOrder.items) {
+    cart.value.push({
+      product: item.product,
+      quantity: item.quantity,
+      notes: item.notes,
+    });
+  }
+  
+  showOrderHistoryModal.value = false;
+  showCartModal.value = true;
+  
+  toast.add({
+    title: t("order.reorderAdded") || "Items Added to Cart",
+    icon: "i-heroicons-check-circle",
+    color: "green",
+  });
+};
+
+// Load order history from localStorage
+const loadOrderHistory = () => {
+  if (import.meta.client) {
+    try {
+      const stored = localStorage.getItem(ORDER_HISTORY_KEY);
+      if (stored) {
+        const allOrders = JSON.parse(stored) as Order[];
+        // Filter to only show orders for this table (today)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        orderHistory.value = allOrders.filter(o => {
+          const orderDate = new Date(o.date);
+          return orderDate >= today && 
+                 o.tableNumber === (tableInfo.value?.tableName || tableInfo.value?.tableNumber);
+        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      }
+    } catch (e) {
+      console.error("Failed to load order history:", e);
+    }
+  }
+};
+
+// Save order to history
+const saveOrderToHistory = (order: Order) => {
+  if (import.meta.client) {
+    try {
+      const stored = localStorage.getItem(ORDER_HISTORY_KEY);
+      const allOrders: Order[] = stored ? JSON.parse(stored) : [];
+      allOrders.unshift(order);
+      // Keep only last 50 orders
+      if (allOrders.length > 50) {
+        allOrders.splice(50);
+      }
+      localStorage.setItem(ORDER_HISTORY_KEY, JSON.stringify(allOrders));
+      orderHistory.value.unshift(order);
+    } catch (e) {
+      console.error("Failed to save order to history:", e);
+    }
+  }
+};
+
 // Submit order
 const submitOrder = async () => {
   if (cart.value.length === 0) return;
@@ -527,9 +999,12 @@ const submitOrder = async () => {
   isSubmitting.value = true;
 
   try {
-    // Create order object
-    const order = {
-      id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    // Create order object with beautiful ID format (timestamp + random for uniqueness)
+    const ts = Date.now().toString(36).slice(-4).toUpperCase(); // Last 4 chars of timestamp in base36
+    const rnd = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random chars
+    const orderId = `ORD-${ts}${rnd}`;
+    const order: Order = {
+      id: orderId,
       customer: "Customer",
       branch: "main",
       date: new Date().toISOString(),
@@ -558,11 +1033,31 @@ const submitOrder = async () => {
         .join("; "),
     };
 
-    // Save order
+    // Save order to local IndexedDB
     await ordersStore.createOrder(order);
+    
+    // Sync to Nostr if we have owner pubkey (ephemeral key signing for anonymous customer)
+    if (ownerPubkey.value) {
+      nostrData.saveOrderAsAnonymous(order, ownerPubkey.value)
+        .then((event) => {
+          if (event) {
+            console.log("[Order] Order synced to Nostr successfully");
+          }
+        })
+        .catch((e) => {
+          console.warn("[Order] Failed to sync to Nostr (order still saved locally):", e);
+        });
+    }
+    
+    // Broadcast to admin tabs (localStorage/BroadcastChannel)
+    broadcastOrderToAdmin(order);
+    
+    // Save to local history
+    saveOrderToHistory(order);
 
     // Update state
     submittedOrderId.value = order.id;
+    currentOrderStatus.value = "new";
     orderSubmitted.value = true;
     showCartModal.value = false;
     cart.value = [];
@@ -575,6 +1070,9 @@ const submitOrder = async () => {
       icon: "i-heroicons-check-circle",
       color: "green",
     });
+    
+    // Start polling for order status updates
+    startOrderStatusPolling(order.id);
   } catch (e) {
     console.error("Failed to submit order:", e);
     toast.add({
@@ -588,10 +1086,40 @@ const submitOrder = async () => {
   }
 };
 
+// Order status polling
+let statusPollInterval: ReturnType<typeof setInterval> | null = null;
+
+const startOrderStatusPolling = (orderId: string) => {
+  // Poll every 10 seconds for status updates
+  statusPollInterval = setInterval(async () => {
+    try {
+      const order = ordersStore.getOrder(orderId);
+      if (order?.kitchenStatus) {
+        currentOrderStatus.value = order.kitchenStatus as "new" | "preparing" | "ready" | "served";
+        
+        // Stop polling if order is served
+        if (order.kitchenStatus === "served" || order.kitchenStatus === "ready") {
+          if (statusPollInterval) {
+            clearInterval(statusPollInterval);
+            statusPollInterval = null;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to poll order status:", e);
+    }
+  }, 10000);
+};
+
 // Start new order after submission
 const startNewOrder = () => {
   orderSubmitted.value = false;
   submittedOrderId.value = null;
+  currentOrderStatus.value = "new";
+  if (statusPollInterval) {
+    clearInterval(statusPollInterval);
+    statusPollInterval = null;
+  }
 };
 
 onMounted(async () => {
@@ -618,13 +1146,10 @@ onMounted(async () => {
     tableName: result.tableName || "",
   };
 
-  console.log("[Order] Table info:", tableInfo.value);
-  console.log("[Order] Owner pubkey from token:", result.ownerPubkey);
-
   // Try to load products from owner's Nostr data if pubkey is available
   if (result.ownerPubkey) {
+    ownerPubkey.value = result.ownerPubkey;
     try {
-      console.log("[Order] Loading products for owner:", result.ownerPubkey);
       const [products, categories] = await Promise.all([
         nostrData.getProductsForOwner(result.ownerPubkey),
         nostrData.getCategoriesForOwner(result.ownerPubkey),
@@ -632,13 +1157,6 @@ onMounted(async () => {
 
       ownerProducts.value = products;
       ownerCategories.value = categories;
-
-      console.log(
-        "[Order] Loaded from Nostr - Products:",
-        products.length,
-        "Categories:",
-        categories.length
-      );
     } catch (e) {
       console.error("[Order] Failed to load from Nostr:", e);
     }
@@ -646,20 +1164,21 @@ onMounted(async () => {
 
   // Fallback: Also try local store (if on same browser as admin)
   if (ownerProducts.value.length === 0) {
-    console.log("[Order] No products from Nostr, trying local store...");
     await productsStore.init();
-    console.log("[Order] Local products:", productsStore.products.value.length);
-    console.log(
-      "[Order] Local public products:",
-      productsStore.publicProducts.value.length
-    );
   }
 
-  console.log("[Order] Categories:", productsStore.categories.value.length);
-
   await ordersStore.init();
+  
+  // Load order history
+  loadOrderHistory();
 
   isLoading.value = false;
+});
+
+onUnmounted(() => {
+  if (statusPollInterval) {
+    clearInterval(statusPollInterval);
+  }
 });
 </script>
 
@@ -671,11 +1190,29 @@ onMounted(async () => {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* Safe area insets for mobile */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+/* Touch manipulation for better mobile UX */
+.touch-manipulation {
+  touch-action: manipulation;
 }
 </style>

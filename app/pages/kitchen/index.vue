@@ -1,6 +1,8 @@
 <!-- pages/kitchen/index.vue -->
 <!-- 👨‍🍳 Kitchen Display System (KDS) - Real-time Order Queue -->
 <script setup lang="ts">
+import type { Order } from "~/types";
+
 definePageMeta({
   layout: "blank",
   middleware: ["auth"],
@@ -27,8 +29,11 @@ const autoRefresh = ref(true);
 const kitchenOrders = computed(() => {
   let orders = ordersStore.orders.value.filter(
     (o) =>
-      // Only show orders that are processing (not paid yet) OR completed (paid) but still in kitchen
-      (o.status === "completed" || o.status === "processing") &&
+      // Show orders that need kitchen attention:
+      // - pending (customer QR orders waiting for payment)
+      // - processing (payment in progress)
+      // - completed (paid) but still in kitchen
+      (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
       // IMPORTANT: Exclude orders that have been served or picked up
       o.kitchenStatus !== "served"
   );
@@ -52,7 +57,7 @@ const newOrdersCount = computed(
   () =>
     ordersStore.orders.value.filter(
       (o) =>
-        (o.status === "completed" || o.status === "processing") &&
+        (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
         o.kitchenStatus === "new"
     ).length
 );
@@ -61,7 +66,7 @@ const preparingOrdersCount = computed(
   () =>
     ordersStore.orders.value.filter(
       (o) =>
-        (o.status === "completed" || o.status === "processing") &&
+        (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
         o.kitchenStatus === "preparing"
     ).length
 );
@@ -70,7 +75,7 @@ const readyOrdersCount = computed(
   () =>
     ordersStore.orders.value.filter(
       (o) =>
-        (o.status === "completed" || o.status === "processing") &&
+        (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
         o.kitchenStatus === "ready"
     ).length
 );
@@ -202,24 +207,82 @@ const formatTime = (date: string) => {
 // ============================================
 // Lifecycle
 // ============================================
+let refreshInterval: ReturnType<typeof setInterval>;
+let orderChannel: BroadcastChannel | null = null;
+
+// Handle new order from BroadcastChannel (instant)
+const handleNewOrder = (order: Order) => {
+  const exists = ordersStore.orders.value.find(o => o.id === order.id);
+  if (!exists) {
+    ordersStore.orders.value.unshift(order);
+    if (soundEnabled.value) playBellSound();
+  }
+};
+
+// Check for pending customer orders from localStorage
+const checkPendingOrders = () => {
+  const PENDING_ORDERS_KEY = "bitspace_pending_orders";
+  try {
+    const stored = localStorage.getItem(PENDING_ORDERS_KEY);
+    if (!stored) return;
+    
+    const pendingOrders = JSON.parse(stored);
+    let importedCount = 0;
+    
+    for (const order of pendingOrders) {
+      const exists = ordersStore.orders.value.find(o => o.id === order.id);
+      if (!exists) {
+        ordersStore.orders.value.unshift(order);
+        importedCount++;
+        if (soundEnabled.value) playBellSound();
+      }
+    }
+    
+    if (importedCount > 0) {
+      localStorage.removeItem(PENDING_ORDERS_KEY);
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+};
+
 onMounted(async () => {
   await ordersStore.init();
+  
+  // Check for any pending orders on load
+  checkPendingOrders();
 
   // Update time every second
   timeInterval = setInterval(() => {
     currentTime.value = new Date();
   }, 1000);
 
-  // Auto-refresh orders
-  if (autoRefresh.value) {
-    setInterval(() => {
-      ordersStore.init();
-    }, 30000); // Every 30 seconds
-  }
+  // BroadcastChannel for INSTANT order notifications (same origin)
+  orderChannel = new BroadcastChannel('bitspace-orders');
+  orderChannel.onmessage = (event) => {
+    if (event.data?.type === 'new-order' && event.data?.order) {
+      handleNewOrder(event.data.order);
+    }
+  };
+
+  // Fallback: Check for new orders every 30 seconds (BroadcastChannel handles instant)
+  refreshInterval = setInterval(async () => {
+    checkPendingOrders();
+    await ordersStore.init(); // This also fetches from Nostr for cross-device sync
+  }, 30000);
+  
+  // Listen for storage events from customer order pages
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'bitspace_pending_orders') {
+      checkPendingOrders();
+    }
+  });
 });
 
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval);
+  if (refreshInterval) clearInterval(refreshInterval);
+  if (orderChannel) orderChannel.close();
 });
 </script>
 

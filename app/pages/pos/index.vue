@@ -44,6 +44,7 @@ const showItemNotesModal = ref(false);
 const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
 const showTableSwitcher = ref(false); // Table switcher modal
+const showPendingOrdersModal = ref(false); // Pending orders for payment
 const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
 const numpadValue = ref("");
 const isProcessing = ref(false);
@@ -96,6 +97,24 @@ const tables = ref<
     seats: number;
   }>
 >([]);
+
+// Pending customer orders count (for kitchen badge)
+const pendingKitchenOrders = computed(() => 
+  ordersStore.orders.value.filter(
+    o => (o.status === "pending" || o.status === "processing") && 
+         o.kitchenStatus === "new"
+  ).length
+);
+
+// List of pending orders for payment (cafe pay-later)
+const pendingOrdersList = computed(() => 
+  ordersStore.orders.value.filter(
+    o => o.status === "pending"
+  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+);
+
+// Selected pending order for payment
+const selectedPendingOrder = ref<Order | null>(null);
 
 // Tax settings
 const taxEnabled = ref(false);
@@ -296,6 +315,69 @@ const holdOrder = () => {
   pos.clearCart();
 };
 
+/**
+ * Send order to kitchen with pending payment (cafe-style "pay later")
+ * Creates a real order with status=pending, sends to kitchen display
+ * Customer can pay when ready to leave
+ */
+const sendToKitchen = async () => {
+  if (pos.cartItems.value.length === 0) return;
+
+  isProcessing.value = true;
+  
+  try {
+    // Create order with PENDING status (not paid yet)
+    const order = pos.createOrder("pending" as PaymentMethod);
+    order.status = "pending"; // Not paid yet
+    order.kitchenStatus = "new"; // Ready for kitchen
+    
+    // Link to table if dine-in
+    if (pos.tableNumber.value) {
+      order.tableNumber = pos.tableNumber.value;
+      order.orderType = "dine_in";
+    }
+    
+    // Add kitchen notes from cart items
+    order.kitchenNotes = pos.cartItems.value
+      .filter(item => item.notes)
+      .map(item => `${item.product.name}: ${item.notes}`)
+      .join("; ");
+
+    // Save order to local DB and sync to Nostr
+    await ordersStore.createOrder(order);
+
+    // Update POS session
+    pos.updateSessionTotals(order);
+
+    // Play notification sound
+    sound.playNotification();
+
+    // Clear cart
+    pos.clearCart();
+
+    // Show success toast
+    const toast = useToast();
+    toast.add({
+      title: t("pos.orderSentToKitchen") || "Order Sent to Kitchen!",
+      description: `${t("pos.orderNumber") || "Order"}: ${order.id} - ${t("pos.payLater") || "Pay when ready to leave"}`,
+      icon: "i-heroicons-check-circle",
+      color: "green",
+    });
+    
+  } catch (e) {
+    console.error("Failed to send order to kitchen:", e);
+    const toast = useToast();
+    toast.add({
+      title: t("common.error") || "Error",
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 const recallOrder = (orderId: string) => {
   const order = heldOrders.value.find((o) => o.id === orderId);
   if (order) {
@@ -466,7 +548,105 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 const cancelPayment = () => {
   showPaymentModal.value = false;
   isProcessing.value = false;
+  selectedPendingOrder.value = null;
   pos.setPaymentState({ status: "idle" });
+};
+
+/**
+ * Select a pending order and open payment modal
+ */
+const selectPendingOrderForPayment = (order: Order) => {
+  selectedPendingOrder.value = order;
+  showPendingOrdersModal.value = false;
+  
+  // Set payment state with order total
+  pos.setPaymentState({
+    status: "pending",
+    amount: order.total,
+    satsAmount: currency.toSats(order.total, order.currency || "LAK"),
+  });
+  
+  showPaymentModal.value = true;
+};
+
+/**
+ * Complete payment for a pending order
+ */
+const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
+  if (!selectedPendingOrder.value) return;
+  
+  isProcessing.value = true;
+  
+  try {
+    const order = selectedPendingOrder.value;
+    
+    // Update order status to completed
+    await ordersStore.updateOrderStatus(order.id, "completed", {
+      paymentMethod: method,
+    });
+    
+    // Add payment proof if available
+    if (proof) {
+      order.paymentProof = {
+        id: `proof_${Date.now()}`,
+        orderId: order.id,
+        paymentHash: (proof as { paymentHash?: string })?.paymentHash || "",
+        preimage: (proof as { preimage?: string })?.preimage || "",
+        amount: order.totalSats || 0,
+        receivedAt: new Date().toISOString(),
+        method,
+        isOffline: !navigator.onLine,
+      };
+    }
+    
+    // Play success sound
+    if (method === "lightning" || method === "bolt12" || method === "lnurl") {
+      sound.playLightningZap();
+    } else if (method === "cash") {
+      sound.playCashRegister();
+    } else {
+      sound.playOrderComplete();
+    }
+    
+    // Store completed order for receipt
+    completedOrder.value = { ...order, status: "completed", paymentMethod: method };
+    completedPaymentMethod.value = method;
+    
+    // Generate receipt
+    const generatedReceipt = receipt.generateReceipt(completedOrder.value, completedOrder.value.paymentProof);
+    receipt.storeEBill(generatedReceipt);
+    
+    // Clear and close
+    selectedPendingOrder.value = null;
+    showPaymentModal.value = false;
+    showReceiptModal.value = true;
+    
+    pos.setPaymentState({
+      status: "paid",
+      eBillUrl: receipt.generateEBillUrl(generatedReceipt.id),
+      eBillId: generatedReceipt.id,
+    });
+    
+    const toast = useToast();
+    toast.add({
+      title: t("pos.paymentComplete") || "Payment Complete!",
+      description: `${t("pos.orderNumber") || "Order"}: ${order.id}`,
+      icon: "i-heroicons-check-circle",
+      color: "green",
+    });
+    
+  } catch (e) {
+    console.error("Failed to process pending order payment:", e);
+    const toast = useToast();
+    toast.add({
+      title: t("common.error") || "Error",
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
+  } finally {
+    isProcessing.value = false;
+  }
 };
 
 // ============================================
@@ -548,8 +728,12 @@ watch([taxEnabled, taxRatePercent, taxInclusive], () => {
 // ============================================
 const loadTables = async () => {
   try {
-    // Use tablesStore from composable as primary source
     const tablesStore = useTables();
+    
+    // Load tables from store (this loads from localStorage cache first, then Nostr)
+    await tablesStore.loadTables();
+    
+    // Map to local format after store is loaded
     if (tablesStore.tables.value && tablesStore.tables.value.length > 0) {
       tables.value = tablesStore.tables.value.map((t) => ({
         id: t.id,
@@ -558,12 +742,6 @@ const loadTables = async () => {
         status: t.status,
         seats: t.capacity,
       }));
-    } else {
-      // Fallback to localStorage
-      const stored = localStorage.getItem("tables");
-      if (stored) {
-        tables.value = JSON.parse(stored);
-      }
     }
   } catch (e) {
     console.error("Failed to load tables:", e);
@@ -823,15 +1001,21 @@ onUnmounted(() => {
               </NuxtLink>
             </UTooltip>
 
-            <!-- Kitchen Display Link -->
-            <UTooltip text="Kitchen Display">
-              <NuxtLink to="/kitchen">
+            <!-- Kitchen Display Link (with pending orders badge) -->
+            <UTooltip :text="pendingKitchenOrders > 0 ? `Kitchen (${pendingKitchenOrders} new)` : 'Kitchen Display'">
+              <NuxtLink to="/kitchen" class="relative">
                 <UButton
                   icon="i-heroicons-fire"
-                  color="neutral"
+                  :color="pendingKitchenOrders > 0 ? 'amber' : 'neutral'"
                   variant="ghost"
                   size="sm"
                 />
+                <span 
+                  v-if="pendingKitchenOrders > 0"
+                  class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse"
+                >
+                  {{ pendingKitchenOrders > 9 ? '9+' : pendingKitchenOrders }}
+                </span>
               </NuxtLink>
             </UTooltip>
 
@@ -905,6 +1089,18 @@ onUnmounted(() => {
             >
               <UIcon name="i-heroicons-clock" class="w-4 h-4" />
               <span>{{ heldOrders.length }}</span>
+            </UButton>
+            
+            <!-- Pending Bills (Pay Later orders) Button -->
+            <UButton
+              v-if="pendingOrdersList.length > 0"
+              size="sm"
+              color="red"
+              variant="soft"
+              @click="showPendingOrdersModal = true"
+            >
+              <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
+              <span>{{ pendingOrdersList.length }} {{ t("pos.pendingBills") || "Bills" }}</span>
             </UButton>
           </div>
         </div>
@@ -1517,6 +1713,23 @@ onUnmounted(() => {
               📱 {{ t("payment.methods.staticQR") }}
             </UButton>
           </div>
+          
+          <!-- Send to Kitchen (Pay Later) Button -->
+          <UButton
+            block
+            size="md"
+            color="emerald"
+            variant="soft"
+            :disabled="pos.cartItems.value.length === 0"
+            :loading="isProcessing"
+            @click="sendToKitchen"
+          >
+            <span class="flex items-center gap-2">
+              <span class="text-lg">🔥</span>
+              <span>{{ t("pos.sendToKitchen") || "Send to Kitchen" }}</span>
+              <span class="text-xs opacity-75">({{ t("pos.payLater") || "Pay Later" }})</span>
+            </span>
+          </UButton>
         </div>
       </div>
     </div>
@@ -1776,12 +1989,12 @@ onUnmounted(() => {
         >
           <PaymentSelector
             v-if="showPaymentModal"
-            :amount="totalWithTax"
-            :sats-amount="totalSatsWithTax"
-            :currency="pos.selectedCurrency.value"
-            :order-id="'ORD-' + Date.now().toString(36).toUpperCase()"
+            :amount="selectedPendingOrder ? selectedPendingOrder.total : totalWithTax"
+            :sats-amount="selectedPendingOrder ? currency.toSats(selectedPendingOrder.total, selectedPendingOrder.currency || 'LAK') : totalSatsWithTax"
+            :currency="selectedPendingOrder ? (selectedPendingOrder.currency || pos.selectedCurrency.value) : pos.selectedCurrency.value"
+            :order-id="selectedPendingOrder ? selectedPendingOrder.id : ('ORD-' + Date.now().toString(36).toUpperCase())"
             :default-method="defaultPaymentMethod || undefined"
-            @paid="handlePaymentComplete"
+            @paid="(method, proof) => selectedPendingOrder ? payPendingOrder(method, proof) : handlePaymentComplete(method, proof)"
             @cancel="cancelPayment"
           />
         </div>
@@ -1995,6 +2208,79 @@ onUnmounted(() => {
                   <UIcon name="i-heroicons-trash" class="w-4 h-4" />
                 </UButton>
               </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Pending Orders Modal (Bills waiting for payment) -->
+    <UModal v-model:open="showPendingOrdersModal">
+      <template #content>
+        <div class="p-6 bg-white dark:bg-gray-900">
+          <h3
+            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
+          >
+            <span>💳</span> {{ t("pos.pendingBills") || "Pending Bills" }}
+            <span class="text-sm font-normal text-gray-500">({{ t("pos.awaitingPayment") || "Awaiting Payment" }})</span>
+          </h3>
+
+          <div
+            v-if="pendingOrdersList.length === 0"
+            class="text-center py-8 text-gray-400 dark:text-gray-500"
+          >
+            <span class="text-4xl block mb-2">✅</span>
+            {{ t("pos.noPendingBills") || "No pending bills" }}
+          </div>
+
+          <div v-else class="space-y-3 max-h-96 overflow-auto">
+            <div
+              v-for="order in pendingOrdersList"
+              :key="order.id"
+              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700/30"
+            >
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <p class="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                    {{ order.id }}
+                    <span v-if="order.tableNumber" class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                      🪑 {{ order.tableNumber }}
+                    </span>
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {{ new Date(order.date).toLocaleTimeString() }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-red-600 dark:text-red-400 text-lg">
+                    {{ currency.format(order.total, order.currency || pos.selectedCurrency.value) }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {{ order.items.length }} {{ t("common.items") || "items" }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Order Items Preview -->
+              <div class="text-sm text-gray-500 dark:text-gray-400 mb-3 space-y-1">
+                <div v-for="item in order.items.slice(0, 3)" :key="item.product.id" class="flex justify-between">
+                  <span>{{ item.quantity }}x {{ item.product.name }}</span>
+                  <span>{{ currency.format(item.product.price * item.quantity, order.currency || 'LAK') }}</span>
+                </div>
+                <p v-if="order.items.length > 3" class="text-xs italic">
+                  +{{ order.items.length - 3 }} {{ t("common.more") || "more" }}...
+                </p>
+              </div>
+
+              <UButton
+                block
+                size="sm"
+                color="primary"
+                @click="selectPendingOrderForPayment(order)"
+              >
+                <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
+                {{ t("pos.collectPayment") || "Collect Payment" }}
+              </UButton>
             </div>
           </div>
         </div>

@@ -101,7 +101,16 @@
         "cleaning": "Cleaning",
         "unavailable": "Unavailable"
       }
-    }
+    },
+    "sendToKitchen": "Send to Kitchen",
+    "payLater": "Pay Later",
+    "pendingBills": "Pending Bills",
+    "awaitingPayment": "Awaiting Payment",
+    "noPendingBills": "No pending bills",
+    "collectPayment": "Collect Payment",
+    "orderNumber": "Order",
+    "paymentComplete": "Payment Complete!",
+    "orderSentToKitchen": "Order Sent to Kitchen!"
   },
   "loyalty": {
     "title": "Loyalty Program",
