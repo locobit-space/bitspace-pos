@@ -7,9 +7,9 @@ import type { Event, Filter } from "nostr-tools";
 const DEFAULT_RELAYS = [
   "wss://relay.damus.io",
   "wss://nos.lol",
-  "wss://relay.nostr.band",
-  // "wss://nostr-pub.wellorder.net",
-  // "wss://yabu.me",
+  // "wss://relay.nostr.band",
+  "wss://nostr-pub.wellorder.net",
+  "wss://yabu.me",
   // Uncomment for local development:
   // 'ws://localhost:8080',
 ];

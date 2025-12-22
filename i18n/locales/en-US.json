@@ -161,6 +161,7 @@
       "tableFreed": "Table is now available"
     },
     "sendToKitchen": "Send to Kitchen",
+    "newCustomerOrder": "🔔 New Customer Order!",
     "payLater": "Pay Later",
     "pendingBills": "Pending Bills",
     "awaitingPayment": "Awaiting Payment",
@@ -2244,6 +2245,7 @@
     "lastUpdate": "Last update",
     "statusUpdated": "Kitchen status updated",
     "markedAs": "Order marked as {status}",
+    "newOrder": "🔔 New Order!",
     "status": {
       "title": "Kitchen Status",
       "new": "🆕 New",

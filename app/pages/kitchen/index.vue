@@ -10,6 +10,7 @@ definePageMeta({
 
 const { t } = useI18n();
 const ordersStore = useOrders();
+const toast = useToast();
 
 // ============================================
 // State
@@ -230,6 +231,14 @@ const handleNewOrder = (order: Order) => {
   if (!exists) {
     ordersStore.orders.value.unshift(order);
     if (soundEnabled.value) playBellSound();
+    
+    // Show toast notification
+    toast.add({
+      title: t("kitchen.newOrder") || "🔔 New Order!",
+      description: `#${order.id.slice(-6).toUpperCase()} - ${order.tableNumber ? 'Table ' + order.tableNumber : t("orders.walkInCustomer") || 'Walk-in'}`,
+      color: "blue",
+      icon: "i-heroicons-bell-alert"
+    });
   }
 };
 
@@ -273,6 +282,7 @@ onMounted(async () => {
 
   // BroadcastChannel for INSTANT order notifications (same origin)
   orderChannel = new BroadcastChannel('bitspace-orders');
+  
   orderChannel.onmessage = (event) => {
     if (event.data?.type === 'new-order' && event.data?.order) {
       handleNewOrder(event.data.order);

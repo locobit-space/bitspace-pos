@@ -1167,14 +1167,56 @@ onMounted(async () => {
       }
     };
   }
+  
+  // Listen for NEW customer orders (from order.vue QR ordering)
+  if (import.meta.client) {
+    customerOrderChannel = new BroadcastChannel('bitspace-orders');
+    
+    customerOrderChannel.onmessage = (event) => {
+      if (event.data?.type === 'new-order' && event.data?.order) {
+        const order = event.data.order;
+        const dedupKey = `new_order_notified_${order.id}`;
+        
+        // Deduplicate using sessionStorage
+        const lastNotified = sessionStorage.getItem(dedupKey);
+        const now = Date.now();
+        
+        if (lastNotified && (now - parseInt(lastNotified)) < 10000) {
+          return; // Skip if notified within last 10 seconds
+        }
+        
+        // Mark as notified
+        sessionStorage.setItem(dedupKey, now.toString());
+        setTimeout(() => sessionStorage.removeItem(dedupKey), 15000);
+        
+        // Play notification sound
+        sound.playNotification();
+        
+        // Show toast notification
+        const toast = useToast();
+        toast.add({
+          title: t("pos.newCustomerOrder") || "🔔 New Customer Order!",
+          description: `#${order.id.slice(-6).toUpperCase()} - ${order.tableNumber ? t("orders.table") + ' ' + order.tableNumber : t("orders.walkInCustomer") || 'Walk-in'}`,
+          icon: "i-heroicons-bell-alert",
+          color: "blue",
+        });
+        
+        // Refresh orders to update pending count
+        ordersStore.init();
+      }
+    };
+  }
 });
 
 // Order ready channel for kitchen notifications
 let orderReadyChannel: BroadcastChannel | null = null;
+// Customer order channel for new order alerts
+let customerOrderChannel: BroadcastChannel | null = null;
 
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval);
   if (orderReadyChannel) orderReadyChannel.close();
+  if (customerOrderChannel) customerOrderChannel.close();
 });
 </script>
 
