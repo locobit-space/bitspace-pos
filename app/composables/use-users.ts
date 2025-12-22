@@ -616,11 +616,7 @@ export function useUsers() {
   async function saveUsers(): Promise<void> {
     // 1. Save to localStorage (always)
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users.value));
-    console.log(
-      "[useUsers] Saved",
-      users.value.length,
-      "users to localStorage"
-    );
+
 
     // 2. Sync to Nostr relays (if owner is logged in with Nostr)
     try {
@@ -630,23 +626,10 @@ export function useUsers() {
         const event = await nostrData.saveStaff(user);
         if (event) {
           syncedCount++;
-          console.log(
-            "[useUsers] ✅ Synced user to Nostr:",
-            user.name,
-            "Event ID:",
-            event.id?.slice(0, 8)
-          );
-        } else {
-          console.warn("[useUsers] ❌ Failed to sync user:", user.name);
+
         }
       }
-      console.log(
-        "[useUsers] Synced",
-        syncedCount,
-        "/",
-        users.value.length,
-        "users to Nostr relays"
-      );
+
     } catch (error) {
       console.warn(
         "[useUsers] Nostr sync failed (local save succeeded):",
@@ -660,18 +643,14 @@ export function useUsers() {
    * Load users from storage (local + Nostr sync)
    */
   async function loadUsers(): Promise<void> {
-    console.log("[useUsers] Starting loadUsers...");
+
 
     // 1. Load from localStorage first (fast, offline-first)
     const stored = localStorage.getItem(STORAGE_KEYS.USERS);
     if (stored) {
       try {
         users.value = JSON.parse(stored);
-        console.log(
-          "[useUsers] Loaded",
-          users.value.length,
-          "users from localStorage"
-        );
+
       } catch {
         /* continue to try other sources */
       }
@@ -679,10 +658,8 @@ export function useUsers() {
 
     // 2. Try to fetch from Nostr relays (for cross-device sync)
     try {
-      console.log("[useUsers] Fetching users from Nostr relays...");
       const nostrData = useNostrData();
       const nostrUsers = await nostrData.getAllStaff();
-      console.log("[useUsers] Received", nostrUsers.length, "users from Nostr");
 
       if (nostrUsers.length > 0) {
         // Merge Nostr users with local users (Nostr takes precedence for conflicts)
@@ -701,10 +678,7 @@ export function useUsers() {
             new Date(nostrUser.updatedAt || 0) > new Date(local.updatedAt || 0)
           ) {
             // Nostr version is newer - update local
-            console.log(
-              "[useUsers] 🔄 Updating user from Nostr:",
-              nostrUser.name
-            );
+
             const index = users.value.findIndex((u) => u.id === nostrUser.id);
             if (index !== -1) {
               users.value[index] = nostrUser;
@@ -714,11 +688,7 @@ export function useUsers() {
 
         // Save merged result back to localStorage
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users.value));
-        console.log(
-          "[useUsers] ✅ Merged and saved",
-          users.value.length,
-          "total users"
-        );
+
       }
     } catch (error) {
       console.warn(
@@ -735,11 +705,7 @@ export function useUsers() {
       );
       if (encrypted) {
         users.value = encrypted;
-        console.log(
-          "[useUsers] Loaded",
-          users.value.length,
-          "users from encrypted storage"
-        );
+
       }
     }
   }
@@ -793,10 +759,7 @@ export function useUsers() {
             saveUsers();
           }
 
-          console.log(
-            "[useUsers] Refreshed current user profile:",
-            currentUser.value.name
-          );
+
         }
       } catch {
         /* ignore */

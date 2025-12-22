@@ -1041,7 +1041,7 @@ const submitOrder = async () => {
       nostrData.saveOrderAsAnonymous(order, ownerPubkey.value)
         .then((event) => {
           if (event) {
-            console.log("[Order] Order synced to Nostr successfully");
+
           }
         })
         .catch((e) => {

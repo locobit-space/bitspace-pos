@@ -114,7 +114,7 @@ const handleCompanyCodeSubmit = async () => {
 
     if (!ownerPubkey) {
       // Try to discover owner pubkey from company index event
-      console.log("[Signin] No stored owner pubkey, attempting discovery...");
+
       ownerPubkey = await nostrData.discoverOwnerByCompanyCode(
         companyCodeInput.value
       );
@@ -125,10 +125,7 @@ const handleCompanyCodeSubmit = async () => {
       }
     }
 
-    console.log(
-      "[Signin] Fetching staff with company code:",
-      companyCodeInput.value
-    );
+
 
     // Fetch staff from Nostr using company code
     const staff = await nostrData.fetchStaffByCompanyCode(
@@ -160,7 +157,7 @@ const handleCompanyCodeSubmit = async () => {
     // Reinitialize users composable to pick up new users
     await usersComposable.refreshFromNostr();
 
-    console.log("[Signin] Loaded", staff.length, "staff from company code");
+
     companyCodeInput.value = ""; // Clear input
   } catch (e) {
     console.error("[Signin] Company code error:", e);
@@ -174,7 +171,7 @@ const handleCompanyCodeSubmit = async () => {
 const invite = useInvite();
 
 const handleQrScanned = async (data: string) => {
-  console.log("[Signin] QR scanned:", data);
+
 
   try {
     // Parse the invite link
@@ -196,7 +193,7 @@ const handleQrScanned = async (data: string) => {
     // Refresh users
     await usersComposable.refreshFromNostr();
 
-    console.log("[Signin] QR import successful:", result.data.user.name);
+
 
     // If we have users now, they'll show up in the staff list
   } catch (error) {
@@ -247,12 +244,12 @@ const triggerNos2xPopup = async () => {
       return;
     }
 
-    console.log("[nos2x] Requesting public key...");
+
 
     // This should trigger the nos2x popup
     const pubkey = await win.nostr.getPublicKey();
 
-    console.log("[nos2x] Got pubkey:", pubkey);
+
 
     if (
       !pubkey ||
@@ -332,7 +329,7 @@ const handleNsecSignIn = async () => {
     }
 
     const pubkeyHex = userInfo.pubkey;
-    console.log("[Nsec] Derived pubkey:", pubkeyHex.slice(0, 16) + "...");
+
 
     // Set cookie for middleware
     const nostrCookie = useCookie("nostr-pubkey", {
@@ -345,7 +342,7 @@ const handleNsecSignIn = async () => {
 
     // Initialize company code for owner (generates if not exists)
     const companyCode = await company.initializeCompany(pubkeyHex);
-    console.log("[Nsec] Company code:", companyCode);
+
 
     // Publish company index for cross-device discovery
     const codeHash = await company.hashCompanyCode(companyCode);
@@ -354,11 +351,7 @@ const handleNsecSignIn = async () => {
     // IMPORTANT: Re-fetch users from Nostr now that we have keys
     // This enables staff logins on new devices!
     await usersComposable.refreshFromNostr();
-    console.log(
-      "[Nsec] Synced",
-      usersComposable.users.value.length,
-      "users from Nostr"
-    );
+
 
     // Clear the input
     manualNsec.value = "";
@@ -378,7 +371,7 @@ const handleStaffLogin = async (
   user: { id: string; name: string },
   _method: string
 ) => {
-  console.log("[Staff] Login success:", user.name);
+
 
   // Make sure the user is set as current in useUsers composable
   // (StaffLogin component uses staffAuth which doesn't update useUsers)

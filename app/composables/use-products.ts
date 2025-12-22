@@ -182,16 +182,12 @@ export function useProductsStore() {
     try {
       // Debug: First check all products in DB
       const allRecords = await db.products.toArray();
-      console.log("[Products] All records in IndexedDB:", allRecords.length);
-      if (allRecords.length > 0) {
-        console.log("[Products] First record sample:", allRecords[0]);
-      }
 
       const records = await db.products
         .where("status")
         .equals("active")
         .toArray();
-      console.log("[Products] Active products found:", records.length);
+
       return records.map((r) => JSON.parse(r.data) as Product);
     } catch (e) {
       console.error("Failed to load products from local DB:", e);
@@ -516,15 +512,8 @@ export function useProductsStore() {
   // ============================================
 
   async function init(): Promise<void> {
-    console.log(
-      "[Products] init() called, isInitialized:",
-      isInitialized.value,
-      "products count:",
-      products.value.length
-    );
 
     if (isInitialized.value) {
-      console.log("[Products] Already initialized, returning early");
       return;
     }
 

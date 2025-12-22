@@ -786,9 +786,7 @@ function onLanguageChange() {}
 // Load settings from Nostr on mount
 const loadSettings = async () => {
   try {
-    console.log('[general.vue] Loading settings from Nostr...');
     const settings = await nostrData.getSettings();
-    console.log('[general.vue] Loaded settings:', settings);
     if (settings) {
       // Handle BOTH new flat structure and legacy nested structure
       
@@ -819,9 +817,7 @@ const loadSettings = async () => {
         }
       }
       
-      console.log('[general.vue] State updated, companyName:', state.companyName);
-    } else {
-      console.log('[general.vue] No settings found');
+
     }
   } catch (err) {
     console.error('[general.vue] Failed to load settings:', err);
