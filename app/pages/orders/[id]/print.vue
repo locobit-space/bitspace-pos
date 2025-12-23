@@ -64,10 +64,10 @@
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ $t('common.phone') }}: {{ billData.customer.phone }}
               </p>
-              <p class="text-sm text-gray-600" v-if="billData.customer.email">
+              <p class="text-sm text-gray-600 dark:text-gray-400" v-if="billData.customer.email">
                 {{ $t('common.email') }}: {{ billData.customer.email }}
               </p>
-              <p class="text-sm text-gray-600" v-if="billData.customer.taxId">
+              <p class="text-sm text-gray-600 dark:text-gray-400" v-if="billData.customer.taxId">
                 {{ $t('bill.tax_id') }}: {{ billData.customer.taxId }}
               </p>
             </div>
@@ -134,16 +134,16 @@
                 <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-white">
                   {{ formatNumber(item.quantity) }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center">
+                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-white">
                   {{ item.unit }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right">
+                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-gray-900 dark:text-white">
                   {{ formatCurrency(item.unitPrice) }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right">
+                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-gray-900 dark:text-white">
                   {{ item.discount > 0 ? formatCurrency(item.discount) : '-' }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right font-medium">
+                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
                   {{ formatCurrency(item.total) }}
                 </td>
               </tr>
@@ -427,6 +427,32 @@ useHead({
     border: none;
     box-shadow: none;
     border-radius: 0;
+    background: white !important;
+  }
+  
+  /* Force light mode colors for print */
+  .bill-print-content * {
+    color: #1f2937 !important;
+    background: transparent !important;
+    border-color: #e5e7eb !important;
+  }
+  
+  .bill-print-content table {
+    background: white !important;
+  }
+  
+  .bill-print-content thead {
+    background: #f9fafb !important;
+  }
+  
+  .bill-print-content h1,
+  .bill-print-content h2,
+  .bill-print-content h3 {
+    color: #111827 !important;
+  }
+  
+  .text-primary-600 {
+    color: #2563eb !important;
   }
   
   body {

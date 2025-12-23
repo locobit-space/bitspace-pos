@@ -4,6 +4,141 @@
 // ============================================
 
 // ============================================
+// 🏪 SHOP CONFIGURATION TYPES
+// Visibility, Type & Templates for Easy Setup
+// ============================================
+
+/**
+ * Shop visibility - determines if discoverable in marketplace
+ */
+export type ShopVisibility = 'private' | 'public';
+
+/**
+ * Shop type categories with associated product templates
+ */
+export type ShopType =
+  | 'cafe'
+  | 'restaurant'
+  | 'retail'
+  | 'grocery'
+  | 'service'
+  | 'pharmacy'
+  | 'gym'
+  | 'karaoke'
+  | 'garage'
+  | 'other';
+
+/**
+ * Shop type metadata for UI display
+ */
+export interface ShopTypeMeta {
+  type: ShopType;
+  name: string;
+  nameLao: string;
+  icon: string;
+  description: string;
+  descriptionLao: string;
+}
+
+/**
+ * Category template for quick store setup
+ */
+export interface CategoryTemplate {
+  id: string;
+  name: string;
+  nameLao?: string;
+  icon?: string;
+  sortOrder: number;
+}
+
+/**
+ * Product template for quick store setup
+ */
+export interface ProductTemplate {
+  id: string;
+  name: string;
+  nameLao?: string;
+  description?: string;
+  categoryId: string;
+  price: number;
+  image?: string;
+}
+
+/**
+ * Complete shop type configuration with templates
+ */
+export interface ShopTypeConfig {
+  type: ShopType;
+  meta: ShopTypeMeta;
+  categories: CategoryTemplate[];
+  products: ProductTemplate[];
+}
+
+
+// ============================================
+// 💳 MEMBERSHIP & SUBSCRIPTION TYPES
+// For Gym, Clubs, and Subscription-Based Businesses
+// ============================================
+
+/**
+ * Membership plan status
+ */
+export type MembershipStatus = 'active' | 'expired' | 'cancelled' | 'suspended' | 'pending';
+
+/**
+ * Membership plan configuration
+ */
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  nameLao?: string;
+  description?: string;
+  descriptionLao?: string;
+  duration: number; // days
+  price: number;
+  currency?: string;
+  benefits: string[];
+  benefitsLao?: string[];
+  maxCheckIns?: number; // unlimited if not set
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Customer membership record
+ */
+export interface Membership {
+  id: string;
+  customerId: string;
+  customerName?: string;
+  planId: string;
+  planName?: string;
+  status: MembershipStatus;
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  checkInCount: number;
+  lastCheckIn?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Check-in record for membership tracking
+ */
+export interface MembershipCheckIn {
+  id: string;
+  membershipId: string;
+  customerId: string;
+  checkInTime: string;
+  checkOutTime?: string;
+  notes?: string;
+}
+
+// ============================================
 // 🧪 RECIPE & INGREDIENT TYPES
 // Cost Calculation + Stock Management
 // ============================================

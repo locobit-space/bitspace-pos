@@ -1,7 +1,9 @@
 <!-- components/dashboard/DashboardShopSetup.vue -->
-<!-- 🏪 Shop Setup Wizard for New Users -->
+<!-- 🏪 Shop Setup Wizard for New Users - Enhanced with Shop Type & Visibility -->
 <script setup lang="ts">
 import type { ShopConfig } from '~/composables/use-shop';
+import type { ShopType, ShopVisibility, ProductTemplate, CategoryTemplate } from '~/types';
+import { getShopTypeConfig } from '~/data/shop-templates';
 
 const emit = defineEmits<{
   (e: 'complete'): void;
@@ -10,13 +12,14 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const shop = useShop();
 const toast = useToast();
+const productsStore = useProductsStore();
 
-// Setup steps
+// Setup steps (now 4 steps)
 const currentStep = ref(1);
-const totalSteps = 3;
+const totalSteps = 4;
 const isSubmitting = ref(false);
 
-// Step 1: Shop Info
+// Step 1: Shop Info + Visibility
 const shopForm = ref({
   name: '',
   address: '',
@@ -24,21 +27,26 @@ const shopForm = ref({
   currency: 'LAK',
   timezone: 'Asia/Vientiane',
   language: 'en-US',
+  visibility: 'private' as ShopVisibility,
 });
 
-// Step 2: Branch Info
+// Step 2: Shop Type
+const shopType = ref<ShopType>('cafe');
+
+// Step 3: Branch Info
 const branchForm = ref({
   name: '',
   code: '',
   address: '',
 });
 
-// Step 3: Additional Settings
+// Step 4: Additional Settings + Templates
 const settingsForm = ref({
   taxRate: 0,
   tipEnabled: false,
   receiptFooter: '',
 });
+const applyTemplates = ref(true);
 
 // Currency options
 const currencyOptions = [
@@ -55,17 +63,21 @@ const languageOptions = [
   { value: 'lo-LA', label: '🇱🇦 ລາວ (Lao)' },
 ];
 
-// Timezone options (common for region) - for future use
-const _timezoneOptions = [
-  { value: 'Asia/Vientiane', label: 'Vientiane (GMT+7)' },
-  { value: 'Asia/Bangkok', label: 'Bangkok (GMT+7)' },
-  { value: 'Asia/Singapore', label: 'Singapore (GMT+8)' },
-  { value: 'UTC', label: 'UTC (GMT+0)' },
-];
+// Step icons and titles
+const stepConfig = computed(() => [
+  { icon: 'i-heroicons-building-storefront', color: 'primary', title: t('shop.setup.step1.title') },
+  { icon: 'i-heroicons-squares-2x2', color: 'purple', title: t('shop.setup.step2.title') },
+  { icon: 'i-heroicons-map', color: 'green', title: t('shop.setup.step3.title') },
+  { icon: 'i-heroicons-cog-6-tooth', color: 'amber', title: t('shop.setup.step4.title') },
+]);
+
+// Get selected shop type config
+const selectedTypeConfig = computed(() => getShopTypeConfig(shopType.value));
 
 // Validation
 const isStep1Valid = computed(() => shopForm.value.name.trim().length > 0);
-const isStep2Valid = computed(() => branchForm.value.name.trim().length > 0 && branchForm.value.code.trim().length > 0);
+const isStep2Valid = computed(() => !!shopType.value);
+const isStep3Valid = computed(() => branchForm.value.name.trim().length > 0 && branchForm.value.code.trim().length > 0);
 
 // Methods
 const nextStep = () => {
@@ -77,6 +89,45 @@ const nextStep = () => {
 const prevStep = () => {
   if (currentStep.value > 1) {
     currentStep.value--;
+  }
+};
+
+const applyProductTemplates = async () => {
+  if (!applyTemplates.value || !selectedTypeConfig.value) return;
+
+  const config = selectedTypeConfig.value;
+
+  // Create categories
+  for (const cat of config.categories) {
+    await productsStore.addCategory({
+      name: cat.name,
+      description: cat.nameLao,
+      icon: cat.icon,
+      sortOrder: cat.sortOrder,
+    });
+  }
+
+  // Create products
+  for (const prod of config.products) {
+    // Find the category
+    const categoryId = productsStore.categories.value.find(
+      (c) => c.name === config.categories.find((tc) => tc.id === prod.categoryId)?.name
+    )?.id;
+
+    if (categoryId) {
+      await productsStore.addProduct({
+        name: prod.name,
+        description: prod.nameLao,
+        sku: prod.id.toUpperCase(),
+        categoryId,
+        unitId: 'default',
+        price: prod.price,
+        stock: 0,
+        minStock: 0,
+        branchId: '',
+        status: 'active',
+      });
+    }
   }
 };
 
@@ -92,6 +143,8 @@ const completeSetup = async () => {
       currency: shopForm.value.currency,
       timezone: shopForm.value.timezone,
       language: shopForm.value.language,
+      visibility: shopForm.value.visibility,
+      shopType: shopType.value,
       taxRate: settingsForm.value.taxRate,
       tipEnabled: settingsForm.value.tipEnabled,
       receiptFooter: settingsForm.value.receiptFooter,
@@ -100,17 +153,22 @@ const completeSetup = async () => {
     await shop.saveShopConfig(shopConfig);
     
     // Create first branch
-    await shop.createFirstBranch({
+    const newBranch = await shop.createFirstBranch({
       name: branchForm.value.name,
       code: branchForm.value.code,
       address: branchForm.value.address,
     });
+
+    // Apply product templates if enabled
+    if (applyTemplates.value && newBranch) {
+      await applyProductTemplates();
+    }
     
     toast.add({
       title: t('shop.setup.success'),
       description: t('shop.setup.successDescription'),
       icon: 'i-heroicons-check-circle',
-      color: 'green',
+      color: 'success',
     });
     
     emit('complete');
@@ -120,7 +178,7 @@ const completeSetup = async () => {
       title: t('common.error'),
       description: String(error),
       icon: 'i-heroicons-exclamation-circle',
-      color: 'red',
+      color: 'error',
     });
   } finally {
     isSubmitting.value = false;
@@ -162,7 +220,7 @@ watch(() => branchForm.value.name, (name) => {
             </div>
             <div 
               v-if="step < totalSteps"
-              class="w-16 h-1 mx-2 rounded-full transition-colors"
+              class="w-12 sm:w-16 h-1 mx-1 sm:mx-2 rounded-full transition-colors"
               :class="step < currentStep 
                 ? 'bg-primary-500' 
                 : 'bg-gray-200 dark:bg-gray-700'"
@@ -173,7 +231,7 @@ watch(() => branchForm.value.name, (name) => {
 
       <!-- Card -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
-        <!-- Step 1: Shop Info -->
+        <!-- Step 1: Shop Info + Visibility -->
         <div v-show="currentStep === 1" class="space-y-4">
           <div class="flex items-center gap-2 mb-4">
             <div class="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
@@ -191,6 +249,7 @@ watch(() => branchForm.value.name, (name) => {
               :placeholder="t('shop.namePlaceholder')"
               size="lg"
               icon="i-heroicons-building-storefront"
+              class="w-full"
             />
           </UFormField>
 
@@ -199,6 +258,7 @@ watch(() => branchForm.value.name, (name) => {
               v-model="shopForm.address" 
               :placeholder="t('shop.addressPlaceholder')"
               icon="i-heroicons-map-pin"
+              class="w-full"
             />
           </UFormField>
 
@@ -207,6 +267,7 @@ watch(() => branchForm.value.name, (name) => {
               v-model="shopForm.phone" 
               :placeholder="t('shop.phonePlaceholder')"
               icon="i-heroicons-phone"
+              class="w-full"
             />
           </UFormField>
 
@@ -217,6 +278,7 @@ watch(() => branchForm.value.name, (name) => {
                 :items="currencyOptions"
                 value-key="value"
                 label-key="label"
+                class="w-full"
               />
             </UFormField>
 
@@ -226,20 +288,73 @@ watch(() => branchForm.value.name, (name) => {
                 :items="languageOptions"
                 value-key="value"
                 label-key="label"
+                class="w-full"
               />
             </UFormField>
           </div>
+
+          <!-- Shop Visibility -->
+          <div class="pt-2">
+            <p class="text-sm font-medium text-gray-900 dark:text-white mb-3">
+              {{ t('shop.setup.visibility') }}
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                class="p-3 rounded-lg border-2 text-left transition-all"
+                :class="shopForm.visibility === 'private' 
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'border-gray-200 dark:border-gray-700'"
+                @click="shopForm.visibility = 'private'"
+              >
+                <UIcon name="i-heroicons-lock-closed" class="w-5 h-5 mb-1" :class="shopForm.visibility === 'private' ? 'text-primary-600' : 'text-gray-400'" />
+                <p class="font-medium text-sm" :class="shopForm.visibility === 'private' ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-white'">
+                  {{ t('shop.setup.private') }}
+                </p>
+                <p class="text-xs text-gray-500">{{ t('shop.setup.privateDesc') }}</p>
+              </button>
+              <button
+                type="button"
+                class="p-3 rounded-lg border-2 text-left transition-all"
+                :class="shopForm.visibility === 'public' 
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'border-gray-200 dark:border-gray-700'"
+                @click="shopForm.visibility = 'public'"
+              >
+                <UIcon name="i-heroicons-globe-alt" class="w-5 h-5 mb-1" :class="shopForm.visibility === 'public' ? 'text-primary-600' : 'text-gray-400'" />
+                <p class="font-medium text-sm" :class="shopForm.visibility === 'public' ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-white'">
+                  {{ t('shop.setup.public') }}
+                </p>
+                <p class="text-xs text-gray-500">{{ t('shop.setup.publicDesc') }}</p>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Step 2: Branch Info -->
+        <!-- Step 2: Shop Type -->
         <div v-show="currentStep === 2" class="space-y-4">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h2 class="font-semibold text-gray-900 dark:text-white">{{ t('shop.setup.step2.title') }}</h2>
+              <p class="text-xs text-gray-500">{{ t('shop.setup.step2.subtitle') }}</p>
+            </div>
+          </div>
+
+          <ShopTypeSelector v-model="shopType" />
+        </div>
+
+        <!-- Step 3: Branch Info -->
+        <div v-show="currentStep === 3" class="space-y-4">
           <div class="flex items-center gap-2 mb-4">
             <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <UIcon name="i-heroicons-map" class="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h2 class="font-semibold text-gray-900 dark:text-white">{{ t('shop.setup.step2.title') }}</h2>
-              <p class="text-xs text-gray-500">{{ t('shop.setup.step2.subtitle') }}</p>
+              <h2 class="font-semibold text-gray-900 dark:text-white">{{ t('shop.setup.step3.title') }}</h2>
+              <p class="text-xs text-gray-500">{{ t('shop.setup.step3.subtitle') }}</p>
             </div>
           </div>
 
@@ -249,6 +364,7 @@ watch(() => branchForm.value.name, (name) => {
               :placeholder="t('branch.namePlaceholder')"
               size="lg"
               icon="i-heroicons-building-office"
+              class="w-full"
             />
           </UFormField>
 
@@ -257,6 +373,7 @@ watch(() => branchForm.value.name, (name) => {
               v-model="branchForm.code" 
               :placeholder="t('branch.codePlaceholder')"
               icon="i-heroicons-tag"
+              class="w-full"
             />
             <template #hint>
               <span class="text-xs text-gray-500">{{ t('branch.codeHint') }}</span>
@@ -268,19 +385,20 @@ watch(() => branchForm.value.name, (name) => {
               v-model="branchForm.address" 
               :placeholder="t('branch.addressPlaceholder')"
               :rows="2"
+              class="w-full"
             />
           </UFormField>
         </div>
 
-        <!-- Step 3: Settings -->
-        <div v-show="currentStep === 3" class="space-y-4">
+        <!-- Step 4: Settings + Templates -->
+        <div v-show="currentStep === 4" class="space-y-4">
           <div class="flex items-center gap-2 mb-4">
-            <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-              <UIcon name="i-heroicons-cog-6-tooth" class="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-cog-6-tooth" class="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h2 class="font-semibold text-gray-900 dark:text-white">{{ t('shop.setup.step3.title') }}</h2>
-              <p class="text-xs text-gray-500">{{ t('shop.setup.step3.subtitle') }}</p>
+              <h2 class="font-semibold text-gray-900 dark:text-white">{{ t('shop.setup.step4.title') }}</h2>
+              <p class="text-xs text-gray-500">{{ t('shop.setup.step4.subtitle') }}</p>
             </div>
           </div>
 
@@ -312,8 +430,17 @@ watch(() => branchForm.value.name, (name) => {
               v-model="settingsForm.receiptFooter" 
               :placeholder="t('settings.receiptFooterPlaceholder')"
               :rows="2"
+              class="w-full"
             />
           </UFormField>
+
+          <!-- Product Templates -->
+          <div class="pt-2">
+            <ShopProductTemplatePreview
+              :shop-type="shopType"
+              v-model="applyTemplates"
+            />
+          </div>
 
           <!-- Summary -->
           <div class="mt-6 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
@@ -322,6 +449,7 @@ watch(() => branchForm.value.name, (name) => {
               <p><span class="opacity-70">{{ t('shop.name') }}:</span> {{ shopForm.name }}</p>
               <p><span class="opacity-70">{{ t('branch.name') }}:</span> {{ branchForm.name }} ({{ branchForm.code }})</p>
               <p><span class="opacity-70">{{ t('settings.currency') }}:</span> {{ shopForm.currency }}</p>
+              <p><span class="opacity-70">{{ t('shop.setup.shopType') }}:</span> {{ shopType }}</p>
             </div>
           </div>
         </div>
@@ -344,7 +472,7 @@ watch(() => branchForm.value.name, (name) => {
             color="primary"
             icon="i-heroicons-arrow-right"
             trailing
-            :disabled="(currentStep === 1 && !isStep1Valid) || (currentStep === 2 && !isStep2Valid)"
+            :disabled="(currentStep === 1 && !isStep1Valid) || (currentStep === 2 && !isStep2Valid) || (currentStep === 3 && !isStep3Valid)"
             @click="nextStep"
           >
             {{ t('common.next') }}

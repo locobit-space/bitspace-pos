@@ -298,7 +298,7 @@ onMounted(async () => {
         v-if="order.orderType === 'dine_in' || order.kitchenStatus"
         class="bg-white dark:bg-gray-800 rounded-xl border-gray-200 p-4 border dark:border-gray-700"
       >
-        <h3 class="font-semibold mb-3">🍳 {{ t("kitchen.status.title") || "Kitchen Status" }}</h3>
+        <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">🍳 {{ t("kitchen.status.title") || "Kitchen Status" }}</h3>
         <div class="flex gap-2 flex-wrap">
           <UButton
             v-for="status in kitchenStatusOptions"
@@ -370,7 +370,7 @@ onMounted(async () => {
             :class="
               activeTab === tab
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
             "
             @click="activeTab = tab as any"
           >
@@ -443,12 +443,12 @@ onMounted(async () => {
             class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4 space-y-2"
           >
             <div class="flex justify-between text-sm">
-              <span class="text-gray-500">{{ t("pos.subtotal") }}</span>
-              <span>{{ formatCurrency(subtotal) }}</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t("pos.subtotal") }}</span>
+              <span class="text-gray-900 dark:text-white">{{ formatCurrency(subtotal) }}</span>
             </div>
             <div class="flex justify-between text-lg font-bold">
-              <span>{{ t("pos.total") }}</span>
-              <span class="text-primary-600">{{
+              <span class="text-gray-900 dark:text-white">{{ t("pos.total") }}</span>
+              <span class="text-primary-600 dark:text-primary-400">{{
                 formatCurrency(order.total)
               }}</span>
             </div>
@@ -460,7 +460,7 @@ onMounted(async () => {
           <!-- Customer -->
           <UCard>
             <template #header>
-              <h3 class="text-lg font-semibold">{{ t("orders.customer") }}</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t("orders.customer") }}</h3>
             </template>
             <div class="flex items-center gap-3">
               <div
@@ -484,7 +484,7 @@ onMounted(async () => {
           <!-- Status -->
           <UCard>
             <template #header>
-              <h3 class="text-lg font-semibold">{{ t("orders.status") }}</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t("orders.status") }}</h3>
             </template>
             <div class="space-y-3">
               <USelect
@@ -514,7 +514,7 @@ onMounted(async () => {
           <!-- Notes -->
           <UCard>
             <template #header>
-              <h3 class="text-lg font-semibold">{{ t("orders.notes") }}</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t("orders.notes") }}</h3>
             </template>
             <UTextarea
               v-model="editableNotes"
@@ -538,7 +538,7 @@ onMounted(async () => {
       <div v-if="activeTab === 'payment'">
         <UCard>
           <template #header>
-            <h3 class="text-lg font-semibold">{{ t("pos.payment") }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t("pos.payment") }}</h3>
           </template>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

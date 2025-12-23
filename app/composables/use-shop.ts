@@ -2,7 +2,70 @@
 // 🏪 Shop & Branch Configuration Management
 // Stores shop settings in Nostr (kind: 30078)
 
-import type { Branch, StoreSettings, GeneralSettings, LightningSettings, SecuritySettings } from '~/types';
+import type { Branch, StoreSettings, GeneralSettings, LightningSettings, SecuritySettings, ShopVisibility, ShopType } from '~/types';
+
+/**
+ * Feature flags for enabling/disabling shop modules
+ */
+export interface EnabledFeatures {
+  // Core (always on)
+  products: boolean;
+  orders: boolean;
+  pos: boolean;
+  reports: boolean;
+  settings: boolean;
+  // Optional features
+  customers: boolean;
+  inventory: boolean;
+  kitchen: boolean;
+  recipes: boolean;
+  ingredients: boolean;
+  memberships: boolean;
+  accounting: boolean;
+  invoicing: boolean;
+  delivery: boolean;
+  loyalty: boolean;
+}
+
+/**
+ * Get default features based on shop type
+ */
+export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
+  const base: EnabledFeatures = {
+    products: true,
+    orders: true,
+    pos: true,
+    reports: true,
+    settings: true,
+    customers: true,
+    inventory: true,
+    kitchen: false,
+    recipes: false,
+    ingredients: false,
+    memberships: false,
+    accounting: false,
+    invoicing: false,
+    delivery: false,
+    loyalty: false,
+  };
+
+  // Customize based on shop type
+  switch (shopType) {
+    case 'restaurant':
+    case 'cafe':
+      return { ...base, kitchen: true, recipes: true, ingredients: true };
+    case 'gym':
+      return { ...base, memberships: true, inventory: false, kitchen: false };
+    case 'karaoke':
+      return { ...base, kitchen: false, loyalty: true };
+    case 'garage':
+      return { ...base, invoicing: true, inventory: true };
+    case 'service':
+      return { ...base, invoicing: true, inventory: false };
+    default:
+      return base;
+  }
+}
 
 export interface ShopConfig {
   name: string;
@@ -17,6 +80,18 @@ export interface ShopConfig {
   taxRate: number;
   tipEnabled: boolean;
   receiptFooter?: string;
+  // Shop type & visibility
+  visibility: ShopVisibility;
+  shopType: ShopType;
+  // Feature flags
+  enabledFeatures: EnabledFeatures;
+  // Marketplace fields
+  marketplaceDescription?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
 }
 
 // Singleton state
@@ -40,6 +115,7 @@ export function useShop() {
 
   // Convert StoreSettings to ShopConfig
   function storeSettingsToShopConfig(settings: StoreSettings): ShopConfig {
+    const shopType: ShopType = 'other';
     return {
       name: settings.general?.storeName || '',
       address: settings.general?.storeAddress,
@@ -52,6 +128,10 @@ export function useShop() {
       taxRate: settings.general?.taxRate || 0,
       tipEnabled: settings.general?.tipEnabled || false,
       receiptFooter: settings.general?.receiptFooter,
+      // Shop type & visibility defaults
+      visibility: 'private',
+      shopType,
+      enabledFeatures: getDefaultFeatures(shopType),
     };
   }
 
@@ -137,6 +217,7 @@ export function useShop() {
     error.value = null;
 
     try {
+      const shopType = config.shopType ?? shopConfig.value?.shopType ?? 'other';
       const newConfig: ShopConfig = {
         name: config.name || shopConfig.value?.name || '',
         address: config.address ?? shopConfig.value?.address,
@@ -150,6 +231,12 @@ export function useShop() {
         taxRate: config.taxRate ?? shopConfig.value?.taxRate ?? 0,
         tipEnabled: config.tipEnabled ?? shopConfig.value?.tipEnabled ?? false,
         receiptFooter: config.receiptFooter ?? shopConfig.value?.receiptFooter,
+        // Shop type & visibility
+        visibility: config.visibility ?? shopConfig.value?.visibility ?? 'private',
+        shopType,
+        enabledFeatures: config.enabledFeatures ?? shopConfig.value?.enabledFeatures ?? getDefaultFeatures(shopType),
+        marketplaceDescription: config.marketplaceDescription ?? shopConfig.value?.marketplaceDescription,
+        socialLinks: config.socialLinks ?? shopConfig.value?.socialLinks,
       };
 
       // Get existing settings or create new

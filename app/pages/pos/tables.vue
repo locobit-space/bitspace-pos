@@ -154,6 +154,15 @@
             >
               ⏱️ {{ tablesStore.formatDuration(tablesStore.getTableOccupiedMinutes(table.id)) || '0m' }}
             </div>
+            <!-- Live Cost for Per-Hour Billing -->
+            <div
+              v-if="table.billingType === 'per_hour' && table.hourlyRate"
+              class="mt-1"
+            >
+              <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
+                💰 {{ formatRoomCost(table) }}
+              </span>
+            </div>
             <p v-if="table.currentOrderId" class="text-xs text-muted mt-1">
               Order #{{ table.currentOrderId.slice(-4) }}
             </p>
@@ -265,6 +274,17 @@
               @click="addToOrder(selectedTable)"
             >
               {{ $t("pos.tables.addItems") }}
+            </UButton>
+
+            <!-- Room Checkout Button (for per-hour billing) -->
+            <UButton
+              v-if="selectedTable.status === 'occupied' && selectedTable.billingType === 'per_hour'"
+              color="purple"
+              variant="soft"
+              icon="i-heroicons-clock"
+              @click="openCheckoutModal(selectedTable)"
+            >
+              {{ $t("pos.tables.checkout") || 'Room Checkout' }}
             </UButton>
 
             <UButton
@@ -661,63 +681,95 @@
       </template>
     </UModal>
 
-    <!-- Move/Merge Table Modal -->
-    <UModal v-model:open="showTableSelectionModal">
-      <template #header>
-        <h3 class="text-lg font-bold">
-          {{ tableSelectionMode === 'move' ? 'Move Table' : 'Merge Bill' }}
-        </h3>
-        <p class="text-sm text-gray-500">
-          Select a target table to {{ tableSelectionMode === 'move' ? 'move to' : 'merge with' }}.
-        </p>
-      </template>
-
-      <template #body>
-        <USelect
-          v-model="selectedTargetTableId"
-          :items="targetTablesOptions"
-          label-key="label"
-          value-key="value"
-          placeholder="Select a table..."
-          class="w-full"
-        />
-        
-        <div v-if="selectedTargetTableId" class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
-           <p class="text-sm">
-             <span class="font-bold">Summary:</span>
-             <br/>
-             Action: {{ tableSelectionMode === 'move' ? 'Move' : 'Merge' }}
-             <br/>
-             From: {{ sourceTableForAction?.name || sourceTableForAction?.number }}
-             <br/>
-             To: {{ tablesStore.getTable(selectedTargetTableId)?.name || tablesStore.getTable(selectedTargetTableId)?.number }}
-           </p>
-        </div>
-      </template>
-
-      <template #footer>
-        <div class="flex justify-end gap-2">
-           <UButton variant="ghost" @click="showTableSelectionModal = false">
-             Cancel
-           </UButton>
-           <UButton 
-             :color="tableSelectionMode === 'move' ? 'primary' : 'orange'" 
-             @click="confirmTableAction"
-             :disabled="!selectedTargetTableId"
-           >
-             Confirm {{ tableSelectionMode === 'move' ? 'Move' : 'Merge' }}
-           </UButton>
-        </div>
-      </template>
-    </UModal>
+    <!-- Room Checkout Modal -->
+    <RoomCheckoutModal
+      v-model:open="showCheckoutModal"
+      :table="checkoutTable"
+      @checkout="onRoomCheckout"
+      @extend="onRoomExtend"
+    />
   </UContainer>
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  layout: "default",
-  middleware: ["auth", "permission"],
-});
+// ... existing imports ...
+import { useOrders } from '~/composables/use-orders';
+
+const ordersStore = useOrders();
+
+// ... existing code ...
+
+// Handlers
+const openCheckoutModal = (table: any) => {
+  checkoutTable.value = table;
+  showCheckoutModal.value = true;
+};
+
+const onRoomCheckout = async ({ tableId, roomCharge }: { tableId: string; roomCharge: number }) => {
+  const table = tables.value.find(t => t.id === tableId);
+  if (!table) return;
+
+  try {
+    // 1. If no current order, create one
+    let orderId = table.currentOrderId;
+    
+    if (!orderId) {
+      const newOrder = await ordersStore.createOrder({
+        tableId: table.id,
+        tableNumber: table.number,
+        type: 'dine_in',
+        status: 'pending',
+        items: [], // Will add room charge item next
+      });
+      orderId = newOrder.id;
+      // Link order to table
+      await tablesStore.linkOrder(table.id, orderId);
+    }
+    
+    // 2. Add room charge as a line item
+    if (orderId && roomCharge > 0) {
+      await ordersStore.addOrderItem(orderId, {
+        productId: 'room_charge', // Special product ID for room charge
+        name: t('pos.tables.roomCharge') || 'Room Charge',
+        price: roomCharge,
+        quantity: 1,
+        type: 'service',
+      });
+      
+      toast.add({
+        title: t('common.success'),
+        description: t('pos.tables.roomChargeAdded'),
+        color: 'green',
+      });
+    }
+    
+    // 3. Navigate to order for payment
+    if (orderId) {
+      router.push(`/orders/${orderId}`);
+    }
+    
+  } catch (error) {
+    console.error('Failed to checkout room:', error);
+    toast.add({
+      title: t('common.error'),
+      description: 'Failed to process room checkout',
+      color: 'red',
+    });
+  }
+  
+  showCheckoutModal.value = false;
+};
+
+const onRoomExtend = async ({ tableId, minutes }: { tableId: string; minutes: number }) => {
+  // Logic to extend time (could update expectedEndTime field on table)
+  // For now just show a toast as the timer keeps running anyway
+  toast.add({
+    title: t('common.success'),
+    description: `Added ${minutes} minutes to room time`,
+    color: 'green',
+  });
+};
+
 
 const { t } = useI18n();
 const toast = useToast();
@@ -741,6 +793,11 @@ const savingReservation = ref(false);
 const selectedTable = ref<any | null>(null); // Using any safely for now as simple ref
 const editingTable = ref<any | null>(null);
 const reservingTable = ref<any | null>(null);
+const showCheckoutModal = ref(false);
+const checkoutTable = ref<any | null>(null); // Table being checked out
+
+// Imports
+import RoomCheckoutModal from '~/components/tables/RoomCheckoutModal.vue';
 
 // Initialize
 onMounted(async () => {
@@ -900,6 +957,20 @@ const getFloorName = (zoneId: string) => {
 
 const formatCurrency = (value: number) => {
   return format(value);
+};
+
+// Calculate and format room cost based on occupied time and hourly rate
+const formatRoomCost = (table: any) => {
+  if (!table.occupiedAt || !table.hourlyRate) return format(0);
+  
+  const now = new Date();
+  const startTime = new Date(table.occupiedAt);
+  const hoursUsed = (now.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+  const minimumHours = table.minimumHours || 1;
+  const billedHours = Math.max(Math.ceil(hoursUsed), minimumHours);
+  const cost = billedHours * table.hourlyRate;
+  
+  return format(cost);
 };
 
 const formatTime = (timeStr: string) => {

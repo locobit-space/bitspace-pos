@@ -35,6 +35,11 @@ export interface Table {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Time-based billing (for Karaoke rooms)
+  billingType?: 'per_order' | 'per_hour'; // Billing method
+  hourlyRate?: number; // Price per hour
+  minimumHours?: number; // Minimum billing hours (e.g., 1)
+  expectedEndTime?: string; // Expected checkout time (for extend tracking)
 }
 
 export interface TableZone {

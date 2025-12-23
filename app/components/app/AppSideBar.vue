@@ -384,68 +384,118 @@ onMounted(() => {
   }
 });
 
-const items = computed(() => [
+const shop = useShop();
+
+// Feature to route mapping
+const featureRoutes = {
+  products: '/products',
+  orders: '/orders',
+  pos: '/pos',
+  reports: '/reports',
+  settings: '/settings',
+  customers: '/customers',
+  inventory: '/inventory',
+  kitchen: '/kitchen',
+  recipes: '/recipes',
+  ingredients: '/ingredients',
+  memberships: '/memberships',
+  accounting: '/accounting',
+};
+
+// All navigation items with their feature key
+const allItems = computed(() => [
   {
     label: t("navigation.dashboard"),
     to: "/",
     icon: "i-heroicons-home",
+    feature: null, // Always visible
   },
   {
     label: t("navigation.pos"),
     to: "/pos",
     icon: "i-heroicons-bolt",
+    feature: 'pos',
   },
   {
     label: t("navigation.orders"),
     to: "/orders",
     icon: "i-heroicons-shopping-bag",
+    feature: 'orders',
   },
   {
     label: t("navigation.products"),
     to: "/products",
     icon: "i-heroicons-cube",
+    feature: 'products',
   },
   {
     label: "Recipes",
     to: "/recipes",
     icon: "i-heroicons-beaker",
+    feature: 'recipes',
   },
   {
     label: "Ingredients",
     to: "/ingredients",
     icon: "i-heroicons-variable",
+    feature: 'ingredients',
   },
   {
     label: t("navigation.customers"),
     to: "/customers",
     icon: "i-heroicons-users",
+    feature: 'customers',
+  },
+  {
+    label: t("memberships.title") || "Memberships",
+    to: "/memberships",
+    icon: "i-heroicons-credit-card",
+    feature: 'memberships',
   },
   {
     label: t("navigation.inventory"),
     to: "/inventory",
     icon: "i-heroicons-archive-box",
+    feature: 'inventory',
   },
   {
     label: t("navigation.kitchen"),
     to: "/kitchen",
     icon: "i-heroicons-fire",
+    feature: 'kitchen',
   },
   {
     label: t("navigation.reports"),
     to: "/reports",
     icon: "i-heroicons-chart-bar",
+    feature: 'reports',
   },
   {
     label: t("navigation.accounting"),
     to: "/accounting",
     icon: "i-heroicons-calculator",
+    feature: 'accounting',
   },
   {
     label: t("navigation.settings"),
     to: "/settings",
     icon: "i-heroicons-cog-6-tooth",
+    feature: 'settings',
   },
 ]);
+
+// Filter items based on enabled features
+const items = computed(() => {
+  const enabledFeatures = shop.shopConfig.value?.enabledFeatures;
+  if (!enabledFeatures) return allItems.value;
+  
+  return allItems.value.filter(item => {
+    // Always show items without a feature requirement
+    if (!item.feature) return true;
+    // Check if feature is enabled
+    return (enabledFeatures as any)[item.feature] === true;
+  });
+});
 
 // Provider badge styling
 const providerBadgeClass = computed(() => {

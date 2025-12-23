@@ -45,6 +45,15 @@
         <UButton
           v-if="canEditProducts"
           color="primary"
+          variant="soft"
+          size="lg"
+          :label="$t('products.lookup.discover')"
+          icon="i-heroicons-magnifying-glass-circle"
+          @click="showLookupModal = true"
+        />
+        <UButton
+          v-if="canEditProducts"
+          color="primary"
           size="lg"
           :label="$t('common.add')"
           icon="i-heroicons-plus"
@@ -382,6 +391,12 @@
       @cancel="showProductModal = false"
       @add-category="openCategoryModal()"
       @add-unit="openUnitModal()"
+    />
+
+    <!-- Product Lookup Modal -->
+    <ProductsProductLookupModal
+      v-model:open="showLookupModal"
+      @import="handleLookupImport"
     />
 
     <!-- Delete Confirmation Modal -->
@@ -1099,6 +1114,7 @@ const itemsPerPage = ref<number>(10);
 const showProductModal = ref<boolean>(false);
 const showDeleteModal = ref<boolean>(false);
 const showViewModal = ref<boolean>(false);
+const showLookupModal = ref<boolean>(false);
 
 // ============================================
 // Settings Panel State (Categories/Units)
@@ -1385,6 +1401,48 @@ const deleteProduct = (product: Product) => {
   showDeleteModal.value = true;
 };
 
+// Handler for importing products from public database lookup
+const handleLookupImport = async (products: import('~/composables/use-product-lookup').PublicProduct[]) => {
+  const toast = useToast();
+  const imported = [];
+  
+  for (const product of products) {
+    try {
+      // Create a new product from the lookup result
+      const newProduct = {
+        name: product.name,
+        sku: `SKU-${Date.now().toString(36).toUpperCase()}`,
+        description: product.description || '',
+        categoryId: '', // User will need to assign category
+        unitId: '', // User will need to assign unit
+        price: product.suggestedPrice || 0,
+        stock: 0,
+        minStock: 0,
+        branchId: selectedBranch.value !== 'all' ? selectedBranch.value : '',
+        status: 'active' as const,
+        image: product.image || '',
+        barcode: product.barcode,
+        productType: 'good' as const,
+        trackStock: true,
+      };
+      
+      await productsStore.addProduct(newProduct);
+      imported.push(product.name);
+    } catch (error) {
+      console.error('Failed to import product:', product.name, error);
+    }
+  }
+  
+  if (imported.length > 0) {
+    toast.add({
+      title: t('common.success'),
+      description: `Imported ${imported.length} product(s)`,
+      icon: 'i-heroicons-check-circle',
+      color: 'success',
+    });
+  }
+};
+
 // Handler for ProductModal save event
 const handleProductSave = async (data: {
   name: string;
@@ -1400,6 +1458,7 @@ const handleProductSave = async (data: {
   image: string;
   productType: "good" | "service" | "digital" | "subscription" | "bundle";
   trackStock: boolean;
+  isPublic: boolean;
   hasExpiry: boolean;
   defaultShelfLifeDays: number | undefined;
   trackLots: boolean;
@@ -1434,6 +1493,7 @@ const handleProductSave = async (data: {
       image: data.image || "📦",
       productType: data.productType || "good",
       trackStock: shouldTrackStock,
+      isPublic: data.isPublic,
       // Expiry tracking fields
       hasExpiry: data.hasExpiry,
       defaultShelfLifeDays: data.defaultShelfLifeDays,
