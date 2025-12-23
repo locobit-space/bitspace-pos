@@ -1425,6 +1425,7 @@ export interface GeneralSettings {
   language: string;
   timezone: string;
   paymentTerms?: PaymentTerm[];
+  enabledFeatures?: Record<string, boolean>; // Feature flags
 }
 
 export interface StoreSettings {

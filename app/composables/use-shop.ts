@@ -131,7 +131,7 @@ export function useShop() {
       // Shop type & visibility defaults
       visibility: 'private',
       shopType,
-      enabledFeatures: getDefaultFeatures(shopType),
+      enabledFeatures: (settings.general?.enabledFeatures as unknown as EnabledFeatures) || getDefaultFeatures(shopType),
     };
   }
 
@@ -150,6 +150,8 @@ export function useShop() {
       tipEnabled: config.tipEnabled,
       tipSuggestions: [10, 15, 20],
       receiptFooter: config.receiptFooter,
+      // @ts-ignore - Record<string, boolean> vs EnabledFeatures match
+      enabledFeatures: config.enabledFeatures,
     };
   }
 
