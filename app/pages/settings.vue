@@ -14,6 +14,11 @@ const navItems = computed(() => [
     icon: 'i-heroicons-cog-6-tooth',
   },
   {
+    label: t('settings.features.title') || 'Features & Modules',
+    to: '/settings/features',
+    icon: 'i-heroicons-squares-plus',
+  },
+  {
     label: t('settings.account.title'),
     to: '/settings/account',
     icon: 'i-heroicons-user-circle',

@@ -465,6 +465,29 @@
             </UFormField>
           </div>
 
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField :label="$t('pos.tables.billingType') || 'Billing Type'">
+              <USelect
+                v-model="tableForm.billingType"
+                :items="billingTypeOptions"
+                value-key="value"
+                label-key="label"
+              />
+            </UFormField>
+
+            <UFormField 
+              v-if="tableForm.billingType === 'per_hour'"
+              :label="$t('pos.tables.hourlyRate') || 'Hourly Rate'"
+            >
+              <UInput
+                v-model.number="tableForm.hourlyRate"
+                type="number"
+                min="0"
+                step="1000"
+              />
+            </UFormField>
+          </div>
+
           <UFormField :label="$t('pos.tables.floor')">
             <USelect
               v-model="tableForm.floorId"
@@ -693,7 +716,6 @@
 
 <script setup lang="ts">
 // ... existing imports ...
-import { useOrders } from '~/composables/use-orders';
 
 const ordersStore = useOrders();
 
@@ -826,7 +848,10 @@ const tableForm = reactive({
   seats: 4,
   minSeats: 1,
   floorId: "",
+  floorId: "",
   shape: "square" as "round" | "square" | "rectangle",
+  billingType: "per_order" as "per_order" | "per_hour",
+  hourlyRate: 0,
 });
 
 const reservationForm = reactive({
@@ -843,6 +868,11 @@ const shapeOptions = [
   { value: "round", label: t("tables.shapes.round") || "Round" },
   { value: "rectangle", label: t("tables.shapes.rectangle") || "Rectangle" },
   { value: "oval", label: t("tables.shapes.oval") || "Oval" },
+];
+
+const billingTypeOptions = [
+  { value: "per_order", label: t("pos.tables.perOrder") || "Per Order" },
+  { value: "per_hour", label: t("pos.tables.perHour") || "Per Hour" },
 ];
 
 // Computed
@@ -1003,6 +1033,8 @@ const openTableModal = (table?: any) => {
     tableForm.minSeats = table.minCapacity || 1;
     tableForm.shape = table.shape;
     tableForm.floorId = table.zone || "";
+    tableForm.billingType = table.billingType || "per_order";
+    tableForm.hourlyRate = table.hourlyRate || 0;
   } else {
     tableForm.number = "";
     tableForm.name = "";
@@ -1010,6 +1042,8 @@ const openTableModal = (table?: any) => {
     tableForm.minSeats = 1;
     tableForm.shape = "square";
     tableForm.floorId = currentFloor.value || activeZones.value[0]?.id || "";
+    tableForm.billingType = "per_order";
+    tableForm.hourlyRate = 0;
   }
   showTableModal.value = true;
 };
@@ -1026,6 +1060,9 @@ const saveTable = async () => {
       zone: tableForm.floorId,
       isActive: true,
       qrOrderingEnabled: true,
+      billingType: tableForm.billingType,
+      hourlyRate: tableForm.hourlyRate,
+      minimumHours: 1,
     };
 
     if (editingTable.value) {
