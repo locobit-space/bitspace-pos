@@ -48,7 +48,7 @@ const loadPaymentTerms = async () => {
 };
 
 const paymentTermOptions = computed(() => [
-  { value: '', label: t('common.none') || 'None' },
+  { value: 'none', label: t('common.none') || 'None' },
   ...paymentTerms.value.map(term => ({
     value: term.id,
     label: `${term.name} (${term.days} days)`,
@@ -120,9 +120,18 @@ const customerForm = ref({
   address: "",
   notes: "",
   tags: [] as string[],
+  tier: "bronze" as "bronze" | "silver" | "gold" | "platinum",
   defaultPaymentTermId: "",
   creditLimit: 0,
 });
+
+// Tier options for form selector (without 'all')
+const formTierOptions = [
+  { value: "bronze", label: t("loyalty.bronze") || "Bronze" },
+  { value: "silver", label: t("loyalty.silver") || "Silver" },
+  { value: "gold", label: t("loyalty.gold") || "Gold" },
+  { value: "platinum", label: t("loyalty.platinum") || "Platinum" },
+];
 
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat("lo-LA", {
@@ -149,11 +158,12 @@ const openCustomerModal = (customer?: LoyaltyMember) => {
       name: customer.name || "",
       email: customer.email || "",
       phone: customer.phone || "",
-      nostrPubkey: customer.nostrPubkey || "",
+      nostrPubkey: customer.nostrPubkey,
       lud16: customer.lud16 || "",
       address: customer.address || "",
       notes: customer.notes || "",
-      tags: [...(customer.tags || [])],
+      tags: customer.tags || [],
+      tier: customer.tier || "bronze",
       defaultPaymentTermId: customer.defaultPaymentTermId || "",
       creditLimit: customer.creditLimit || 0,
     };
@@ -168,6 +178,7 @@ const openCustomerModal = (customer?: LoyaltyMember) => {
       address: "",
       notes: "",
       tags: [],
+      tier: "bronze",
       defaultPaymentTermId: "",
       creditLimit: 0,
     };
@@ -198,7 +209,8 @@ const saveCustomer = async () => {
         address: customerForm.value.address || undefined,
         notes: customerForm.value.notes || undefined,
         tags: customerForm.value.tags,
-        defaultPaymentTermId: customerForm.value.defaultPaymentTermId || undefined,
+        tier: customerForm.value.tier,
+        defaultPaymentTermId: customerForm.value.defaultPaymentTermId && customerForm.value.defaultPaymentTermId !== 'none' ? customerForm.value.defaultPaymentTermId : undefined,
         creditLimit: customerForm.value.creditLimit || undefined,
       });
       toast.add({
@@ -218,7 +230,8 @@ const saveCustomer = async () => {
           address: customerForm.value.address || undefined,
           notes: customerForm.value.notes || undefined,
           tags: customerForm.value.tags,
-          defaultPaymentTermId: customerForm.value.defaultPaymentTermId || undefined,
+          tier: customerForm.value.tier,
+          defaultPaymentTermId: customerForm.value.defaultPaymentTermId && customerForm.value.defaultPaymentTermId !== 'none' ? customerForm.value.defaultPaymentTermId : undefined,
           creditLimit: customerForm.value.creditLimit || undefined,
         });
         toast.add({
@@ -513,6 +526,15 @@ const stats = computed(() => customersStore.getCustomerStats());
 
               <UFormField :label="t('customers.lightningAddress')">
                 <UInput v-model="customerForm.lud16" placeholder="user@getalby.com" />
+              </UFormField>
+
+              <UFormField :label="t('loyalty.tier')">
+                <USelect
+                  v-model="customerForm.tier"
+                  :items="formTierOptions"
+                  value-key="value"
+                  label-key="label"
+                />
               </UFormField>
 
               <UFormField :label="t('customers.email')">

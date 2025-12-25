@@ -330,7 +330,7 @@ watch([searchQuery, selectedCategory], () => {
 </script>
 
 <template>
-  <div class="c space-y-6">
+  <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center px-4">
       <div>

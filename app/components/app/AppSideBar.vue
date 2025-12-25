@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- Navigation Items -->
-    <ul class="p-1 flex-1 space-y-1">
+    <ul class="p-1 flex-1 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
       <!-- Notification Center -->
 
       <li v-for="(item, index) in items" :key="index">
@@ -477,6 +477,24 @@ const allItems = computed(() => [
     feature: 'accounting',
   },
   {
+    label: t("navigation.invoicing") || "Invoicing",
+    to: "/invoicing",
+    icon: "i-heroicons-document-text",
+    feature: 'invoicing',
+  },
+  {
+    label: t("navigation.delivery") || "Delivery",
+    to: "/delivery",
+    icon: "i-heroicons-truck",
+    feature: 'delivery',
+  },
+  {
+    label: t("navigation.contracts") || "Contracts",
+    to: "/contracts",
+    icon: "i-heroicons-clipboard-document-check",
+    feature: 'contracts',
+  },
+  {
     label: t("navigation.settings"),
     to: "/settings",
     icon: "i-heroicons-cog-6-tooth",
@@ -524,4 +542,13 @@ const handleLogout = async () => {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Hide scrollbar but keep scroll functionality */
+ul {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+ul::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+</style>

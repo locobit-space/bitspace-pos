@@ -25,6 +25,7 @@ export interface EnabledFeatures {
   invoicing: boolean;
   delivery: boolean;
   loyalty: boolean;
+  contracts: boolean;
 }
 
 /**
@@ -47,6 +48,7 @@ export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
     invoicing: false,
     delivery: false,
     loyalty: false,
+    contracts: false,
   };
 
   // Customize based on shop type
@@ -62,6 +64,21 @@ export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
       return { ...base, invoicing: true, inventory: true };
     case 'service':
       return { ...base, invoicing: true, inventory: false };
+    case 'enterprise':
+      return {
+        ...base,
+        customers: true,
+        inventory: true,
+        kitchen: true,
+        recipes: true,
+        ingredients: true,
+        memberships: true,
+        accounting: true,
+        invoicing: true,
+        delivery: true,
+        loyalty: true,
+        contracts: true,
+      };
     default:
       return base;
   }

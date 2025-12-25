@@ -26,6 +26,7 @@ export type ShopType =
   | 'gym'
   | 'karaoke'
   | 'garage'
+  | 'enterprise'
   | 'other';
 
 /**
@@ -1602,4 +1603,323 @@ export interface UserInfo {
   verified?: boolean; // NIP-05 verified
   lastUpdated?: number | null; // Last profile update timestamp
   userKeys?: NostrUserKeys; // User's cryptographic keys
+}
+
+// ============================================
+// 🚚 DELIVERY TYPES
+// Order Delivery Tracking & Driver Management
+// ============================================
+
+/**
+ * Status of a delivery
+ */
+export type DeliveryStatus =
+  | 'pending'
+  | 'assigned'
+  | 'picked_up'
+  | 'in_transit'
+  | 'delivered'
+  | 'cancelled'
+  | 'failed';
+
+/**
+ * Delivery driver
+ */
+export interface Driver {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  vehicleType?: 'motorcycle' | 'car' | 'bicycle' | 'walk';
+  vehiclePlate?: string;
+  isAvailable: boolean;
+  currentDeliveryId?: string;
+  totalDeliveries?: number;
+  rating?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Delivery record linked to an order
+ */
+export interface Delivery {
+  id: string;
+  orderId: string;
+  order?: Order;
+  driverId?: string;
+  driver?: Driver;
+  status: DeliveryStatus;
+  // Customer details
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  addressLine2?: string;
+  city?: string;
+  postalCode?: string;
+  notes?: string;
+  // Times
+  scheduledAt?: string;
+  assignedAt?: string;
+  pickedUpAt?: string;
+  deliveredAt?: string;
+  cancelledAt?: string;
+  // Tracking
+  estimatedMinutes?: number;
+  actualMinutes?: number;
+  distanceKm?: number;
+  // Fee
+  deliveryFee: number;
+  tip?: number;
+  // Metadata
+  cancellationReason?: string;
+  failureReason?: string;
+  proofOfDelivery?: string; // Photo or signature
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// 🧾 INVOICE TYPES
+// Invoicing & Payment Tracking
+// ============================================
+
+/**
+ * Invoice status
+ */
+export type InvoiceStatus =
+  | 'draft'
+  | 'sent'
+  | 'viewed'
+  | 'paid'
+  | 'partial'
+  | 'overdue'
+  | 'cancelled'
+  | 'refunded';
+
+/**
+ * Invoice line item
+ */
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  discount?: number;
+  discountType?: 'fixed' | 'percentage';
+  taxRate?: number;
+  total: number;
+}
+
+/**
+ * Payment recorded against an invoice
+ */
+export interface InvoicePayment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  method: PaymentMethod;
+  reference?: string;
+  notes?: string;
+  paidAt: string;
+  createdBy?: string;
+}
+
+/**
+ * Invoice for customers
+ */
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  // Customer
+  customerId?: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerTaxId?: string;
+  // Linked order
+  orderId?: string;
+  // Items
+  items: InvoiceItem[];
+  // Amounts
+  subtotal: number;
+  discountAmount?: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  amountPaid: number;
+  amountDue: number;
+  currency: CurrencyCode;
+  // Dates
+  issueDate: string;
+  dueDate: string;
+  paidDate?: string;
+  sentDate?: string;
+  viewedDate?: string;
+  // Status
+  status: InvoiceStatus;
+  // Content
+  notes?: string;
+  terms?: string;
+  footerText?: string;
+  // Payments
+  payments: InvoicePayment[];
+  // Metadata
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// 📋 CONTRACT & RENTAL TYPES
+// Contract Management & Asset Rentals
+// ============================================
+
+/**
+ * Contract type
+ */
+export type ContractType = 'rental' | 'lease' | 'service' | 'subscription';
+
+/**
+ * Contract status
+ */
+export type ContractStatus =
+  | 'draft'
+  | 'pending'
+  | 'active'
+  | 'expired'
+  | 'terminated'
+  | 'cancelled';
+
+/**
+ * Rental asset type
+ */
+export type AssetType =
+  | 'room'
+  | 'equipment'
+  | 'vehicle'
+  | 'locker'
+  | 'space'
+  | 'other';
+
+/**
+ * Rental Asset (room, equipment, vehicle, locker, etc.)
+ */
+export interface RentalAsset {
+  id: string;
+  name: string;
+  nameLao?: string;
+  type: AssetType;
+  category?: string;
+  description?: string;
+  image?: string;
+  // Pricing
+  hourlyRate?: number;
+  dailyRate?: number;
+  weeklyRate?: number;
+  monthlyRate?: number;
+  deposit?: number;
+  currency?: CurrencyCode;
+  // Availability
+  isAvailable: boolean;
+  isActive: boolean;
+  // Details
+  location?: string;
+  capacity?: number;
+  serialNumber?: string;
+  // Metadata
+  tags?: string[];
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Contract for rentals, leases, or services
+ */
+export interface Contract {
+  id: string;
+  contractNumber: string;
+  // Customer
+  customerId?: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  customerAddress?: string;
+  // Type & Status
+  type: ContractType;
+  status: ContractStatus;
+  // Asset (for rentals)
+  assetId?: string;
+  asset?: RentalAsset;
+  // Period
+  startDate: string;
+  endDate: string;
+  // Billing
+  amount: number;
+  paymentSchedule: 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  currency: CurrencyCode;
+  totalPaid?: number;
+  // Deposit
+  depositAmount?: number;
+  depositStatus?: 'pending' | 'collected' | 'partial' | 'returned' | 'forfeited';
+  depositPaidAt?: string;
+  depositReturnedAt?: string;
+  // Options
+  autoRenew: boolean;
+  renewalNotificationDays?: number;
+  // Content
+  description?: string;
+  notes?: string;
+  terms?: string;
+  // Linked records
+  invoiceIds?: string[];
+  paymentIds?: string[];
+  // Timestamps
+  activatedAt?: string;
+  terminatedAt?: string;
+  terminationReason?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Rental booking for assets
+ */
+export interface RentalBooking {
+  id: string;
+  bookingNumber?: string;
+  // Asset
+  assetId: string;
+  asset?: RentalAsset;
+  // Customer
+  customerId?: string;
+  customerName: string;
+  customerPhone?: string;
+  // Contract link
+  contractId?: string;
+  // Times
+  startTime: string;
+  endTime: string;
+  actualStartTime?: string;
+  actualEndTime?: string;
+  // Status
+  status: 'reserved' | 'checked_out' | 'returned' | 'cancelled' | 'no_show';
+  // Billing
+  totalAmount: number;
+  depositAmount?: number;
+  lateFee?: number;
+  currency?: CurrencyCode;
+  isPaid?: boolean;
+  // Notes
+  notes?: string;
+  returnCondition?: string;
+  // Timestamps
+  checkedOutAt?: string;
+  returnedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
 }

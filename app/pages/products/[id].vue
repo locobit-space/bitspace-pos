@@ -1,5 +1,5 @@
 <template>
-  <div class="c space-y-6">
+  <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-4">
       <div class="flex items-center gap-4">

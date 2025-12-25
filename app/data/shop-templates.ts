@@ -81,6 +81,14 @@ export const SHOP_TYPE_META: ShopTypeMeta[] = [
     descriptionLao: 'ຊ່ອມແປງລົດຍົນ ແລະ ລົດຈັກ ພ້ອມອະໄຫຼ່',
   },
   {
+    type: 'enterprise',
+    name: 'Enterprise',
+    nameLao: 'ອົງກອນ',
+    icon: 'i-heroicons-building-office-2',
+    description: 'Full-featured for enterprise businesses',
+    descriptionLao: 'ຄຸນສົມບັດຄົບຖ້ວນ ສຳລັບທຸລະກິດອົງກອນ',
+  },
+  {
     type: 'other',
     name: 'Other',
     nameLao: 'ອື່ນໆ',
@@ -219,6 +227,18 @@ export const SHOP_TYPE_TEMPLATES: ShopTypeConfig[] = [
     meta: SHOP_TYPE_META.find((m) => m.type === 'other')!,
     categories: [
       { id: 'cat-general', name: 'General', nameLao: 'ທົ່ວໄປ', icon: '📦', sortOrder: 1 },
+    ],
+    products: [],
+  },
+
+  // ========== ENTERPRISE ==========
+  {
+    type: 'enterprise',
+    meta: SHOP_TYPE_META.find((m) => m.type === 'enterprise')!,
+    categories: [
+      { id: 'cat-products', name: 'Products', nameLao: 'ສິນຄ້າ', icon: '📦', sortOrder: 1 },
+      { id: 'cat-services', name: 'Services', nameLao: 'ບໍລິການ', icon: '🛠️', sortOrder: 2 },
+      { id: 'cat-subscriptions', name: 'Subscriptions', nameLao: 'ສະມາຊິກ', icon: '💳', sortOrder: 3 },
     ],
     products: [],
   },
