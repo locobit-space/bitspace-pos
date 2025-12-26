@@ -118,13 +118,8 @@ const isInitialized = ref(false);
 const syncPending = ref(0);
 const currentBranchId = ref<string>("all");
 
-// Nostr Event Kinds
-const NOSTR_KINDS = {
-  SUPPLIER: 30700,
-  BRANCH_STOCK: 30701,
-  PURCHASE_ORDER: 30702,
-  STOCK_TRANSFER: 30703,
-};
+// Import centralized NOSTR_KINDS
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 export function useInventory() {
   const nostrData = useNostrData();
@@ -279,7 +274,7 @@ export function useInventory() {
   async function syncBranchToNostr(branch: BranchRecord): Promise<boolean> {
     try {
       const event = await nostrData.publishReplaceableEvent(
-        30600, // BRANCH kind
+        NOSTR_KINDS.BRANCH,
         JSON.stringify({
           id: branch.id,
           name: branch.name,

@@ -13,9 +13,8 @@ import type {
 } from '~/types';
 import { DEFAULT_PERMISSIONS } from '~/types';
 
-// Custom Nostr event kinds for POS permissions
-const PERMISSION_GRANT_KIND = 30078;
-const PERMISSION_REVOKE_KIND = 30079;
+// Import centralized NOSTR_KINDS
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Singleton state
 const permissionGrants = ref<PermissionGrant[]>([]);
@@ -75,7 +74,7 @@ export function usePermissionEvents() {
       });
       
       const unsignedEvent = {
-        kind: PERMISSION_GRANT_KIND,
+        kind: NOSTR_KINDS.PERMISSION_GRANT,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
           ['p', granteePubkeyHex], // Grantee
@@ -94,7 +93,7 @@ export function usePermissionEvents() {
       // Create grant object
       const grant: PermissionGrant = {
         id: grantId,
-        kind: PERMISSION_GRANT_KIND,
+        kind: NOSTR_KINDS.PERMISSION_GRANT,
         storeId: storeId.value,
         storeName: storeName.value,
         granterPubkey: granterPubkeyHex,
@@ -197,7 +196,7 @@ export function usePermissionEvents() {
       });
       
       const unsignedEvent = {
-        kind: PERMISSION_REVOKE_KIND,
+        kind: NOSTR_KINDS.PERMISSION_REVOKE,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
           ['p', grant.granteePubkey], // Who is being revoked
@@ -216,7 +215,7 @@ export function usePermissionEvents() {
       // Create revocation object
       const revocation: PermissionRevocation = {
         id: revocationId,
-        kind: PERMISSION_REVOKE_KIND,
+        kind: NOSTR_KINDS.PERMISSION_REVOKE,
         storeId: storeId.value,
         revokerPubkey: revokerPubkeyHex,
         revokerNpub,

@@ -16,6 +16,10 @@ import type {
   StoreUser,
 } from "~/types";
 
+// Import centralized NOSTR_KINDS
+export { NOSTR_KINDS, type NostrKind } from "~/types/nostr-kinds";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
+
 // ============================================
 // 🔧 UTILITY FUNCTIONS
 // ============================================
@@ -30,45 +34,6 @@ function hexToBytes(hex: string): Uint8Array {
   }
   return bytes;
 }
-
-// ============================================
-// 📋 NOSTR EVENT KINDS FOR POS
-// Using parameterized replaceable events (kind 30000-39999)
-// ============================================
-
-export const NOSTR_KINDS = {
-  // Store Configuration (replaceable, single per pubkey)
-  STORE_SETTINGS: 30078, // Store settings & config
-
-  // Catalog Data (parameterized replaceable)
-  PRODUCT: 30100, // Individual product
-  CATEGORY: 30101, // Product category
-  UNIT: 30102, // Unit of measurement
-  MODIFIER_GROUP: 30103, // Product modifier groups
-
-  // Transactions (regular events - append only)
-  ORDER: 30200, // Order record
-  PAYMENT: 30201, // Payment proof
-  REFUND: 30202, // Refund record
-
-  // Customer & Loyalty
-  CUSTOMER: 30300, // Customer profile
-  LOYALTY_POINTS: 30301, // Loyalty points transaction
-  LOYALTY_REWARD: 30302, // Reward claim
-
-  // Inventory
-  STOCK_ADJUSTMENT: 30400, // Stock adjustment record
-  INVENTORY_COUNT: 30401, // Inventory count session
-
-  // Staff & Access
-  STAFF_MEMBER: 30500, // Staff profile
-  POS_SESSION: 30501, // POS session log
-  AUDIT_LOG: 30502, // Audit trail
-  COMPANY_INDEX: 30503, // Company code → owner pubkey mapping (public, unencrypted)
-
-  // Branch Management
-  BRANCH: 30600, // Branch details
-} as const;
 
 // ============================================
 // 🔑 ENCRYPTION HELPERS

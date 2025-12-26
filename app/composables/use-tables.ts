@@ -104,8 +104,8 @@ const tableSessions = ref<TableSession[]>([]);
 const isLoading = ref(false);
 const lastSyncAt = ref<string | null>(null);
 
-// Nostr event kind for tables
-const TABLE_KIND = 30080;
+// Import centralized NOSTR_KINDS
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 export function useTables() {
   const nostrData = useNostrData();
@@ -139,7 +139,7 @@ export function useTables() {
     isLoading.value = true;
     try {
       const data = await nostrData.getReplaceableEvent<TableData>(
-        TABLE_KIND,
+        NOSTR_KINDS.TABLE,
         "tables"
       );
 
@@ -171,7 +171,7 @@ export function useTables() {
   const saveTables = async (): Promise<void> => {
     try {
       await nostrData.publishReplaceableEvent(
-        TABLE_KIND,
+        NOSTR_KINDS.TABLE,
         {
           tables: tables.value,
           zones: zones.value,

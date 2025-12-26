@@ -38,8 +38,8 @@ const couponUsages = ref<CouponUsage[]>([]);
 const isLoading = ref(false);
 const lastSyncAt = ref<string | null>(null);
 
-// Nostr event kind for coupons
-const COUPON_KIND = 30078;
+// Import centralized NOSTR_KINDS
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 export function useCoupons() {
   const nostrData = useNostrData();
@@ -54,7 +54,7 @@ export function useCoupons() {
   const loadCoupons = async (): Promise<void> => {
     isLoading.value = true;
     try {
-      const data = await nostrData.getReplaceableEvent<CouponData>(COUPON_KIND, 'coupons');
+      const data = await nostrData.getReplaceableEvent<CouponData>(NOSTR_KINDS.COUPON, 'coupons');
       if (data?.data) {
         coupons.value = data.data.coupons || [];
         couponUsages.value = data.data.usages || [];
@@ -73,7 +73,7 @@ export function useCoupons() {
   const saveCoupons = async (): Promise<void> => {
     try {
       await nostrData.publishReplaceableEvent(
-        COUPON_KIND,
+        NOSTR_KINDS.COUPON,
         {
           coupons: coupons.value,
           usages: couponUsages.value,

@@ -1595,11 +1595,11 @@ export interface SecurityAuditLog {
 // 🎫 PERMISSION EVENT TYPES (Nostr-based)
 // ============================================
 
-export type PermissionEventKind = 30078 | 30079; // 30078 = grant, 30079 = revoke
+export type PermissionEventKind = 30510 | 30511; // 30510 = grant, 30511 = revoke
 
 export interface PermissionGrant {
   id: string;
-  kind: 30078;
+  kind: 30510;
   storeId: string;
   storeName: string;
   granterPubkey: string; // Owner/Admin who granted
@@ -1616,7 +1616,7 @@ export interface PermissionGrant {
 
 export interface PermissionRevocation {
   id: string;
-  kind: 30079;
+  kind: 30511;
   storeId: string;
   revokerPubkey: string; // Owner/Admin who revoked
   revokerNpub: string;
