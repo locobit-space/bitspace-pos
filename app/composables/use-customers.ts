@@ -3,15 +3,27 @@
 // Customer & Loyalty Management with Dexie + Nostr
 // ============================================
 
-import type { LoyaltyMember, ZapReward } from '~/types';
-import { db, type CustomerRecord } from '~/db/db';
+import type { LoyaltyMember, ZapReward } from "~/types";
+import { db, type CustomerRecord } from "~/db/db";
 
 // Loyalty tier configuration
 const LOYALTY_TIERS = {
-  bronze: { minPoints: 0, zapMultiplier: 1, benefits: ['Basic rewards'] },
-  silver: { minPoints: 1000, zapMultiplier: 1.5, benefits: ['5% discount', 'Priority service'] },
-  gold: { minPoints: 5000, zapMultiplier: 2, benefits: ['10% discount', 'Free delivery', 'Exclusive offers'] },
-  platinum: { minPoints: 20000, zapMultiplier: 3, benefits: ['15% discount', 'VIP access', 'Personal account manager'] },
+  bronze: { minPoints: 0, zapMultiplier: 1, benefits: ["Basic rewards"] },
+  silver: {
+    minPoints: 1000,
+    zapMultiplier: 1.5,
+    benefits: ["5% discount", "Priority service"],
+  },
+  gold: {
+    minPoints: 5000,
+    zapMultiplier: 2,
+    benefits: ["10% discount", "Free delivery", "Exclusive offers"],
+  },
+  platinum: {
+    minPoints: 20000,
+    zapMultiplier: 3,
+    benefits: ["15% discount", "VIP access", "Personal account manager"],
+  },
 } as const;
 
 // Points per currency unit
@@ -36,10 +48,10 @@ export function useCustomers() {
   const totalCustomers = computed(() => customers.value.length);
 
   const customersByTier = computed(() => ({
-    bronze: customers.value.filter(c => c.tier === 'bronze'),
-    silver: customers.value.filter(c => c.tier === 'silver'),
-    gold: customers.value.filter(c => c.tier === 'gold'),
-    platinum: customers.value.filter(c => c.tier === 'platinum'),
+    bronze: customers.value.filter((c) => c.tier === "bronze"),
+    silver: customers.value.filter((c) => c.tier === "silver"),
+    gold: customers.value.filter((c) => c.tier === "gold"),
+    platinum: customers.value.filter((c) => c.tier === "platinum"),
   }));
 
   const topCustomers = computed(() =>
@@ -50,7 +62,10 @@ export function useCustomers() {
 
   const recentCustomers = computed(() =>
     [...customers.value]
-      .sort((a, b) => new Date(b.lastVisit).getTime() - new Date(a.lastVisit).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.lastVisit).getTime() - new Date(a.lastVisit).getTime()
+      )
       .slice(0, 10)
   );
 
@@ -61,11 +76,11 @@ export function useCustomers() {
   async function loadFromLocal(): Promise<LoyaltyMember[]> {
     try {
       const records = await db.customers.toArray();
-      return records.map(r => ({
+      return records.map((r) => ({
         id: r.id,
         nostrPubkey: r.nostrPubkey,
         points: r.points,
-        tier: r.tier as LoyaltyMember['tier'],
+        tier: r.tier as LoyaltyMember["tier"],
         totalSpent: r.totalSpent,
         visitCount: r.visitCount,
         lastVisit: new Date(r.lastVisit).toISOString(),
@@ -73,7 +88,7 @@ export function useCustomers() {
         zapRewards: [],
       }));
     } catch (e) {
-      console.error('Failed to load customers from local DB:', e);
+      console.error("Failed to load customers from local DB:", e);
       return [];
     }
   }
@@ -110,7 +125,7 @@ export function useCustomers() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to sync customer to Nostr:', e);
+      console.error("Failed to sync customer to Nostr:", e);
       return false;
     }
   }
@@ -118,14 +133,14 @@ export function useCustomers() {
   async function loadFromNostr(): Promise<void> {
     try {
       const nostrCustomers = await nostrData.getAllCustomers();
-      
+
       for (const customer of nostrCustomers) {
         await saveToLocal(customer);
       }
 
       customers.value = await loadFromLocal();
     } catch (e) {
-      console.error('Failed to load from Nostr:', e);
+      console.error("Failed to load from Nostr:", e);
     }
   }
 
@@ -146,7 +161,7 @@ export function useCustomers() {
         await loadFromNostr();
       }
 
-      const unsyncedCount = await db.customers.filter(c => !c.synced).count();
+      const unsyncedCount = await db.customers.filter((c) => !c.synced).count();
       syncPending.value = unsyncedCount;
 
       isInitialized.value = true;
@@ -161,17 +176,19 @@ export function useCustomers() {
   // 👤 CUSTOMER CRUD
   // ============================================
 
-  async function getOrCreateCustomer(nostrPubkey: string): Promise<LoyaltyMember> {
+  async function getOrCreateCustomer(
+    nostrPubkey: string
+  ): Promise<LoyaltyMember> {
     // Check existing
-    let customer = customers.value.find(c => c.nostrPubkey === nostrPubkey);
-    
+    let customer = customers.value.find((c) => c.nostrPubkey === nostrPubkey);
+
     if (!customer) {
       // Create new customer
       customer = {
         id: `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         nostrPubkey,
         points: 0,
-        tier: 'bronze',
+        tier: "bronze",
         totalSpent: 0,
         visitCount: 0,
         lastVisit: new Date().toISOString(),
@@ -192,11 +209,74 @@ export function useCustomers() {
     return customer;
   }
 
+  /**
+   * Create a new customer with optional nostrPubkey
+   * This allows adding customers without requiring a Nostr public key
+   */
+  async function createCustomer(data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    nostrPubkey?: string;
+    lud16?: string;
+    address?: string;
+    notes?: string;
+    tags?: string[];
+    tier?: LoyaltyMember["tier"];
+    defaultPaymentTermId?: string;
+    creditLimit?: number;
+  }): Promise<LoyaltyMember> {
+    // If nostrPubkey is provided, check for existing customer
+    if (data.nostrPubkey) {
+      const existing = customers.value.find(
+        (c) => c.nostrPubkey === data.nostrPubkey
+      );
+      if (existing) {
+        // Update existing instead
+        const updated = await updateCustomer(existing.id, data);
+        return updated || existing;
+      }
+    }
+
+    // Create new customer
+    const customer: LoyaltyMember = {
+      id: `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      nostrPubkey: data.nostrPubkey || "",
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      lud16: data.lud16,
+      address: data.address,
+      notes: data.notes,
+      tags: data.tags || [],
+      tier: data.tier || "bronze",
+      defaultPaymentTermId: data.defaultPaymentTermId,
+      creditLimit: data.creditLimit,
+      points: 0,
+      totalSpent: 0,
+      visitCount: 0,
+      lastVisit: new Date().toISOString(),
+      joinedAt: new Date().toISOString(),
+      zapRewards: [],
+    };
+
+    customers.value.push(customer);
+    await saveToLocal(customer);
+
+    if (offline.isOnline.value) {
+      await syncToNostr(customer);
+    } else {
+      syncPending.value++;
+    }
+
+    return customer;
+  }
+
   async function updateCustomer(
     id: string,
     updates: Partial<LoyaltyMember>
   ): Promise<LoyaltyMember | null> {
-    const index = customers.value.findIndex(c => c.id === id);
+    const index = customers.value.findIndex((c) => c.id === id);
     if (index === -1) return null;
 
     const existing = customers.value[index]!;
@@ -204,7 +284,11 @@ export function useCustomers() {
       ...existing,
       ...updates,
       id: existing.id,
-      nostrPubkey: existing.nostrPubkey,
+      // Allow updating nostrPubkey if it's explicitly provided in updates
+      nostrPubkey:
+        updates.nostrPubkey !== undefined
+          ? updates.nostrPubkey
+          : existing.nostrPubkey,
       joinedAt: existing.joinedAt,
     };
 
@@ -219,11 +303,11 @@ export function useCustomers() {
   }
 
   function getCustomer(id: string): LoyaltyMember | undefined {
-    return customers.value.find(c => c.id === id);
+    return customers.value.find((c) => c.id === id);
   }
 
   function getCustomerByPubkey(pubkey: string): LoyaltyMember | undefined {
-    return customers.value.find(c => c.nostrPubkey === pubkey);
+    return customers.value.find((c) => c.nostrPubkey === pubkey);
   }
 
   // ============================================
@@ -235,7 +319,7 @@ export function useCustomers() {
     amountFiat?: number
   ): number {
     let points = 0;
-    
+
     if (amountSats) {
       points += Math.floor(amountSats * POINTS_PER_SAT);
     }
@@ -246,19 +330,19 @@ export function useCustomers() {
     return points;
   }
 
-  function calculateTier(points: number): LoyaltyMember['tier'] {
-    if (points >= LOYALTY_TIERS.platinum.minPoints) return 'platinum';
-    if (points >= LOYALTY_TIERS.gold.minPoints) return 'gold';
-    if (points >= LOYALTY_TIERS.silver.minPoints) return 'silver';
-    return 'bronze';
+  function calculateTier(points: number): LoyaltyMember["tier"] {
+    if (points >= LOYALTY_TIERS.platinum.minPoints) return "platinum";
+    if (points >= LOYALTY_TIERS.gold.minPoints) return "gold";
+    if (points >= LOYALTY_TIERS.silver.minPoints) return "silver";
+    return "bronze";
   }
 
   async function addPoints(
     customerId: string,
     points: number,
-    _reason: 'purchase' | 'referral' | 'promotion' = 'purchase'
+    _reason: "purchase" | "referral" | "promotion" = "purchase"
   ): Promise<LoyaltyMember | null> {
-    const customer = customers.value.find(c => c.id === customerId);
+    const customer = customers.value.find((c) => c.id === customerId);
     if (!customer) return null;
 
     // Apply tier multiplier
@@ -279,20 +363,20 @@ export function useCustomers() {
     points: number,
     _rewardDescription: string
   ): Promise<{ success: boolean; reward?: ZapReward; error?: string }> {
-    const customer = customers.value.find(c => c.id === customerId);
+    const customer = customers.value.find((c) => c.id === customerId);
     if (!customer) {
-      return { success: false, error: 'Customer not found' };
+      return { success: false, error: "Customer not found" };
     }
 
     if (customer.points < points) {
-      return { success: false, error: 'Insufficient points' };
+      return { success: false, error: "Insufficient points" };
     }
 
     const reward: ZapReward = {
       id: `reward_${Date.now()}`,
       memberId: customerId,
       amount: points,
-      reason: 'loyalty',
+      reason: "loyalty",
       createdAt: new Date().toISOString(),
       claimed: true,
     };
@@ -312,7 +396,7 @@ export function useCustomers() {
     _orderId: string
   ): Promise<LoyaltyMember> {
     const customer = await getOrCreateCustomer(customerPubkey);
-    
+
     const points = calculatePointsFromPurchase(amountSats, amountFiat);
     const tierConfig = LOYALTY_TIERS[customer.tier];
     const earnedPoints = Math.floor(points * tierConfig.zapMultiplier);
@@ -334,23 +418,22 @@ export function useCustomers() {
 
   function searchCustomers(query: string): LoyaltyMember[] {
     const q = query.toLowerCase();
-    return customers.value.filter(c =>
-      c.nostrPubkey.toLowerCase().includes(q) ||
-      c.id.toLowerCase().includes(q)
+    return customers.value.filter(
+      (c) =>
+        c.nostrPubkey.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q)
     );
   }
 
-  function getCustomersByTier(tier: LoyaltyMember['tier']): LoyaltyMember[] {
-    return customers.value.filter(c => c.tier === tier);
+  function getCustomersByTier(tier: LoyaltyMember["tier"]): LoyaltyMember[] {
+    return customers.value.filter((c) => c.tier === tier);
   }
 
   function getInactiveCustomers(daysSinceLastVisit = 30): LoyaltyMember[] {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - daysSinceLastVisit);
 
-    return customers.value.filter(c =>
-      new Date(c.lastVisit) < cutoff
-    );
+    return customers.value.filter((c) => new Date(c.lastVisit) < cutoff);
   }
 
   // ============================================
@@ -369,8 +452,8 @@ export function useCustomers() {
     thisMonth.setHours(0, 0, 0, 0);
 
     const totalPoints = customers.value.reduce((sum, c) => sum + c.points, 0);
-    const activeThisMonth = customers.value.filter(c =>
-      new Date(c.lastVisit) >= thisMonth
+    const activeThisMonth = customers.value.filter(
+      (c) => new Date(c.lastVisit) >= thisMonth
     ).length;
 
     return {
@@ -382,9 +465,10 @@ export function useCustomers() {
         platinum: customersByTier.value.platinum.length,
       },
       totalPoints,
-      avgPointsPerCustomer: customers.value.length > 0 
-        ? Math.floor(totalPoints / customers.value.length) 
-        : 0,
+      avgPointsPerCustomer:
+        customers.value.length > 0
+          ? Math.floor(totalPoints / customers.value.length)
+          : 0,
       activeThisMonth,
     };
   }
@@ -397,7 +481,7 @@ export function useCustomers() {
     return [...customers.value]
       .sort((a, b) => b.totalSpent - a.totalSpent)
       .slice(0, limit)
-      .map(c => ({
+      .map((c) => ({
         customer: c,
         totalSpent: c.totalSpent,
         visitCount: c.visitCount,
@@ -409,10 +493,14 @@ export function useCustomers() {
   // ============================================
 
   async function exportCustomers(): Promise<string> {
-    return JSON.stringify({
-      customers: customers.value,
-      exportedAt: new Date().toISOString(),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        customers: customers.value,
+        exportedAt: new Date().toISOString(),
+      },
+      null,
+      2
+    );
   }
 
   return {
@@ -436,6 +524,7 @@ export function useCustomers() {
     init,
 
     // CRUD
+    createCustomer,
     getOrCreateCustomer,
     updateCustomer,
     getCustomer,

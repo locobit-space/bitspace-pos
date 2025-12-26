@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IngredientUnit } from '~/types';
+import type { IngredientUnit } from "~/types";
 
 /**
  * 🧪 INGREDIENTS MANAGEMENT PAGE
@@ -8,8 +8,8 @@ import type { IngredientUnit } from '~/types';
  */
 
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth'],
+  layout: "default",
+  middleware: ["auth"],
 });
 
 const { t } = useI18n();
@@ -25,84 +25,90 @@ onMounted(async () => {
 const showCreateModal = ref(false);
 const showStockModal = ref(false);
 const showDetailsModal = ref(false);
-const selectedIngredient = ref<typeof ingredientsStore.ingredients.value[0] | null>(null);
-const activeTab = ref<'list' | 'alerts' | 'usage'>('list');
+const selectedIngredient = ref<
+  (typeof ingredientsStore.ingredients.value)[0] | null
+>(null);
+const activeTab = ref<"list" | "alerts" | "usage">("list");
 const saving = ref(false);
 
 // Filters
-const searchQuery = ref('');
-const selectedCategory = ref('all');
+const searchQuery = ref("");
+const selectedCategory = ref("all");
 const currentPage = ref(1);
 const itemsPerPage = 15;
 
 // Form state for new ingredient
 const formData = ref({
-  name: '',
-  nameTh: '',
-  unit: 'g' as IngredientUnit,
-  baseUnit: 'kg' as IngredientUnit,
+  name: "",
+  nameTh: "",
+  unit: "g" as IngredientUnit,
+  baseUnit: "kg" as IngredientUnit,
   conversionFactor: 1000,
   costPerBaseUnit: 0,
   currentStock: 0,
   minStock: 0,
   maxStock: 100,
-  categoryId: '',
-  storageType: 'ambient' as 'ambient' | 'refrigerated' | 'frozen',
+  categoryId: "",
+  storageType: "ambient" as "ambient" | "refrigerated" | "frozen",
 });
 
 // Stock adjustment form
 const stockForm = ref({
   adjustment: 0,
-  type: 'purchase' as 'purchase' | 'waste' | 'adjustment' | 'count',
+  type: "purchase" as "purchase" | "waste" | "adjustment" | "count",
   unitCost: 0,
-  notes: '',
+  notes: "",
 });
 
 // Options
 const unitOptions = [
-  { value: 'g', label: 'Gram (g)' },
-  { value: 'kg', label: 'Kilogram (kg)' },
-  { value: 'ml', label: 'Milliliter (ml)' },
-  { value: 'l', label: 'Liter (L)' },
-  { value: 'piece', label: 'Piece' },
-  { value: 'pack', label: 'Pack' },
-  { value: 'tray', label: 'Tray' },
-  { value: 'bottle', label: 'Bottle' },
-  { value: 'can', label: 'Can' },
+  { value: "g", label: "Gram (g)" },
+  { value: "kg", label: "Kilogram (kg)" },
+  { value: "ml", label: "Milliliter (ml)" },
+  { value: "l", label: "Liter (L)" },
+  { value: "piece", label: "Piece" },
+  { value: "pack", label: "Pack" },
+  { value: "tray", label: "Tray" },
+  { value: "bottle", label: "Bottle" },
+  { value: "can", label: "Can" },
 ];
 
 const baseUnitOptions = [
-  { value: 'kg', label: 'Kilogram (kg)' },
-  { value: 'l', label: 'Liter (L)' },
-  { value: 'piece', label: 'Piece' },
-  { value: 'pack', label: 'Pack' },
-  { value: 'tray', label: 'Tray (30 pcs)' },
-  { value: 'bottle', label: 'Bottle' },
+  { value: "kg", label: "Kilogram (kg)" },
+  { value: "l", label: "Liter (L)" },
+  { value: "piece", label: "Piece" },
+  { value: "pack", label: "Pack" },
+  { value: "tray", label: "Tray (30 pcs)" },
+  { value: "bottle", label: "Bottle" },
 ];
 
 const stockAdjustmentTypes = [
-  { value: 'purchase', label: '➕ Purchase/Restock' },
-  { value: 'waste', label: '🗑️ Waste/Spoilage' },
-  { value: 'adjustment', label: '📋 Adjustment' },
-  { value: 'count', label: '🔢 Physical Count' },
+  { value: "purchase", label: "➕ Purchase/Restock" },
+  { value: "waste", label: "🗑️ Waste/Spoilage" },
+  { value: "adjustment", label: "📋 Adjustment" },
+  { value: "count", label: "🔢 Physical Count" },
 ];
 
 const storageTypes = [
-  { value: 'ambient', label: '🏪 Ambient', icon: '🏪' },
-  { value: 'refrigerated', label: '❄️ Refrigerated', icon: '❄️' },
-  { value: 'frozen', label: '🧊 Frozen', icon: '🧊' },
+  { value: "ambient", label: "🏪 Ambient", icon: "🏪" },
+  { value: "refrigerated", label: "❄️ Refrigerated", icon: "❄️" },
+  { value: "frozen", label: "🧊 Frozen", icon: "🧊" },
 ];
 
 // Computed
 const categoryOptions = computed(() => [
-  { id: 'all', name: t('common.all') || 'All Categories' },
+  { id: "all", name: t("common.all") || "All Categories" },
   // Map categories without 'icon' property to prevent USelect from trying to render emoji as Icon
-  ...ingredientsStore.categories.value.filter(c => c.id).map(c => ({ id: c.id, name: c.name })),
+  ...ingredientsStore.categories.value
+    .filter((c) => c.id)
+    .map((c) => ({ id: c.id, name: c.name })),
 ]);
 
 // Category options for form (exclude empty ids, strip icon to prevent USelect icon rendering issues)
-const formCategoryOptions = computed(() => 
-  ingredientsStore.categories.value.filter(c => c.id && c.id !== '').map(c => ({ id: c.id, name: c.name }))
+const formCategoryOptions = computed(() =>
+  ingredientsStore.categories.value
+    .filter((c) => c.id && c.id !== "")
+    .map((c) => ({ id: c.id, name: c.name }))
 );
 
 const filteredIngredients = computed(() => {
@@ -110,21 +116,24 @@ const filteredIngredients = computed(() => {
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(i =>
-      i.name.toLowerCase().includes(query) ||
-      i.nameTh?.toLowerCase().includes(query) ||
-      i.code?.toLowerCase().includes(query)
+    filtered = filtered.filter(
+      (i) =>
+        i.name.toLowerCase().includes(query) ||
+        i.nameTh?.toLowerCase().includes(query) ||
+        i.code?.toLowerCase().includes(query)
     );
   }
 
-  if (selectedCategory.value && selectedCategory.value !== 'all') {
-    filtered = filtered.filter(i => i.categoryId === selectedCategory.value);
+  if (selectedCategory.value && selectedCategory.value !== "all") {
+    filtered = filtered.filter((i) => i.categoryId === selectedCategory.value);
   }
 
   return filtered;
 });
 
-const totalPages = computed(() => Math.ceil(filteredIngredients.value.length / itemsPerPage));
+const totalPages = computed(() =>
+  Math.ceil(filteredIngredients.value.length / itemsPerPage)
+);
 const paginatedIngredients = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredIngredients.value.slice(start, start + itemsPerPage);
@@ -132,40 +141,44 @@ const paginatedIngredients = computed(() => {
 
 // Methods
 function resetFilters() {
-  searchQuery.value = '';
-  selectedCategory.value = 'all';
+  searchQuery.value = "";
+  selectedCategory.value = "all";
   currentPage.value = 1;
 }
 
 function openCreateModal() {
   formData.value = {
-    name: '',
-    nameTh: '',
-    unit: 'g',
-    baseUnit: 'kg',
+    name: "",
+    nameTh: "",
+    unit: "g",
+    baseUnit: "kg",
     conversionFactor: 1000,
     costPerBaseUnit: 0,
     currentStock: 0,
     minStock: 0,
     maxStock: 100,
-    categoryId: '',
-    storageType: 'ambient',
+    categoryId: "",
+    storageType: "ambient",
   };
   showCreateModal.value = true;
 }
 
-function openStockModal(ingredient: typeof ingredientsStore.ingredients.value[0]) {
+function openStockModal(
+  ingredient: (typeof ingredientsStore.ingredients.value)[0]
+) {
   selectedIngredient.value = ingredient;
   stockForm.value = {
     adjustment: 0,
-    type: 'purchase',
+    type: "purchase",
     unitCost: ingredient.costPerBaseUnit,
-    notes: '',
+    notes: "",
   };
   showStockModal.value = true;
 }
 
-function viewDetails(ingredient: typeof ingredientsStore.ingredients.value[0]) {
+function viewDetails(
+  ingredient: (typeof ingredientsStore.ingredients.value)[0]
+) {
   selectedIngredient.value = ingredient;
   showDetailsModal.value = true;
 }
@@ -173,10 +186,10 @@ function viewDetails(ingredient: typeof ingredientsStore.ingredients.value[0]) {
 async function saveIngredient() {
   if (!formData.value.name) {
     toast.add({
-      title: t('common.error'),
-      description: 'Ingredient name is required',
-      color: 'red',
-      icon: 'i-heroicons-exclamation-circle',
+      title: t("common.error"),
+      description: "Ingredient name is required",
+      color: "red",
+      icon: "i-heroicons-exclamation-circle",
     });
     return;
   }
@@ -199,20 +212,21 @@ async function saveIngredient() {
     });
 
     toast.add({
-      title: t('common.success'),
-      description: t('ingredients.messages.created') || 'Ingredient created successfully',
-      color: 'green',
-      icon: 'i-heroicons-check-circle',
+      title: t("common.success"),
+      description:
+        t("ingredients.messages.created") || "Ingredient created successfully",
+      color: "green",
+      icon: "i-heroicons-check-circle",
     });
 
     showCreateModal.value = false;
   } catch (error) {
-    console.error('Error saving ingredient:', error);
+    console.error("Error saving ingredient:", error);
     toast.add({
-      title: t('common.error'),
-      description: 'Failed to save ingredient',
-      color: 'red',
-      icon: 'i-heroicons-exclamation-circle',
+      title: t("common.error"),
+      description: "Failed to save ingredient",
+      color: "red",
+      icon: "i-heroicons-exclamation-circle",
     });
   } finally {
     saving.value = false;
@@ -224,9 +238,10 @@ async function saveStockAdjustment() {
 
   saving.value = true;
   try {
-    const adjustment = stockForm.value.type === 'count'
-      ? stockForm.value.adjustment - selectedIngredient.value.currentStock
-      : stockForm.value.type === 'waste'
+    const adjustment =
+      stockForm.value.type === "count"
+        ? stockForm.value.adjustment - selectedIngredient.value.currentStock
+        : stockForm.value.type === "waste"
         ? -Math.abs(stockForm.value.adjustment)
         : stockForm.value.adjustment;
 
@@ -241,20 +256,20 @@ async function saveStockAdjustment() {
     );
 
     toast.add({
-      title: t('common.success'),
-      description: 'Stock adjusted successfully',
-      color: 'green',
-      icon: 'i-heroicons-check-circle',
+      title: t("common.success"),
+      description: "Stock adjusted successfully",
+      color: "green",
+      icon: "i-heroicons-check-circle",
     });
 
     showStockModal.value = false;
   } catch (error) {
-    console.error('Error adjusting stock:', error);
+    console.error("Error adjusting stock:", error);
     toast.add({
-      title: t('common.error'),
-      description: 'Failed to adjust stock',
-      color: 'red',
-      icon: 'i-heroicons-exclamation-circle',
+      title: t("common.error"),
+      description: "Failed to adjust stock",
+      color: "red",
+      icon: "i-heroicons-exclamation-circle",
     });
   } finally {
     saving.value = false;
@@ -264,62 +279,109 @@ async function saveStockAdjustment() {
 async function acknowledgeAlert(alertId: string) {
   await ingredientsStore.acknowledgeAlert(alertId);
   toast.add({
-    title: t('common.success'),
-    description: 'Alert dismissed',
-    color: 'green',
-    icon: 'i-heroicons-check-circle',
+    title: t("common.success"),
+    description: "Alert dismissed",
+    color: "green",
+    icon: "i-heroicons-check-circle",
   });
 }
 
 // Format helpers
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK',
+  return new Intl.NumberFormat("lo-LA", {
+    style: "currency",
+    currency: "LAK",
     minimumFractionDigits: 0,
   }).format(amount);
 }
 
-type BadgeColor = 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose' | 'gray' | 'neutral' | 'primary' | 'success' | 'info' | 'warning' | 'error';
+type BadgeColor =
+  | "red"
+  | "orange"
+  | "amber"
+  | "yellow"
+  | "lime"
+  | "green"
+  | "emerald"
+  | "teal"
+  | "cyan"
+  | "sky"
+  | "blue"
+  | "indigo"
+  | "violet"
+  | "purple"
+  | "fuchsia"
+  | "pink"
+  | "rose"
+  | "gray"
+  | "neutral"
+  | "primary"
+  | "success"
+  | "info"
+  | "warning"
+  | "error";
 
-function getStockStatusColor(ingredient: typeof ingredientsStore.ingredients.value[0]): BadgeColor {
+function getStockStatusColor(
+  ingredient: (typeof ingredientsStore.ingredients.value)[0]
+): BadgeColor {
   const status = ingredientsStore.getStockStatus(ingredient);
   switch (status) {
-    case 'ok': return 'green';
-    case 'low': return 'yellow';
-    case 'critical': return 'orange';
-    case 'out': return 'red';
-    default: return 'gray';
+    case "ok":
+      return "green";
+    case "low":
+      return "yellow";
+    case "critical":
+      return "orange";
+    case "out":
+      return "red";
+    default:
+      return "gray";
   }
 }
 
-function getStockStatusText(ingredient: typeof ingredientsStore.ingredients.value[0]): string {
+function getStockStatusText(
+  ingredient: (typeof ingredientsStore.ingredients.value)[0]
+): string {
   const status = ingredientsStore.getStockStatus(ingredient);
   switch (status) {
-    case 'ok': return t('ingredients.statusInStock');
-    case 'low': return t('ingredients.statusLowStock');
-    case 'critical': return t('ingredients.statusCritical');
-    case 'out': return t('ingredients.statusOutOfStock');
-    default: return t('ingredients.statusUnknown');
+    case "ok":
+      return t("ingredients.statusInStock");
+    case "low":
+      return t("ingredients.statusLowStock");
+    case "critical":
+      return t("ingredients.statusCritical");
+    case "out":
+      return t("ingredients.statusOutOfStock");
+    default:
+      return t("ingredients.statusUnknown");
   }
 }
 
 function getStorageIcon(type: string): string {
   switch (type) {
-    case 'ambient': return '🏪';
-    case 'refrigerated': return '❄️';
-    case 'frozen': return '🧊';
-    default: return '📦';
+    case "ambient":
+      return "🏪";
+    case "refrigerated":
+      return "❄️";
+    case "frozen":
+      return "🧊";
+    default:
+      return "📦";
   }
 }
 
 function getPriorityColor(priority: string): BadgeColor {
   switch (priority) {
-    case 'critical': return 'red';
-    case 'high': return 'orange';
-    case 'medium': return 'yellow';
-    case 'low': return 'blue';
-    default: return 'gray';
+    case "critical":
+      return "red";
+    case "high":
+      return "orange";
+    case "medium":
+      return "yellow";
+    case "low":
+      return "blue";
+    default:
+      return "gray";
   }
 }
 
@@ -335,10 +397,10 @@ watch([searchQuery, selectedCategory], () => {
     <div class="flex justify-between items-center px-4">
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          🧪 {{ t('ingredients.title') }}
+          🧪 {{ t("ingredients.title") }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ t('ingredients.description') }}
+          {{ t("ingredients.description") }}
         </p>
       </div>
       <UButton
@@ -352,75 +414,36 @@ watch([searchQuery, selectedCategory], () => {
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-5 gap-4 px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xl">
-            📦
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.totalItems') }}</div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ ingredientsStore.activeIngredients.value.length }}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xl">
-            💰
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.inventoryValue') }}</div>
-            <div class="text-2xl font-bold text-primary-600">
-              {{ formatCurrency(ingredientsStore.totalInventoryValue.value) }}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-xl">
-            ⚠️
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.lowStock') }}</div>
-            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {{ ingredientsStore.lowStockIngredients.value.length }}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-xl">
-            ❌
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.outOfStock') }}</div>
-            <div class="text-2xl font-bold text-red-600 dark:text-red-400">
-              {{ ingredientsStore.outOfStockIngredients.value.length }}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-xl">
-            🔔
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.pendingAlerts') }}</div>
-            <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {{ ingredientsStore.pendingAlerts.value.length }}
-            </div>
-          </div>
-        </div>
-      </div>
+      <CommonStatCard
+        icon="i-heroicons-cube"
+        icon-color="blue"
+        :label="t('ingredients.totalItems')"
+        :value="ingredientsStore.activeIngredients.value.length"
+      />
+      <CommonStatCard
+        icon="i-heroicons-currency-dollar"
+        icon-color="blue"
+        :label="t('ingredients.inventoryValue')"
+        :value="formatCurrency(ingredientsStore.totalInventoryValue.value)"
+      />
+      <CommonStatCard
+        icon="i-heroicons-exclamation-triangle"
+        icon-color="yellow"
+        :label="t('ingredients.lowStock')"
+        :value="ingredientsStore.lowStockIngredients.value.length"
+      />
+      <CommonStatCard
+        icon="i-heroicons-x-circle"
+        icon-color="red"
+        :label="t('ingredients.outOfStock')"
+        :value="ingredientsStore.outOfStockIngredients.value.length"
+      />
+      <CommonStatCard
+        icon="i-heroicons-bell-alert"
+        icon-color="yellow"
+        :label="t('ingredients.pendingAlerts')"
+        :value="ingredientsStore.pendingAlerts.value.length"
+      />
     </div>
 
     <!-- Tabs -->
@@ -440,7 +463,11 @@ watch([searchQuery, selectedCategory], () => {
         @click="activeTab = 'alerts'"
       >
         <template v-if="ingredientsStore.pendingAlerts.value.length" #trailing>
-          <UBadge color="red" size="xs" :label="String(ingredientsStore.pendingAlerts.value.length)" />
+          <UBadge
+            color="red"
+            size="xs"
+            :label="String(ingredientsStore.pendingAlerts.value.length)"
+          />
         </template>
       </UButton>
       <UButton
@@ -459,7 +486,9 @@ watch([searchQuery, selectedCategory], () => {
         <UFormField :label="t('common.search')" class="min-w-[250px]">
           <UInput
             v-model="searchQuery"
-            :placeholder="t('ingredients.searchPlaceholder') || 'Search ingredients...'"
+            :placeholder="
+              t('ingredients.searchPlaceholder') || 'Search ingredients...'
+            "
             icon="i-heroicons-magnifying-glass"
           />
         </UFormField>
@@ -486,22 +515,58 @@ watch([searchQuery, selectedCategory], () => {
       <div class="px-4">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-            {{ t('ingredients.title') }} ({{ filteredIngredients.length }})
+            {{ t("ingredients.title") }} ({{ filteredIngredients.length }})
           </h2>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700"
+        >
           <table class="w-full">
             <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                <th class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
-                <th class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.name') }}</th>
-                <th class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('common.category') }}</th>
-                <th class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.stock') }}</th>
-                <th class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.cost') }}</th>
-                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.status') }}</th>
-                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('ingredients.storage') }}</th>
-                <th class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{{ t('common.actions') }}</th>
+              <tr
+                class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+              >
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  Code
+                </th>
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("ingredients.name") }}
+                </th>
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("common.category") }}
+                </th>
+                <th
+                  class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("ingredients.stock") }}
+                </th>
+                <th
+                  class="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("ingredients.cost") }}
+                </th>
+                <th
+                  class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("ingredients.status") }}
+                </th>
+                <th
+                  class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("ingredients.storage") }}
+                </th>
+                <th
+                  class="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ t("common.actions") }}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -510,20 +575,38 @@ watch([searchQuery, selectedCategory], () => {
                 :key="ingredient.id"
                 class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
               >
-                <td class="py-3 px-4 text-sm font-mono text-gray-500">{{ ingredient.code }}</td>
+                <td class="py-3 px-4 text-sm font-mono text-gray-500">
+                  {{ ingredient.code }}
+                </td>
                 <td class="py-3 px-4">
-                  <div class="font-medium text-gray-900 dark:text-white">{{ ingredient.name }}</div>
-                  <div v-if="ingredient.nameTh" class="text-sm text-gray-500 dark:text-gray-400">{{ ingredient.nameTh }}</div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {{ ingredient.name }}
+                  </div>
+                  <div
+                    v-if="ingredient.nameTh"
+                    class="text-sm text-gray-500 dark:text-gray-400"
+                  >
+                    {{ ingredient.nameTh }}
+                  </div>
                 </td>
                 <td class="py-3 px-4 text-sm">
-                  {{ ingredientsStore.getCategory(ingredient.categoryId || '')?.name || '-' }}
+                  {{
+                    ingredientsStore.getCategory(ingredient.categoryId || "")
+                      ?.name || "-"
+                  }}
                 </td>
                 <td class="py-3 px-4 text-right">
-                  <span class="font-medium">{{ ingredient.currentStock.toFixed(2) }}</span>
-                  <span class="text-gray-500 ml-1">{{ ingredient.baseUnit }}</span>
+                  <span class="font-medium">{{
+                    ingredient.currentStock.toFixed(2)
+                  }}</span>
+                  <span class="text-gray-500 ml-1">{{
+                    ingredient.baseUnit
+                  }}</span>
                 </td>
                 <td class="py-3 px-4 text-right">
-                  {{ formatCurrency(ingredient.costPerBaseUnit) }}/{{ ingredient.baseUnit }}
+                  {{ formatCurrency(ingredient.costPerBaseUnit) }}/{{
+                    ingredient.baseUnit
+                  }}
                 </td>
                 <td class="py-3 px-4 text-center">
                   <UBadge
@@ -561,10 +644,10 @@ watch([searchQuery, selectedCategory], () => {
           <div v-if="!filteredIngredients.length" class="text-center py-12">
             <div class="text-6xl mb-4">🧪</div>
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {{ t('ingredients.noIngredients') }}
+              {{ t("ingredients.noIngredients") }}
             </h3>
             <p class="text-gray-500 dark:text-gray-400 mb-4">
-              {{ t('ingredients.addFirstIngredient') }}
+              {{ t("ingredients.addFirstIngredient") }}
             </p>
             <UButton
               color="primary"
@@ -575,11 +658,17 @@ watch([searchQuery, selectedCategory], () => {
         </div>
 
         <!-- Pagination -->
-        <div v-if="filteredIngredients.length > itemsPerPage" class="flex justify-between items-center mt-4">
+        <div
+          v-if="filteredIngredients.length > itemsPerPage"
+          class="flex justify-between items-center mt-4"
+        >
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            {{ t('common.showing') }} {{ (currentPage - 1) * itemsPerPage + 1 }} - 
-            {{ Math.min(currentPage * itemsPerPage, filteredIngredients.length) }}
-            {{ t('common.of') }} {{ filteredIngredients.length }}
+            {{ t("common.showing") }}
+            {{ (currentPage - 1) * itemsPerPage + 1 }} -
+            {{
+              Math.min(currentPage * itemsPerPage, filteredIngredients.length)
+            }}
+            {{ t("common.of") }} {{ filteredIngredients.length }}
           </div>
           <div class="flex gap-2">
             <UButton
@@ -609,15 +698,22 @@ watch([searchQuery, selectedCategory], () => {
     <!-- Alerts Tab -->
     <template v-if="activeTab === 'alerts'">
       <div class="px-4">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+        >
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h3
+              class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
+            >
               <span class="text-xl">⚠️</span>
-              {{ t('ingredients.lowStockAlerts') }}
+              {{ t("ingredients.lowStockAlerts") }}
             </h3>
           </div>
-          
-          <div v-if="ingredientsStore.pendingAlerts.value.length" class="divide-y divide-gray-200 dark:divide-gray-700">
+
+          <div
+            v-if="ingredientsStore.pendingAlerts.value.length"
+            class="divide-y divide-gray-200 dark:divide-gray-700"
+          >
             <div
               v-for="alert in ingredientsStore.pendingAlerts.value"
               :key="alert.id"
@@ -630,17 +726,28 @@ watch([searchQuery, selectedCategory], () => {
                   size="xs"
                 />
                 <div>
-                  <div class="font-medium text-gray-900 dark:text-white">{{ alert.ingredient?.name || t('ingredients.unknown') }}</div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {{ alert.ingredient?.name || t("ingredients.unknown") }}
+                  </div>
                   <div class="text-sm text-gray-500 dark:text-gray-400">
-                    Current: {{ alert.currentStock.toFixed(2) }} {{ alert.ingredient?.baseUnit }} 
-                    (Min: {{ alert.minStock }})
+                    Current: {{ alert.currentStock.toFixed(2) }}
+                    {{ alert.ingredient?.baseUnit }} (Min: {{ alert.minStock }})
                   </div>
                 </div>
               </div>
               <div class="flex items-center gap-4">
                 <div class="text-right text-sm">
-                  <div>{{ t('ingredients.suggestedOrder') }}: <span class="font-medium">{{ alert.suggestedPurchaseQty.toFixed(2) }} {{ alert.ingredient?.baseUnit }}</span></div>
-                  <div class="text-gray-500">{{ t('ingredients.estimatedCost') }}: {{ formatCurrency(alert.estimatedCost) }}</div>
+                  <div>
+                    {{ t("ingredients.suggestedOrder") }}:
+                    <span class="font-medium"
+                      >{{ alert.suggestedPurchaseQty.toFixed(2) }}
+                      {{ alert.ingredient?.baseUnit }}</span
+                    >
+                  </div>
+                  <div class="text-gray-500">
+                    {{ t("ingredients.estimatedCost") }}:
+                    {{ formatCurrency(alert.estimatedCost) }}
+                  </div>
                 </div>
                 <UButton
                   color="neutral"
@@ -655,8 +762,12 @@ watch([searchQuery, selectedCategory], () => {
 
           <div v-else class="p-12 text-center">
             <div class="text-6xl mb-4">✅</div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{{ t('ingredients.allClear') }}</h3>
-            <p class="text-gray-500 dark:text-gray-400">{{ t('ingredients.noLowStockAlerts') }}</p>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              {{ t("ingredients.allClear") }}
+            </h3>
+            <p class="text-gray-500 dark:text-gray-400">
+              {{ t("ingredients.noLowStockAlerts") }}
+            </p>
           </div>
         </div>
       </div>
@@ -665,17 +776,27 @@ watch([searchQuery, selectedCategory], () => {
     <!-- Usage Tab -->
     <template v-if="activeTab === 'usage'">
       <div class="px-4">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+        >
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h3
+              class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
+            >
               <span class="text-xl">📊</span>
-              {{ t('ingredients.recentStockMovements') }}
+              {{ t("ingredients.recentStockMovements") }}
             </h3>
           </div>
-          
-          <div v-if="ingredientsStore.stockAdjustments.value.length" class="divide-y divide-gray-200 dark:divide-gray-700">
+
+          <div
+            v-if="ingredientsStore.stockAdjustments.value.length"
+            class="divide-y divide-gray-200 dark:divide-gray-700"
+          >
             <div
-              v-for="adj in ingredientsStore.stockAdjustments.value.slice(0, 20)"
+              v-for="adj in ingredientsStore.stockAdjustments.value.slice(
+                0,
+                20
+              )"
               :key="adj.id"
               class="p-4 flex justify-between items-center"
             >
@@ -683,26 +804,44 @@ watch([searchQuery, selectedCategory], () => {
                 <div
                   class="w-10 h-10 rounded-full flex items-center justify-center"
                   :class="{
-                    'bg-green-100 dark:bg-green-900/30 text-green-600': adj.type === 'purchase',
-                    'bg-red-100 dark:bg-red-900/30 text-red-600': adj.type === 'usage' || adj.type === 'waste',
-                    'bg-blue-100 dark:bg-blue-900/30 text-blue-600': adj.type === 'count' || adj.type === 'adjustment',
+                    'bg-green-100 dark:bg-green-900/30 text-green-600':
+                      adj.type === 'purchase',
+                    'bg-red-100 dark:bg-red-900/30 text-red-600':
+                      adj.type === 'usage' || adj.type === 'waste',
+                    'bg-blue-100 dark:bg-blue-900/30 text-blue-600':
+                      adj.type === 'count' || adj.type === 'adjustment',
                   }"
                 >
                   <span class="text-lg">
-                    {{ adj.type === 'purchase' ? '➕' : adj.type === 'usage' ? '➖' : adj.type === 'waste' ? '🗑️' : '📋' }}
+                    {{
+                      adj.type === "purchase"
+                        ? "➕"
+                        : adj.type === "usage"
+                        ? "➖"
+                        : adj.type === "waste"
+                        ? "🗑️"
+                        : "📋"
+                    }}
                   </span>
                 </div>
                 <div>
-                  <div class="font-medium text-gray-900 dark:text-white">{{ adj.ingredient?.name || 'Unknown' }}</div>
-                  <div class="text-sm text-gray-500 dark:text-gray-400">{{ adj.reason }}</div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {{ adj.ingredient?.name || "Unknown" }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ adj.reason }}
+                  </div>
                 </div>
               </div>
               <div class="text-right">
                 <div
                   class="font-medium"
-                  :class="adj.adjustment > 0 ? 'text-green-600' : 'text-red-600'"
+                  :class="
+                    adj.adjustment > 0 ? 'text-green-600' : 'text-red-600'
+                  "
                 >
-                  {{ adj.adjustment > 0 ? '+' : '' }}{{ adj.adjustment.toFixed(2) }}
+                  {{ adj.adjustment > 0 ? "+" : ""
+                  }}{{ adj.adjustment.toFixed(2) }}
                 </div>
                 <div class="text-sm text-gray-500 dark:text-gray-400">
                   {{ new Date(adj.createdAt).toLocaleDateString() }}
@@ -713,22 +852,30 @@ watch([searchQuery, selectedCategory], () => {
 
           <div v-else class="p-12 text-center">
             <div class="text-6xl mb-4">📭</div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{{ t('ingredients.noHistoryYet') }}</h3>
-            <p class="text-gray-500 dark:text-gray-400">{{ t('ingredients.stockAdjustmentsAppearHere') }}</p>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              {{ t("ingredients.noHistoryYet") }}
+            </h3>
+            <p class="text-gray-500 dark:text-gray-400">
+              {{ t("ingredients.stockAdjustmentsAppearHere") }}
+            </p>
           </div>
         </div>
       </div>
     </template>
 
     <!-- Create Ingredient Modal -->
-    <UModal v-model:open="showCreateModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
+    <UModal
+      v-model:open="showCreateModal"
+      :overlay="true"
+      :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }"
+    >
       <template #content>
         <UCard class="max-w-lg">
           <template #header>
             <div class="flex items-center gap-3">
               <span class="text-2xl">🧪</span>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t('ingredients.addIngredient') }}
+                {{ t("ingredients.addIngredient") }}
               </h3>
             </div>
           </template>
@@ -835,7 +982,7 @@ watch([searchQuery, selectedCategory], () => {
                     type="radio"
                     :value="storage.value"
                     class="w-4 h-4 text-primary-600"
-                  >
+                  />
                   <span>{{ storage.label }}</span>
                 </label>
               </div>
@@ -864,16 +1011,22 @@ watch([searchQuery, selectedCategory], () => {
     </UModal>
 
     <!-- Stock Adjustment Modal -->
-    <UModal v-model:open="showStockModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
+    <UModal
+      v-model:open="showStockModal"
+      :overlay="true"
+      :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }"
+    >
       <template #content>
         <UCard v-if="selectedIngredient" class="max-w-md">
           <template #header>
             <div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t('ingredients.adjustStock') }}
+                {{ t("ingredients.adjustStock") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {{ selectedIngredient.name }} - Current: {{ selectedIngredient.currentStock.toFixed(2) }} {{ selectedIngredient.baseUnit }}
+                {{ selectedIngredient.name }} - Current:
+                {{ selectedIngredient.currentStock.toFixed(2) }}
+                {{ selectedIngredient.baseUnit }}
               </p>
             </div>
           </template>
@@ -888,7 +1041,13 @@ watch([searchQuery, selectedCategory], () => {
               />
             </UFormField>
 
-            <UFormField :label="stockForm.type === 'count' ? t('ingredients.newStockLevel') : t('ingredients.quantity')">
+            <UFormField
+              :label="
+                stockForm.type === 'count'
+                  ? t('ingredients.newStockLevel')
+                  : t('ingredients.quantity')
+              "
+            >
               <UInput
                 v-model.number="stockForm.adjustment"
                 type="number"
@@ -896,7 +1055,10 @@ watch([searchQuery, selectedCategory], () => {
               />
             </UFormField>
 
-            <UFormField v-if="stockForm.type === 'purchase'" :label="t('ingredients.unitCost')">
+            <UFormField
+              v-if="stockForm.type === 'purchase'"
+              :label="t('ingredients.unitCost')"
+            >
               <UInput
                 v-model.number="stockForm.unitCost"
                 type="number"
@@ -935,7 +1097,11 @@ watch([searchQuery, selectedCategory], () => {
     </UModal>
 
     <!-- Details Modal -->
-    <UModal v-model:open="showDetailsModal" :overlay="true" :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }">
+    <UModal
+      v-model:open="showDetailsModal"
+      :overlay="true"
+      :ui="{ overlay: 'bg-gray-950/50 dark:bg-gray-950/75' }"
+    >
       <template #content>
         <UCard v-if="selectedIngredient" class="max-w-lg">
           <template #header>
@@ -943,7 +1109,10 @@ watch([searchQuery, selectedCategory], () => {
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">
                 {{ selectedIngredient.name }}
               </h3>
-              <p v-if="selectedIngredient.nameTh" class="text-gray-500 dark:text-gray-400">
+              <p
+                v-if="selectedIngredient.nameTh"
+                class="text-gray-500 dark:text-gray-400"
+              >
                 {{ selectedIngredient.nameTh }}
               </p>
             </div>
@@ -952,52 +1121,108 @@ watch([searchQuery, selectedCategory], () => {
           <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.code') }}</div>
-                <div class="font-mono font-medium text-gray-900 dark:text-white">{{ selectedIngredient.code }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t("ingredients.code") }}
+                </div>
+                <div
+                  class="font-mono font-medium text-gray-900 dark:text-white"
+                >
+                  {{ selectedIngredient.code }}
+                </div>
               </div>
               <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('common.category') }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t("common.category") }}
+                </div>
                 <div class="font-medium text-gray-900 dark:text-white">
-                  {{ ingredientsStore.getCategory(selectedIngredient.categoryId || '')?.name || t('ingredients.uncategorized') }}
+                  {{
+                    ingredientsStore.getCategory(
+                      selectedIngredient.categoryId || ""
+                    )?.name || t("ingredients.uncategorized")
+                  }}
                 </div>
               </div>
             </div>
 
             <div class="grid grid-cols-3 gap-4">
-              <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.currentStock') }}</div>
-                <div class="font-bold text-lg text-gray-900 dark:text-white">{{ selectedIngredient.currentStock.toFixed(2) }}</div>
-                <div class="text-xs text-gray-500">{{ selectedIngredient.baseUnit }}</div>
+              <div
+                class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center"
+              >
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t("ingredients.currentStock") }}
+                </div>
+                <div class="font-bold text-lg text-gray-900 dark:text-white">
+                  {{ selectedIngredient.currentStock.toFixed(2) }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ selectedIngredient.baseUnit }}
+                </div>
               </div>
-              <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.minStock') }}</div>
-                <div class="font-bold text-lg text-gray-900 dark:text-white">{{ selectedIngredient.minStock.toFixed(2) }}</div>
-                <div class="text-xs text-gray-500">{{ selectedIngredient.baseUnit }}</div>
+              <div
+                class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center"
+              >
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t("ingredients.minStock") }}
+                </div>
+                <div class="font-bold text-lg text-gray-900 dark:text-white">
+                  {{ selectedIngredient.minStock.toFixed(2) }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ selectedIngredient.baseUnit }}
+                </div>
               </div>
-              <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('ingredients.maxStock') }}</div>
-                <div class="font-bold text-lg text-gray-900 dark:text-white">{{ selectedIngredient.maxStock.toFixed(2) }}</div>
-                <div class="text-xs text-gray-500">{{ selectedIngredient.baseUnit }}</div>
+              <div
+                class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center"
+              >
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t("ingredients.maxStock") }}
+                </div>
+                <div class="font-bold text-lg text-gray-900 dark:text-white">
+                  {{ selectedIngredient.maxStock.toFixed(2) }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ selectedIngredient.baseUnit }}
+                </div>
               </div>
             </div>
 
             <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-              <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ t('ingredients.costInformation') }}</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                {{ t("ingredients.costInformation") }}
+              </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <div class="text-xs text-gray-500">{{ t('ingredients.perUnit', { unit: selectedIngredient.baseUnit }) }}</div>
-                  <div class="font-bold text-gray-900 dark:text-white">{{ formatCurrency(selectedIngredient.costPerBaseUnit) }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{
+                      t("ingredients.perUnit", {
+                        unit: selectedIngredient.baseUnit,
+                      })
+                    }}
+                  </div>
+                  <div class="font-bold text-gray-900 dark:text-white">
+                    {{ formatCurrency(selectedIngredient.costPerBaseUnit) }}
+                  </div>
                 </div>
                 <div>
-                  <div class="text-xs text-gray-500">{{ t('ingredients.perUnit', { unit: selectedIngredient.unit }) }}</div>
-                  <div class="font-bold text-gray-900 dark:text-white">{{ formatCurrency(selectedIngredient.costPerUnit) }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{
+                      t("ingredients.perUnit", {
+                        unit: selectedIngredient.unit,
+                      })
+                    }}
+                  </div>
+                  <div class="font-bold text-gray-900 dark:text-white">
+                    {{ formatCurrency(selectedIngredient.costPerUnit) }}
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="flex justify-between items-center">
               <div class="text-sm text-gray-500 dark:text-gray-400">
-                {{ t('ingredients.storage') }}: {{ getStorageIcon(selectedIngredient.storageType) }} {{ selectedIngredient.storageType }}
+                {{ t("ingredients.storage") }}:
+                {{ getStorageIcon(selectedIngredient.storageType) }}
+                {{ selectedIngredient.storageType }}
               </div>
               <UBadge
                 :color="getStockStatusColor(selectedIngredient)"
@@ -1014,7 +1239,10 @@ watch([searchQuery, selectedCategory], () => {
                 variant="ghost"
                 icon="i-heroicons-arrow-path"
                 :label="t('ingredients.adjustStock')"
-                @click="openStockModal(selectedIngredient); showDetailsModal = false"
+                @click="
+                  openStockModal(selectedIngredient);
+                  showDetailsModal = false;
+                "
               />
               <UButton
                 color="neutral"

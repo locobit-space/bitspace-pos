@@ -2,8 +2,8 @@
 <!-- 🧾 Orders Management - Connected to Nostr/Dexie -->
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth'],
+  layout: "default",
+  middleware: ["auth"],
 });
 
 const { t } = useI18n();
@@ -37,10 +37,11 @@ const filteredOrders = computed(() => {
   // Search filter
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase();
-    result = result.filter((order) => 
-      order.id.toLowerCase().includes(query) ||
-      (order.customer && order.customer.toLowerCase().includes(query)) ||
-      (order.customerName && order.customerName.toLowerCase().includes(query))
+    result = result.filter(
+      (order) =>
+        order.id.toLowerCase().includes(query) ||
+        (order.customer && order.customer.toLowerCase().includes(query)) ||
+        (order.customerName && order.customerName.toLowerCase().includes(query))
     );
   }
 
@@ -50,7 +51,9 @@ const filteredOrders = computed(() => {
   }
 
   // Sort by date descending
-  result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  result.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
 
   return result;
 });
@@ -65,11 +68,11 @@ const paginatedOrders = computed(() => {
 const stats = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const todayOrders = ordersStore.orders.value.filter(
-    o => new Date(o.date) >= today
+    (o) => new Date(o.date) >= today
   );
-  
+
   return {
     total: ordersStore.orders.value.length,
     today: todayOrders.length,
@@ -81,42 +84,42 @@ const stats = computed(() => {
 // Status badge color mapping
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    pending: 'yellow',
-    processing: 'blue', 
-    completed: 'green',
-    cancelled: 'red',
-    refunded: 'orange',
+    pending: "yellow",
+    processing: "blue",
+    completed: "green",
+    cancelled: "red",
+    refunded: "orange",
   };
-  return colors[status] || 'gray';
+  return colors[status] || "gray";
 };
 
 // Payment method icon
 const getPaymentIcon = (method?: string) => {
   const icons: Record<string, string> = {
-    lightning: '⚡',
-    cash: '💵',
-    qr_static: '📱',
-    bolt12: '⚡',
-    lnurl: '⚡',
-    card: '💳',
+    lightning: "⚡",
+    cash: "💵",
+    qr_static: "📱",
+    bolt12: "⚡",
+    lnurl: "⚡",
+    card: "💳",
   };
-  return icons[method || ''] || '💰';
+  return icons[method || ""] || "💰";
 };
 
 // Format date
 const formatDate = (date: string | Date) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
 // Delete order
 const deleteOrder = async (id: string) => {
-  if (confirm(t('orders.confirmDelete'))) {
+  if (confirm(t("orders.confirmDelete"))) {
     await ordersStore.deleteOrder(id);
   }
 };
@@ -152,7 +155,7 @@ onMounted(async () => {
           >
             {{ ordersStore.syncPending.value }} pending
           </UButton>
-          
+
           <UButton
             v-if="canCreateOrders"
             icon="i-heroicons-plus"
@@ -166,31 +169,30 @@ onMounted(async () => {
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <div class="text-3xl mb-1">📋</div>
-        <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</div>
-        <div class="text-sm text-gray-500">Total Orders</div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <div class="text-3xl mb-1">📅</div>
-        <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.today }}</div>
-        <div class="text-sm text-gray-500">Today</div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <div class="text-3xl mb-1">💰</div>
-        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">
-          {{ currency.format(stats.todayRevenue, 'LAK') }}
-        </div>
-        <div class="text-sm text-gray-500">Today's Revenue</div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <div class="text-3xl mb-1">⏳</div>
-        <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ stats.pending }}</div>
-        <div class="text-sm text-gray-500">Pending</div>
-      </div>
+      <CommonStatCard
+        icon="i-heroicons-clipboard-document-list"
+        icon-color="blue"
+        label="Total Orders"
+        :value="stats.total"
+      />
+      <CommonStatCard
+        icon="i-heroicons-calendar-days"
+        icon-color="green"
+        label="Today"
+        :value="stats.today"
+      />
+      <CommonStatCard
+        icon="i-heroicons-banknotes"
+        icon-color="yellow"
+        label="Today's Revenue"
+        :value="currency.format(stats.todayRevenue, 'LAK')"
+      />
+      <CommonStatCard
+        icon="i-heroicons-clock"
+        icon-color="yellow"
+        label="Pending"
+        :value="stats.pending"
+      />
     </div>
 
     <!-- Filters -->
@@ -233,9 +235,7 @@ onMounted(async () => {
         No orders yet
       </h3>
       <p class="text-gray-500 mb-4">Create your first order from the POS</p>
-      <UButton to="/pos" color="primary">
-        Go to POS
-      </UButton>
+      <UButton to="/pos" color="primary"> Go to POS </UButton>
     </div>
 
     <!-- Orders Table -->
@@ -243,28 +243,44 @@ onMounted(async () => {
       <table class="w-full">
         <thead>
           <tr class="border-b border-gray-200 dark:border-gray-700">
-            <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               {{ t("orders.id") }}
             </th>
-            <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               {{ t("orders.date") }}
             </th>
-            <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               {{ t("orders.customer") }}
             </th>
-            <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               Items
             </th>
-            <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               Payment
             </th>
-            <th class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               {{ t("orders.total") }}
             </th>
-            <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               {{ t("orders.status") }}
             </th>
-            <th class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">
+            <th
+              class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
+            >
               {{ t("common.actions") }}
             </th>
           </tr>
@@ -277,7 +293,9 @@ onMounted(async () => {
             @click="$router.push(`/orders/${order.id}`)"
           >
             <td class="py-3 px-4">
-              <code class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+              <code
+                class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+              >
                 {{ order.id }}
               </code>
             </td>
@@ -285,7 +303,10 @@ onMounted(async () => {
               {{ formatDate(order.date) }}
             </td>
             <td class="py-3 px-4">
-              <div v-if="order.customer || order.customerName" class="font-medium text-gray-900 dark:text-white">
+              <div
+                v-if="order.customer || order.customerName"
+                class="font-medium text-gray-900 dark:text-white"
+              >
                 {{ order.customerName || order.customer }}
               </div>
               <div v-else class="text-gray-400">—</div>
@@ -297,16 +318,19 @@ onMounted(async () => {
               <span class="inline-flex items-center gap-1 text-sm">
                 <span>{{ getPaymentIcon(order.paymentMethod) }}</span>
                 <span class="text-gray-600 dark:text-gray-400 capitalize">
-                  {{ order.paymentMethod || 'unknown' }}
+                  {{ order.paymentMethod || "unknown" }}
                 </span>
               </span>
             </td>
             <td class="py-3 px-4 text-right">
               <div class="font-bold text-gray-900 dark:text-white">
-                {{ currency.format(order.total, 'LAK') }}
+                {{ currency.format(order.total, "LAK") }}
               </div>
-              <div v-if="order.totalSats" class="text-xs text-amber-600 dark:text-amber-400">
-                {{ currency.format(order.totalSats, 'SATS') }}
+              <div
+                v-if="order.totalSats"
+                class="text-xs text-amber-600 dark:text-amber-400"
+              >
+                {{ currency.format(order.totalSats, "SATS") }}
               </div>
             </td>
             <td class="py-3 px-4">
@@ -348,10 +372,14 @@ onMounted(async () => {
     </div>
 
     <!-- Pagination -->
-    <div v-if="filteredOrders.length > 0" class="flex justify-between items-center px-4">
+    <div
+      v-if="filteredOrders.length > 0"
+      class="flex justify-between items-center px-4"
+    >
       <span class="text-sm text-gray-500 dark:text-gray-400">
         {{ t("common.showing") }} {{ paginatedOrders.length }}
-        {{ t("common.of") }} {{ filteredOrders.length }} {{ t("common.entries") }}
+        {{ t("common.of") }} {{ filteredOrders.length }}
+        {{ t("common.entries") }}
       </span>
       <UPagination
         v-model:page="currentPage"
@@ -359,14 +387,24 @@ onMounted(async () => {
         :total="filteredOrders.length"
       />
     </div>
-    
+
     <!-- Nostr Sync Info -->
     <div class="px-4 pb-4">
-      <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 text-sm text-gray-500 dark:text-gray-400">
+      <div
+        class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 text-sm text-gray-500 dark:text-gray-400"
+      >
         <div class="flex items-center gap-2">
           <span>📡</span>
-          <span>Orders are stored locally and synced to Nostr relays when online</span>
-          <UBadge v-if="ordersStore.syncPending.value > 0" color="amber" variant="soft" size="xs">
+          <span
+            >Orders are stored locally and synced to Nostr relays when
+            online</span
+          >
+          <UBadge
+            v-if="ordersStore.syncPending.value > 0"
+            color="amber"
+            variant="soft"
+            size="xs"
+          >
             {{ ordersStore.syncPending.value }} pending sync
           </UBadge>
         </div>

@@ -478,90 +478,30 @@ watch([searchQuery, selectedDifficulty], () => {
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
-      <div
-        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xl"
-          >
-            📋
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("recipes.stats.totalRecipes") }}
-            </div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ recipesStore.activeRecipes.value.length }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xl"
-          >
-            📊
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("recipes.stats.avgMargin") }}
-            </div>
-            <div
-              class="text-2xl font-bold"
-              :class="`text-${getProfitColor(
-                recipesStore.averageProfitMargin.value
-              )}-600`"
-            >
-              {{ formatPercent(recipesStore.averageProfitMargin.value) }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xl"
-          >
-            💰
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("recipes.stats.highProfit") }}
-            </div>
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-              {{ recipesStore.highProfitRecipes.value.length }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-xl"
-          >
-            ⚠️
-          </div>
-          <div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("recipes.stats.lowMargin") }}
-            </div>
-            <div class="text-2xl font-bold text-red-600 dark:text-red-400">
-              {{ recipesStore.lowProfitRecipes.value.length }}
-            </div>
-          </div>
-        </div>
-      </div>
+      <CommonStatCard
+        icon="i-heroicons-clipboard-document-list"
+        icon-color="blue"
+        :label="t('recipes.stats.totalRecipes')"
+        :value="recipesStore.activeRecipes.value.length"
+      />
+      <CommonStatCard
+        icon="i-heroicons-chart-bar"
+        icon-color="blue"
+        :label="t('recipes.stats.avgMargin')"
+        :value="formatPercent(recipesStore.averageProfitMargin.value)"
+      />
+      <CommonStatCard
+        icon="i-heroicons-currency-dollar"
+        icon-color="green"
+        :label="t('recipes.stats.highProfit')"
+        :value="recipesStore.highProfitRecipes.value.length"
+      />
+      <CommonStatCard
+        icon="i-heroicons-exclamation-triangle"
+        icon-color="red"
+        :label="t('recipes.stats.lowMargin')"
+        :value="recipesStore.lowProfitRecipes.value.length"
+      />
     </div>
 
     <!-- Tabs -->
