@@ -8,6 +8,7 @@ definePageMeta({
 
 const { t } = useI18n();
 const currency = useCurrency();
+import * as XLSX from "xlsx";
 
 // Use real orders store with Nostr sync
 const ordersStore = useOrders();
@@ -129,6 +130,26 @@ const handleSync = async () => {
   await ordersStore.syncWithNostr();
 };
 
+// Export orders to Excel
+const exportOrdersToExcel = () => {
+  const data = filteredOrders.value.map((order) => ({
+    "Order ID": order.id,
+    Date: formatDate(order.date),
+    Customer: order.customerName || order.customer || "-",
+    Items: order.items?.length || 0,
+    "Payment Method": order.paymentMethod || "-",
+    "Total (LAK)": order.total,
+    "Total (Sats)": order.totalSats || "-",
+    Status: order.status,
+    Notes: order.notes || "",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Orders");
+  XLSX.writeFile(wb, `Orders_${new Date().toISOString().split("T")[0]}.xlsx`);
+};
+
 // Initialize
 onMounted(async () => {
   await ordersStore.init();
@@ -144,6 +165,15 @@ onMounted(async () => {
     >
       <template #right>
         <div class="flex gap-2">
+          <!-- Export Button -->
+          <UButton
+            icon="i-heroicons-arrow-down-tray"
+            color="neutral"
+            variant="soft"
+            :label="t('common.export') || 'Export'"
+            @click="exportOrdersToExcel"
+          />
+
           <!-- Sync Button -->
           <UButton
             v-if="ordersStore.syncPending.value > 0"

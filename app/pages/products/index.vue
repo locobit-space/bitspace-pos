@@ -129,33 +129,52 @@
     </div>
 
     <!-- Products Table -->
-
     <div class="flex justify-between items-center px-4">
       <h2 class="text-xl font-semibold">
         {{ $t("products.list") }} ({{ filteredProducts.length }})
       </h2>
       <div class="flex gap-2">
-        <UButton
-          color="gray"
-          variant="outline"
-          size="sm"
-          :label="$t('common.export')"
-          icon="i-heroicons-arrow-down-tray"
-          @click="exportProducts"
-        />
-        <UButton
-          color="gray"
-          variant="outline"
-          size="sm"
-          :label="$t('common.import')"
-          icon="i-heroicons-arrow-up-tray"
-          @click="importProducts"
-        />
+        <UDropdownMenu
+          :items="[
+            [
+              {
+                label: $t('products.import.title') || 'Import Excel',
+                icon: 'i-heroicons-arrow-up-tray',
+                onClick: () => (showExcelImportModal = true),
+              },
+              {
+                label: $t('products.export.title') || 'Export Excel',
+                icon: 'i-heroicons-arrow-down-tray',
+                onClick: exportToExcel,
+              },
+            ],
+            [
+              {
+                label: 'Backup (JSON)',
+                icon: 'i-heroicons-archive-box-arrow-down',
+                onClick: exportProducts,
+              },
+              {
+                label: 'Restore (JSON)',
+                icon: 'i-heroicons-archive-box',
+                onClick: importProducts,
+              },
+            ],
+          ]"
+        >
+          <UButton
+            variant="soft"
+            :label="$t('common.data') || 'Data'"
+            icon="i-heroicons-table-cells"
+            trailing-icon="i-heroicons-chevron-down-20-solid"
+          />
+        </UDropdownMenu>
       </div>
     </div>
 
     <div class="overflow-x-auto">
       <table class="w-full">
+        <!-- ... existing table header ... -->
         <thead>
           <tr class="border-b border-gray-200 dark:border-gray-700">
             <th
@@ -206,6 +225,7 @@
           </tr>
         </thead>
         <tbody>
+          <!-- ... existing table body ... -->
           <tr
             v-for="product in paginatedProducts"
             :key="product.id"
@@ -350,7 +370,7 @@
       </table>
     </div>
 
-    <!-- Pagination -->
+    <!-- ... Pagination ... -->
     <div class="flex justify-between items-center px-4">
       <div class="text-sm text-gray-500 dark:text-gray-400">
         {{ $t("common.showing") }} {{ startIndex + 1 }} - {{ endIndex }}
@@ -378,6 +398,14 @@
         />
       </div>
     </div>
+
+    <!-- Excel Import Modal -->
+    <ProductsExcelImportModal
+      v-model:open="showExcelImportModal"
+      @import="handleExcelImport"
+    />
+
+    <!-- ... Other Modals ... -->
 
     <!-- Product Modal - Using Component -->
     <ProductsProductModal
@@ -1402,43 +1430,45 @@ const deleteProduct = (product: Product) => {
 };
 
 // Handler for importing products from public database lookup
-const handleLookupImport = async (products: import('~/composables/use-product-lookup').PublicProduct[]) => {
+const handleLookupImport = async (
+  products: import("~/composables/use-product-lookup").PublicProduct[]
+) => {
   const toast = useToast();
   const imported = [];
-  
+
   for (const product of products) {
     try {
       // Create a new product from the lookup result
       const newProduct = {
         name: product.name,
         sku: `SKU-${Date.now().toString(36).toUpperCase()}`,
-        description: product.description || '',
-        categoryId: '', // User will need to assign category
-        unitId: '', // User will need to assign unit
+        description: product.description || "",
+        categoryId: "", // User will need to assign category
+        unitId: "", // User will need to assign unit
         price: product.suggestedPrice || 0,
         stock: 0,
         minStock: 0,
-        branchId: selectedBranch.value !== 'all' ? selectedBranch.value : '',
-        status: 'active' as const,
-        image: product.image || '',
+        branchId: selectedBranch.value !== "all" ? selectedBranch.value : "",
+        status: "active" as const,
+        image: product.image || "",
         barcode: product.barcode,
-        productType: 'good' as const,
+        productType: "good" as const,
         trackStock: true,
       };
-      
+
       await productsStore.addProduct(newProduct);
       imported.push(product.name);
     } catch (error) {
-      console.error('Failed to import product:', product.name, error);
+      console.error("Failed to import product:", product.name, error);
     }
   }
-  
+
   if (imported.length > 0) {
     toast.add({
-      title: t('common.success'),
+      title: t("common.success"),
       description: `Imported ${imported.length} product(s)`,
-      icon: 'i-heroicons-check-circle',
-      color: 'success',
+      icon: "i-heroicons-check-circle",
+      color: "success",
     });
   }
 };
@@ -1884,7 +1914,126 @@ const exportProducts = async () => {
   }
 };
 
-// ✅ Import products from JSON
+// ... imports
+import * as XLSX from "xlsx";
+
+// ... variables
+const showExcelImportModal = ref(false);
+
+// ... existing code ...
+
+const exportToExcel = () => {
+  const data = filteredProducts.value.map((p) => ({
+    Name: p.name,
+    Category: getCategoryName(p.categoryId),
+    Price: p.price,
+    Stock: p.stock,
+    Unit: getUnitSymbol(p.unitId),
+    SKU: p.sku,
+    Barcode: p.barcode,
+    Description: p.description,
+    Image: p.image,
+    Status: p.status,
+    CanExpire: p.hasExpiry ? "true" : "false",
+    ExpiryDays: p.defaultShelfLifeDays,
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Products");
+  XLSX.writeFile(wb, `Products_${new Date().toISOString().split("T")[0]}.xlsx`);
+};
+
+const handleExcelImport = async (data: any[]) => {
+  let importedCount = 0;
+
+  for (const row of data) {
+    try {
+      // 1. Resolve Category
+      let categoryId = "all";
+      if (row.Category) {
+        const existingCat = categories.value.find(
+          (c) => c.name.toLowerCase() === String(row.Category).toLowerCase()
+        );
+        if (existingCat) {
+          categoryId = existingCat.id;
+        } else {
+          // Create new category
+          const newId = await productsStore.addCategory({
+            name: String(row.Category),
+            icon: "📦",
+          });
+          categoryId = newId as unknown as string; // Ensure string type
+        }
+      }
+
+      // 2. Resolve Unit
+      let unitId = "piece"; // default
+      if (row.Unit) {
+        const existingUnit = units.value.find(
+          (u) =>
+            u.symbol.toLowerCase() === String(row.Unit).toLowerCase() ||
+            u.name.toLowerCase() === String(row.Unit).toLowerCase()
+        );
+        unitId = existingUnit ? existingUnit.id : "piece"; // Default to piece if not found (safer than creating dupes)
+      }
+
+      // 3. Create Product
+      const newProduct = {
+        name: String(row.Name || "Unnamed Product"),
+        sku: row.SKU
+          ? String(row.SKU)
+          : `SKU-${Date.now().toString(36).toUpperCase()}-${importedCount}`,
+        barcode: row.Barcode ? String(row.Barcode) : undefined,
+        description: row.Description ? String(row.Description) : "",
+        categoryId,
+        unitId,
+        price: Number(row.Price) || 0,
+        stock: Number(row.Stock) || 0,
+        minStock: 5,
+        branchId:
+          selectedBranch.value !== "all" ? selectedBranch.value : "main",
+        status: (row.Status?.toLowerCase() === "inactive"
+          ? "inactive"
+          : "active") as "active" | "inactive",
+        image: row.Image ? String(row.Image) : "📦",
+        productType: "good" as const,
+        trackStock: true,
+        hasExpiry: String(row.CanExpire).toLowerCase() === "true",
+        defaultShelfLifeDays: row.ExpiryDays
+          ? Number(row.ExpiryDays)
+          : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await productsStore.addProduct(newProduct);
+      importedCount++;
+    } catch (e) {
+      console.error("Import error for row", row, e);
+    }
+  }
+
+  if (importedCount > 0) {
+    toast.add({
+      title: "Import Successful",
+      description: `Successfully imported ${importedCount} products.`,
+      color: "green",
+      icon: "i-heroicons-check-circle",
+    });
+  } else {
+    toast.add({
+      title: "Import Failed",
+      description: "No products were imported. Please check your file format.",
+      color: "red",
+      icon: "i-heroicons-exclamation-circle",
+    });
+  }
+
+  showExcelImportModal.value = false;
+};
+
+// ✅ Import products from JSON (Legacy/Backup)
 const importProducts = async () => {
   const input = document.createElement("input");
   input.type = "file";
