@@ -543,6 +543,36 @@ export interface ExpiryAlertRecord {
 }
 
 // ============================================
+// 📋 CYCLE COUNT RECORDS
+// Scheduled Physical Inventory Counts
+// ============================================
+
+export interface CycleCountRecord {
+  id: string;
+  name: string;
+  branchId: string;
+  status: 'draft' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled';
+  scheduledDate: number;
+  startedAt?: number;
+  completedAt?: number;
+  // Items to count (JSON array of CycleCountItem)
+  itemsJson: string;
+  // Count results
+  totalItems: number;
+  countedItems: number;
+  varianceCount: number;
+  varianceValue: number;
+  // Approvals
+  createdBy: string;
+  countedBy?: string;
+  approvedBy?: string;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+  synced: boolean;
+}
+
+// ============================================
 // Database Class
 // ============================================
 
@@ -581,6 +611,8 @@ export class POSDatabase extends Dexie {
   stockReceipts!: Table<StockReceiptRecord, string>;
   lotStockMovements!: Table<LotStockMovementRecord, string>;
   expiryAlerts!: Table<ExpiryAlertRecord, string>;
+  // Cycle Counting tables
+  cycleCounts!: Table<CycleCountRecord, string>;
 
   constructor() {
     super("POSDatabase");
@@ -745,6 +777,42 @@ export class POSDatabase extends Dexie {
       expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
       // New in v7 - Product Activity Logs
       productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+    });
+
+    // Version 8: Cycle Counting for Physical Inventory
+    this.version(8).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products: "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      // New in v8 - Cycle Counting
+      cycleCounts: "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
     });
   }
 }
