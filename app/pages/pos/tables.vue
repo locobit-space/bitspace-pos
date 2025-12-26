@@ -873,7 +873,6 @@ const tableForm = reactive({
   seats: 4,
   minSeats: 1,
   floorId: "",
-  floorId: "",
   shape: "square" as "round" | "square" | "rectangle",
   billingType: "per_order" as "per_order" | "per_hour",
   hourlyRate: 0,

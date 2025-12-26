@@ -2078,7 +2078,7 @@
       "paymentReceived": "Payment Received",
       "paymentReceivedDesc": "Alert when payment is confirmed",
       "nostr": "Nostr Notifications",
-      "mentions": "Mentions ('@')",
+      "mentions": "Mentions ({'@'})",
       "mentionsDesc": "When someone mentions you in a note",
       "reactions": "Reactions",
       "reactionsDesc": "Likes, zaps, and other reactions",

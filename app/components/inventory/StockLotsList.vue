@@ -3,11 +3,13 @@
 <template>
   <div class="space-y-4">
     <!-- Header with Filters -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center justify-between px-4 gap-3">
       <div class="flex items-center gap-3">
-        <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h3
+          class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
+        >
           <span class="text-lg">📦</span>
-          {{ $t('inventory.stockLots') || 'Stock Lots' }}
+          {{ $t("inventory.stockLots") || "Stock Lots" }}
           <UBadge color="primary" variant="subtle">
             {{ filteredLots.length }}
           </UBadge>
@@ -35,31 +37,47 @@
     </div>
 
     <!-- Lots Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div
+      class="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-hidden"
+    >
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
             <tr class="bg-gray-50 dark:bg-gray-700/50">
-              <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {{ $t('inventory.lotInfo') || 'Lot Info' }}
+              <th
+                class="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {{ $t("inventory.lotInfo") || "Lot Info" }}
               </th>
-              <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {{ $t('products.name') || 'Product' }}
+              <th
+                class="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {{ $t("products.name") || "Product" }}
               </th>
-              <th class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {{ $t('inventory.quantity') || 'Qty' }}
+              <th
+                class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {{ $t("inventory.quantity") || "Qty" }}
               </th>
-              <th class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {{ $t('inventory.expiryDate') || 'Expiry' }}
+              <th
+                class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {{ $t("inventory.expiryDate") || "Expiry" }}
               </th>
-              <th class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {{ $t('inventory.position') || 'Position' }}
+              <th
+                class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {{ $t("inventory.position") || "Position" }}
               </th>
-              <th class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {{ $t('common.status') || 'Status' }}
+              <th
+                class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {{ $t("common.status") || "Status" }}
               </th>
-              <th class="text-right py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {{ $t('common.actions') || 'Actions' }}
+              <th
+                class="text-right py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {{ $t("common.actions") || "Actions" }}
               </th>
             </tr>
           </thead>
@@ -73,14 +91,17 @@
               <td class="py-3 px-4">
                 <div class="flex items-center gap-3">
                   <!-- FEFO indicator -->
-                  <div 
+                  <div
                     v-if="index === 0 && lot.expiryDate"
                     class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
                     :title="$t('inventory.fefoNext') || 'Next to pick (FEFO)'"
                   >
                     <span class="text-sm">1️⃣</span>
                   </div>
-                  <div v-else class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm text-gray-500">
+                  <div
+                    v-else
+                    class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm text-gray-500"
+                  >
                     {{ index + 1 }}
                   </div>
                   <div>
@@ -97,9 +118,13 @@
               <!-- Product -->
               <td class="py-3 px-4">
                 <div class="flex items-center gap-2">
-                  <span class="text-xl">{{ getProductImage(lot.productId) }}</span>
+                  <span class="text-xl">{{
+                    getProductImage(lot.productId)
+                  }}</span>
                   <div>
-                    <p class="font-medium text-gray-900 dark:text-white text-sm">
+                    <p
+                      class="font-medium text-gray-900 dark:text-white text-sm"
+                    >
                       {{ getProductName(lot.productId) }}
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -124,19 +149,23 @@
               <!-- Expiry -->
               <td class="py-3 px-4 text-center">
                 <div v-if="lot.expiryDate">
-                  <p 
+                  <p
                     class="font-medium text-sm"
                     :class="getExpiryTextClass(lot.daysUntilExpiry)"
                   >
                     {{ formatDate(lot.expiryDate) }}
                   </p>
-                  <p 
+                  <p
                     class="text-xs"
                     :class="getExpiryTextClass(lot.daysUntilExpiry)"
                   >
-                    {{ lot.daysUntilExpiry && lot.daysUntilExpiry <= 0 
-                      ? ($t('inventory.expired') || 'Expired')
-                      : `${lot.daysUntilExpiry} ${$t('common.days') || 'days'}` }}
+                    {{
+                      lot.daysUntilExpiry && lot.daysUntilExpiry <= 0
+                        ? $t("inventory.expired") || "Expired"
+                        : `${lot.daysUntilExpiry} ${
+                            $t("common.days") || "days"
+                          }`
+                    }}
                   </p>
                 </div>
                 <span v-else class="text-gray-400 text-sm">—</span>
@@ -144,7 +173,7 @@
 
               <!-- Position -->
               <td class="py-3 px-4 text-center">
-                <UBadge 
+                <UBadge
                   v-if="lot.positionCode"
                   color="neutral"
                   variant="subtle"
@@ -165,7 +194,9 @@
               <!-- Actions -->
               <td class="py-3 px-4 text-right">
                 <div class="flex items-center justify-end gap-1">
-                  <UTooltip :text="$t('inventory.adjustQty') || 'Adjust Quantity'">
+                  <UTooltip
+                    :text="$t('inventory.adjustQty') || 'Adjust Quantity'"
+                  >
                     <UButton
                       icon="i-heroicons-plus-minus"
                       color="neutral"
@@ -174,7 +205,9 @@
                       @click="$emit('adjust', lot)"
                     />
                   </UTooltip>
-                  <UTooltip :text="$t('inventory.movePosition') || 'Move Position'">
+                  <UTooltip
+                    :text="$t('inventory.movePosition') || 'Move Position'"
+                  >
                     <UButton
                       icon="i-heroicons-arrows-right-left"
                       color="neutral"
@@ -183,10 +216,7 @@
                       @click="$emit('move', lot)"
                     />
                   </UTooltip>
-                  <UDropdownMenu
-                    :items="getLotActions(lot)"
-                    class="w-48"
-                  >
+                  <UDropdownMenu :items="getLotActions(lot)" class="w-48">
                     <UButton
                       icon="i-heroicons-ellipsis-vertical"
                       color="neutral"
@@ -207,18 +237,27 @@
         class="flex flex-col items-center justify-center py-16 text-gray-400"
       >
         <span class="text-4xl mb-3">📦</span>
-        <p class="font-medium">{{ $t('inventory.noLots') || 'No stock lots found' }}</p>
-        <p class="text-sm">{{ $t('inventory.receiveStockToCreate') || 'Receive stock to create lots' }}</p>
+        <p class="font-medium">
+          {{ $t("inventory.noLots") || "No stock lots found" }}
+        </p>
+        <p class="text-sm">
+          {{
+            $t("inventory.receiveStockToCreate") ||
+            "Receive stock to create lots"
+          }}
+        </p>
       </div>
 
       <!-- Pagination -->
-      <div 
+      <div
         v-if="totalPages > 1"
         class="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          {{ $t('common.showing') || 'Showing' }} {{ startIndex + 1 }}-{{ endIndex }} 
-          {{ $t('common.of') || 'of' }} {{ filteredLots.length }}
+          {{ $t("common.showing") || "Showing" }} {{ startIndex + 1 }}-{{
+            endIndex
+          }}
+          {{ $t("common.of") || "of" }} {{ filteredLots.length }}
         </p>
         <div class="flex gap-2">
           <UButton
@@ -247,7 +286,7 @@
 </template>
 
 <script setup lang="ts">
-import type { StockLot } from '~/types';
+import type { StockLot } from "~/types";
 
 // Props & Emits
 defineProps<{
@@ -256,10 +295,10 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'adjust': [lot: StockLot];
-  'move': [lot: StockLot];
-  'quarantine': [lot: StockLot];
-  'view': [lot: StockLot];
+  adjust: [lot: StockLot];
+  move: [lot: StockLot];
+  quarantine: [lot: StockLot];
+  view: [lot: StockLot];
 }>();
 
 // Composables
@@ -268,37 +307,38 @@ const stockLots = useStockLots();
 const productsStore = useProductsStore();
 
 // State
-const searchQuery = ref('');
-const statusFilter = ref('all');
+const searchQuery = ref("");
+const statusFilter = ref("all");
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
 // Options
 const statusOptions = [
-  { value: 'all', label: 'All Status' },
-  { value: 'available', label: '✅ Available' },
-  { value: 'low', label: '📉 Low' },
-  { value: 'expiring', label: '⏰ Expiring' },
-  { value: 'expired', label: '🚫 Expired' },
-  { value: 'quarantine', label: '⚠️ Quarantine' },
+  { value: "all", label: "All Status" },
+  { value: "available", label: "✅ Available" },
+  { value: "low", label: "📉 Low" },
+  { value: "expiring", label: "⏰ Expiring" },
+  { value: "expired", label: "🚫 Expired" },
+  { value: "quarantine", label: "⚠️ Quarantine" },
 ];
 
 // Computed
 const filteredLots = computed(() => {
-  let lots = stockLots.stockLots.value.filter(l => l.status !== 'depleted');
+  let lots = stockLots.stockLots.value.filter((l) => l.status !== "depleted");
 
   // Filter by status
-  if (statusFilter.value !== 'all') {
-    lots = lots.filter(l => l.status === statusFilter.value);
+  if (statusFilter.value !== "all") {
+    lots = lots.filter((l) => l.status === statusFilter.value);
   }
 
   // Filter by search
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    lots = lots.filter(l => 
-      l.lotNumber.toLowerCase().includes(query) ||
-      l.batchCode?.toLowerCase().includes(query) ||
-      getProductName(l.productId).toLowerCase().includes(query)
+    lots = lots.filter(
+      (l) =>
+        l.lotNumber.toLowerCase().includes(query) ||
+        l.batchCode?.toLowerCase().includes(query) ||
+        getProductName(l.productId).toLowerCase().includes(query)
     );
   }
 
@@ -311,63 +351,77 @@ const filteredLots = computed(() => {
   });
 });
 
-const totalPages = computed(() => Math.ceil(filteredLots.value.length / itemsPerPage));
+const totalPages = computed(() =>
+  Math.ceil(filteredLots.value.length / itemsPerPage)
+);
 const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage);
-const endIndex = computed(() => Math.min(startIndex.value + itemsPerPage, filteredLots.value.length));
-const paginatedLots = computed(() => filteredLots.value.slice(startIndex.value, endIndex.value));
+const endIndex = computed(() =>
+  Math.min(startIndex.value + itemsPerPage, filteredLots.value.length)
+);
+const paginatedLots = computed(() =>
+  filteredLots.value.slice(startIndex.value, endIndex.value)
+);
 
 // Methods
 function getProductName(productId: string): string {
-  const product = productsStore.products.value.find(p => p.id === productId);
-  return product?.name || 'Unknown';
+  const product = productsStore.products.value.find((p) => p.id === productId);
+  return product?.name || "Unknown";
 }
 
 function getProductSku(productId: string): string {
-  const product = productsStore.products.value.find(p => p.id === productId);
-  return product?.sku || '';
+  const product = productsStore.products.value.find((p) => p.id === productId);
+  return product?.sku || "";
 }
 
 function getProductImage(productId: string): string {
-  const product = productsStore.products.value.find(p => p.id === productId);
-  return product?.image || '📦';
+  const product = productsStore.products.value.find((p) => p.id === productId);
+  return product?.image || "📦";
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 }
 
 function getExpiryTextClass(daysUntil?: number): string {
-  if (!daysUntil) return 'text-gray-500 dark:text-gray-400';
-  if (daysUntil <= 0) return 'text-red-600 dark:text-red-400';
-  if (daysUntil <= 3) return 'text-orange-600 dark:text-orange-400';
-  if (daysUntil <= 7) return 'text-amber-600 dark:text-amber-400';
-  if (daysUntil <= 30) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-gray-600 dark:text-gray-400';
+  if (!daysUntil) return "text-gray-500 dark:text-gray-400";
+  if (daysUntil <= 0) return "text-red-600 dark:text-red-400";
+  if (daysUntil <= 3) return "text-orange-600 dark:text-orange-400";
+  if (daysUntil <= 7) return "text-amber-600 dark:text-amber-400";
+  if (daysUntil <= 30) return "text-yellow-600 dark:text-yellow-400";
+  return "text-gray-600 dark:text-gray-400";
 }
 
-function getStatusColor(status: string): 'green' | 'yellow' | 'orange' | 'red' | 'gray' {
+function getStatusColor(
+  status: string
+): "green" | "yellow" | "orange" | "red" | "gray" {
   switch (status) {
-    case 'available': return 'green';
-    case 'low': return 'yellow';
-    case 'expiring': return 'orange';
-    case 'expired': return 'red';
-    case 'quarantine': return 'red';
-    default: return 'gray';
+    case "available":
+      return "green";
+    case "low":
+      return "yellow";
+    case "expiring":
+      return "orange";
+    case "expired":
+      return "red";
+    case "quarantine":
+      return "red";
+    default:
+      return "gray";
   }
 }
 
 function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    available: t('inventory.available') || 'Available',
-    low: t('inventory.low') || 'Low',
-    expiring: t('inventory.expiring') || 'Expiring',
-    expired: t('inventory.expired') || 'Expired',
-    quarantine: t('inventory.quarantine') || 'Quarantine',
-    depleted: t('inventory.depleted') || 'Depleted',
+    available: t("inventory.available") || "Available",
+    low: t("inventory.low") || "Low",
+    expiring: t("inventory.expiring") || "Expiring",
+    expired: t("inventory.expired") || "Expired",
+    quarantine: t("inventory.quarantine") || "Quarantine",
+    depleted: t("inventory.depleted") || "Depleted",
   };
   return labels[status] || status;
 }
@@ -376,29 +430,30 @@ function getLotActions(lot: StockLot) {
   return [
     [
       {
-        label: t('inventory.viewDetails') || 'View Details',
-        icon: 'i-heroicons-eye',
-        onSelect: () => emit('view', lot),
+        label: t("inventory.viewDetails") || "View Details",
+        icon: "i-heroicons-eye",
+        onSelect: () => emit("view", lot),
       },
       {
-        label: t('inventory.adjustStock') || 'Adjust Stock',
-        icon: 'i-heroicons-plus-minus',
-        onSelect: () => emit('adjust', lot),
+        label: t("inventory.adjustStock") || "Adjust Stock",
+        icon: "i-heroicons-plus-minus",
+        onSelect: () => emit("adjust", lot),
       },
       {
-        label: t('inventory.movePosition') || 'Move Position',
-        icon: 'i-heroicons-arrows-right-left',
-        onSelect: () => emit('move', lot),
+        label: t("inventory.movePosition") || "Move Position",
+        icon: "i-heroicons-arrows-right-left",
+        onSelect: () => emit("move", lot),
       },
     ],
     [
       {
-        label: lot.status === 'quarantine' 
-          ? (t('inventory.releaseFromQuarantine') || 'Release')
-          : (t('inventory.quarantine') || 'Quarantine'),
-        icon: 'i-heroicons-shield-exclamation',
-        color: 'amber' as const,
-        onSelect: () => emit('quarantine', lot),
+        label:
+          lot.status === "quarantine"
+            ? t("inventory.releaseFromQuarantine") || "Release"
+            : t("inventory.quarantine") || "Quarantine",
+        icon: "i-heroicons-shield-exclamation",
+        color: "amber" as const,
+        onSelect: () => emit("quarantine", lot),
       },
     ],
   ];

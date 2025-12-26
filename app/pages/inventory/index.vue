@@ -509,7 +509,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div>
     <!-- Header -->
     <CommonPageHeader
       :title="t('inventory.title')"
@@ -626,6 +626,7 @@ onMounted(async () => {
         v-model:status="selectedStatus"
         :branches="branches"
         :status-options="statusOptions"
+        class="my-6"
       />
 
       <!-- Inventory Table -->
@@ -811,7 +812,7 @@ onMounted(async () => {
 
     <!-- Suppliers Tab -->
     <template v-if="activeTab === 'suppliers'">
-      <div class="px-4 mb-4 flex gap-2">
+      <div class="px-4 mb-4 flex my-6 gap-2">
         <UButton
           color="primary"
           icon="i-heroicons-plus"
@@ -929,7 +930,7 @@ onMounted(async () => {
 
     <!-- Purchase Orders Tab -->
     <template v-if="activeTab === 'purchaseOrders'">
-      <div class="px-4 mb-4">
+      <div class="px-4 my-4">
         <UButton
           color="primary"
           icon="i-heroicons-plus"
@@ -1025,9 +1026,9 @@ onMounted(async () => {
 
     <!-- Stock Lots Tab -->
     <template v-if="activeTab === 'lots'">
-      <div class="px-4 space-y-4">
+      <div class="space-y-4">
         <!-- Quick Actions -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between p-4">
           <div class="flex items-center gap-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t("inventory.stockLots") }}
@@ -1068,7 +1069,7 @@ onMounted(async () => {
 
     <!-- Expiry Alerts Tab -->
     <template v-if="activeTab === 'expiry'">
-      <div class="px-4">
+      <div class="">
         <InventoryStockExpiryAlerts
           @view-lot="handleLotView"
           @quarantine="handleLotQuarantine"
