@@ -85,12 +85,16 @@ export function useAccounting() {
   // INITIALIZATION
   // ============================================
 
+  // ============================================
+  // INITIALIZATION
+  // ============================================
+
   async function init(): Promise<void> {
     isLoading.value = true;
     error.value = null;
 
     try {
-      // Load settings from localStorage
+      // Load settings from localStorage (keep settings in localStorage for now)
       if (import.meta.client) {
         const stored = localStorage.getItem('accountingSettings');
         if (stored) {
@@ -98,7 +102,7 @@ export function useAccounting() {
         }
       }
 
-      // Load accounts from Dexie (if table exists) or use defaults
+      // Load from local DB
       await loadAccounts();
       await loadJournalEntries();
 
@@ -106,6 +110,10 @@ export function useAccounting() {
       if (accounts.value.length === 0) {
         await initializeDefaultAccounts();
       }
+
+      // Sync from Nostr if online
+      loadFromNostr();
+
     } catch (e) {
       error.value = `Failed to initialize accounting: ${e}`;
       console.error(error.value);
@@ -115,48 +123,99 @@ export function useAccounting() {
   }
 
   async function loadAccounts(): Promise<void> {
-    // For now, load from localStorage (can migrate to Dexie/Nostr later)
-    if (import.meta.client) {
-      const stored = localStorage.getItem('chartOfAccounts');
-      if (stored) {
-        accounts.value = JSON.parse(stored);
-      }
+    try {
+      const dbAccounts = await db.accounts.toArray();
+      // Map DB records back to UI types if needed
+      accounts.value = dbAccounts.map(rec => ({
+        ...rec,
+        type: rec.type as any, // Cast string back to union type
+        category: rec.category as any,
+      }));
+    } catch (e) {
+      console.error('Failed to load accounts from DB:', e);
     }
   }
 
   async function loadJournalEntries(): Promise<void> {
-    if (import.meta.client) {
-      const stored = localStorage.getItem('journalEntries');
-      if (stored) {
-        journalEntries.value = JSON.parse(stored);
+    try {
+      const dbEntries = await db.journalEntries.orderBy('date').reverse().limit(100).toArray(); // Load recent 100
+      
+      journalEntries.value = dbEntries.map(rec => ({
+        ...rec,
+        lines: JSON.parse(rec.linesJson),
+        status: rec.status as any,
+      }));
+    } catch (e) {
+      console.error('Failed to load journal entries from DB:', e);
+    }
+  }
+
+  async function loadFromNostr(): Promise<void> {
+    // 1. Sync Accounts (Kind 30800)
+    const accountEvents = await nostrData.getAllEventsOfKind<any>(NOSTR_KINDS.ACCOUNT);
+    for (const { data, event } of accountEvents) {
+      if (data && data.code) {
+        // Update local DB if newer
+        const existing = await db.accounts.get(data.id || data.code); // Fallback to code if id missing
+        const updatedAt = new Date(data.updatedAt || 0).getTime();
+        const existingUpdatedAt = existing ? new Date(existing.updatedAt || 0).getTime() : 0;
+        
+        if (!existing || updatedAt > existingUpdatedAt) {
+           await db.accounts.put({
+             ...data,
+             id: data.id || data.code, // Ensure ID
+             synced: true,
+             nostrEventId: event.id
+           });
+        }
       }
     }
+
+    // 2. Sync Journal Entries (Kind 30801)
+    const journalEvents = await nostrData.getAllEventsOfKind<any>(NOSTR_KINDS.JOURNAL_ENTRY);
+    for (const { data, event } of journalEvents) {
+      if (data && data.id) {
+        const existing = await db.journalEntries.get(data.id);
+        const createdAt = new Date(data.createdAt || 0).getTime();
+        const existingCreatedAt = existing ? new Date(existing.createdAt || 0).getTime() : 0;
+
+        // Simple conflict resolution: overwrite if newer or new
+        if (!existing || createdAt > existingCreatedAt) {
+          // Flatten lines to JSON for DB
+          const { lines, ...rest } = data;
+          await db.journalEntries.put({
+            ...rest,
+            linesJson: JSON.stringify(lines),
+            synced: true,
+            nostrEventId: event.id
+          });
+        }
+      }
+    }
+    
+    // Reload UI
+    await loadAccounts();
+    await loadJournalEntries();
   }
 
   async function initializeDefaultAccounts(): Promise<void> {
     const defaults = getDefaultChartOfAccounts(settings.value.standard);
     const now = new Date().toISOString();
     
-    accounts.value = defaults.map(acc => ({
+    // Batch add to DB
+    const newAccounts = defaults.map(acc => ({
       ...acc,
+      id: acc.code, // Use code as ID for defaults
+      balance: 0,
       createdAt: now,
       updatedAt: now,
+      synced: false,
     }));
 
-    await saveAccounts();
+    await db.accounts.bulkPut(newAccounts);
+    await loadAccounts(); // Reload to update state
   }
 
-  async function saveAccounts(): Promise<void> {
-    if (import.meta.client) {
-      localStorage.setItem('chartOfAccounts', JSON.stringify(accounts.value));
-    }
-  }
-
-  async function saveJournalEntries(): Promise<void> {
-    if (import.meta.client) {
-      localStorage.setItem('journalEntries', JSON.stringify(journalEntries.value));
-    }
-  }
 
   // ============================================
   // SETTINGS MANAGEMENT
@@ -200,8 +259,32 @@ export function useAccounting() {
       updatedAt: now,
     };
     
+    // 1. Save to local DB
+    await db.accounts.put({
+      ...newAccount,
+      id: newAccount.code, // Use code as ID
+      balance: 0,
+      synced: false
+    });
+    
+    // Update local state
     accounts.value.push(newAccount);
-    await saveAccounts();
+    
+    // 2. Sync to Nostr
+    try {
+      if (nostrData) {
+        await nostrData.publishReplaceableEvent(
+           NOSTR_KINDS.ACCOUNT,
+           newAccount,
+           newAccount.code
+        );
+        // Mark as synced
+        await db.accounts.update(newAccount.code, { synced: true });
+      }
+    } catch (e) {
+      console.warn('Failed to sync account to Nostr:', e);
+    }
+    
     return newAccount;
   }
 
@@ -209,14 +292,40 @@ export function useAccounting() {
     const index = accounts.value.findIndex(a => a.code === code);
     if (index === -1) return null;
 
-    accounts.value[index] = {
+    const updatedAccount = {
       ...accounts.value[index]!,
       ...updates,
       updatedAt: new Date().toISOString(),
     };
+    
+    // 1. Save to local DB
+    // 1. Save to local DB
+    await db.accounts.put({
+      ...updatedAccount,
+      id: updatedAccount.code,
+      balance: 0, // Balance is calculated dynamically, set 0 or fetch from getAccountBalance if needed
+      synced: false
+    });
 
-    await saveAccounts();
-    return accounts.value[index]!;
+    // Update local state
+    accounts.value[index] = updatedAccount;
+
+    // 2. Sync to Nostr
+    try {
+      if (nostrData) {
+        await nostrData.publishReplaceableEvent(
+           NOSTR_KINDS.ACCOUNT,
+           updatedAccount,
+           updatedAccount.code
+        );
+        // Mark as synced
+        await db.accounts.update(updatedAccount.code, { synced: true });
+      }
+    } catch (e) {
+       console.warn('Failed to sync account updates to Nostr:', e);
+    }
+    
+    return updatedAccount;
   }
 
   // ============================================
@@ -273,16 +382,39 @@ export function useAccounting() {
       isBalanced,
     };
 
-    journalEntries.value.unshift(entry);
-    await saveJournalEntries();
-
-    // Sync to Nostr
+    // 1. Save to local DB first
     try {
-      await nostrData.publishReplaceableEvent(
+      await db.journalEntries.put({
+        ...entry,
+        linesJson: JSON.stringify(entry.lines), // Serialize lines
+        synced: false
+      });
+    } catch (dbError) {
+      console.error('Failed to save journal entry to DB:', dbError);
+      // Decide if we should return null or proceed. Let's return null to be safe.
+      return null;
+    }
+
+    journalEntries.value.unshift(entry);
+    // Removed saveJournalEntries() call
+
+    // 2. Sync to Nostr (if auto-post or explicit sync needed)
+    // We only sync 'posted' entries usually, but here we sync all created entries?
+    // Let's stick to existing logic: sync immediately.
+    try {
+      const event = await nostrData.publishReplaceableEvent(
         NOSTR_KINDS.JOURNAL_ENTRY,
         entry,
         entry.id
       );
+      
+      if (event) {
+        // Mark as synced in DB
+        await db.journalEntries.update(entry.id, { 
+          synced: true,
+          nostrEventId: event.id
+        });
+      }
     } catch (e) {
       console.warn('Failed to sync journal entry to Nostr:', e);
     }

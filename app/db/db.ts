@@ -573,6 +573,68 @@ export interface CycleCountRecord {
 }
 
 // ============================================
+// 💰 ACCOUNTING RECORDS
+// ============================================
+
+export interface AccountRecord {
+  id: string;
+  code: string;
+  name: string;
+  nameLao?: string;
+  type: string;
+  category: string;
+  description?: string;
+  parentAccount?: string;
+  isSystem: boolean;
+  isActive: boolean;
+  normalBalance: 'debit' | 'credit';
+  currency: string;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+export interface JournalEntryRecord {
+  id: string;
+  entryNumber: string;
+  date: string;
+  description: string;
+  reference?: string;
+  status: 'draft' | 'posted' | 'voided';
+  sourceType?: string;
+  sourceId?: string;
+  linesJson: string; // JSON array of lines
+  totalDebit: number;
+  totalCredit: number;
+  isBalanced: boolean;
+  createdAt: string;
+  postedAt?: string;
+  updatedAt?: string;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+export interface ExpenseRecord {
+  id: string;
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+  vendor?: string;
+  paymentMethod: string;
+  reference?: string;
+  notes?: string;
+  receipt?: string;
+  accountCode?: string;
+  createdAt: string;
+  updatedAt: string;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// ============================================
 // Database Class
 // ============================================
 
@@ -613,6 +675,11 @@ export class POSDatabase extends Dexie {
   expiryAlerts!: Table<ExpiryAlertRecord, string>;
   // Cycle Counting tables
   cycleCounts!: Table<CycleCountRecord, string>;
+  
+  // Accounting tables
+  accounts!: Table<AccountRecord, string>;
+  journalEntries!: Table<JournalEntryRecord, string>;
+  expenses!: Table<ExpenseRecord, string>;
 
   constructor() {
     super("POSDatabase");
@@ -813,6 +880,45 @@ export class POSDatabase extends Dexie {
       productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
       // New in v8 - Cycle Counting
       cycleCounts: "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+    });
+
+    // Version 9: Accounting & Expenses
+    this.version(9).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products: "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts: "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      // New in v9
+      accounts: "id, code, name, type, category, isActive, synced, updatedAt",
+      journalEntries: "id, entryNumber, date, status, synced, createdAt",
+      expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
     });
   }
 }

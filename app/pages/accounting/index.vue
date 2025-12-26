@@ -322,7 +322,7 @@ async function handleCreateInvoice() {
       unitPrice: newInvoice.value.amount,
       total: newInvoice.value.amount
     }],
-    dueDate: newInvoice.value.dueDate || new Date().toISOString().split('T')[0]
+    dueDate: (newInvoice.value.dueDate as string) || new Date().toISOString().split('T')[0]
   });
   showInvoiceModal.value = false;
   // Reset form
