@@ -1936,6 +1936,39 @@
       "posted": "ລົງບັນຊີແລ້ວ",
       "draft": "ຮ່າງ"
     },
+    "settings": {
+      "title": "ການຕັ້ງຄ່າບັນຊີ",
+      "enableAccounting": "ເປີດໃຊ້ງານບັນຊີ",
+      "enableAccountingDesc": "ເປີດໃຊ້ຄຸນສົມບັດຕິດຕາມລາຍຮັບ, ລາຍຈ່າຍ ແລະ ພາສີ.",
+      "standard": "ມາດຕະຖານບັນຊີ",
+      "laoHint": "ໃຊ້ລະຫັດບັນຊີ 4 ຕົວເລກ (1000-9999) ຕາມມາດຕະຖານກະຊວງການເງິນລາວ.",
+      "globalHint": "ໃຊ້ລະຫັດບັນຊີ 5 ຕົວເລກ (10000-99999) ຕາມມາດຕະຖານ IFRS/GAAP.",
+      "vatRate": "ອັດຕາພາສີ (%)",
+      "autoPost": "ລົງບັນຊີອັດຕະໂນມັດ",
+      "autoPostDesc": "ລົງບັນຊີລາຍວັນອັດຕະໂນມັດສຳລັບການຂາຍ ແລະ ການຈ່າຍເງິນ POS.",
+      "nostrSync": "ສຳຮອງ & ຊິງຄ໌ຜ່ານ Nostr"
+    },
+    "expenseCategories": {
+      "rent": "ຄ່າເຊົ່າ",
+      "utilities": "ຄ່ານຳ້ຄ່າໄຟ",
+      "supplies": "ອຸປະກອນສິ້ນເປືອງ",
+      "inventory": "ສິນຄ້າຄົງຄັງ",
+      "marketing": "ການຕະຫຼາດ",
+      "salaries": "ເງິນເດືອນ",
+      "equipment": "ອຸປະກອນ",
+      "maintenance": "ການບຳລຸງຮັກສາ",
+      "insurance": "ປະກັນໄພ",
+      "transportation": "ການຂົນສົ່ງ",
+      "professional": "ຄ່າບໍລິການວິຊາຊີບ",
+      "other": "ອື່ນໆ"
+    },
+    "paymentMethods": {
+      "cash": "ເງິນສົດ",
+      "bank_transfer": "ໂອນຜ່ານທະນາຄານ",
+      "credit_card": "ບັດເຄຣດິດ",
+      "lightning": "Lightning",
+      "check": "ເຊັກ"
+    },
     "reports": {
       "incomeStatement": "ງົບກຳໄລຂາດທຶນ",
       "incomeStatementDesc": "ລາຍງານກຳໄລ ແລະ ຂາດທຶນ",
@@ -2122,7 +2155,11 @@
     "remove": "ລຶບອອກ",
     "view": "ເບິ່ງ",
     "details": "ລາຍລະອຽດ",
-    "summary": "ສະຫຼຸບ"
+    "summary": "ສະຫຼຸບ",
+    "lastSync": "ຊິງຄ໌ຫຼ້າສຸດ",
+    "notSyncedYet": "ຍັງບໍ່ທັນຊິງຄ໌",
+    "syncNow": "ຊິງຄ໌ດຽວນີ້",
+    "saveSettings": "ບັນທຶກການຕັ້ງຄ່າ"
   },
   "kitchen": {
     "title": "ຈໍສະແດງຜົນເຮືອນຄົວ",

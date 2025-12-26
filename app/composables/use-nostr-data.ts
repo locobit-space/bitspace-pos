@@ -1101,12 +1101,15 @@ export function useNostrData() {
   async function recordStockAdjustment(
     adjustment: StockAdjustment
   ): Promise<Event | null> {
-    return publishEvent(NOSTR_KINDS.STOCK_ADJUSTMENT, adjustment, [
-      ["d", adjustment.id],
-      ["product", adjustment.productId],
-      ["reason", adjustment.reason],
-      ["adjustment", adjustment.adjustment.toString()],
-    ]);
+    return publishReplaceableEvent(
+      NOSTR_KINDS.STOCK_ADJUSTMENT,
+      adjustment,
+      adjustment.id
+    );
+  }
+
+  async function saveProductActivityLog(log: any): Promise<Event | null> {
+    return publishReplaceableEvent(NOSTR_KINDS.AUDIT_LOG, log, log.id);
   }
 
   async function getStockHistory(
@@ -1282,6 +1285,7 @@ export function useNostrData() {
     // Inventory
     recordStockAdjustment,
     getStockHistory,
+    saveProductActivityLog,
 
     // Sync
     fullSync,

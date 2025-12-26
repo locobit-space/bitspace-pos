@@ -1475,6 +1475,15 @@ export interface StoreSettings {
   notificationSettings?: NotificationPreferences;
   relays?: RelayConfig[];
 
+  // Accounting settings
+  accounting?: {
+    enabled: boolean;              // ON/OFF toggle for auto journal entries
+    standard: 'global' | 'lao';    // Accounting standard
+    vatRate: number;               // VAT rate (0.10 = 10%)
+    autoPostJournals: boolean;     // Auto-post or require approval
+    fiscalYearStart: string;       // "01-01" format
+  };
+
   updatedAt?: string;
 }
 

@@ -706,6 +706,39 @@ export function useInventory() {
         syncPending.value++;
       }
 
+      // Auto-create accounting journal entry for stock adjustments (loss/waste/count)
+      if (reason === 'waste' || reason === 'adjustment' || reason === 'count') {
+        try {
+          const accounting = useAccounting();
+          const productRecord = await db.products.get(productId);
+          const productName = productRecord?.name || 'Unknown Product';
+          const costPrice = branchStock.costPrice || 0;
+          
+          if (adjustment < 0 && costPrice > 0) {
+            // Stock loss/write-off
+            await accounting.createStockAdjustmentEntry(
+              productName,
+              Math.abs(adjustment),
+              costPrice,
+              reason === 'waste' ? 'write_off' : 'loss',
+              adjustmentRecord.id
+            );
+          } else if (adjustment > 0 && costPrice > 0) {
+            // Stock found/gain
+            await accounting.createStockAdjustmentEntry(
+              productName,
+              adjustment,
+              costPrice,
+              'gain',
+              adjustmentRecord.id
+            );
+          }
+        } catch (e) {
+          console.warn('[Inventory] Failed to create accounting entry:', e);
+          // Don't block stock adjustment if accounting fails
+        }
+      }
+
       // Reload inventory
       await loadFromLocal();
 

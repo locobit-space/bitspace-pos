@@ -303,6 +303,7 @@ export function useOrders() {
   /**
    * Complete order with payment proof
    * Auto-deducts ingredients if recipe exists
+   * Auto-creates accounting journal entry
    */
   async function completeOrder(
     orderId: string,
@@ -325,6 +326,16 @@ export function useOrders() {
           orderId
         );
       }
+    }
+
+    // Auto-create accounting journal entry for the sale
+    try {
+      const accounting = useAccounting();
+      const completedOrder = { ...order, paymentMethod, status: 'completed' as const };
+      await accounting.createSalesJournalEntry(completedOrder);
+    } catch (e) {
+      console.warn('[Orders] Failed to create accounting entry:', e);
+      // Don't block order completion if accounting fails
     }
 
     return updateOrderStatus(orderId, "completed", {

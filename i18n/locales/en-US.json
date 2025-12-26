@@ -2370,6 +2370,27 @@
     },
     "expenses": {
       "title": "Expense Tracking",
+      "expenseCategories": {
+        "rent": "Rent",
+        "utilities": "Utilities",
+        "supplies": "Supplies",
+        "inventory": "Inventory",
+        "marketing": "Marketing",
+        "salaries": "Salaries",
+        "equipment": "Equipment",
+        "maintenance": "Maintenance",
+        "insurance": "Insurance",
+        "transportation": "Transportation",
+        "professional": "Professional Services",
+        "other": "Other"
+      },
+      "paymentMethods": {
+        "cash": "Cash",
+        "bank_transfer": "Bank Transfer",
+        "credit_card": "Credit Card",
+        "lightning": "Lightning",
+        "check": "Check"
+      },
       "addExpense": "Add Expense",
       "editExpense": "Edit Expense",
       "deleteExpense": "Delete Expense",
@@ -2429,6 +2450,18 @@
     "entryStatus": {
       "posted": "Posted",
       "draft": "Draft"
+    },
+    "settings": {
+      "title": "Accounting Settings",
+      "enableAccounting": "Enable Accounting",
+      "enableAccountingDesc": "Enable features for tracking revenue, expenses, and tax.",
+      "standard": "Accounting Standard",
+      "laoHint": "Uses 4-digit account codes (1000-9999) compliant with Lao Ministry of Finance.",
+      "globalHint": "Uses 5-digit account codes (10000-99999) compliant with IFRS/GAAP.",
+      "vatRate": "VAT Rate (%)",
+      "autoPost": "Auto-Post to Ledger",
+      "autoPostDesc": "Automatically post journal entries for POS sales and payments.",
+      "nostrSync": "Nostr Backup & Sync"
     },
     "reports": {
       "incomeStatement": "Income Statement",
@@ -2575,7 +2608,11 @@
     "remove": "Remove",
     "view": "View",
     "details": "Details",
-    "summary": "Summary"
+    "summary": "Summary",
+    "lastSync": "Last Sync",
+    "notSyncedYet": "Not Synced Yet",
+    "syncNow": "Sync Now",
+    "saveSettings": "Save Settings"
   },
   "kitchen": {
     "title": "Kitchen Display",
