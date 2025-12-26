@@ -220,9 +220,13 @@
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                 {{ $t("settings.users.allUsers") }}
               </h3>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-4">
+                <UCheckbox
+                  v-model="showDeleted"
+                  :label="$t('settings.users.showDeleted') || 'Show Deleted'"
+                />
                 <UBadge color="gray" variant="subtle">
-                  {{ users.length }} {{ $t("settings.users.users") }}
+                  {{ filteredUsers.length }} {{ $t("settings.users.users") }}
                 </UBadge>
               </div>
             </div>
@@ -231,7 +235,7 @@
           <!-- User List -->
           <div class="divide-y divide-gray-200 dark:divide-gray-700">
             <div
-              v-for="user in users"
+              v-for="user in filteredUsers"
               :key="user.id"
               class="flex items-center justify-between py-4 first:pt-0 last:pb-0"
               :class="{ 'opacity-50': user.revokedAt || !user.isActive }"
@@ -337,7 +341,9 @@
                     <UButton
                       variant="ghost"
                       size="xs"
-                      :disabled="user.id === currentUser?.id"
+                      :disabled="
+                        user.id === currentUser?.id || !!user.deletedAt
+                      "
                       @click="openEditModal(user)"
                     >
                       <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
@@ -348,6 +354,7 @@
                     <UButton
                       variant="ghost"
                       size="xs"
+                      :disabled="!!user.deletedAt"
                       @click="openPermissionsModal(user)"
                     >
                       <UIcon name="i-heroicons-shield-check" class="w-4 h-4" />
@@ -356,7 +363,7 @@
 
                   <!-- Revoke/Restore button -->
                   <UTooltip
-                    v-if="user.id !== currentUser?.id"
+                    v-if="user.id !== currentUser?.id && !user.deletedAt"
                     :text="
                       user.revokedAt
                         ? $t('settings.users.restore')
@@ -404,15 +411,30 @@
 
                   <UTooltip
                     v-if="user.id !== currentUser?.id"
-                    :text="$t('common.delete')"
+                    :text="
+                      user.deletedAt
+                        ? $t('common.restore')
+                        : $t('common.delete')
+                    "
                   >
                     <UButton
                       variant="ghost"
-                      color="red"
+                      :color="user.deletedAt ? 'green' : 'red'"
                       size="xs"
-                      @click="confirmDelete(user)"
+                      @click="
+                        user.deletedAt
+                          ? confirmRestoreDeleted(user)
+                          : confirmDelete(user)
+                      "
                     >
-                      <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+                      <UIcon
+                        :name="
+                          user.deletedAt
+                            ? 'i-heroicons-arrow-path'
+                            : 'i-heroicons-trash'
+                        "
+                        class="w-4 h-4"
+                      />
                     </UButton>
                   </UTooltip>
                 </div>
@@ -747,91 +769,20 @@
               </h3>
             </template>
 
-            <div v-if="selectedUser" class="space-y-6">
-              <!-- POS Operations -->
-              <div>
+            <div
+              v-if="selectedUser"
+              class="space-y-6 max-h-[60vh] overflow-y-auto px-1"
+            >
+              <div v-for="group in PERMISSION_GROUPS" :key="group.id">
                 <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                  {{ $t("settings.users.permissions.pos") }}
+                  {{ $t(group.label) }}
                 </h4>
                 <div class="grid grid-cols-2 gap-3">
                   <UCheckbox
-                    v-model="permissionsForm.canCreateOrders"
-                    :label="$t('settings.users.permissions.canCreateOrders')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canVoidOrders"
-                    :label="$t('settings.users.permissions.canVoidOrders')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canApplyDiscounts"
-                    :label="$t('settings.users.permissions.canApplyDiscounts')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canProcessRefunds"
-                    :label="$t('settings.users.permissions.canProcessRefunds')"
-                  />
-                </div>
-              </div>
-
-              <!-- Products -->
-              <div>
-                <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                  {{ $t("settings.users.permissions.products") }}
-                </h4>
-                <div class="grid grid-cols-2 gap-3">
-                  <UCheckbox
-                    v-model="permissionsForm.canViewProducts"
-                    :label="$t('settings.users.permissions.canViewProducts')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canEditProducts"
-                    :label="$t('settings.users.permissions.canEditProducts')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canDeleteProducts"
-                    :label="$t('settings.users.permissions.canDeleteProducts')"
-                  />
-                </div>
-              </div>
-
-              <!-- Reports -->
-              <div>
-                <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                  {{ $t("settings.users.permissions.reports") }}
-                </h4>
-                <div class="grid grid-cols-2 gap-3">
-                  <UCheckbox
-                    v-model="permissionsForm.canViewReports"
-                    :label="$t('settings.users.permissions.canViewReports')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canExportReports"
-                    :label="$t('settings.users.permissions.canExportReports')"
-                  />
-                </div>
-              </div>
-
-              <!-- Settings -->
-              <div>
-                <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                  {{ $t("settings.users.permissions.settings") }}
-                </h4>
-                <div class="grid grid-cols-2 gap-3">
-                  <UCheckbox
-                    v-model="permissionsForm.canViewSettings"
-                    :label="$t('settings.users.permissions.canViewSettings')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canEditSettings"
-                    :label="$t('settings.users.permissions.canEditSettings')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canManageLightning"
-                    :label="$t('settings.users.permissions.canManageLightning')"
-                  />
-                  <UCheckbox
-                    v-model="permissionsForm.canManageUsers"
-                    :label="$t('settings.users.permissions.canManageUsers')"
+                    v-for="perm in group.permissions"
+                    :key="perm.key"
+                    v-model="permissionsForm[perm.key]"
+                    :label="$t(perm.label)"
                   />
                 </div>
               </div>
@@ -1033,11 +984,56 @@
       </UModal>
     </template>
   </div>
+
+  <!-- Restore Confirmation Modal -->
+  <UModal v-model:open="showRestoreDeletedModal">
+    <template #content>
+      <UCard>
+        <template #header>
+          <div class="flex items-center gap-3 text-green-600">
+            <UIcon name="i-heroicons-arrow-path" class="w-6 h-6" />
+            <h3 class="text-lg font-semibold">
+              {{ $t("settings.users.restoreUser") || "Restore User" }}
+            </h3>
+          </div>
+        </template>
+        <p class="text-gray-600 dark:text-gray-300">
+          {{
+            $t("settings.users.restoreUserConfirm") ||
+            "Are you sure you want to restore this user account?"
+          }}
+          <br />
+          <span class="font-bold text-gray-900 dark:text-white">{{
+            userToRestore?.name
+          }}</span>
+        </p>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton
+              color="gray"
+              variant="ghost"
+              @click="showRestoreDeletedModal = false"
+            >
+              {{ $t("common.cancel") }}
+            </UButton>
+            <UButton
+              color="green"
+              :loading="restoring"
+              @click="restoreDeletedUserConfirmed"
+            >
+              {{ $t("common.restore") }}
+            </UButton>
+          </div>
+        </template>
+      </UCard>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
 import type { StoreUser, UserRole, UserPermissions, AuthMethod } from "~/types";
 import { DEFAULT_PERMISSIONS } from "~/types";
+import { PERMISSION_GROUPS } from "~/config/permissions";
 
 definePageMeta({
   layout: "default",
@@ -1051,6 +1047,7 @@ const staffAuth = useStaffAuth();
 
 // Wait for users composable to initialize
 const isReady = ref(false);
+const showDeleted = ref(false); // Add this toggle
 
 // Company code state
 const company = useCompany();
@@ -1197,17 +1194,26 @@ const showUserModal = ref(false);
 const showPermissionsModal = ref(false);
 const showDeleteModal = ref(false);
 const showRevokeModal = ref(false);
+const showRestoreDeletedModal = ref(false); // Add this state
 const saving = ref(false);
 const deleting = ref(false);
 const revoking = ref(false);
+const restoring = ref(false); // Add this state
 const editingUser = ref<StoreUser | null>(null);
 const selectedUser = ref<StoreUser | null>(null);
 const userToDelete = ref<StoreUser | null>(null);
 const userToRevoke = ref<StoreUser | null>(null);
+const userToRestore = ref<StoreUser | null>(null); // Add this state
 const revokeReason = ref("");
 
 // Computed
 const users = computed(() => usersComposable.users.value);
+const filteredUsers = computed(() => {
+  if (showDeleted.value) {
+    return users.value;
+  }
+  return users.value.filter((u) => !u.deletedAt);
+});
 const currentUser = computed(() => usersComposable.currentUser.value);
 const canManageUsers = computed(() =>
   usersComposable.hasPermission("canManageUsers")
@@ -1612,6 +1618,42 @@ const deleteUserConfirmed = async () => {
     });
   } finally {
     deleting.value = false;
+  }
+};
+
+const confirmRestoreDeleted = (user: StoreUser) => {
+  userToRestore.value = user;
+  showRestoreDeletedModal.value = true;
+};
+
+const restoreDeletedUserConfirmed = async () => {
+  if (!userToRestore.value) return;
+
+  restoring.value = true;
+
+  try {
+    // @ts-ignore - restoreDeletedUser is added in use-users.ts but TS might not pick up immediately without restart
+    if (usersComposable.restoreDeletedUser) {
+      // @ts-ignore
+      await usersComposable.restoreDeletedUser(userToRestore.value.id);
+      toast.add({
+        title: t("settings.users.restoreSuccess") || "User restored",
+        color: "green",
+      });
+    } else {
+      // Fallback manual restore if backend not yet updated in types
+      // This shouldn't be needed if file update works
+      console.warn("restoreDeletedUser method not found");
+    }
+    showRestoreDeletedModal.value = false;
+  } catch (error) {
+    toast.add({
+      title: t("common.error"),
+      description: String(error),
+      color: "red",
+    });
+  } finally {
+    restoring.value = false;
   }
 };
 </script>

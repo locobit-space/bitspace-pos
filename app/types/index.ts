@@ -11,23 +11,23 @@
 /**
  * Shop visibility - determines if discoverable in marketplace
  */
-export type ShopVisibility = 'private' | 'public';
+export type ShopVisibility = "private" | "public";
 
 /**
  * Shop type categories with associated product templates
  */
 export type ShopType =
-  | 'cafe'
-  | 'restaurant'
-  | 'retail'
-  | 'grocery'
-  | 'service'
-  | 'pharmacy'
-  | 'gym'
-  | 'karaoke'
-  | 'garage'
-  | 'enterprise'
-  | 'other';
+  | "cafe"
+  | "restaurant"
+  | "retail"
+  | "grocery"
+  | "service"
+  | "pharmacy"
+  | "gym"
+  | "karaoke"
+  | "garage"
+  | "enterprise"
+  | "other";
 
 /**
  * Shop type metadata for UI display
@@ -75,7 +75,6 @@ export interface ShopTypeConfig {
   products: ProductTemplate[];
 }
 
-
 // ============================================
 // 💳 MEMBERSHIP & SUBSCRIPTION TYPES
 // For Gym, Clubs, and Subscription-Based Businesses
@@ -84,7 +83,12 @@ export interface ShopTypeConfig {
 /**
  * Membership plan status
  */
-export type MembershipStatus = 'active' | 'expired' | 'cancelled' | 'suspended' | 'pending';
+export type MembershipStatus =
+  | "active"
+  | "expired"
+  | "cancelled"
+  | "suspended"
+  | "pending";
 
 /**
  * Membership plan configuration
@@ -1094,7 +1098,14 @@ export interface OrderItem {
   // Custom notes (e.g., "no onions", "extra spicy")
   notes?: string;
   // Kitchen tracking
-  kitchenStatus?: "new" | "pending" | "preparing" | "cooking" | "ready" | "served" | "cancelled";
+  kitchenStatus?:
+    | "new"
+    | "pending"
+    | "preparing"
+    | "cooking"
+    | "ready"
+    | "served"
+    | "cancelled";
 }
 
 // ============================================
@@ -1149,7 +1160,14 @@ export interface POSSession {
 
 export interface CartItem {
   id?: string; // Optional: ID from existing order (for editing)
-  kitchenStatus?: "new" | "pending" | "preparing" | "cooking" | "ready" | "served" | "cancelled";
+  kitchenStatus?:
+    | "new"
+    | "pending"
+    | "preparing"
+    | "cooking"
+    | "ready"
+    | "served"
+    | "cancelled";
   product: Product;
   quantity: number;
   price: number; // Base price + variant + modifiers
@@ -1330,6 +1348,7 @@ export interface StoreUser {
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
+  deletedAt?: string; // For soft delete
 
   // ============================================
   // 🔐 HYBRID AUTHENTICATION FIELDS
@@ -1464,12 +1483,12 @@ export interface StoreSettings {
 // ============================================
 
 export interface AppearanceSettings {
-  theme: 'system' | 'light' | 'dark';
+  theme: "system" | "light" | "dark";
   accentColor: string;
-  fontSize: 'small' | 'medium' | 'large';
+  fontSize: "small" | "medium" | "large";
   fontFamily: string;
   compactMode: boolean;
-  sidebarPosition: 'left' | 'right';
+  sidebarPosition: "left" | "right";
   highContrast: boolean;
   reduceMotion: boolean;
 }
@@ -1480,18 +1499,18 @@ export interface AppearanceSettings {
 
 export interface CustomizationSettings {
   // Feed Display
-  defaultView: 'timeline' | 'grid' | 'compact';
+  defaultView: "timeline" | "grid" | "compact";
   showReposts: boolean;
   showReplies: boolean;
-  contentDensity: 'compact' | 'normal' | 'comfortable';
+  contentDensity: "compact" | "normal" | "comfortable";
   // UI Preferences
-  animationSpeed: 'fast' | 'normal' | 'slow';
+  animationSpeed: "fast" | "normal" | "slow";
   hapticFeedback: boolean;
   autoPlayMedia: boolean;
-  imageQuality: 'low' | 'medium' | 'high';
+  imageQuality: "low" | "medium" | "high";
   // POS Settings
   gridColumns: number;
-  cartPosition: 'left' | 'right' | 'bottom';
+  cartPosition: "left" | "right" | "bottom";
   quickActions: QuickActionConfig[];
 }
 
@@ -1539,7 +1558,7 @@ export interface RelayConfig {
   write: boolean;
   outbox: boolean;
   isPrimary: boolean;
-  status?: 'connected' | 'connecting' | 'disconnected' | 'error';
+  status?: "connected" | "connecting" | "disconnected" | "error";
   latency?: number;
   lastConnectedAt?: string;
 }
@@ -1705,13 +1724,13 @@ export interface UserInfo {
  * Status of a delivery
  */
 export type DeliveryStatus =
-  | 'pending'
-  | 'assigned'
-  | 'picked_up'
-  | 'in_transit'
-  | 'delivered'
-  | 'cancelled'
-  | 'failed';
+  | "pending"
+  | "assigned"
+  | "picked_up"
+  | "in_transit"
+  | "delivered"
+  | "cancelled"
+  | "failed";
 
 /**
  * Delivery driver
@@ -1721,7 +1740,7 @@ export interface Driver {
   name: string;
   phone: string;
   email?: string;
-  vehicleType?: 'motorcycle' | 'car' | 'bicycle' | 'walk';
+  vehicleType?: "motorcycle" | "car" | "bicycle" | "walk";
   vehiclePlate?: string;
   isAvailable: boolean;
   currentDeliveryId?: string;
@@ -1780,14 +1799,14 @@ export interface Delivery {
  * Invoice status
  */
 export type InvoiceStatus =
-  | 'draft'
-  | 'sent'
-  | 'viewed'
-  | 'paid'
-  | 'partial'
-  | 'overdue'
-  | 'cancelled'
-  | 'refunded';
+  | "draft"
+  | "sent"
+  | "viewed"
+  | "paid"
+  | "partial"
+  | "overdue"
+  | "cancelled"
+  | "refunded";
 
 /**
  * Invoice line item
@@ -1798,7 +1817,7 @@ export interface InvoiceItem {
   quantity: number;
   unitPrice: number;
   discount?: number;
-  discountType?: 'fixed' | 'percentage';
+  discountType?: "fixed" | "percentage";
   taxRate?: number;
   total: number;
 }
@@ -1871,29 +1890,29 @@ export interface Invoice {
 /**
  * Contract type
  */
-export type ContractType = 'rental' | 'lease' | 'service' | 'subscription';
+export type ContractType = "rental" | "lease" | "service" | "subscription";
 
 /**
  * Contract status
  */
 export type ContractStatus =
-  | 'draft'
-  | 'pending'
-  | 'active'
-  | 'expired'
-  | 'terminated'
-  | 'cancelled';
+  | "draft"
+  | "pending"
+  | "active"
+  | "expired"
+  | "terminated"
+  | "cancelled";
 
 /**
  * Rental asset type
  */
 export type AssetType =
-  | 'room'
-  | 'equipment'
-  | 'vehicle'
-  | 'locker'
-  | 'space'
-  | 'other';
+  | "room"
+  | "equipment"
+  | "vehicle"
+  | "locker"
+  | "space"
+  | "other";
 
 /**
  * Rental Asset (room, equipment, vehicle, locker, etc.)
@@ -1950,12 +1969,17 @@ export interface Contract {
   endDate: string;
   // Billing
   amount: number;
-  paymentSchedule: 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  paymentSchedule: "once" | "daily" | "weekly" | "monthly" | "yearly";
   currency: CurrencyCode;
   totalPaid?: number;
   // Deposit
   depositAmount?: number;
-  depositStatus?: 'pending' | 'collected' | 'partial' | 'returned' | 'forfeited';
+  depositStatus?:
+    | "pending"
+    | "collected"
+    | "partial"
+    | "returned"
+    | "forfeited";
   depositPaidAt?: string;
   depositReturnedAt?: string;
   // Options
@@ -1998,7 +2022,7 @@ export interface RentalBooking {
   actualStartTime?: string;
   actualEndTime?: string;
   // Status
-  status: 'reserved' | 'checked_out' | 'returned' | 'cancelled' | 'no_show';
+  status: "reserved" | "checked_out" | "returned" | "cancelled" | "no_show";
   // Billing
   totalAmount: number;
   depositAmount?: number;

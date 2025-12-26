@@ -197,7 +197,7 @@ export function useUsers() {
   }
 
   /**
-   * Delete user
+   * Delete user (Soft Delete)
    */
   async function deleteUser(userId: string): Promise<boolean> {
     // Check permission
@@ -215,13 +215,46 @@ export function useUsers() {
     const user = users.value.find((u) => u.id === userId);
     if (!user) return false;
 
-    users.value = users.value.filter((u) => u.id !== userId);
+    // Soft Delete
+    user.deletedAt = new Date().toISOString();
+    user.isActive = false; // Also deactivate
+    user.updatedAt = new Date().toISOString();
+
     await saveUsers();
 
     await security.addAuditLog(
       "role_change",
       currentUser.value?.id || "system",
-      `Deleted user: ${user.name}`,
+      `Deleted user (soft): ${user.name}`,
+      currentUser.value?.name
+    );
+
+    return true;
+  }
+
+  /**
+   * Restore deleted user
+   */
+  async function restoreDeletedUser(userId: string): Promise<boolean> {
+    // Check permission
+    if (currentUser.value && !currentUser.value.permissions.canManageUsers) {
+      console.error("Permission denied: Cannot manage users");
+      return false;
+    }
+
+    const user = users.value.find((u) => u.id === userId);
+    if (!user) return false;
+
+    user.deletedAt = undefined;
+    user.isActive = true; // Reactivate
+    user.updatedAt = new Date().toISOString();
+
+    await saveUsers();
+
+    await security.addAuditLog(
+      "role_change",
+      currentUser.value?.id || "system",
+      `Restored deleted user: ${user.name}`,
       currentUser.value?.name
     );
 
@@ -239,7 +272,7 @@ export function useUsers() {
    * Get users by role
    */
   function getUsersByRole(role: UserRole): StoreUser[] {
-    return users.value.filter((u) => u.role === role);
+    return users.value.filter((u) => u.role === role && !u.deletedAt);
   }
 
   /**
@@ -300,7 +333,9 @@ export function useUsers() {
    * Login with PIN (quick access)
    */
   async function loginWithPin(pin: string): Promise<StoreUser | null> {
-    const result = await staffAuth.loginWithPin(pin, users.value);
+    // Filter out deleted users before passing to auth
+    const activeUsers = users.value.filter((u) => !u.deletedAt);
+    const result = await staffAuth.loginWithPin(pin, activeUsers);
 
     if (result.success && result.user) {
       currentUser.value = result.user;
@@ -327,7 +362,9 @@ export function useUsers() {
   async function loginWithNostr(
     nsec: string
   ): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
-    const result = await staffAuth.loginWithNostr(nsec, users.value);
+    // Filter out deleted users before passing to auth
+    const activeUsers = users.value.filter((u) => !u.deletedAt);
+    const result = await staffAuth.loginWithNostr(nsec, activeUsers);
 
     if (result.success && result.user) {
       currentUser.value = result.user;
@@ -354,10 +391,12 @@ export function useUsers() {
     identifier: string,
     password: string
   ): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
+    // Filter out deleted users before passing to auth
+    const activeUsers = users.value.filter((u) => !u.deletedAt);
     const result = await staffAuth.loginWithPassword(
       identifier,
       password,
-      users.value
+      activeUsers
     );
 
     if (result.success && result.user) {
@@ -389,7 +428,9 @@ export function useUsers() {
    * Login with user ID (for switching users - requires PIN verification)
    */
   async function loginAsUser(userId: string): Promise<StoreUser | null> {
-    const user = users.value.find((u) => u.id === userId && u.isActive);
+    const user = users.value.find(
+      (u) => u.id === userId && u.isActive && !u.deletedAt
+    );
 
     if (user) {
       // Check if user is revoked or expired
@@ -617,7 +658,6 @@ export function useUsers() {
     // 1. Save to localStorage (always)
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users.value));
 
-
     // 2. Sync to Nostr relays (if owner is logged in with Nostr)
     try {
       const nostrData = useNostrData();
@@ -626,10 +666,8 @@ export function useUsers() {
         const event = await nostrData.saveStaff(user);
         if (event) {
           syncedCount++;
-
         }
       }
-
     } catch (error) {
       console.warn(
         "[useUsers] Nostr sync failed (local save succeeded):",
@@ -643,14 +681,11 @@ export function useUsers() {
    * Load users from storage (local + Nostr sync)
    */
   async function loadUsers(): Promise<void> {
-
-
     // 1. Load from localStorage first (fast, offline-first)
     const stored = localStorage.getItem(STORAGE_KEYS.USERS);
     if (stored) {
       try {
         users.value = JSON.parse(stored);
-
       } catch {
         /* continue to try other sources */
       }
@@ -688,7 +723,6 @@ export function useUsers() {
 
         // Save merged result back to localStorage
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users.value));
-
       }
     } catch (error) {
       console.warn(
@@ -705,7 +739,6 @@ export function useUsers() {
       );
       if (encrypted) {
         users.value = encrypted;
-
       }
     }
   }
@@ -758,8 +791,6 @@ export function useUsers() {
             users.value[userIndex] = { ...currentUser.value };
             saveUsers();
           }
-
-
         }
       } catch {
         /* ignore */
@@ -995,6 +1026,7 @@ export function useUsers() {
     // Access control
     revokeUserAccess,
     restoreUserAccess,
+    restoreDeletedUser, // Soft delete restore
     setUserExpiry,
 
     // Permissions

@@ -7,7 +7,7 @@
     "termsOfService": "Terms of Service"
   },
   "pos": {
-     "shift": {
+    "shift": {
       "title": "Shift Management",
       "description": "Manage cash register shifts and reconciliation",
       "activeShift": "Active Shift",
@@ -1643,6 +1643,13 @@
         "canViewProducts": "View Products",
         "canEditProducts": "Edit Products",
         "canDeleteProducts": "Delete Products",
+        "inventory": "Inventory",
+        "canViewInventory": "View Inventory",
+        "canEditInventory": "Manage Inventory",
+        "canAdjustStock": "Adjust Stock",
+        "customers": "Customers",
+        "canViewCustomers": "View Customers",
+        "canEditCustomers": "Manage Customers",
         "reports": "Reports & Analytics",
         "canViewReports": "View Reports",
         "canExportReports": "Export Reports",
