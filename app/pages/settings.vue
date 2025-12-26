@@ -14,20 +14,34 @@ const navItems = computed(() => [
     icon: 'i-heroicons-cog-6-tooth',
   },
   {
-    label: t('settings.features.title') || 'Features & Modules',
-    to: '/settings/features',
-    icon: 'i-heroicons-squares-plus',
-  },
-  {
     label: t('settings.account.title'),
     to: '/settings/account',
     icon: 'i-heroicons-user-circle',
   },
   {
+    label: t('settings.security.title'),
+    to: '/settings/security',
+    icon: 'i-heroicons-key',
+  },
+  {
+    label: t('settings.relays.title'),
+    to: '/settings/relays',
+    icon: 'i-heroicons-server-stack',
+  },
+  {
     label: t('settings.lightning.title'),
-    
     to: '/settings/lightning',
     icon: 'i-heroicons-bolt',
+  },
+  {
+    label: t('settings.customization.title'),
+    to: '/settings/customization',
+    icon: 'i-heroicons-sparkles',
+  },
+  {
+    label: t('settings.features.title') || 'Features & Modules',
+    to: '/settings/features',
+    icon: 'i-heroicons-squares-plus',
   },
   {
     label: t('settings.users.title'),

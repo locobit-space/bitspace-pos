@@ -1450,7 +1450,98 @@ export interface StoreSettings {
   lightning?: LightningSettings;
   security?: SecuritySettings;
 
+  // New settings sections
+  appearance?: AppearanceSettings;
+  customization?: CustomizationSettings;
+  notificationSettings?: NotificationPreferences;
+  relays?: RelayConfig[];
+
   updatedAt?: string;
+}
+
+// ============================================
+// 🎨 APPEARANCE SETTINGS
+// ============================================
+
+export interface AppearanceSettings {
+  theme: 'system' | 'light' | 'dark';
+  accentColor: string;
+  fontSize: 'small' | 'medium' | 'large';
+  fontFamily: string;
+  compactMode: boolean;
+  sidebarPosition: 'left' | 'right';
+  highContrast: boolean;
+  reduceMotion: boolean;
+}
+
+// ============================================
+// ⚙️ CUSTOMIZATION SETTINGS
+// ============================================
+
+export interface CustomizationSettings {
+  // Feed Display
+  defaultView: 'timeline' | 'grid' | 'compact';
+  showReposts: boolean;
+  showReplies: boolean;
+  contentDensity: 'compact' | 'normal' | 'comfortable';
+  // UI Preferences
+  animationSpeed: 'fast' | 'normal' | 'slow';
+  hapticFeedback: boolean;
+  autoPlayMedia: boolean;
+  imageQuality: 'low' | 'medium' | 'high';
+  // POS Settings
+  gridColumns: number;
+  cartPosition: 'left' | 'right' | 'bottom';
+  quickActions: QuickActionConfig[];
+}
+
+export interface QuickActionConfig {
+  id: string;
+  label: string;
+  icon: string;
+  enabled: boolean;
+}
+
+// ============================================
+// 🔔 NOTIFICATION PREFERENCES
+// ============================================
+
+export interface NotificationPreferences {
+  notifications: {
+    // Orders
+    newOrder: boolean;
+    orderStatus: boolean;
+    paymentReceived: boolean;
+    // Nostr
+    mentions: boolean;
+    reactions: boolean;
+    reposts: boolean;
+    directMessages: boolean;
+    // System
+    backupReminders: boolean;
+    lowStock: boolean;
+    relayIssues: boolean;
+  };
+  delivery: {
+    push: boolean;
+    inApp: boolean;
+    sound: boolean;
+  };
+}
+
+// ============================================
+// 📡 RELAY CONFIGURATION
+// ============================================
+
+export interface RelayConfig {
+  url: string;
+  read: boolean;
+  write: boolean;
+  outbox: boolean;
+  isPrimary: boolean;
+  status?: 'connected' | 'connecting' | 'disconnected' | 'error';
+  latency?: number;
+  lastConnectedAt?: string;
 }
 
 // ============================================
