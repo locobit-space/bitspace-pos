@@ -90,6 +90,7 @@ const selectedItem = ref<InventoryItem | null>(null);
 const selectedLot = ref<StockLot | null>(null);
 const adjusting = ref(false);
 const editingSupplier = ref<(typeof suppliers.value)[number] | null>(null);
+const editingPO = ref<(typeof purchaseOrders.value)[number] | null>(null);
 
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat("lo-LA", {
@@ -350,29 +351,109 @@ const handleSavePurchaseOrder = async (data: POFormData) => {
   try {
     const items = data.items.map((item) => ({
       ...item,
-      receivedQty: 0,
+      receivedQty: (item as { receivedQty?: number }).receivedQty || 0,
     }));
 
-    const result = await inventory.createPurchaseOrder(
-      data.supplierId,
-      data.branchId,
-      items,
-      data.notes
-    );
-
-    if (result) {
-      toast.add({
-        title: t("inventory.poCreated"),
-        description: `PO#${result.id}`,
-        icon: "i-heroicons-check-circle",
-        color: "green",
+    // Check if we're editing or creating
+    if (editingPO.value) {
+      // Update existing PO
+      const success = await inventory.updatePurchaseOrder(editingPO.value.id, {
+        supplierId: data.supplierId,
+        branchId: data.branchId,
+        items,
+        notes: data.notes,
       });
-      showPurchaseOrderModal.value = false;
+
+      if (success) {
+        toast.add({
+          title: t("inventory.poUpdated") || "Purchase Order Updated",
+          description: `PO#${editingPO.value.id}`,
+          icon: "i-heroicons-check-circle",
+          color: "green",
+        });
+        showPurchaseOrderModal.value = false;
+        editingPO.value = null;
+      } else {
+        toast.add({
+          title: t("common.error"),
+          description: inventory.error.value || t("inventory.poUpdateFailed"),
+          icon: "i-heroicons-exclamation-circle",
+          color: "red",
+        });
+      }
+    } else {
+      // Create new PO
+      const result = await inventory.createPurchaseOrder(
+        data.supplierId,
+        data.branchId,
+        items,
+        data.notes
+      );
+
+      if (result) {
+        toast.add({
+          title: t("inventory.poCreated"),
+          description: `PO#${result.id}`,
+          icon: "i-heroicons-check-circle",
+          color: "green",
+        });
+        showPurchaseOrderModal.value = false;
+      }
     }
   } finally {
     adjusting.value = false;
   }
 };
+
+// ============================================
+// 📦 PURCHASE ORDER MANAGEMENT
+// ============================================
+
+const handleEditPO = (po: (typeof purchaseOrders.value)[number]) => {
+  editingPO.value = po;
+  showPurchaseOrderModal.value = true;
+};
+
+const handleDeletePO = async (id: string) => {
+  if (!confirm(t("inventory.confirmDeletePO") || "Delete this purchase order?"))
+    return;
+
+  adjusting.value = true;
+  try {
+    const success = await inventory.deletePurchaseOrder(id);
+    if (success) {
+      toast.add({
+        title: t("inventory.poDeleted") || "Purchase Order Deleted",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+    } else {
+      toast.add({
+        title: t("common.error"),
+        description: inventory.error.value || t("inventory.poDeleteFailed"),
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
+      });
+    }
+  } finally {
+    adjusting.value = false;
+  }
+};
+
+const canEditPO = (status: string) => {
+  return ["draft", "pending"].includes(status);
+};
+
+const canDeletePO = (status: string) => {
+  return ["draft", "pending", "cancelled"].includes(status);
+};
+
+// Reset editingPO when modal closes
+watch(showPurchaseOrderModal, (isOpen) => {
+  if (!isOpen) {
+    editingPO.value = null;
+  }
+});
 
 // ============================================
 // 👥 SUPPLIER MANAGEMENT
@@ -964,19 +1045,24 @@ onMounted(async () => {
               <th class="text-left py-3 px-4 font-medium">
                 {{ t("common.date") }}
               </th>
+              <th class="text-right py-3 px-4 font-medium">
+                {{ t("common.actions") }}
+              </th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="po in purchaseOrders"
               :key="po.id"
-              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
             >
               <td class="py-3 px-4">
                 <code
-                  class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
-                  >{{ po.id }}</code
+                  class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                  @click="navigateTo(`/inventory/po/${po.id}`)"
                 >
+                  {{ po.id }}
+                </code>
               </td>
               <td class="py-3 px-4 font-medium">{{ po.supplierName }}</td>
               <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
@@ -995,6 +1081,8 @@ onMounted(async () => {
                       ? 'red'
                       : po.status === 'partial'
                       ? 'yellow'
+                      : po.status === 'draft'
+                      ? 'gray'
                       : 'blue'
                   "
                   :label="
@@ -1008,6 +1096,33 @@ onMounted(async () => {
               </td>
               <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ new Date(po.createdAt).toLocaleDateString() }}
+              </td>
+              <td class="py-3 px-4">
+                <div class="flex justify-end gap-1">
+                  <UButton
+                    color="gray"
+                    variant="ghost"
+                    size="sm"
+                    icon="i-heroicons-eye"
+                    @click.stop="navigateTo(`/inventory/po/${po.id}`)"
+                  />
+                  <UButton
+                    v-if="canEditPO(po.status)"
+                    color="gray"
+                    variant="ghost"
+                    size="sm"
+                    icon="i-heroicons-pencil-square"
+                    @click.stop="handleEditPO(po)"
+                  />
+                  <UButton
+                    v-if="canDeletePO(po.status)"
+                    color="red"
+                    variant="ghost"
+                    size="sm"
+                    icon="i-heroicons-trash"
+                    @click.stop="handleDeletePO(po.id)"
+                  />
+                </div>
               </td>
             </tr>
           </tbody>
@@ -1117,6 +1232,7 @@ onMounted(async () => {
       :suppliers="suppliers"
       :branches="branches"
       :inventory-items="inventoryItems"
+      :editing-p-o="editingPO"
       :loading="adjusting"
       @save="handleSavePurchaseOrder"
     />

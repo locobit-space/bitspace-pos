@@ -2,12 +2,19 @@
   <div class="p-4 space-y-6 max-w-4xl mx-auto">
     <!-- Profile Header Card (YakiHonne-inspired) -->
     <div
-      class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-6 relative overflow-hidden"
+      class="bg-linear-to-br from-primary-200 to-primary-600 rounded-2xl p-6 relative overflow-hidden"
     >
       <!-- Background Pattern -->
       <div
         class="absolute inset-0 opacity-20"
-        style="background-image: radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px); background-size: 20px 20px;"
+        style="
+          background-image: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.3) 1px,
+            transparent 1px
+          );
+          background-size: 20px 20px;
+        "
       />
 
       <div class="relative flex items-center gap-6">
@@ -26,10 +33,10 @@
         <!-- User Info -->
         <div class="flex-1">
           <h2 class="text-xl font-bold text-white">
-            {{ userProfile.name || $t('account.noName') }}
+            {{ userProfile.name || $t("account.noName") }}
           </h2>
           <p class="text-gray-400 text-sm font-mono">
-            {{ userProfile.npub || '@anonymous' }}
+            {{ userProfile.npub || "@anonymous" }}
           </p>
           <p
             v-if="userProfile.nip05"
@@ -47,7 +54,7 @@
             variant="solid"
             @click="navigateTo('/settings/account')"
           >
-            {{ $t('account.viewProfile') || 'View profile' }}
+            {{ $t("account.viewProfile") || "View profile" }}
           </UButton>
           <UButton
             color="neutral"
@@ -55,7 +62,7 @@
             class="!text-white !border-gray-600"
             @click="navigateTo('/settings/account#edit')"
           >
-            {{ $t('account.editProfile') || 'Edit profile' }}
+            {{ $t("account.editProfile") || "Edit profile" }}
           </UButton>
         </div>
       </div>
@@ -76,10 +83,10 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t('settings.security.yourKeys') || 'Your keys' }}
+              {{ $t("settings.security.yourKeys") || "Your keys" }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t('settings.security.subtitle') }}
+              {{ $t("settings.security.subtitle") }}
             </p>
           </div>
           <UIcon
@@ -105,10 +112,10 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t('settings.relays.title') }}
+              {{ $t("settings.relays.title") }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t('settings.relays.subtitle') }}
+              {{ $t("settings.relays.subtitle") }}
             </p>
           </div>
           <UIcon
@@ -131,10 +138,10 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t('settings.wallets') || 'Wallets' }}
+              {{ $t("settings.wallets") || "Wallets" }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t('settings.lightning.subtitle') }}
+              {{ $t("settings.lightning.subtitle") }}
             </p>
           </div>
           <UIcon
@@ -157,10 +164,10 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t('settings.customization.title') }}
+              {{ $t("settings.customization.title") }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t('settings.customization.subtitle') }}
+              {{ $t("settings.customization.subtitle") }}
             </p>
           </div>
           <UIcon
@@ -169,13 +176,12 @@
           />
         </div>
       </NuxtLink>
-
     </div>
 
     <!-- Business Settings Section -->
     <div>
       <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-        {{ $t('settings.sectionBusiness') }}
+        {{ $t("settings.sectionBusiness") }}
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- General Store Settings -->
@@ -194,10 +200,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.general.title') }}
+                {{ $t("settings.general.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('settings.general.subtitle') }}
+                {{ $t("settings.general.subtitle") }}
               </p>
             </div>
             <UIcon
@@ -223,10 +229,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.tax.title') }}
+                {{ $t("settings.tax.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('settings.tax.subtitle') }}
+                {{ $t("settings.tax.subtitle") }}
               </p>
             </div>
             <UIcon
@@ -252,10 +258,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.receipt.title') }}
+                {{ $t("settings.receipt.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('settings.receipt.subtitle') }}
+                {{ $t("settings.receipt.subtitle") }}
               </p>
             </div>
             <UIcon
@@ -278,10 +284,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.users.title') }}
+                {{ $t("settings.users.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('settings.users.subtitle') }}
+                {{ $t("settings.users.subtitle") }}
               </p>
             </div>
             <UIcon
@@ -307,10 +313,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('tables.title') || 'Tables' }}
+                {{ $t("tables.title") || "Tables" }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('tables.description') || 'QR code ordering' }}
+                {{ $t("tables.description") || "QR code ordering" }}
               </p>
             </div>
             <UIcon
@@ -325,7 +331,7 @@
     <!-- System Settings Section -->
     <div>
       <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-        {{ $t('settings.sectionSystem') }}
+        {{ $t("settings.sectionSystem") }}
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- Backup -->
@@ -344,10 +350,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.backup.title') }}
+                {{ $t("settings.backup.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('settings.backup.subtitle') }}
+                {{ $t("settings.backup.subtitle") }}
               </p>
             </div>
             <UIcon
@@ -373,10 +379,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.auditLog.title') }}
+                {{ $t("settings.auditLog.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('settings.auditLog.subtitle') }}
+                {{ $t("settings.auditLog.subtitle") }}
               </p>
             </div>
             <UIcon
@@ -402,10 +408,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t('settings.features.title') }}
+                {{ $t("settings.features.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t('settings.features.subtitle') }}
+                {{ $t("settings.features.subtitle") }}
               </p>
             </div>
             <UIcon
@@ -421,8 +427,8 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth'],
+  layout: "default",
+  middleware: ["auth"],
 });
 
 const { t } = useI18n();
@@ -430,34 +436,34 @@ const nostrRelay = useNostrRelay();
 
 // User profile data
 const userProfile = ref({
-  name: '',
-  avatar: '',
-  npub: '',
-  nip05: '',
+  name: "",
+  avatar: "",
+  npub: "",
+  nip05: "",
 });
 
 // Load user profile
 async function loadUserProfile() {
   try {
     // Try to get from localStorage first
-    const storedProfile = localStorage.getItem('nostr_user_profile');
+    const storedProfile = localStorage.getItem("nostr_user_profile");
     if (storedProfile) {
       const profile = JSON.parse(storedProfile);
       userProfile.value = {
-        name: profile.name || profile.display_name || '',
-        avatar: profile.picture || '',
-        npub: profile.npub || '',
-        nip05: profile.nip05 || '',
+        name: profile.name || profile.display_name || "",
+        avatar: profile.picture || "",
+        npub: profile.npub || "",
+        nip05: profile.nip05 || "",
       };
     }
 
     // Try to get npub from localStorage
-    const npub = localStorage.getItem('nostr_npub');
+    const npub = localStorage.getItem("nostr_npub");
     if (npub) {
-      userProfile.value.npub = npub.slice(0, 16) + '...' + npub.slice(-8);
+      userProfile.value.npub = npub.slice(0, 16) + "..." + npub.slice(-8);
     }
   } catch (error) {
-    console.error('Failed to load user profile:', error);
+    console.error("Failed to load user profile:", error);
   }
 }
 
@@ -468,13 +474,13 @@ onMounted(() => {
 
 // Set page title
 useHead({
-  title: t('settings.title'),
+  title: t("settings.title"),
 });
 </script>
 
 <style scoped>
 /* Italic serif font for settings title like YakiHonne */
 .font-serif {
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-family: Georgia, "Times New Roman", Times, serif;
 }
 </style>
