@@ -6,6 +6,14 @@ definePageMeta({
 });
 
 const { t } = useI18n();
+const toast = useToast();
+
+// Use real stores
+const ordersStore = useOrders();
+const customersStore = useCustomers();
+const productsStore = useProductsStore();
+const inventoryStore = useInventory();
+const shopStore = useShop();
 
 // Report types
 type ReportType =
@@ -78,12 +86,16 @@ const dateRange = ref({
 const selectedBranch = ref("all");
 const selectedReport = ref<ReportType>("sales");
 const loading = ref(false);
+const isInitialized = ref(false);
 
-const branches = [
-  { id: "all", name: t("common.allBranches") },
-  { id: "1", name: "ສາຂາໃຈກາງ / Central Branch" },
-  { id: "2", name: "ສາຂາຫ້ວຍໂຮ້ງ / Huay Hong Branch" },
-];
+// Dynamic branches from shop store (Nostr/API)
+const branches = computed(() => {
+  const allBranches = shopStore.branches.value || [];
+  return [
+    { id: "all", name: t("common.allBranches") || "All Branches" },
+    ...allBranches.map((b) => ({ id: b.id, name: b.name })),
+  ];
+});
 
 const quickDateRanges = [
   { label: t("reports.today"), value: "today" },
@@ -95,80 +107,241 @@ const quickDateRanges = [
   { label: t("reports.thisYear"), value: "year" },
 ];
 
-// Mock report data
-const salesData = ref({
-  totalRevenue: 42850000,
-  totalOrders: 1084,
-  avgOrderValue: 39527,
-  topPaymentMethod: "Cash",
-  byPeriod: [
-    { period: "Jan", revenue: 4500000, orders: 120 },
-    { period: "Feb", revenue: 5200000, orders: 145 },
-    { period: "Mar", revenue: 4800000, orders: 130 },
-    { period: "Apr", revenue: 6200000, orders: 165 },
-    { period: "May", revenue: 5800000, orders: 152 },
-    { period: "Jun", revenue: 7100000, orders: 190 },
-    { period: "Jul", revenue: 9250000, orders: 182 },
-  ],
-  byPaymentMethod: [
-    { method: "Cash", amount: 25710000, percentage: 60 },
-    { method: "Lightning", amount: 12855000, percentage: 30 },
-    { method: "QR Code", amount: 4285000, percentage: 10 },
-  ],
+// Initialize all stores
+onMounted(async () => {
+  loading.value = true;
+  try {
+    await Promise.all([
+      ordersStore.init(),
+      customersStore.init(),
+      productsStore.init(),
+      shopStore.init(),
+    ]);
+    isInitialized.value = true;
+  } catch (error) {
+    console.error("Failed to initialize stores:", error);
+    toast.add({
+      title: t("common.error"),
+      description: t("reports.initError") || "Failed to load report data",
+      color: "error",
+    });
+  } finally {
+    loading.value = false;
+  }
 });
 
-const productData = ref({
-  topProducts: [
-    { name: "ເບຍ Beer Lao", sold: 420, revenue: 5040000 },
-    { name: "ເຂົ້າຈີ່ Grilled Chicken", sold: 280, revenue: 7000000 },
-    { name: "ກາເຟ Coffee Lao", sold: 350, revenue: 5250000 },
-    { name: "ສົ້ມຕຳ Papaya Salad", sold: 220, revenue: 3960000 },
-    { name: "ນ້ຳດື່ມ Water", sold: 580, revenue: 1740000 },
-  ],
-  byCategory: [
-    { category: "ເຄື່ອງດື່ມ", sold: 1350, revenue: 12030000 },
-    { category: "ອາຫານ", sold: 650, revenue: 18200000 },
-    { category: "ຂອງຫວານ", sold: 180, revenue: 4500000 },
-  ],
+// Computed date objects from string inputs
+const startDate = computed(() => new Date(dateRange.value.start || new Date()));
+const endDate = computed(() => {
+  const end = new Date(dateRange.value.end || new Date());
+  end.setHours(23, 59, 59, 999);
+  return end;
 });
 
-const customerData = ref({
-  totalCustomers: 856,
-  newCustomers: 45,
-  repeatRate: 68,
-  topCustomers: [
-    { name: "ທ່ານ ສົມສັກ ສີຫາລາດ", orders: 48, spent: 5250000 },
-    { name: "ນາງ ຄຳລາ ວົງສາ", orders: 35, spent: 3850000 },
-    { name: "ທ່ານ ບຸນມີ ຈັນທະວົງ", orders: 28, spent: 2950000 },
-  ],
+// Real sales data from orders store
+const salesData = computed(() => {
+  if (!isInitialized.value) {
+    return {
+      totalRevenue: 0,
+      totalOrders: 0,
+      totalSats: 0,
+      avgOrderValue: 0,
+      topPaymentMethod: "-",
+      byPaymentMethod: [] as {
+        method: string;
+        amount: number;
+        percentage: number;
+        count: number;
+      }[],
+      byPeriod: [] as { period: string; revenue: number; orders: number }[],
+    };
+  }
+
+  const summary = ordersStore.getSalesSummary(startDate.value, endDate.value);
+
+  // Convert byPaymentMethod to array format
+  const methodTotal = Object.values(summary.byPaymentMethod).reduce(
+    (sum, m) => sum + m.total,
+    0
+  );
+  const byPaymentMethod = Object.entries(summary.byPaymentMethod)
+    .map(([method, data]) => ({
+      method: method.charAt(0).toUpperCase() + method.slice(1),
+      amount: data.total,
+      count: data.count,
+      percentage:
+        methodTotal > 0 ? Math.round((data.total / methodTotal) * 100) : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // Find top payment method
+  const topMethod = byPaymentMethod[0]?.method || "-";
+
+  // Group by period (daily for now)
+  const orders = ordersStore
+    .getOrdersByDateRange(startDate.value, endDate.value)
+    .filter((o) => o.status === "completed");
+
+  const byDay: Record<string, { revenue: number; orders: number }> = {};
+  for (const order of orders) {
+    const day = new Date(order.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    if (!byDay[day]) byDay[day] = { revenue: 0, orders: 0 };
+    byDay[day].revenue += order.total;
+    byDay[day].orders++;
+  }
+
+  const byPeriod = Object.entries(byDay).map(([period, data]) => ({
+    period,
+    revenue: data.revenue,
+    orders: data.orders,
+  }));
+
+  return {
+    totalRevenue: summary.totalSales,
+    totalOrders: summary.totalOrders,
+    totalSats: summary.totalSats,
+    avgOrderValue: summary.avgOrderValue,
+    topPaymentMethod: topMethod,
+    byPaymentMethod,
+    byPeriod,
+  };
 });
 
-const paymentData = ref({
-  byMethod: [
-    {
-      method: "Cash",
-      transactions: 650,
-      amount: 25710000,
-      icon: "i-heroicons-banknotes",
+// Real product data from orders store
+const productData = computed(() => {
+  if (!isInitialized.value) {
+    return {
+      topProducts: [] as { name: string; sold: number; revenue: number }[],
+      byCategory: [] as { category: string; sold: number; revenue: number }[],
+    };
+  }
+
+  const topProducts = ordersStore
+    .getTopProducts(startDate.value, endDate.value, 10)
+    .map((p) => ({
+      name: p.productName,
+      sold: p.quantity,
+      revenue: p.revenue,
+    }));
+
+  // Group by category
+  const orders = ordersStore
+    .getOrdersByDateRange(startDate.value, endDate.value)
+    .filter((o) => o.status === "completed");
+
+  const categoryStats: Record<string, { sold: number; revenue: number }> = {};
+  for (const order of orders) {
+    for (const item of order.items) {
+      const category = item.product.categoryId || t("common.uncategorized");
+      if (!categoryStats[category])
+        categoryStats[category] = { sold: 0, revenue: 0 };
+      categoryStats[category].sold += item.quantity;
+      categoryStats[category].revenue += item.total;
+    }
+  }
+
+  const byCategory = Object.entries(categoryStats)
+    .map(([category, data]) => ({
+      category,
+      sold: data.sold,
+      revenue: data.revenue,
+    }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  return { topProducts, byCategory };
+});
+
+// Real customer data from customers store
+const customerData = computed(() => {
+  if (!isInitialized.value) {
+    return {
+      totalCustomers: 0,
+      newCustomers: 0,
+      repeatRate: 0,
+      topCustomers: [] as { name: string; orders: number; spent: number }[],
+    };
+  }
+
+  const stats = customersStore.getCustomerStats();
+  const topSpenders = customersStore.getTopSpenders(5);
+
+  // Calculate new customers (joined this month)
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const newCustomers = customersStore.customers.value.filter(
+    (c) => new Date(c.joinedAt) >= monthStart
+  ).length;
+
+  // Repeat rate (customers with more than 1 visit)
+  const repeatCustomers = customersStore.customers.value.filter(
+    (c) => c.visitCount > 1
+  ).length;
+  const repeatRate =
+    stats.total > 0 ? Math.round((repeatCustomers / stats.total) * 100) : 0;
+
+  const topCustomers = topSpenders.map((s) => ({
+    name:
+      s.customer.name ||
+      s.customer.nostrPubkey?.slice(0, 12) + "..." ||
+      t("customers.anonymous"),
+    orders: s.visitCount,
+    spent: s.totalSpent,
+  }));
+
+  return {
+    totalCustomers: stats.total,
+    newCustomers,
+    repeatRate,
+    topCustomers,
+  };
+});
+
+// Real payment data
+const paymentData = computed(() => {
+  const byMethod = salesData.value.byPaymentMethod.map((m) => ({
+    method: m.method,
+    transactions: m.count,
+    amount: m.amount,
+    icon:
+      m.method.toLowerCase() === "lightning"
+        ? "i-heroicons-bolt"
+        : m.method.toLowerCase() === "cash"
+        ? "i-heroicons-banknotes"
+        : "i-heroicons-qr-code",
+  }));
+
+  // Lightning stats
+  const lightningOrders = ordersStore
+    .getOrdersByPaymentMethod("lightning")
+    .filter(
+      (o) =>
+        o.status === "completed" &&
+        dateRange.value.start &&
+        o.date >= dateRange.value.start
+    );
+
+  const totalSats = lightningOrders.reduce(
+    (sum, o) => sum + (o.totalSats || 0),
+    0
+  );
+  const avgTxSize =
+    lightningOrders.length > 0
+      ? Math.round(totalSats / lightningOrders.length)
+      : 0;
+
+  return {
+    byMethod,
+    lightningStats: {
+      totalSats,
+      avgTxSize,
+      successRate: 99.7, // Would need payment tracking for accurate rate
     },
-    {
-      method: "Lightning",
-      transactions: 324,
-      amount: 12855000,
-      icon: "i-heroicons-bolt",
-    },
-    {
-      method: "QR Code",
-      transactions: 110,
-      amount: 4285000,
-      icon: "i-heroicons-qr-code",
-    },
-  ],
-  lightningStats: {
-    totalSats: 857000,
-    avgTxSize: 2645,
-    successRate: 99.7,
-  },
+  };
 });
 
 const formatCurrency = (amount: number): string => {
@@ -243,16 +416,61 @@ const setQuickDateRange = (range: string) => {
 const generateReport = async () => {
   loading.value = true;
   try {
-    // TODO: Fetch from Hasura/Nostr
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Refresh data from stores
+    await Promise.all([ordersStore.init(), customersStore.init()]);
+    toast.add({
+      title: t("common.success"),
+      description: t("reports.dataRefreshed") || "Report data refreshed",
+      color: "success",
+    });
+  } catch (error) {
+    toast.add({
+      title: t("common.error"),
+      description: String(error),
+      color: "error",
+    });
   } finally {
     loading.value = false;
   }
 };
 
-const exportReport = (format: "pdf" | "excel" | "csv") => {
-  console.log(`Exporting ${selectedReport.value} report as ${format}`);
-  // TODO: Implement export
+const exportReport = async (format: "pdf" | "excel" | "csv") => {
+  loading.value = true;
+  try {
+    // For CSV export
+    if (format === "csv" && selectedReport.value === "sales") {
+      const headers = ["Date", "Orders", "Revenue (LAK)"];
+      const rows = salesData.value.byPeriod.map((p) => [
+        p.period,
+        p.orders,
+        p.revenue,
+      ]);
+      const csvContent = [headers, ...rows].map((r) => r.join(",")).join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sales-report-${dateRange.value.start}-${dateRange.value.end}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.add({
+        title: t("common.success"),
+        description: t("reports.exported") || "Report exported",
+        color: "success",
+      });
+    } else {
+      toast.add({
+        title: t("common.info"),
+        description:
+          t("reports.exportComingSoon") || "PDF and Excel export coming soon",
+        color: "info",
+      });
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 
 // Chart series
@@ -385,24 +603,28 @@ const salesChartSeries = computed(() => [
           icon-color="blue"
           :label="t('reports.totalRevenue')"
           :value="formatCurrency(salesData.totalRevenue)"
+          :loading="loading || !isInitialized"
         />
         <CommonStatCard
           icon="i-heroicons-shopping-cart"
           icon-color="green"
           :label="t('reports.totalOrders')"
           :value="salesData.totalOrders.toLocaleString()"
+          :loading="loading || !isInitialized"
         />
         <CommonStatCard
           icon="i-heroicons-calculator"
           icon-color="purple"
           :label="t('reports.avgOrderValue')"
           :value="formatCurrency(salesData.avgOrderValue)"
+          :loading="loading || !isInitialized"
         />
         <CommonStatCard
           icon="i-heroicons-banknotes"
           icon-color="yellow"
           :label="t('reports.topPaymentMethod')"
           :value="salesData.topPaymentMethod"
+          :loading="loading || !isInitialized"
         />
       </div>
 
@@ -514,18 +736,21 @@ const salesChartSeries = computed(() => [
           icon-color="blue"
           :label="t('reports.totalCustomers')"
           :value="customerData.totalCustomers"
+          :loading="loading || !isInitialized"
         />
         <CommonStatCard
           icon="i-heroicons-user-plus"
           icon-color="green"
           :label="t('reports.newCustomers')"
           :value="'+' + customerData.newCustomers"
+          :loading="loading || !isInitialized"
         />
         <CommonStatCard
           icon="i-heroicons-arrow-path"
           icon-color="purple"
           :label="t('reports.repeatRate')"
           :value="customerData.repeatRate + '%'"
+          :loading="loading || !isInitialized"
         />
       </div>
 

@@ -553,15 +553,15 @@ watch([searchQuery, selectedDifficulty], () => {
       </div>
 
       <!-- Recipes Table -->
-      <div class="px-4">
-        <div class="flex justify-between items-center mb-4">
+      <div>
+        <div class="flex justify-between items-center px-4 mb-4">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
             {{ t("recipes.title") }} ({{ filteredRecipes.length }})
           </h2>
         </div>
 
         <div
-          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700"
+          class="bg-white dark:bg-gray-800 shadow-sm overflow-hidden border-gray-200 dark:border-gray-700"
         >
           <table class="w-full">
             <thead>

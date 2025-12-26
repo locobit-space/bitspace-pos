@@ -22,40 +22,36 @@
 
     <!-- Floor Summary -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-      <UCard>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-primary">{{ stats.total }}</p>
-          <p class="text-sm text-muted">{{ $t("pos.tables.totalTables") }}</p>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-green-600">{{ stats.available }}</p>
-          <p class="text-sm text-muted">{{ $t("pos.tables.available") }}</p>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-blue-600">{{ stats.occupied }}</p>
-          <p class="text-sm text-muted">{{ $t("pos.tables.occupied") }}</p>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-orange-600">{{ stats.reserved }}</p>
-          <p class="text-sm text-muted">{{ $t("pos.tables.reserved") }}</p>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="text-center">
-          <p class="text-2xl font-bold">{{ stats.totalSeats }}</p>
-          <p class="text-sm text-muted">{{ $t("pos.tables.totalSeats") }}</p>
-        </div>
-      </UCard>
+      <CommonStatCard
+        icon="i-heroicons-squares-2x2"
+        icon-color="blue"
+        :label="$t('pos.tables.totalTables')"
+        :value="stats.total"
+      />
+      <CommonStatCard
+        icon="i-heroicons-check-circle"
+        icon-color="green"
+        :label="$t('pos.tables.available')"
+        :value="stats.available"
+      />
+      <CommonStatCard
+        icon="i-heroicons-user-group"
+        icon-color="blue"
+        :label="$t('pos.tables.occupied')"
+        :value="stats.occupied"
+      />
+      <CommonStatCard
+        icon="i-heroicons-calendar"
+        icon-color="yellow"
+        :label="$t('pos.tables.reserved')"
+        :value="stats.reserved"
+      />
+      <CommonStatCard
+        icon="i-heroicons-users"
+        icon-color="purple"
+        :label="$t('pos.tables.totalSeats')"
+        :value="stats.totalSeats"
+      />
     </div>
 
     <!-- Floor Selector -->
@@ -115,12 +111,15 @@
 
           <!-- Actions Dropdown (Absolute Top Right) -->
           <div class="absolute top-2 right-2" @click.stop>
-            <UDropdownMenu :items="getTableActions(table)" :ui="{ width: 'w-48' }">
-              <UButton 
-                variant="ghost" 
-                color="gray" 
-                icon="i-heroicons-ellipsis-vertical" 
-                size="xs" 
+            <UDropdownMenu
+              :items="getTableActions(table)"
+              :ui="{ width: 'w-48' }"
+            >
+              <UButton
+                variant="ghost"
+                color="gray"
+                icon="i-heroicons-ellipsis-vertical"
+                size="xs"
                 class="rounded-full"
               />
             </UDropdownMenu>
@@ -139,27 +138,40 @@
             {{ $t(`pos.tables.status.${table.status}`) }}
           </UBadge>
 
-          <div
-            v-if="table.status === 'occupied'"
-            class="mt-2"
-          >
+          <div v-if="table.status === 'occupied'" class="mt-2">
             <!-- Timer Badge -->
-            <div 
+            <div
               class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold"
               :class="{
-                'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'green',
-                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'yellow',
-                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': tablesStore.getTimerColor(tablesStore.getTableOccupiedMinutes(table.id)) === 'red',
+                'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
+                  tablesStore.getTimerColor(
+                    tablesStore.getTableOccupiedMinutes(table.id)
+                  ) === 'green',
+                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400':
+                  tablesStore.getTimerColor(
+                    tablesStore.getTableOccupiedMinutes(table.id)
+                  ) === 'yellow',
+                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':
+                  tablesStore.getTimerColor(
+                    tablesStore.getTableOccupiedMinutes(table.id)
+                  ) === 'red',
               }"
             >
-              ⏱️ {{ tablesStore.formatDuration(tablesStore.getTableOccupiedMinutes(table.id)) || '0m' }}
+              ⏱️
+              {{
+                tablesStore.formatDuration(
+                  tablesStore.getTableOccupiedMinutes(table.id)
+                ) || "0m"
+              }}
             </div>
             <!-- Live Cost for Per-Hour Billing -->
             <div
               v-if="table.billingType === 'per_hour' && table.hourlyRate"
               class="mt-1"
             >
-              <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
+              <span
+                class="text-sm font-bold text-primary-600 dark:text-primary-400"
+              >
                 💰 {{ formatRoomCost(table) }}
               </span>
             </div>
@@ -278,13 +290,16 @@
 
             <!-- Room Checkout Button (for per-hour billing) -->
             <UButton
-              v-if="selectedTable.status === 'occupied' && selectedTable.billingType === 'per_hour'"
+              v-if="
+                selectedTable.status === 'occupied' &&
+                selectedTable.billingType === 'per_hour'
+              "
               color="purple"
               variant="soft"
               icon="i-heroicons-clock"
               @click="openCheckoutModal(selectedTable)"
             >
-              {{ $t("pos.tables.checkout") || 'Room Checkout' }}
+              {{ $t("pos.tables.checkout") || "Room Checkout" }}
             </UButton>
 
             <UButton
@@ -475,7 +490,7 @@
               />
             </UFormField>
 
-            <UFormField 
+            <UFormField
               v-if="tableForm.billingType === 'per_hour'"
               :label="$t('pos.tables.hourlyRate') || 'Hourly Rate'"
             >
@@ -727,71 +742,81 @@ const openCheckoutModal = (table: any) => {
   showCheckoutModal.value = true;
 };
 
-const onRoomCheckout = async ({ tableId, roomCharge }: { tableId: string; roomCharge: number }) => {
-  const table = tables.value.find(t => t.id === tableId);
+const onRoomCheckout = async ({
+  tableId,
+  roomCharge,
+}: {
+  tableId: string;
+  roomCharge: number;
+}) => {
+  const table = tables.value.find((t) => t.id === tableId);
   if (!table) return;
 
   try {
     // 1. If no current order, create one
     let orderId = table.currentOrderId;
-    
+
     if (!orderId) {
       const newOrder = await ordersStore.createOrder({
         tableId: table.id,
         tableNumber: table.number,
-        type: 'dine_in',
-        status: 'pending',
+        type: "dine_in",
+        status: "pending",
         items: [], // Will add room charge item next
       });
       orderId = newOrder.id;
       // Link order to table
       await tablesStore.linkOrder(table.id, orderId);
     }
-    
+
     // 2. Add room charge as a line item
     if (orderId && roomCharge > 0) {
       await ordersStore.addOrderItem(orderId, {
-        productId: 'room_charge', // Special product ID for room charge
-        name: t('pos.tables.roomCharge') || 'Room Charge',
+        productId: "room_charge", // Special product ID for room charge
+        name: t("pos.tables.roomCharge") || "Room Charge",
         price: roomCharge,
         quantity: 1,
-        type: 'service',
+        type: "service",
       });
-      
+
       toast.add({
-        title: t('common.success'),
-        description: t('pos.tables.roomChargeAdded'),
-        color: 'green',
+        title: t("common.success"),
+        description: t("pos.tables.roomChargeAdded"),
+        color: "green",
       });
     }
-    
+
     // 3. Navigate to order for payment
     if (orderId) {
       router.push(`/orders/${orderId}`);
     }
-    
   } catch (error) {
-    console.error('Failed to checkout room:', error);
+    console.error("Failed to checkout room:", error);
     toast.add({
-      title: t('common.error'),
-      description: 'Failed to process room checkout',
-      color: 'red',
+      title: t("common.error"),
+      description: "Failed to process room checkout",
+      color: "red",
     });
   }
-  
+
   showCheckoutModal.value = false;
 };
 
-const onRoomExtend = async ({ tableId, minutes }: { tableId: string; minutes: number }) => {
+const onRoomExtend = async ({
+  tableId,
+  minutes,
+}: {
+  tableId: string;
+  minutes: number;
+}) => {
   // Logic to extend time (could update expectedEndTime field on table)
   // For now just show a toast as the timer keeps running anyway
   toast.add({
-    title: t('common.success'),
+    title: t("common.success"),
     description: `Added ${minutes} minutes to room time`,
-    color: 'green',
+    color: "green",
   });
 };
-
 
 const { t } = useI18n();
 const toast = useToast();
@@ -819,7 +844,7 @@ const showCheckoutModal = ref(false);
 const checkoutTable = ref<any | null>(null); // Table being checked out
 
 // Imports
-import RoomCheckoutModal from '~/components/tables/RoomCheckoutModal.vue';
+import RoomCheckoutModal from "~/components/tables/RoomCheckoutModal.vue";
 
 // Initialize
 onMounted(async () => {
@@ -992,14 +1017,14 @@ const formatCurrency = (value: number) => {
 // Calculate and format room cost based on occupied time and hourly rate
 const formatRoomCost = (table: any) => {
   if (!table.occupiedAt || !table.hourlyRate) return format(0);
-  
+
   const now = new Date();
   const startTime = new Date(table.occupiedAt);
   const hoursUsed = (now.getTime() - startTime.getTime()) / (1000 * 60 * 60);
   const minimumHours = table.minimumHours || 1;
   const billedHours = Math.max(Math.ceil(hoursUsed), minimumHours);
   const cost = billedHours * table.hourlyRate;
-  
+
   return format(cost);
 };
 
@@ -1260,78 +1285,90 @@ async function cancelReservation(table: any) {
   }
 }
 
-  /*
-   * Move / Merge Table Logic
-   */
-  const showTableSelectionModal = ref(false);
-  const tableSelectionMode = ref<"move" | "merge">("move");
-  const sourceTableForAction = ref<any>(null);
-  const selectedTargetTableId = ref<string>("");
+/*
+ * Move / Merge Table Logic
+ */
+const showTableSelectionModal = ref(false);
+const tableSelectionMode = ref<"move" | "merge">("move");
+const sourceTableForAction = ref<any>(null);
+const selectedTargetTableId = ref<string>("");
 
-  const targetTablesOptions = computed(() => {
-    if (!sourceTableForAction.value) return [];
-    
-    if (tableSelectionMode.value === "move") {
-      // For move, show all available tables
-      return tablesStore.availableTables.value.map(t => ({
-        label: `${t.name || t.number} (${t.capacity} seats)`,
+const targetTablesOptions = computed(() => {
+  if (!sourceTableForAction.value) return [];
+
+  if (tableSelectionMode.value === "move") {
+    // For move, show all available tables
+    return tablesStore.availableTables.value.map((t) => ({
+      label: `${t.name || t.number} (${t.capacity} seats)`,
+      value: t.id,
+      description: t.zone
+        ? tablesStore.activeZones.value.find((z) => z.id === t.zone)?.name
+        : undefined,
+    }));
+  } else {
+    // For merge, show all occupied tables except self
+    return tablesStore.occupiedTables.value
+      .filter((t) => t.id !== sourceTableForAction.value?.id)
+      .map((t) => ({
+        label: `${t.name || t.number} - Order #${
+          t.currentOrderId?.slice(-4) || "??"
+        }`,
         value: t.id,
-        description: t.zone ? tablesStore.activeZones.value.find(z => z.id === t.zone)?.name : undefined
+        description: t.zone
+          ? tablesStore.activeZones.value.find((z) => z.id === t.zone)?.name
+          : undefined,
       }));
-    } else {
-      // For merge, show all occupied tables except self
-      return tablesStore.occupiedTables.value
-        .filter(t => t.id !== sourceTableForAction.value?.id)
-        .map(t => ({
-          label: `${t.name || t.number} - Order #${t.currentOrderId?.slice(-4) || '??'}`,
-          value: t.id,
-          description: t.zone ? tablesStore.activeZones.value.find(z => z.id === t.zone)?.name : undefined
-        }));
-    }
-  });
+  }
+});
 
-  const initiateMoveTable = (table: any) => {
-    sourceTableForAction.value = table;
-    tableSelectionMode.value = "move";
-    selectedTargetTableId.value = "";
-    showTableSelectionModal.value = true;
-  };
+const initiateMoveTable = (table: any) => {
+  sourceTableForAction.value = table;
+  tableSelectionMode.value = "move";
+  selectedTargetTableId.value = "";
+  showTableSelectionModal.value = true;
+};
 
-  const initiateMergeBill = (table: any) => {
-    sourceTableForAction.value = table;
-    tableSelectionMode.value = "merge";
-    selectedTargetTableId.value = "";
-    showTableSelectionModal.value = true;
-  };
+const initiateMergeBill = (table: any) => {
+  sourceTableForAction.value = table;
+  tableSelectionMode.value = "merge";
+  selectedTargetTableId.value = "";
+  showTableSelectionModal.value = true;
+};
 
-  const confirmTableAction = async () => {
-    if (!sourceTableForAction.value || !selectedTargetTableId.value) return;
-    
-    try {
-      if (tableSelectionMode.value === "move") {
-        await tablesStore.moveTable(sourceTableForAction.value.id, selectedTargetTableId.value);
-        toast.add({
-          title: t("common.success"),
-          description: "Table moved successfully",
-          color: "green"
-        });
-      } else {
-        await tablesStore.mergeBill(sourceTableForAction.value.id, selectedTargetTableId.value);
-        toast.add({
-          title: t("common.success"),
-          description: "Bill merged successfully",
-          color: "green"
-        });
-      }
-      showTableSelectionModal.value = false;
-    } catch (e) {
+const confirmTableAction = async () => {
+  if (!sourceTableForAction.value || !selectedTargetTableId.value) return;
+
+  try {
+    if (tableSelectionMode.value === "move") {
+      await tablesStore.moveTable(
+        sourceTableForAction.value.id,
+        selectedTargetTableId.value
+      );
       toast.add({
-        title: t("common.error"),
-        description: `Action failed: ${e}`,
-        color: "red"
+        title: t("common.success"),
+        description: "Table moved successfully",
+        color: "green",
+      });
+    } else {
+      await tablesStore.mergeBill(
+        sourceTableForAction.value.id,
+        selectedTargetTableId.value
+      );
+      toast.add({
+        title: t("common.success"),
+        description: "Bill merged successfully",
+        color: "green",
       });
     }
-  };
+    showTableSelectionModal.value = false;
+  } catch (e) {
+    toast.add({
+      title: t("common.error"),
+      description: `Action failed: ${e}`,
+      color: "red",
+    });
+  }
+};
 
 function getTableActions(table: any) {
   const actions = [];
@@ -1366,15 +1403,15 @@ function getTableActions(table: any) {
     ]);
     actions.push([
       {
-         label: t("pos.tables.moveTable") || "Move Table",
-         icon: "i-heroicons-arrow-right-circle",
-         onSelect: () => initiateMoveTable(table)
+        label: t("pos.tables.moveTable") || "Move Table",
+        icon: "i-heroicons-arrow-right-circle",
+        onSelect: () => initiateMoveTable(table),
       },
       {
-         label: t("pos.tables.mergeBill") || "Merge Bill",
-         icon: "i-heroicons-arrows-pointing-in",
-         onSelect: () => initiateMergeBill(table)
-      }
+        label: t("pos.tables.mergeBill") || "Merge Bill",
+        icon: "i-heroicons-arrows-pointing-in",
+        onSelect: () => initiateMergeBill(table),
+      },
     ]);
     // Complete / Free table action
     actions.push([
@@ -1387,10 +1424,10 @@ function getTableActions(table: any) {
           toast.add({
             title: t("common.success"),
             description: t("pos.tables.tableFreed") || "Table is now available",
-            color: "green"
+            color: "green",
           });
-        }
-      }
+        },
+      },
     ]);
   }
 
