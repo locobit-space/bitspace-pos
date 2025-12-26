@@ -392,7 +392,7 @@ function payWithLightning(invoiceId: string) {
     <!-- Page Header -->
     <CommonPageHeader
       :title="t('accounting.title')"
-      :subtitle="t('accounting.subtitle')"
+      :description="t('accounting.subtitle')"
     >
       <template #actions>
         <div class="flex items-center gap-2">

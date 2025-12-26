@@ -117,7 +117,7 @@ function getExpenseActions(expense: Expense) {
             <p class="font-medium">{{ expense.description }}</p>
             <div class="flex items-center gap-2 text-sm text-muted">
               <UBadge variant="subtle" size="xs">
-                {{ t(`accounting.expenseCategories.${expense.category}`) }}
+                {{ t(`accounting.expenses.expenseCategories.${expense.category}`) }}
               </UBadge>
               <span>{{ formatDate(expense.date) }}</span>
               <span v-if="expense.vendor">· {{ expense.vendor }}</span>
@@ -128,7 +128,7 @@ function getExpenseActions(expense: Expense) {
         <div class="flex items-center gap-4">
           <div class="text-right">
             <p class="font-bold text-error">-{{ formatCurrency(expense.amount) }}</p>
-            <p class="text-xs text-muted">{{ t(`accounting.paymentMethods.${expense.paymentMethod}`) }}</p>
+            <p class="text-xs text-muted">{{ t(`accounting.expenses.paymentMethods.${expense.paymentMethod}`) }}</p>
           </div>
           
           <UDropdownMenu :items="getExpenseActions(expense)">

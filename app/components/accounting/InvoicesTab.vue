@@ -45,7 +45,7 @@ function formatDate(date: string): string {
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">{{ t('accounting.invoices') }}</h3>
+          <h3 class="text-lg font-semibold">{{ t('accounting.tabs.invoices') }}</h3>
           <div class="flex gap-2">
             <NuxtLink to="/invoicing">
               <UButton variant="outline" icon="i-heroicons-arrow-top-right-on-square" size="sm">

@@ -27,7 +27,7 @@ const { t } = useI18n();
 
 const categoryOptions = computed(() => [
   { value: '', label: t('common.all') },
-  ...props.categories.map(c => ({ value: c.value, label: t(`accounting.expenseCategories.${c.value}`) }))
+  ...props.categories.map(c => ({ value: c.value, label: t(`accounting.expenses.expenseCategories.${c.value}`) }))
 ]);
 </script>
 

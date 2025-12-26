@@ -2312,6 +2312,11 @@
     }
   },
   "accounting": {
+
+    "ledger": {
+      "title": "General Ledger"
+    },
+    "noAccounts": "No accounts found. Please create a new account.",
     "title": "Accounting",
     "subtitle": "Financial management and reporting",
     "tabs": {
@@ -2363,7 +2368,7 @@
     "category": "Category",
     "date": "Date",
     "searchExpenses": "Search expenses...",
-    "addExpense": "Add Expense",
+
     "expenseStatus": {
       "paid": "Paid",
       "pending": "Pending"

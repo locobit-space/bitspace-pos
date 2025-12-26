@@ -1874,10 +1874,15 @@
       "invoices": "ໃບແຈ້ງໜີ້",
       "expenses": "ລາຍຈ່າຍ",
       "journal": "ບັນຊີລາຍວັນ",
-      "reports": "ບົດລາຍງານ"
+      "reports": "ບົດລາຍງານ",
+      "settings": "ການຕັ້ງຄ່າ"
     },
+    "ledger": {
+      "title": "ບັນຊີແຍກປະເພດ"
+    },
+    "noAccounts": "ບໍ່ມີບັນຊີເທື່ອ. ກະລຸນາສ້າງບັນຊີໃໝ່.",
     "revenue": "ລາຍຮັບ",
-    "expenses": "ລາຍຈ່າຍ",
+
     "profit": "ກຳໄລສຸດທິ",
     "margin": "ອັດຕາກຳໄລ",
     "lightningBalance": "ຍອດ Lightning",
@@ -1948,26 +1953,47 @@
       "autoPostDesc": "ລົງບັນຊີລາຍວັນອັດຕະໂນມັດສຳລັບການຂາຍ ແລະ ການຈ່າຍເງິນ POS.",
       "nostrSync": "ສຳຮອງ & ຊິງຄ໌ຜ່ານ Nostr"
     },
-    "expenseCategories": {
-      "rent": "ຄ່າເຊົ່າ",
-      "utilities": "ຄ່ານຳ້ຄ່າໄຟ",
-      "supplies": "ອຸປະກອນສິ້ນເປືອງ",
-      "inventory": "ສິນຄ້າຄົງຄັງ",
-      "marketing": "ການຕະຫຼາດ",
-      "salaries": "ເງິນເດືອນ",
-      "equipment": "ອຸປະກອນ",
-      "maintenance": "ການບຳລຸງຮັກສາ",
-      "insurance": "ປະກັນໄພ",
-      "transportation": "ການຂົນສົ່ງ",
-      "professional": "ຄ່າບໍລິການວິຊາຊີບ",
-      "other": "ອື່ນໆ"
-    },
-    "paymentMethods": {
-      "cash": "ເງິນສົດ",
-      "bank_transfer": "ໂອນຜ່ານທະນາຄານ",
-      "credit_card": "ບັດເຄຣດິດ",
-      "lightning": "Lightning",
-      "check": "ເຊັກ"
+    "expenses": {
+      "title": "ການຕິດຕາມລາຍຈ່າຍ",
+      "expenseCategories": {
+        "rent": "ຄ່າເຊົ່າ",
+        "utilities": "ຄ່ານຳ້ຄ່າໄຟ",
+        "supplies": "ອຸປະກອນສິ້ນເປືອງ",
+        "inventory": "ສິນຄ້າຄົງຄັງ",
+        "marketing": "ການຕະຫຼາດ",
+        "salaries": "ເງິນເດືອນ",
+        "equipment": "ອຸປະກອນ",
+        "maintenance": "ການບຳລຸງຮັກສາ",
+        "insurance": "ປະກັນໄພ",
+        "transportation": "ການຂົນສົ່ງ",
+        "professional": "ຄ່າບໍລິການວິຊາຊີບ",
+        "other": "ອື່ນໆ"
+      },
+      "paymentMethods": {
+        "cash": "ເງິນສົດ",
+        "bank_transfer": "ໂອນຜ່ານທະນາຄານ",
+        "credit_card": "ບັດເຄຣດິດ",
+        "lightning": "Lightning",
+        "check": "ເຊັກ"
+      },
+      "addExpense": "ເພີ່ມລາຍຈ່າຍ",
+      "editExpense": "ແກ້ໄຂລາຍຈ່າຍ",
+      "deleteExpense": "ລຶບລາຍຈ່າຍ",
+      "totalExpenses": "ລາຍຈ່າຍທັງໝົດ",
+      "thisMonth": "ເດືອນນີ້",
+      "expenseCount": "ຈຳນວນລາຍການ",
+      "categories": "ປະເພດ",
+      "noExpenses": "ຍັງບໍ່ມີລາຍຈ່າຍ",
+      "addFirstExpense": "ເພີ່ມລາຍຈ່າຍທຳອິດ",
+      "amountPlaceholder": "ປ້ອນຈຳນວນເງິນ",
+      "category": "ປະເພດ",
+      "selectCategory": "ເລືອກປະເພດ",
+      "description": "ລາຍລະອຽດ",
+      "descriptionPlaceholder": "ລາຍຈ່າຍນີ້ສຳລັບຫຍັງ?",
+      "date": "ວັນທີ",
+      "vendor": "ຜູ້ຂາຍ/ຜູ້ໃຫ້ບໍລິການ",
+      "vendorPlaceholder": "ຈ່າຍໃຫ້ໃຜ?",
+      "paymentMethod": "ວິທີຈ່າຍເງິນ"
     },
     "reports": {
       "incomeStatement": "ງົບກຳໄລຂາດທຶນ",

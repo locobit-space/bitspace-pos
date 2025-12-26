@@ -411,7 +411,7 @@ const accountForm = reactive({
 
 // Options
 const typeOptions = computed(() => [
-  { value: '', label: t('common.all') },
+  { value: undefined, label: t('common.all') },
   { value: 'asset', label: t('accounting.types.asset') },
   { value: 'liability', label: t('accounting.types.liability') },
   { value: 'equity', label: t('accounting.types.equity') },
@@ -420,7 +420,7 @@ const typeOptions = computed(() => [
 ])
 
 const statusOptions = computed(() => [
-  { value: '', label: t('common.all') },
+  { value: undefined, label: t('common.all') },
   { value: 'active', label: t('common.active') },
   { value: 'inactive', label: t('common.inactive') },
 ])
@@ -434,7 +434,7 @@ const accountTypeOptions = computed(() => [
 ])
 
 const parentAccountOptions = computed(() => [
-  { value: '', label: t('common.none') },
+  { value: undefined, label: t('common.none') },
   ...accounting.activeAccounts.value.map(a => ({
     value: a.code,
     label: `${a.code} - ${a.name}`

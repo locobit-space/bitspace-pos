@@ -134,7 +134,7 @@ function handleSave() {
         <UFormField :label="t('accounting.expenses.category')" required>
           <USelect
             v-model="form.category"
-            :items="categories.map(c => ({ value: c.value, label: t(`accounting.expenseCategories.${c.value}`) }))"
+            :items="categories.map(c => ({ value: c.value, label: t(`accounting.expenses.expenseCategories.${c.value}`) }))"
             value-key="value"
             label-key="label"
             :placeholder="t('accounting.expenses.selectCategory')"
@@ -162,7 +162,7 @@ function handleSave() {
         <UFormField :label="t('accounting.expenses.paymentMethod')">
           <USelect
             v-model="form.paymentMethod"
-            :items="paymentMethods.map(p => ({ value: p.value, label: t(`accounting.paymentMethods.${p.value}`) }))"
+            :items="paymentMethods.map(p => ({ value: p.value, label: t(`accounting.expenses.paymentMethods.${p.value}`) }))"
             value-key="value"
             label-key="label"
           />
