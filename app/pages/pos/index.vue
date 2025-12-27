@@ -2865,11 +2865,12 @@ onUnmounted(() => {
     <!-- Settings Modal -->
     <UModal v-model:open="showSettingsModal">
       <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900">
+        <div class="p-6 bg-white dark:bg-gray-900 overflow-y-auto">
           <h2
             class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2"
           >
-            <span>⚙️</span> POS Settings
+            <Icon name="heroicons-solid:adjustments-vertical" />
+            POS Settings
           </h2>
 
           <div class="space-y-6">
@@ -2887,9 +2888,11 @@ onUnmounted(() => {
             <!-- Lightning Provider -->
             <div>
               <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
-                >Lightning Provider</label
+                >
+                Lightning Provider
+                </label
               >
-              <USelect :items="['LNbits', 'Alby', 'NWC']" />
+              <USelect :items="['LNbits', 'Alby', 'NWC']" class="w-full" />
             </div>
 
             <!-- Tax Settings -->
