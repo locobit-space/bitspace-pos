@@ -1,9 +1,6 @@
 <template>
   <UContainer>
-    <CommonPageHeader
-      :title="$t('settings.backup.title')"
-      :description="$t('settings.backup.description')"
-    />
+    <CommonPageHeader :title="$t('settings.backup.title')" :description="$t('settings.backup.description')" />
 
     <!-- Backup Status -->
     <UCard class="mb-6">
@@ -28,13 +25,13 @@
           <p class="text-sm text-muted">{{ $t('settings.backup.lastBackup') }}</p>
           <p class="font-semibold">{{ lastBackup ? formatDate(lastBackup) : $t('settings.backup.never') }}</p>
         </div>
-        
+
         <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <UIcon name="i-heroicons-document-text" class="text-3xl text-blue-600 mb-2" />
           <p class="text-sm text-muted">{{ $t('settings.backup.totalRecords') }}</p>
           <p class="font-semibold">{{ stats.totalRecords.toLocaleString() }}</p>
         </div>
-        
+
         <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <UIcon name="i-heroicons-server" class="text-3xl text-green-600 mb-2" />
           <p class="text-sm text-muted">{{ $t('settings.backup.dataSize') }}</p>
@@ -66,19 +63,10 @@
 
         <template #footer>
           <div class="flex gap-2">
-            <UButton
-              icon="i-heroicons-arrow-down-tray"
-              :loading="exporting"
-              @click="exportData('json')"
-            >
+            <UButton icon="i-heroicons-arrow-down-tray" :loading="exporting" @click="exportData('json')">
               {{ $t('settings.backup.exportJSON') }}
             </UButton>
-            <UButton
-              variant="outline"
-              icon="i-heroicons-table-cells"
-              :loading="exporting"
-              @click="exportData('csv')"
-            >
+            <UButton variant="outline" icon="i-heroicons-table-cells" :loading="exporting" @click="exportData('csv')">
               {{ $t('settings.backup.exportCSV') }}
             </UButton>
           </div>
@@ -98,32 +86,18 @@
 
         <div class="space-y-3 mb-4">
           <UFormField :label="$t('settings.backup.nostrRelay')">
-            <UInput
-              v-model="cloudOptions.relay"
-              placeholder="wss://relay.example.com"
-              icon="i-heroicons-signal"
-            />
+            <UInput v-model="cloudOptions.relay" placeholder="wss://relay.example.com" icon="i-heroicons-signal" />
           </UFormField>
-          
+
           <UCheckbox v-model="cloudOptions.autoBackup" :label="$t('settings.backup.autoBackup')" />
-          
+
           <UFormField v-if="cloudOptions.autoBackup" :label="$t('settings.backup.backupFrequency')">
-            <USelect
-              v-model="cloudOptions.frequency"
-              :items="frequencyOptions"
-              value-key="value"
-              label-key="label"
-            />
+            <USelect v-model="cloudOptions.frequency" :items="frequencyOptions" value-key="value" label-key="label" />
           </UFormField>
         </div>
 
         <template #footer>
-          <UButton
-            color="primary"
-            icon="i-heroicons-cloud-arrow-up"
-            :loading="syncing"
-            @click="syncToCloud"
-          >
+          <UButton color="primary" icon="i-heroicons-cloud-arrow-up" :loading="syncing" @click="syncToCloud">
             {{ $t('settings.backup.syncNow') }}
           </UButton>
         </template>
@@ -139,23 +113,12 @@
         </h3>
       </template>
 
-      <UAlert
-        icon="i-heroicons-exclamation-triangle"
-        color="warning"
-        :title="$t('settings.backup.restoreWarning')"
-        :description="$t('settings.backup.restoreWarningDesc')"
-        class="mb-4"
-      />
+      <UAlert icon="i-heroicons-exclamation-triangle" color="warning" :title="$t('settings.backup.restoreWarning')"
+        :description="$t('settings.backup.restoreWarningDesc')" class="mb-4" />
 
-      <div class="border-2 border-dashed rounded-lg p-8 text-center">
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".json,.csv"
-          class="hidden"
-          @change="handleFileSelect"
-        >
-        
+      <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+        <input ref="fileInput" type="file" accept=".json,.csv" class="hidden" @change="handleFileSelect">
+
         <div v-if="!selectedFile">
           <UIcon name="i-heroicons-cloud-arrow-up" class="text-4xl text-muted mb-2" />
           <p class="text-muted mb-4">{{ $t('settings.backup.dragDropOrClick') }}</p>
@@ -163,7 +126,7 @@
             {{ $t('settings.backup.selectFile') }}
           </UButton>
         </div>
-        
+
         <div v-else class="space-y-4">
           <div class="flex items-center justify-center gap-3">
             <UIcon name="i-heroicons-document-text" class="text-2xl text-primary" />
@@ -173,14 +136,9 @@
             </div>
             <UButton variant="ghost" icon="i-heroicons-x-mark" @click="selectedFile = null" />
           </div>
-          
+
           <div class="flex justify-center gap-2">
-            <UButton
-              color="warning"
-              icon="i-heroicons-arrow-up-tray"
-              :loading="restoring"
-              @click="restoreData"
-            >
+            <UButton color="warning" icon="i-heroicons-arrow-up-tray" :loading="restoring" @click="restoreData">
               {{ $t('settings.backup.restoreNow') }}
             </UButton>
           </div>
@@ -193,14 +151,8 @@
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t('settings.backup.backupHistory') }}</h3>
-          <UButton
-            v-if="backupHistory.length > 0"
-            variant="ghost"
-            color="error"
-            size="xs"
-            icon="i-heroicons-trash"
-            @click="clearHistory"
-          >
+          <UButton v-if="backupHistory.length > 0" variant="ghost" color="error" size="xs" icon="i-heroicons-trash"
+            @click="clearHistory">
             {{ $t('settings.backup.clearHistory') }}
           </UButton>
         </div>
@@ -212,16 +164,10 @@
       </div>
 
       <div v-else class="divide-y">
-        <div
-          v-for="backup in backupHistory"
-          :key="backup.id"
-          class="py-3 flex items-center justify-between"
-        >
+        <div v-for="backup in backupHistory" :key="backup.id" class="py-3 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <UIcon
-              :name="backup.type === 'cloud' ? 'i-heroicons-cloud' : 'i-heroicons-document'"
-              :class="backup.type === 'cloud' ? 'text-purple-600' : 'text-blue-600'"
-            />
+            <UIcon :name="backup.type === 'cloud' ? 'i-heroicons-cloud' : 'i-heroicons-document'"
+              :class="backup.type === 'cloud' ? 'text-purple-600' : 'text-blue-600'" />
             <div>
               <p class="font-medium">{{ backup.name }}</p>
               <p class="text-sm text-muted">
@@ -229,18 +175,13 @@
               </p>
             </div>
           </div>
-          
+
           <div class="flex items-center gap-2">
             <UBadge :color="backup.status === 'success' ? 'success' : 'error'" variant="subtle">
               {{ backup.status === 'success' ? $t('settings.backup.success') : $t('settings.backup.failed') }}
             </UBadge>
-            <UButton
-              v-if="backup.type === 'local'"
-              variant="ghost"
-              icon="i-heroicons-arrow-down-tray"
-              size="xs"
-              @click="downloadBackup(backup)"
-            />
+            <UButton v-if="backup.type === 'local'" variant="ghost" icon="i-heroicons-arrow-down-tray" size="xs"
+              @click="downloadBackup(backup)" />
           </div>
         </div>
       </div>
@@ -251,17 +192,13 @@
       <template #header>
         <h3 class="font-semibold text-warning">{{ $t('settings.backup.confirmRestore') }}</h3>
       </template>
-      
+
       <div class="p-4 space-y-4">
         <p>{{ $t('settings.backup.confirmRestoreDesc') }}</p>
-        
-        <UAlert
-          icon="i-heroicons-exclamation-triangle"
-          color="error"
-          :title="$t('settings.backup.dataWillBeReplaced')"
-          :description="$t('settings.backup.dataWillBeReplacedDesc')"
-        />
-        
+
+        <UAlert icon="i-heroicons-exclamation-triangle" color="error" :title="$t('settings.backup.dataWillBeReplaced')"
+          :description="$t('settings.backup.dataWillBeReplacedDesc')" />
+
         <div v-if="restorePreview">
           <p class="text-sm font-medium mb-2">{{ $t('settings.backup.dataToRestore') }}</p>
           <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-1 text-sm">
@@ -271,26 +208,18 @@
             <p v-if="restorePreview.inventory">📊 {{ restorePreview.inventory }} {{ $t('inventory.title') }}</p>
           </div>
         </div>
-        
+
         <UFormField :label="$t('settings.backup.typeConfirm')">
-          <UInput
-            v-model="confirmText"
-            :placeholder="$t('settings.backup.typeRESTORE')"
-          />
+          <UInput v-model="confirmText" :placeholder="$t('settings.backup.typeRESTORE')" />
         </UFormField>
       </div>
-      
+
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" @click="showRestoreModal = false">
             {{ $t('common.cancel') }}
           </UButton>
-          <UButton
-            color="error"
-            :disabled="confirmText !== 'RESTORE'"
-            :loading="restoring"
-            @click="confirmRestore"
-          >
+          <UButton color="error" :disabled="confirmText !== 'RESTORE'" :loading="restoring" @click="confirmRestore">
             {{ $t('settings.backup.restoreNow') }}
           </UButton>
         </div>
@@ -382,11 +311,11 @@ async function loadStats() {
     const { products } = useProducts()
     const { orders } = useOrders()
     const { customers } = useCustomers()
-    
+
     const productCount = products.value?.length || 0
     const orderCount = orders.value?.length || 0
     const customerCount = customers.value?.length || 0
-    
+
     stats.totalRecords = productCount + orderCount + customerCount
     stats.dataSize = JSON.stringify({ products: products.value, orders: orders.value, customers: customers.value }).length
   } catch {
@@ -397,23 +326,23 @@ async function loadStats() {
 
 async function exportData(format: 'json' | 'csv') {
   exporting.value = true
-  
+
   try {
     const { products } = useProducts()
     const { orders } = useOrders()
     const { customers } = useCustomers()
-    
+
     const data: Record<string, unknown> = {}
-    
+
     if (exportOptions.products) data.products = products.value
     if (exportOptions.orders) data.orders = orders.value
     if (exportOptions.customers) data.customers = customers.value
     // Add inventory and settings if available
-    
+
     let content: string
     let filename: string
     let mimeType: string
-    
+
     if (format === 'json') {
       content = JSON.stringify(data, null, 2)
       filename = `bitspace-backup-${new Date().toISOString().split('T')[0]}.json`
@@ -421,7 +350,7 @@ async function exportData(format: 'json' | 'csv') {
     } else {
       // CSV export - flatten data
       const rows: string[] = []
-      
+
       if (data.products && Array.isArray(data.products)) {
         rows.push('--- PRODUCTS ---')
         const products = data.products as Record<string, unknown>[]
@@ -432,12 +361,12 @@ async function exportData(format: 'json' | 'csv') {
           })
         }
       }
-      
+
       content = rows.join('\n')
       filename = `bitspace-backup-${new Date().toISOString().split('T')[0]}.csv`
       mimeType = 'text/csv'
     }
-    
+
     // Download file
     const blob = new Blob([content], { type: mimeType })
     const url = URL.createObjectURL(blob)
@@ -446,7 +375,7 @@ async function exportData(format: 'json' | 'csv') {
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
-    
+
     // Add to history
     backupHistory.value.unshift({
       id: Date.now().toString(),
@@ -457,9 +386,9 @@ async function exportData(format: 'json' | 'csv') {
       status: 'success',
       data: content
     })
-    
+
     lastBackup.value = new Date()
-    
+
     toast.add({
       title: t('settings.backup.exportSuccess'),
       color: 'success'
@@ -477,23 +406,23 @@ async function exportData(format: 'json' | 'csv') {
 
 async function syncToCloud() {
   syncing.value = true
-  
+
   try {
     const { products } = useProducts()
     const { orders } = useOrders()
     const { customers } = useCustomers()
-    
+
     const data = {
       products: products.value,
       orders: orders.value,
       customers: customers.value,
       timestamp: new Date().toISOString()
     }
-    
+
     // In production, this would sync via Nostr relay
     // For now, simulate the sync
     await new Promise(resolve => setTimeout(resolve, 2000))
-    
+
     backupHistory.value.unshift({
       id: Date.now().toString(),
       name: `Cloud Backup - ${new Date().toLocaleDateString()}`,
@@ -502,9 +431,9 @@ async function syncToCloud() {
       type: 'cloud',
       status: 'success'
     })
-    
+
     lastBackup.value = new Date()
-    
+
     toast.add({
       title: t('settings.backup.syncSuccess'),
       color: 'success'
@@ -530,11 +459,11 @@ function handleFileSelect(event: Event) {
 
 async function parseFilePreview() {
   if (!selectedFile.value) return
-  
+
   try {
     const content = await selectedFile.value.text()
     const data = JSON.parse(content)
-    
+
     restorePreview.value = {
       products: data.products?.length || 0,
       orders: data.orders?.length || 0,
@@ -553,28 +482,28 @@ function restoreData() {
 
 async function confirmRestore() {
   if (confirmText.value !== 'RESTORE' || !selectedFile.value) return
-  
+
   restoring.value = true
-  
+
   try {
     const content = await selectedFile.value.text()
     const _data = JSON.parse(content)
-    
+
     // In production, restore data to IndexedDB
     // This would use the composables to save data
-    
+
     await new Promise(resolve => setTimeout(resolve, 2000))
-    
+
     toast.add({
       title: t('settings.backup.restoreSuccess'),
       description: t('settings.backup.restoreSuccessDesc'),
       color: 'success'
     })
-    
+
     showRestoreModal.value = false
     selectedFile.value = null
     restorePreview.value = null
-    
+
     // Refresh the page to load restored data
     window.location.reload()
   } catch (error) {
@@ -590,7 +519,7 @@ async function confirmRestore() {
 
 function downloadBackup(backup: BackupRecord) {
   if (!backup.data) return
-  
+
   const blob = new Blob([backup.data], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -611,13 +540,13 @@ function clearHistory() {
 // Load stats on mount
 onMounted(() => {
   loadStats()
-  
+
   // Load last backup from localStorage
   const saved = localStorage.getItem('lastBackup')
   if (saved) {
     lastBackup.value = new Date(saved)
   }
-  
+
   // Load backup history from localStorage
   const history = localStorage.getItem('backupHistory')
   if (history) {

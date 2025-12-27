@@ -60,7 +60,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t("settings.security.yourKeys") || "Your keys" }}
+              {{ $t("settings.security.title", 'Your keys') }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
               {{ $t("settings.security.subtitle") }}
@@ -98,7 +98,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t("settings.wallets") || "Wallets" }}
+              {{ $t("settings.lightning.title", 'Wallets') }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
               {{ $t("settings.lightning.subtitle") }}

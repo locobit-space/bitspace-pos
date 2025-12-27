@@ -1,61 +1,35 @@
 <template>
   <UContainer>
-    <CommonPageHeader
-      :title="$t('settings.auditLog.title')"
-      :description="$t('settings.auditLog.description')"
-    />
+    <CommonPageHeader :title="$t('settings.auditLog.title')" :description="$t('settings.auditLog.description')" />
 
     <!-- Filters -->
     <UCard class="mb-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <UFormField :label="$t('settings.auditLog.filterByAction')">
-          <USelect
-            v-model="filters.action"
-            :items="actionTypes"
-            value-key="value"
-            label-key="label"
-            :placeholder="$t('common.all')"
-          />
+          <USelect v-model="filters.action" :items="actionTypes" value-key="value" label-key="label"
+            :placeholder="$t('common.all')" />
         </UFormField>
-        
+
         <UFormField :label="$t('settings.auditLog.filterByUser')">
-          <USelect
-            v-model="filters.userId"
-            :items="userOptions"
-            value-key="value"
-            label-key="label"
-            :placeholder="$t('common.all')"
-          />
+          <USelect v-model="filters.userId" :items="userOptions" value-key="value" label-key="label"
+            :placeholder="$t('common.all')" />
         </UFormField>
-        
+
         <UFormField :label="$t('settings.auditLog.startDate')">
-          <UInput
-            v-model="filters.startDate"
-            type="date"
-          />
+          <UInput v-model="filters.startDate" type="date" />
         </UFormField>
-        
+
         <UFormField :label="$t('settings.auditLog.endDate')">
-          <UInput
-            v-model="filters.endDate"
-            type="date"
-          />
+          <UInput v-model="filters.endDate" type="date" />
         </UFormField>
       </div>
-      
+
       <div class="flex justify-between items-center mt-4">
-        <UButton
-          variant="ghost"
-          icon="i-heroicons-arrow-path"
-          @click="resetFilters"
-        >
+        <UButton variant="ghost" icon="i-heroicons-arrow-path" @click="resetFilters">
           {{ $t('settings.auditLog.resetFilters') }}
         </UButton>
-        
-        <UButton
-          icon="i-heroicons-arrow-down-tray"
-          @click="exportLogs"
-        >
+
+        <UButton icon="i-heroicons-arrow-down-tray" @click="exportLogs">
           {{ $t('settings.auditLog.exportLogs') }}
         </UButton>
       </div>
@@ -69,21 +43,21 @@
           <p class="text-sm text-muted">{{ $t('settings.auditLog.totalActions') }}</p>
         </div>
       </UCard>
-      
+
       <UCard>
         <div class="text-center">
           <p class="text-2xl font-bold text-blue-600">{{ stats.todayActions }}</p>
           <p class="text-sm text-muted">{{ $t('settings.auditLog.todayActions') }}</p>
         </div>
       </UCard>
-      
+
       <UCard>
         <div class="text-center">
           <p class="text-2xl font-bold text-orange-600">{{ stats.securityEvents }}</p>
           <p class="text-sm text-muted">{{ $t('settings.auditLog.securityEvents') }}</p>
         </div>
       </UCard>
-      
+
       <UCard>
         <div class="text-center">
           <p class="text-2xl font-bold text-green-600">{{ stats.activeUsers }}</p>
@@ -97,20 +71,12 @@
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t('settings.auditLog.activityLog') }}</h3>
-          <UInput
-            v-model="searchQuery"
-            :placeholder="$t('settings.auditLog.searchPlaceholder')"
-            icon="i-heroicons-magnifying-glass"
-            class="w-64"
-          />
+          <UInput v-model="searchQuery" :placeholder="$t('settings.auditLog.searchPlaceholder')"
+            icon="i-heroicons-magnifying-glass" class="w-64" />
         </div>
       </template>
 
-      <UTable
-        :data="paginatedLogs"
-        :columns="columns"
-        :loading="loading"
-      >
+      <UTable :data="paginatedLogs" :columns="columns" :loading="loading">
         <template #action-cell="{ row }">
           <UBadge :color="getActionColor(row.original.action)" variant="subtle">
             <UIcon :name="getActionIcon(row.original.action)" class="mr-1" />
@@ -120,10 +86,7 @@
 
         <template #user-cell="{ row }">
           <div class="flex items-center gap-2">
-            <UAvatar
-              :alt="row.original.userName"
-              size="xs"
-            />
+            <UAvatar :alt="row.original.userName" size="xs" />
             <span>{{ row.original.userName }}</span>
           </div>
         </template>
@@ -148,25 +111,16 @@
         </template>
 
         <template #actions-cell="{ row }">
-          <UButton
-            variant="ghost"
-            icon="i-heroicons-eye"
-            size="xs"
-            @click="viewDetails(row.original)"
-          />
+          <UButton variant="ghost" icon="i-heroicons-eye" size="xs" @click="viewDetails(row.original)" />
         </template>
       </UTable>
 
       <!-- Pagination -->
-      <div class="flex justify-between items-center mt-4 pt-4 border-t">
+      <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <p class="text-sm text-muted">
           {{ $t('settings.auditLog.showing', { from: pagination.from, to: pagination.to, total: pagination.total }) }}
         </p>
-        <UPagination
-          v-model:page="pagination.page"
-          :items-per-page="pagination.perPage"
-          :total="pagination.total"
-        />
+        <UPagination v-model:page="pagination.page" :items-per-page="pagination.perPage" :total="pagination.total" />
       </div>
     </UCard>
 
@@ -175,7 +129,7 @@
       <template #header>
         <h3 class="font-semibold">{{ $t('settings.auditLog.logDetails') }}</h3>
       </template>
-      
+
       <div v-if="selectedLog" class="p-4 space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -184,35 +138,36 @@
               {{ $t(`settings.auditLog.actions.${selectedLog.action}`) }}
             </UBadge>
           </div>
-          
+
           <div>
             <p class="text-sm text-muted">{{ $t('settings.auditLog.user') }}</p>
             <p class="font-medium">{{ selectedLog.userName }}</p>
           </div>
-          
+
           <div>
             <p class="text-sm text-muted">{{ $t('settings.auditLog.timestamp') }}</p>
             <p class="font-medium">{{ formatDateTime(selectedLog.timestamp) }}</p>
           </div>
-          
+
           <div>
             <p class="text-sm text-muted">{{ $t('settings.auditLog.ipAddress') }}</p>
             <code class="text-sm">{{ selectedLog.ipAddress || 'N/A' }}</code>
           </div>
         </div>
-        
+
         <div>
           <p class="text-sm text-muted mb-2">{{ $t('settings.auditLog.details') }}</p>
           <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
             <p>{{ selectedLog.details }}</p>
           </div>
         </div>
-        
+
         <div v-if="selectedLog.metadata">
           <p class="text-sm text-muted mb-2">{{ $t('settings.auditLog.metadata') }}</p>
-          <pre class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs overflow-auto">{{ JSON.stringify(selectedLog.metadata, null, 2) }}</pre>
+          <pre class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs overflow-auto">{{
+            JSON.stringify(selectedLog.metadata, null, 2) }}</pre>
         </div>
-        
+
         <div v-if="selectedLog.resourceType">
           <p class="text-sm text-muted mb-2">{{ $t('settings.auditLog.affectedResource') }}</p>
           <div class="flex items-center gap-2">
@@ -221,7 +176,7 @@
           </div>
         </div>
       </div>
-      
+
       <template #footer>
         <UButton variant="ghost" @click="showDetailModal = false">
           {{ $t('common.close') }}
@@ -425,9 +380,9 @@ const userOptions = computed(() => {
 const stats = computed(() => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
+
   const securityActions = ['login', 'logout', 'login_failed', 'settings_change', 'user_create', 'user_update']
-  
+
   return {
     totalActions: auditLogs.value.length,
     todayActions: auditLogs.value.filter(log => new Date(log.timestamp) >= today).length,
@@ -438,37 +393,37 @@ const stats = computed(() => {
 
 const filteredLogs = computed(() => {
   let logs = [...auditLogs.value]
-  
+
   // Apply filters
   if (filters.action) {
     logs = logs.filter(log => log.action === filters.action)
   }
-  
+
   if (filters.userId) {
     logs = logs.filter(log => log.userId === filters.userId)
   }
-  
+
   if (filters.startDate) {
     const start = new Date(filters.startDate)
     logs = logs.filter(log => new Date(log.timestamp) >= start)
   }
-  
+
   if (filters.endDate) {
     const end = new Date(filters.endDate)
     end.setHours(23, 59, 59, 999)
     logs = logs.filter(log => new Date(log.timestamp) <= end)
   }
-  
+
   // Apply search
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    logs = logs.filter(log => 
+    logs = logs.filter(log =>
       log.details.toLowerCase().includes(query) ||
       log.userName.toLowerCase().includes(query) ||
       log.action.toLowerCase().includes(query)
     )
   }
-  
+
   return logs
 })
 
@@ -580,7 +535,7 @@ function exportLogs() {
       log.resourceId || ''
     ].join(','))
   ].join('\n')
-  
+
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

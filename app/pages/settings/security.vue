@@ -1,9 +1,6 @@
 <template>
   <UContainer>
-    <CommonPageHeader
-      :title="$t('settings.security.title')"
-      :description="$t('settings.security.description')"
-    />
+    <CommonPageHeader :title="$t('settings.security.title')" :description="$t('settings.security.description')" />
 
     <!-- Encryption Status -->
     <UCard class="mb-6">
@@ -30,13 +27,13 @@
           <p class="text-sm text-muted">{{ $t('settings.security.algorithm') }}</p>
           <p class="font-semibold">AES-256-GCM</p>
         </div>
-        
+
         <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <UIcon name="i-heroicons-finger-print" class="text-3xl text-blue-600 mb-2" />
           <p class="text-sm text-muted">{{ $t('settings.security.keyId') }}</p>
           <p class="font-semibold font-mono text-xs">{{ truncateKeyId(currentKeyId) }}</p>
         </div>
-        
+
         <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <UIcon name="i-heroicons-clock" class="text-3xl text-green-600 mb-2" />
           <p class="text-sm text-muted">{{ $t('settings.security.keyAge') }}</p>
@@ -54,75 +51,49 @@
         </h3>
       </template>
 
-      <UAlert
-        icon="i-heroicons-exclamation-triangle"
-        color="warning"
-        :title="$t('settings.security.keyWarning')"
-        :description="$t('settings.security.keyWarningDesc')"
-        class="mb-6"
-      />
+      <UAlert icon="i-heroicons-exclamation-triangle" color="warning" :title="$t('settings.security.keyWarning')"
+        :description="$t('settings.security.keyWarningDesc')" class="mb-6" />
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- View Current Key -->
-        <div class="border rounded-lg p-4">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <h4 class="font-medium mb-3 flex items-center gap-2">
             <UIcon name="i-heroicons-eye" class="text-blue-600" />
             {{ $t('settings.security.viewKey') }}
           </h4>
-          
+
           <p class="text-sm text-muted mb-4">{{ $t('settings.security.viewKeyDesc') }}</p>
-          
+
           <div v-if="showKey" class="mb-4">
             <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 font-mono text-xs break-all">
               {{ exportedKey }}
             </div>
             <div class="flex gap-2 mt-2">
-              <UButton
-                size="xs"
-                variant="outline"
-                icon="i-heroicons-clipboard"
-                @click="copyKey"
-              >
+              <UButton size="xs" variant="outline" icon="i-heroicons-clipboard" @click="copyKey">
                 {{ $t('common.copy') }}
               </UButton>
-              <UButton
-                size="xs"
-                variant="outline"
-                icon="i-heroicons-eye-slash"
-                @click="hideKey"
-              >
+              <UButton size="xs" variant="outline" icon="i-heroicons-eye-slash" @click="hideKey">
                 {{ $t('settings.security.hideKey') }}
               </UButton>
             </div>
           </div>
-          
-          <UButton
-            v-else
-            variant="soft"
-            icon="i-heroicons-eye"
-            :loading="loadingKey"
-            @click="viewCurrentKey"
-          >
+
+          <UButton v-else variant="soft" icon="i-heroicons-eye" :loading="loadingKey" @click="viewCurrentKey">
             {{ $t('settings.security.revealKey') }}
           </UButton>
         </div>
 
         <!-- Rotate Key -->
-        <div class="border rounded-lg p-4">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <h4 class="font-medium mb-3 flex items-center gap-2">
             <UIcon name="i-heroicons-arrow-path" class="text-purple-600" />
             {{ $t('settings.security.rotateKey') }}
           </h4>
-          
+
           <p class="text-sm text-muted mb-4">{{ $t('settings.security.rotateKeyDesc') }}</p>
-          
-          <UButton
-            color="warning"
-            variant="soft"
-            icon="i-heroicons-arrow-path"
-            :loading="rotatingKey"
-            @click="confirmRotateKey"
-          >
+
+          <UButton color="warning" variant="soft" icon="i-heroicons-arrow-path" :loading="rotatingKey"
+            @click="confirmRotateKey">
             {{ $t('settings.security.rotateNow') }}
           </UButton>
         </div>
@@ -142,51 +113,39 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Backup to Nostr -->
-        <div class="border rounded-lg p-4">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <h4 class="font-medium mb-3 flex items-center gap-2">
             <UIcon name="i-heroicons-arrow-up-on-square" class="text-blue-600" />
             {{ $t('settings.security.backupToNostr') }}
           </h4>
-          
+
           <div class="space-y-3 mb-4">
             <UFormField :label="$t('settings.security.relays')">
-              <UTextarea
-                v-model="nostrRelays"
-                placeholder="wss://relay.damus.io&#10;wss://nos.lol"
-                :rows="3"
-              />
+              <UTextarea v-model="nostrRelays" placeholder="wss://relay.damus.io&#10;wss://nos.lol" :rows="3" />
             </UFormField>
           </div>
-          
+
           <div class="flex items-center justify-between">
             <span v-if="lastNostrBackup" class="text-sm text-muted">
               {{ $t('settings.security.lastBackup') }}: {{ formatDate(lastNostrBackup) }}
             </span>
-            <UButton
-              icon="i-heroicons-cloud-arrow-up"
-              :loading="backingUpToNostr"
-              @click="backupKeyToNostr"
-            >
+            <UButton icon="i-heroicons-cloud-arrow-up" :loading="backingUpToNostr" @click="backupKeyToNostr">
               {{ $t('settings.security.backupNow') }}
             </UButton>
           </div>
         </div>
 
         <!-- Restore from Nostr -->
-        <div class="border rounded-lg p-4">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <h4 class="font-medium mb-3 flex items-center gap-2">
             <UIcon name="i-heroicons-arrow-down-on-square" class="text-green-600" />
             {{ $t('settings.security.restoreFromNostr') }}
           </h4>
-          
+
           <p class="text-sm text-muted mb-4">{{ $t('settings.security.restoreFromNostrDesc') }}</p>
-          
-          <UButton
-            variant="outline"
-            icon="i-heroicons-cloud-arrow-down"
-            :loading="restoringFromNostr"
-            @click="restoreKeyFromNostr"
-          >
+
+          <UButton variant="outline" icon="i-heroicons-cloud-arrow-down" :loading="restoringFromNostr"
+            @click="restoreKeyFromNostr">
             {{ $t('settings.security.restoreKey') }}
           </UButton>
         </div>
@@ -204,7 +163,7 @@
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- AES-256-GCM -->
-        <div class="border rounded-lg p-4">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div class="flex items-center gap-2 mb-2">
             <UIcon name="i-heroicons-lock-closed" class="text-green-600" />
             <h4 class="font-medium">AES-256-GCM</h4>
@@ -214,7 +173,7 @@
         </div>
 
         <!-- NIP-44 -->
-        <div class="border rounded-lg p-4">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div class="flex items-center gap-2 mb-2">
             <UIcon name="i-heroicons-globe-alt" class="text-purple-600" />
             <h4 class="font-medium">NIP-44</h4>
@@ -224,7 +183,7 @@
         </div>
 
         <!-- NIP-04 -->
-        <div class="border rounded-lg p-4">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div class="flex items-center gap-2 mb-2">
             <UIcon name="i-heroicons-clock" class="text-amber-600" />
             <h4 class="font-medium">NIP-04</h4>
@@ -247,12 +206,7 @@
       <p class="text-muted mb-4">{{ $t('settings.security.sensitiveFieldsDesc') }}</p>
 
       <div class="flex flex-wrap gap-2">
-        <UBadge
-          v-for="field in sensitiveFields"
-          :key="field"
-          color="neutral"
-          variant="subtle"
-        >
+        <UBadge v-for="field in sensitiveFields" :key="field" color="neutral" variant="subtle">
           <UIcon name="i-heroicons-lock-closed" class="mr-1 text-xs" />
           {{ field }}
         </UBadge>
@@ -270,12 +224,8 @@
 
       <div class="p-4">
         <p class="mb-4">{{ $t('settings.security.rotateConfirmDesc') }}</p>
-        
-        <UAlert
-          icon="i-heroicons-information-circle"
-          color="info"
-          class="mb-4"
-        >
+
+        <UAlert icon="i-heroicons-information-circle" color="info" class="mb-4">
           <template #description>
             <ul class="list-disc list-inside text-sm">
               <li>{{ $t('settings.security.rotateNote1') }}</li>
@@ -286,11 +236,7 @@
         </UAlert>
 
         <UFormField :label="$t('settings.security.confirmPassword')">
-          <UInput
-            v-model="confirmPassword"
-            type="password"
-            :placeholder="$t('settings.security.enterPassword')"
-          />
+          <UInput v-model="confirmPassword" type="password" :placeholder="$t('settings.security.enterPassword')" />
         </UFormField>
       </div>
 
@@ -299,12 +245,7 @@
           <UButton variant="ghost" @click="showRotateModal = false">
             {{ $t('common.cancel') }}
           </UButton>
-          <UButton
-            color="warning"
-            :loading="rotatingKey"
-            :disabled="!confirmPassword"
-            @click="rotateKey"
-          >
+          <UButton color="warning" :loading="rotatingKey" :disabled="!confirmPassword" @click="rotateKey">
             {{ $t('settings.security.rotateKey') }}
           </UButton>
         </div>
@@ -353,7 +294,7 @@ const sensitiveFields = computed(() => encryption.SENSITIVE_FIELDS);
 // Key age calculation
 const keyAge = computed(() => {
   if (!currentKeyId.value || currentKeyId.value === 'Not set') return t('settings.security.unknown');
-  
+
   // Extract timestamp from key ID format: key-type-timestamp-uuid
   const parts = currentKeyId.value.split('-');
   if (parts.length >= 3) {
@@ -561,10 +502,10 @@ async function backupKeyToNostr() {
     await nostrStorage.saveEncryptedData('company:encryption:key', encryptedKey.data);
 
     lastNostrBackup.value = new Date().toISOString();
-    
+
     // Also save backup timestamp
     await encryption.secureStore('lastNostrKeyBackup', lastNostrBackup.value);
-    
+
     toast.add({
       title: t('common.success'),
       description: t('settings.security.backupSuccess'),
@@ -602,7 +543,7 @@ async function restoreKeyFromNostr() {
 
     // Fetch from Nostr
     const encryptedKey = await nostrStorage.loadEncryptedData('company:encryption:key');
-    
+
     if (!encryptedKey) {
       toast.add({
         title: t('common.error'),

@@ -5,6 +5,9 @@ export default defineNuxtConfig({
 
   ssr: false,
 
+  // Custom SPA loading splash screen
+  spaLoadingTemplate: "app/spa-loading-template.html",
+
   future: {
     compatibilityVersion: 4,
   },
@@ -52,6 +55,27 @@ export default defineNuxtConfig({
           purpose: "maskable",
         },
       ],
+      // Splash screens for iOS and Android
+      screenshots: [
+        {
+          src: "/screenshots/mobile-splash.png",
+          sizes: "750x1334",
+          type: "image/png",
+          form_factor: "narrow",
+          label: "BitSpace POS - Mobile",
+        },
+        {
+          src: "/screenshots/tablet-splash.png",
+          sizes: "1024x768",
+          type: "image/png",
+          form_factor: "wide",
+          label: "BitSpace POS - Tablet",
+        },
+      ],
+      // iOS specific splash screen settings
+      launch_handler: {
+        client_mode: ["navigate-existing", "auto"],
+      },
     },
     workbox: {
       navigateFallback: "/",
