@@ -420,6 +420,37 @@
             />
           </div>
         </NuxtLink>
+
+        <!-- Integrations -->
+        <NuxtLink
+          to="/settings/integrations"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
+        >
+          <div class="p-4 flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-puzzle-piece"
+                class="w-6 h-6 text-sky-600"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.integrations.title") || "Integrations" }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{
+                  $t("settings.integrations.subtitle") || "Cloudinary, API keys"
+                }}
+              </p>
+            </div>
+            <UIcon
+              name="i-heroicons-chevron-right"
+              class="w-5 h-5 text-gray-400 flex-shrink-0"
+            />
+          </div>
+        </NuxtLink>
       </div>
     </div>
   </div>

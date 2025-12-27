@@ -33,10 +33,14 @@
                   />
                 </div>
                 <div>
-                  <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h3
+                    class="text-xl font-semibold text-gray-900 dark:text-white"
+                  >
                     {{ userProfile.name }}
                   </h3>
-                  <p class="text-gray-600 dark:text-gray-400">{{ userProfile.email }}</p>
+                  <p class="text-gray-600 dark:text-gray-400">
+                    {{ userProfile.email }}
+                  </p>
                   <p class="text-sm text-gray-500 dark:text-gray-500">
                     {{ $t("account.member_since") }}:
                     {{ formatDate(userProfile.createdAt) }}
@@ -51,16 +55,28 @@
                 @submit="updateProfile"
               >
                 <!-- Nostr Identity Section -->
-                <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <h4 class="text-sm font-medium text-purple-800 dark:text-purple-200 mb-3">
+                <div
+                  class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg"
+                >
+                  <h4
+                    class="text-sm font-medium text-purple-800 dark:text-purple-200 mb-3"
+                  >
                     {{ $t("account.nostr_identity") || "Nostr Identity" }}
-                    <span class="text-xs font-normal text-purple-600 dark:text-purple-300 ml-2">(kind:0)</span>
+                    <span
+                      class="text-xs font-normal text-purple-600 dark:text-purple-300 ml-2"
+                      >(kind:0)</span
+                    >
                   </h4>
                   <div class="space-y-3">
                     <!-- Public Key (npub) -->
                     <div class="flex items-center gap-2">
-                      <span class="text-xs text-gray-500 dark:text-gray-400 w-12">npub:</span>
-                      <code class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1 truncate">
+                      <span
+                        class="text-xs text-gray-500 dark:text-gray-400 w-12"
+                        >npub:</span
+                      >
+                      <code
+                        class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1 truncate"
+                      >
                         {{ userProfile.npub || "Not available" }}
                       </code>
                       <UButton
@@ -71,18 +87,28 @@
                         @click="copyToClipboard(userProfile.npub)"
                       />
                     </div>
-                    
+
                     <!-- Private Key (nsec) - Backup Section -->
-                    <div class="border-t border-purple-200 dark:border-purple-700 pt-3 mt-3">
+                    <div
+                      class="border-t border-purple-200 dark:border-purple-700 pt-3 mt-3"
+                    >
                       <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium text-red-600 dark:text-red-400">
-                          🔐 {{ $t("account.backup_key") || "Backup Private Key" }}
+                        <span
+                          class="text-xs font-medium text-red-600 dark:text-red-400"
+                        >
+                          🔐
+                          {{ $t("account.backup_key") || "Backup Private Key" }}
                         </span>
                       </div>
                       <div v-if="userNsec" class="space-y-2">
                         <div v-if="!showNsec" class="flex items-center gap-2">
-                          <span class="text-xs text-gray-500 dark:text-gray-400 w-12">nsec:</span>
-                          <code class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1">
+                          <span
+                            class="text-xs text-gray-500 dark:text-gray-400 w-12"
+                            >nsec:</span
+                          >
+                          <code
+                            class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1"
+                          >
                             ••••••••••••••••••••••••••••••••••••••••••••
                           </code>
                           <UButton
@@ -97,8 +123,13 @@
                         </div>
                         <div v-else class="space-y-2">
                           <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 dark:text-gray-400 w-12">nsec:</span>
-                            <code class="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 px-2 py-1 rounded flex-1 break-all border border-red-200 dark:border-red-800">
+                            <span
+                              class="text-xs text-gray-500 dark:text-gray-400 w-12"
+                              >nsec:</span
+                            >
+                            <code
+                              class="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 px-2 py-1 rounded flex-1 break-all border border-red-200 dark:border-red-800"
+                            >
                               {{ userNsec }}
                             </code>
                           </div>
@@ -123,54 +154,125 @@
                           </div>
                         </div>
                       </div>
-                      <p v-else class="text-xs text-gray-500 dark:text-gray-400 italic">
-                        {{ $t("account.no_nsec_available") || "No private key available (using NIP-07 extension)" }}
+                      <p
+                        v-else
+                        class="text-xs text-gray-500 dark:text-gray-400 italic"
+                      >
+                        {{
+                          $t("account.no_nsec_available") ||
+                          "No private key available (using NIP-07 extension)"
+                        }}
                       </p>
                       <p class="text-xs text-red-500 dark:text-red-400 mt-2">
-                        ⚠️ {{ $t("account.nsec_warning") || "Never share your nsec! Anyone with this key has full control of your account." }}
+                        ⚠️
+                        {{
+                          $t("account.nsec_warning") ||
+                          "Never share your nsec! Anyone with this key has full control of your account."
+                        }}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <UFormField name="name" :label="$t('account.name') || 'Name'">
+                    <UInput
+                      v-model="profileForm.name"
+                      placeholder="Your name"
+                      class="w-full"
+                      icon="i-heroicons-user"
+                    />
+                  </UFormField>
+
                   <UFormField
-                    name="name"
-                    :label="$t('account.name') || 'Name'"
+                    name="displayName"
+                    :label="$t('account.display_name') || 'Display Name'"
                   >
-                    <UInput v-model="profileForm.name" placeholder="Your name" />
+                    <UInput
+                      v-model="profileForm.displayName"
+                      placeholder="Display name"
+                      icon="i-heroicons-user"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="displayName" :label="$t('account.display_name') || 'Display Name'">
-                    <UInput v-model="profileForm.displayName" placeholder="Display name" />
+                  <UFormField
+                    name="nip05"
+                    :label="$t('account.nip05') || 'NIP-05 (Nostr Address)'"
+                  >
+                    <UInput
+                      v-model="profileForm.nip05"
+                      placeholder="you@example.com"
+                      icon="i-heroicons-envelope"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="nip05" :label="$t('account.nip05') || 'NIP-05 (Nostr Address)'">
-                    <UInput v-model="profileForm.nip05" placeholder="you@example.com" />
+                  <UFormField
+                    name="lud16"
+                    :label="
+                      $t('account.lightning_address') || 'Lightning Address'
+                    "
+                  >
+                    <UInput
+                      v-model="profileForm.lud16"
+                      placeholder="you@getalby.com"
+                      icon="emojione-v1:lightning-mood"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="lud16" :label="$t('account.lightning_address') || 'Lightning Address'">
-                    <UInput v-model="profileForm.lud16" placeholder="you@getalby.com" />
+                  <UFormField
+                    name="website"
+                    :label="$t('account.website') || 'Website'"
+                  >
+                    <UInput
+                      v-model="profileForm.website"
+                      placeholder="https://yoursite.com"
+                      icon="iconoir:www"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="website" :label="$t('account.website') || 'Website'">
-                    <UInput v-model="profileForm.website" placeholder="https://yoursite.com" />
-                  </UFormField>
-
-                  <UFormField name="picture" :label="$t('account.picture_url') || 'Profile Picture URL'">
-                    <UInput v-model="profileForm.picture" placeholder="https://..." />
+                  <UFormField
+                    name="picture"
+                    :label="$t('account.picture_url') || 'Profile Picture URL'"
+                  >
+                    <UInput
+                      v-model="profileForm.picture"
+                      placeholder="https://..."
+                      icon="i-heroicons-photo"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
 
                 <div class="mt-6">
-                  <UFormField name="about" :label="$t('account.about') || 'About'">
-                    <UTextarea v-model="profileForm.about" :rows="4" placeholder="Tell us about yourself..." />
+                  <UFormField
+                    name="about"
+                    :label="$t('account.about') || 'About'"
+                  >
+                    <UTextarea
+                      v-model="profileForm.about"
+                      :rows="4"
+                      placeholder="Tell us about yourself..."
+                      icon="i-heroicons-chat-bubble-left"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
 
                 <div class="mt-6">
-                  <UFormField name="banner" :label="$t('account.banner_url') || 'Banner Image URL'">
-                    <UInput v-model="profileForm.banner" placeholder="https://..." />
+                  <UFormField
+                    name="banner"
+                    :label="$t('account.banner_url') || 'Banner Image URL'"
+                  >
+                    <UInput
+                      v-model="profileForm.banner"
+                      placeholder="https://..."
+                      icon="i-heroicons-photo"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
 
@@ -201,7 +303,9 @@
             <div class="space-y-8">
               <!-- Change Password -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.change_password") }}
                 </h3>
                 <UForm
@@ -217,6 +321,8 @@
                       <UInput
                         v-model="passwordForm.currentPassword"
                         type="password"
+                        icon="i-heroicons-lock-closed"
+                        class="w-full"
                       />
                     </UFormField>
 
@@ -227,6 +333,8 @@
                       <UInput
                         v-model="passwordForm.newPassword"
                         type="password"
+                        icon="i-heroicons-lock-closed"
+                        class="w-full"
                       />
                     </UFormField>
 
@@ -237,6 +345,8 @@
                       <UInput
                         v-model="passwordForm.confirmPassword"
                         type="password"
+                        icon="i-heroicons-lock-closed"
+                        class="w-full"
                       />
                     </UFormField>
                   </div>
@@ -246,6 +356,7 @@
                       type="submit"
                       color="primary"
                       :loading="isChangingPassword"
+                      icon="i-heroicons-lock-closed"
                     >
                       {{ $t("account.update_password") }}
                     </UButton>
@@ -257,7 +368,9 @@
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
                 <div class="flex items-center justify-between mb-4">
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3
+                      class="text-lg font-semibold text-gray-900 dark:text-white"
+                    >
                       {{ $t("account.two_factor_auth") }}
                     </h3>
                     <p class="text-gray-600 dark:text-gray-400">
@@ -288,7 +401,9 @@
 
               <!-- Active Sessions -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.active_sessions") }}
                 </h3>
                 <div class="space-y-4">
@@ -303,7 +418,9 @@
                         class="text-gray-600 dark:text-gray-400 text-xl"
                       />
                       <div>
-                        <p class="font-medium text-gray-900 dark:text-white">{{ session.device }}</p>
+                        <p class="font-medium text-gray-900 dark:text-white">
+                          {{ session.device }}
+                        </p>
                         <p class="text-sm text-gray-600 dark:text-gray-400">
                           {{ session.location }} •
                           {{ formatDate(session.lastActive) }}
@@ -336,7 +453,9 @@
             <div class="space-y-8">
               <!-- Language & Region -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.language_region") }}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -346,6 +465,8 @@
                       :items="languageOptions"
                       label-key="label"
                       value-key="value"
+                      icon="ion:language-outline"
+                      class="w-full"
                       @update:model-value="changeLanguage"
                     />
                   </UFormField>
@@ -356,6 +477,8 @@
                       :items="timezoneOptions"
                       label-key="label"
                       value-key="value"
+                      icon="ion:time-outline"
+                      class="w-full"
                     />
                   </UFormField>
 
@@ -365,6 +488,8 @@
                       :items="dateFormatOptions"
                       label-key="label"
                       value-key="value"
+                      icon="ion:calendar-outline"
+                      class="w-full"
                     />
                   </UFormField>
 
@@ -374,6 +499,8 @@
                       :items="currencyOptions"
                       label-key="label"
                       value-key="value"
+                      class="w-full"
+                      icon="material-symbols:currency-bitcoin"
                     />
                   </UFormField>
                 </div>
@@ -381,13 +508,17 @@
 
               <!-- Display Settings -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.display_settings") }}
                 </h3>
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="font-medium text-gray-900 dark:text-white">{{ $t("account.dark_mode") }}</p>
+                      <p class="font-medium text-gray-900 dark:text-white">
+                        {{ $t("account.dark_mode") }}
+                      </p>
                       <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{ $t("account.dark_mode_description") }}
                       </p>
@@ -413,7 +544,9 @@
               </div>
 
               <!-- Save Preferences -->
-              <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div
+                class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700"
+              >
                 <UButton
                   color="primary"
                   :loading="isSavingPreferences"
@@ -430,7 +563,9 @@
             <div class="space-y-8">
               <!-- Email Notifications -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.email_notifications") }}
                 </h3>
                 <div class="space-y-4">
@@ -474,7 +609,9 @@
 
               <!-- Push Notifications -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.push_notifications") }}
                 </h3>
                 <div class="space-y-4">
@@ -506,7 +643,9 @@
 
               <!-- Notification Schedule -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.notification_schedule") }}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -527,7 +666,9 @@
               </div>
 
               <!-- Save Notifications -->
-              <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div
+                class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700"
+              >
                 <UButton
                   color="primary"
                   :loading="isSavingNotifications"
@@ -616,24 +757,58 @@
           </template>
 
           <div class="space-y-4">
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p class="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
-                {{ $t("account.nsec_confirm_warning") || "Your private key (nsec) gives FULL ACCESS to your account!" }}
+            <div
+              class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+            >
+              <p
+                class="text-sm text-red-700 dark:text-red-300 font-medium mb-2"
+              >
+                {{
+                  $t("account.nsec_confirm_warning") ||
+                  "Your private key (nsec) gives FULL ACCESS to your account!"
+                }}
               </p>
-              <ul class="text-xs text-red-600 dark:text-red-400 space-y-1 list-disc list-inside">
-                <li>{{ $t("account.nsec_warning_1") || "Anyone with this key can sign messages as you" }}</li>
-                <li>{{ $t("account.nsec_warning_2") || "They can access all your encrypted data" }}</li>
-                <li>{{ $t("account.nsec_warning_3") || "You cannot revoke access once shared" }}</li>
-                <li>{{ $t("account.nsec_warning_4") || "Never share on screenshots, chats, or emails" }}</li>
+              <ul
+                class="text-xs text-red-600 dark:text-red-400 space-y-1 list-disc list-inside"
+              >
+                <li>
+                  {{
+                    $t("account.nsec_warning_1") ||
+                    "Anyone with this key can sign messages as you"
+                  }}
+                </li>
+                <li>
+                  {{
+                    $t("account.nsec_warning_2") ||
+                    "They can access all your encrypted data"
+                  }}
+                </li>
+                <li>
+                  {{
+                    $t("account.nsec_warning_3") ||
+                    "You cannot revoke access once shared"
+                  }}
+                </li>
+                <li>
+                  {{
+                    $t("account.nsec_warning_4") ||
+                    "Never share on screenshots, chats, or emails"
+                  }}
+                </li>
               </ul>
             </div>
-            
+
             <div>
-              <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                {{ $t("account.nsec_confirm_type") || "Type 'I UNDERSTAND' to reveal your key:" }}
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block"
+              >
+                {{
+                  $t("account.nsec_confirm_type") ||
+                  "Type 'I UNDERSTAND' to reveal your key:"
+                }}
               </label>
-              <UInput 
-                v-model="nsecConfirmText" 
+              <UInput
+                v-model="nsecConfirmText"
                 placeholder="I UNDERSTAND"
                 class="font-mono"
               />
@@ -678,6 +853,9 @@ const nostrStorage = useNostrStorage();
 const nostrUser = useNostrUser();
 const nostrRelay = useNostrRelay();
 const { $nostr } = useNuxtApp();
+
+// Session tracking
+const sessionManager = useSessions();
 
 // Users composable for syncing profile to current user
 const { refreshCurrentUserProfile } = useUsers();
@@ -750,16 +928,19 @@ const tabItems = computed(() => [
 const userProfile = computed(() => {
   // Get npub from userKeys or load from storage
   let npub = currentUserInfo.value?.userKeys?.npub || "";
-  
+
   // If no npub in currentUserInfo, try to get from storage
   if (!npub && import.meta.client) {
     const { user } = nostrStorage.loadCurrentUser();
     npub = user?.npub || "";
   }
-  
+
   return {
     id: currentUserInfo.value?.pubkey || "",
-    name: currentUserInfo.value?.displayName || currentUserInfo.value?.name || "User",
+    name:
+      currentUserInfo.value?.displayName ||
+      currentUserInfo.value?.name ||
+      "User",
     email: currentUserInfo.value?.nip05 || "",
     avatar: currentUserInfo.value?.picture || null,
     createdAt: new Date().toISOString(),
@@ -815,23 +996,8 @@ const securitySettings = reactive({
   twoFactorEnabled: false,
 });
 
-// Active sessions
-const activeSessions = ref([
-  {
-    id: "1",
-    device: "Chrome on Windows",
-    location: "Vientiane, LA",
-    lastActive: "2024-07-26T10:30:00Z",
-    current: true,
-  },
-  {
-    id: "2",
-    device: "Safari on iPhone",
-    location: "Vientiane, LA",
-    lastActive: "2024-07-25T15:45:00Z",
-    current: false,
-  },
-]);
+// Active sessions (from composable)
+const activeSessions = computed(() => sessionManager.sessions.value);
 
 // Preferences
 const preferences = reactive({
@@ -839,7 +1005,7 @@ const preferences = reactive({
   timezone: "Asia/Vientiane",
   dateFormat: "DD/MM/YYYY",
   currency: "LAK",
-  darkMode: colorMode.preference === 'dark',
+  darkMode: colorMode.preference === "dark",
   compactView: false,
 });
 
@@ -904,12 +1070,13 @@ const copyToClipboard = async (text: string) => {
 // Copy nsec with extra warning
 const copyNsec = async () => {
   if (!userNsec.value) return;
-  
+
   try {
     await navigator.clipboard.writeText(userNsec.value);
     toast.add({
       title: t("account.nsec_copied") || "Private key copied!",
-      description: t("account.nsec_copied_warning") || "Keep it safe and never share it!",
+      description:
+        t("account.nsec_copied_warning") || "Keep it safe and never share it!",
       color: "warning",
     });
   } catch (error) {
@@ -927,7 +1094,7 @@ const confirmRevealNsec = () => {
   if (nsecConfirmText.value === "I UNDERSTAND") {
     showNsec.value = true;
     closeNsecConfirmModal();
-    
+
     // Auto-hide after 60 seconds for security
     setTimeout(() => {
       showNsec.value = false;
@@ -961,7 +1128,7 @@ const loadNostrProfile = async () => {
       profileForm.nip05 = profile.nip05 || "";
       profileForm.lud16 = profile.lud16 || "";
       profileForm.website = profile.website || "";
-      
+
       toast.add({
         title: t("account.profile_loaded") || "Profile loaded from Nostr",
         color: "success",
@@ -1003,11 +1170,13 @@ const updateProfile = async () => {
     const { userInfo, user } = nostrStorage.loadCurrentUser();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const hasNip07 = typeof window !== "undefined" && (window as any).nostr;
-    
+
     if (!userInfo?.userKeys?.nsec && !user?.nsec && !hasNip07) {
       toast.add({
         title: t("account.no_keys") || "No signing keys available",
-        description: t("account.need_keys_to_publish") || "You need a private key or NIP-07 extension to publish",
+        description:
+          t("account.need_keys_to_publish") ||
+          "You need a private key or NIP-07 extension to publish",
         color: "error",
       });
       return;
@@ -1046,7 +1215,7 @@ const updateProfile = async () => {
     if (signedEvent) {
       // Publish to relays
       const published = await nostrRelay.publishEvent(signedEvent);
-      
+
       if (!published) {
         toast.add({
           title: t("account.publish_failed") || "Failed to publish to relays",
@@ -1054,17 +1223,21 @@ const updateProfile = async () => {
         });
         return;
       }
-      
+
       // Update local storage - preserve userKeys with npub
-      const userKeys = userInfo?.userKeys ? userInfo.userKeys : (user ? {
-        pub: user.publicKey,
-        sec: user.privateKey,
-        npub: user.npub,
-        nsec: user.nsec,
-        publicKey: user.publicKey,
-        privateKey: user.privateKey,
-      } : undefined);
-      
+      const userKeys = userInfo?.userKeys
+        ? userInfo.userKeys
+        : user
+        ? {
+            pub: user.publicKey,
+            sec: user.privateKey,
+            npub: user.npub,
+            nsec: user.nsec,
+            publicKey: user.publicKey,
+            privateKey: user.privateKey,
+          }
+        : undefined;
+
       const updatedUserInfo: UserInfo = {
         pubkey,
         name: profileForm.name,
@@ -1079,10 +1252,10 @@ const updateProfile = async () => {
         userKeys,
       };
       nostrStorage.saveUser(updatedUserInfo);
-      
+
       // Update current user info reactive state so UI updates immediately
       currentUserInfo.value = updatedUserInfo;
-      
+
       // Sync profile to bitspace_current_user (staff user system)
       refreshCurrentUserProfile();
 
@@ -1142,14 +1315,11 @@ const toggleTwoFactor = async (enabled: boolean) => {
 
 const terminateSession = async (sessionId: string) => {
   try {
-    // API call to terminate session
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    // Remove from active sessions
-    const index = activeSessions.value.findIndex((s) => s.id === sessionId);
-    if (index > -1) {
-      activeSessions.value.splice(index, 1);
+    // Terminate session via composable
+    const success = sessionManager.terminateSession(sessionId);
+    if (success) {
+      console.log("Session terminated successfully");
     }
-    console.log("Session terminated successfully");
   } catch (error) {
     console.error("Failed to terminate session:", error);
   }
@@ -1163,7 +1333,7 @@ const changeLanguage = (newLanguage: string) => {
 
 const toggleDarkMode = (enabled: boolean) => {
   // Toggle dark mode using Nuxt color mode
-  colorMode.preference = enabled ? 'dark' : 'light';
+  colorMode.preference = enabled ? "dark" : "light";
   console.log("Dark mode", enabled ? "enabled" : "disabled");
 };
 
@@ -1240,27 +1410,36 @@ const formatDate = (dateString: string) => {
 
 // Sync dark mode preference on mount and watch for external changes
 onMounted(async () => {
-  preferences.darkMode = colorMode.preference === 'dark' || colorMode.value === 'dark';
-  
+  preferences.darkMode =
+    colorMode.preference === "dark" || colorMode.value === "dark";
+
+  // Register this device session
+  sessionManager.registerLogin();
+
   // Load current user info from storage
   const { userInfo, user } = nostrStorage.loadCurrentUser();
   if (userInfo || user) {
     // Merge userInfo with user keys if needed
     const mergedInfo = {
       ...userInfo,
-      userKeys: userInfo?.userKeys || (user ? {
-        npub: user.npub,
-        nsec: user.nsec,
-        publicKey: user.publicKey,
-        privateKey: user.privateKey,
-      } : undefined),
+      userKeys:
+        userInfo?.userKeys ||
+        (user
+          ? {
+              npub: user.npub,
+              nsec: user.nsec,
+              publicKey: user.publicKey,
+              privateKey: user.privateKey,
+            }
+          : undefined),
     };
-    
+
     currentUserInfo.value = mergedInfo;
-    
+
     // Pre-fill form with stored profile data
     profileForm.name = userInfo?.name || "";
-    profileForm.displayName = userInfo?.displayName || userInfo?.display_name || "";
+    profileForm.displayName =
+      userInfo?.displayName || userInfo?.display_name || "";
     profileForm.about = userInfo?.about || "";
     profileForm.picture = userInfo?.picture || "";
     profileForm.banner = userInfo?.banner || "";
@@ -1271,7 +1450,10 @@ onMounted(async () => {
 });
 
 // Watch for external color mode changes (e.g., from other components)
-watch(() => colorMode.value, (newVal) => {
-  preferences.darkMode = newVal === 'dark';
-});
+watch(
+  () => colorMode.value,
+  (newVal) => {
+    preferences.darkMode = newVal === "dark";
+  }
+);
 </script>

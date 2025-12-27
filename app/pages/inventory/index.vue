@@ -440,6 +440,162 @@ const handleDeletePO = async (id: string) => {
   }
 };
 
+// PO Status Handlers
+const handleApprovePO = async (id: string) => {
+  adjusting.value = true;
+  try {
+    const success = await inventory.updatePurchaseOrderStatus(id, "pending");
+    if (success) {
+      toast.add({
+        title: t("inventory.poApproved") || "Purchase Order Approved",
+        description: t("inventory.poNowPending") || "Status changed to pending",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+    }
+  } finally {
+    adjusting.value = false;
+  }
+};
+
+const handleMarkOrdered = async (id: string) => {
+  adjusting.value = true;
+  try {
+    const success = await inventory.updatePurchaseOrderStatus(id, "ordered");
+    if (success) {
+      toast.add({
+        title: t("inventory.poOrdered") || "Marked as Ordered",
+        description:
+          t("inventory.poNowOrdered") || "Order has been placed with supplier",
+        icon: "i-heroicons-truck",
+        color: "blue",
+      });
+    }
+  } finally {
+    adjusting.value = false;
+  }
+};
+
+const handleReceivePO = (po: (typeof purchaseOrders.value)[number]) => {
+  // Navigate to receive page or open receive modal
+  navigateTo(`/inventory/po/${po.id}?action=receive`);
+};
+
+const handleCancelPO = async (id: string) => {
+  if (!confirm(t("inventory.confirmCancelPO") || "Cancel this purchase order?"))
+    return;
+
+  adjusting.value = true;
+  try {
+    const success = await inventory.updatePurchaseOrderStatus(id, "cancelled");
+    if (success) {
+      toast.add({
+        title: t("inventory.poCancelled") || "Purchase Order Cancelled",
+        icon: "i-heroicons-x-circle",
+        color: "red",
+      });
+    }
+  } finally {
+    adjusting.value = false;
+  }
+};
+
+// Get action menu items for a PO based on its status
+const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
+  const items: {
+    label: string;
+    icon: string;
+    onClick: () => void;
+    color?: string;
+  }[][] = [
+    // Always show view
+    [
+      {
+        label: t("common.view") || "View Details",
+        icon: "i-heroicons-eye",
+        onClick: () => navigateTo(`/inventory/po/${po.id}`),
+      },
+    ],
+  ];
+
+  // Edit action for draft/pending
+  if (canEditPO(po.status)) {
+    items[0].push({
+      label: t("common.edit") || "Edit",
+      icon: "i-heroicons-pencil-square",
+      onClick: () => handleEditPO(po),
+    });
+  }
+
+  // Status workflow actions
+  const statusActions: {
+    label: string;
+    icon: string;
+    onClick: () => void;
+    color?: string;
+  }[] = [];
+
+  if (po.status === "draft") {
+    statusActions.push({
+      label: t("inventory.approvePO") || "Approve",
+      icon: "i-heroicons-check",
+      onClick: () => handleApprovePO(po.id),
+    });
+  }
+
+  if (po.status === "pending") {
+    statusActions.push({
+      label: t("inventory.markAsOrdered") || "Mark as Ordered",
+      icon: "i-heroicons-truck",
+      onClick: () => handleMarkOrdered(po.id),
+    });
+  }
+
+  if (po.status === "ordered" || po.status === "partial") {
+    statusActions.push({
+      label: t("inventory.receivePO") || "Receive Stock",
+      icon: "i-heroicons-archive-box-arrow-down",
+      onClick: () => handleReceivePO(po),
+    });
+  }
+
+  if (statusActions.length > 0) {
+    items.push(statusActions);
+  }
+
+  // Destructive actions
+  const destructiveActions: {
+    label: string;
+    icon: string;
+    onClick: () => void;
+    color?: string;
+  }[] = [];
+
+  if (po.status !== "received" && po.status !== "cancelled") {
+    destructiveActions.push({
+      label: t("inventory.cancelPO") || "Cancel",
+      icon: "i-heroicons-x-circle",
+      color: "red",
+      onClick: () => handleCancelPO(po.id),
+    });
+  }
+
+  if (canDeletePO(po.status)) {
+    destructiveActions.push({
+      label: t("common.delete") || "Delete",
+      icon: "i-heroicons-trash",
+      color: "red",
+      onClick: () => handleDeletePO(po.id),
+    });
+  }
+
+  if (destructiveActions.length > 0) {
+    items.push(destructiveActions);
+  }
+
+  return items;
+};
+
 const canEditPO = (status: string) => {
   return ["draft", "pending"].includes(status);
 };
@@ -665,7 +821,7 @@ onMounted(async () => {
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 px-4">
+    <div class="grid grid-cols-1 mt-4 sm:grid-cols-2 lg:grid-cols-5 gap-4 px-4">
       <CommonStatCard
         icon="i-heroicons-cube"
         icon-color="blue"
@@ -1058,7 +1214,7 @@ onMounted(async () => {
             >
               <td class="py-3 px-4">
                 <code
-                  class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="text-sm bg-gray-100 uppercase dark:bg-gray-800 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                   @click="navigateTo(`/inventory/po/${po.id}`)"
                 >
                   {{ po.id }}
@@ -1098,30 +1254,16 @@ onMounted(async () => {
                 {{ new Date(po.createdAt).toLocaleDateString() }}
               </td>
               <td class="py-3 px-4">
-                <div class="flex justify-end gap-1">
-                  <UButton
-                    color="gray"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-heroicons-eye"
-                    @click.stop="navigateTo(`/inventory/po/${po.id}`)"
-                  />
-                  <UButton
-                    v-if="canEditPO(po.status)"
-                    color="gray"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-heroicons-pencil-square"
-                    @click.stop="handleEditPO(po)"
-                  />
-                  <UButton
-                    v-if="canDeletePO(po.status)"
-                    color="red"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-heroicons-trash"
-                    @click.stop="handleDeletePO(po.id)"
-                  />
+                <div class="flex justify-end">
+                  <UDropdownMenu :items="getPOActions(po)">
+                    <UButton
+                      color="gray"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-heroicons-ellipsis-vertical"
+                      @click.stop
+                    />
+                  </UDropdownMenu>
                 </div>
               </td>
             </tr>

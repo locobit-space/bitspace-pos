@@ -1,6 +1,6 @@
 <!-- components/common/UPageHeader.vue -->
 <script setup lang="ts">
-import type { PropType } from 'vue';
+import type { PropType } from "vue";
 
 defineProps({
   title: {
@@ -15,9 +15,9 @@ defineProps({
 </script>
 
 <template>
-  <div class=" w-full p-4">
+  <div class="w-full">
     <div
-      class="flex flex-col justify-between gap-4 md:flex-row md:items-center"
+      class="flex flex-col justify-between px-4 pt-4 gap-4 md:flex-row md:items-center"
     >
       <div class="flex-1">
         <h1 class="truncate text-2xl font-bold text-gray-900 dark:text-white">
@@ -37,18 +37,18 @@ defineProps({
         </div>
       </div>
 
-       <div v-if="$slots.actions" class="flex-shrink-0">
+      <div v-if="$slots.actions" class="flex-shrink-0">
         <div class="flex flex-wrap gap-2">
           <slot name="actions" />
         </div>
       </div>
     </div>
 
-    <div v-if="$slots.default" class="mt-4">
+    <div v-if="$slots.default">
       <slot />
     </div>
 
-    <div v-if="$slots.tabs" class="mt-6">
+    <div v-if="$slots.tabs" class="mt-4">
       <slot name="tabs" />
     </div>
   </div>

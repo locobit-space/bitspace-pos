@@ -201,7 +201,7 @@ export function useInventory() {
     const rnd =
       chars.charAt(Math.floor(Math.random() * chars.length)) +
       chars.charAt(Math.floor(Math.random() * chars.length));
-    return `${prefix}-${yy}${mm}${dd}-${seq}${rnd}`;
+    return `${prefix}-${yy}${mm}${dd}-${seq}${rnd}`.toLocaleUpperCase();
   }
 
   // ============================================
@@ -707,20 +707,20 @@ export function useInventory() {
       }
 
       // Auto-create accounting journal entry for stock adjustments (loss/waste/count)
-      if (reason === 'waste' || reason === 'adjustment' || reason === 'count') {
+      if (reason === "waste" || reason === "adjustment" || reason === "count") {
         try {
           const accounting = useAccounting();
           const productRecord = await db.products.get(productId);
-          const productName = productRecord?.name || 'Unknown Product';
+          const productName = productRecord?.name || "Unknown Product";
           const costPrice = branchStock.costPrice || 0;
-          
+
           if (adjustment < 0 && costPrice > 0) {
             // Stock loss/write-off
             await accounting.createStockAdjustmentEntry(
               productName,
               Math.abs(adjustment),
               costPrice,
-              reason === 'waste' ? 'write_off' : 'loss',
+              reason === "waste" ? "write_off" : "loss",
               adjustmentRecord.id
             );
           } else if (adjustment > 0 && costPrice > 0) {
@@ -729,12 +729,12 @@ export function useInventory() {
               productName,
               adjustment,
               costPrice,
-              'gain',
+              "gain",
               adjustmentRecord.id
             );
           }
         } catch (e) {
-          console.warn('[Inventory] Failed to create accounting entry:', e);
+          console.warn("[Inventory] Failed to create accounting entry:", e);
           // Don't block stock adjustment if accounting fails
         }
       }

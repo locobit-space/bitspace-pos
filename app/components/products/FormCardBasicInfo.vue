@@ -2,12 +2,13 @@
 <!-- Basic Information Form Card -->
 <script setup lang="ts">
 const { t } = useI18n();
+const { generateBarcode } = useBarcode();
 
 interface FormData {
   name: string;
   sku: string;
   barcode?: string;
-  barcodeType?: 'ean13' | 'upca' | 'code128' | 'qr' | 'custom';
+  barcodeType?: "ean13" | "upca" | "code128" | "qr" | "custom";
   description: string;
   price: number;
 }
@@ -15,28 +16,53 @@ interface FormData {
 const form = defineModel<FormData>({ required: true });
 
 const barcodeTypeOptions = [
-  { value: 'ean13', label: 'EAN-13' },
-  { value: 'upca', label: 'UPC-A' },
-  { value: 'code128', label: 'Code 128' },
-  { value: 'qr', label: 'QR Code' },
-  { value: 'custom', label: t('common.custom') || 'Custom' },
+  { value: "ean13", label: "EAN-13" },
+  { value: "upca", label: "UPC-A" },
+  { value: "code128", label: "Code 128" },
+  { value: "qr", label: "QR Code" },
+  { value: "custom", label: t("common.custom") || "Custom" },
 ];
+
+// Generate barcode based on selected type
+function handleGenerateBarcode() {
+  const type = form.value.barcodeType || "ean13";
+
+  if (type === "ean13" || type === "upca") {
+    form.value.barcode = generateBarcode("ean13");
+  } else if (type === "code128") {
+    form.value.barcode = generateBarcode("code128", { length: 10 });
+  } else {
+    form.value.barcode = generateBarcode("numeric", { length: 8 });
+  }
+}
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+  <div
+    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden"
+  >
     <!-- Header -->
-    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+    <div
+      class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50"
+    >
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-          <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div
+          class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
+        >
+          <UIcon
+            name="i-heroicons-information-circle"
+            class="w-5 h-5 text-blue-600 dark:text-blue-400"
+          />
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t('products.basicInfo') || 'Basic Information' }}
+            {{ t("products.basicInfo") || "Basic Information" }}
           </h3>
           <p class="text-xs text-gray-500">
-            {{ t('products.basicInfoHint') || 'Product name, price, and identification' }}
+            {{
+              t("products.basicInfoHint") ||
+              "Product name, price, and identification"
+            }}
           </p>
         </div>
       </div>
@@ -74,7 +100,9 @@ const barcodeTypeOptions = [
         <UFormField :label="t('products.sku')" name="sku">
           <UInput
             v-model="form.sku"
-            :placeholder="t('products.skuPlaceholder') || 'Auto-generated if empty'"
+            :placeholder="
+              t('products.skuPlaceholder') || 'Auto-generated if empty'
+            "
             size="lg"
           >
             <template #leading>
@@ -85,30 +113,49 @@ const barcodeTypeOptions = [
       </div>
 
       <!-- Barcode -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="md:col-span-2">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div class="md:col-span-5">
           <UFormField :label="t('products.barcode')" name="barcode">
             <UInput
               v-model="form.barcode"
-              :placeholder="t('products.barcodePlaceholder') || 'Scan or enter barcode'"
+              :placeholder="
+                t('products.barcodePlaceholder') || 'Scan or enter barcode'
+              "
               size="lg"
             >
               <template #leading>
-                <UIcon name="i-heroicons-qr-code" class="w-4 h-4 text-gray-400" />
+                <UIcon
+                  name="i-heroicons-qr-code"
+                  class="w-4 h-4 text-gray-400"
+                />
               </template>
             </UInput>
           </UFormField>
         </div>
-        <UFormField :label="t('products.barcodeType')" name="barcodeType">
-          <USelect
-            v-model="form.barcodeType"
-            :items="barcodeTypeOptions"
-            :placeholder="t('common.select')"
+        <div class="md:col-span-4">
+          <UFormField :label="t('products.barcodeType')" name="barcodeType">
+            <USelect
+              v-model="form.barcodeType"
+              :items="barcodeTypeOptions"
+              :placeholder="t('common.select')"
+              size="lg"
+              value-key="value"
+              label-key="label"
+            />
+          </UFormField>
+        </div>
+        <div class="md:col-span-3 flex items-end">
+          <UButton
+            color="primary"
+            variant="soft"
             size="lg"
-            value-key="value"
-            label-key="label"
-          />
-        </UFormField>
+            icon="i-heroicons-sparkles"
+            class="w-full"
+            @click="handleGenerateBarcode"
+          >
+            {{ t("products.generateBarcode") || "Generate" }}
+          </UButton>
+        </div>
       </div>
 
       <!-- Description -->

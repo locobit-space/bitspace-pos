@@ -1,11 +1,11 @@
 // composables/use-auth.ts
 // 🔐 Hybrid Authentication - Hasura Auth + Nostr
 
-import { ref, computed } from 'vue';
-import type { NostrUserKeys } from '~/types';
+import { ref, computed } from "vue";
+import type { NostrUserKeys } from "~/types";
 
 // Storage key - unified with use-users.ts
-const AUTH_STORAGE_KEY = 'bitspace_current_user';
+const AUTH_STORAGE_KEY = "bitspace_current_user";
 
 // Types
 export interface User {
@@ -13,12 +13,12 @@ export interface User {
   email?: string;
   displayName?: string;
   avatarUrl?: string;
-  provider: 'hasura' | 'nostr' | 'google';
+  provider: "hasura" | "nostr" | "google";
   nostrPubkey?: string;
-  role: 'admin' | 'manager' | 'cashier' | 'viewer';
+  role: "admin" | "manager" | "cashier" | "viewer";
   branchId?: string;
   createdAt: string;
-  userKeys?: NostrUserKeys;  // Optional - only for Nostr users
+  userKeys?: NostrUserKeys; // Optional - only for Nostr users
 }
 
 export interface AuthState {
@@ -36,6 +36,8 @@ interface HasuraAuthConfig {
 }
 
 export const useAuth = () => {
+  // Session tracking
+  const sessionManager = useSessions();
   // State
   const user = ref<User | null>(null);
   const accessToken = ref<string | null>(null);
@@ -45,8 +47,9 @@ export const useAuth = () => {
 
   // Config - set from environment or settings
   const config = ref<HasuraAuthConfig>({
-    url: process.env.HASURA_AUTH_URL || 'http://localhost:4000',
-    graphqlUrl: process.env.HASURA_GRAPHQL_URL || 'http://localhost:8080/v1/graphql',
+    url: process.env.HASURA_AUTH_URL || "http://localhost:4000",
+    graphqlUrl:
+      process.env.HASURA_GRAPHQL_URL || "http://localhost:8080/v1/graphql",
   });
 
   // ============================================
@@ -56,27 +59,33 @@ export const useAuth = () => {
   /**
    * Sign in with email/password
    */
-  const signInWithEmail = async (email: string, password: string): Promise<boolean> => {
+  const signInWithEmail = async (
+    email: string,
+    password: string
+  ): Promise<boolean> => {
     isLoading.value = true;
     error.value = null;
 
     try {
-      const response = await fetch(`${config.value.url}/signin/email-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        `${config.value.url}/signin/email-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Sign in failed');
+        throw new Error(data.message || "Sign in failed");
       }
 
       const data = await response.json();
-      await handleAuthResponse(data, 'hasura');
+      await handleAuthResponse(data, "hasura");
       return true;
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Sign in failed';
+      error.value = e instanceof Error ? e.message : "Sign in failed";
       return false;
     } finally {
       isLoading.value = false;
@@ -87,43 +96,46 @@ export const useAuth = () => {
    * Sign up with email/password
    */
   const signUpWithEmail = async (
-    email: string, 
-    password: string, 
+    email: string,
+    password: string,
     displayName?: string
   ): Promise<boolean> => {
     isLoading.value = true;
     error.value = null;
 
     try {
-      const response = await fetch(`${config.value.url}/signup/email-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email, 
-          password,
-          options: {
-            displayName,
-            defaultRole: 'cashier',
-            allowedRoles: ['cashier', 'viewer'],
-          }
-        }),
-      });
+      const response = await fetch(
+        `${config.value.url}/signup/email-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            password,
+            options: {
+              displayName,
+              defaultRole: "cashier",
+              allowedRoles: ["cashier", "viewer"],
+            },
+          }),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Sign up failed');
+        throw new Error(data.message || "Sign up failed");
       }
 
       const data = await response.json();
-      
+
       // Some setups require email verification
       if (data.session) {
-        await handleAuthResponse(data, 'hasura');
+        await handleAuthResponse(data, "hasura");
       }
-      
+
       return true;
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Sign up failed';
+      error.value = e instanceof Error ? e.message : "Sign up failed";
       return false;
     } finally {
       isLoading.value = false;
@@ -140,11 +152,13 @@ export const useAuth = () => {
     try {
       // Redirect to Hasura Auth Google OAuth
       const redirectUrl = `${window.location.origin}/auth/callback`;
-      const authUrl = `${config.value.url}/signin/provider/google?redirectTo=${encodeURIComponent(redirectUrl)}`;
-      
+      const authUrl = `${
+        config.value.url
+      }/signin/provider/google?redirectTo=${encodeURIComponent(redirectUrl)}`;
+
       window.location.href = authUrl;
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Google sign in failed';
+      error.value = e instanceof Error ? e.message : "Google sign in failed";
       isLoading.value = false;
     }
   };
@@ -160,29 +174,30 @@ export const useAuth = () => {
       // Get tokens from URL hash or query params
       const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      
-      const token = urlParams.get('refreshToken') || hashParams.get('refreshToken');
-      
+
+      const token =
+        urlParams.get("refreshToken") || hashParams.get("refreshToken");
+
       if (token) {
         // Exchange refresh token for session
         const response = await fetch(`${config.value.url}/token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken: token }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to exchange token');
+          throw new Error("Failed to exchange token");
         }
 
         const data = await response.json();
-        await handleAuthResponse(data, 'google');
+        await handleAuthResponse(data, "google");
         return true;
       }
 
       return false;
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'OAuth callback failed';
+      error.value = e instanceof Error ? e.message : "OAuth callback failed";
       return false;
     } finally {
       isLoading.value = false;
@@ -197,7 +212,7 @@ export const useAuth = () => {
    * Check if Nostr extension is available
    */
   const hasNostrExtension = (): boolean => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === "undefined") return false;
     return !!(window as unknown as { nostr?: object }).nostr;
   };
 
@@ -210,84 +225,106 @@ export const useAuth = () => {
 
     try {
       // Check for NIP-07 extension
-      if (typeof window === 'undefined') {
-        throw new Error('Window not available');
+      if (typeof window === "undefined") {
+        throw new Error("Window not available");
       }
 
-      const win = window as unknown as { 
-        nostr?: { 
+      const win = window as unknown as {
+        nostr?: {
           getPublicKey: () => Promise<string | null> | string | null;
           signEvent: (event: object) => Promise<object>;
           // Alby specific
           enable?: () => Promise<{ enabled: boolean }>;
-        } 
+        };
       };
 
       if (!win.nostr) {
-        throw new Error('Nostr extension not found. Please install Alby or nos2x.');
+        throw new Error(
+          "Nostr extension not found. Please install Alby or nos2x."
+        );
       }
 
-      console.log('[Nostr Auth] Nostr extension detected:', win.nostr);
-      console.log('[Nostr Auth] Available methods:', Object.keys(win.nostr));
+      console.log("[Nostr Auth] Nostr extension detected:", win.nostr);
+      console.log("[Nostr Auth] Available methods:", Object.keys(win.nostr));
 
       // For Alby: Try to enable/request permission first
-      if (typeof win.nostr.enable === 'function') {
-        console.log('[Nostr Auth] Detected Alby, requesting permission...');
+      if (typeof win.nostr.enable === "function") {
+        console.log("[Nostr Auth] Detected Alby, requesting permission...");
         try {
           const enableResult = await win.nostr.enable();
-          console.log('[Nostr Auth] Alby enable result:', enableResult);
+          console.log("[Nostr Auth] Alby enable result:", enableResult);
         } catch (enableErr) {
-          console.warn('[Nostr Auth] Alby enable failed, continuing anyway:', enableErr);
+          console.warn(
+            "[Nostr Auth] Alby enable failed, continuing anyway:",
+            enableErr
+          );
         }
       }
 
       // Get public key - handle both sync and async returns
       let pubkey: string | null = null;
-      
-      console.log('[Nostr Auth] Calling getPublicKey...');
-      
+
+      console.log("[Nostr Auth] Calling getPublicKey...");
+
       try {
         const result = win.nostr.getPublicKey();
-        console.log('[Nostr Auth] getPublicKey raw result:', result, 'type:', typeof result);
-        
+        console.log(
+          "[Nostr Auth] getPublicKey raw result:",
+          result,
+          "type:",
+          typeof result
+        );
+
         // Handle Promise
-        if (result && typeof result === 'object' && 'then' in result) {
-          console.log('[Nostr Auth] Result is a Promise, awaiting...');
+        if (result && typeof result === "object" && "then" in result) {
+          console.log("[Nostr Auth] Result is a Promise, awaiting...");
           const awaited = await result;
-          console.log('[Nostr Auth] Awaited result:', awaited, 'type:', typeof awaited);
-          
-          if (typeof awaited === 'string' && awaited.length > 0) {
+          console.log(
+            "[Nostr Auth] Awaited result:",
+            awaited,
+            "type:",
+            typeof awaited
+          );
+
+          if (typeof awaited === "string" && awaited.length > 0) {
             pubkey = awaited;
           }
-        } 
+        }
         // Handle direct string return
-        else if (typeof result === 'string' && result.length > 0) {
+        else if (typeof result === "string" && result.length > 0) {
           pubkey = result;
         }
       } catch (err) {
-        console.error('[Nostr Auth] getPublicKey error:', err);
-        
+        console.error("[Nostr Auth] getPublicKey error:", err);
+
         // nos2x may throw if user rejects or extension is locked
         const errorMessage = err instanceof Error ? err.message : String(err);
-        if (errorMessage.includes('reject') || errorMessage.includes('denied')) {
-          throw new Error('Permission denied. Please approve the request in your Nostr extension.');
+        if (
+          errorMessage.includes("reject") ||
+          errorMessage.includes("denied")
+        ) {
+          throw new Error(
+            "Permission denied. Please approve the request in your Nostr extension."
+          );
         }
-        throw new Error('Failed to get public key. Please make sure your Nostr extension is unlocked.');
-      }
-
-      console.log('[Nostr Auth] Final pubkey:', pubkey);
-
-      if (!pubkey || typeof pubkey !== 'string' || pubkey.length < 32) {
         throw new Error(
-          'Could not get public key from Nostr extension.\n\n' +
-          '💡 Troubleshooting:\n' +
-          '• nos2x: Click the extension icon and make sure you have a key\n' +
-          '• Alby: Go to Settings → Nostr → Enable Nostr\n' +
-          '• Try refreshing the page after setup'
+          "Failed to get public key. Please make sure your Nostr extension is unlocked."
         );
       }
 
-      console.log('[Nostr Auth] Got pubkey:', pubkey.slice(0, 16) + '...');
+      console.log("[Nostr Auth] Final pubkey:", pubkey);
+
+      if (!pubkey || typeof pubkey !== "string" || pubkey.length < 32) {
+        throw new Error(
+          "Could not get public key from Nostr extension.\n\n" +
+            "💡 Troubleshooting:\n" +
+            "• nos2x: Click the extension icon and make sure you have a key\n" +
+            "• Alby: Go to Settings → Nostr → Enable Nostr\n" +
+            "• Try refreshing the page after setup"
+        );
+      }
+
+      console.log("[Nostr Auth] Got pubkey:", pubkey.slice(0, 16) + "...");
 
       // Create challenge for verification
       const challenge = crypto.randomUUID();
@@ -298,18 +335,20 @@ export const useAuth = () => {
         kind: 27235, // NIP-98 HTTP Auth
         created_at: timestamp,
         tags: [
-          ['challenge', challenge],
-          ['method', 'GET'],
-          ['u', window.location.origin],
+          ["challenge", challenge],
+          ["method", "GET"],
+          ["u", window.location.origin],
         ],
-        content: 'BitSpace POS Login',
+        content: "BitSpace POS Login",
       };
 
       let signedEvent: object;
       try {
         signedEvent = await win.nostr.signEvent(authEvent);
       } catch {
-        throw new Error('Failed to sign event. Please approve the signature request.');
+        throw new Error(
+          "Failed to sign event. Please approve the signature request."
+        );
       }
 
       // Create user from Nostr pubkey
@@ -317,25 +356,27 @@ export const useAuth = () => {
       const nostrUser: User = {
         id: `nostr_${pubkey.slice(0, 16)}`,
         displayName: `nostr:${shortPubkey}...`,
-        provider: 'nostr',
+        provider: "nostr",
         nostrPubkey: pubkey,
-        role: 'cashier',
+        role: "cashier",
         createdAt: new Date().toISOString(),
       };
 
       user.value = nostrUser;
       accessToken.value = JSON.stringify(signedEvent); // Store signed event as token
-      
+
       // Save to cookie for middleware
-      const nostrCookie = useCookie('nostr-pubkey', { maxAge: 60 * 60 * 24 * 30 }); // 30 days
+      const nostrCookie = useCookie("nostr-pubkey", {
+        maxAge: 60 * 60 * 24 * 30,
+      }); // 30 days
       nostrCookie.value = pubkey;
-      
+
       // Save to localStorage
       saveAuthState();
 
       return true;
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Nostr sign in failed';
+      error.value = e instanceof Error ? e.message : "Nostr sign in failed";
       return false;
     } finally {
       isLoading.value = false;
@@ -352,51 +393,58 @@ export const useAuth = () => {
 
     try {
       let pubkey = npubOrHex.trim();
-      
+
       // Convert npub to hex if needed
-      if (pubkey.startsWith('npub1')) {
+      if (pubkey.startsWith("npub1")) {
         // Simple bech32 decode - npub1 prefix
         // For production, use a proper bech32 library
         // This is a simplified version that works for most cases
-        const { decode } = await import('nostr-tools/nip19');
+        const { decode } = await import("nostr-tools/nip19");
         const decoded = decode(pubkey);
-        if (decoded.type !== 'npub') {
-          throw new Error('Invalid npub format');
+        if (decoded.type !== "npub") {
+          throw new Error("Invalid npub format");
         }
         pubkey = decoded.data;
       }
 
       // Validate hex pubkey (64 characters, hex only)
       if (!/^[0-9a-f]{64}$/i.test(pubkey)) {
-        throw new Error('Invalid public key format. Please enter a valid npub or hex pubkey.');
+        throw new Error(
+          "Invalid public key format. Please enter a valid npub or hex pubkey."
+        );
       }
 
-      console.log('[Nostr Auth] Manual login with pubkey:', pubkey.slice(0, 16) + '...');
+      console.log(
+        "[Nostr Auth] Manual login with pubkey:",
+        pubkey.slice(0, 16) + "..."
+      );
 
       // Create user (read-only mode - no signed event)
       const shortPubkey = pubkey.slice(0, 8);
       const nostrUser: User = {
         id: `nostr_${pubkey.slice(0, 16)}`,
         displayName: `nostr:${shortPubkey}...`,
-        provider: 'nostr',
+        provider: "nostr",
         nostrPubkey: pubkey,
-        role: 'viewer', // Read-only role since we can't sign
+        role: "viewer", // Read-only role since we can't sign
         createdAt: new Date().toISOString(),
       };
 
       user.value = nostrUser;
       accessToken.value = `npub_readonly_${pubkey}`; // Mark as read-only
-      
+
       // Save to cookie for middleware
-      const nostrCookie = useCookie('nostr-pubkey', { maxAge: 60 * 60 * 24 * 30 });
+      const nostrCookie = useCookie("nostr-pubkey", {
+        maxAge: 60 * 60 * 24 * 30,
+      });
       nostrCookie.value = pubkey;
-      
+
       // Save to localStorage
       saveAuthState();
 
       return true;
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Invalid npub';
+      error.value = e instanceof Error ? e.message : "Invalid npub";
       return false;
     } finally {
       isLoading.value = false;
@@ -408,24 +456,26 @@ export const useAuth = () => {
    */
   const linkNostrToAccount = async (): Promise<boolean> => {
     if (!user.value || !accessToken.value) {
-      error.value = 'Must be logged in to link Nostr';
+      error.value = "Must be logged in to link Nostr";
       return false;
     }
 
     try {
-      if (typeof window === 'undefined' || !('nostr' in window)) {
-        throw new Error('Nostr extension not found');
+      if (typeof window === "undefined" || !("nostr" in window)) {
+        throw new Error("Nostr extension not found");
       }
 
-      const nostr = window as unknown as { nostr: { getPublicKey: () => Promise<string> } };
+      const nostr = window as unknown as {
+        nostr: { getPublicKey: () => Promise<string> };
+      };
       const pubkey = await nostr.nostr.getPublicKey();
 
       // Update user metadata in Hasura
       const response = await fetch(config.value.graphqlUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken.value}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken.value}`,
         },
         body: JSON.stringify({
           query: `
@@ -447,7 +497,7 @@ export const useAuth = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to link Nostr');
+        throw new Error("Failed to link Nostr");
       }
 
       user.value.nostrPubkey = pubkey;
@@ -455,7 +505,7 @@ export const useAuth = () => {
 
       return true;
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to link Nostr';
+      error.value = e instanceof Error ? e.message : "Failed to link Nostr";
       return false;
     }
   };
@@ -467,7 +517,16 @@ export const useAuth = () => {
   /**
    * Handle auth response from Hasura
    */
-  const handleAuthResponse = async (data: { session?: { accessToken: string; refreshToken: string; user: Record<string, unknown> } }, provider: 'hasura' | 'google') => {
+  const handleAuthResponse = async (
+    data: {
+      session?: {
+        accessToken: string;
+        refreshToken: string;
+        user: Record<string, unknown>;
+      };
+    },
+    provider: "hasura" | "google"
+  ) => {
     if (data.session) {
       accessToken.value = data.session.accessToken;
       refreshToken.value = data.session.refreshToken;
@@ -480,7 +539,7 @@ export const useAuth = () => {
         avatarUrl: userData.avatarUrl as string | undefined,
         provider,
         nostrPubkey: userData.nostrPubkey as string | undefined,
-        role: (userData.defaultRole || 'cashier') as User['role'],
+        role: (userData.defaultRole || "cashier") as User["role"],
         branchId: userData.branchId as string | undefined,
         createdAt: userData.createdAt as string,
       };
@@ -497,18 +556,18 @@ export const useAuth = () => {
 
     try {
       const response = await fetch(`${config.value.url}/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: refreshToken.value }),
       });
 
       if (!response.ok) {
-        throw new Error('Token refresh failed');
+        throw new Error("Token refresh failed");
       }
 
       const data = await response.json();
       accessToken.value = data.accessToken;
-      
+
       if (data.refreshToken) {
         refreshToken.value = data.refreshToken;
       }
@@ -527,12 +586,12 @@ export const useAuth = () => {
    */
   const signOut = async () => {
     // Call Hasura signout if we have a token
-    if (accessToken.value && user.value?.provider !== 'nostr') {
+    if (accessToken.value && user.value?.provider !== "nostr") {
       try {
         await fetch(`${config.value.url}/signout`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${accessToken.value}`,
+            Authorization: `Bearer ${accessToken.value}`,
           },
         });
       } catch {
@@ -549,7 +608,7 @@ export const useAuth = () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
 
     // Redirect to login
-    navigateTo('/auth/signin');
+    navigateTo("/auth/signin");
   };
 
   /**
@@ -565,6 +624,11 @@ export const useAuth = () => {
     };
 
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
+
+    // Register device login session
+    if (user.value) {
+      sessionManager.registerLogin();
+    }
   };
 
   /**
@@ -579,8 +643,13 @@ export const useAuth = () => {
         accessToken.value = state.accessToken;
         refreshToken.value = state.refreshToken;
 
+        // Update session activity
+        if (state.user) {
+          sessionManager.registerLogin();
+        }
+
         // Refresh token if Hasura auth
-        if (state.user?.provider !== 'nostr' && state.refreshToken) {
+        if (state.user?.provider !== "nostr" && state.refreshToken) {
           refreshAccessToken();
         }
       } catch {
@@ -592,10 +661,10 @@ export const useAuth = () => {
   /**
    * Check if user has permission
    */
-  const hasPermission = (requiredRole: User['role']): boolean => {
+  const hasPermission = (requiredRole: User["role"]): boolean => {
     if (!user.value) return false;
 
-    const roleHierarchy: Record<User['role'], number> = {
+    const roleHierarchy: Record<User["role"], number> = {
       admin: 4,
       manager: 3,
       cashier: 2,
@@ -607,11 +676,13 @@ export const useAuth = () => {
 
   // Computed
   const isAuthenticated = computed(() => !!user.value);
-  const isNostrUser = computed(() => user.value?.provider === 'nostr');
-  const userDisplayName = computed(() => user.value?.displayName || user.value?.email || 'User');
+  const isNostrUser = computed(() => user.value?.provider === "nostr");
+  const userDisplayName = computed(
+    () => user.value?.displayName || user.value?.email || "User"
+  );
 
   // Initialize
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     restoreAuthState();
   }
 

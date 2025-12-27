@@ -199,20 +199,23 @@ const formatCurrency = (amount: number): string => {
         <div class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <UFormField :label="t('inventory.supplier')" required>
-              <USelect
+              <USelectMenu
                 v-model="poForm.supplierId"
                 :items="activeSuppliers"
                 value-key="value"
                 label-key="label"
                 :placeholder="t('inventory.selectSupplier')"
+                class="w-full"
               />
             </UFormField>
             <UFormField :label="t('common.branch')" required>
-              <USelect
+              <USelectMenu
                 v-model="poForm.branchId"
                 :items="branchOptions"
                 value-key="id"
                 label-key="name"
+                :placeholder="t('common.selectBranch') || 'Select branch'"
+                class="w-full"
               />
             </UFormField>
           </div>

@@ -770,6 +770,25 @@
       "inApp": "In-App Alerts",
       "sound": "Sound Effects",
       "saved": "Notification settings saved"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "subtitle": "Cloudinary, API keys",
+      "cloudinaryDesc": "Image hosting and optimization",
+      "useOwnKey": "Use My Own API Key",
+      "useOwnKeyDesc": "Configure your own Cloudinary account",
+      "useSystemDefault": "Use System Default",
+      "useSystemDefaultDesc": "Use the pre-configured Cloudinary account",
+      "usingSystemDefault": "Using system default configuration",
+      "cloudinarySaved": "Cloudinary configuration saved",
+      "fillRequired": "Please fill in Cloud Name and Upload Preset",
+      "saved": "Saved",
+      "uploadPresetHint": "Create an unsigned upload preset in your Cloudinary dashboard",
+      "cloudinaryHelp": "Get your Cloud Name from cloudinary.com → Settings → Account",
+      "testConnection": "Test Connection",
+      "connectionSuccess": "Connection Successful",
+      "connectionFailed": "Connection Failed",
+      "cloudinaryWorking": "Cloudinary is configured correctly"
     }
   }
 }

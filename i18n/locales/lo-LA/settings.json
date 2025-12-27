@@ -671,6 +671,25 @@
       "inApp": "ການແຈ້ງເຕືອນໃນແອັບ",
       "sound": "ເອັບເຟັກສຽງ",
       "saved": "ບັນທຶກການຕັ້ງຄ່າການແຈ້ງເຕືອນແລ້ວ"
+    },
+    "integrations": {
+      "title": "ການເຊື່ອມຕໍ່",
+      "subtitle": "Cloudinary, API keys",
+      "cloudinaryDesc": "ການໂຮສຮູບພາບ ແລະ ການເພີ່ມປະສິດທິພາບ",
+      "useOwnKey": "ໃຊ້ API Key ຂອງຂ້ອຍ",
+      "useOwnKeyDesc": "ຕັ້ງຄ່າບັນຊີ Cloudinary ຂອງຕົນເອງ",
+      "useSystemDefault": "ໃຊ້ຄ່າເລີ່ມຕົ້ນຂອງລະບົບ",
+      "useSystemDefaultDesc": "ໃຊ້ບັນຊີ Cloudinary ທີ່ຕັ້ງຄ່າໄວ້ກ່ອນ",
+      "usingSystemDefault": "ໃຊ້ການຕັ້ງຄ່າເລີ່ມຕົ້ນຂອງລະບົບ",
+      "cloudinarySaved": "ບັນທຶກການຕັ້ງຄ່າ Cloudinary ແລ້ວ",
+      "fillRequired": "ກະລຸນາປ້ອນ Cloud Name ແລະ Upload Preset",
+      "saved": "ບັນທຶກແລ້ວ",
+      "uploadPresetHint": "ສ້າງ unsigned upload preset ໃນໜ້າ Cloudinary dashboard",
+      "cloudinaryHelp": "ເອົາ Cloud Name ຈາກ cloudinary.com → Settings → Account",
+      "testConnection": "ທົດສອບການເຊື່ອມຕໍ່",
+      "connectionSuccess": "ການເຊື່ອມຕໍ່ສຳເລັດ",
+      "connectionFailed": "ການເຊື່ອມຕໍ່ລົ້ມເຫລວ",
+      "cloudinaryWorking": "Cloudinary ຕັ້ງຄ່າຖືກຕ້ອງແລ້ວ"
     }
   }
 }
