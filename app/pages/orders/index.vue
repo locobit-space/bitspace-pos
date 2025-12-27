@@ -1,12 +1,16 @@
 <!-- pages/orders/index.vue -->
-<!-- 🧾 Orders Management - Connected to Nostr/Dexie -->
+<!-- 🧾 Orders Management - Enterprise UI with Bulk Actions -->
 <script setup lang="ts">
+import type { Order } from "~/types";
+
 definePageMeta({
   layout: "default",
   middleware: ["auth"],
 });
 
 const { t } = useI18n();
+const router = useRouter();
+const toast = useToast();
 const currency = useCurrency();
 import * as XLSX from "xlsx";
 
@@ -19,8 +23,13 @@ const { canCreateOrders, canVoidOrders } = usePermissions();
 // UI State
 const searchQuery = ref("");
 const statusFilter = ref("all");
+const dateFilter = ref<"all" | "today" | "week" | "month">("all");
 const currentPage = ref(1);
 const itemsPerPage = 20;
+
+// Bulk selection
+const selectedOrders = ref<Set<string>>(new Set());
+const selectAll = ref(false);
 
 // Sorting
 const sortKey = ref<string>("date");
@@ -38,16 +47,48 @@ const toggleSort = (key: string) => {
 
 // Status options
 const statusOptions = [
-  { value: "all", label: t("orders.status.all") },
-  { value: "pending", label: t("orders.status.pending") },
-  { value: "processing", label: t("orders.status.processing") },
-  { value: "completed", label: t("orders.status.completed") },
-  { value: "cancelled", label: t("orders.status.cancelled") },
+  { value: "all", label: t("orders.status.all") || "All Status" },
+  { value: "pending", label: t("orders.status.pending") || "Pending" },
+  { value: "processing", label: t("orders.status.processing") || "Processing" },
+  { value: "completed", label: t("orders.status.completed") || "Completed" },
+  { value: "cancelled", label: t("orders.status.cancelled") || "Cancelled" },
 ];
+
+const dateFilterOptions = [
+  { value: "all", label: "All Time" },
+  { value: "today", label: "Today" },
+  { value: "week", label: "This Week" },
+  { value: "month", label: "This Month" },
+];
+
+// Date filter logic
+const getDateFilterStart = () => {
+  const now = new Date();
+  switch (dateFilter.value) {
+    case "today":
+      now.setHours(0, 0, 0, 0);
+      return now;
+    case "week":
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      return weekStart;
+    case "month":
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    default:
+      return null;
+  }
+};
 
 // Filtered orders
 const filteredOrders = computed(() => {
   let result = [...ordersStore.orders.value];
+
+  // Date filter
+  const dateStart = getDateFilterStart();
+  if (dateStart) {
+    result = result.filter((order) => new Date(order.date) >= dateStart);
+  }
 
   // Search filter
   if (searchQuery.value.trim()) {
@@ -123,24 +164,26 @@ const stats = computed(() => {
     (o) => new Date(o.date) >= today
   );
 
+  const completedToday = todayOrders.filter(o => o.status === 'completed');
+
   return {
     total: ordersStore.orders.value.length,
     today: todayOrders.length,
-    todayRevenue: todayOrders.reduce((sum, o) => sum + o.total, 0),
+    todayRevenue: completedToday.reduce((sum, o) => sum + o.total, 0),
     pending: ordersStore.pendingOrders.value.length,
   };
 });
 
-// Status badge color mapping
-const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    pending: "yellow",
-    processing: "blue",
-    completed: "green",
-    cancelled: "red",
-    refunded: "orange",
+// Status badge styles
+const getStatusStyle = (status: string) => {
+  const styles: Record<string, string> = {
+    pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    processing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+    refunded: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   };
-  return colors[status] || "gray";
+  return styles[status] || "bg-gray-100 text-gray-600";
 };
 
 // Payment method icon
@@ -152,14 +195,27 @@ const getPaymentIcon = (method?: string) => {
     bolt12: "⚡",
     lnurl: "⚡",
     card: "💳",
+    bank: "🏦",
   };
   return icons[method || ""] || "💰";
 };
 
 // Format date
 const formatDate = (date: string | Date) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+
+  // Show relative time for recent orders
+  if (diffMins < 60) {
+    return `${diffMins}m ago`;
+  } else if (diffHours < 24 && d.getDate() === now.getDate()) {
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  return d.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -167,20 +223,103 @@ const formatDate = (date: string | Date) => {
   });
 };
 
-// Delete order
-const deleteOrder = async (id: string) => {
-  if (confirm(t("orders.confirmDelete"))) {
-    await ordersStore.deleteOrder(id);
+// Bulk selection handlers
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedOrders.value = new Set();
+    selectAll.value = false;
+  } else {
+    selectedOrders.value = new Set(paginatedOrders.value.map(o => o.id));
+    selectAll.value = true;
   }
 };
 
-// Sync orders
-const handleSync = async () => {
-  await ordersStore.syncWithNostr();
+const toggleOrderSelection = (orderId: string) => {
+  if (selectedOrders.value.has(orderId)) {
+    selectedOrders.value.delete(orderId);
+  } else {
+    selectedOrders.value.add(orderId);
+  }
+  // Trigger reactivity
+  selectedOrders.value = new Set(selectedOrders.value);
 };
 
-// Export orders to Excel
-const exportOrdersToExcel = () => {
+const isSelected = (orderId: string) => selectedOrders.value.has(orderId);
+
+// Bulk actions
+const bulkMarkAsPaid = async () => {
+  const count = selectedOrders.value.size;
+  if (!confirm(`Mark ${count} orders as paid?`)) return;
+
+  for (const orderId of selectedOrders.value) {
+    try {
+      await ordersStore.completeOrder(orderId, "cash");
+    } catch (e) {
+      console.error(`Failed to complete order ${orderId}:`, e);
+    }
+  }
+
+  toast.add({
+    title: "Bulk Update Complete",
+    description: `${count} orders marked as paid`,
+    color: "green",
+  });
+
+  selectedOrders.value = new Set();
+  selectAll.value = false;
+};
+
+const bulkDelete = async () => {
+  const count = selectedOrders.value.size;
+  if (!confirm(`Delete ${count} orders? This cannot be undone.`)) return;
+
+  for (const orderId of selectedOrders.value) {
+    try {
+      await ordersStore.deleteOrder(orderId);
+    } catch (e) {
+      console.error(`Failed to delete order ${orderId}:`, e);
+    }
+  }
+
+  toast.add({
+    title: "Bulk Delete Complete",
+    description: `${count} orders deleted`,
+    color: "green",
+  });
+
+  selectedOrders.value = new Set();
+  selectAll.value = false;
+};
+
+const bulkExport = () => {
+  const selectedData = filteredOrders.value
+    .filter(o => selectedOrders.value.has(o.id))
+    .map((order) => ({
+      "Order ID": order.id,
+      Date: formatDate(order.date),
+      Customer: order.customerName || order.customer || "-",
+      Items: order.items?.length || 0,
+      "Payment Method": order.paymentMethod || "-",
+      "Total (LAK)": order.total,
+      "Total (Sats)": order.totalSats || "-",
+      Status: order.status,
+      Notes: order.notes || "",
+    }));
+
+  const ws = XLSX.utils.json_to_sheet(selectedData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Orders");
+  XLSX.writeFile(wb, `Orders_Selected_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+  toast.add({
+    title: "Export Complete",
+    description: `${selectedData.length} orders exported`,
+    color: "green",
+  });
+};
+
+// Export all orders
+const exportAllOrders = () => {
   const data = filteredOrders.value.map((order) => ({
     "Order ID": order.id,
     Date: formatDate(order.date),
@@ -199,6 +338,27 @@ const exportOrdersToExcel = () => {
   XLSX.writeFile(wb, `Orders_${new Date().toISOString().split("T")[0]}.xlsx`);
 };
 
+// Delete order
+const deleteOrder = async (id: string) => {
+  if (confirm(t("orders.confirmDelete") || "Delete this order?")) {
+    await ordersStore.deleteOrder(id);
+    toast.add({
+      title: "Order Deleted",
+      color: "green",
+    });
+  }
+};
+
+// Sync orders
+const handleSync = async () => {
+  await ordersStore.syncWithNostr();
+  toast.add({
+    title: "Sync Complete",
+    description: "Orders synced with Nostr relays",
+    color: "green",
+  });
+};
+
 // Initialize
 onMounted(async () => {
   await ordersStore.init();
@@ -206,389 +366,348 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div>
     <!-- Header -->
-    <CommonPageHeader
-      :title="t('orders.title')"
-      :description="t('orders.description')"
-    >
-      <template #right>
-        <div class="flex gap-2">
-          <!-- Export Button -->
-          <UButton
-            icon="i-heroicons-arrow-down-tray"
-            color="neutral"
-            variant="soft"
-            :label="t('common.export') || 'Export'"
-            @click="exportOrdersToExcel"
-          />
+    <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto px-4 py-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ t('orders.title') || 'Orders' }}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {{ t('orders.description') || 'Manage all your orders' }}
+            </p>
+          </div>
 
-          <!-- Sync Button -->
-          <UButton
-            v-if="ordersStore.syncPending.value > 0"
-            icon="i-heroicons-arrow-path"
-            color="amber"
-            variant="soft"
-            :loading="ordersStore.isLoading.value"
-            @click="handleSync"
-          >
-            {{ ordersStore.syncPending.value }} pending
-          </UButton>
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Sync Status -->
+            <UButton v-if="ordersStore.syncPending.value > 0" icon="i-heroicons-arrow-path" color="amber" variant="soft"
+              size="sm" :loading="ordersStore.isLoading.value" @click="handleSync">
+              {{ ordersStore.syncPending.value }} pending
+            </UButton>
 
-          <UButton
-            v-if="canCreateOrders"
-            icon="i-heroicons-plus"
-            color="primary"
-            :label="t('orders.newOrder')"
-            to="/orders/create"
-          />
+            <!-- Export Button -->
+            <UButton icon="i-heroicons-arrow-down-tray" variant="outline" color="gray" @click="exportAllOrders">
+              {{ t('common.export') || 'Export' }}
+            </UButton>
+
+            <!-- Create Order Button -->
+            <UButton v-if="canCreateOrders" icon="i-heroicons-plus" color="primary" to="/orders/create">
+              {{ t('orders.newOrder') || 'New Order' }}
+            </UButton>
+          </div>
         </div>
-      </template>
-    </CommonPageHeader>
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
-      <CommonStatCard
-        icon="i-heroicons-clipboard-document-list"
-        icon-color="blue"
-        label="Total Orders"
-        :value="stats.total"
-      />
-      <CommonStatCard
-        icon="i-heroicons-calendar-days"
-        icon-color="green"
-        label="Today"
-        :value="stats.today"
-      />
-      <CommonStatCard
-        icon="i-heroicons-banknotes"
-        icon-color="yellow"
-        label="Today's Revenue"
-        :value="currency.format(stats.todayRevenue, 'LAK')"
-      />
-      <CommonStatCard
-        icon="i-heroicons-clock"
-        icon-color="yellow"
-        label="Pending"
-        :value="stats.pending"
-      />
-    </div>
-
-    <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
-      <UInput
-        v-model="searchQuery"
-        icon="i-heroicons-magnifying-glass"
-        :placeholder="t('common.search')"
-      />
-      <USelect
-        v-model="statusFilter"
-        :items="statusOptions"
-        value-key="value"
-        label-key="label"
-        :placeholder="t('orders.filterStatus')"
-      />
-      <UButton
-        icon="i-heroicons-arrow-path"
-        color="neutral"
-        variant="soft"
-        :loading="ordersStore.isLoading.value"
-        @click="ordersStore.init()"
-      >
-        Refresh
-      </UButton>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="ordersStore.isLoading.value" class="flex justify-center py-12">
-      <div class="flex items-center gap-3 text-gray-500">
-        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin" />
-        <span>Loading orders...</span>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div v-else-if="filteredOrders.length === 0" class="text-center py-12">
-      <div class="text-6xl mb-4">📋</div>
-      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-        No orders yet
-      </h3>
-      <p class="text-gray-500 mb-4">Create your first order from the POS</p>
-      <UButton to="/orders/create" color="primary"> Create Order </UButton>
-    </div>
-
-    <!-- Orders Table -->
-    <div v-else class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-gray-200 dark:border-gray-700">
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
-              @click="toggleSort('id')"
-            >
-              <div class="flex items-center gap-1">
-                {{ t("orders.id") }}
-                <UIcon
-                  v-if="sortKey === 'id'"
-                  :name="
-                    sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
-                  "
-                  class="w-4 h-4"
-                />
-                <UIcon
-                  v-else
-                  name="i-heroicons-chevron-up-down"
-                  class="w-4 h-4 opacity-30"
-                />
-              </div>
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
-              @click="toggleSort('date')"
-            >
-              <div class="flex items-center gap-1">
-                {{ t("orders.date") }}
-                <UIcon
-                  v-if="sortKey === 'date'"
-                  :name="
-                    sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
-                  "
-                  class="w-4 h-4"
-                />
-                <UIcon
-                  v-else
-                  name="i-heroicons-chevron-up-down"
-                  class="w-4 h-4 opacity-30"
-                />
-              </div>
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
-              @click="toggleSort('customer')"
-            >
-              <div class="flex items-center gap-1">
-                {{ t("orders.customer") }}
-                <UIcon
-                  v-if="sortKey === 'customer'"
-                  :name="
-                    sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
-                  "
-                  class="w-4 h-4"
-                />
-                <UIcon
-                  v-else
-                  name="i-heroicons-chevron-up-down"
-                  class="w-4 h-4 opacity-30"
-                />
-              </div>
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
-              @click="toggleSort('items')"
-            >
-              <div class="flex items-center gap-1">
-                Items
-                <UIcon
-                  v-if="sortKey === 'items'"
-                  :name="
-                    sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
-                  "
-                  class="w-4 h-4"
-                />
-                <UIcon
-                  v-else
-                  name="i-heroicons-chevron-up-down"
-                  class="w-4 h-4 opacity-30"
-                />
-              </div>
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              Payment
-            </th>
-            <th
-              class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
-              @click="toggleSort('total')"
-            >
-              <div class="flex items-center gap-1 justify-end">
-                {{ t("orders.total") }}
-                <UIcon
-                  v-if="sortKey === 'total'"
-                  :name="
-                    sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
-                  "
-                  class="w-4 h-4"
-                />
-                <UIcon
-                  v-else
-                  name="i-heroicons-chevron-up-down"
-                  class="w-4 h-4 opacity-30"
-                />
-              </div>
-            </th>
-            <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
-              @click="toggleSort('status')"
-            >
-              <div class="flex items-center gap-1">
-                {{ t("orders.status") }}
-                <UIcon
-                  v-if="sortKey === 'status'"
-                  :name="
-                    sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
-                  "
-                  class="w-4 h-4"
-                />
-                <UIcon
-                  v-else
-                  name="i-heroicons-chevron-up-down"
-                  class="w-4 h-4 opacity-30"
-                />
-              </div>
-            </th>
-            <th
-              class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
-            >
-              {{ t("common.actions") }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="order in paginatedOrders"
-            :key="order.id"
-            class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-            @click="$router.push(`/orders/${order.id}`)"
-          >
-            <td class="py-3 px-4">
-              <code
-                class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
-              >
-                {{ order.id }}
-              </code>
-            </td>
-            <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
-              {{ formatDate(order.date) }}
-            </td>
-            <td class="py-3 px-4">
-              <div
-                v-if="order.customer || order.customerName"
-                class="font-medium text-gray-900 dark:text-white"
-              >
-                {{ order.customerName || order.customer }}
-              </div>
-              <div v-else class="text-gray-400">—</div>
-            </td>
-            <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
-              {{ order.items?.length || 0 }} items
-            </td>
-            <td class="py-3 px-4">
-              <span class="inline-flex items-center gap-1 text-sm">
-                <span>{{ getPaymentIcon(order.paymentMethod) }}</span>
-                <span class="text-gray-600 dark:text-gray-400 capitalize">
-                  {{ order.paymentMethod || "unknown" }}
-                </span>
-              </span>
-            </td>
-            <td class="py-3 px-4 text-right">
-              <div class="font-bold text-gray-900 dark:text-white">
-                {{ currency.format(order.total, "LAK") }}
-              </div>
-              <div
-                v-if="order.totalSats"
-                class="text-xs text-amber-600 dark:text-amber-400"
-              >
-                {{ currency.format(order.totalSats, "SATS") }}
-              </div>
-            </td>
-            <td class="py-3 px-4">
-              <UBadge
-                :label="t(`orders.status.${order.status}`)"
-                :color="getStatusColor(order.status) as 'yellow' | 'blue' | 'green' | 'red' | 'orange' | 'gray'"
-                variant="soft"
-              />
-            </td>
-            <td class="py-3 px-4 text-right" @click.stop>
-              <div class="flex justify-end gap-1">
-                <UButton
-                  icon="i-heroicons-eye"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  :to="`/orders/${order.id}`"
-                />
-                <UButton
-                  icon="i-heroicons-printer"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  :to="`/orders/${order.id}/print`"
-                />
-                <UButton
-                  v-if="canVoidOrders"
-                  icon="i-heroicons-trash"
-                  color="red"
-                  variant="ghost"
-                  size="xs"
-                  @click="deleteOrder(order.id)"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div
-      v-if="filteredOrders.length > 0"
-      class="flex justify-between items-center px-4"
-    >
-      <span class="text-sm text-gray-500 dark:text-gray-400">
-        {{ t("common.showing") }} {{ paginatedOrders.length }}
-        {{ t("common.of") }} {{ filteredOrders.length }}
-        {{ t("common.entries") }}
-      </span>
-      <UPagination
-        v-model:page="currentPage"
-        :items-per-page="itemsPerPage"
-        :total="filteredOrders.length"
-      />
-    </div>
-
-    <!-- Nostr Sync Info -->
-    <div class="px-4 pb-4">
-      <div
-        class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 text-sm text-gray-500 dark:text-gray-400"
-      >
-        <div class="flex items-center gap-2">
-          <span>📡</span>
-          <span
-            >Orders are stored locally and synced to Nostr relays when
-            online</span
-          >
-          <UBadge
-            v-if="ordersStore.syncPending.value > 0"
-            color="amber"
-            variant="soft"
-            size="xs"
-          >
-            {{ ordersStore.syncPending.value }} pending sync
-          </UBadge>
+    <div class="max-w-7xl mx-auto py-6 space-y-6">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 px-4 gap-4">
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-clipboard-document-list" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
+              <p class="text-xs text-gray-500">Total Orders</p>
+            </div>
+          </div>
         </div>
+
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-calendar-days" class="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.today }}</p>
+              <p class="text-xs text-gray-500">Today's Orders</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-banknotes" class="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ currency.format(stats.todayRevenue, 'LAK')
+                }}</p>
+              <p class="text-xs text-gray-500">Today's Revenue</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-clock" class="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.pending }}</p>
+              <p class="text-xs text-gray-500">Pending</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      <div class="px-4">
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex flex-col lg:flex-row gap-4">
+            <!-- Search -->
+            <div class="flex-1">
+              <UInput v-model="searchQuery" icon="i-heroicons-magnifying-glass"
+                :placeholder="t('common.search') || 'Search orders...'" size="lg" />
+            </div>
+
+            <!-- Filters -->
+            <div class="flex gap-3 flex-wrap">
+              <USelect v-model="dateFilter" :items="dateFilterOptions" value-key="value" label-key="label"
+                class="w-36" />
+              <USelect v-model="statusFilter" :items="statusOptions" value-key="value" label-key="label" class="w-36" />
+              <UButton icon="i-heroicons-arrow-path" variant="soft" color="gray" :loading="ordersStore.isLoading.value"
+                @click="ordersStore.init()">
+                Refresh
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Actions Bar (appears when items selected) -->
+      <Transition enter-active-class="transition-all duration-200" leave-active-class="transition-all duration-200"
+        enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0"
+        leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+        <div v-if="selectedOrders.size > 0" class="px-4">
+          <div
+            class="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="font-medium text-primary-700 dark:text-primary-300">
+                {{ selectedOrders.size }} orders selected
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <UButton icon="i-heroicons-check-circle" variant="soft" color="green" size="sm" @click="bulkMarkAsPaid">
+                Mark Paid
+              </UButton>
+              <UButton icon="i-heroicons-arrow-down-tray" variant="soft" color="gray" size="sm" @click="bulkExport">
+                Export
+              </UButton>
+              <UButton v-if="canVoidOrders" icon="i-heroicons-trash" variant="soft" color="red" size="sm"
+                @click="bulkDelete">
+                Delete
+              </UButton>
+              <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" size="sm"
+                @click="selectedOrders = new Set(); selectAll = false">
+                Clear
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Loading State -->
+      <div v-if="ordersStore.isLoading.value" class="flex justify-center py-16">
+        <div class="text-center">
+          <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary-500 mb-4" />
+          <p class="text-gray-500">Loading orders...</p>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="filteredOrders.length === 0"
+        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-16 text-center">
+        <div class="text-6xl mb-4">📋</div>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          No orders yet
+        </h3>
+        <p class="text-gray-500 mb-6 max-w-md mx-auto">
+          Create your first order to start tracking sales and managing your business.
+        </p>
+        <UButton to="/orders/create" color="primary" size="lg" icon="i-heroicons-plus">
+          Create First Order
+        </UButton>
+      </div>
+
+      <!-- Orders Table -->
+      <div v-else class="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <!-- Select All Checkbox -->
+                <th class="py-3 px-4 w-12">
+                  <input type="checkbox" :checked="selectAll"
+                    class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                    @change="toggleSelectAll" />
+                </th>
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
+                  @click="toggleSort('id')">
+                  <div class="flex items-center gap-1">
+                    Order
+                    <UIcon v-if="sortKey === 'id'"
+                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                      class="w-4 h-4" />
+                  </div>
+                </th>
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
+                  @click="toggleSort('date')">
+                  <div class="flex items-center gap-1">
+                    Date
+                    <UIcon v-if="sortKey === 'date'"
+                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                      class="w-4 h-4" />
+                  </div>
+                </th>
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
+                  @click="toggleSort('customer')">
+                  <div class="flex items-center gap-1">
+                    Customer
+                    <UIcon v-if="sortKey === 'customer'"
+                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                      class="w-4 h-4" />
+                  </div>
+                </th>
+                <th class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm">
+                  Items
+                </th>
+                <th class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm">
+                  Payment
+                </th>
+                <th
+                  class="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
+                  @click="toggleSort('total')">
+                  <div class="flex items-center gap-1 justify-end">
+                    Total
+                    <UIcon v-if="sortKey === 'total'"
+                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                      class="w-4 h-4" />
+                  </div>
+                </th>
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
+                  @click="toggleSort('status')">
+                  <div class="flex items-center gap-1">
+                    Status
+                    <UIcon v-if="sortKey === 'status'"
+                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                      class="w-4 h-4" />
+                  </div>
+                </th>
+                <th class="py-3 px-4 w-24"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr v-for="order in paginatedOrders" :key="order.id"
+                class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                :class="{ 'bg-primary-50 dark:bg-primary-900/10': isSelected(order.id) }"
+                @click="router.push(`/orders/${order.id}`)">
+                <!-- Checkbox -->
+                <td class="py-4 px-4" @click.stop>
+                  <input type="checkbox" :checked="isSelected(order.id)"
+                    class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                    @change="toggleOrderSelection(order.id)" />
+                </td>
+
+                <!-- Order ID -->
+                <td class="py-4 px-4">
+                  <span class="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                    #{{ order.id.slice(-6).toUpperCase() }}
+                  </span>
+                </td>
+
+                <!-- Date -->
+                <td class="py-4 px-4 text-sm text-gray-600 dark:text-gray-400">
+                  {{ formatDate(order.date) }}
+                </td>
+
+                <!-- Customer -->
+                <td class="py-4 px-4">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
+                      {{ (order.customerName || order.customer || 'W')[0].toUpperCase() }}
+                    </div>
+                    <span class="text-sm text-gray-900 dark:text-white">
+                      {{ order.customerName || order.customer || 'Walk-in' }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Items -->
+                <td class="py-4 px-4">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    {{ order.items?.length || 0 }} items
+                  </span>
+                </td>
+
+                <!-- Payment -->
+                <td class="py-4 px-4">
+                  <span class="inline-flex items-center gap-1.5 text-sm">
+                    <span>{{ getPaymentIcon(order.paymentMethod) }}</span>
+                    <span class="text-gray-600 dark:text-gray-400 capitalize">
+                      {{ order.paymentMethod || "—" }}
+                    </span>
+                  </span>
+                </td>
+
+                <!-- Total -->
+                <td class="py-4 px-4 text-right">
+                  <div class="font-semibold text-gray-900 dark:text-white">
+                    {{ currency.format(order.total, "LAK") }}
+                  </div>
+                  <div v-if="order.totalSats" class="text-xs text-amber-600 dark:text-amber-400">
+                    ⚡ {{ order.totalSats.toLocaleString() }} sats
+                  </div>
+                </td>
+
+                <!-- Status -->
+                <td class="py-4 px-4">
+                  <span :class="getStatusStyle(order.status)"
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium">
+                    {{ t(`orders.status.${order.status}`) || order.status }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="py-4 px-4" @click.stop>
+                  <div class="flex justify-end gap-1">
+                    <UButton icon="i-heroicons-eye" variant="ghost" color="gray" size="xs"
+                      :to="`/orders/${order.id}`" />
+                    <UButton icon="i-heroicons-printer" variant="ghost" color="gray" size="xs"
+                      :to="`/orders/${order.id}/print`" />
+                    <UButton v-if="canVoidOrders" icon="i-heroicons-trash" variant="ghost" color="red" size="xs"
+                      @click="deleteOrder(order.id)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer with Pagination -->
+        <div
+          class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span class="text-sm text-gray-500 dark:text-gray-400">
+            Showing {{ paginatedOrders.length }} of {{ filteredOrders.length }} orders
+          </span>
+          <UPagination v-model:page="currentPage" :items-per-page="itemsPerPage" :total="filteredOrders.length" />
+        </div>
+      </div>
+
+      <!-- Sync Info Footer -->
+      <div class="text-center text-sm text-gray-400 dark:text-gray-500 py-4">
+        📡 Orders synced with Nostr relays
+        <UBadge v-if="ordersStore.syncPending.value > 0" color="amber" variant="soft" size="xs" class="ml-2">
+          {{ ordersStore.syncPending.value }} pending sync
+        </UBadge>
       </div>
     </div>
   </div>

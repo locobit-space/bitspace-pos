@@ -1,188 +1,192 @@
 <!-- pages/orders/create.vue -->
+<!-- 🛒 Enterprise Order System - Full Featured -->
 <script setup lang="ts">
-import type { Product, CartItem, Order, PaymentMethod } from '~/types';
+import type { Product, CartItem, Order, PaymentMethod, LoyaltyMember } from '~/types';
+
+definePageMeta({
+  layout: "default",
+  middleware: ["auth"],
+});
 
 const { t } = useI18n();
 const router = useRouter();
+const toast = useToast();
 
-// Mock products data
-const products = ref<Product[]>([
-  {
-    id: '1',
-    name: 'ເບຍ Beer Lao',
-    sku: 'BL001',
-    description: 'ເບຍລາວ ປະເພດຂວດ 640ml',
-    categoryId: '1',
-    unitId: '1',
-    price: 12000,
-    stock: 150,
-    minStock: 20,
-    branchId: '1',
-    status: 'active',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    name: 'ເຂົ້າຈີ່ Grilled Chicken',
-    sku: 'GC001',
-    description: 'ເຂົ້າຈີ່ປີ້ງ ພ້ອມເຄື່ອງເຈບ',
-    categoryId: '2',
-    unitId: '2',
-    price: 25000,
-    stock: 50,
-    minStock: 10,
-    branchId: '1',
-    status: 'active',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-  },
-  {
-    id: '3',
-    name: 'ເຂົ້າຫມົກ Khao Mok',
-    sku: 'KM001',
-    description: 'ເຂົ້າຫມົກປະເພດຊີ້ນຫມູ',
-    categoryId: '2',
-    unitId: '2',
-    price: 20000,
-    stock: 30,
-    minStock: 5,
-    branchId: '1',
-    status: 'active',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-  },
-  {
-    id: '4',
-    name: 'ນ້ຳດື່ມ Water',
-    sku: 'WA001',
-    description: 'ນ້ຳດື່ມຂວດ 500ml',
-    categoryId: '1',
-    unitId: '1',
-    price: 3000,
-    stock: 200,
-    minStock: 50,
-    branchId: '1',
-    status: 'active',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-  },
-  {
-    id: '5',
-    name: 'ກາເຟ Coffee Lao',
-    sku: 'CF001',
-    description: 'ກາເຟລາວ ຮ້ອນ/ເຢັນ',
-    categoryId: '1',
-    unitId: '3',
-    price: 15000,
-    stock: 100,
-    minStock: 20,
-    branchId: '1',
-    status: 'active',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-  },
-  {
-    id: '6',
-    name: 'ສົ້ມຕຳ Papaya Salad',
-    sku: 'PS001',
-    description: 'ສົ້ມຕຳລາວ ລົດຊາດແຊບ',
-    categoryId: '2',
-    unitId: '2',
-    price: 18000,
-    stock: 40,
-    minStock: 10,
-    branchId: '1',
-    status: 'active',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-  },
-]);
+// Composables
+const productsStore = useProductsStore();
+const ordersStore = useOrders();
+const customersStore = useCustomers();
+const { format: formatCurrency } = useCurrency();
 
-const categories = [
-  { id: 'all', name: t('common.all') },
-  { id: '1', name: 'ເຄື່ອງດື່ມ / Beverages' },
-  { id: '2', name: 'ອາຫານ / Food' },
-  { id: '3', name: 'ຂອງຫວານ / Desserts' },
-];
-
-// Cart state
-const cart = ref<CartItem[]>([]);
-const searchQuery = ref('');
-const selectedCategory = ref('all');
-const customerName = ref('');
-const customerPhone = ref('');
-const customerEmail = ref('');
-const orderNotes = ref('');
-const selectedPaymentMethod = ref<PaymentMethod>('cash');
-const taxRate = 0.1; // 10% tax
-const tipAmount = ref(0);
-
-// Payment modal
-const showPaymentModal = ref(false);
-const processing = ref(false);
-
-const paymentMethods = [
-  { value: 'cash', label: t('pos.cash'), icon: 'i-heroicons-banknotes' },
-  { value: 'lightning', label: 'Lightning', icon: 'i-heroicons-bolt' },
-  { value: 'qr_static', label: 'QR Code', icon: 'i-heroicons-qr-code' },
-];
-
-// Filtered products
-const filteredProducts = computed(() => {
-  return products.value.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const matchesCategory = selectedCategory.value === 'all' || product.categoryId === selectedCategory.value;
-    return matchesSearch && matchesCategory && product.status === 'active';
-  });
+// Initialize
+const isLoading = ref(true);
+onMounted(async () => {
+  await Promise.all([
+    productsStore.init(),
+    customersStore.init(),
+  ]);
+  isLoading.value = false;
 });
 
-// Cart calculations
-const subtotal = computed(() => cart.value.reduce((sum, item) => sum + item.total, 0));
-const tax = computed(() => subtotal.value * taxRate);
-const total = computed(() => subtotal.value + tax.value + tipAmount.value);
+// ============================================
+// ORDER STATE
+// ============================================
+const orderStatus = ref<'draft' | 'confirmed' | 'processing'>('draft');
+const orderType = ref<'dine_in' | 'takeaway' | 'delivery' | 'pickup'>('dine_in');
+const tableNumber = ref('');
 
-// Format currency
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK',
-    minimumFractionDigits: 0,
-  }).format(amount);
+// ============================================
+// CUSTOMER (from system)
+// ============================================
+const showCustomerModal = ref(false);
+const customerSearchQuery = ref('');
+const selectedCustomer = ref<LoyaltyMember | null>(null);
+
+const filteredCustomers = computed(() => {
+  if (!customerSearchQuery.value.trim()) {
+    return customersStore.customers.value.slice(0, 10);
+  }
+  return customersStore.searchCustomers(customerSearchQuery.value);
+});
+
+const selectCustomer = (customer: LoyaltyMember) => {
+  selectedCustomer.value = customer;
+  showCustomerModal.value = false;
+  toast.add({
+    title: 'Customer Selected',
+    description: customer.name || customer.phone || 'Customer',
+    color: 'green',
+    timeout: 1500,
+  });
 };
 
-// Add product to cart
-const addToCart = (product: Product) => {
+// ============================================
+// SHIPPING / SENDER INFO
+// ============================================
+const showShippingModal = ref(false);
+const shippingInfo = ref({
+  senderName: '',
+  senderPhone: '',
+  recipientName: '',
+  recipientPhone: '',
+  address: '',
+  city: '',
+  postalCode: '',
+  deliveryNotes: '',
+  deliveryDate: '',
+  deliveryTime: '',
+});
+
+// ============================================
+// PRODUCT SELECTION MODAL
+// ============================================
+const showProductModal = ref(false);
+const productSearchQuery = ref('');
+const selectedProductsInModal = ref<Set<string>>(new Set());
+const productQuantities = ref<Record<string, number>>({});
+
+const products = computed(() => productsStore.products.value);
+
+const filteredProducts = computed(() => {
+  if (!productSearchQuery.value.trim()) {
+    return products.value.filter(p => p.status === 'active');
+  }
+  const query = productSearchQuery.value.toLowerCase();
+  return products.value.filter(p =>
+    p.status === 'active' && (
+      p.name.toLowerCase().includes(query) ||
+      p.sku?.toLowerCase().includes(query)
+    )
+  );
+});
+
+const toggleProductSelection = (productId: string) => {
+  if (selectedProductsInModal.value.has(productId)) {
+    selectedProductsInModal.value.delete(productId);
+    delete productQuantities.value[productId];
+  } else {
+    selectedProductsInModal.value.add(productId);
+    productQuantities.value[productId] = 1;
+  }
+  // Trigger reactivity
+  selectedProductsInModal.value = new Set(selectedProductsInModal.value);
+};
+
+const updateProductQuantityInModal = (productId: string, qty: number) => {
+  if (qty > 0) {
+    productQuantities.value[productId] = qty;
+  }
+};
+
+const addSelectedProductsToCart = () => {
+  for (const productId of selectedProductsInModal.value) {
+    const product = products.value.find(p => p.id === productId);
+    if (product) {
+      const qty = productQuantities.value[productId] || 1;
+      addToCartWithQty(product, qty);
+    }
+  }
+
+  toast.add({
+    title: 'Products Added',
+    description: `${selectedProductsInModal.value.size} items added to order`,
+    color: 'green',
+  });
+
+  selectedProductsInModal.value = new Set();
+  productQuantities.value = {};
+  showProductModal.value = false;
+};
+
+// ============================================
+// CART STATE
+// ============================================
+const cart = ref<CartItem[]>([]);
+const orderNotes = ref('');
+const selectedPaymentMethod = ref<PaymentMethod>('cash');
+const taxRate = 0.10;
+const discountAmount = ref(0);
+const discountType = ref<'fixed' | 'percent'>('fixed');
+const deliveryFee = ref(0);
+
+// Cart calculations
+const cartItemCount = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0));
+const subtotal = computed(() => cart.value.reduce((sum, item) => sum + item.total, 0));
+const discountValue = computed(() => {
+  if (discountType.value === 'percent') {
+    return subtotal.value * (discountAmount.value / 100);
+  }
+  return discountAmount.value;
+});
+const tax = computed(() => (subtotal.value - discountValue.value) * taxRate);
+const total = computed(() => subtotal.value - discountValue.value + tax.value + deliveryFee.value);
+
+// Cart actions
+const addToCartWithQty = (product: Product, qty: number) => {
   const existingItem = cart.value.find((item) => item.product.id === product.id);
-  
+
   if (existingItem) {
-    existingItem.quantity += 1;
+    existingItem.quantity += qty;
     existingItem.total = existingItem.quantity * existingItem.price;
   } else {
     cart.value.push({
       product,
-      quantity: 1,
+      quantity: qty,
       price: product.price,
-      total: product.price,
+      total: product.price * qty,
     });
   }
 };
 
-// Update cart item quantity
-const updateQuantity = (item: CartItem, delta: number) => {
-  const newQuantity = item.quantity + delta;
-  
-  if (newQuantity <= 0) {
+const updateQuantity = (item: CartItem, qty: number) => {
+  if (qty <= 0) {
     removeFromCart(item);
-  } else if (newQuantity <= item.product.stock) {
-    item.quantity = newQuantity;
+  } else if (qty <= item.product.stock) {
+    item.quantity = qty;
     item.total = item.quantity * item.price;
   }
 };
 
-// Remove from cart
 const removeFromCart = (item: CartItem) => {
   const index = cart.value.findIndex((i) => i.product.id === item.product.id);
   if (index !== -1) {
@@ -190,44 +194,86 @@ const removeFromCart = (item: CartItem) => {
   }
 };
 
-// Clear cart
 const clearCart = () => {
   cart.value = [];
-  tipAmount.value = 0;
-  customerName.value = '';
-  customerPhone.value = '';
-  customerEmail.value = '';
+  discountAmount.value = 0;
+  deliveryFee.value = 0;
+  selectedCustomer.value = null;
   orderNotes.value = '';
+  shippingInfo.value = {
+    senderName: '',
+    senderPhone: '',
+    recipientName: '',
+    recipientPhone: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    deliveryNotes: '',
+    deliveryDate: '',
+    deliveryTime: '',
+  };
 };
 
-// Open payment modal
-const openPaymentModal = () => {
-  if (cart.value.length === 0) return;
-  showPaymentModal.value = true;
+// ============================================
+// PAYMENT
+// ============================================
+const showPaymentModal = ref(false);
+const processing = ref(false);
+
+const paymentMethods = [
+  { value: 'cash', label: 'Cash', emoji: '💵' },
+  { value: 'lightning', label: 'Lightning', emoji: '⚡' },
+  { value: 'qr_static', label: 'QR Code', emoji: '📱' },
+  { value: 'bank', label: 'Bank Transfer', emoji: '🏦' },
+];
+
+const orderTypeOptions = [
+  { value: 'dine_in', label: 'Dine In', icon: '🍽️' },
+  { value: 'takeaway', label: 'Takeaway', icon: '🥡' },
+  { value: 'delivery', label: 'Delivery', icon: '🚚' },
+  { value: 'pickup', label: 'Pickup', icon: '🏪' },
+];
+
+const statusOptions = [
+  { value: 'draft', label: 'Draft', color: 'gray' },
+  { value: 'confirmed', label: 'Confirmed', color: 'blue' },
+  { value: 'processing', label: 'Processing', color: 'yellow' },
+];
+
+const getStatusStyle = (status: string) => {
+  const styles: Record<string, string> = {
+    draft: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400',
+    confirmed: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400',
+    processing: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400',
+  };
+  return styles[status] || styles.draft;
 };
 
-// Process order
 const processOrder = async () => {
+  if (cart.value.length === 0) return;
   processing.value = true;
-  
+
   try {
-    // Generate order ID
-    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-    
-    // Create order object
-    const order: Partial<Order> = {
-      id: orderId,
-      customer: customerName.value || 'Walk-in Customer',
-      branch: 'Vientiane Center',
+    const orderData: Order = {
+      id: `ORD-${Date.now().toString(36).toUpperCase()}`,
+      customer: selectedCustomer.value?.name || 'Walk-in Customer',
+      customerPhone: selectedCustomer.value?.phone || shippingInfo.value.senderPhone,
+      customerEmail: selectedCustomer.value?.email,
+      branch: 'Default Branch',
       date: new Date().toISOString(),
       total: total.value,
+      subtotal: subtotal.value,
+      tax: tax.value,
+      discount: discountValue.value,
       currency: 'LAK',
-      status: 'completed',
+      status: orderStatus.value === 'draft' ? 'pending' : 'processing',
+      orderType: orderType.value,
+      tableNumber: tableNumber.value || undefined,
       paymentMethod: selectedPaymentMethod.value,
-      notes: orderNotes.value,
-      tip: tipAmount.value,
+      notes: orderNotes.value || undefined,
+      shippingAddress: orderType.value === 'delivery' ? shippingInfo.value.address : undefined,
       items: cart.value.map((item) => ({
-        id: item.product.id,
+        id: `ITEM-${Date.now()}-${item.product.id}`,
         productId: item.product.id,
         quantity: item.quantity,
         price: item.price,
@@ -236,22 +282,32 @@ const processOrder = async () => {
         updatedAt: new Date().toISOString(),
         product: item.product,
       })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-    
-    // TODO: Save to Nostr/Hasura
-    console.log('Order created:', order);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // Close modal and redirect
+
+    const savedOrder = await ordersStore.createOrder(orderData);
+
+    if (selectedPaymentMethod.value === 'cash' || selectedPaymentMethod.value === 'bank') {
+      await ordersStore.completeOrder(savedOrder.id, selectedPaymentMethod.value);
+    }
+
+    toast.add({
+      title: 'Order Created',
+      description: `Order #${savedOrder.id.slice(-6).toUpperCase()}`,
+      icon: 'i-heroicons-check-circle',
+      color: 'green',
+    });
+
     showPaymentModal.value = false;
     clearCart();
-    
-    // Navigate to order detail
-    router.push(`/orders/${orderId}`);
+    router.push(`/orders/${savedOrder.id}`);
   } catch (error) {
-    console.error('Error processing order:', error);
+    toast.add({
+      title: 'Error',
+      description: error instanceof Error ? error.message : 'Failed to create order',
+      color: 'red',
+    });
   } finally {
     processing.value = false;
   }
@@ -260,340 +316,480 @@ const processOrder = async () => {
 // Keyboard shortcuts
 onMounted(() => {
   const handleKeydown = (e: KeyboardEvent) => {
-    // Ctrl/Cmd + P to open payment
+    if (e.key === 'F2') { e.preventDefault(); showProductModal.value = true; }
+    if (e.key === 'F3') { e.preventDefault(); showCustomerModal.value = true; }
     if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
       e.preventDefault();
-      openPaymentModal();
+      if (cart.value.length > 0) showPaymentModal.value = true;
     }
-    // Escape to close modal
     if (e.key === 'Escape') {
       showPaymentModal.value = false;
+      showCustomerModal.value = false;
+      showProductModal.value = false;
+      showShippingModal.value = false;
     }
   };
-  
   window.addEventListener('keydown', handleKeydown);
   onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 });
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-4rem)]">
-    <!-- Products Section -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <!-- Header -->
-      <div class="p-4 border-b border-gray-200 dark:border-gray-800">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('orders.createOrder') }}</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('orders.createOrderDesc') }}</p>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <!-- ============ HEADER ============ -->
+    <div class=" bg-slate-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <UButton icon="i-heroicons-chevron-left" variant="ghost" color="gray" to="/orders" />
+            <span class="text-sm text-gray-500">New Order</span>
+            <span class="text-gray-300">›</span>
+            <span class="font-medium text-gray-900 dark:text-white">Order #NEW</span>
           </div>
-          <UButton color="gray" variant="ghost" icon="i-heroicons-arrow-left" :label="t('common.back')" to="/orders" />
-        </div>
-        
-        <!-- Filters -->
-        <div class="flex gap-4">
-          <UInput
-            v-model="searchQuery"
-            class="flex-1"
-            icon="i-heroicons-magnifying-glass"
-            :placeholder="t('products.searchPlaceholder')"
-          />
-          <USelect
-            v-model="selectedCategory"
-            :items="categories"
-            value-key="id"
-            label-key="name"
-            class="w-48"
-          />
+          <div class="flex items-center gap-2">
+            <UButton icon="i-heroicons-printer" variant="outline" color="gray" disabled>Print</UButton>
+            <UButton v-if="cart.length > 0" icon="i-heroicons-trash" variant="outline" color="red" @click="clearCart">
+              Clear</UButton>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Products Grid -->
-      <div class="flex-1 overflow-y-auto p-4">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <div
-            v-for="product in filteredProducts"
-            :key="product.id"
-            class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg hover:border-primary-500 transition-all duration-200"
-            @click="addToCart(product)"
-          >
-            <div class="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center relative">
-              <Icon name="i-heroicons-cube" class="w-12 h-12 text-gray-400" />
-              <div
-                v-if="product.stock <= product.minStock"
-                class="absolute top-2 right-2"
-              >
-                <UBadge color="red" size="xs">{{ t('products.lowStock') }}</UBadge>
-              </div>
-              <!-- Quick add overlay -->
-              <div class="absolute inset-0 bg-primary-500/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <div class="bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg">
-                  <Icon name="i-heroicons-plus" class="w-6 h-6 text-primary-500" />
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex gap-6">
+        <!-- ============ MAIN CONTENT ============ -->
+        <div class="flex-1 space-y-6">
+          <!-- Order Title & Status -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Order #NEW</h1>
+              <!-- Status Dropdown -->
+              <UDropdownMenu :items="[[
+                { label: 'Draft', click: () => orderStatus = 'draft' },
+                { label: 'Confirmed', click: () => orderStatus = 'confirmed' },
+                { label: 'Processing', click: () => orderStatus = 'processing' },
+              ]]">
+                <button
+                  :class="[getStatusStyle(orderStatus), 'px-3 py-1 rounded-full text-sm font-medium border flex items-center gap-1']">
+                  ● {{statusOptions.find(s => s.value === orderStatus)?.label}}
+                  <UIcon name="i-heroicons-chevron-down" class="w-3 h-3" />
+                </button>
+              </UDropdownMenu>
+            </div>
+
+            <!-- Order Type -->
+            <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <button v-for="type in orderTypeOptions" :key="type.value"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all" :class="[
+                  orderType === type.value
+                    ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white'
+                    : 'text-gray-500 hover:text-gray-700'
+                ]" @click="orderType = type.value as any">
+                <span>{{ type.icon }}</span>
+                <span>{{ type.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Number (for Dine In) -->
+          <div v-if="orderType === 'dine_in'"
+            class="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-700 border-slate-200 p-4">
+            <UIcon name="i-heroicons-square-2-stack" class="w-5 h-5 text-gray-400" />
+            <label class="text-sm text-gray-500">Table Number</label>
+            <UInput v-model="tableNumber" placeholder="e.g. A1, 5" class="w-32" />
+          </div>
+
+          <!-- Customer Section -->
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div v-if="selectedCustomer" class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div
+                  class="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  {{ (selectedCustomer.name || 'C').slice(0, 2).toUpperCase() }}
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ selectedCustomer.name ||
+                      'Customer' }}</h3>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700">{{ selectedCustomer.tier
+                    }}</span>
+                  </div>
+                  <p class="text-sm text-gray-500">{{ selectedCustomer.phone || selectedCustomer.email || 'No contact'
+                  }}</p>
+                  <button class="text-sm text-primary-600 hover:underline flex items-center gap-1 mt-1"
+                    @click="showCustomerModal = true">
+                    <UIcon name="i-heroicons-pencil" class="w-3 h-3" /> Change Customer
+                  </button>
                 </div>
               </div>
-            </div>
-            <div class="p-3">
-              <h3 class="font-medium text-gray-900 dark:text-white truncate">{{ product.name }}</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ product.sku }}</p>
-              <div class="flex items-center justify-between mt-2">
-                <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatCurrency(product.price) }}</span>
-                <span class="text-xs text-gray-500">{{ t('products.stock') }}: {{ product.stock }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="filteredProducts.length === 0" class="flex flex-col items-center justify-center h-64 text-gray-500">
-          <Icon name="i-heroicons-magnifying-glass" class="w-12 h-12 mb-4" />
-          <p>{{ t('products.noProducts') }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cart Section -->
-    <div class="w-96 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex flex-col">
-      <!-- Cart Header -->
-      <div class="p-4 border-b border-gray-200 dark:border-gray-800">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white">
-            {{ t('pos.cart') }}
-            <span v-if="cart.length" class="text-sm font-normal text-gray-500">({{ cart.length }} {{ t('pos.items') }})</span>
-          </h2>
-          <UButton
-            v-if="cart.length"
-            color="gray"
-            variant="ghost"
-            size="xs"
-            icon="i-heroicons-trash"
-            @click="clearCart"
-          />
-        </div>
-      </div>
-
-      <!-- Cart Items -->
-      <div class="flex-1 overflow-y-auto p-4">
-        <div v-if="cart.length === 0" class="flex flex-col items-center justify-center h-full text-gray-500">
-          <Icon name="i-heroicons-shopping-cart" class="w-16 h-16 mb-4 opacity-50" />
-          <p>{{ t('pos.emptyCart') }}</p>
-          <p class="text-sm">{{ t('pos.addProductsHint') }}</p>
-        </div>
-
-        <div v-else class="space-y-3">
-          <div
-            v-for="item in cart"
-            :key="item.product.id"
-            class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm"
-          >
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <h4 class="font-medium text-gray-900 dark:text-white text-sm">{{ item.product.name }}</h4>
-                <p class="text-xs text-gray-500 mt-1">{{ formatCurrency(item.price) }} {{ t('pos.each') }}</p>
-              </div>
-              <UButton
-                color="gray"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-x-mark"
-                @click="removeFromCart(item)"
-              />
-            </div>
-            <div class="flex items-center justify-between mt-2">
               <div class="flex items-center gap-2">
-                <UButton
-                  size="xs"
-                  color="gray"
-                  variant="solid"
-                  icon="i-heroicons-minus"
-                  @click="updateQuantity(item, -1)"
-                />
-                <span class="w-8 text-center font-medium">{{ item.quantity }}</span>
-                <UButton
-                  size="xs"
-                  color="gray"
-                  variant="solid"
-                  icon="i-heroicons-plus"
-                  :disabled="item.quantity >= item.product.stock"
-                  @click="updateQuantity(item, 1)"
-                />
+                <UButton v-if="selectedCustomer.email" icon="i-heroicons-envelope" variant="soft" color="gray">Email
+                </UButton>
+                <UButton v-if="selectedCustomer.phone" icon="i-heroicons-phone" variant="soft" color="gray">{{
+                  selectedCustomer.phone }}</UButton>
               </div>
-              <span class="font-bold text-gray-900 dark:text-white">{{ formatCurrency(item.total) }}</span>
             </div>
+            <div v-else class="flex items-center justify-between">
+              <span class="text-gray-500">No customer selected</span>
+              <UButton icon="i-heroicons-user-plus" variant="soft" color="primary" @click="showCustomerModal = true">
+                Add Customer (F3)
+              </UButton>
+            </div>
+          </div>
+
+          <!-- Shipping Info (for Delivery) -->
+          <div v-if="orderType === 'delivery'"
+            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <span>🚚</span> Delivery Information
+              </h3>
+              <UButton variant="soft" size="sm" @click="showShippingModal = true">
+                {{ shippingInfo.address ? 'Edit' : 'Add Delivery Info' }}
+              </UButton>
+            </div>
+            <div v-if="shippingInfo.address" class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p class="text-gray-500">Recipient</p>
+                <p class="font-medium">{{ shippingInfo.recipientName }}</p>
+                <p>{{ shippingInfo.recipientPhone }}</p>
+              </div>
+              <div>
+                <p class="text-gray-500">Address</p>
+                <p class="font-medium">{{ shippingInfo.address }}</p>
+                <p>{{ shippingInfo.city }}</p>
+              </div>
+            </div>
+            <div v-else class="text-gray-400 text-sm">No delivery information added</div>
+          </div>
+
+          <!-- Product Items Section -->
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+              <h3 class="font-semibold text-gray-900 dark:text-white">Product Items ({{ cart.length }})</h3>
+              <UButton icon="i-heroicons-plus" variant="soft" color="primary" @click="showProductModal = true">
+                Add Products (F2)
+              </UButton>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="cart.length === 0" class="p-16 text-center">
+              <UIcon name="i-heroicons-shopping-bag" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p class="text-gray-500 font-medium">No items in order</p>
+              <p class="text-sm text-gray-400 mt-1">Click "Add Products" to select items</p>
+            </div>
+
+            <!-- Items Table -->
+            <table v-else class="w-full">
+              <thead class="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th class="text-left py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Item Details</th>
+                  <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase w-32">Quantity</th>
+                  <th class="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase w-28">Unit Price</th>
+                  <th class="text-right py-3 px-5 text-xs font-semibold text-gray-500 uppercase w-32">Total</th>
+                  <th class="w-10"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr v-for="item in cart" :key="item.product.id">
+                  <td class="py-4 px-5">
+                    <div class="flex items-center gap-4">
+                      <div
+                        class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                        <img v-if="item.product.image" :src="item.product.image" class="w-full h-full object-cover" />
+                        <span v-else>📦</span>
+                      </div>
+                      <div>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ item.product.name }}</p>
+                        <p class="text-xs text-gray-500">SKU: {{ item.product.sku }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4">
+                    <div class="flex items-center justify-center gap-1">
+                      <UButton icon="i-heroicons-minus" size="xs" color="gray" variant="soft"
+                        @click="updateQuantity(item, item.quantity - 1)" />
+                      <input type="number" :value="item.quantity"
+                        class="w-14 text-center border border-gray-300 dark:border-gray-600 rounded-lg py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        @change="(e) => updateQuantity(item, parseInt((e.target as HTMLInputElement).value) || 1)" />
+                      <UButton icon="i-heroicons-plus" size="xs" color="gray" variant="soft"
+                        @click="updateQuantity(item, item.quantity + 1)" />
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-right text-sm text-gray-500">{{ formatCurrency(item.price, 'LAK') }}</td>
+                  <td class="py-4 px-5 text-right font-semibold">{{ formatCurrency(item.total, 'LAK') }}</td>
+                  <td class="py-4 px-2">
+                    <UButton icon="i-heroicons-x-mark" size="xs" variant="ghost" color="red"
+                      @click="removeFromCart(item)" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Order Totals -->
+            <div v-if="cart.length > 0" class="border-t p-5 bg-gray-50 dark:bg-gray-800/30">
+              <div class="max-w-xs ml-auto space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>{{
+                  formatCurrency(subtotal, 'LAK') }}</span></div>
+                <div v-if="orderType === 'delivery'" class="flex justify-between">
+                  <span class="text-gray-500">Delivery Fee</span>
+                  <input v-model.number="deliveryFee" type="number"
+                    class="w-24 text-right border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    :min="0" />
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500">Discount</span>
+                  <div class="flex items-center gap-1">
+                    <input v-model.number="discountAmount" type="number"
+                      class="w-16 text-right border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      :min="0" />
+                    <div class="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
+                      <button type="button" class="px-2 py-1 text-xs font-medium transition-colors"
+                        :class="discountType === 'percent' ? 'bg-primary-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                        @click="discountType = 'percent'">%</button>
+                      <button type="button"
+                        class="px-2 py-1 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
+                        :class="discountType === 'fixed' ? 'bg-primary-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                        @click="discountType = 'fixed'">₭</button>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="discountValue > 0" class="flex justify-between text-green-600"><span>Discount
+                    Applied</span><span>-{{ formatCurrency(discountValue, 'LAK') }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Tax (10%)</span><span>{{
+                  formatCurrency(tax, 'LAK') }}</span></div>
+                <div class="flex justify-between text-lg font-bold pt-2 border-t"><span>Total</span><span
+                    class="text-primary-600">{{ formatCurrency(total, 'LAK') }}</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="bg-white dark:bg-gray-900 dark:border-gray-700 border-slate-200 rounded-xl border p-5">
+            <h3 class="font-semibold mb-3">Order Notes</h3>
+            <UTextarea v-model="orderNotes" :rows="2" class="w-full" placeholder="Add notes..." />
           </div>
         </div>
-      </div>
 
-      <!-- Customer Info -->
-      <div v-if="cart.length" class="p-4 border-t border-gray-200 dark:border-gray-800">
-        <UInput
-          v-model="customerName"
-          size="sm"
-          icon="i-heroicons-user"
-          :placeholder="t('orders.customerName')"
-          class="mb-2"
-        />
-        <UInput
-          v-model="customerPhone"
-          size="sm"
-          icon="i-heroicons-phone"
-          :placeholder="t('orders.customerPhone')"
-        />
-      </div>
-
-      <!-- Cart Summary -->
-      <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">{{ t('pos.subtotal') }}</span>
-            <span class="font-medium">{{ formatCurrency(subtotal) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">{{ t('pos.tax') }} (10%)</span>
-            <span class="font-medium">{{ formatCurrency(tax) }}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-500 dark:text-gray-400">{{ t('pos.tip') }}</span>
-            <UInput
-              v-model.number="tipAmount"
-              size="xs"
-              class="w-24 text-right"
-              type="number"
-              :min="0"
-            />
-          </div>
-          <div class="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
-            <div class="flex justify-between text-lg font-bold">
-              <span>{{ t('pos.total') }}</span>
-              <span class="text-primary-600 dark:text-primary-400">{{ formatCurrency(total) }}</span>
+        <!-- ============ RIGHT SIDEBAR ============ -->
+        <div class="w-80 space-y-4">
+          <!-- Payment Card -->
+          <div
+            class="bg-white dark:bg-gray-900 dark:border-gray-700 border-slate-200 rounded-xl border overflow-hidden">
+            <div class="px-4 py-3 border-b dark:border-gray-700 border-slate-200 flex items-center justify-between">
+              <span class="text-sm font-medium text-gray-500 uppercase">Payment</span>
             </div>
-          </div>
-        </div>
-
-        <!-- Payment Button -->
-        <UButton
-          class="w-full mt-4"
-          size="lg"
-          color="primary"
-          :disabled="cart.length === 0"
-          @click="openPaymentModal"
-        >
-          <template #leading>
-            <Icon name="i-heroicons-credit-card" class="w-5 h-5" />
-          </template>
-          {{ t('pos.proceedToPayment') }}
-          <template #trailing>
-            <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-xs font-mono bg-white/20 rounded">⌘P</kbd>
-          </template>
-        </UButton>
-      </div>
-    </div>
-
-    <!-- Payment Modal -->
-    <UModal v-model:open="showPaymentModal" :ui="{ content: 'max-w-lg' }">
-      <template #content>
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-bold">{{ t('pos.payment') }}</h3>
-              <UButton
-                color="gray"
-                variant="ghost"
-                icon="i-heroicons-x-mark"
-                @click="showPaymentModal = false"
-              />
-            </div>
-          </template>
-
-          <div class="space-y-6">
-            <!-- Order Summary -->
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <div class="flex justify-between items-center mb-4">
-                <span class="text-gray-500">{{ t('pos.itemsCount') }}</span>
-                <span class="font-medium">{{ cart.reduce((sum, item) => sum + item.quantity, 0) }} {{ t('pos.items') }}</span>
-              </div>
-              <div class="flex justify-between items-center text-xl font-bold">
-                <span>{{ t('pos.total') }}</span>
-                <span class="text-primary-600 dark:text-primary-400">{{ formatCurrency(total) }}</span>
-              </div>
-            </div>
-
-            <!-- Payment Method -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                {{ t('pos.paymentMethod') }}
-              </label>
-              <div class="grid grid-cols-3 gap-3">
-                <button
-                  v-for="method in paymentMethods"
-                  :key="method.value"
-                  class="flex flex-col items-center p-4 rounded-lg border-2 transition-all"
-                  :class="[
-                    selectedPaymentMethod === method.value
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                  ]"
-                  @click="selectedPaymentMethod = method.value as PaymentMethod"
-                >
-                  <Icon
-                    :name="method.icon"
-                    class="w-8 h-8 mb-2"
-                    :class="selectedPaymentMethod === method.value ? 'text-primary-500' : 'text-gray-400'"
-                  />
-                  <span
-                    class="text-sm font-medium"
-                    :class="selectedPaymentMethod === method.value ? 'text-primary-700 dark:text-primary-300' : 'text-gray-600 dark:text-gray-400'"
-                  >
-                    {{ method.label }}
-                  </span>
+            <div class="p-4 space-y-4">
+              <div class="grid grid-cols-2 gap-2">
+                <button v-for="method in paymentMethods" :key="method.value"
+                  class="flex items-center gap-2 p-2 rounded-lg border text-sm transition-all"
+                  :class="selectedPaymentMethod === method.value ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-700'"
+                  @click="selectedPaymentMethod = method.value as PaymentMethod">
+                  <span>{{ method.emoji }}</span><span>{{ method.label }}</span>
                 </button>
               </div>
+              <div class="pt-3 border-t dark:border-gray-700 border-slate-200 space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-gray-500">Paid</span><span>₭0</span></div>
+                <div class="flex justify-between font-semibold"><span>Outstanding</span><span>{{ formatCurrency(total,
+                  'LAK') }}</span></div>
+              </div>
+              <UButton block color="green" size="lg" :disabled="cart.length === 0" @click="showPaymentModal = true">
+                Record Payment
+              </UButton>
             </div>
+          </div>
 
-            <!-- Lightning Payment Component -->
-            <div v-if="selectedPaymentMethod === 'lightning'" class="text-center py-4">
-              <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                <Icon name="i-heroicons-bolt" class="w-16 h-16 text-orange-500 mx-auto mb-4" />
-                <p class="text-gray-600 dark:text-gray-400 mb-2">{{ t('pos.scanToPayLightning') }}</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(total) }}</p>
-                <p class="text-sm text-gray-500 mt-1">≈ {{ (total / 50000000).toFixed(0) }} sats</p>
+          <!-- Shortcuts -->
+          <div class="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 text-sm">
+            <p class="font-medium mb-2">Shortcuts</p>
+            <div class="space-y-1 text-gray-500">
+              <div class="flex justify-between"><span>Add Products</span><kbd
+                  class="px-1.5 bg-white dark:bg-gray-700 rounded text-xs">F2</kbd></div>
+              <div class="flex justify-between"><span>Customer</span><kbd
+                  class="px-1.5 bg-white dark:bg-gray-700 rounded text-xs">F3</kbd></div>
+              <div class="flex justify-between"><span>Payment</span><kbd
+                  class="px-1.5 bg-white dark:bg-gray-700 rounded text-xs">⌘P</kbd></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CUSTOMER MODAL ============ -->
+    <UModal v-model:open="showCustomerModal">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Customer Lookup</h3>
+            <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" @click="showCustomerModal = false" />
+          </div>
+          <UInput v-model="customerSearchQuery" icon="i-heroicons-magnifying-glass" placeholder="Search customers..."
+            size="lg" autofocus class="mb-4" />
+          <div class="max-h-64 overflow-y-auto space-y-2">
+            <div v-for="customer in filteredCustomers" :key="customer.id"
+              class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+              @click="selectCustomer(customer)">
+              <div
+                class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold">
+                {{ (customer.name || 'C').slice(0, 2).toUpperCase() }}
+              </div>
+              <div class="flex-1">
+                <p class="font-medium text-gray-900 dark:text-white">{{ customer.name || 'Customer' }}</p>
+                <p class="text-sm text-gray-500">{{ customer.phone || customer.email }}</p>
+              </div>
+              <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700">{{ customer.tier }}</span>
+            </div>
+            <div v-if="filteredCustomers.length === 0" class="text-center py-8 text-gray-500">No customers found</div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-200 dark:border-gray-700 flex gap-3">
+            <UButton variant="outline" class="flex-1" @click="showCustomerModal = false">Cancel</UButton>
+            <UButton color="primary" class="flex-1" icon="i-heroicons-plus">New Customer</UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ============ PRODUCT SELECTION MODAL ============ -->
+    <UModal v-model:open="showProductModal" :ui="{ width: 'sm:max-w-3xl' }">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Select Products</h3>
+            <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" @click="showProductModal = false" />
+          </div>
+          <UInput v-model="productSearchQuery" icon="i-heroicons-magnifying-glass" placeholder="Search products..."
+            size="lg" autofocus class="mb-4" />
+
+          <!-- Product List -->
+          <div
+            class="max-h-96 overflow-y-auto border border-slate-200 dark:border-gray-700 rounded-lg divide-y divide-slate-200 dark:divide-gray-700">
+            <div v-for="product in filteredProducts" :key="product.id"
+              class="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+              :class="{ 'bg-primary-50 dark:bg-primary-900/20': selectedProductsInModal.has(product.id) }"
+              @click="toggleProductSelection(product.id)">
+
+              <UCheckbox :model-value="selectedProductsInModal.has(product.id)" @click.stop />
+
+              <div
+                class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                <img v-if="product.image" :src="product.image" class="w-full h-full object-cover" />
+                <span v-else>📦</span>
+              </div>
+
+              <div class="flex-1">
+                <p class="font-medium text-gray-900 dark:text-white">{{ product.name }}</p>
+                <p class="text-sm text-gray-500">SKU: {{ product.sku }}</p>
+              </div>
+
+              <div class="text-right">
+                <p class="font-semibold text-primary-600">{{ formatCurrency(product.price, 'LAK') }}</p>
+                <p class="text-xs text-gray-400">{{ product.stock }} in stock</p>
+              </div>
+
+              <!-- Quantity Input (when selected) -->
+              <div v-if="selectedProductsInModal.has(product.id)" class="flex items-center gap-2" @click.stop>
+                <UInput type="number" :model-value="productQuantities[product.id] ?? 1" :min="1" :max="product.stock"
+                  class="w-20" size="sm"
+                  @update:model-value="(val) => updateProductQuantityInModal(product.id, Number(val) || 1)" />
               </div>
             </div>
+            <div v-if="filteredProducts.length === 0" class="p-8 text-center text-gray-500">No products found</div>
+          </div>
 
-            <!-- QR Code Payment -->
-            <div v-if="selectedPaymentMethod === 'qr_static'" class="text-center py-4">
-              <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                <Icon name="i-heroicons-qr-code" class="w-16 h-16 text-primary-500 mx-auto mb-4" />
-                <p class="text-gray-600 dark:text-gray-400 mb-2">{{ t('pos.scanQRCode') }}</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(total) }}</p>
+          <!-- Footer -->
+          <div class="mt-4 pt-4 border-t border-slate-200 dark:border-gray-700 flex items-center justify-between">
+            <span class="text-sm text-gray-500">{{ selectedProductsInModal.size }} products selected</span>
+            <div class="flex gap-3">
+              <UButton variant="outline" @click="showProductModal = false">Cancel</UButton>
+              <UButton color="primary" :disabled="selectedProductsInModal.size === 0"
+                @click="addSelectedProductsToCart">
+                Add to Order
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ============ SHIPPING MODAL ============ -->
+    <UModal v-model:open="showShippingModal" :ui="{ width: 'sm:max-w-lg' }">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Delivery Information</h3>
+            <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" @click="showShippingModal = false" />
+          </div>
+
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <UFormField label="Sender Name">
+                <UInput v-model="shippingInfo.senderName" placeholder="Your name" />
+              </UFormField>
+              <UFormField label="Sender Phone">
+                <UInput v-model="shippingInfo.senderPhone" placeholder="Phone" />
+              </UFormField>
+            </div>
+            <div class="border-t border-slate-200 dark:border-gray-700 pt-4">
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Recipient</p>
+              <div class="grid grid-cols-2 gap-4">
+                <UFormField label="Recipient Name">
+                  <UInput v-model="shippingInfo.recipientName" placeholder="Recipient name" />
+                </UFormField>
+                <UFormField label="Recipient Phone">
+                  <UInput v-model="shippingInfo.recipientPhone" placeholder="Phone" />
+                </UFormField>
               </div>
             </div>
-
-            <!-- Order Notes -->
-            <UFormField :label="t('orders.notes')">
-              <UTextarea
-                v-model="orderNotes"
-                :placeholder="t('orders.notesPlaceholder')"
-                :rows="2"
-              />
+            <UFormField label="Delivery Address">
+              <UTextarea v-model="shippingInfo.address" placeholder="Full address" :rows="2" />
+            </UFormField>
+            <div class="grid grid-cols-2 gap-4">
+              <UFormField label="City">
+                <UInput v-model="shippingInfo.city" placeholder="City" />
+              </UFormField>
+              <UFormField label="Postal Code">
+                <UInput v-model="shippingInfo.postalCode" placeholder="Postal code" />
+              </UFormField>
+            </div>
+            <UFormField label="Delivery Notes">
+              <UTextarea v-model="shippingInfo.deliveryNotes" placeholder="Special instructions..." :rows="2" />
             </UFormField>
           </div>
 
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton
-                color="gray"
-                variant="outline"
-                :label="t('common.cancel')"
-                @click="showPaymentModal = false"
-              />
-              <UButton
-                color="primary"
-                :loading="processing"
-                :label="processing ? t('pos.processing') : t('pos.confirmPayment')"
-                @click="processOrder"
-              />
-            </div>
-          </template>
-        </UCard>
+          <div class="mt-6 flex gap-3">
+            <UButton variant="outline" class="flex-1" @click="showShippingModal = false">Cancel</UButton>
+            <UButton color="primary" class="flex-1" @click="showShippingModal = false">Save</UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ============ PAYMENT MODAL ============ -->
+    <UModal v-model:open="showPaymentModal" :ui="{ width: 'sm:max-w-md' }">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Record Payment</h3>
+            <UButton icon="i-heroicons-x-mark" variant="ghost" @click="showPaymentModal = false" />
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6 text-center">
+            <p class="text-sm text-gray-500 mb-1">Amount Due</p>
+            <p class="text-3xl font-bold text-primary-600">{{ formatCurrency(total, 'LAK') }}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-6">
+            <button v-for="method in paymentMethods" :key="method.value"
+              class="p-3 rounded-lg border text-center transition-all"
+              :class="selectedPaymentMethod === method.value ? 'border-primary-500 bg-primary-50' : 'border-gray-200'"
+              @click="selectedPaymentMethod = method.value as PaymentMethod">
+              <span class="text-2xl">{{ method.emoji }}</span>
+              <p class="text-sm mt-1">{{ method.label }}</p>
+            </button>
+          </div>
+          <div class="flex gap-3">
+            <UButton variant="outline" class="flex-1" @click="showPaymentModal = false">Cancel</UButton>
+            <UButton color="green" class="flex-1" :loading="processing" @click="processOrder">Confirm Payment</UButton>
+          </div>
+        </div>
       </template>
     </UModal>
   </div>

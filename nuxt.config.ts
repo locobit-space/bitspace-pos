@@ -145,7 +145,7 @@ export default defineNuxtConfig({
 
   icon: {
     // Use local server bundle for better performance
-    serverBundle: 'local',
+    serverBundle: "local",
     // Pre-bundle icons used in the app for faster loading
     clientBundle: {
       // Only include icon collections you actually use
@@ -156,7 +156,7 @@ export default defineNuxtConfig({
     // Customize icon rendering
     customCollections: [],
     // Provider settings
-    provider: 'iconify',
+    provider: "iconify",
   },
 
   i18n: {
