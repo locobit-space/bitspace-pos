@@ -25,6 +25,7 @@ onMounted(async () => {
     productsStore.init(),
     customersStore.init(),
   ]);
+  loadTaxSettings(); // Load tax settings from localStorage like POS
   isLoading.value = false;
 });
 
@@ -144,22 +145,128 @@ const addSelectedProductsToCart = () => {
 const cart = ref<CartItem[]>([]);
 const orderNotes = ref('');
 const selectedPaymentMethod = ref<PaymentMethod>('cash');
-const taxRate = 0.10;
 const discountAmount = ref(0);
 const discountType = ref<'fixed' | 'percent'>('fixed');
 const deliveryFee = ref(0);
+
+// Tax settings (loaded from localStorage like POS)
+const taxEnabled = ref(false);
+const taxRatePercent = ref(10);
+const taxInclusive = ref(false);
+
+// Tip settings
+const tipPercent = ref(0);
+const tipOptions = [
+  { label: 'No Tip', value: 0 },
+  { label: '5%', value: 5 },
+  { label: '10%', value: 10 },
+  { label: '15%', value: 15 },
+  { label: '20%', value: 20 },
+];
+
+// Coupon state
+const appliedCoupon = ref<{ code: string; discount: number } | null>(null);
+
+// KiotViet-style: Barcode scan & paid amount
+const barcodeInput = ref('');
+const paidAmount = ref(0);
+
+// Load tax settings from localStorage (same as POS)
+const loadTaxSettings = () => {
+  try {
+    const stored = localStorage.getItem('pos_tax_settings');
+    if (stored) {
+      const settings = JSON.parse(stored);
+      taxEnabled.value = settings.enabled ?? false;
+      taxRatePercent.value = settings.rate ?? 10;
+      taxInclusive.value = settings.inclusive ?? false;
+    }
+  } catch (e) {
+    console.error('Failed to load tax settings:', e);
+  }
+};
 
 // Cart calculations
 const cartItemCount = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0));
 const subtotal = computed(() => cart.value.reduce((sum, item) => sum + item.total, 0));
 const discountValue = computed(() => {
+  let discount = 0;
   if (discountType.value === 'percent') {
-    return subtotal.value * (discountAmount.value / 100);
+    discount = subtotal.value * (discountAmount.value / 100);
+  } else {
+    discount = discountAmount.value;
   }
-  return discountAmount.value;
+  // Add coupon discount
+  if (appliedCoupon.value) {
+    discount += appliedCoupon.value.discount;
+  }
+  return discount;
 });
-const tax = computed(() => (subtotal.value - discountValue.value) * taxRate);
-const total = computed(() => subtotal.value - discountValue.value + tax.value + deliveryFee.value);
+const tipAmount = computed(() => subtotal.value * (tipPercent.value / 100));
+const taxAmount = computed(() => {
+  if (!taxEnabled.value) return 0;
+  const taxableAmount = subtotal.value - discountValue.value;
+  if (taxInclusive.value) {
+    return Math.round(taxableAmount - taxableAmount / (1 + taxRatePercent.value / 100));
+  }
+  return Math.round(taxableAmount * (taxRatePercent.value / 100));
+});
+const total = computed(() => {
+  const base = subtotal.value - discountValue.value + tipAmount.value + deliveryFee.value;
+  if (taxInclusive.value) return base;
+  return base + taxAmount.value;
+});
+const change = computed(() => Math.max(0, paidAmount.value - total.value));
+
+// Barcode/SKU quick add handler
+const handleBarcodeInput = () => {
+  if (!barcodeInput.value.trim()) return;
+  const query = barcodeInput.value.trim().toLowerCase();
+  const product = products.value.find(
+    p => p.sku?.toLowerCase() === query || p.barcode?.toLowerCase() === query || p.name.toLowerCase() === query
+  );
+  if (product) {
+    addToCartWithQty(product, 1);
+    toast.add({ title: 'Added', description: product.name, color: 'green' });
+  } else {
+    toast.add({ title: 'Not Found', description: `No product with SKU/barcode: ${barcodeInput.value}`, color: 'red' });
+  }
+  barcodeInput.value = '';
+};
+
+// Coupon handler
+const couponCodeInput = ref('');
+const sampleCoupons: Record<string, number> = {
+  'SAVE10': 10000,
+  'SAVE20': 20000,
+  'WELCOME': 15000,
+  'VIP50': 50000,
+  '10OFF': subtotal.value * 0.10, // 10% off
+};
+
+const validateAndApplyCoupon = () => {
+  const code = couponCodeInput.value.trim().toUpperCase();
+  if (!code) return;
+
+  // Check if coupon exists
+  if (sampleCoupons[code] !== undefined) {
+    const discountAmt = code === '10OFF' ? Math.round(subtotal.value * 0.10) : sampleCoupons[code];
+    appliedCoupon.value = { code, discount: discountAmt };
+    toast.add({ title: 'Coupon Applied!', description: `${code} - ${formatCurrency(discountAmt, 'LAK')} off`, color: 'green' });
+    couponCodeInput.value = '';
+  } else {
+    toast.add({ title: 'Invalid Coupon', description: `Coupon "${code}" not found`, color: 'red' });
+  }
+};
+
+const applyCoupon = (code: string, discountAmt: number) => {
+  appliedCoupon.value = { code, discount: discountAmt };
+  toast.add({ title: 'Coupon Applied', description: `${code} - ${formatCurrency(discountAmt, 'LAK')} off`, color: 'green' });
+};
+const removeCoupon = () => {
+  appliedCoupon.value = null;
+  couponCodeInput.value = '';
+};
 
 // Cart actions
 const addToCartWithQty = (product: Product, qty: number) => {
@@ -263,7 +370,7 @@ const processOrder = async () => {
       date: new Date().toISOString(),
       total: total.value,
       subtotal: subtotal.value,
-      tax: tax.value,
+      tax: taxAmount.value,
       discount: discountValue.value,
       currency: 'LAK',
       status: orderStatus.value === 'draft' ? 'pending' : 'processing',
@@ -465,11 +572,19 @@ onMounted(() => {
 
           <!-- Product Items Section -->
           <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-              <h3 class="font-semibold text-gray-900 dark:text-white">Product Items ({{ cart.length }})</h3>
-              <UButton icon="i-heroicons-plus" variant="soft" color="primary" @click="showProductModal = true">
-                Add Products (F2)
-              </UButton>
+            <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+              <!-- KiotViet-style: Barcode scan + quick add -->
+              <div class="flex items-center gap-3 mb-3">
+                <UInput v-model="barcodeInput" icon="i-heroicons-qr-code" placeholder="Scan barcode or enter SKU..."
+                  size="lg" class="flex-1" @keyup.enter="handleBarcodeInput" />
+                <UButton icon="i-heroicons-plus" color="primary" size="lg" @click="showProductModal = true">
+                  Add (F2)
+                </UButton>
+              </div>
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900 dark:text-white">Product Items ({{ cart.length }})</h3>
+                <span class="text-sm text-gray-500">{{cart.reduce((s, i) => s + i.quantity, 0)}} items total</span>
+              </div>
             </div>
 
             <!-- Empty State -->
@@ -527,7 +642,8 @@ onMounted(() => {
             </table>
 
             <!-- Order Totals -->
-            <div v-if="cart.length > 0" class="border-t p-5 bg-gray-50 dark:bg-gray-800/30">
+            <div v-if="cart.length > 0"
+              class="border-t p-5 bg-gray-50 dark:bg-gray-800/30 border-slate-200 dark:border-gray-700">
               <div class="max-w-xs ml-auto space-y-2 text-sm">
                 <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>{{
                   formatCurrency(subtotal, 'LAK') }}</span></div>
@@ -554,12 +670,38 @@ onMounted(() => {
                     </div>
                   </div>
                 </div>
-                <div v-if="discountValue > 0" class="flex justify-between text-green-600"><span>Discount
-                    Applied</span><span>-{{ formatCurrency(discountValue, 'LAK') }}</span></div>
-                <div class="flex justify-between"><span class="text-gray-500">Tax (10%)</span><span>{{
-                  formatCurrency(tax, 'LAK') }}</span></div>
-                <div class="flex justify-between text-lg font-bold pt-2 border-t"><span>Total</span><span
-                    class="text-primary-600">{{ formatCurrency(total, 'LAK') }}</span></div>
+                <!-- Coupon Code Input -->
+                <div v-if="!appliedCoupon" class="flex items-center gap-2">
+                  <UInput v-model="couponCodeInput" icon="i-heroicons-ticket" placeholder="Enter coupon code..."
+                    size="sm" class="flex-1" @keyup.enter="validateAndApplyCoupon" />
+                  <UButton size="sm" color="primary" variant="soft" :disabled="!couponCodeInput.trim()"
+                    @click="validateAndApplyCoupon">
+                    Apply
+                  </UButton>
+                </div>
+                <div v-if="discountValue > 0 && !appliedCoupon" class="flex justify-between text-green-600">
+                  <span>Discount
+                    Applied</span><span>-{{ formatCurrency(discountValue, 'LAK') }}</span>
+                </div>
+                <div v-if="appliedCoupon" class="flex justify-between text-purple-600">
+                  <span class="flex items-center gap-1">
+                    <UIcon name="i-heroicons-ticket" class="w-3 h-3" />
+                    Coupon: {{ appliedCoupon.code }}
+                    <button @click="removeCoupon" class="text-xs text-red-500 ml-1">×</button>
+                  </span>
+                  <span>-{{ formatCurrency(appliedCoupon.discount, 'LAK') }}</span>
+                </div>
+                <div v-if="tipAmount > 0" class="flex justify-between text-blue-600">
+                  <span>Tip ({{ tipPercent }}%)</span>
+                  <span>+{{ formatCurrency(tipAmount, 'LAK') }}</span>
+                </div>
+                <div v-if="taxEnabled && taxAmount > 0" class="flex justify-between">
+                  <span class="text-gray-500">Tax ({{ taxRatePercent }}%{{ taxInclusive ? ' incl.' : '' }})</span>
+                  <span>{{ formatCurrency(taxAmount, 'LAK') }}</span>
+                </div>
+                <div class="flex justify-between text-lg font-bold pt-2 border-slate-200 dark:border-gray-700 border-t">
+                  <span>Total</span><span class="text-primary-600">{{ formatCurrency(total, 'LAK') }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -588,10 +730,25 @@ onMounted(() => {
                   <span>{{ method.emoji }}</span><span>{{ method.label }}</span>
                 </button>
               </div>
-              <div class="pt-3 border-t dark:border-gray-700 border-slate-200 space-y-2 text-sm">
-                <div class="flex justify-between"><span class="text-gray-500">Paid</span><span>₭0</span></div>
-                <div class="flex justify-between font-semibold"><span>Outstanding</span><span>{{ formatCurrency(total,
-                  'LAK') }}</span></div>
+              <div class="pt-3 border-t dark:border-gray-700 border-slate-200 space-y-3 text-sm">
+                <!-- KiotViet-style: Paid amount input -->
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">Amount Paid</span>
+                  <UInput v-model.number="paidAmount" type="number" :min="0" class="w-32 text-right" size="sm"
+                    placeholder="0" />
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Outstanding</span>
+                  <span class="font-semibold" :class="paidAmount >= total ? 'text-green-600' : 'text-red-500'">
+                    {{ formatCurrency(Math.max(0, total - paidAmount), 'LAK') }}
+                  </span>
+                </div>
+                <div v-if="paidAmount > total"
+                  class="flex justify-between bg-green-50 dark:bg-green-900/20 -mx-4 px-4 py-2 rounded">
+                  <span class="text-green-700 dark:text-green-400 font-medium">Change</span>
+                  <span class="text-green-700 dark:text-green-400 font-bold text-lg">{{ formatCurrency(change, 'LAK')
+                  }}</span>
+                </div>
               </div>
               <UButton block color="green" size="lg" :disabled="cart.length === 0" @click="showPaymentModal = true">
                 Record Payment
@@ -712,7 +869,7 @@ onMounted(() => {
     </UModal>
 
     <!-- ============ SHIPPING MODAL ============ -->
-    <UModal v-model:open="showShippingModal" :ui="{ width: 'sm:max-w-lg' }">
+    <UModal v-model:open="showShippingModal">
       <template #content>
         <div class="p-6">
           <div class="flex items-center justify-between mb-4">
