@@ -14,7 +14,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 // Status badge color
-function getStatusColor(status: string): string {
+function getStatusColor(status: string): "success" | "neutral" | "warning" | "error" {
     switch (status) {
         case "active": return "success";
         case "inactive": return "neutral";

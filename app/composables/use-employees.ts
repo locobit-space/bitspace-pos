@@ -106,8 +106,8 @@ export function useEmployeesStore() {
       const records = await db.employees.toArray();
       return records.map((r: EmployeeRecord) => ({
         ...r,
-        synced: undefined, // Remove internal field
-      }));
+        synced: undefined,
+      })) as unknown as Employee[];
     } catch (e) {
       console.error("Failed to load employees:", e);
       return [];

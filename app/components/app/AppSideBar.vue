@@ -2,20 +2,16 @@
   <div class="flex flex-col h-full bg-white dark:bg-gray-900 p-2">
     <!-- Navigation Items -->
     <ul
-      class="p-1 flex-1 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent"
-    >
+      class="p-1 flex-1 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
       <li v-for="(item, index) in items" :key="index">
-        <NuxtLinkLocale
-          :to="item.to"
+        <NuxtLinkLocale :to="item.to"
           class="flex p-2 transition-all justify-center size-12 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 items-center group relative"
           active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
-          @click="$emit('navigate')"
-        >
+          @click="$emit('navigate')">
           <Icon :name="item.icon" size="24" />
           <!-- Tooltip -->
           <span
-            class="absolute left-full ml-2 px-2 py-1 bg-primary-600 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50"
-          >
+            class="absolute left-full ml-2 px-2 py-1 bg-primary-600 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
             {{ item.label }}
           </span>
         </NuxtLinkLocale>
@@ -69,61 +65,61 @@ const allItems = computed(() => [
     feature: "ingredients",
   },
   {
-    label: t("navigation.customers"),
+    label: t("navigation.customers", "Customers"),
     to: "/customers",
     icon: "i-heroicons-users",
     feature: "customers",
   },
   {
-    label: t("memberships.title") || "Memberships",
+    label: t("memberships.title", "Memberships"),
     to: "/memberships",
     icon: "i-heroicons-credit-card",
     feature: "memberships",
   },
   {
-    label: t("navigation.inventory"),
+    label: t("navigation.inventory", "Inventory"),
     to: "/inventory",
     icon: "i-heroicons-archive-box",
     feature: "inventory",
   },
   {
-    label: t("navigation.kitchen"),
+    label: t("navigation.kitchen", "Kitchen"),
     to: "/kitchen",
     icon: "i-heroicons-fire",
     feature: "kitchen",
   },
   {
-    label: t("navigation.reports"),
+    label: t("navigation.reports", "Reports"),
     to: "/reports",
     icon: "i-heroicons-chart-bar",
     feature: "reports",
   },
   {
-    label: t("navigation.accounting"),
+    label: t("navigation.accounting", "Accounting"),
     to: "/accounting",
     icon: "i-heroicons-calculator",
     feature: "accounting",
   },
   {
-    label: t("navigation.invoicing") || "Invoicing",
+    label: t("navigation.invoicing", "Invoicing"),
     to: "/invoicing",
     icon: "i-heroicons-document-text",
     feature: "invoicing",
   },
   {
-    label: t("navigation.delivery") || "Delivery",
+    label: t("navigation.delivery", "Delivery"),
     to: "/delivery",
     icon: "i-heroicons-truck",
     feature: "delivery",
   },
   {
-    label: t("navigation.contracts") || "Contracts",
+    label: t("navigation.contracts", "Contracts"),
     to: "/contracts",
     icon: "i-heroicons-clipboard-document-check",
     feature: "contracts",
   },
   {
-    label: t("navigation.settings"),
+    label: t("navigation.settings", "Settings"),
     to: "/settings",
     icon: "i-heroicons-cog-6-tooth",
     feature: "settings",
@@ -147,10 +143,14 @@ const items = computed(() => {
 <style scoped>
 /* Hide scrollbar but keep scroll functionality */
 ul {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 ul::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 </style>

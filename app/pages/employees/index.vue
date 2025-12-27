@@ -41,7 +41,7 @@ const employmentTypeLabels: Record<EmploymentType, string> = {
 };
 
 // Status badge color
-function getStatusColor(status: EmployeeStatus): string {
+function getStatusColor(status: EmployeeStatus): "success" | "neutral" | "warning" | "error" {
     switch (status) {
         case "active": return "success";
         case "inactive": return "neutral";
@@ -118,14 +118,14 @@ const departmentOptions = computed(() => [
                         value-key="value" label-key="label" class="w-40" :placeholder="t('employees.department')" />
 
                     <!-- View Toggle -->
-                    <UButtonGroup>
+                    <div class="flex items-center -space-x-px">
                         <UButton :color="viewMode === 'grid' ? 'primary' : 'neutral'"
                             :variant="viewMode === 'grid' ? 'solid' : 'ghost'" icon="i-heroicons-squares-2x2"
-                            @click="viewMode = 'grid'" />
+                            class="rounded-r-none focus:z-10" @click="viewMode = 'grid'" />
                         <UButton :color="viewMode === 'table' ? 'primary' : 'neutral'"
                             :variant="viewMode === 'table' ? 'solid' : 'ghost'" icon="i-heroicons-list-bullet"
-                            @click="viewMode = 'table'" />
-                    </UButtonGroup>
+                            class="rounded-l-none focus:z-10" @click="viewMode = 'table'" />
+                    </div>
                 </div>
             </div>
         </div>

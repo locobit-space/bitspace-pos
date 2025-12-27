@@ -2,7 +2,15 @@
 // 🏪 Shop & Branch Configuration Management
 // Stores shop settings in Nostr (kind: 30078)
 
-import type { Branch, StoreSettings, GeneralSettings, LightningSettings, SecuritySettings, ShopVisibility, ShopType } from '~/types';
+import type {
+  Branch,
+  StoreSettings,
+  GeneralSettings,
+  LightningSettings,
+  SecuritySettings,
+  ShopVisibility,
+  ShopType,
+} from "~/types";
 
 /**
  * Feature flags for enabling/disabling shop modules
@@ -26,6 +34,7 @@ export interface EnabledFeatures {
   delivery: boolean;
   loyalty: boolean;
   contracts: boolean;
+  employees: boolean;
 }
 
 /**
@@ -49,22 +58,23 @@ export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
     delivery: false,
     loyalty: false,
     contracts: false,
+    employees: false,
   };
 
   // Customize based on shop type
   switch (shopType) {
-    case 'restaurant':
-    case 'cafe':
+    case "restaurant":
+    case "cafe":
       return { ...base, kitchen: true, recipes: true, ingredients: true };
-    case 'gym':
+    case "gym":
       return { ...base, memberships: true, inventory: false, kitchen: false };
-    case 'karaoke':
+    case "karaoke":
       return { ...base, kitchen: false, loyalty: true };
-    case 'garage':
+    case "garage":
       return { ...base, invoicing: true, inventory: true };
-    case 'service':
+    case "service":
       return { ...base, invoicing: true, inventory: false };
-    case 'enterprise':
+    case "enterprise":
       return {
         ...base,
         customers: true,
@@ -125,30 +135,34 @@ export function useShop() {
   // Check if shop is configured
   const hasShopConfig = computed(() => !!shopConfig.value?.name);
   const hasBranches = computed(() => productsStore.branches.value.length > 0);
-  const isSetupComplete = computed(() => hasShopConfig.value && hasBranches.value);
+  const isSetupComplete = computed(
+    () => hasShopConfig.value && hasBranches.value
+  );
 
   // Get all branches from products store
   const branches = computed(() => productsStore.branches.value);
 
   // Convert StoreSettings to ShopConfig
   function storeSettingsToShopConfig(settings: StoreSettings): ShopConfig {
-    const shopType: ShopType = 'other';
+    const shopType: ShopType = "other";
     return {
-      name: settings.general?.storeName || '',
+      name: settings.general?.storeName || "",
       address: settings.general?.storeAddress,
       phone: settings.general?.storePhone,
       email: settings.general?.storeEmail,
       logo: settings.general?.storeLogo,
-      currency: settings.general?.defaultCurrency || 'LAK',
-      timezone: settings.general?.timezone || 'Asia/Vientiane',
-      language: settings.general?.language || 'en-US',
+      currency: settings.general?.defaultCurrency || "LAK",
+      timezone: settings.general?.timezone || "Asia/Vientiane",
+      language: settings.general?.language || "en-US",
       taxRate: settings.general?.taxRate || 0,
       tipEnabled: settings.general?.tipEnabled || false,
       receiptFooter: settings.general?.receiptFooter,
       // Shop type & visibility defaults
-      visibility: 'private',
+      visibility: "private",
       shopType,
-      enabledFeatures: (settings.general?.enabledFeatures as unknown as EnabledFeatures) || getDefaultFeatures(shopType),
+      enabledFeatures:
+        (settings.general?.enabledFeatures as unknown as EnabledFeatures) ||
+        getDefaultFeatures(shopType),
     };
   }
 
@@ -160,7 +174,12 @@ export function useShop() {
       storePhone: config.phone,
       storeEmail: config.email,
       storeLogo: config.logo,
-      defaultCurrency: config.currency as 'LAK' | 'USD' | 'THB' | 'BTC' | 'SATS',
+      defaultCurrency: config.currency as
+        | "LAK"
+        | "USD"
+        | "THB"
+        | "BTC"
+        | "SATS",
       timezone: config.timezone,
       language: config.language,
       taxRate: config.taxRate,
@@ -174,11 +193,11 @@ export function useShop() {
 
   // Default lightning settings
   const defaultLightningSettings: LightningSettings = {
-    provider: 'lnbits',
+    provider: "lnbits",
     isConfigured: false,
   };
 
-  // Default security settings  
+  // Default security settings
   const defaultSecuritySettings: SecuritySettings = {
     dataEncryption: true,
     autoLockTimeout: 30,
@@ -196,23 +215,28 @@ export function useShop() {
     try {
       // Try to get from Nostr (STORE_SETTINGS kind)
       const settings = await nostrData.getSettings();
-      
+
       if (settings) {
         shopConfig.value = storeSettingsToShopConfig(settings);
         isConfigured.value = true;
-        
+
         // Set current branch from localStorage or first available
         if (branches.value.length > 0) {
-          const storedBranchId = import.meta.client ? localStorage.getItem('currentBranchId') : null;
-          currentBranch.value = branches.value.find(b => b.id === storedBranchId) || branches.value[0] || null;
+          const storedBranchId = import.meta.client
+            ? localStorage.getItem("currentBranchId")
+            : null;
+          currentBranch.value =
+            branches.value.find((b) => b.id === storedBranchId) ||
+            branches.value[0] ||
+            null;
         }
-        
+
         return shopConfig.value;
       }
 
       // Check localStorage fallback
       if (import.meta.client) {
-        const stored = localStorage.getItem('shopConfig');
+        const stored = localStorage.getItem("shopConfig");
         if (stored) {
           shopConfig.value = JSON.parse(stored);
           isConfigured.value = true;
@@ -236,25 +260,33 @@ export function useShop() {
     error.value = null;
 
     try {
-      const shopType = config.shopType ?? shopConfig.value?.shopType ?? 'other';
+      const shopType = config.shopType ?? shopConfig.value?.shopType ?? "other";
       const newConfig: ShopConfig = {
-        name: config.name || shopConfig.value?.name || '',
+        name: config.name || shopConfig.value?.name || "",
         address: config.address ?? shopConfig.value?.address,
         phone: config.phone ?? shopConfig.value?.phone,
         email: config.email ?? shopConfig.value?.email,
         logo: config.logo ?? shopConfig.value?.logo,
-        currency: config.currency || shopConfig.value?.currency || 'LAK',
-        timezone: config.timezone || shopConfig.value?.timezone || 'Asia/Vientiane',
-        language: config.language || shopConfig.value?.language || 'en-US',
-        defaultBranchId: config.defaultBranchId ?? shopConfig.value?.defaultBranchId,
+        currency: config.currency || shopConfig.value?.currency || "LAK",
+        timezone:
+          config.timezone || shopConfig.value?.timezone || "Asia/Vientiane",
+        language: config.language || shopConfig.value?.language || "en-US",
+        defaultBranchId:
+          config.defaultBranchId ?? shopConfig.value?.defaultBranchId,
         taxRate: config.taxRate ?? shopConfig.value?.taxRate ?? 0,
         tipEnabled: config.tipEnabled ?? shopConfig.value?.tipEnabled ?? false,
         receiptFooter: config.receiptFooter ?? shopConfig.value?.receiptFooter,
         // Shop type & visibility
-        visibility: config.visibility ?? shopConfig.value?.visibility ?? 'private',
+        visibility:
+          config.visibility ?? shopConfig.value?.visibility ?? "private",
         shopType,
-        enabledFeatures: config.enabledFeatures ?? shopConfig.value?.enabledFeatures ?? getDefaultFeatures(shopType),
-        marketplaceDescription: config.marketplaceDescription ?? shopConfig.value?.marketplaceDescription,
+        enabledFeatures:
+          config.enabledFeatures ??
+          shopConfig.value?.enabledFeatures ??
+          getDefaultFeatures(shopType),
+        marketplaceDescription:
+          config.marketplaceDescription ??
+          shopConfig.value?.marketplaceDescription,
         socialLinks: config.socialLinks ?? shopConfig.value?.socialLinks,
       };
 
@@ -272,7 +304,7 @@ export function useShop() {
 
       // Also save to localStorage as fallback
       if (import.meta.client) {
-        localStorage.setItem('shopConfig', JSON.stringify(newConfig));
+        localStorage.setItem("shopConfig", JSON.stringify(newConfig));
       }
 
       shopConfig.value = newConfig;
@@ -289,16 +321,18 @@ export function useShop() {
   }
 
   // Create first branch
-  async function createFirstBranch(branch: Omit<Branch, 'id'>): Promise<Branch | null> {
+  async function createFirstBranch(
+    branch: Omit<Branch, "id">
+  ): Promise<Branch | null> {
     try {
       const newBranch = await productsStore.addBranch(branch);
       currentBranch.value = newBranch;
-      
+
       // Update shop config with default branch
       if (shopConfig.value) {
         await saveShopConfig({ defaultBranchId: newBranch.id });
       }
-      
+
       return newBranch;
     } catch (e) {
       error.value = `Failed to create branch: ${e}`;
@@ -308,11 +342,11 @@ export function useShop() {
 
   // Set current branch
   function setCurrentBranch(branchId: string): void {
-    const branch = branches.value.find(b => b.id === branchId);
+    const branch = branches.value.find((b) => b.id === branchId);
     if (branch) {
       currentBranch.value = branch;
       if (import.meta.client) {
-        localStorage.setItem('currentBranchId', branchId);
+        localStorage.setItem("currentBranchId", branchId);
       }
     }
   }
@@ -321,13 +355,13 @@ export function useShop() {
   async function init(): Promise<void> {
     // Load products store first (includes branches)
     await productsStore.init();
-    
+
     // Then load shop config
     await loadShopConfig();
 
     // Try to restore current branch from localStorage
     if (import.meta.client && !currentBranch.value) {
-      const storedBranchId = localStorage.getItem('currentBranchId');
+      const storedBranchId = localStorage.getItem("currentBranchId");
       if (storedBranchId) {
         setCurrentBranch(storedBranchId);
       } else if (branches.value.length > 0) {
