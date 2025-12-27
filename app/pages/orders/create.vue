@@ -395,6 +395,16 @@ const processOrder = async () => {
 
     const savedOrder = await ordersStore.createOrder(orderData);
 
+    // ✅ AUTO-ADJUST STOCK: Decrease stock for each item (only if product tracks stock)
+    for (const item of cart.value) {
+      // Only deduct stock if product trackStock is not explicitly false
+      // Products with trackStock=undefined or true will have stock deducted
+      // Services/digital products with trackStock=false will be skipped
+      if (item.product.trackStock !== false) {
+        await productsStore.decreaseStock(item.product.id, item.quantity);
+      }
+    }
+
     if (selectedPaymentMethod.value === 'cash' || selectedPaymentMethod.value === 'bank') {
       await ordersStore.completeOrder(savedOrder.id, selectedPaymentMethod.value);
     }
@@ -519,10 +529,10 @@ onMounted(() => {
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ selectedCustomer.name ||
                       'Customer' }}</h3>
                     <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700">{{ selectedCustomer.tier
-                    }}</span>
+                      }}</span>
                   </div>
                   <p class="text-sm text-gray-500">{{ selectedCustomer.phone || selectedCustomer.email || 'No contact'
-                  }}</p>
+                    }}</p>
                   <button class="text-sm text-primary-600 hover:underline flex items-center gap-1 mt-1"
                     @click="showCustomerModal = true">
                     <UIcon name="i-heroicons-pencil" class="w-3 h-3" /> Change Customer
@@ -747,7 +757,7 @@ onMounted(() => {
                   class="flex justify-between bg-green-50 dark:bg-green-900/20 -mx-4 px-4 py-2 rounded">
                   <span class="text-green-700 dark:text-green-400 font-medium">Change</span>
                   <span class="text-green-700 dark:text-green-400 font-bold text-lg">{{ formatCurrency(change, 'LAK')
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
               <UButton block color="green" size="lg" :disabled="cart.length === 0" @click="showPaymentModal = true">

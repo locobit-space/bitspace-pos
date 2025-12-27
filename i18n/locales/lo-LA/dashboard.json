@@ -39,6 +39,12 @@
     "newOrder": "ອໍເດີ້ໃໝ່",
     "viewReports": "ເບິ່ງລາຍງານ",
     "manageProducts": "ຈັດການສິນຄ້າ",
-    "goToSettings": "ໄປຕັ້ງຄ່າ"
+    "goToSettings": "ໄປຕັ້ງຄ່າ",
+    "greeting": {
+      "morning": "ສະບາຍດີຕອນເຊົ້າ",
+      "afternoon": "ສະບາຍດີຕອນບ່າຍ",
+      "evening": "ສະບາຍດີຕອນແລງ",
+      "night": "ສະບາຍດີຕອນຄ່ຳ"
+    }
   }
 }

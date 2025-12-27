@@ -27,7 +27,8 @@ export default defineNuxtConfig({
     manifest: {
       name: "BitSpace POS",
       short_name: "BitSpace",
-      description: "Lightning-powered Point of Sale",
+      description:
+        "Lightning-powered Point of Sale System, Business OS - Nostr",
       theme_color: "#f59e0b",
       background_color: "#111827",
       display: "standalone",

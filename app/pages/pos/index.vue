@@ -643,6 +643,16 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
     // Save order to local DB and sync to Nostr
     await ordersStore.createOrder(order);
 
+    // ✅ AUTO-ADJUST STOCK: Decrease stock for each item (only if product tracks stock)
+    for (const item of order.items || []) {
+      // Only deduct stock if product exists and trackStock is not explicitly false
+      // Products with trackStock=undefined or true will have stock deducted
+      // Services/digital products with trackStock=false will be skipped
+      if (item.productId && item.product?.trackStock !== false) {
+        await productsStore.decreaseStock(item.productId, item.quantity);
+      }
+    }
+
     // Update POS session totals
     pos.updateSessionTotals(order);
 
