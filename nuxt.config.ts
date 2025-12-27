@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   ssr: false,
 
   // Custom SPA loading splash screen
-  spaLoadingTemplate: "app/spa-loading-template.html",
+  spaLoadingTemplate: "spa-loading-template.html",
 
   future: {
     compatibilityVersion: 4,
@@ -220,6 +220,7 @@ export default defineNuxtConfig({
           "lo-LA/notifications.json",
           "lo-LA/delivery.json",
           "lo-LA/contracts.json",
+          "lo-LA/employees.json",
         ],
       },
       {
@@ -261,6 +262,7 @@ export default defineNuxtConfig({
           "en-US/notifications.json",
           "en-US/delivery.json",
           "en-US/contracts.json",
+          "en-US/employees.json",
         ],
       },
     ],

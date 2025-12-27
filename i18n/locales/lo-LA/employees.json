@@ -1,0 +1,118 @@
+{
+  "employees": {
+    "title": "ພະນັກງານ",
+    "total": "ທັງໝົດ",
+    "employee": "ພະນັກງານ",
+    "addEmployee": "ເພີ່ມພະນັກງານ",
+    "editEmployee": "ແກ້ໄຂພະນັກງານ",
+    "addFirstEmployee": "ເພີ່ມພະນັກງານທຳອິດ",
+    "searchPlaceholder": "ຄົ້ນຫາພະນັກງານ...",
+    "noEmployees": "ຍັງບໍ່ມີພະນັກງານ",
+    "noEmployeesDescription": "ເລີ່ມຕົ້ນໂດຍການເພີ່ມສະມາຊິກທີມທຳອິດຂອງທ່ານ",
+    "noPosition": "ບໍ່ມີຕຳແໜ່ງ",
+    "createSuccess": "ເພີ່ມພະນັກງານສຳເລັດແລ້ວ",
+    "updateSuccess": "ອັບເດດພະນັກງານສຳເລັດແລ້ວ",
+    "deleteSuccess": "ຢຸດການເຮັດວຽກສຳເລັດແລ້ວ",
+
+    "status": {
+      "label": "ສະຖານະ",
+      "all": "ທຸກສະຖານະ",
+      "active": "ເຮັດວຽກ",
+      "inactive": "ບໍ່ເຮັດວຽກ",
+      "on-leave": "ພັກຜ່ອນ",
+      "onLeave": "ພັກຜ່ອນ",
+      "terminated": "ຢຸດເຮັດວຽກ"
+    },
+
+    "type": {
+      "fullTime": "ເຕັມເວລາ",
+      "partTime": "ເຄິ່ງເວລາ",
+      "contract": "ສັນຍາ",
+      "intern": "ນັກສຶກສາຝຶກງານ",
+      "freelance": "ຟຣີແລນ"
+    },
+
+    "salaryType": {
+      "label": "ປະເພດເງິນເດືອນ",
+      "hourly": "ຊົ່ວໂມງ",
+      "daily": "ມື້",
+      "weekly": "ອາທິດ",
+      "monthly": "ເດືອນ"
+    },
+
+    "paymentMethod": {
+      "cash": "ເງິນສົດ",
+      "bank": "ໂອນທະນາຄານ",
+      "lightning": "ໄລທ໌ນິງ"
+    },
+
+    "gender": {
+      "label": "ເພດ",
+      "male": "ຊາຍ",
+      "female": "ຍິງ",
+      "other": "ອື່ນໆ"
+    },
+
+    "tabs": {
+      "basic": "ຂໍ້ມູນພື້ນຖານ",
+      "employment": "ການຈ້າງງານ",
+      "compensation": "ຄ່າຕອບແທນ",
+      "access": "ການເຂົ້າເຖິງ"
+    },
+
+    "firstName": "ຊື່",
+    "firstNamePlaceholder": "ປ້ອນຊື່",
+    "lastName": "ນາມສະກຸນ",
+    "lastNamePlaceholder": "ປ້ອນນາມສະກຸນ",
+    "displayName": "ຊື່ເອີ້ນ",
+    "displayNamePlaceholder": "ຊື່ຫຼິ້ນ ຫຼື ນາມແຝງ",
+    "email": "ອີເມວ",
+    "phone": "ເບີໂທ",
+    "dateOfBirth": "ວັນເດືອນປີເກີດ",
+    "nationalId": "ເລກບັດປະຈຳຕົວ",
+    "nationalIdPlaceholder": "ເລກບັດປະຈຳຕົວ",
+    "address": "ທີ່ຢູ່",
+
+    "emergencyContact": "ຕິດຕໍ່ສຸກເສີນ",
+    "contactName": "ຊື່",
+    "contactPhone": "ເບີໂທ",
+    "contactRelation": "ຄວາມສຳພັນ",
+
+    "department": "ພະແນກ",
+    "departmentPlaceholder": "ເຊັ່ນ: ຂາຍ, ເຮືອນຄົວ",
+    "position": "ຕຳແໜ່ງ",
+    "positionPlaceholder": "ເຊັ່ນ: ຜູ້ຈັດການ, ພະນັກງານຂາຍ",
+    "employmentType": "ປະເພດການຈ້າງ",
+    "hireDate": "ວັນທີເຂົ້າເຮັດວຽກ",
+    "notes": "ໝາຍເຫດ",
+    "notesPlaceholder": "ໝາຍເຫດເພີ່ມເຕີມ...",
+
+    "salary": "ເງິນເດືອນ",
+    "baseSalary": "ເງິນເດືອນພື້ນຖານ",
+    "currency": "ສະກຸນເງິນ",
+    "overtimeRate": "ອັດຕາລ່ວງເວລາ",
+    "paymentInfo": "ຂໍ້ມູນການຈ່າຍເງິນ",
+    "preferredPayment": "ວິທີທີ່ຕ້ອງການ",
+    "bankName": "ຊື່ທະນາຄານ",
+    "bankAccount": "ເລກບັນຊີ",
+    "lightningAddress": "ທີ່ຢູ່ Lightning",
+
+    "commission": "ຄ່ານາຍໜ້າ",
+    "commissionRate": "ອັດຕາຄ່ານາຍໜ້າ",
+
+    "leaveBalances": "ວັນພັກທີ່ເຫຼືອ",
+    "annualLeave": "ພັກປະຈຳປີ",
+    "sickLeave": "ພັກເຈັບປ່ວຍ",
+    "personalLeave": "ພັກສ່ວນຕົວ",
+
+    "posAccess": "ເຂົ້າເຖິງ POS",
+    "posAccessDescription": "ອະນຸຍາດໃຫ້ພະນັກງານເຂົ້າເຖິງລະບົບ POS",
+    "pin": "ລະຫັດ PIN",
+    "pinPlaceholder": "PIN 4-6 ຕົວເລກ",
+    "pinHint": "ໃຊ້ສຳລັບ clock in ແລະ ເຂົ້າເຖິງ POS",
+
+    "employmentInfo": "ຂໍ້ມູນການຈ້າງງານ",
+    "contactInfo": "ຂໍ້ມູນຕິດຕໍ່",
+    "tenure": "ໄລຍະເວລາເຮັດວຽກ"
+  }
+}

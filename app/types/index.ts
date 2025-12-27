@@ -144,6 +144,383 @@ export interface MembershipCheckIn {
 }
 
 // ============================================
+// 👥 EMPLOYEE & PAYROLL TYPES
+// Enterprise HR, Time Tracking & Payroll
+// ============================================
+
+/**
+ * Employment type classification
+ */
+export type EmploymentType =
+  | "full-time"
+  | "part-time"
+  | "contract"
+  | "intern"
+  | "freelance";
+
+/**
+ * Employee status
+ */
+export type EmployeeStatus = "active" | "inactive" | "on-leave" | "terminated";
+
+/**
+ * Salary calculation method
+ */
+export type SalaryType = "hourly" | "daily" | "weekly" | "monthly";
+
+/**
+ * Attendance status for a day
+ */
+export type AttendanceStatus =
+  | "present"
+  | "absent"
+  | "late"
+  | "leave"
+  | "holiday"
+  | "half-day";
+
+/**
+ * Leave type categories
+ */
+export type LeaveType =
+  | "annual"
+  | "sick"
+  | "personal"
+  | "maternity"
+  | "paternity"
+  | "unpaid"
+  | "other";
+
+/**
+ * Payment method for payroll
+ */
+export type EmployeePaymentMethod = "cash" | "bank" | "lightning" | "check";
+
+/**
+ * Payment status
+ */
+export type EmployeePaymentStatus =
+  | "pending"
+  | "processing"
+  | "paid"
+  | "failed"
+  | "cancelled";
+
+/**
+ * Employee profile with HR information
+ */
+export interface Employee {
+  id: string;
+
+  // Basic Info
+  firstName: string;
+  lastName: string;
+  displayName?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  dateOfBirth?: string;
+  gender?: "male" | "female" | "other";
+  nationalId?: string;
+
+  // Address
+  address?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+
+  // Emergency Contact
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+
+  // Employment Details
+  employeeCode: string;
+  department?: string;
+  position?: string;
+  employmentType: EmploymentType;
+  hireDate: string;
+  probationEndDate?: string;
+  terminationDate?: string;
+  terminationReason?: string;
+  status: EmployeeStatus;
+  branchId?: string;
+
+  // Compensation
+  salaryType: SalaryType;
+  baseSalary: number;
+  currency: string;
+  overtimeRate?: number; // Multiplier (e.g., 1.5 for time-and-a-half)
+
+  // Payment Info
+  bankName?: string;
+  bankAccount?: string;
+  lightningAddress?: string;
+  preferredPaymentMethod: EmployeePaymentMethod;
+
+  // Deductions & Benefits
+  socialSecurityNumber?: string;
+  taxId?: string;
+  insuranceNumber?: string;
+
+  // Leave Balances
+  annualLeaveBalance: number;
+  sickLeaveBalance: number;
+  personalLeaveBalance: number;
+
+  // POS Access
+  userId?: string;
+  canAccessPOS: boolean;
+  pin?: string;
+
+  // Commission Settings
+  commissionEnabled: boolean;
+  commissionRate?: number; // Percentage of sales
+
+  // Nostr Integration
+  npub?: string;
+
+  // Metadata
+  notes?: string;
+  documents?: string[]; // URLs to uploaded documents
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Daily attendance record
+ */
+export interface Attendance {
+  id: string;
+  employeeId: string;
+  employeeName?: string;
+  date: string;
+
+  // Time Records
+  clockIn?: string;
+  clockInPhoto?: string;
+  clockOut?: string;
+  clockOutPhoto?: string;
+
+  // Break Time
+  breakStart?: string;
+  breakEnd?: string;
+  breakMinutes: number;
+
+  // Calculated Hours
+  scheduledHours?: number;
+  workedHours: number;
+  overtimeHours: number;
+  lateMinutes: number;
+  earlyLeaveMinutes: number;
+
+  // Status
+  status: AttendanceStatus;
+  leaveType?: LeaveType;
+
+  // Location (if GPS tracking)
+  clockInLocation?: { lat: number; lng: number };
+  clockOutLocation?: { lat: number; lng: number };
+
+  // Metadata
+  notes?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Shift schedule assignment
+ */
+export interface Shift {
+  id: string;
+  employeeId: string;
+  employeeName?: string;
+  branchId?: string;
+
+  // Schedule
+  date: string;
+  startTime: string;
+  endTime: string;
+  breakMinutes: number;
+
+  // Details
+  role?: string;
+  color?: string;
+  isPublished: boolean;
+
+  // Swap/Cover
+  originalEmployeeId?: string; // If shift was swapped
+  swapRequestedAt?: string;
+
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Leave request
+ */
+export interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  employeeName?: string;
+
+  // Leave Details
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  reason?: string;
+
+  // Approval
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+
+  // Documents
+  attachments?: string[];
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Payroll run - batch processing for a pay period
+ */
+export interface PayrollRun {
+  id: string;
+
+  // Period
+  periodStart: string;
+  periodEnd: string;
+  periodType: "weekly" | "bi-weekly" | "monthly";
+
+  // Run Info
+  runDate: string;
+  runBy?: string;
+  status:
+    | "draft"
+    | "calculating"
+    | "review"
+    | "approved"
+    | "processing"
+    | "completed"
+    | "cancelled";
+
+  // Totals
+  employeeCount: number;
+  totalGrossPay: number;
+  totalDeductions: number;
+  totalNetPay: number;
+  totalCommissions: number;
+  totalBonuses: number;
+  currency: string;
+
+  // Payment Breakdown
+  cashPayments: number;
+  bankPayments: number;
+  lightningPayments: number;
+
+  // Metadata
+  notes?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Individual payslip for an employee
+ */
+export interface Payslip {
+  id: string;
+  payrollRunId: string;
+  employeeId: string;
+  employeeName?: string;
+  employeeCode?: string;
+
+  // Period
+  periodStart: string;
+  periodEnd: string;
+
+  // Work Summary
+  daysWorked: number;
+  hoursWorked: number;
+  overtimeHours: number;
+  leaveDays: number;
+  absentDays: number;
+
+  // Earnings
+  basePay: number;
+  overtimePay: number;
+  commission: number;
+  tips: number;
+  bonus: number;
+  allowances: number;
+  otherEarnings: number;
+  grossPay: number;
+
+  // Deductions
+  incomeTax: number;
+  socialSecurity: number;
+  healthInsurance: number;
+  loanRepayment: number;
+  advances: number;
+  otherDeductions: number;
+  totalDeductions: number;
+
+  // Net Pay
+  netPay: number;
+  currency: string;
+
+  // Payment
+  paymentMethod: EmployeePaymentMethod;
+  paymentStatus: EmployeePaymentStatus;
+  paymentReference?: string;
+  paidAt?: string;
+
+  // Lightning Payment
+  lightningInvoice?: string;
+  lightningPreimage?: string;
+
+  // Metadata
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Payroll deduction/addition template
+ */
+export interface PayrollItem {
+  id: string;
+  name: string;
+  nameLao?: string;
+  type: "earning" | "deduction";
+  category:
+    | "salary"
+    | "overtime"
+    | "commission"
+    | "bonus"
+    | "allowance"
+    | "tax"
+    | "insurance"
+    | "loan"
+    | "other";
+  calculationType: "fixed" | "percentage" | "hourly" | "per-day";
+  amount: number; // Fixed amount or percentage
+  isDefault: boolean;
+  isActive: boolean;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
 // 🧪 RECIPE & INGREDIENT TYPES
 // Cost Calculation + Stock Management
 // ============================================
@@ -1477,11 +1854,11 @@ export interface StoreSettings {
 
   // Accounting settings
   accounting?: {
-    enabled: boolean;              // ON/OFF toggle for auto journal entries
-    standard: 'global' | 'lao';    // Accounting standard
-    vatRate: number;               // VAT rate (0.10 = 10%)
-    autoPostJournals: boolean;     // Auto-post or require approval
-    fiscalYearStart: string;       // "01-01" format
+    enabled: boolean; // ON/OFF toggle for auto journal entries
+    standard: "global" | "lao"; // Accounting standard
+    vatRate: number; // VAT rate (0.10 = 10%)
+    autoPostJournals: boolean; // Auto-post or require approval
+    fiscalYearStart: string; // "01-01" format
   };
 
   updatedAt?: string;

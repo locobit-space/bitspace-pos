@@ -123,7 +123,14 @@ export interface ProductRecord {
 export interface ProductActivityLogRecord {
   id: string;
   productId: string;
-  action: 'create' | 'update' | 'delete' | 'price_change' | 'stock_adjust' | 'status_change' | 'restore';
+  action:
+    | "create"
+    | "update"
+    | "delete"
+    | "price_change"
+    | "stock_adjust"
+    | "status_change"
+    | "restore";
   userId: string;
   userName?: string;
   userRole?: string;
@@ -244,7 +251,7 @@ export interface IngredientRecord {
   maxStock: number;
   supplierId?: string;
   categoryId?: string;
-  storageType: 'ambient' | 'refrigerated' | 'frozen';
+  storageType: "ambient" | "refrigerated" | "frozen";
   isActive: boolean;
   createdAt: number;
   updatedAt: number;
@@ -283,7 +290,7 @@ export interface RecipeRecord {
   profitMargin: number;
   prepTime: number;
   cookTime: number;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   categoryId?: string;
   tagsJson?: string; // JSON of string[]
   isActive: boolean;
@@ -297,7 +304,7 @@ export interface RecipeRecord {
 export interface IngredientStockAdjustmentRecord {
   id: string;
   ingredientId: string;
-  type: 'purchase' | 'usage' | 'waste' | 'return' | 'adjustment' | 'count';
+  type: "purchase" | "usage" | "waste" | "return" | "adjustment" | "count";
   previousStock: number;
   adjustment: number;
   newStock: number;
@@ -305,7 +312,7 @@ export interface IngredientStockAdjustmentRecord {
   totalCost?: number;
   reason: string;
   referenceId?: string;
-  referenceType?: 'order' | 'purchase' | 'production' | 'manual';
+  referenceType?: "order" | "purchase" | "production" | "manual";
   notes?: string;
   staffId: string;
   createdAt: number;
@@ -319,7 +326,7 @@ export interface ProductionPlanRecord {
   date: string;
   itemsJson: string; // JSON of ProductionPlanItem[]
   totalIngredientCost: number;
-  status: 'planned' | 'in-progress' | 'completed' | 'cancelled';
+  status: "planned" | "in-progress" | "completed" | "cancelled";
   notes?: string;
   createdBy: string;
   createdAt: number;
@@ -337,7 +344,7 @@ export interface LowStockAlertRecord {
   deficitAmount: number;
   suggestedPurchaseQty: number;
   estimatedCost: number;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: "low" | "medium" | "high" | "critical";
   createdAt: number;
   acknowledgedAt?: number;
   acknowledgedBy?: string;
@@ -359,7 +366,7 @@ export interface SupplierRecord {
   leadTimeDays?: number;
   notes?: string;
   productIds: string[]; // Products supplied
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   createdAt: number;
   updatedAt: number;
   nostrEventId?: string;
@@ -389,7 +396,14 @@ export interface PurchaseOrderRecord {
   id: string;
   supplierId: string;
   branchId: string;
-  status: 'draft' | 'pending' | 'approved' | 'ordered' | 'partial' | 'received' | 'cancelled';
+  status:
+    | "draft"
+    | "pending"
+    | "approved"
+    | "ordered"
+    | "partial"
+    | "received"
+    | "cancelled";
   items: string; // JSON array of { productId, quantity, unitPrice, receivedQty }
   subtotal: number;
   tax: number;
@@ -421,7 +435,7 @@ export interface StoragePositionRecord {
   fullCode: string;
   description?: string;
   capacity?: number;
-  storageType: 'ambient' | 'refrigerated' | 'frozen' | 'controlled';
+  storageType: "ambient" | "refrigerated" | "frozen" | "controlled";
   temperatureMin?: number;
   temperatureMax?: number;
   isActive: boolean;
@@ -447,7 +461,13 @@ export interface StockLotRecord {
   bestBeforeDate?: number;
   receivedDate: number;
   // Status
-  status: 'available' | 'low' | 'expiring' | 'expired' | 'quarantine' | 'depleted';
+  status:
+    | "available"
+    | "low"
+    | "expiring"
+    | "expired"
+    | "quarantine"
+    | "depleted";
   expiryAlertSent?: boolean;
   // Storage Location
   positionId?: string;
@@ -459,7 +479,7 @@ export interface StockLotRecord {
   costPrice: number;
   totalCost: number;
   // Quality
-  qualityGrade?: 'A' | 'B' | 'C';
+  qualityGrade?: "A" | "B" | "C";
   qualityNotes?: string;
   inspectedAt?: number;
   inspectedBy?: string;
@@ -487,7 +507,12 @@ export interface StockReceiptRecord {
   totalItems: number;
   totalQuantity: number;
   totalValue: number;
-  status: 'draft' | 'pending_inspection' | 'inspected' | 'completed' | 'rejected';
+  status:
+    | "draft"
+    | "pending_inspection"
+    | "inspected"
+    | "completed"
+    | "rejected";
   inspectionNotes?: string;
   receivedBy: string;
   inspectedBy?: string;
@@ -505,11 +530,24 @@ export interface LotStockMovementRecord {
   lotId: string;
   productId: string;
   branchId: string;
-  type: 'receipt' | 'sale' | 'transfer_in' | 'transfer_out' | 'adjustment' | 'waste' | 'return' | 'production';
+  type:
+    | "receipt"
+    | "sale"
+    | "transfer_in"
+    | "transfer_out"
+    | "adjustment"
+    | "waste"
+    | "return"
+    | "production";
   quantity: number;
   previousQty: number;
   newQty: number;
-  referenceType?: 'order' | 'purchase_order' | 'transfer' | 'production' | 'manual';
+  referenceType?:
+    | "order"
+    | "purchase_order"
+    | "transfer"
+    | "production"
+    | "manual";
   referenceId?: string;
   reason: string;
   notes?: string;
@@ -534,7 +572,7 @@ export interface ExpiryAlertRecord {
   currentQuantity: number;
   expiryDate: number;
   daysUntilExpiry: number;
-  alertLevel: 'warning' | 'critical' | 'urgent' | 'expired';
+  alertLevel: "warning" | "critical" | "urgent" | "expired";
   acknowledged: boolean;
   acknowledgedAt?: number;
   acknowledgedBy?: string;
@@ -551,7 +589,12 @@ export interface CycleCountRecord {
   id: string;
   name: string;
   branchId: string;
-  status: 'draft' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled';
+  status:
+    | "draft"
+    | "in_progress"
+    | "pending_review"
+    | "completed"
+    | "cancelled";
   scheduledDate: number;
   startedAt?: number;
   completedAt?: number;
@@ -573,6 +616,47 @@ export interface CycleCountRecord {
 }
 
 // ============================================
+// 👥 EMPLOYEE RECORDS
+// ============================================
+
+export interface EmployeeRecord {
+  id: string;
+  employeeCode: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  status: string;
+  department?: string;
+  position?: string;
+  branchId?: string;
+  employmentType: string;
+  salaryType: string;
+  baseSalary: number;
+  currency: string;
+  hireDate: string;
+  terminationDate?: string;
+  bankAccount?: string;
+  lightningAddress?: string;
+  preferredPaymentMethod: string;
+  annualLeaveBalance: number;
+  sickLeaveBalance: number;
+  personalLeaveBalance: number;
+  canAccessPOS: boolean;
+  pin?: string;
+  commissionEnabled: boolean;
+  commissionRate?: number;
+  npub?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// ============================================
 // 💰 ACCOUNTING RECORDS
 // ============================================
 
@@ -587,7 +671,7 @@ export interface AccountRecord {
   parentAccount?: string;
   isSystem: boolean;
   isActive: boolean;
-  normalBalance: 'debit' | 'credit';
+  normalBalance: "debit" | "credit";
   currency: string;
   balance: number;
   createdAt: string;
@@ -602,7 +686,7 @@ export interface JournalEntryRecord {
   date: string;
   description: string;
   reference?: string;
-  status: 'draft' | 'posted' | 'voided';
+  status: "draft" | "posted" | "voided";
   sourceType?: string;
   sourceId?: string;
   linesJson: string; // JSON array of lines
@@ -675,11 +759,14 @@ export class POSDatabase extends Dexie {
   expiryAlerts!: Table<ExpiryAlertRecord, string>;
   // Cycle Counting tables
   cycleCounts!: Table<CycleCountRecord, string>;
-  
+
   // Accounting tables
   accounts!: Table<AccountRecord, string>;
   journalEntries!: Table<JournalEntryRecord, string>;
   expenses!: Table<ExpenseRecord, string>;
+
+  // Employee & Payroll tables
+  employees!: Table<EmployeeRecord, string>;
 
   constructor() {
     super("POSDatabase");
@@ -713,10 +800,12 @@ export class POSDatabase extends Dexie {
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
       // New in v3
-      products: "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
+      products:
+        "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
       categories: "id, name, sortOrder, synced",
       units: "id, name, symbol, synced",
-      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
       stockAdjustments: "id, productId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
@@ -732,18 +821,22 @@ export class POSDatabase extends Dexie {
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
-      products: "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
+      products:
+        "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
       categories: "id, name, sortOrder, synced",
       units: "id, name, symbol, synced",
-      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
       stockAdjustments: "id, productId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
       // New in v4 - Recipe & Ingredients
-      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
       ingredientCategories: "id, name, sortOrder, synced",
       recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
-      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
       productionPlans: "id, date, status, createdAt, synced",
       lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
     });
@@ -758,17 +851,21 @@ export class POSDatabase extends Dexie {
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
-      products: "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
+      products:
+        "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
       categories: "id, name, sortOrder, synced",
       units: "id, name, symbol, synced",
-      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
       stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
-      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
       ingredientCategories: "id, name, sortOrder, synced",
       recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
-      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
       productionPlans: "id, date, status, createdAt, synced",
       lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
       // New in v5 - Supply Chain & Multi-Branch
@@ -787,28 +884,37 @@ export class POSDatabase extends Dexie {
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
-      products: "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
+      products:
+        "id, sku, name, categoryId, status, price, stock, updatedAt, synced",
       categories: "id, name, sortOrder, synced",
       units: "id, name, symbol, synced",
-      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
       stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
-      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
       ingredientCategories: "id, name, sortOrder, synced",
       recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
-      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
       productionPlans: "id, date, status, createdAt, synced",
       lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
       suppliers: "id, name, code, status, synced, updatedAt",
       branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
       purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
       // New in v6 - Stock Lot/Batch Tracking
-      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
-      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
-      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
-      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
-      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
     });
 
     // Version 7: Product Activity Logs & Barcode Support
@@ -821,29 +927,39 @@ export class POSDatabase extends Dexie {
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
-      products: "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
       categories: "id, name, sortOrder, synced",
       units: "id, name, symbol, synced",
-      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
       stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
-      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
       ingredientCategories: "id, name, sortOrder, synced",
       recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
-      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
       productionPlans: "id, date, status, createdAt, synced",
       lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
       suppliers: "id, name, code, status, synced, updatedAt",
       branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
       purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
-      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
-      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
-      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
-      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
-      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
       // New in v7 - Product Activity Logs
-      productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
     });
 
     // Version 8: Cycle Counting for Physical Inventory
@@ -856,30 +972,41 @@ export class POSDatabase extends Dexie {
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
-      products: "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
       categories: "id, name, sortOrder, synced",
       units: "id, name, symbol, synced",
-      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
       stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
-      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
       ingredientCategories: "id, name, sortOrder, synced",
       recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
-      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
       productionPlans: "id, date, status, createdAt, synced",
       lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
       suppliers: "id, name, code, status, synced, updatedAt",
       branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
       purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
-      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
-      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
-      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
-      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
-      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
-      productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
       // New in v8 - Cycle Counting
-      cycleCounts: "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
     });
 
     // Version 9: Accounting & Expenses
@@ -892,33 +1019,96 @@ export class POSDatabase extends Dexie {
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
-      products: "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
       categories: "id, name, sortOrder, synced",
       units: "id, name, symbol, synced",
-      customers: "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
       stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
       branches: "id, name, code, synced",
       staff: "id, name, role, branchId, isActive, synced",
-      ingredients: "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
       ingredientCategories: "id, name, sortOrder, synced",
       recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
-      ingredientStockAdjustments: "id, ingredientId, type, referenceId, createdAt, synced",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
       productionPlans: "id, date, status, createdAt, synced",
       lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
       suppliers: "id, name, code, status, synced, updatedAt",
       branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
       purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
-      storagePositions: "id, branchId, zone, fullCode, storageType, isActive, synced",
-      stockLots: "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
-      stockReceipts: "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
-      lotStockMovements: "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
-      expiryAlerts: "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
-      productActivityLogs: "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
-      cycleCounts: "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
       // New in v9
       accounts: "id, code, name, type, category, isActive, synced, updatedAt",
       journalEntries: "id, entryNumber, date, status, synced, createdAt",
       expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
+    });
+
+    // Version 10: Employee & Payroll Management
+    this.version(10).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      accounts: "id, code, name, type, category, isActive, synced, updatedAt",
+      journalEntries: "id, entryNumber, date, status, synced, createdAt",
+      expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
+      // New in v10 - Employee & Payroll
+      employees:
+        "id, employeeCode, firstName, lastName, status, branchId, department, position, synced, updatedAt",
     });
   }
 }
