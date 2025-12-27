@@ -165,6 +165,25 @@
         </template>
       </UPopover>
 
+      <!-- Help & Support Button -->
+      <UDropdownMenu
+        :items="helpMenuItems"
+        :ui="{
+          content: 'w-56',
+        }"
+      >
+        <button
+          class="p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          :title="$t('help.title') || 'Help & Support'"
+        >
+          <Icon
+            name="i-heroicons-question-mark-circle"
+            size="22"
+            class="text-gray-600 dark:text-gray-400"
+          />
+        </button>
+      </UDropdownMenu>
+
       <!-- Profile Avatar -->
       <UPopover
         :ui="{
@@ -395,6 +414,11 @@
     v-model:open="showAccountSwitcher"
     @switched="onAccountSwitched"
   />
+
+  <!-- Help & Support Modals -->
+  <CommonHelpDrawer />
+  <CommonFeedbackModal />
+  <CommonSupportModal v-model:open="showSupportModal" />
 </template>
 
 <script setup lang="ts">
@@ -407,9 +431,44 @@ const usersComposable = useUsers();
 const nostrStorage = useNostrStorage();
 const router = useRouter();
 const appConfig = useAppConfig();
+const { t } = useI18n();
+const help = useHelp();
+const feedback = useFeedback();
 
 const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } =
   useNotifications();
+
+// Help & Support
+const showSupportModal = ref(false);
+
+const helpMenuItems = computed(() => [
+  [
+    {
+      label: t("help.title") || "Help & Documentation",
+      icon: "i-heroicons-book-open",
+      onClick: () => help.openHelp(),
+    },
+  ],
+  [
+    {
+      label: t("feedback.reportBug") || "Report a Bug",
+      icon: "i-heroicons-bug-ant",
+      onClick: () => feedback.openFeedback("bug"),
+    },
+    {
+      label: t("feedback.requestFeature") || "Request Feature",
+      icon: "i-heroicons-light-bulb",
+      onClick: () => feedback.openFeedback("feature"),
+    },
+  ],
+  [
+    {
+      label: t("support.title") || "Support Development",
+      icon: "i-heroicons-heart",
+      onClick: () => (showSupportModal.value = true),
+    },
+  ],
+]);
 
 // Account switcher state
 const showAccountSwitcher = ref(false);
