@@ -305,9 +305,9 @@ export function useProductsStore() {
     try {
       const records = await db.branches.toArray();
       if (records.length === 0) {
-        // Seed default branches
-        await seedDefaultBranches();
-        return DEFAULT_BRANCHES;
+        // Don't seed default branches automatically
+        // Let shop setup wizard create the first branch to avoid duplicates
+        return [];
       }
       return records.map((r) => ({
         id: r.id,
@@ -319,7 +319,7 @@ export function useProductsStore() {
       }));
     } catch (e) {
       console.error("Failed to load branches:", e);
-      return DEFAULT_BRANCHES;
+      return [];
     }
   }
 
@@ -512,7 +512,6 @@ export function useProductsStore() {
   // ============================================
 
   async function init(): Promise<void> {
-
     if (isInitialized.value) {
       return;
     }

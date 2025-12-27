@@ -222,7 +222,7 @@
         </div>
       </template>
 
-      <div class="p-4">
+      <div class="py-4">
         <p class="mb-4">{{ $t('settings.security.rotateConfirmDesc') }}</p>
 
         <UAlert icon="i-heroicons-information-circle" color="info" class="mb-4">
