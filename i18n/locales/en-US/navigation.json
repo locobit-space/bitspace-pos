@@ -1,0 +1,16 @@
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "pos": "POS",
+    "kitchen": "Kitchen",
+    "orders": "Orders",
+    "products": "Products",
+    "customers": "Customers",
+    "inventory": "Inventory",
+    "recipes": "Recipes",
+    "ingredients": "Ingredients",
+    "reports": "Reports",
+    "accounting": "Accounting",
+    "settings": "Settings"
+  }
+}

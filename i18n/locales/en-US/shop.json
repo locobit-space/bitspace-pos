@@ -1,0 +1,48 @@
+{
+  "shop": {
+    "title": "Shop",
+    "name": "Shop Name",
+    "namePlaceholder": "Enter your shop name",
+    "address": "Address",
+    "addressPlaceholder": "Enter shop address",
+    "phone": "Phone",
+    "phonePlaceholder": "+856 20 1234 5678",
+    "email": "Email",
+    "emailPlaceholder": "shop{'@'}example.com",
+    "logo": "Logo",
+    "setup": {
+      "title": "Welcome to BitSpace POS",
+      "subtitle": "Let's set up your business in a few quick steps",
+      "step1": {
+        "title": "Shop Information",
+        "subtitle": "Basic details about your business"
+      },
+      "step2": {
+        "title": "Shop Type",
+        "subtitle": "Select your business type for tailored templates"
+      },
+      "step3": {
+        "title": "Branch Setup",
+        "subtitle": "Configure your first location"
+      },
+      "step4": {
+        "title": "Settings & Templates",
+        "subtitle": "Customize preferences and import starter products"
+      },
+      "success": "Setup Complete!",
+      "successDescription": "Your shop has been configured successfully",
+      "summary": "Summary",
+      "complete": "Complete Setup",
+      "skipForNow": "Skip for now",
+      "visibility": "Shop Visibility",
+      "private": "Private",
+      "privateDesc": "Only visible within your POS system",
+      "public": "Public",
+      "publicDesc": "Discoverable in marketplace",
+      "shopType": "Shop Type",
+      "applyTemplates": "Apply Product Templates",
+      "applyTemplatesDesc": "Import {categories} categories and {products} sample products",
+      "noTemplateProducts": "No preset products, add your own"
+    }
+  }
+}

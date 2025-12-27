@@ -1,0 +1,88 @@
+{
+  "notifications": {
+    "title": "Notifications",
+    "pageDescription": "Manage and view all your notifications",
+    "noNotifications": "No notifications",
+    "empty": "No notifications yet",
+    "emptyTitle": "All caught up!",
+    "emptyDescription": "You don't have any notifications right now. New notifications will appear here when you receive payments, orders, or alerts.",
+    "markAllRead": "Mark all read",
+    "markRead": "Mark as read",
+    "read": "Read",
+    "delete": "Delete",
+    "clearAll": "Clear all",
+    "viewAll": "View all notifications",
+    "clearConfirmTitle": "Clear all notifications?",
+    "clearConfirmMessage": "This will permanently delete all notifications. This action cannot be undone.",
+    "settings": "Notification settings",
+    "stats": {
+      "total": "Total",
+      "unread": "Unread",
+      "payments": "Payments",
+      "stockAlerts": "Stock Alerts"
+    },
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "payments": "Payments",
+      "orders": "Orders",
+      "stock": "Stock",
+      "loyalty": "Loyalty",
+      "ai": "AI Insights"
+    },
+    "types": {
+      "payment": "Payment",
+      "order": "Order",
+      "stock": "Stock",
+      "loyalty": "Loyalty",
+      "ai": "AI Insight",
+      "alert": "Alert",
+      "system": "System"
+    },
+    "payment": {
+      "received": "Payment Received",
+      "receivedDesc": "Payment of {amount} received via {method}",
+      "failed": "Payment Failed",
+      "failedDesc": "Payment of {amount} failed"
+    },
+    "order": {
+      "new": "New Order",
+      "newDesc": "Order #{orderId} received",
+      "ready": "Order Ready",
+      "readyDesc": "Order #{orderId} is ready for pickup",
+      "completed": "Order Completed",
+      "completedDesc": "Order #{orderId} has been completed"
+    },
+    "inventory": {
+      "lowStock": "Low Stock Alert",
+      "lowStockDesc": "{productName} is running low ({quantity} remaining)",
+      "outOfStock": "Out of Stock",
+      "outOfStockDesc": "{productName} is out of stock"
+    },
+    "lowStock": "Low Stock",
+    "outOfStock": "Out of Stock",
+    "lowStockMessage": "{product} is low on stock ({stock} remaining)",
+    "outOfStockMessage": "{product} is out of stock!",
+    "paymentReceived": "Payment Received",
+    "paymentReceivedMessage": "Payment of {amount} received",
+    "newOrder": "New Order",
+    "newOrderReceived": "New order received",
+    "newOrderFromCustomer": "New order from {customer}",
+    "loyaltyPoints": "Loyalty Points Earned",
+    "loyaltyPointsMessage": "{customer} earned {points} points",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "system": {
+      "syncComplete": "Sync Complete",
+      "syncCompleteDesc": "All data has been synced",
+      "syncFailed": "Sync Failed",
+      "syncFailedDesc": "Failed to sync data. Please try again.",
+      "offline": "Offline Mode",
+      "offlineDesc": "You are now working offline"
+    }
+  }
+}

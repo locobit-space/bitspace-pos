@@ -1,0 +1,18 @@
+{
+  "branch": {
+    "title": "Branches",
+    "name": "Branch Name",
+    "namePlaceholder": "Main Branch",
+    "code": "Branch Code",
+    "codePlaceholder": "MAIN",
+    "codeHint": "Unique identifier for this branch",
+    "address": "Branch Address",
+    "addressPlaceholder": "Enter branch address",
+    "phone": "Branch Phone",
+    "phonePlaceholder": "+856 20 1234 5678",
+    "add": "Add Branch",
+    "edit": "Edit Branch",
+    "delete": "Delete Branch",
+    "manage": "Manage Branches"
+  }
+}

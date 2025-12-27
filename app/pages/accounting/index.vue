@@ -24,15 +24,15 @@ const activeTab = ref<
   "overview" | "invoices" | "expenses" | "journal" | "reports" | "settings"
 >("overview");
 
-// Tab definitions with icons
-const tabs = [
-  { value: 'overview', icon: 'i-heroicons-chart-pie' },
-  { value: 'invoices', icon: 'i-heroicons-document-text' },
-  { value: 'expenses', icon: 'i-heroicons-credit-card' },
-  { value: 'journal', icon: 'i-heroicons-book-open' },
-  { value: 'reports', icon: 'i-heroicons-chart-bar' },
-  { value: 'settings', icon: 'i-heroicons-cog-6-tooth' },
-];
+// Tab definitions for UTabs
+const tabs = computed(() => [
+  { label: t('accounting.tabs.overview'), icon: 'i-heroicons-chart-pie', value: 'overview', slot: 'overview' },
+  { label: t('accounting.tabs.invoices'), icon: 'i-heroicons-document-text', value: 'invoices', slot: 'invoices' },
+  { label: t('accounting.tabs.expenses'), icon: 'i-heroicons-credit-card', value: 'expenses', slot: 'expenses' },
+  { label: t('accounting.tabs.journal'), icon: 'i-heroicons-book-open', value: 'journal', slot: 'journal' },
+  { label: t('accounting.tabs.reports'), icon: 'i-heroicons-chart-bar', value: 'reports', slot: 'reports' },
+  { label: t('accounting.tabs.settings'), icon: 'i-heroicons-cog-6-tooth', value: 'settings', slot: 'settings' },
+]);
 
 // Sync state
 const syncingToNostr = ref(false);
@@ -408,68 +408,79 @@ function payWithLightning(invoiceId: string) {
       </template>
     </CommonPageHeader>
 
-    <!-- Tab Navigation -->
-    <div class="border-b border-gray-200 dark:border-gray-700">
-      <nav class="flex gap-1 overflow-x-auto">
-        <button
-          v-for="tab in tabs"
-          :key="tab.value"
-          @click="activeTab = tab.value as any"
-          class="px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-2"
-          :class="
-            activeTab === tab.value
-              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          "
-        >
-          <UIcon :name="tab.icon" class="w-4 h-4" />
-          <span>{{ t(`accounting.tabs.${tab.value}`) }}</span>
-        </button>
-      </nav>
-    </div>
+    <!-- Tab Navigation with Nuxt UI UTabs -->
+    <UTabs
+      v-model="activeTab"
+      :items="tabs"
+      variant="pill"
+      class="w-full"
+    >
+      <!-- Overview Tab Content -->
+      <template #overview>
+        <div class="mt-4">
+          <AccountingOverviewTab
+            :financial-overview="financialOverview"
+            :chart-of-accounts="chartOfAccounts"
+          />
+        </div>
+      </template>
 
-    <!-- Tab Content -->
-    <AccountingOverviewTab
-      v-if="activeTab === 'overview'"
-      :financial-overview="financialOverview"
-      :chart-of-accounts="chartOfAccounts"
-    />
+      <!-- Invoices Tab Content -->
+      <template #invoices>
+        <div class="mt-4">
+          <AccountingInvoicesTab
+            :invoices="invoices"
+            @add="showInvoiceModal = true"
+            @pay-lightning="payWithLightning"
+          />
+        </div>
+      </template>
 
-    <AccountingInvoicesTab
-      v-else-if="activeTab === 'invoices'"
-      :invoices="invoices"
-      @add="showInvoiceModal = true"
-      @pay-lightning="payWithLightning"
-    />
+      <!-- Expenses Tab Content -->
+      <template #expenses>
+        <div class="mt-4">
+          <AccountingExpensesTab
+            :expenses="expenses"
+            @add="showExpenseModal = true"
+          />
+        </div>
+      </template>
 
-    <AccountingExpensesTab
-      v-else-if="activeTab === 'expenses'"
-      :expenses="expenses"
-      @add="showExpenseModal = true"
-    />
+      <!-- Journal Tab Content -->
+      <template #journal>
+        <div class="mt-4">
+          <AccountingJournalTab
+            :entries="journalEntries"
+            @add="showJournalModal = true"
+          />
+        </div>
+      </template>
 
-    <AccountingJournalTab
-      v-else-if="activeTab === 'journal'"
-      :entries="journalEntries"
-      @add="showJournalModal = true"
-    />
+      <!-- Reports Tab Content -->
+      <template #reports>
+        <div class="mt-4">
+          <AccountingReportsTab
+            @export="exportReport"
+          />
+        </div>
+      </template>
 
-    <AccountingReportsTab
-      v-else-if="activeTab === 'reports'"
-      @export="exportReport"
-    />
-
-    <AccountingSettingsTab
-      v-else-if="activeTab === 'settings'"
-      v-model:accounting-enabled="accountingEnabled"
-      v-model:selected-standard="selectedStandard"
-      v-model:vat-rate="vatRate"
-      v-model:auto-post="autoPost"
-      :syncing-to-nostr="syncingToNostr"
-      :last-sync-time="lastSyncTime"
-      @save="saveSettings"
-      @sync="syncToNostr"
-    />
+      <!-- Settings Tab Content -->
+      <template #settings>
+        <div class="mt-4">
+          <AccountingSettingsTab
+            v-model:accounting-enabled="accountingEnabled"
+            v-model:selected-standard="selectedStandard"
+            v-model:vat-rate="vatRate"
+            v-model:auto-post="autoPost"
+            :syncing-to-nostr="syncingToNostr"
+            :last-sync-time="lastSyncTime"
+            @save="saveSettings"
+            @sync="syncToNostr"
+          />
+        </div>
+      </template>
+    </UTabs>
 
     <!-- Modals -->
     <AccountingInvoiceModal 

@@ -1,0 +1,9 @@
+{
+  "app": {
+    "name": "BitSpace POS",
+    "tagline": "ລະບົບຂາຍໜ້າຮ້ານດ້ວຍ Lightning",
+    "copyright": "BitSpace POS. ເຮັດວຽກດ້ວຍ ⚡ Lightning",
+    "privacyPolicy": "ນະໂຍບາຍຄວາມເປັນສ່ວນຕົວ",
+    "termsOfService": "ເງື່ອນໄຂການໃຊ້ບໍລິການ"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "contracts": {
+    "title": "Contracts & Rentals",
+    "description": "Manage contracts, assets, and bookings",
+    "newContract": "New Contract",
+    "editContract": "Edit Contract",
+    "addAsset": "Add Asset",
+    "editAsset": "Edit Asset",
+    "newBooking": "New Booking",
+    "contracts": "Contracts",
+    "assets": "Assets",
+    "bookings": "Bookings",
+    "contractNumber": "Contract #",
+    "customer": "Customer",
+    "customerName": "Customer Name",
+    "customerPhone": "Customer Phone",
+    "customerEmail": "Customer Email",
+    "type": "Type",
+    "asset": "Asset",
+    "amount": "Amount",
+    "deposit": "Deposit",
+    "depositAmount": "Deposit Amount",
+    "depositStatus": "Deposit Status",
+    "collectDeposit": "Collect Deposit",
+    "returnDeposit": "Return Deposit",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "autoRenew": "Auto Renew",
+    "paymentSchedule": "Payment Schedule",
+    "notes": "Notes",
+    "types": {
+      "rental": "Rental",
+      "lease": "Lease",
+      "service": "Service",
+      "subscription": "Subscription"
+    },
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "active": "Active",
+      "expired": "Expired",
+      "terminated": "Terminated",
+      "cancelled": "Cancelled"
+    },
+    "schedules": {
+      "once": "One-time",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "assetTypes": {
+      "room": "Room",
+      "equipment": "Equipment",
+      "vehicle": "Vehicle",
+      "locker": "Locker",
+      "space": "Space",
+      "other": "Other"
+    },
+    "assetFields": {
+      "name": "Asset Name",
+      "hourlyRate": "Hourly Rate",
+      "dailyRate": "Daily Rate",
+      "monthlyRate": "Monthly Rate",
+      "location": "Location",
+      "capacity": "Capacity"
+    },
+    "bookingStatus": {
+      "reserved": "Reserved",
+      "checkedOut": "Checked Out",
+      "returned": "Returned",
+      "cancelled": "Cancelled",
+      "noShow": "No Show"
+    },
+    "actions": {
+      "activate": "Activate",
+      "terminate": "Terminate",
+      "renew": "Renew",
+      "checkOut": "Check Out",
+      "return": "Return"
+    },
+    "stats": {
+      "active": "Active",
+      "expiring": "Expiring Soon",
+      "assets": "Total Assets",
+      "todayBookings": "Today's Bookings",
+      "monthlyRevenue": "Monthly Revenue"
+    },
+    "empty": {
+      "noContracts": "No contracts yet",
+      "createFirst": "Create your first contract",
+      "noAssets": "No assets yet",
+      "addFirst": "Add your first rental asset",
+      "noBookings": "No bookings yet"
+    }
+  }
+}
