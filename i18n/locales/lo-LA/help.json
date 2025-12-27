@@ -116,5 +116,42 @@
         }
       }
     }
+  },
+  "title": "ຊ່ວຍເຫຼືອ",
+  "searchPlaceholder": "ຄົ້ນຫາການຊ່ວຍເຫຼືອ...",
+  "resultsFound": "ຜົນການຄົ້ນຫາ",
+  "noResults": "ບໍ່ພົບຜົນການຄົ້ນຫາ",
+  "noHelpAvailable": "ບໍ່ມີການຊ່ວຍເຫຼືອ",
+  "noHelpDesc": "ເນື້ອຫາຊ່ວຍເຫຼືອສຳລັບໜ້ານີ້ກຳລັງມາໃນໄວໆນີ້.",
+  "needMoreHelp": "ຕ້ອງການຄວາມຊ່ວຍເຫຼືອເພີ່ມບໍ?",
+  "reportBug": "ລາຍງານບັກ",
+  "requestFeature": "ຂໍຟີເຈີໃໝ່",
+  "openHelp": "ເປີດຊ່ວຍເຫຼືອ",
+  "pressQuestion": "ກົດ ? ເພື່ອຊ່ວຍເຫຼືອ",
+  "syncing": "ກຳລັງຊິງຄ໌...",
+  "edit": "ແກ້ໄຂ",
+  "writeHelp": "ຂຽນບົດຄວາມຊ່ວຍເຫຼືອ",
+  "fromNostr": "ຊິງຄ໌ຈາກ Nostr",
+  "editor": {
+    "createArticle": "ສ້າງບົດຄວາມຊ່ວຍເຫຼືອ",
+    "editArticle": "ແກ້ໄຂບົດຄວາມຊ່ວຍເຫຼືອ",
+    "page": "ໜ້າ",
+    "language": "ພາສາ",
+    "title": "ຫົວຂໍ້",
+    "titlePlaceholder": "ເຊັ່ນ: ວິທີໃຊ້ງານ POS",
+    "description": "ຄຳອະທິບາຍ",
+    "descriptionPlaceholder": "ຄຳອະທິບາຍສັ້ນໆສຳລັບສ່ວນຊ່ວຍເຫຼືອນີ້",
+    "content": "ເນື້ອຫາ (Markdown)",
+    "write": "ຂຽນ",
+    "preview": "ເບິ່ງກ່ອນ",
+    "contentPlaceholder": "ຂຽນເນື້ອຫາຊ່ວຍເຫຼືອລະອຽດທີ່ນີ້. ຮອງຮັບ **markdown** ຟໍແມັດ.",
+    "noContent": "ບໍ່ມີເນື້ອຫາໃຫ້ເບິ່ງກ່ອນ",
+    "tags": "ແທັກ",
+    "tagsDescription": "ແທັກແຍກດ້ວຍຈຸດໂຄມາ ສຳລັບການຄົ້ນຫາ",
+    "tagsPlaceholder": "ເຊັ່ນ: ຂາຍ, ຊຳລະເງິນ, ຈ່າຍ",
+    "update": "ອັບເດດ",
+    "publish": "ເຜີຍແຜ່ໄປ Nostr",
+    "publishSuccess": "ເຜີຍແຜ່ສຳເລັດ!",
+    "publishedToNostr": "ບົດຄວາມບັນທຶກໄປ Nostr relays ແລ້ວ"
   }
 }

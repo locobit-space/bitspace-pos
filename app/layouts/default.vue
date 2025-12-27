@@ -38,6 +38,10 @@
 
     <!-- Mobile Bottom Navigation (hidden when sidebar is open) -->
     <AppBottomNav v-if="!sidebarOpen" @open-menu="sidebarOpen = true" />
+
+    <!-- Help System -->
+    <CommonHelpButton />
+    <CommonHelpDrawer />
   </div>
 </template>
 

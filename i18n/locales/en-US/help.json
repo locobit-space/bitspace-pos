@@ -116,5 +116,42 @@
         }
       }
     }
+  },
+  "title": "Help",
+  "searchPlaceholder": "Search help...",
+  "resultsFound": "results found",
+  "noResults": "No results found",
+  "noHelpAvailable": "No help available",
+  "noHelpDesc": "Help content for this page is coming soon.",
+  "needMoreHelp": "Need more help?",
+  "reportBug": "Report Bug",
+  "requestFeature": "Request Feature",
+  "openHelp": "Open Help",
+  "pressQuestion": "Press ? for help",
+  "syncing": "Syncing...",
+  "edit": "Edit",
+  "writeHelp": "Write Help Article",
+  "fromNostr": "Synced from Nostr",
+  "editor": {
+    "createArticle": "Create Help Article",
+    "editArticle": "Edit Help Article",
+    "page": "Page",
+    "language": "Language",
+    "title": "Title",
+    "titlePlaceholder": "e.g. How to use the POS",
+    "description": "Description",
+    "descriptionPlaceholder": "Brief description of this help section",
+    "content": "Content (Markdown)",
+    "write": "Write",
+    "preview": "Preview",
+    "contentPlaceholder": "Write detailed help content here. Supports **markdown** formatting.",
+    "noContent": "No content to preview",
+    "tags": "Tags",
+    "tagsDescription": "Comma-separated tags for search",
+    "tagsPlaceholder": "e.g. sales, checkout, payment",
+    "update": "Update",
+    "publish": "Publish to Nostr",
+    "publishSuccess": "Help published!",
+    "publishedToNostr": "Article saved to Nostr relays"
   }
 }

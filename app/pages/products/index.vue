@@ -1123,8 +1123,11 @@
 
 <script setup lang="ts">
 import { z } from "zod";
-import type { Product } from "~/types";
+import type { Category, Product } from "~/types";
 
+useHead({
+  title: "Products",
+});
 // ============================================
 // 📦 PRODUCTS PAGE - Connected to Nostr/Dexie
 // ============================================
@@ -1134,30 +1137,7 @@ const productsStore = useProductsStore();
 const toast = useToast();
 const { canEditProducts, canDeleteProducts } = usePermissions();
 
-// Types (local only)
-interface _Product {
-  id: string;
-  name: string;
-  sku: string;
-  description?: string;
-  categoryId: string;
-  unitId: string;
-  price: number;
-  stock: number;
-  minStock: number;
-  branchId: string;
-  status: "active" | "inactive";
-  image?: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
-}
 
 interface Unit {
   id: string;

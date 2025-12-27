@@ -240,7 +240,7 @@ onMounted(async () => {
             icon="i-heroicons-plus"
             color="primary"
             :label="t('orders.newOrder')"
-            to="/pos"
+            to="/orders/create"
           />
         </div>
       </template>
@@ -314,7 +314,7 @@ onMounted(async () => {
         No orders yet
       </h3>
       <p class="text-gray-500 mb-4">Create your first order from the POS</p>
-      <UButton to="/pos" color="primary"> Go to POS </UButton>
+      <UButton to="/orders/create" color="primary"> Create Order </UButton>
     </div>
 
     <!-- Orders Table -->

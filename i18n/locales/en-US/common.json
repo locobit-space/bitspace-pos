@@ -170,11 +170,17 @@
       "orSendDirectly": "Or send directly to:",
       "noAddressConfigured": "Lightning address not configured",
       "nostrZap": "You can also zap us on Nostr!",
-      "openWallet": "Open Lightning Wallet",
+      "openWallet": "Open Wallet",
       "lightningTip": "Powered by Lightning Network",
       "copied": "Copied!",
       "addressCopied": "Lightning address copied to clipboard",
-      "copyFailed": "Failed to copy"
+      "copyFailed": "Failed to copy",
+      "postToNostr": "Share my support on Nostr",
+      "notifyDeveloper": "notifies developer",
+      "messagePlaceholder": "Add a message (optional)",
+      "postedToNostr": "Posted to Nostr!",
+      "thankYouShared": "Your support message was shared",
+      "bankDesc": "Scan with BCEL One or any Lao banking app"
     }
   }
 }

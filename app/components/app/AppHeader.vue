@@ -444,26 +444,26 @@ const showSupportModal = ref(false);
 const helpMenuItems = computed(() => [
   [
     {
-      label: t("help.title") || "Help & Documentation",
+      label: t("help.title", "Help & Documentation"),
       icon: "i-heroicons-book-open",
       onClick: () => help.openHelp(),
     },
   ],
   [
     {
-      label: t("feedback.reportBug") || "Report a Bug",
+      label: t("common.feedback.reportBug", "Report a Bug"),
       icon: "i-heroicons-bug-ant",
       onClick: () => feedback.openFeedback("bug"),
     },
     {
-      label: t("feedback.requestFeature") || "Request Feature",
+      label: t("common.feedback.requestFeature", "Request Feature"),
       icon: "i-heroicons-light-bulb",
       onClick: () => feedback.openFeedback("feature"),
     },
   ],
   [
     {
-      label: t("support.title") || "Support Development",
+      label: t("donate.title", "Support Development"),
       icon: "i-heroicons-heart",
       onClick: () => (showSupportModal.value = true),
     },

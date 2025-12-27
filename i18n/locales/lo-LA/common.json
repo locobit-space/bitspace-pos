@@ -157,11 +157,17 @@
       "orSendDirectly": "ຫຼື ສົ່ງໂດຍກົງໄປທີ່:",
       "noAddressConfigured": "ຍັງບໍ່ໄດ້ຕັ້ງຄ່າທີ່ຢູ່ Lightning",
       "nostrZap": "ທ່ານສາມາດ Zap ຜ່ານ Nostr ໄດ້!",
-      "openWallet": "ເປີດກະເປົາ Lightning",
+      "openWallet": "ເປີດກະເປົາ",
       "lightningTip": "ຮອງຮັບໂດຍ Lightning Network",
       "copied": "ຄັດລອກແລ້ວ!",
       "addressCopied": "ຄັດລອກທີ່ຢູ່ Lightning ແລ້ວ",
-      "copyFailed": "ຄັດລອກບໍ່ສຳເລັດ"
+      "copyFailed": "ຄັດລອກບໍ່ສຳເລັດ",
+      "postToNostr": "ແບ່ງປັນການສະໜັບສະໜູນໃນ Nostr",
+      "notifyDeveloper": "ແຈ້ງເຕືອນນັກພັດທະນາ",
+      "messagePlaceholder": "ເພີ່ມຂໍ້ຄວາມ (ບໍ່ບັງຄັບ)",
+      "postedToNostr": "ໂພສໃສ່ Nostr ແລ້ວ!",
+      "thankYouShared": "ຂໍ້ຄວາມສະໜັບສະໜູນຖືກແບ່ງປັນແລ້ວ",
+      "bankDesc": "ສະແກນດ້ວຍ BCEL One ຫຼື ແອັບທະນາຄານລາວ"
     }
   }
 }

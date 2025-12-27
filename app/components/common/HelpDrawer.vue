@@ -1,16 +1,46 @@
 <!-- components/common/HelpDrawer.vue -->
+<!-- Enhanced drawer with Nostr dynamic content support -->
 <script setup lang="ts">
 const help = useHelp();
+const nostrHelp = useNostrHelp();
 const feedback = useFeedback();
 const { t } = useI18n();
+
+// Use Nostr help with fallback to static
+const currentHelp = computed(() => nostrHelp.currentPageHelp.value);
 
 const searchQuery = ref("");
 const searchResults = computed(() => {
   if (!searchQuery.value.trim()) return [];
-  return help.searchHelp(searchQuery.value);
+  // Search both Nostr and static help
+  const nostrResults = nostrHelp.searchHelp(searchQuery.value);
+  const staticResults = help.searchHelp(searchQuery.value);
+  return [...nostrResults.map((a: { id: string; title: string; description: string }) => ({
+    id: a.id,
+    title: a.title,
+    content: a.description,
+    icon: "i-heroicons-document-text",
+  })), ...staticResults];
 });
 
 const showSearch = computed(() => searchQuery.value.trim().length > 0);
+
+// Check if user can edit (for now, anyone logged in can edit)
+const canEdit = computed(() => {
+  if (!import.meta.client) return false;
+  const stored = localStorage.getItem("nostrUser");
+  return !!stored;
+});
+
+function handleEdit() {
+  // Open editor with current help article
+  const article = nostrHelp.getHelpForPage();
+  nostrHelp.openEditor(article);
+}
+
+function handleWriteNew() {
+  nostrHelp.openEditor();
+}
 </script>
 
 <template>
@@ -29,12 +59,25 @@ const showSearch = computed(() => searchQuery.value.trim().length > 0);
                 {{ t("help.title") || "Help" }}
               </h2>
             </div>
-            <UButton
-              color="gray"
-              variant="ghost"
-              icon="i-heroicons-x-mark"
-              @click="help.closeHelp()"
-            />
+            <div class="flex items-center gap-2">
+              <!-- Sync Status -->
+              <UButton
+                v-if="nostrHelp.isSyncing.value"
+                color="gray"
+                variant="ghost"
+                size="xs"
+                loading
+                disabled
+              >
+                {{ t("help.syncing") || "Syncing..." }}
+              </UButton>
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-x-mark"
+                @click="help.closeHelp()"
+              />
+            </div>
           </div>
 
           <!-- Search -->
@@ -48,8 +91,13 @@ const showSearch = computed(() => searchQuery.value.trim().length > 0);
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-4">
+          <!-- Loading State -->
+          <div v-if="nostrHelp.isLoading.value" class="flex items-center justify-center py-8">
+            <Icon name="i-heroicons-arrow-path" class="animate-spin text-2xl text-gray-400" />
+          </div>
+
           <!-- Search Results -->
-          <div v-if="showSearch" class="space-y-3">
+          <div v-else-if="showSearch" class="space-y-3">
             <p class="text-sm text-gray-500">
               {{ searchResults.length }}
               {{ t("help.resultsFound") || "results found" }}
@@ -86,23 +134,43 @@ const showSearch = computed(() => searchQuery.value.trim().length > 0);
             </div>
           </div>
 
-          <!-- Page Help Content -->
-          <div v-else-if="help.currentHelp.value" class="space-y-6">
-            <div>
-              <h3
-                class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+          <!-- Page Help Content (Dynamic from Nostr or Static fallback) -->
+          <div v-else-if="currentHelp" class="space-y-6">
+            <!-- Header with Edit Button -->
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                >
+                  {{ currentHelp.title }}
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ currentHelp.description }}
+                </p>
+              </div>
+              <UButton
+                v-if="canEdit"
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-pencil-square"
+                size="xs"
+                @click="handleEdit"
               >
-                {{ help.currentHelp.value.title }}
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                {{ help.currentHelp.value.description }}
-              </p>
+                {{ t("help.edit") || "Edit" }}
+              </UButton>
             </div>
 
+            <!-- Markdown Content (if available) -->
+            <div
+              v-if="currentHelp.content"
+              class="prose dark:prose-invert prose-sm max-w-none p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+              v-html="currentHelp.content"
+            />
+
             <!-- Sections -->
-            <div class="space-y-4">
+            <div v-if="currentHelp.sections?.length" class="space-y-4">
               <div
-                v-for="section in help.currentHelp.value.sections"
+                v-for="section in currentHelp.sections"
                 :key="section.id"
                 class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
               >
@@ -124,9 +192,19 @@ const showSearch = computed(() => searchQuery.value.trim().length > 0);
                 </div>
               </div>
             </div>
+
+            <!-- Nostr Meta Info -->
+            <div
+              v-if="currentHelp.updatedAt && !currentHelp.id.startsWith('static_')"
+              class="text-xs text-gray-400 flex items-center gap-1"
+            >
+              <Icon name="i-heroicons-cloud" class="text-sm" />
+              {{ t("help.fromNostr") || "Synced from Nostr" }}
+              · v{{ currentHelp.version }}
+            </div>
           </div>
 
-          <!-- No Help Available -->
+          <!-- No Help Available - Option to Write -->
           <div v-else class="text-center py-12">
             <Icon
               name="i-heroicons-document-text"
@@ -135,12 +213,21 @@ const showSearch = computed(() => searchQuery.value.trim().length > 0);
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">
               {{ t("help.noHelpAvailable") || "No help available" }}
             </h3>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-500 mb-4">
               {{
                 t("help.noHelpDesc") ||
                 "Help content for this page is coming soon."
               }}
             </p>
+            <UButton
+              v-if="canEdit"
+              color="primary"
+              variant="soft"
+              icon="i-heroicons-pencil-square"
+              @click="handleWriteNew"
+            >
+              {{ t("help.writeHelp") || "Write Help Article" }}
+            </UButton>
           </div>
         </div>
 
@@ -183,4 +270,12 @@ const showSearch = computed(() => searchQuery.value.trim().length > 0);
       </div>
     </template>
   </USlideover>
+
+  <!-- Help Editor Modal (for admins) -->
+  <CommonHelpEditorModal
+    v-if="nostrHelp.isEditorOpen.value"
+    :article="nostrHelp.editingArticle.value"
+    @close="nostrHelp.closeEditor()"
+    @saved="nostrHelp.closeEditor()"
+  />
 </template>

@@ -9779,6 +9779,11 @@ q@^1.5.1:
   resolved "https://registry.yarnpkg.com/q/-/q-1.5.1.tgz#7e32f75b41381291d04611f1bf14109ac00651d7"
   integrity sha512-kV/CThkXo6xyFEZUugw/+pIOywXcDbFYgSct5cT3gqlbkBE1SJdwy6UQoZvodiWF/ckQLZyDE/Bu1M6gVu5lVw==
 
+qrcode.vue@^3.6.0:
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/qrcode.vue/-/qrcode.vue-3.6.0.tgz#d940fe96712922232aa19892bdd68793e62c73e7"
+  integrity sha512-vQcl2fyHYHMjDO1GguCldJxepq2izQjBkDEEu9NENgfVKP6mv/e2SU62WbqYHGwTgWXLhxZ1NCD1dAZKHQq1fg==
+
 qrcode@^1.5.4:
   version "1.5.4"
   resolved "https://registry.yarnpkg.com/qrcode/-/qrcode-1.5.4.tgz#5cb81d86eb57c675febb08cf007fff963405da88"

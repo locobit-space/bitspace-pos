@@ -24,6 +24,9 @@ export interface FeedbackSubmission {
 const FEEDBACK_STORAGE_KEY = "bitspace_feedback_history";
 const DEVELOPER_NPUB_KEY = "bitspace_developer_npub";
 
+// Hardcoded developer npub - fallback if not configured
+const DEFAULT_DEVELOPER_NPUB = "npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk";
+
 export function useFeedback() {
   const config = useRuntimeConfig();
   const route = useRoute();
@@ -38,16 +41,16 @@ export function useFeedback() {
   );
   const feedbackType = useState<FeedbackType>("feedbackType", () => "bug");
 
-  // Get developer npub from config or localStorage
+  // Get developer npub from config or localStorage, fallback to hardcoded
   const developerNpub = computed(() => {
     if (import.meta.client) {
       return (
         localStorage.getItem(DEVELOPER_NPUB_KEY) ||
         config.public?.developerNpub ||
-        ""
+        DEFAULT_DEVELOPER_NPUB
       );
     }
-    return "";
+    return DEFAULT_DEVELOPER_NPUB;
   });
 
   // Get app version
@@ -132,9 +135,9 @@ export function useFeedback() {
   }): Promise<boolean> {
     if (!developerNpub.value) {
       toast.add({
-        title: t("feedback.noDeveloperNpub") || "Configuration Error",
+        title: t("common.feedback.noDeveloperNpub") || "Configuration Error",
         description:
-          t("feedback.noDeveloperNpubDesc") ||
+          t("common.feedback.noDeveloperNpubDesc") ||
           "Developer contact not configured",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
@@ -159,67 +162,70 @@ export function useFeedback() {
     };
 
     try {
-      // Build message content
-      const messageContent = JSON.stringify(
-        {
-          app: "BitSpace POS",
-          version: submission.appVersion,
-          type: submission.type,
-          title: submission.title,
-          description: submission.description,
-          priority: submission.priority,
-          page: submission.page,
-          device: submission.deviceInfo,
-          timestamp: submission.createdAt,
-          hasScreenshot: !!submission.screenshot,
-        },
-        null,
-        2
-      );
+      // Build human-readable message content (standard Nostr format)
+      const typeEmoji = submission.type === "bug" ? "🐛" : submission.type === "feature" ? "💡" : "❓";
+      const typeLabel = submission.type === "bug" ? "Bug Report" : submission.type === "feature" ? "Feature Request" : "Question";
+      const priorityLabel = submission.priority ? ` [${submission.priority.toUpperCase()}]` : "";
+      
+      const messageContent = `${typeEmoji} ${typeLabel}${priorityLabel} - BitSpace POS
 
-      // Try to send via Nostr (NIP-04 encrypted DM)
-      const { $nostr } = useNuxtApp();
+📝 ${submission.title}
 
-      if ($nostr) {
-        // Convert npub to hex pubkey
-        const { decode } = await import("nostr-tools/nip19");
-        const decoded = decode(developerNpub.value);
+${submission.description}
 
-        if (decoded.type !== "npub") {
-          throw new Error("Invalid developer npub");
-        }
+---
+📱 ${submission.deviceInfo} | 📍 ${submission.page}
+🏷️ v${submission.appVersion}
 
-        const devPubkey = decoded.data;
+#BitSpacePOS #Feedback #${submission.type}`;
 
-        // Create and send encrypted DM
-        const event = await $nostr.sendEncryptedDM(devPubkey, messageContent);
+      // Try to send via Nostr (public Kind 1 note tagging developer)
+      const nostrData = useNostrData();
+      const { nip19 } = await import("nostr-tools");
 
-        if (event) {
-          submission.status = "sent";
-          submission.nostrEventId = event.id;
+      // Convert npub to hex pubkey
+      const decoded = nip19.decode(developerNpub.value);
 
-          toast.add({
-            title:
-              submission.type === "bug"
-                ? t("feedback.bugReported") || "Bug Reported"
-                : t("feedback.featureRequested") || "Feature Requested",
-            description:
-              t("feedback.thankYou") || "Thank you for your feedback!",
-            icon: "i-heroicons-check-circle",
-            color: "green",
-          });
-        } else {
-          throw new Error("Failed to send DM");
-        }
+      if (decoded.type !== "npub") {
+        throw new Error("Invalid developer npub");
+      }
+
+      const devPubkey = decoded.data as string;
+
+      // Create tags for the feedback note
+      const tags: string[][] = [
+        ["p", devPubkey], // Tag the developer
+        ["t", "BitSpacePOS"],
+        ["t", "Feedback"],
+        ["t", submission.type],
+      ];
+
+      // Create and send public note
+      const event = await nostrData.publishEvent(1, messageContent, tags, false);
+
+      if (event) {
+        submission.status = "sent";
+        submission.nostrEventId = event.id;
+
+        toast.add({
+          title:
+            submission.type === "bug"
+              ? t("common.feedback.bugReported") || "Bug Reported"
+              : t("common.feedback.featureRequested") || "Feature Requested",
+          description:
+            t("common.feedback.thankYou") || "Thank you for your feedback!",
+          icon: "i-heroicons-check-circle",
+          color: "green",
+        });
       } else {
         // Fallback: save locally only
-        console.warn("[Feedback] Nostr not available, saving locally");
+        console.warn("[Feedback] Nostr publish failed, saving locally");
         submission.status = "pending";
 
         toast.add({
-          title: t("feedback.savedLocally") || "Saved Locally",
+          title: t("common.feedback.savedLocally") || "Saved Locally",
           description:
-            t("feedback.willSendLater") || "Will send when connected",
+            t("common.feedback.willSendLater") || "Will send when connected",
           icon: "i-heroicons-cloud-arrow-up",
           color: "blue",
         });
@@ -238,8 +244,8 @@ export function useFeedback() {
       saveHistory();
 
       toast.add({
-        title: t("feedback.submitFailed") || "Submission Failed",
-        description: t("feedback.tryAgainLater") || "Please try again later",
+        title: t("common.feedback.submitFailed") || "Submission Failed",
+        description: t("common.feedback.tryAgainLater") || "Please try again later",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
