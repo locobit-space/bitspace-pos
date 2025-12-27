@@ -5,12 +5,50 @@
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
           {{ $t("products.title") }}
+          ({{ filteredProducts.length }})
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
           {{ $t("products.subtitle") }}
         </p>
       </div>
       <div class="flex items-center gap-2">
+        <div class="flex gap-2">
+          <UDropdownMenu
+            :items="[
+              [
+                {
+                  label: $t('products.import.title') || 'Import Excel',
+                  icon: 'i-heroicons-arrow-up-tray',
+                  onClick: () => (showExcelImportModal = true),
+                },
+                {
+                  label: $t('products.export.title') || 'Export Excel',
+                  icon: 'i-heroicons-arrow-down-tray',
+                  onClick: exportToExcel,
+                },
+              ],
+              [
+                {
+                  label: 'Backup (JSON)',
+                  icon: 'i-heroicons-archive-box-arrow-down',
+                  onClick: exportProducts,
+                },
+                {
+                  label: 'Restore (JSON)',
+                  icon: 'i-heroicons-archive-box',
+                  onClick: importProducts,
+                },
+              ],
+            ]"
+          >
+            <UButton
+              variant="soft"
+              :label="$t('common.data') || 'Data'"
+              icon="i-heroicons-table-cells"
+              trailing-icon="i-heroicons-chevron-down-20-solid"
+            />
+          </UDropdownMenu>
+        </div>
         <!-- Quick Management Buttons (only for users who can edit) -->
         <template v-if="canEditProducts">
           <UTooltip
@@ -105,6 +143,7 @@
           :items="statusOptions"
           label-key="label"
           value-key="value"
+          class="w-full"
           :placeholder="$t('common.selectStatus')"
         />
       </UFormField>
@@ -128,50 +167,6 @@
       />
     </div>
 
-    <!-- Products Table -->
-    <div class="flex justify-between items-center px-4">
-      <h2 class="text-xl font-semibold">
-        {{ $t("products.list") }} ({{ filteredProducts.length }})
-      </h2>
-      <div class="flex gap-2">
-        <UDropdownMenu
-          :items="[
-            [
-              {
-                label: $t('products.import.title') || 'Import Excel',
-                icon: 'i-heroicons-arrow-up-tray',
-                onClick: () => (showExcelImportModal = true),
-              },
-              {
-                label: $t('products.export.title') || 'Export Excel',
-                icon: 'i-heroicons-arrow-down-tray',
-                onClick: exportToExcel,
-              },
-            ],
-            [
-              {
-                label: 'Backup (JSON)',
-                icon: 'i-heroicons-archive-box-arrow-down',
-                onClick: exportProducts,
-              },
-              {
-                label: 'Restore (JSON)',
-                icon: 'i-heroicons-archive-box',
-                onClick: importProducts,
-              },
-            ],
-          ]"
-        >
-          <UButton
-            variant="soft"
-            :label="$t('common.data') || 'Data'"
-            icon="i-heroicons-table-cells"
-            trailing-icon="i-heroicons-chevron-down-20-solid"
-          />
-        </UDropdownMenu>
-      </div>
-    </div>
-
     <div class="overflow-x-auto">
       <table class="w-full">
         <!-- ... existing table header ... -->
@@ -183,14 +178,48 @@
               {{ $t("products.image") }}
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('name')"
             >
-              {{ $t("products.name") }}
+              <div class="flex items-center gap-1">
+                {{ $t("products.name") }}
+                <UIcon
+                  v-if="sortKey === 'name'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('sku')"
             >
-              {{ $t("products.sku") }}
+              <div class="flex items-center gap-1">
+                {{ $t("products.sku") }}
+                <UIcon
+                  v-if="sortKey === 'sku'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
               class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
@@ -198,24 +227,92 @@
               {{ $t("products.barcode") }}
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('category')"
             >
-              {{ $t("products.category") }}
+              <div class="flex items-center gap-1">
+                {{ $t("products.category") }}
+                <UIcon
+                  v-if="sortKey === 'category'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('price')"
             >
-              {{ $t("products.price") }}
+              <div class="flex items-center gap-1">
+                {{ $t("products.price") }}
+                <UIcon
+                  v-if="sortKey === 'price'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('stock')"
             >
-              {{ $t("products.stock") }}
+              <div class="flex items-center gap-1">
+                {{ $t("products.stock") }}
+                <UIcon
+                  v-if="sortKey === 'stock'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('status')"
             >
-              {{ $t("common.status") }}
+              <div class="flex items-center gap-1">
+                {{ $t("common.status") }}
+                <UIcon
+                  v-if="sortKey === 'status'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
               class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
@@ -1138,6 +1235,20 @@ const searchQuery = ref<string>("");
 const currentPage = ref<number>(1);
 const itemsPerPage = ref<number>(10);
 
+// Sorting
+const sortKey = ref<string>("name");
+const sortOrder = ref<"asc" | "desc">("asc");
+
+const toggleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = "asc";
+  }
+  currentPage.value = 1;
+};
+
 // Modals
 const showProductModal = ref<boolean>(false);
 const showDeleteModal = ref<boolean>(false);
@@ -1292,12 +1403,10 @@ const branchOptions = computed(() => [
 ]);
 
 const categoryOptions = computed(() => [
-  { id: "all", name: "All Categories" },
+  // { id: "all", name: "All Categories" },
   // Map categories without 'icon' property to prevent USelect from trying to render emoji as Icon
   ...categories.value.map((cat) => ({ id: cat.id, name: cat.name })),
 ]);
-
-const _unitOptions = computed(() => units.value);
 
 // Computed Properties
 const filteredProducts = computed(() => {
@@ -1324,6 +1433,46 @@ const filteredProducts = computed(() => {
         p.description?.toLowerCase().includes(query)
     );
   }
+
+  // Apply sorting
+  filtered = [...filtered].sort((a, b) => {
+    let aVal: string | number = "";
+    let bVal: string | number = "";
+
+    switch (sortKey.value) {
+      case "name":
+        aVal = a.name.toLowerCase();
+        bVal = b.name.toLowerCase();
+        break;
+      case "sku":
+        aVal = a.sku?.toLowerCase() || "";
+        bVal = b.sku?.toLowerCase() || "";
+        break;
+      case "category":
+        aVal = getCategoryName(a.categoryId).toLowerCase();
+        bVal = getCategoryName(b.categoryId).toLowerCase();
+        break;
+      case "price":
+        aVal = a.price;
+        bVal = b.price;
+        break;
+      case "stock":
+        aVal = a.stock;
+        bVal = b.stock;
+        break;
+      case "status":
+        aVal = a.status;
+        bVal = b.status;
+        break;
+      default:
+        aVal = a.name.toLowerCase();
+        bVal = b.name.toLowerCase();
+    }
+
+    if (aVal < bVal) return sortOrder.value === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder.value === "asc" ? 1 : -1;
+    return 0;
+  });
 
   return filtered;
 });

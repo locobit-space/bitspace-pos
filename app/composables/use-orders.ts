@@ -17,6 +17,8 @@ const orders = ref<Order[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const syncPending = ref(0);
+const lastSyncAt = ref<number>(0);
+let backgroundSyncInterval: ReturnType<typeof setInterval> | null = null;
 
 export function useOrders() {
   const nostrData = useNostrData();
@@ -30,7 +32,7 @@ export function useOrders() {
       return null;
     }
   };
-  
+
   // Get current user's pubkey for store order queries
   const getUserPubkey = (): string | null => {
     if (!import.meta.client) return null;
@@ -76,7 +78,7 @@ export function useOrders() {
       const localOrders = await db.localOrders
         .orderBy("createdAt")
         .reverse()
-        .limit(500)
+        .limit(100) // Reduced from 500 for faster initial load
         .toArray();
 
       return localOrders.map((lo) => JSON.parse(lo.data) as Order);
@@ -108,6 +110,14 @@ export function useOrders() {
     error.value = null;
 
     try {
+      // Restore last sync timestamp
+      if (import.meta.client) {
+        const savedSyncAt = localStorage.getItem("bitspace_last_orders_sync");
+        if (savedSyncAt) {
+          lastSyncAt.value = parseInt(savedSyncAt, 10);
+        }
+      }
+
       // Load from local DB first (fast)
       orders.value = await loadFromLocal();
 
@@ -116,7 +126,7 @@ export function useOrders() {
 
       // Then sync with Nostr if online
       if (offline.isOnline.value) {
-        await syncWithNostr();
+        await syncWithNostr({ batchSize: 50 });
       }
 
       // Count pending syncs
@@ -125,8 +135,14 @@ export function useOrders() {
 
       // Listen for new orders from customer tabs (same browser)
       if (import.meta.client) {
-        window.addEventListener('storage', handleStorageEvent);
-        window.addEventListener('bitspace-new-order', handleNewOrderEvent as EventListener);
+        window.addEventListener("storage", handleStorageEvent);
+        window.addEventListener(
+          "bitspace-new-order",
+          handleNewOrderEvent as EventListener
+        );
+
+        // Start background sync (every 30 seconds)
+        startBackgroundSync(30000);
       }
     } catch (e) {
       error.value = `Failed to initialize orders: ${e}`;
@@ -140,31 +156,31 @@ export function useOrders() {
    */
   async function pickupPendingCustomerOrders(): Promise<void> {
     if (!import.meta.client) return;
-    
+
     const PENDING_ORDERS_KEY = "bitspace_pending_orders";
     try {
       const stored = localStorage.getItem(PENDING_ORDERS_KEY);
       if (!stored) return;
-      
+
       const pendingOrders: Order[] = JSON.parse(stored);
       let importedCount = 0;
-      
+
       for (const order of pendingOrders) {
         // Check if order already exists
-        const exists = orders.value.find(o => o.id === order.id);
+        const exists = orders.value.find((o) => o.id === order.id);
         if (!exists) {
           // Add to state and save to local DB
           orders.value.unshift(order);
           await saveToLocal(order);
           importedCount++;
-          
+
           // Try to sync to Nostr
           if (offline.isOnline.value) {
             saveToNostr(order).catch(() => {});
           }
         }
       }
-      
+
       // Clear pending orders after pickup
       if (importedCount > 0) {
         localStorage.removeItem(PENDING_ORDERS_KEY);
@@ -188,7 +204,7 @@ export function useOrders() {
    */
   function handleNewOrderEvent(event: CustomEvent<Order>): void {
     const order = event.detail;
-    const exists = orders.value.find(o => o.id === order.id);
+    const exists = orders.value.find((o) => o.id === order.id);
     if (!exists) {
       orders.value.unshift(order);
       saveToLocal(order);
@@ -331,10 +347,14 @@ export function useOrders() {
     // Auto-create accounting journal entry for the sale
     try {
       const accounting = useAccounting();
-      const completedOrder = { ...order, paymentMethod, status: 'completed' as const };
+      const completedOrder = {
+        ...order,
+        paymentMethod,
+        status: "completed" as const,
+      };
       await accounting.createSalesJournalEntry(completedOrder);
     } catch (e) {
-      console.warn('[Orders] Failed to create accounting entry:', e);
+      console.warn("[Orders] Failed to create accounting entry:", e);
       // Don't block order completion if accounting fails
     }
 
@@ -396,37 +416,43 @@ export function useOrders() {
     // Note: For Nostr, we would typically publish a deletion event (kind 5)
     // but since nostrData doesn't have deleteOrder yet, we skip this for now
     // The order is effectively soft-deleted from this client
-    
+
     return true;
   }
 
   /**
    * Update full order details
    */
-  async function updateOrder(orderId: string, updates: Partial<Order>): Promise<Order | null> {
-    const order = orders.value.find(o => o.id === orderId);
+  async function updateOrder(
+    orderId: string,
+    updates: Partial<Order>
+  ): Promise<Order | null> {
+    const order = orders.value.find((o) => o.id === orderId);
     if (!order) return null;
-    
+
     const updatedOrder: Order = {
       ...order,
-      ...updates
+      ...updates,
     };
-    
+
     // Calculate new total if items changed
     if (updates.items) {
-      updatedOrder.total = updates.items.reduce((sum, item) => sum + item.total, 0);
+      updatedOrder.total = updates.items.reduce(
+        (sum, item) => sum + item.total,
+        0
+      );
     }
-    
+
     // Update local state and DB
-    const index = orders.value.findIndex(o => o.id === orderId);
+    const index = orders.value.findIndex((o) => o.id === orderId);
     if (index !== -1) orders.value[index] = updatedOrder;
     await saveToLocal(updatedOrder);
-    
+
     // Sync to Nostr
     if (offline.isOnline.value) {
       saveToNostr(updatedOrder); // Fire and forget
     }
-    
+
     return updatedOrder;
   }
 
@@ -434,37 +460,43 @@ export function useOrders() {
    * Merge two orders (combine items)
    * Source order is cancelled/deleted after merge
    */
-  async function mergeOrders(sourceOrderId: string, targetOrderId: string): Promise<Order | null> {
-    const sourceOrder = orders.value.find(o => o.id === sourceOrderId);
-    const targetOrder = orders.value.find(o => o.id === targetOrderId);
-    
+  async function mergeOrders(
+    sourceOrderId: string,
+    targetOrderId: string
+  ): Promise<Order | null> {
+    const sourceOrder = orders.value.find((o) => o.id === sourceOrderId);
+    const targetOrder = orders.value.find((o) => o.id === targetOrderId);
+
     if (!sourceOrder || !targetOrder) return null;
-    
+
     // Clone items from source to avoid reference issues
-    const newItems = sourceOrder.items.map(item => ({
+    const newItems = sourceOrder.items.map((item) => ({
       ...item,
       id: `merged_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, // Generate new IDs
     }));
-    
+
     // Combine items
     const combinedItems = [...targetOrder.items, ...newItems];
-    
+
     // Calculate new totals
     const newTotal = combinedItems.reduce((sum, item) => sum + item.total, 0);
     const newTips = (targetOrder.tip || 0) + (sourceOrder.tip || 0);
-    
+
     // Update target order
     const updatedTarget = await updateOrder(targetOrderId, {
       items: combinedItems,
       total: newTotal,
       tip: newTips,
-      notes: (targetOrder.notes ? targetOrder.notes + '\n' : '') + 
-             (sourceOrder.notes ? `Merged from #${sourceOrder.id.slice(-4)}: ${sourceOrder.notes}` : `Merged from #${sourceOrder.id.slice(-4)}`)
+      notes:
+        (targetOrder.notes ? targetOrder.notes + "\n" : "") +
+        (sourceOrder.notes
+          ? `Merged from #${sourceOrder.id.slice(-4)}: ${sourceOrder.notes}`
+          : `Merged from #${sourceOrder.id.slice(-4)}`),
     });
-    
+
     // Delete source order
     await deleteOrder(sourceOrderId);
-    
+
     return updatedTarget;
   }
   // ============================================
@@ -473,14 +505,20 @@ export function useOrders() {
 
   /**
    * Sync local orders with Nostr
+   * @param options.batchSize - Number of orders to fetch per batch (default: 50)
+   * @param options.fullSync - Force full sync regardless of last sync time
    */
-  async function syncWithNostr(): Promise<number> {
+  async function syncWithNostr(
+    options: { batchSize?: number; fullSync?: boolean } = {}
+  ): Promise<number> {
+    const batchSize = options.batchSize ?? 50;
     let synced = 0;
 
     try {
-      // Get unsynced orders
+      // Get unsynced orders (limit batch to avoid blocking)
       const unsyncedOrders = await db.localOrders
         .filter((o) => !o.syncedAt || o.syncedAt === 0)
+        .limit(batchSize)
         .toArray();
 
       for (const localOrder of unsyncedOrders) {
@@ -491,17 +529,14 @@ export function useOrders() {
         }
       }
 
-      // Fetch new orders from Nostr
-      const lastSynced = await db.localOrders
-        .orderBy("createdAt")
-        .reverse()
-        .first();
-
-      const since = lastSynced
-        ? Math.floor(lastSynced.createdAt / 1000) - 3600 // 1 hour buffer
+      // Fetch new orders from Nostr with limit
+      const since = options.fullSync
+        ? undefined
+        : lastSyncAt.value
+        ? Math.floor(lastSyncAt.value / 1000) - 3600 // 1 hour buffer
         : undefined;
 
-      const nostrOrders = await loadFromNostr({ since });
+      const nostrOrders = await loadFromNostr({ since, limit: batchSize });
 
       // Merge with local
       for (const nostrOrder of nostrOrders) {
@@ -511,7 +546,7 @@ export function useOrders() {
           await saveToLocal(nostrOrder);
         }
       }
-      
+
       // Also fetch customer orders tagged to this store (via #p tag)
       // This gets orders from customers who scanned QR and used ephemeral keys
       const userPubkey = getUserPubkey();
@@ -532,10 +567,52 @@ export function useOrders() {
       );
 
       syncPending.value = Math.max(0, syncPending.value - synced);
+      lastSyncAt.value = Date.now();
+
+      // Persist last sync time
+      if (import.meta.client) {
+        localStorage.setItem(
+          "bitspace_last_orders_sync",
+          lastSyncAt.value.toString()
+        );
+      }
+
       return synced;
     } catch (e) {
       console.error("Sync failed:", e);
       return 0;
+    }
+  }
+
+  /**
+   * Start background sync at specified interval
+   * @param intervalMs - Sync interval in milliseconds (default: 30000 = 30 seconds)
+   */
+  function startBackgroundSync(intervalMs = 30000): void {
+    if (backgroundSyncInterval) {
+      clearInterval(backgroundSyncInterval);
+    }
+
+    backgroundSyncInterval = setInterval(async () => {
+      if (offline.isOnline.value && !isLoading.value) {
+        console.log("[Orders] Background sync triggered");
+        await syncWithNostr({ batchSize: 50 });
+      }
+    }, intervalMs);
+
+    console.log(
+      `[Orders] Background sync started (every ${intervalMs / 1000}s)`
+    );
+  }
+
+  /**
+   * Stop background sync
+   */
+  function stopBackgroundSync(): void {
+    if (backgroundSyncInterval) {
+      clearInterval(backgroundSyncInterval);
+      backgroundSyncInterval = null;
+      console.log("[Orders] Background sync stopped");
     }
   }
 
@@ -814,6 +891,9 @@ export function useOrders() {
     // Sync
     syncWithNostr,
     forceSyncAll,
+    startBackgroundSync,
+    stopBackgroundSync,
+    lastSyncAt,
 
     // Query
     getOrder,

@@ -22,6 +22,20 @@ const statusFilter = ref("all");
 const currentPage = ref(1);
 const itemsPerPage = 20;
 
+// Sorting
+const sortKey = ref<string>("date");
+const sortOrder = ref<"asc" | "desc">("desc");
+
+const toggleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = key === "date" ? "desc" : "asc";
+  }
+  currentPage.value = 1;
+};
+
 // Status options
 const statusOptions = [
   { value: "all", label: t("orders.status.all") },
@@ -51,10 +65,45 @@ const filteredOrders = computed(() => {
     result = result.filter((order) => order.status === statusFilter.value);
   }
 
-  // Sort by date descending
-  result.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  // Apply dynamic sorting
+  result.sort((a, b) => {
+    let aVal: string | number = "";
+    let bVal: string | number = "";
+
+    switch (sortKey.value) {
+      case "id":
+        aVal = a.id.toLowerCase();
+        bVal = b.id.toLowerCase();
+        break;
+      case "date":
+        aVal = new Date(a.date).getTime();
+        bVal = new Date(b.date).getTime();
+        break;
+      case "customer":
+        aVal = (a.customerName || a.customer || "").toLowerCase();
+        bVal = (b.customerName || b.customer || "").toLowerCase();
+        break;
+      case "items":
+        aVal = a.items?.length || 0;
+        bVal = b.items?.length || 0;
+        break;
+      case "total":
+        aVal = a.total;
+        bVal = b.total;
+        break;
+      case "status":
+        aVal = a.status;
+        bVal = b.status;
+        break;
+      default:
+        aVal = new Date(a.date).getTime();
+        bVal = new Date(b.date).getTime();
+    }
+
+    if (aVal < bVal) return sortOrder.value === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder.value === "asc" ? 1 : -1;
+    return 0;
+  });
 
   return result;
 });
@@ -274,24 +323,92 @@ onMounted(async () => {
         <thead>
           <tr class="border-b border-gray-200 dark:border-gray-700">
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('id')"
             >
-              {{ t("orders.id") }}
+              <div class="flex items-center gap-1">
+                {{ t("orders.id") }}
+                <UIcon
+                  v-if="sortKey === 'id'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('date')"
             >
-              {{ t("orders.date") }}
+              <div class="flex items-center gap-1">
+                {{ t("orders.date") }}
+                <UIcon
+                  v-if="sortKey === 'date'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('customer')"
             >
-              {{ t("orders.customer") }}
+              <div class="flex items-center gap-1">
+                {{ t("orders.customer") }}
+                <UIcon
+                  v-if="sortKey === 'customer'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('items')"
             >
-              Items
+              <div class="flex items-center gap-1">
+                Items
+                <UIcon
+                  v-if="sortKey === 'items'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
               class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
@@ -299,14 +416,48 @@ onMounted(async () => {
               Payment
             </th>
             <th
-              class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('total')"
             >
-              {{ t("orders.total") }}
+              <div class="flex items-center gap-1 justify-end">
+                {{ t("orders.total") }}
+                <UIcon
+                  v-if="sortKey === 'total'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
-              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+              class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 select-none"
+              @click="toggleSort('status')"
             >
-              {{ t("orders.status") }}
+              <div class="flex items-center gap-1">
+                {{ t("orders.status") }}
+                <UIcon
+                  v-if="sortKey === 'status'"
+                  :name="
+                    sortOrder === 'asc'
+                      ? 'i-heroicons-chevron-up'
+                      : 'i-heroicons-chevron-down'
+                  "
+                  class="w-4 h-4"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-chevron-up-down"
+                  class="w-4 h-4 opacity-30"
+                />
+              </div>
             </th>
             <th
               class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
