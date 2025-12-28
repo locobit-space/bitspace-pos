@@ -119,6 +119,9 @@ export interface ShopConfig {
     instagram?: string;
     tiktok?: string;
   };
+  // Analytics & Tracking
+  tags?: string[]; // Custom tags like "coffee", "thai-food", "retail"
+  platformTag?: string; // Platform identifier, defaults to "bnos.space"
 }
 
 // Singleton state
@@ -288,6 +291,10 @@ export function useShop() {
           config.marketplaceDescription ??
           shopConfig.value?.marketplaceDescription,
         socialLinks: config.socialLinks ?? shopConfig.value?.socialLinks,
+        // Analytics & Tracking
+        tags: config.tags ?? shopConfig.value?.tags ?? [],
+        platformTag:
+          config.platformTag ?? shopConfig.value?.platformTag ?? "bnos.space",
       };
 
       // Get existing settings or create new

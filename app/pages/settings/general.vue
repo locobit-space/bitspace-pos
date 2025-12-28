@@ -192,6 +192,91 @@
                   </UFormField>
                 </div>
               </div>
+
+              <!-- Shop Tags & Analytics -->
+              <div>
+                <h3 class="text-lg font-semibold mb-4">
+                  {{
+                    $t("settings.general.shop_tags") || "Shop Tags & Analytics"
+                  }}
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  {{
+                    $t("settings.general.shop_tags_desc") ||
+                    "Add tags to categorize your shop and help with analytics."
+                  }}
+                </p>
+
+                <div class="space-y-4">
+                  <!-- Tags Input -->
+                  <UFormField
+                    :label="$t('settings.general.tags') || 'Tags'"
+                    name="tags"
+                  >
+                    <div class="space-y-2">
+                      <div class="flex flex-wrap gap-2 mb-2">
+                        <UBadge
+                          v-for="(tag, index) in state.tags"
+                          :key="index"
+                          color="primary"
+                          variant="subtle"
+                          class="cursor-pointer"
+                          @click="removeTag(index)"
+                        >
+                          {{ tag }}
+                          <UIcon
+                            name="i-heroicons-x-mark"
+                            class="w-3 h-3 ml-1"
+                          />
+                        </UBadge>
+                      </div>
+                      <div class="flex gap-2">
+                        <UInput
+                          v-model="newTag"
+                          :placeholder="
+                            $t('settings.general.tag_placeholder') ||
+                            'e.g. coffee, thai-food, retail'
+                          "
+                          class="flex-1"
+                          @keyup.enter="addTag"
+                        />
+                        <UButton
+                          icon="i-heroicons-plus"
+                          :disabled="!newTag.trim()"
+                          @click="addTag"
+                        />
+                      </div>
+                    </div>
+                    <template #hint>
+                      <span class="text-xs text-gray-500">
+                        {{
+                          $t("settings.general.tags_hint") ||
+                          "Press Enter or click + to add tags"
+                        }}
+                      </span>
+                    </template>
+                  </UFormField>
+
+                  <!-- Platform Tag (Read-only) -->
+                  <UFormField
+                    :label="$t('settings.general.platform_tag') || 'Platform'"
+                    name="platformTag"
+                  >
+                    <div class="flex items-center gap-2">
+                      <UBadge color="amber" variant="solid" size="lg">
+                        <UIcon name="i-heroicons-bolt" class="w-4 h-4 mr-1" />
+                        {{ state.platformTag }}
+                      </UBadge>
+                      <span class="text-xs text-gray-500">
+                        {{
+                          $t("settings.general.platform_tag_hint") ||
+                          "Powered by bnos.space"
+                        }}
+                      </span>
+                    </div>
+                  </UFormField>
+                </div>
+              </div>
             </div>
           </UCard>
         </template>
@@ -716,7 +801,25 @@ const state = reactive({
   sessionTimeout: 30,
   maxLoginAttempts: 5,
   enableTwoFactor: false,
+  // Shop Tags & Analytics
+  tags: [] as string[],
+  platformTag: "bnos.space",
 });
+
+// Tag management
+const newTag = ref("");
+
+const addTag = () => {
+  const tag = newTag.value.trim().toLowerCase().replace(/\s+/g, "-");
+  if (tag && !state.tags.includes(tag)) {
+    state.tags.push(tag);
+    newTag.value = "";
+  }
+};
+
+const removeTag = (index: number) => {
+  state.tags.splice(index, 1);
+};
 
 // Tabs configuration
 const tabs = [

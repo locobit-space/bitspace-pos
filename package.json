@@ -7,7 +7,7 @@
     "build": "nuxt build",
     "dev": "nuxt dev -p 3002",
     "generate": "nuxt generate",
-    "preview": "nuxt preview",
+    "preview": "nuxt preview -p 3002",
     "test": "vitest",
     "test:unit": "vitest",
     "test:e2e": "playwright test",

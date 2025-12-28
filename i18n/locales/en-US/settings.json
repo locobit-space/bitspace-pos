@@ -87,7 +87,14 @@
       "date_format": "Date Format",
       "time_format": "Time Format",
       "timezone": "Timezone",
-      "decimal_places": "Decimal Places"
+      "decimal_places": "Decimal Places",
+      "shop_tags": "Shop Tags & Analytics",
+      "shop_tags_desc": "Add tags to categorize your shop and help with analytics.",
+      "tags": "Tags",
+      "tag_placeholder": "e.g. coffee, thai-food, retail",
+      "tags_hint": "Press Enter or click + to add tags",
+      "platform_tag": "Platform",
+      "platform_tag_hint": "Powered by bnos.space"
     },
     "branches": {
       "title": "Branch Management",

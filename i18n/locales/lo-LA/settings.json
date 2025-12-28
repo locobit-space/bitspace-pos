@@ -76,7 +76,14 @@
       "date_format": "ຮູບແບບວັນທີ",
       "time_format": "ຮູບແບບເວລາ",
       "timezone": "ເຂດເວລາ",
-      "decimal_places": "ຈຳນວນຕົວເລກທົດສະນິຍົມ"
+      "decimal_places": "ຈຳນວນຕົວເລກທົດສະນິຍົມ",
+      "shop_tags": "ແທັກຮ້ານ ແລະ ການວິເຄາະ",
+      "shop_tags_desc": "ເພີ່ມແທັກເພື່ອຈັດປະເພດຮ້ານຂອງທ່ານ ແລະ ຊ່ວຍໃນການວິເຄາະ.",
+      "tags": "ແທັກ",
+      "tag_placeholder": "ເຊັ່ນ: ກາເຟ, ອາຫານໄທ, ຂາຍຍ່ອຍ",
+      "tags_hint": "ກົດ Enter ຫຼື ຄລິກ + ເພື່ອເພີ່ມແທັກ",
+      "platform_tag": "ແພຣດຟອມ",
+      "platform_tag_hint": "ຂັບເຄື່ອນໂດຍ bnos.space"
     },
     "branches": {
       "title": "ການຈັດການສາຂາ",
