@@ -1,5 +1,6 @@
 {
   "common": {
+    "data": "Data",
     "enabled": "Enabled",
     "or": "or",
     "save": "Save",
@@ -32,9 +33,9 @@
     "filter": "Filter",
     "moreFilters": "More Filters",
     "reset": "Reset",
-    "export": "Export",
+    "export": "Export {type}",
     "exported": "Exported",
-    "import": "Import",
+    "import": "Import {type}",
     "date": "Date",
     "createdBy": "Created By",
     "all": "All",
@@ -113,6 +114,9 @@
     "continue": "Continue",
     "apply": "Apply",
     "remove": "Remove",
+    "clearAll": "Clear All",
+    "default": "Default",
+    "setDefault": "Set Default",
     "view": "View",
     "details": "Details",
     "summary": "Summary",

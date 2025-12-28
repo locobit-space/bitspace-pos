@@ -137,6 +137,24 @@
       "loadMore": "ໂຫຼດເພີ່ມ",
       "loading": "ກຳລັງໂຫຼດ...",
       "showingOf": "ສະແດງ {shown} ຈາກ {total}"
-    }
+    },
+    "sizeVariants": "ຕົວເລືອກຂະໜາດ",
+    "sizeVariantsDesc": "ເພີ່ມຂະໜາດ ເຊັ່ນ: S, M, L ກັບລາຄາຕ່າງກັນ",
+    "enableVariants": "ເປີດໃຊ້ຕົວເລືອກຂະໜາດ",
+    "variantsDescription": "ເພີ່ມຂະໜາດ ເຊັ່ນ: S, M, L ກັບລາຄາຕ່າງກັນ",
+    "quickPresets": "ຕົວເລືອກດ່ວນ:",
+    "variantsList": "ຕົວເລືອກ",
+    "addCustomVariant": "ເພີ່ມຕົວເລືອກໃໝ່",
+    "shortName": "ຊື່ຫຍໍ້",
+    "variantName": "ຊື່ຕົວເລືອກ",
+    "priceModifier": "ລາຄາເພີ່ມ/ຫຼຸດ",
+    "basePrice": "ລາຄາພື້ນຖານ",
+    "fixed": "ຈຳນວນແນ່ນອນ",
+    "percentage": "ເປີເຊັນ",
+    "selectSize": "ເລືອກຂະໜາດ",
+    "specialInstructions": "ຄຳແນະນຳພິເສດ",
+    "notesPlaceholder": "ເຊັ່ນ: ນ້ຳແຂງໜ້ອຍ, ບໍ່ໃສ່ນໍ້າຕານ, ເຜັດຫຼາຍ...",
+    "addToCart": "ເພີ່ມໃສ່ກະຕ່າ",
+    "sizeRequired": "ກະລຸນາເລືອກຂະໜາດ"
   }
 }

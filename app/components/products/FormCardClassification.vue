@@ -21,38 +21,50 @@ interface Props {
   categoryOptions: Option[];
   unitOptions: Option[];
   branchOptions: Option[];
-  productTypeOptions: Array<{ value: string; label: string; icon?: string }>;
+  productTypeOptions: Array<{ value: string; label: string }>;
 }
 
 defineProps<Props>();
 
 const emit = defineEmits<{
-  'product-type-change': [type: string];
-  'add-category': [];
-  'add-unit': [];
+  "product-type-change": [type: string];
+  "add-category": [];
+  "add-unit": [];
 }>();
 
 const form = defineModel<FormData>({ required: true });
 
 function onTypeChange(value: string) {
-  emit('product-type-change', value);
+  emit("product-type-change", value);
 }
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+  <div
+    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden"
+  >
     <!-- Header -->
-    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+    <div
+      class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50"
+    >
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-          <UIcon name="i-heroicons-tag" class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        <div
+          class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center"
+        >
+          <UIcon
+            name="i-heroicons-tag"
+            class="w-5 h-5 text-purple-600 dark:text-purple-400"
+          />
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t('products.classification') || 'Classification' }}
+            {{ t("products.classification") || "Classification" }}
           </h3>
           <p class="text-xs text-gray-500">
-            {{ t('products.classificationHint') || 'Product type, category, and unit' }}
+            {{
+              t("products.classificationHint") ||
+              "Product type, category, and unit"
+            }}
           </p>
         </div>
       </div>
@@ -62,12 +74,16 @@ function onTypeChange(value: string) {
     <div class="p-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Product Type -->
-        <UFormField :label="t('products.productType') || 'Product Type'" name="productType">
+        <UFormField
+          :label="t('products.productType') || 'Product Type'"
+          name="productType"
+        >
           <USelect
             v-model="form.productType"
             :items="productTypeOptions"
             label-key="label"
             value-key="value"
+            class="w-full"
             :placeholder="t('products.selectProductType') || 'Select type'"
             @update:model-value="onTypeChange"
           />
@@ -82,7 +98,7 @@ function onTypeChange(value: string) {
               label-key="name"
               value-key="id"
               :placeholder="t('products.selectCategory')"
-              class="flex-1"
+              class="w-full"
             />
             <UTooltip :text="t('common.add') + ' ' + t('products.category')">
               <UButton
@@ -104,7 +120,7 @@ function onTypeChange(value: string) {
               label-key="name"
               value-key="id"
               :placeholder="t('products.selectUnit')"
-              class="flex-1"
+              class="w-full"
             />
             <UTooltip :text="t('common.add') + ' ' + t('products.unit')">
               <UButton
@@ -125,6 +141,7 @@ function onTypeChange(value: string) {
             label-key="name"
             value-key="id"
             :placeholder="t('common.selectBranch')"
+            class="w-full"
           />
         </UFormField>
       </div>

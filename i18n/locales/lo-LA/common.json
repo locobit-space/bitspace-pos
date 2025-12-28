@@ -1,5 +1,6 @@
 {
   "common": {
+    "data": "ຂໍ້ມູນ",
     "justNow": "ເມື່ອກີ້",
     "clear": "ລຶບ",
     "enabled": "ເປີດໃຊ້",
@@ -32,9 +33,9 @@
     "filter": "ກັ່ນຕອງ",
     "moreFilters": "ຕົວກັ່ນຕອງເພີ່ມ",
     "reset": "ຣີເຊັດ",
-    "export": "ສົ່ງອອກ",
+    "export": "ສົ່ງອອກ {type}",
     "exported": "ສົ່ງອອກແລ້ວ",
-    "import": "ນຳເຂົ້າ",
+    "import": "ນຳເຂົ້າ {type}",
     "date": "ວັນທີ",
     "createdBy": "ສ້າງໂດຍ",
     "all": "ທັງໝົດ",
@@ -100,6 +101,9 @@
     "continue": "ສືບຕໍ່",
     "apply": "ນຳໃຊ້",
     "remove": "ລຶບອອກ",
+    "clearAll": "ລຶບທັງໝົດ",
+    "default": "ຄ່າປົກກະຕິ",
+    "setDefault": "ຕັ້ງເປັນຄ່າປົກກະຕິ",
     "view": "ເບິ່ງ",
     "details": "ລາຍລະອຽດ",
     "summary": "ສະຫຼຸບ",

@@ -83,9 +83,7 @@
               >
                 <div
                   class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-300"
-                  :class="
-                    getStepClass(step.key, index)
-                  "
+                  :class="getStepClass(step.key, index)"
                 >
                   {{ step.icon }}
                 </div>
@@ -143,7 +141,8 @@
             <div class="flex items-center gap-3">
               <div>
                 <h1 class="text-lg font-bold text-gray-900 dark:text-white">
-                  📍 {{ tableInfo.tableName || `Table ${tableInfo.tableNumber}` }}
+                  📍
+                  {{ tableInfo.tableName || `Table ${tableInfo.tableNumber}` }}
                 </h1>
                 <p class="text-xs text-gray-500">
                   {{ $t("order.browseMenu") || "Browse our menu" }}
@@ -181,7 +180,9 @@
         class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-[60px] z-10"
       >
         <div class="container mx-auto px-4">
-          <div class="flex gap-2 overflow-x-auto py-3 scrollbar-hide -mx-4 px-4">
+          <div
+            class="flex gap-2 overflow-x-auto py-3 scrollbar-hide -mx-4 px-4"
+          >
             <UButton
               v-for="category in menuCategories"
               :key="category.id"
@@ -244,7 +245,9 @@
               >
                 {{ product.name }}
               </h3>
-              <p class="font-bold text-primary-600 dark:text-primary-400 text-sm mt-1">
+              <p
+                class="font-bold text-primary-600 dark:text-primary-400 text-sm mt-1"
+              >
                 {{ formatPrice(product.price) }}
               </p>
             </div>
@@ -324,7 +327,9 @@
       <!-- Cart Modal - Bottom Sheet Style -->
       <UModal v-model:open="showCartModal">
         <template #content>
-          <UCard class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl">
+          <UCard
+            class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl"
+          >
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
@@ -385,9 +390,15 @@
                       class="font-medium text-gray-900 dark:text-white text-sm truncate"
                     >
                       {{ item.product.name }}
+                      <span
+                        v-if="item.selectedVariant"
+                        class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
+                      >
+                        {{ item.selectedVariant.shortName }}
+                      </span>
                     </h4>
                     <p class="text-xs text-primary-600 dark:text-primary-400">
-                      {{ formatPrice(item.product.price) }}
+                      {{ formatPrice(getItemPrice(item)) }}
                     </p>
 
                     <!-- Notes Input -->
@@ -459,7 +470,9 @@
       <!-- Order History Modal -->
       <UModal v-model:open="showOrderHistoryModal">
         <template #content>
-          <UCard class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl">
+          <UCard
+            class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl"
+          >
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
@@ -512,12 +525,18 @@
 
                   <!-- Order Items -->
                   <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {{ historyOrder.items.map(i => `${i.quantity}x ${i.product.name}`).join(', ') }}
+                    {{
+                      historyOrder.items
+                        .map((i) => `${i.quantity}x ${i.product.name}`)
+                        .join(", ")
+                    }}
                   </div>
 
                   <!-- Order Total & Reorder -->
                   <div class="flex items-center justify-between">
-                    <span class="font-bold text-primary-600 dark:text-primary-400">
+                    <span
+                      class="font-bold text-primary-600 dark:text-primary-400"
+                    >
                       {{ formatPrice(historyOrder.total) }}
                     </span>
                     <UButton
@@ -527,7 +546,10 @@
                       class="min-h-[36px]"
                       @click="reorderFromHistory(historyOrder)"
                     >
-                      <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-1" />
+                      <UIcon
+                        name="i-heroicons-arrow-path"
+                        class="w-4 h-4 mr-1"
+                      />
                       {{ $t("order.reorder") || "Reorder" }}
                     </UButton>
                   </div>
@@ -540,12 +562,26 @@
 
       <!-- Call Waiter Success Toast -->
       <!-- Request Bill Success Toast -->
+
+      <!-- Product Variant Selection Modal -->
+      <ProductsProductVariantModal
+        v-model:open="showVariantModal"
+        :product="selectedProductForVariant"
+        @confirm="handleVariantConfirm"
+        @cancel="selectedProductForVariant = null"
+      />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Product, Category, Order } from "~/types";
+import type {
+  Product,
+  ProductVariant,
+  ProductModifier,
+  Category,
+  Order,
+} from "~/types";
 
 definePageMeta({
   layout: "blank",
@@ -569,9 +605,19 @@ const tableInfo = ref<{
 } | null>(null);
 
 const selectedCategory = ref("all");
-const cart = ref<{ product: Product; quantity: number; notes?: string }[]>([]);
+const cart = ref<
+  {
+    product: Product;
+    quantity: number;
+    notes?: string;
+    selectedVariant?: ProductVariant;
+    selectedModifiers?: ProductModifier[];
+  }[]
+>([]);
 const showCartModal = ref(false);
 const showOrderHistoryModal = ref(false);
+const showVariantModal = ref(false);
+const selectedProductForVariant = ref<Product | null>(null);
 const isSubmitting = ref(false);
 const orderSubmitted = ref(false);
 const submittedOrderId = ref<string | null>(null);
@@ -595,40 +641,43 @@ const PENDING_ORDERS_KEY = "bitspace_pending_orders"; // For admin to pick up
 // BroadcastChannel for instant cross-tab communication
 let orderChannel: BroadcastChannel | null = null;
 if (import.meta.client) {
-  orderChannel = new BroadcastChannel('bitspace-orders');
+  orderChannel = new BroadcastChannel("bitspace-orders");
 }
 
 // Broadcast new order to other tabs (admin/kitchen tabs)
 const broadcastOrderToAdmin = (order: Order) => {
   if (!import.meta.client) return;
-  
+
   try {
     // Serialize order to plain object (removes Vue reactive proxies)
     const plainOrder = JSON.parse(JSON.stringify(order));
-    
+
     // Method 1: BroadcastChannel (instant, same-origin only)
     if (orderChannel) {
-      orderChannel.postMessage({ type: 'new-order', order: plainOrder });
+      orderChannel.postMessage({ type: "new-order", order: plainOrder });
     }
-    
+
     // Method 2: localStorage (fallback, triggers storage event in other tabs)
     const existing = localStorage.getItem(PENDING_ORDERS_KEY);
     const pendingOrders: Order[] = existing ? JSON.parse(existing) : [];
     pendingOrders.unshift(plainOrder);
     if (pendingOrders.length > 100) pendingOrders.splice(100);
     localStorage.setItem(PENDING_ORDERS_KEY, JSON.stringify(pendingOrders));
-    
+
     // Method 3: IndexedDB is already shared across tabs via ordersStore.createOrder()
-    
   } catch (e) {
-    console.error('Failed to broadcast order:', e);
+    console.error("Failed to broadcast order:", e);
   }
 };
 
 // Order status steps for timeline
 const orderStatusSteps = [
   { key: "new", icon: "📝", label: t("order.statusNew") || "Placed" },
-  { key: "preparing", icon: "👨‍🍳", label: t("order.statusPreparing") || "Preparing" },
+  {
+    key: "preparing",
+    icon: "👨‍🍳",
+    label: t("order.statusPreparing") || "Preparing",
+  },
   { key: "ready", icon: "✅", label: t("order.statusReady") || "Ready" },
   { key: "served", icon: "🍽️", label: t("order.statusServed") || "Served" },
 ];
@@ -662,10 +711,24 @@ const cartItemCount = computed(() => {
 });
 
 const cartTotal = computed(() => {
-  return cart.value.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
+  return cart.value.reduce((sum, item) => {
+    let price = item.product.price;
+    // Add variant price modifier
+    if (item.selectedVariant) {
+      if (item.selectedVariant.priceModifierType === "percentage") {
+        price += price * (item.selectedVariant.priceModifier / 100);
+      } else {
+        price += item.selectedVariant.priceModifier;
+      }
+    }
+    // Add modifier prices
+    if (item.selectedModifiers) {
+      for (const mod of item.selectedModifiers) {
+        price += mod.price;
+      }
+    }
+    return sum + price * item.quantity;
+  }, 0);
 });
 
 // Get quantity in cart for a product
@@ -679,7 +742,7 @@ const getStepClass = (stepKey: string, index: number) => {
   const statusOrder = ["new", "preparing", "ready", "served"];
   const currentIndex = statusOrder.indexOf(currentOrderStatus.value);
   const stepIndex = statusOrder.indexOf(stepKey);
-  
+
   if (stepIndex < currentIndex) {
     return "bg-primary-500 text-white";
   } else if (stepIndex === currentIndex) {
@@ -758,11 +821,18 @@ const getOrderStatusTitle = (status: string) => {
 const getOrderStatusDescription = (status: string) => {
   switch (status) {
     case "new":
-      return t("order.orderPlacedDesc") || "Your order has been sent to the kitchen";
+      return (
+        t("order.orderPlacedDesc") || "Your order has been sent to the kitchen"
+      );
     case "preparing":
-      return t("order.orderPreparingDesc") || "The chef is preparing your order";
+      return (
+        t("order.orderPreparingDesc") || "The chef is preparing your order"
+      );
     case "ready":
-      return t("order.orderReadyDesc") || "Your order is ready for pickup or delivery";
+      return (
+        t("order.orderReadyDesc") ||
+        "Your order is ready for pickup or delivery"
+      );
     case "served":
       return t("order.orderServedDesc") || "Thank you for dining with us!";
     default:
@@ -811,7 +881,17 @@ const formatOrderTime = (dateString: string) => {
 
 // Cart actions
 const addToCart = (product: Product) => {
-  const existing = cart.value.find((item) => item.product.id === product.id);
+  // If product has variants, show variant selection modal
+  if (product.hasVariants && product.variants && product.variants.length > 0) {
+    selectedProductForVariant.value = product;
+    showVariantModal.value = true;
+    return;
+  }
+
+  // No variants, add directly
+  const existing = cart.value.find(
+    (item) => item.product.id === product.id && !item.selectedVariant
+  );
   if (existing) {
     existing.quantity++;
   } else {
@@ -825,6 +905,64 @@ const addToCart = (product: Product) => {
     color: "green",
     timeout: 1500,
   });
+};
+
+// Handle variant modal confirmation
+const handleVariantConfirm = (data: {
+  product: Product;
+  variant?: ProductVariant;
+  modifiers: ProductModifier[];
+  notes: string;
+  quantity: number;
+}) => {
+  // Create unique key for cart item with variant
+  const existingIndex = cart.value.findIndex(
+    (item) =>
+      item.product.id === data.product.id &&
+      item.selectedVariant?.id === data.variant?.id &&
+      JSON.stringify(item.selectedModifiers) === JSON.stringify(data.modifiers)
+  );
+
+  if (existingIndex !== -1) {
+    cart.value[existingIndex].quantity += data.quantity;
+  } else {
+    cart.value.push({
+      product: data.product,
+      quantity: data.quantity,
+      notes: data.notes || undefined,
+      selectedVariant: data.variant,
+      selectedModifiers: data.modifiers.length > 0 ? data.modifiers : undefined,
+    });
+  }
+
+  // Show toast
+  const sizeName = data.variant ? ` (${data.variant.shortName})` : "";
+  toast.add({
+    title: `${data.product.name}${sizeName} added`,
+    icon: "i-heroicons-check-circle",
+    color: "green",
+    timeout: 1500,
+  });
+
+  selectedProductForVariant.value = null;
+};
+
+// Get item price including variant modifiers
+const getItemPrice = (item: (typeof cart.value)[0]) => {
+  let price = item.product.price;
+  if (item.selectedVariant) {
+    if (item.selectedVariant.priceModifierType === "percentage") {
+      price += price * (item.selectedVariant.priceModifier / 100);
+    } else {
+      price += item.selectedVariant.priceModifier;
+    }
+  }
+  if (item.selectedModifiers) {
+    for (const mod of item.selectedModifiers) {
+      price += mod.price;
+    }
+  }
+  return price;
 };
 
 const increaseQuantity = (index: number) => {
@@ -850,7 +988,10 @@ const callWaiter = async () => {
   try {
     // Create a service request order
     const serviceRequest = {
-      id: `SVC-${Date.now().toString(36).slice(-4).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      id: `SVC-${Date.now().toString(36).slice(-4).toUpperCase()}${Math.random()
+        .toString(36)
+        .substring(2, 6)
+        .toUpperCase()}`,
       customer: "Customer",
       branch: "main",
       date: new Date().toISOString(),
@@ -859,7 +1000,8 @@ const callWaiter = async () => {
       currency: "LAK" as const,
       status: "pending" as const,
       orderType: "dine_in" as const,
-      tableNumber: tableInfo.value?.tableName || tableInfo.value?.tableNumber || "",
+      tableNumber:
+        tableInfo.value?.tableName || tableInfo.value?.tableNumber || "",
       items: [],
       kitchenStatus: "new" as const,
       kitchenNotes: "🔔 CALL WAITER - Customer needs assistance",
@@ -869,7 +1011,8 @@ const callWaiter = async () => {
 
     toast.add({
       title: t("order.waiterCalled") || "Waiter Called!",
-      description: t("order.waiterCalledDesc") || "Staff will be with you shortly",
+      description:
+        t("order.waiterCalledDesc") || "Staff will be with you shortly",
       icon: "i-heroicons-bell-alert",
       color: "amber",
     });
@@ -891,7 +1034,10 @@ const requestBill = async () => {
   try {
     // Create a bill request order
     const billRequest = {
-      id: `BIL-${Date.now().toString(36).slice(-4).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      id: `BIL-${Date.now().toString(36).slice(-4).toUpperCase()}${Math.random()
+        .toString(36)
+        .substring(2, 6)
+        .toUpperCase()}`,
       customer: "Customer",
       branch: "main",
       date: new Date().toISOString(),
@@ -900,7 +1046,8 @@ const requestBill = async () => {
       currency: "LAK" as const,
       status: "pending" as const,
       orderType: "dine_in" as const,
-      tableNumber: tableInfo.value?.tableName || tableInfo.value?.tableNumber || "",
+      tableNumber:
+        tableInfo.value?.tableName || tableInfo.value?.tableNumber || "",
       items: [],
       kitchenStatus: "new" as const,
       kitchenNotes: "💰 BILL REQUEST - Customer wants to pay",
@@ -910,7 +1057,8 @@ const requestBill = async () => {
 
     toast.add({
       title: t("order.billRequested") || "Bill Requested!",
-      description: t("order.billRequestedDesc") || "Staff will bring your bill shortly",
+      description:
+        t("order.billRequestedDesc") || "Staff will bring your bill shortly",
       icon: "i-heroicons-receipt-percent",
       color: "emerald",
     });
@@ -931,7 +1079,7 @@ const requestBill = async () => {
 const reorderFromHistory = (historyOrder: Order) => {
   // Clear current cart
   cart.value = [];
-  
+
   // Add items from history order
   for (const item of historyOrder.items) {
     cart.value.push({
@@ -940,10 +1088,10 @@ const reorderFromHistory = (historyOrder: Order) => {
       notes: item.notes,
     });
   }
-  
+
   showOrderHistoryModal.value = false;
   showCartModal.value = true;
-  
+
   toast.add({
     title: t("order.reorderAdded") || "Items Added to Cart",
     icon: "i-heroicons-check-circle",
@@ -961,11 +1109,18 @@ const loadOrderHistory = () => {
         // Filter to only show orders for this table (today)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        orderHistory.value = allOrders.filter(o => {
-          const orderDate = new Date(o.date);
-          return orderDate >= today && 
-                 o.tableNumber === (tableInfo.value?.tableName || tableInfo.value?.tableNumber);
-        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        orderHistory.value = allOrders
+          .filter((o) => {
+            const orderDate = new Date(o.date);
+            return (
+              orderDate >= today &&
+              o.tableNumber ===
+                (tableInfo.value?.tableName || tableInfo.value?.tableNumber)
+            );
+          })
+          .sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
       }
     } catch (e) {
       console.error("Failed to load order history:", e);
@@ -1035,23 +1190,26 @@ const submitOrder = async () => {
 
     // Save order to local IndexedDB
     await ordersStore.createOrder(order);
-    
+
     // Sync to Nostr if we have owner pubkey (ephemeral key signing for anonymous customer)
     if (ownerPubkey.value) {
-      nostrData.saveOrderAsAnonymous(order, ownerPubkey.value)
+      nostrData
+        .saveOrderAsAnonymous(order, ownerPubkey.value)
         .then((event) => {
           if (event) {
-
           }
         })
         .catch((e) => {
-          console.warn("[Order] Failed to sync to Nostr (order still saved locally):", e);
+          console.warn(
+            "[Order] Failed to sync to Nostr (order still saved locally):",
+            e
+          );
         });
     }
-    
+
     // Broadcast to admin tabs (localStorage/BroadcastChannel)
     broadcastOrderToAdmin(order);
-    
+
     // Save to local history
     saveOrderToHistory(order);
 
@@ -1070,7 +1228,7 @@ const submitOrder = async () => {
       icon: "i-heroicons-check-circle",
       color: "green",
     });
-    
+
     // Start polling for order status updates
     startOrderStatusPolling(order.id);
   } catch (e) {
@@ -1095,10 +1253,17 @@ const startOrderStatusPolling = (orderId: string) => {
     try {
       const order = ordersStore.getOrder(orderId);
       if (order?.kitchenStatus) {
-        currentOrderStatus.value = order.kitchenStatus as "new" | "preparing" | "ready" | "served";
-        
+        currentOrderStatus.value = order.kitchenStatus as
+          | "new"
+          | "preparing"
+          | "ready"
+          | "served";
+
         // Stop polling if order is served
-        if (order.kitchenStatus === "served" || order.kitchenStatus === "ready") {
+        if (
+          order.kitchenStatus === "served" ||
+          order.kitchenStatus === "ready"
+        ) {
           if (statusPollInterval) {
             clearInterval(statusPollInterval);
             statusPollInterval = null;
@@ -1168,7 +1333,7 @@ onMounted(async () => {
   }
 
   await ordersStore.init();
-  
+
   // Load order history
   loadOrderHistory();
 

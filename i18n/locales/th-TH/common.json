@@ -1,5 +1,6 @@
 {
   "common": {
+    "data": "ข้อมูล",
     "save": "บันทึก",
     "cancel": "ยกเลิก",
     "delete": "ลบ",
@@ -38,8 +39,8 @@
     "refresh": "รีเฟรช",
     "retry": "ลองอีกครั้ง",
     "print": "พิมพ์",
-    "export": "ส่งออก",
-    "import": "นำเข้า",
+    "export": "ส่งออก {type}",
+    "import": "นำเข้า {type}",
     "download": "ดาวน์โหลด",
     "upload": "อัปโหลด",
     "filter": "กรอง",

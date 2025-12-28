@@ -17,12 +17,12 @@
             :items="[
               [
                 {
-                  label: $t('products.import.title') || 'Import Excel',
+                  label: $t('common.import', { type: 'Excel' }),
                   icon: 'i-heroicons-arrow-up-tray',
                   onClick: () => (showExcelImportModal = true),
                 },
                 {
-                  label: $t('products.export.title') || 'Export Excel',
+                  label: $t('common.export', { type: 'Excel' }),
                   icon: 'i-heroicons-arrow-down-tray',
                   onClick: exportToExcel,
                 },
@@ -1652,6 +1652,9 @@ const handleProductSave = async (data: {
   requiresExpiryDate: boolean;
   expiryWarningDays: number | undefined;
   storageType: "ambient" | "refrigerated" | "frozen" | "controlled" | undefined;
+  // Size variants
+  hasVariants: boolean;
+  variants: import("~/types").ProductVariant[];
 }) => {
   try {
     saving.value = true;
@@ -1688,6 +1691,9 @@ const handleProductSave = async (data: {
       requiresExpiryDate: data.requiresExpiryDate,
       expiryWarningDays: data.expiryWarningDays,
       storageType: data.storageType,
+      // Size variants
+      hasVariants: data.hasVariants,
+      variants: data.hasVariants ? data.variants : undefined,
     };
 
     if (selectedProduct.value) {

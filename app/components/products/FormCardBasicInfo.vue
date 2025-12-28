@@ -76,7 +76,7 @@ function handleGenerateBarcode() {
           v-model="form.name"
           :placeholder="t('products.namePlaceholder')"
           size="lg"
-          class="text-lg"
+          class="text-lg w-full"
         />
       </UFormField>
 
@@ -89,6 +89,7 @@ function handleGenerateBarcode() {
             step="0.01"
             :placeholder="t('products.pricePlaceholder')"
             size="lg"
+            class="text-lg w-full"
           >
             <template #leading>
               <span class="text-gray-400 text-sm">₭</span>
@@ -104,6 +105,7 @@ function handleGenerateBarcode() {
               t('products.skuPlaceholder') || 'Auto-generated if empty'
             "
             size="lg"
+            class="text-lg w-full"
           >
             <template #leading>
               <UIcon name="i-heroicons-hashtag" class="w-4 h-4 text-gray-400" />
@@ -122,6 +124,7 @@ function handleGenerateBarcode() {
                 t('products.barcodePlaceholder') || 'Scan or enter barcode'
               "
               size="lg"
+              class="w-full"
             >
               <template #leading>
                 <UIcon
@@ -141,6 +144,7 @@ function handleGenerateBarcode() {
               size="lg"
               value-key="value"
               label-key="label"
+              class="w-full"
             />
           </UFormField>
         </div>
@@ -150,7 +154,7 @@ function handleGenerateBarcode() {
             variant="soft"
             size="lg"
             icon="i-heroicons-sparkles"
-            class="w-full"
+            block
             @click="handleGenerateBarcode"
           >
             {{ t("products.generateBarcode") || "Generate" }}

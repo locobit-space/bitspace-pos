@@ -171,6 +171,24 @@
       "loadMore": "Load More",
       "loading": "Loading...",
       "showingOf": "Showing {shown} of {total}"
-    }
+    },
+    "sizeVariants": "Size Variants",
+    "sizeVariantsDesc": "Add sizes like S, M, L with different prices",
+    "enableVariants": "Enable Size Variants",
+    "variantsDescription": "Add sizes like S, M, L with different prices",
+    "quickPresets": "Quick presets:",
+    "variantsList": "Variants",
+    "addCustomVariant": "Add Custom Variant",
+    "shortName": "Short Name",
+    "variantName": "Variant Name",
+    "priceModifier": "Price Modifier",
+    "basePrice": "Base price",
+    "fixed": "Fixed",
+    "percentage": "Percentage",
+    "selectSize": "Select Size",
+    "specialInstructions": "Special Instructions",
+    "notesPlaceholder": "E.g., Less ice, no sugar, extra spicy...",
+    "addToCart": "Add to Cart",
+    "sizeRequired": "Please select a size"
   }
 }

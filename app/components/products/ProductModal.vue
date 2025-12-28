@@ -2,7 +2,7 @@
 <!-- Fullscreen Product Add/Edit Modal -->
 <script setup lang="ts">
 import { z } from "zod";
-import type { Product, Category, Unit, Branch } from "~/types";
+import type { Product, Category, Unit, Branch, ProductVariant } from "~/types";
 
 // Props
 interface Props {
@@ -56,6 +56,9 @@ export interface ProductFormData {
   expiryWarningDays: number | undefined;
   storageType: "ambient" | "refrigerated" | "frozen" | "controlled" | undefined;
   isPublic: boolean; // Show on customer menu
+  // Size variants
+  hasVariants: boolean;
+  variants: ProductVariant[];
 }
 
 // Validation Schema
@@ -85,11 +88,11 @@ const productSchema = z.object({
 
 // Options
 const productTypeOptions = [
-  { value: "good", label: "Physical Good", icon: "📦" },
-  { value: "service", label: "Service", icon: "🛠️" },
-  { value: "digital", label: "Digital Product", icon: "💾" },
-  { value: "subscription", label: "Subscription", icon: "🔄" },
-  { value: "bundle", label: "Bundle", icon: "🎁" },
+  { value: "good", label: "📦 Physical Good" },
+  { value: "service", label: "🛠️ Service" },
+  { value: "digital", label: "💾 Digital Product" },
+  { value: "subscription", label: "🔄 Subscription" },
+  { value: "bundle", label: "🎁 Bundle" },
 ];
 
 const storageTypeOptions = [
@@ -161,6 +164,9 @@ function getDefaultForm(): ProductFormData {
     expiryWarningDays: 7,
     storageType: "ambient",
     isPublic: true, // Default to public (show on menu)
+    // Size variants
+    hasVariants: false,
+    variants: [],
   };
 }
 
@@ -208,6 +214,9 @@ watch(
         expiryWarningDays: product.expiryWarningDays || 7,
         storageType: product.storageType || "ambient",
         isPublic: product.isPublic !== false, // Default to true if not set
+        // Size variants
+        hasVariants: product.hasVariants || false,
+        variants: product.variants || [],
       };
     } else {
       form.value = getDefaultForm();
@@ -347,6 +356,31 @@ function handleCancel() {
                     :storage-type-options="storageTypeOptions"
                   />
 
+                  <!-- Size Variants Card -->
+                  <div
+                    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden"
+                  >
+                    <div
+                      class="px-6 py-4 border-b border-gray-200 dark:border-gray-800"
+                    >
+                      <h3 class="font-semibold text-gray-900 dark:text-white">
+                        {{ t("products.sizeVariants") || "Size Variants" }}
+                      </h3>
+                      <p class="text-sm text-gray-500">
+                        {{
+                          t("products.sizeVariantsDesc") ||
+                          "Add sizes like S, M, L with different prices"
+                        }}
+                      </p>
+                    </div>
+                    <div class="p-6">
+                      <ProductsProductVariantEditor
+                        v-model:has-variants="form.hasVariants"
+                        v-model:variants="form.variants"
+                      />
+                    </div>
+                  </div>
+
                   <!-- No Stock Info -->
                   <div
                     v-if="
@@ -405,7 +439,9 @@ function handleCancel() {
                 <div class="text-sm text-gray-500">
                   <span v-if="isEditing && product">
                     {{ t("common.lastUpdated") || "Last updated" }}:
-                    {{ new Date(product.updatedAt).toLocaleDateString() }}
+                    <span v-if="product.updatedAt">
+                      {{ $d(new Date(product.updatedAt), "long") }}
+                    </span>
                   </span>
                   <span v-else>
                     {{
