@@ -18,6 +18,13 @@ const props = defineProps<{
 const currencyHelper = useCurrency();
 const { t } = useI18n();
 const pos = usePOS();
+const {
+  bankAccounts,
+  activeAccounts,
+  hasActiveAccounts,
+  getBankIcon,
+  BANK_ICONS,
+} = useBankAccounts();
 
 // State
 const step = ref<"select" | "confirm" | "complete">("select");
@@ -25,43 +32,8 @@ const selectedBank = ref<BankAccount | null>(null);
 const transferReference = ref("");
 const isProcessing = ref(false);
 
-// Mock bank accounts - in production, load from settings
-const bankAccounts = ref<BankAccount[]>([
-  {
-    id: "bcel",
-    bankName: "BCEL",
-    bankCode: "BCEL",
-    accountNumber: "010-12-00-00123456-001",
-    accountName: "BITSPACE CO., LTD",
-    isDefault: true,
-    isActive: true,
-  },
-  {
-    id: "ldb",
-    bankName: "Lao Development Bank",
-    bankCode: "LDB",
-    accountNumber: "0001234567890",
-    accountName: "BITSPACE CO., LTD",
-    isActive: true,
-  },
-  {
-    id: "jdb",
-    bankName: "JDB Bank",
-    bankCode: "JDB",
-    accountNumber: "123-456-7890",
-    accountName: "BITSPACE CO., LTD",
-    isActive: true,
-  },
-]);
-
-// Bank icons/logos
-const bankIcons: Record<string, string> = {
-  bcel: "🏦",
-  ldb: "🏛️",
-  jdb: "💳",
-  apb: "🌾",
-  stb: "🏪",
-};
+// Use bank icons from composable
+const bankIcons = BANK_ICONS;
 
 const selectBank = (bank: BankAccount) => {
   selectedBank.value = bank;
@@ -146,52 +118,70 @@ const copyToClipboard = (text: string) => {
         </UButton>
       </div>
 
-      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        {{ t("payment.bankTransfer.selectBank") }}
-      </p>
-
-      <!-- Bank Selection -->
-      <div class="space-y-3">
-        <button
-          v-for="bank in bankAccounts.filter((b) => b.isActive)"
-          :key="bank.id"
-          class="w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10"
-          :class="
-            bank.isDefault
-              ? 'border-primary-200 dark:border-primary-800'
-              : 'border-gray-200 dark:border-gray-700'
-          "
-          @click="selectBank(bank)"
-        >
-          <div
-            class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl"
-          >
-            {{ bankIcons[bank.id] || "🏦" }}
-          </div>
-          <div class="flex-1 text-left">
-            <div class="flex items-center gap-2">
-              <span class="font-semibold text-gray-900 dark:text-white">{{
-                bank.bankName
-              }}</span>
-              <UBadge
-                v-if="bank.isDefault"
-                color="primary"
-                variant="soft"
-                size="xs"
-              >
-                Default
-              </UBadge>
-            </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 font-mono">
-              {{ bank.accountNumber }}
-            </p>
-          </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400"
-          />
-        </button>
+      <!-- Empty State: No bank accounts configured -->
+      <div v-if="!hasActiveAccounts" class="py-8 text-center">
+        <div class="text-6xl mb-4">🏦</div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          {{ t("payment.bankTransfer.noAccounts") }}
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">
+          {{ t("payment.bankTransfer.noAccountsDesc") }}
+        </p>
+        <NuxtLink to="/settings/bank-accounts">
+          <UButton color="primary" icon="i-heroicons-cog-6-tooth">
+            {{ t("payment.bankTransfer.setupAccounts") }}
+          </UButton>
+        </NuxtLink>
       </div>
+
+      <!-- Bank Selection (when accounts exist) -->
+      <template v-else>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          {{ t("payment.bankTransfer.selectBank") }}
+        </p>
+
+        <div class="space-y-3">
+          <button
+            v-for="bank in activeAccounts"
+            :key="bank.id"
+            class="w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10"
+            :class="
+              bank.isDefault
+                ? 'border-primary-200 dark:border-primary-800'
+                : 'border-gray-200 dark:border-gray-700'
+            "
+            @click="selectBank(bank)"
+          >
+            <div
+              class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl"
+            >
+              {{ bankIcons[bank.id] || "🏦" }}
+            </div>
+            <div class="flex-1 text-left">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-gray-900 dark:text-white">{{
+                  bank.bankName
+                }}</span>
+                <UBadge
+                  v-if="bank.isDefault"
+                  color="primary"
+                  variant="soft"
+                  size="xs"
+                >
+                  Default
+                </UBadge>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                {{ bank.accountNumber }}
+              </p>
+            </div>
+            <UIcon
+              name="i-heroicons-chevron-right"
+              class="w-5 h-5 text-gray-400"
+            />
+          </button>
+        </div>
+      </template>
     </div>
 
     <!-- Step 2: Transfer Details & Confirm -->

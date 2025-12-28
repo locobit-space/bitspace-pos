@@ -70,6 +70,9 @@
     "bankTransfer": {
       "title": "Bank Transfer",
       "selectBank": "Select a bank account to receive payment",
+      "noAccounts": "No Bank Accounts Configured",
+      "noAccountsDesc": "Add bank accounts in settings to accept bank transfer payments",
+      "setupAccounts": "Setup Bank Accounts",
       "transferTo": "Transfer to this account",
       "accountNumber": "Account Number",
       "accountName": "Account Name",

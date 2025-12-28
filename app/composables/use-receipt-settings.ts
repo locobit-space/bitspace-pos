@@ -85,10 +85,10 @@ const defaultSettings: SavedReceiptSettings = {
   showLogo: true,
   eBillBaseUrl: "", // Empty = auto-detect from window.location
   header: {
-    businessName: "My Store",
-    address: "123 Main Street, City, Country",
-    phone: "+1 234 567 890",
-    email: "info@mystore.com",
+    businessName: "Bit Space",
+    address: "",
+    phone: "",
+    email: "",
     taxId: "",
     customText: "",
   },
@@ -107,7 +107,7 @@ const defaultSettings: SavedReceiptSettings = {
     showChange: true,
   },
   footer: {
-    thankYouMessage: "Thank you for your purchase!",
+    thankYouMessage: "🥰 ຂອບມຸກຄອບຫໍ່ 🙏 !",
     returnPolicy: "",
     customText: "",
     showQrCode: false,
