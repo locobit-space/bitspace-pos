@@ -145,7 +145,7 @@
       </template>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <UButton variant="soft" color="neutral" block @click="openHelp">
+        <UButton variant="soft" color="neutral" block @click="openHelpAction">
           <UIcon name="i-heroicons-question-mark-circle" class="mr-2" />
           {{ $t("settings.about.helpCenter") }}
         </UButton>
@@ -319,8 +319,8 @@ const techStack = [
 
 // Help modal
 const help = useHelp();
-function openHelp() {
-  help.openHelpModal();
+function openHelpAction() {
+  help.openHelp();
 }
 
 // Set page title
