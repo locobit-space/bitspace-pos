@@ -747,6 +747,7 @@ const currencies = [
 const languages = [
   { code: "lo", name: "ລາວ (Lao)" },
   { code: "en", name: "English (US)" },
+  { code: "th", name: "ไทย (Thai)" },
 ];
 
 const dateFormats = [

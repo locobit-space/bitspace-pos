@@ -1,0 +1,96 @@
+{
+    "settings": {
+        "title": "ตั้งค่า",
+        "sectionBusiness": "ธุรกิจ",
+        "sectionSystem": "ระบบ",
+        "about": {
+            "title": "เกี่ยวกับ",
+            "subtitle": "ข้อมูลแอปและเวอร์ชัน",
+            "description": "ข้อมูลแอปพลิเคชันและรายละเอียดเวอร์ชัน",
+            "tagline": "ระบบ POS ที่ขับเคลื่อนด้วย Lightning และ Business OS",
+            "versionInfo": "ข้อมูลเวอร์ชัน",
+            "version": "เวอร์ชัน",
+            "buildDate": "วันที่ Build",
+            "framework": "Framework",
+            "platform": "แพลตฟอร์ม",
+            "keyFeatures": "คุณสมบัติหลัก",
+            "features": {
+                "lightning": "ชำระเงิน Lightning",
+                "lightningDesc": "รับ Bitcoin ผ่าน Lightning Network",
+                "nostr": "Nostr Protocol",
+                "nostrDesc": "เก็บข้อมูลแบบกระจายศูนย์",
+                "offline": "ออฟไลน์ก่อน",
+                "offlineDesc": "ใช้งานได้โดยไม่ต้องมีอินเทอร์เน็ต",
+                "encrypted": "เข้ารหัสทั้งหมด",
+                "encryptedDesc": "เข้ารหัส NIP-04/44",
+                "pwa": "Progressive Web App",
+                "pwaDesc": "ติดตั้งบนทุกอุปกรณ์",
+                "i18n": "หลายภาษา",
+                "i18nDesc": "รองรับภาษาไทย อังกฤษ ลาว และเวียดนาม"
+            },
+            "techStack": "เทคโนโลยีที่ใช้",
+            "links": "ลิงก์และทรัพยากร",
+            "helpCenter": "ศูนย์ช่วยเหลือ",
+            "supportProject": "สนับสนุนโครงการ",
+            "github": "GitHub",
+            "nostrProtocol": "Nostr Protocol",
+            "credits": "เครดิต",
+            "builtWith": "สร้างด้วย ⚡ โดย",
+            "sovereignBusiness": "ธุรกิจอิสระ. กระจายศูนย์.",
+            "openSource": "โครงการนี้เป็น open source และสร้างขึ้นบน protocol เปิด",
+            "license": "ได้รับอนุญาตภายใต้ MIT License"
+        },
+        "security": {
+            "title": "ความปลอดภัย",
+            "subtitle": "คีย์และการรักษาความปลอดภัย"
+        },
+        "relays": {
+            "title": "Relays",
+            "subtitle": "จัดการ Nostr relays"
+        },
+        "lightning": {
+            "title": "กระเป๋า",
+            "subtitle": "การตั้งค่า Lightning"
+        },
+        "customization": {
+            "title": "ปรับแต่ง",
+            "subtitle": "ธีมและการแสดงผล"
+        },
+        "general": {
+            "title": "ทั่วไป",
+            "subtitle": "ตั้งค่าร้านค้า"
+        },
+        "tax": {
+            "title": "ภาษี",
+            "subtitle": "อัตราภาษี"
+        },
+        "receipt": {
+            "title": "ใบเสร็จ",
+            "subtitle": "ปรับแต่งใบเสร็จ"
+        },
+        "bankAccounts": {
+            "title": "บัญชีธนาคาร",
+            "description": "จัดการบัญชีธนาคาร"
+        },
+        "users": {
+            "title": "ผู้ใช้",
+            "subtitle": "จัดการผู้ใช้และสิทธิ์"
+        },
+        "backup": {
+            "title": "สำรองข้อมูล",
+            "subtitle": "สำรองและกู้คืนข้อมูล"
+        },
+        "auditLog": {
+            "title": "บันทึกการตรวจสอบ",
+            "subtitle": "ดูประวัติการดำเนินการ"
+        },
+        "features": {
+            "title": "คุณสมบัติ",
+            "subtitle": "เปิด/ปิดคุณสมบัติ"
+        },
+        "integrations": {
+            "title": "การเชื่อมต่อ",
+            "subtitle": "Cloudinary, API keys"
+        }
+    }
+}

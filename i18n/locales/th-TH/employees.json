@@ -1,0 +1,25 @@
+{
+  "employees": {
+    "title": "พนักงาน",
+    "subtitle": "จัดการพนักงานและบทบาท",
+    "employee": "พนักงาน",
+    "addEmployee": "เพิ่มพนักงาน",
+    "editEmployee": "แก้ไขพนักงาน",
+    "name": "ชื่อ",
+    "email": "อีเมล",
+    "phone": "เบอร์โทร",
+    "role": "บทบาท",
+    "roles": {
+      "admin": "ผู้ดูแลระบบ",
+      "manager": "ผู้จัดการ",
+      "cashier": "แคชเชียร์",
+      "staff": "พนักงาน"
+    },
+    "status": {
+      "active": "ใช้งาน",
+      "inactive": "ไม่ใช้งาน"
+    },
+    "permissions": "สิทธิ์",
+    "noEmployees": "ยังไม่มีพนักงาน"
+  }
+}

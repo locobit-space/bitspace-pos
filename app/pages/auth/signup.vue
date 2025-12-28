@@ -272,13 +272,14 @@ onMounted(() => {
               color="neutral"
               variant="outline"
               icon="material-icon-theme:google"
+              class="hidden"
               @click="handleGoogleSignUp"
             >
               Continue with Google
             </UButton>
           </div>
 
-          <div class="relative mb-6">
+          <div class="relative hidden mb-6">
             <div class="absolute inset-0 flex items-center">
               <div
                 class="w-full border-t border-gray-200 dark:border-gray-800"
@@ -292,7 +293,7 @@ onMounted(() => {
           </div>
 
           <!-- Email Sign Up Form -->
-          <form class="space-y-4" @submit.prevent="handleSignUp">
+          <form class="space-y-4 hidden" @submit.prevent="handleSignUp">
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
