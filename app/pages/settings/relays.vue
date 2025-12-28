@@ -11,14 +11,14 @@
         <div class="flex items-center justify-between">
           <h3 class="font-semibold flex items-center gap-2">
             <UIcon name="i-heroicons-signal" class="text-primary" />
-            {{ $t('settings.relays.connectionStatus') }}
+            {{ $t("settings.relays.connectionStatus") }}
           </h3>
           <UBadge
             :color="connectedCount > 0 ? 'success' : 'error'"
             variant="subtle"
           >
             {{ connectedCount }}/{{ relayInfoList.length }}
-            {{ $t('settings.relays.connected') }}
+            {{ $t("settings.relays.connected") }}
           </UBadge>
         </div>
       </template>
@@ -30,7 +30,7 @@
             class="text-3xl text-primary mb-2"
           />
           <p class="text-sm text-muted">
-            {{ $t('settings.relays.totalRelays') }}
+            {{ $t("settings.relays.totalRelays") }}
           </p>
           <p class="font-semibold text-xl">{{ relayInfoList.length }}</p>
         </div>
@@ -40,7 +40,7 @@
             class="text-3xl text-green-600 mb-2"
           />
           <p class="text-sm text-muted">
-            {{ $t('settings.relays.connected') }}
+            {{ $t("settings.relays.connected") }}
           </p>
           <p class="font-semibold text-xl text-green-600">
             {{ connectedCount }}
@@ -52,7 +52,7 @@
             class="text-3xl text-amber-600 mb-2"
           />
           <p class="text-sm text-muted">
-            {{ $t('settings.relays.avgLatency') }}
+            {{ $t("settings.relays.avgLatency") }}
           </p>
           <p class="font-semibold text-xl">{{ avgLatency }}ms</p>
         </div>
@@ -61,7 +61,7 @@
             name="i-heroicons-arrow-path"
             class="text-3xl text-violet-600 mb-2"
           />
-          <p class="text-sm text-muted">{{ $t('settings.relays.lastSync') }}</p>
+          <p class="text-sm text-muted">{{ $t("settings.relays.lastSync") }}</p>
           <p class="font-semibold text-sm">{{ lastSyncFormatted }}</p>
         </div>
       </div>
@@ -72,7 +72,7 @@
       <template #header>
         <h3 class="font-semibold flex items-center gap-2">
           <UIcon name="i-heroicons-plus-circle" class="text-primary" />
-          {{ $t('settings.relays.addRelay') }}
+          {{ $t("settings.relays.addRelay") }}
         </h3>
       </template>
 
@@ -96,7 +96,7 @@
             @click="addNewRelay"
           >
             <UIcon name="i-heroicons-plus" class="mr-1" />
-            {{ $t('common.add') }}
+            {{ $t("common.add") }}
           </UButton>
         </div>
       </div>
@@ -104,7 +104,7 @@
       <!-- Quick Add Popular Relays -->
       <div class="mt-4">
         <p class="text-sm text-muted mb-2">
-          {{ $t('settings.relays.popularRelays') }}
+          {{ $t("settings.relays.popularRelays") }}
         </p>
         <div class="flex flex-wrap gap-2">
           <UButton
@@ -136,7 +136,7 @@
         <div class="flex items-center justify-between">
           <h3 class="font-semibold flex items-center gap-2">
             <UIcon name="i-heroicons-server-stack" class="text-violet-600" />
-            {{ $t('settings.relays.configuredRelays') }}
+            {{ $t("settings.relays.configuredRelays") }}
           </h3>
           <div class="flex gap-2">
             <UButton
@@ -147,7 +147,7 @@
               @click="refreshAllRelays"
             >
               <UIcon name="i-heroicons-arrow-path" class="mr-1" />
-              {{ $t('settings.relays.refreshAll') }}
+              {{ $t("settings.relays.refreshAll") }}
             </UButton>
             <UButton
               size="xs"
@@ -156,7 +156,7 @@
               @click="saveRelayConfig"
             >
               <UIcon name="i-heroicons-cloud-arrow-up" class="mr-1" />
-              {{ $t('common.save') }}
+              {{ $t("common.save") }}
             </UButton>
           </div>
         </div>
@@ -167,9 +167,9 @@
           name="i-heroicons-server-stack"
           class="text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-3"
         />
-        <p class="text-muted">{{ $t('settings.relays.noRelays') }}</p>
+        <p class="text-muted">{{ $t("settings.relays.noRelays") }}</p>
         <p class="text-sm text-gray-400">
-          {{ $t('settings.relays.addFirstRelay') }}
+          {{ $t("settings.relays.addFirstRelay") }}
         </p>
       </div>
 
@@ -197,7 +197,7 @@
                   color="primary"
                   variant="subtle"
                 >
-                  {{ $t('settings.relays.primary') }}
+                  {{ $t("settings.relays.primary") }}
                 </UBadge>
               </div>
 
@@ -207,7 +207,7 @@
               >
                 <span class="flex items-center gap-1">
                   <UIcon name="i-heroicons-clock" />
-                  {{ relay.latency > 0 ? `${relay.latency}ms` : '--' }}
+                  {{ relay.latency > 0 ? `${relay.latency}ms` : "--" }}
                 </span>
                 <span
                   class="flex items-center gap-1"
@@ -227,31 +227,25 @@
               </div>
 
               <!-- Relay Role Toggles -->
-              <div class="flex items-center gap-3 mt-2">
-                <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="relay.isRead"
-                    class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <span>{{ $t('settings.relays.readRelay') }}</span>
-                </label>
-                <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="relay.isWrite"
-                    class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <span>{{ $t('settings.relays.writeRelay') }}</span>
-                </label>
-                <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="relay.isOutbox"
-                    class="w-3.5 h-3.5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
-                  />
-                  <span>{{ $t('settings.relays.outboxRelay') }}</span>
-                </label>
+              <div class="flex items-center gap-4 mt-3">
+                <UCheckbox
+                  v-model="relay.isRead"
+                  :label="$t('settings.relays.readRelay')"
+                  color="success"
+                  size="sm"
+                />
+                <UCheckbox
+                  v-model="relay.isWrite"
+                  :label="$t('settings.relays.writeRelay')"
+                  color="primary"
+                  size="sm"
+                />
+                <UCheckbox
+                  v-model="relay.isOutbox"
+                  :label="$t('settings.relays.outboxRelay')"
+                  color="warning"
+                  size="sm"
+                />
               </div>
             </div>
 
@@ -294,12 +288,12 @@
       <template #header>
         <h3 class="font-semibold flex items-center gap-2">
           <UIcon name="i-heroicons-information-circle" class="text-blue-600" />
-          {{ $t('settings.relays.nip65Info') }}
+          {{ $t("settings.relays.nip65Info") }}
         </h3>
       </template>
 
       <p class="text-sm text-muted mb-4">
-        {{ $t('settings.relays.nip65Description') }}
+        {{ $t("settings.relays.nip65Description") }}
       </p>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -307,33 +301,33 @@
           <div class="flex items-center gap-2 mb-1">
             <UIcon name="i-heroicons-arrow-down-tray" class="text-green-600" />
             <span class="font-medium text-green-800 dark:text-green-200">
-              {{ $t('settings.relays.readRelays') }}
+              {{ $t("settings.relays.readRelays") }}
             </span>
           </div>
           <p class="text-xs text-green-700 dark:text-green-300">
-            {{ $t('settings.relays.readRelaysDesc') }}
+            {{ $t("settings.relays.readRelaysDesc") }}
           </p>
         </div>
         <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <div class="flex items-center gap-2 mb-1">
             <UIcon name="i-heroicons-arrow-up-tray" class="text-blue-600" />
             <span class="font-medium text-blue-800 dark:text-blue-200">
-              {{ $t('settings.relays.writeRelays') }}
+              {{ $t("settings.relays.writeRelays") }}
             </span>
           </div>
           <p class="text-xs text-blue-700 dark:text-blue-300">
-            {{ $t('settings.relays.writeRelaysDesc') }}
+            {{ $t("settings.relays.writeRelaysDesc") }}
           </p>
         </div>
         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
           <div class="flex items-center gap-2 mb-1">
             <UIcon name="i-heroicons-inbox-arrow-down" class="text-amber-600" />
             <span class="font-medium text-amber-800 dark:text-amber-200">
-              {{ $t('settings.relays.outboxRelays') }}
+              {{ $t("settings.relays.outboxRelays") }}
             </span>
           </div>
           <p class="text-xs text-amber-700 dark:text-amber-300">
-            {{ $t('settings.relays.outboxRelaysDesc') }}
+            {{ $t("settings.relays.outboxRelaysDesc") }}
           </p>
         </div>
       </div>
@@ -346,7 +340,7 @@
           @click="publishRelayList"
         >
           <UIcon name="i-heroicons-globe-alt" class="mr-1" />
-          {{ $t('settings.relays.publishRelayList') }}
+          {{ $t("settings.relays.publishRelayList") }}
         </UButton>
       </div>
     </UCard>
@@ -355,8 +349,8 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth'],
+  layout: "default",
+  middleware: ["auth"],
 });
 
 const { t } = useI18n();
@@ -367,7 +361,7 @@ const nostrData = useNostrData();
 // Relay Info Type
 interface RelayInfo {
   url: string;
-  status: 'connected' | 'connecting' | 'disconnected' | 'error';
+  status: "connected" | "connecting" | "disconnected" | "error";
   latency: number;
   lastSync: Date | null;
   isRead: boolean;
@@ -378,7 +372,7 @@ interface RelayInfo {
 }
 
 // State
-const newRelayUrl = ref('');
+const newRelayUrl = ref("");
 const addingRelay = ref(false);
 const refreshingAll = ref(false);
 const publishingRelayList = ref(false);
@@ -389,29 +383,32 @@ const relayInfoList = ref<RelayInfo[]>([]);
 
 // Popular relays for quick add
 const popularRelays = [
-  'wss://relay.damus.io',
-  'wss://nos.lol',
-  'wss://relay.nostr.band',
-  'wss://nostr-pub.wellorder.net',
-  'wss://relay.snort.social',
-  'wss://yabu.me',
+  "wss://relay.damus.io",
+  "wss://nos.lol",
+  "wss://relay.nostr.band",
+  "wss://nostr-pub.wellorder.net",
+  "wss://relay.snort.social",
+  "wss://yabu.me",
 ];
 
 // URL validation
 const urlError = computed(() => {
   if (!newRelayUrl.value) return null;
-  if (!newRelayUrl.value.startsWith('wss://') && !newRelayUrl.value.startsWith('ws://')) {
-    return t('settings.relays.invalidUrl');
+  if (
+    !newRelayUrl.value.startsWith("wss://") &&
+    !newRelayUrl.value.startsWith("ws://")
+  ) {
+    return t("settings.relays.invalidUrl");
   }
   if (isRelayAdded(newRelayUrl.value)) {
-    return t('settings.relays.alreadyAdded');
+    return t("settings.relays.alreadyAdded");
   }
   return null;
 });
 
 // Computed
 const connectedCount = computed(() => {
-  return relayInfoList.value.filter((r) => r.status === 'connected').length;
+  return relayInfoList.value.filter((r) => r.status === "connected").length;
 });
 
 const avgLatency = computed(() => {
@@ -422,7 +419,7 @@ const avgLatency = computed(() => {
 });
 
 const lastSyncFormatted = computed(() => {
-  if (!lastSync.value) return '--';
+  if (!lastSync.value) return "--";
   return formatRelativeTime(lastSync.value);
 });
 
@@ -447,7 +444,7 @@ function formatRelativeTime(date: Date): string {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
 
-  if (seconds < 60) return t('common.justNow');
+  if (seconds < 60) return t("common.justNow");
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return date.toLocaleDateString();
@@ -455,42 +452,42 @@ function formatRelativeTime(date: Date): string {
 
 function getStatusColor(status: string): string {
   switch (status) {
-    case 'connected':
-      return 'bg-green-500';
-    case 'connecting':
-      return 'bg-amber-500 animate-pulse';
-    case 'disconnected':
-      return 'bg-gray-400';
-    case 'error':
-      return 'bg-red-500';
+    case "connected":
+      return "bg-green-500";
+    case "connecting":
+      return "bg-amber-500 animate-pulse";
+    case "disconnected":
+      return "bg-gray-400";
+    case "error":
+      return "bg-red-500";
     default:
-      return 'bg-gray-400';
+      return "bg-gray-400";
   }
 }
 
 function getStatusTextColor(status: string): string {
   switch (status) {
-    case 'connected':
-      return 'text-green-600';
-    case 'connecting':
-      return 'text-amber-600';
-    case 'error':
-      return 'text-red-600';
+    case "connected":
+      return "text-green-600";
+    case "connecting":
+      return "text-amber-600";
+    case "error":
+      return "text-red-600";
     default:
-      return 'text-gray-500';
+      return "text-gray-500";
   }
 }
 
 function getStatusIcon(status: string): string {
   switch (status) {
-    case 'connected':
-      return 'i-heroicons-check-circle';
-    case 'connecting':
-      return 'i-heroicons-arrow-path';
-    case 'error':
-      return 'i-heroicons-exclamation-triangle';
+    case "connected":
+      return "i-heroicons-check-circle";
+    case "connecting":
+      return "i-heroicons-arrow-path";
+    case "error":
+      return "i-heroicons-exclamation-triangle";
     default:
-      return 'i-heroicons-minus-circle';
+      return "i-heroicons-minus-circle";
   }
 }
 
@@ -504,7 +501,7 @@ async function addNewRelay() {
     // Add to list with initial state
     const newRelay: RelayInfo = {
       url,
-      status: 'connecting',
+      status: "connecting",
       latency: 0,
       lastSync: null,
       isRead: true,
@@ -514,18 +511,23 @@ async function addNewRelay() {
     };
 
     relayInfoList.value.push(newRelay);
-    newRelayUrl.value = '';
+    newRelayUrl.value = "";
 
     // Test the connection
     await testRelay(newRelay);
 
-    // Add to nostr relay composable
-    nostrRelay.addRelay(url);
+    // Add to nostr relay composable with full config
+    nostrRelay.addRelay(url, {
+      read: newRelay.isRead,
+      write: newRelay.isWrite,
+      outbox: newRelay.isOutbox,
+      isPrimary: newRelay.isPrimary,
+    });
 
     toast.add({
-      title: t('common.success'),
-      description: t('settings.relays.relayAdded'),
-      color: 'success',
+      title: t("common.success"),
+      description: t("settings.relays.relayAdded"),
+      color: "success",
     });
   } finally {
     addingRelay.value = false;
@@ -539,7 +541,7 @@ function quickAddRelay(url: string) {
 
 async function testRelay(relay: RelayInfo) {
   relay.testing = true;
-  relay.status = 'connecting';
+  relay.status = "connecting";
 
   try {
     const startTime = Date.now();
@@ -550,13 +552,13 @@ async function testRelay(relay: RelayInfo) {
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         ws.close();
-        reject(new Error('Connection timeout'));
+        reject(new Error("Connection timeout"));
       }, 5000);
 
       ws.onopen = () => {
         clearTimeout(timeout);
         relay.latency = Date.now() - startTime;
-        relay.status = 'connected';
+        relay.status = "connected";
         relay.lastSync = new Date();
         ws.close();
         resolve();
@@ -564,11 +566,11 @@ async function testRelay(relay: RelayInfo) {
 
       ws.onerror = () => {
         clearTimeout(timeout);
-        reject(new Error('Connection failed'));
+        reject(new Error("Connection failed"));
       };
     });
   } catch {
-    relay.status = 'error';
+    relay.status = "error";
     relay.latency = 0;
   } finally {
     relay.testing = false;
@@ -589,9 +591,9 @@ function removeRelayFromList(url: string) {
     nostrRelay.removeRelay(url);
 
     toast.add({
-      title: t('common.success'),
-      description: t('settings.relays.relayRemoved'),
-      color: 'success',
+      title: t("common.success"),
+      description: t("settings.relays.relayRemoved"),
+      color: "success",
     });
   }
 }
@@ -614,29 +616,30 @@ async function refreshAllRelays() {
 
 async function saveRelayConfig() {
   try {
-    const settings = await nostrData.getSettings();
-    if (settings) {
-      settings.relays = relayInfoList.value.map((r) => ({
-        url: r.url,
+    // Sync UI state back to composable
+    relayInfoList.value.forEach((r) => {
+      nostrRelay.updateRelay(r.url, {
         read: r.isRead,
         write: r.isWrite,
         outbox: r.isOutbox,
         isPrimary: r.isPrimary,
-      }));
-      await nostrData.saveSettings(settings);
-    }
+      });
+    });
+
+    // Save to Nostr (also saves to localStorage via composable)
+    await nostrRelay.saveRelaysToNostr();
 
     toast.add({
-      title: t('common.success'),
-      description: t('settings.relays.configSaved'),
-      color: 'success',
+      title: t("common.success"),
+      description: t("settings.relays.configSaved"),
+      color: "success",
     });
   } catch (error) {
-    console.error('Failed to save relay config:', error);
+    console.error("Failed to save relay config:", error);
     toast.add({
-      title: t('common.error'),
-      description: t('settings.relays.saveFailed'),
-      color: 'error',
+      title: t("common.error"),
+      description: t("settings.relays.saveFailed"),
+      color: "error",
     });
   }
 }
@@ -648,16 +651,16 @@ async function publishRelayList() {
     // This would create a kind 10002 event with the relay list
 
     toast.add({
-      title: t('common.success'),
-      description: t('settings.relays.relayListPublished'),
-      color: 'success',
+      title: t("common.success"),
+      description: t("settings.relays.relayListPublished"),
+      color: "success",
     });
   } catch (error) {
-    console.error('Failed to publish relay list:', error);
+    console.error("Failed to publish relay list:", error);
     toast.add({
-      title: t('common.error'),
-      description: t('settings.relays.publishFailed'),
-      color: 'error',
+      title: t("common.error"),
+      description: t("settings.relays.publishFailed"),
+      color: "error",
     });
   } finally {
     publishingRelayList.value = false;
@@ -667,37 +670,32 @@ async function publishRelayList() {
 // Load saved relay config
 async function loadRelayConfig() {
   try {
-    // First, load from default relays
-    const defaultRelays = nostrRelay.DEFAULT_RELAYS;
+    // Initialize the composable (loads from localStorage + Nostr settings)
+    await nostrRelay.init();
 
-    // Try to load saved config from settings
-    const settings = await nostrData.getSettings();
-    const savedRelays = settings?.relays || [];
+    // Get the merged relay configs from composable
+    const relayConfigs = nostrRelay.relayConfigs.value;
 
-    // Merge default and saved relays
-    const allUrls = new Set([
-      ...savedRelays.map((r: { url: string }) => r.url),
-      ...defaultRelays,
-    ]);
+    // Convert to RelayInfo format for UI
+    relayInfoList.value = relayConfigs.map((r, index) => ({
+      url: r.url,
+      status: (r.status || "disconnected") as
+        | "connected"
+        | "connecting"
+        | "disconnected"
+        | "error",
+      latency: r.latency || 0,
+      lastSync: r.lastConnectedAt ? new Date(r.lastConnectedAt) : null,
+      isRead: r.read,
+      isWrite: r.write,
+      isOutbox: r.outbox,
+      isPrimary: r.isPrimary ?? index === 0,
+    }));
 
-    relayInfoList.value = Array.from(allUrls).map((url, index) => {
-      const saved = savedRelays.find((r: { url: string }) => r.url === url) as import('~/types').RelayConfig | undefined;
-      return {
-        url,
-        status: 'disconnected' as const,
-        latency: 0,
-        lastSync: null,
-        isRead: saved?.read ?? true,
-        isWrite: saved?.write ?? true,
-        isOutbox: saved?.outbox ?? false,
-        isPrimary: saved?.isPrimary ?? index === 0,
-      };
-    });
-
-    // Test all relays
+    // Test all relays to get accurate status
     await refreshAllRelays();
   } catch (error) {
-    console.error('Failed to load relay config:', error);
+    console.error("Failed to load relay config:", error);
   }
 }
 
@@ -708,6 +706,6 @@ onMounted(() => {
 
 // Set page title
 useHead({
-  title: t('settings.relays.title'),
+  title: t("settings.relays.title"),
 });
 </script>

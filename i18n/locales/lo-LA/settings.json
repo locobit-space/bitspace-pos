@@ -812,6 +812,43 @@
       "connectionSuccess": "ການເຊື່ອມຕໍ່ສຳເລັດ",
       "connectionFailed": "ການເຊື່ອມຕໍ່ລົ້ມເຫລວ",
       "cloudinaryWorking": "Cloudinary ຕັ້ງຄ່າຖືກຕ້ອງແລ້ວ"
+    },
+    "about": {
+      "title": "ກ່ຽວກັບ",
+      "subtitle": "ຂໍ້ມູນແອັບ ແລະ ເວີຊັ່ນ",
+      "description": "ຂໍ້ມູນແອັບພລິເຄຊັ່ນ ແລະ ລາຍລະອຽດເວີຊັ່ນ",
+      "tagline": "ລະບົບ POS ທີ່ຂັບເຄື່ອນດ້ວຍ Lightning ແລະ Business OS",
+      "versionInfo": "ຂໍ້ມູນເວີຊັ່ນ",
+      "version": "ເວີຊັ່ນ",
+      "buildDate": "ວັນທີ Build",
+      "framework": "Framework",
+      "platform": "ແພລດຟອມ",
+      "keyFeatures": "ຄຸນສົມບັດຫຼັກ",
+      "features": {
+        "lightning": "ການຈ່າຍ Lightning",
+        "lightningDesc": "ຮັບ Bitcoin ຜ່ານ Lightning Network",
+        "nostr": "Nostr Protocol",
+        "nostrDesc": "ເກັບຂໍ້ມູນແບບກະຈາຍ",
+        "offline": "ອອບໄລນ໌ກ່ອນ",
+        "offlineDesc": "ໃຊ້ໄດ້ໂດຍບໍ່ຕ້ອງມີອິນເຕີເນັດ",
+        "encrypted": "ເຂົ້າລະຫັດທັງໝົດ",
+        "encryptedDesc": "ເຂົ້າລະຫັດ NIP-04/44",
+        "pwa": "Progressive Web App",
+        "pwaDesc": "ຕິດຕັ້ງໃນທຸກອຸປະກອນ",
+        "i18n": "ຫຼາຍພາສາ",
+        "i18nDesc": "ຮອງຮັບພາສາອັງກິດ ແລະ ລາວ"
+      },
+      "techStack": "ເທັກໂນໂລຊີທີ່ໃຊ້",
+      "links": "ລິ້ງ ແລະ ຊັບພະຍາກອນ",
+      "helpCenter": "ສູນຊ່ວຍເຫຼືອ",
+      "supportProject": "ສະໜັບສະໜູນໂຄງການ",
+      "github": "GitHub",
+      "nostrProtocol": "Nostr Protocol",
+      "credits": "ໜ່ວຍງານ",
+      "builtWith": "ສ້າງດ້ວຍ ⚡ ໂດຍ",
+      "sovereignBusiness": "ທຸລະກິດອິດສະຫຼະ. ກະຈາຍສູນ.",
+      "openSource": "ໂຄງການນີ້ເປັນ open source ແລະ ສ້າງຂຶ້ນບົນ protocol ເປີດ.",
+      "license": "ອະນຸຍາດພາຍໃຕ້ MIT License"
     }
   }
 }

@@ -832,6 +832,43 @@
       "connectionSuccess": "Connection Successful",
       "connectionFailed": "Connection Failed",
       "cloudinaryWorking": "Cloudinary is configured correctly"
+    },
+    "about": {
+      "title": "About",
+      "subtitle": "App info & version",
+      "description": "Application information and version details",
+      "tagline": "Lightning-Powered Point of Sale System & Business OS",
+      "versionInfo": "Version Information",
+      "version": "Version",
+      "buildDate": "Build Date",
+      "framework": "Framework",
+      "platform": "Platform",
+      "keyFeatures": "Key Features",
+      "features": {
+        "lightning": "Lightning Payments",
+        "lightningDesc": "Accept Bitcoin via Lightning Network",
+        "nostr": "Nostr Protocol",
+        "nostrDesc": "Decentralized data storage",
+        "offline": "Offline First",
+        "offlineDesc": "Works without internet",
+        "encrypted": "End-to-End Encrypted",
+        "encryptedDesc": "NIP-04/44 encryption",
+        "pwa": "Progressive Web App",
+        "pwaDesc": "Install on any device",
+        "i18n": "Multi-Language",
+        "i18nDesc": "English & Lao support"
+      },
+      "techStack": "Technology Stack",
+      "links": "Links & Resources",
+      "helpCenter": "Help Center",
+      "supportProject": "Support Project",
+      "github": "GitHub",
+      "nostrProtocol": "Nostr Protocol",
+      "credits": "Credits",
+      "builtWith": "Built with ⚡ by",
+      "sovereignBusiness": "Sovereign Business. Decentralized Future.",
+      "openSource": "This project is open source and built on open protocols.",
+      "license": "Licensed under MIT License"
     }
   }
 }

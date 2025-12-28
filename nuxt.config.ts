@@ -12,6 +12,13 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  runtimeConfig: {
+    public: {
+      version: process.env.npm_package_version || "0.0.1",
+      buildTime: new Date().toISOString(),
+    },
+  },
+
   css: ["~/assets/css/main.css"],
 
   modules: [

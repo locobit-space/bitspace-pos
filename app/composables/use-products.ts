@@ -139,11 +139,16 @@ export function useProductsStore() {
   );
 
   const lowStockProducts = computed(() =>
-    products.value.filter((p) => p.stock <= p.minStock && p.status === "active")
+    products.value.filter(
+      (p) =>
+        p.stock <= p.minStock && p.status === "active" && p.trackStock !== false // Exclude products with stock tracking disabled
+    )
   );
 
   const outOfStockProducts = computed(() =>
-    products.value.filter((p) => p.stock <= 0 && p.status === "active")
+    products.value.filter(
+      (p) => p.stock <= 0 && p.status === "active" && p.trackStock !== false // Exclude products with stock tracking disabled
+    )
   );
 
   const productsByCategory = computed(() => {

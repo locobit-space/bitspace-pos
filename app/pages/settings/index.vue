@@ -485,6 +485,35 @@
             />
           </div>
         </NuxtLink>
+
+        <!-- About -->
+        <NuxtLink
+          to="/settings/about"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all"
+        >
+          <div class="p-4 flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-information-circle"
+                class="w-6 h-6 text-amber-600"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.about.title") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ $t("settings.about.subtitle") }}
+              </p>
+            </div>
+            <UIcon
+              name="i-heroicons-chevron-right"
+              class="w-5 h-5 text-gray-400 flex-shrink-0"
+            />
+          </div>
+        </NuxtLink>
       </div>
     </div>
   </div>
