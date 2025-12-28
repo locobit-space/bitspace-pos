@@ -262,6 +262,45 @@
       "keysNotEncryptedDescription": "API keys ຂອງທ່ານຖືກເກັບໂດຍບໍ່ມີການເຂົ້າລະຫັດ. ເປີດໃຊ້ການເຂົ້າລະຫັດຂໍ້ມູນດ້ວຍລະຫັດຜ່ານຫຼັກເພື່ອຄວາມປອດໄພທີ່ດີກວ່າ.",
       "enableEncryption": "ເປີດໃຊ້ການເຂົ້າລະຫັດ"
     },
+    "crypto": {
+      "title": "ການຈ່າຍ Crypto",
+      "subtitle": "Bitcoin & USDT",
+      "description": "ຕັ້ງຄ່າການຈ່າຍເງິນ Bitcoin on-chain ແລະ USDT stablecoin",
+      "connectionStatus": "ສະຖານະການເຊື່ອມຕໍ່",
+      "configured": "ຕັ້ງຄ່າແລ້ວ",
+      "notConfigured": "ຍັງບໍ່ຕັ້ງຄ່າ",
+      "lastTested": "ທົດສອບຫຼ້າສຸດ",
+      "testConnection": "ທົດສອບການເຊື່ອມຕໍ່",
+      "testSuccess": "ເຊື່ອມຕໍ່ສຳເລັດ",
+      "testFailed": "ເຊື່ອມຕໍ່ລົ້ມເຫຼວ",
+      "noProviderToTest": "ບໍ່ມີຜູ້ໃຫ້ບໍລິການທີ່ຈະທົດສອບ",
+      "saved": "ບັນທຶກການຕັ້ງຄ່າ Crypto ແລ້ວ",
+      "saveFailed": "ບັນທຶກການຕັ້ງຄ່າລົ້ມເຫຼວ",
+      "bitcoin": {
+        "title": "Bitcoin On-Chain",
+        "description": "ຮັບການຈ່າຍເງິນ Bitcoin ໂດຍກົງເທິງ blockchain",
+        "provider": "ຜູ້ໃຫ້ບໍລິການ Bitcoin",
+        "btcpayInfo": "BTCPay Server",
+        "btcpayDescription": "ເຄື່ອງປະມວນຜົນການຈ່າຍເງິນ Bitcoin ແບບ self-hosted. ຕ້ອງມີ BTCPay Server ຂອງທ່ານເອງ.",
+        "serverUrl": "URL BTCPay Server",
+        "serverUrlHint": "URL ຂອງ BTCPay Server ຂອງທ່ານ",
+        "apiKey": "API Key",
+        "apiKeyHint": "ສ້າງຈາກ BTCPay Server → Account → Manage Account → API Keys",
+        "storeId": "Store ID",
+        "storeIdHint": "ຢູ່ໃນການຕັ້ງຄ່າ BTCPay Server store",
+        "confirmations": "ຈຳນວນການຢືນຢັນ",
+        "confirmationsHint": "ຈຳນວນການຢືນຢັນກ່ອນຖືວ່າການຈ່າຍສຳເລັດ"
+      },
+      "usdt": {
+        "title": "USDT Stablecoin",
+        "description": "ຮັບການຈ່າຍເງິນ Tether (USDT) ເທິງເຄືອຂ່າຍຕ່າງໆ",
+        "defaultNetwork": "ເຄືອຂ່າຍເລີ່ມຕົ້ນ",
+        "addresses": "ທີ່ຢູ່ເຄືອຂ່າຍ",
+        "addressesHint": "ເພີ່ມທີ່ຢູ່ຮັບເງິນສຳລັບແຕ່ລະເຄືອຂ່າຍທີ່ທ່ານຕ້ອງການຮອງຮັບ",
+        "warning": "ສຳຄັນ",
+        "warningDescription": "ເພີ່ມສະເພາະທີ່ຢູ່ທີ່ທ່ານຄວບຄຸມເທົ່ານັ້ນ. ການຈ່າຍເງິນຖືກກວດສອບໂດຍການຕິດຕາມທຸລະກຳ blockchain."
+      }
+    },
     "users": {
       "title": "ການຈັດການຜູ້ໃຊ້",
       "subtitle": "ຈັດການຜູ້ໃຊ້ ແລະ ບົດບາດຂອງຮ້ານ",

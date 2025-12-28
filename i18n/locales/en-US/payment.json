@@ -13,7 +13,11 @@
       "external": "Other Payment",
       "externalDesc": "PromptPay, WeChat, Alipay, etc.",
       "staticQR": "Static QR",
-      "staticQRDesc": "BOLT12 - One QR for any amount"
+      "staticQRDesc": "BOLT12 - One QR for any amount",
+      "bitcoin": "Bitcoin",
+      "bitcoinDesc": "Pay with Bitcoin (on-chain)",
+      "usdt": "USDT",
+      "usdtDesc": "Pay with Tether stablecoin"
     },
     "lightning": {
       "title": "Lightning Payment",
@@ -99,6 +103,40 @@
       "title": "Static QR Payment",
       "description": "Scan this QR code to pay any amount",
       "confirmHint": "After customer pays, confirm the payment below"
-    }
+    },
+    "bitcoin": {
+      "title": "Bitcoin Payment",
+      "generating": "Generating address...",
+      "sendTo": "Send BTC to this address",
+      "expiresIn": "Expires in",
+      "copyAddress": "Copy Address",
+      "txDetected": "Transaction detected!",
+      "confirmations": "{count} confirmations",
+      "waitingConfirmations": "Waiting for confirmations...",
+      "success": "Payment Confirmed!",
+      "error": "Payment Failed",
+      "expired": "Payment request expired",
+      "manualConfirmHint": "If auto-detection fails, confirm manually after verifying payment.",
+      "confirmReceived": "Confirm Payment Received"
+    },
+    "usdt": {
+      "title": "USDT Payment",
+      "selectNetwork": "Select Network",
+      "networkFee": "Network fee",
+      "generating": "Generating payment...",
+      "sendExactly": "Send exactly",
+      "exactAmountWarning": "Send exact amount to ensure auto-detection",
+      "sendTo": "Send USDT to this address",
+      "expiresIn": "Expires in",
+      "copyAddress": "Copy Address",
+      "networkFeeNote": "Estimated network fee",
+      "success": "Payment Confirmed!",
+      "error": "Payment Failed",
+      "expired": "Payment request expired",
+      "noNetworksConfigured": "No USDT addresses configured",
+      "manualConfirmHint": "If auto-detection fails, confirm manually after verifying payment.",
+      "confirmReceived": "Confirm Payment Received"
+    },
+    "closingIn": "Closing in {seconds}s..."
   }
 }

@@ -273,6 +273,45 @@
       "keysNotEncryptedDescription": "Your API keys are stored without encryption. Enable data encryption with a master password for better security.",
       "enableEncryption": "Enable Encryption"
     },
+    "crypto": {
+      "title": "Crypto Payments",
+      "subtitle": "Bitcoin & USDT",
+      "description": "Configure Bitcoin on-chain and USDT stablecoin payments",
+      "connectionStatus": "Connection Status",
+      "configured": "Configured",
+      "notConfigured": "Not Configured",
+      "lastTested": "Last tested",
+      "testConnection": "Test Connection",
+      "testSuccess": "Connection Successful",
+      "testFailed": "Connection Failed",
+      "noProviderToTest": "No provider configured to test",
+      "saved": "Crypto settings saved",
+      "saveFailed": "Failed to save settings",
+      "bitcoin": {
+        "title": "Bitcoin On-Chain",
+        "description": "Accept Bitcoin payments directly on the blockchain",
+        "provider": "Bitcoin Provider",
+        "btcpayInfo": "BTCPay Server",
+        "btcpayDescription": "Self-hosted Bitcoin payment processor. Requires your own BTCPay Server instance.",
+        "serverUrl": "BTCPay Server URL",
+        "serverUrlHint": "The URL of your BTCPay Server instance",
+        "apiKey": "API Key",
+        "apiKeyHint": "Generate from BTCPay Server → Account → Manage Account → API Keys",
+        "storeId": "Store ID",
+        "storeIdHint": "Found in your BTCPay Server store settings",
+        "confirmations": "Required Confirmations",
+        "confirmationsHint": "Number of confirmations before payment is considered complete"
+      },
+      "usdt": {
+        "title": "USDT Stablecoin",
+        "description": "Accept Tether (USDT) payments on various networks",
+        "defaultNetwork": "Default Network",
+        "addresses": "Network Addresses",
+        "addressesHint": "Add your receiving address for each network you want to support",
+        "warning": "Important",
+        "warningDescription": "Only add addresses you control. Payments are verified by monitoring blockchain transactions."
+      }
+    },
     "users": {
       "title": "User Management",
       "subtitle": "Staff & permissions",

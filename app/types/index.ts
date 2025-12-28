@@ -967,6 +967,8 @@ export type PaymentMethod =
   | "bolt12"
   | "lnurl"
   | "onchain"
+  | "bitcoin"
+  | "usdt"
   | "cash"
   | "qr_static"
   | "bank_transfer"
@@ -980,6 +982,12 @@ export type PaymentStatus =
   | "expired"
   | "refunded"
   | "offline_pending"; // For offline mode
+
+// USDT Network Types
+export type USDTNetwork = "tron" | "polygon" | "ethereum" | "arbitrum";
+
+// Crypto Provider Types
+export type CryptoProvider = "btcpay" | "blockonomics" | "manual";
 
 export interface LightningInvoice {
   id: string;
@@ -1022,6 +1030,89 @@ export interface PaymentProof {
   isOffline: boolean;
   syncedAt?: string;
   nostrEventId?: string;
+}
+
+// ============================================
+// ₿ BITCOIN ON-CHAIN PAYMENT TYPES
+// ============================================
+
+export interface BitcoinPayment {
+  id: string;
+  orderId: string;
+  address: string; // BTC receiving address
+  amountBTC: string; // Amount in BTC (string for precision)
+  amountSats: number; // Amount in satoshis
+  amountFiat: number; // Original fiat amount
+  currency: CurrencyCode;
+  exchangeRate: number; // BTC/fiat rate at time of creation
+  txid?: string; // Transaction ID once detected
+  confirmations: number; // Current confirmation count
+  requiredConfirmations: number; // Required confirmations (1-6)
+  status: PaymentStatus;
+  expiresAt: string;
+  createdAt: string;
+  confirmedAt?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================
+// 💵 USDT STABLECOIN PAYMENT TYPES
+// ============================================
+
+export interface USDTPayment {
+  id: string;
+  orderId: string;
+  network: USDTNetwork; // Tron, Polygon, Ethereum
+  address: string; // USDT receiving address
+  amountUSDT: string; // Exact USDT amount (string for precision)
+  amountFiat: number; // Original fiat amount
+  currency: CurrencyCode;
+  exchangeRate: number; // USD/fiat rate
+  txHash?: string; // Transaction hash once detected
+  confirmations: number;
+  requiredConfirmations: number;
+  status: PaymentStatus;
+  networkFee?: string; // Estimated network fee
+  expiresAt: string;
+  createdAt: string;
+  confirmedAt?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================
+// ⚙️ CRYPTO SETTINGS TYPES
+// ============================================
+
+export interface CryptoSettings {
+  // Bitcoin On-Chain
+  bitcoinEnabled: boolean;
+  bitcoinProvider: CryptoProvider;
+  // BTCPay Server
+  btcpayServerUrl?: string;
+  btcpayApiKey?: string;
+  btcpayStoreId?: string;
+  // Blockonomics
+  blockonomicsApiKey?: string;
+  // Manual / Shared
+  bitcoinAddress?: string; // Static receive address
+  bitcoinXpub?: string; // xpub for address derivation
+  bitcoinRequiredConfirmations: number; // 1, 3, or 6
+
+  // USDT
+  usdtEnabled: boolean;
+  usdtDefaultNetwork: USDTNetwork;
+  usdtAddresses: {
+    tron?: string;
+    polygon?: string;
+    ethereum?: string;
+    arbitrum?: string;
+  };
+  usdtRequiredConfirmations: number;
+
+  // General
+  isConfigured: boolean;
+  lastTestedAt?: string;
+  testStatus?: "success" | "failed";
 }
 
 // ============================================

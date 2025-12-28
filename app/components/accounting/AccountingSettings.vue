@@ -61,9 +61,7 @@ const standardOptions = [
       </template>
       <div class="space-y-6">
         <!-- Auto Entries Toggle -->
-        <div
-          class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-        >
+        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <div>
             <p class="font-medium text-gray-900 dark:text-white">
               Auto Journal Entries
@@ -77,26 +75,13 @@ const standardOptions = [
         </div>
 
         <!-- Accounting Standard -->
-        <UFormField
-          label="Accounting Standard"
-          hint="Select your preferred chart of accounts format"
-        >
-          <USelectMenu
-            v-model="localStandard"
-            :items="standardOptions"
-            value-key="value"
-            class="w-full"
-          />
+        <UFormField label="Accounting Standard" hint="Select your preferred chart of accounts format">
+          <USelectMenu v-model="localStandard" :items="standardOptions" value-key="value" class="w-full" />
         </UFormField>
 
-        <div
-          class="p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
-        >
+        <div class="p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <div class="flex items-start gap-3">
-            <UIcon
-              name="i-heroicons-information-circle"
-              class="w-5 h-5 text-blue-500 mt-0.5"
-            />
+            <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-500 mt-0.5" />
             <div class="text-sm">
               <p class="font-medium text-blue-700 dark:text-blue-300">
                 {{
@@ -130,18 +115,8 @@ const standardOptions = [
         </div>
 
         <!-- VAT Rate -->
-        <UFormField
-          label="VAT Rate (%)"
-          hint="Value Added Tax rate for automatic calculations"
-        >
-          <UInput
-            v-model.number="localVatRate"
-            type="number"
-            min="0"
-            max="100"
-            step="0.5"
-            placeholder="10"
-          >
+        <UFormField label="VAT Rate (%)" hint="Value Added Tax rate for automatic calculations">
+          <UInput v-model.number="localVatRate" type="number" min="0" max="100" step="0.5" placeholder="10">
             <template #trailing>
               <span class="text-gray-500">%</span>
             </template>
@@ -149,9 +124,7 @@ const standardOptions = [
         </UFormField>
 
         <!-- Auto Post Toggle -->
-        <div
-          class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-        >
+        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <div>
             <p class="font-medium text-gray-900 dark:text-white">
               Auto-Post Journals
@@ -160,16 +133,12 @@ const standardOptions = [
               Automatically post journal entries without manual approval
             </p>
           </div>
-          <UToggle v-model="localAutoPost" />
+          <USwitch v-model="localAutoPost" />
         </div>
 
         <!-- Save Button -->
         <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <UButton
-            color="primary"
-            icon="i-heroicons-check"
-            @click="emit('save')"
-          >
+          <UButton color="primary" icon="i-heroicons-check" @click="emit('save')">
             Save Settings
           </UButton>
         </div>
@@ -191,7 +160,7 @@ const standardOptions = [
           Standard:
           <strong>{{
             localStandard === "lao" ? "Lao Country (LAO-GAAP)" : "Global (IFRS)"
-          }}</strong>
+            }}</strong>
         </p>
         <p>
           VAT Rate: <strong>{{ localVatRate }}%</strong>

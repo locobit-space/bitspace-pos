@@ -18,6 +18,7 @@ const emit = defineEmits<{
 
 // Composables
 const lightning = useLightning();
+const crypto = useCrypto();
 const currencyHelper = useCurrency();
 const { t } = useI18n();
 
@@ -30,6 +31,10 @@ const isLightningConfigured = computed(
   () => lightning.settings.value?.isConfigured
 );
 const lightningProvider = computed(() => lightning.settings.value?.provider);
+
+// Check Crypto configuration
+const isBitcoinConfigured = computed(() => crypto.isBitcoinConfigured.value);
+const isUSDTConfigured = computed(() => crypto.isUSDTConfigured.value);
 
 // Payment methods available
 const paymentMethods = computed(() => [
@@ -74,6 +79,22 @@ const paymentMethods = computed(() => [
       isLightningConfigured.value && !!lightning.settings.value?.bolt12Offer,
     badge: "BOLT12",
   },
+  {
+    id: "bitcoin" as PaymentMethod,
+    name: t("payment.methods.bitcoin"),
+    description: t("payment.methods.bitcoinDesc"),
+    icon: "₿",
+    available: isBitcoinConfigured.value,
+    badge: "On-Chain",
+  },
+  {
+    id: "usdt" as PaymentMethod,
+    name: t("payment.methods.usdt"),
+    description: t("payment.methods.usdtDesc"),
+    icon: "💎",
+    available: isUSDTConfigured.value,
+    badge: crypto.settings.value.usdtDefaultNetwork?.toUpperCase(),
+  },
 ]);
 
 const selectMethod = (method: PaymentMethod) => {
@@ -109,6 +130,14 @@ const handleStaticQRPaid = () => {
   emit("paid", "qr_static", { manual: true });
 };
 
+const handleBitcoinPaid = (data: { txid: string; address: string }) => {
+  emit("paid", "bitcoin", data);
+};
+
+const handleUSDTPaid = (data: { txHash: string; network: string; address: string }) => {
+  emit("paid", "usdt", data);
+};
+
 const handleCancel = () => {
   if (selectedMethod.value) {
     goBack();
@@ -120,6 +149,7 @@ const handleCancel = () => {
 // Load settings on mount and auto-select method if provided
 onMounted(async () => {
   await lightning.loadSettings();
+  await crypto.loadSettings();
 
   // Auto-select default method if provided
   if (props.defaultMethod) {
@@ -311,6 +341,26 @@ onMounted(async () => {
           {{ t("common.cancel") }}
         </UButton>
       </div>
+
+      <!-- Bitcoin On-Chain Payment -->
+      <PaymentBitcoin
+        v-else-if="selectedMethod === 'bitcoin'"
+        :amount="amount"
+        :currency="currency"
+        :order-id="orderId"
+        @paid="handleBitcoinPaid"
+        @cancel="handleCancel"
+      />
+
+      <!-- USDT Payment -->
+      <PaymentUSDT
+        v-else-if="selectedMethod === 'usdt'"
+        :amount="amount"
+        :currency="currency"
+        :order-id="orderId"
+        @paid="handleUSDTPaid"
+        @cancel="handleCancel"
+      />
     </div>
   </div>
 </template>

@@ -13,7 +13,11 @@
       "external": "ການຈ່າຍອື່ນ",
       "externalDesc": "PromptPay, WeChat, Alipay, ແລະອື່ນໆ",
       "staticQR": "QR ຄົງທີ່",
-      "staticQRDesc": "BOLT12 - QR ດຽວສຳລັບທຸກຈຳນວນ"
+      "staticQRDesc": "BOLT12 - QR ດຽວສຳລັບທຸກຈຳນວນ",
+      "bitcoin": "Bitcoin",
+      "bitcoinDesc": "ຈ່າຍດ້ວຍ Bitcoin (on-chain)",
+      "usdt": "USDT",
+      "usdtDesc": "ຈ່າຍດ້ວຍ Tether stablecoin"
     },
     "lightning": {
       "title": "ຈ່າຍຜ່ານ Lightning",
@@ -99,6 +103,40 @@
       "title": "ຈ່າຍຜ່ານ QR ຄົງທີ່",
       "description": "ສະແກນ QR ນີ້ເພື່ອຈ່າຍເງິນຈຳນວນໃດກໍໄດ້",
       "confirmHint": "ຫຼັງຈາກລູກຄ້າຈ່າຍແລ້ວ, ຢືນຢັນການຈ່າຍຂ້າງລຸ່ມ"
-    }
+    },
+    "bitcoin": {
+      "title": "ຈ່າຍດ້ວຍ Bitcoin",
+      "generating": "ກຳລັງສ້າງທີ່ຢູ່...",
+      "sendTo": "ສົ່ງ BTC ໄປທີ່ທີ່ຢູ່ນີ້",
+      "expiresIn": "ໝົດອາຍຸໃນ",
+      "copyAddress": "ສຳເນົາທີ່ຢູ່",
+      "txDetected": "ກວດພົບທຸລະກຳ!",
+      "confirmations": "{count} ການຢືນຢັນ",
+      "waitingConfirmations": "ລໍຖ້າການຢືນຢັນ...",
+      "success": "ການຈ່າຍສຳເລັດ!",
+      "error": "ການຈ່າຍລົ້ມເຫຼວ",
+      "expired": "ຄຳຂໍຈ່າຍເງິນໝົດອາຍຸ",
+      "manualConfirmHint": "ຖ້າກວດຈັບອັດຕະໂນມັດບໍ່ເຮັດວຽກ, ຢືນຢັນດ້ວຍຕົນເອງຫຼັງກວດສອບ.",
+      "confirmReceived": "ຢືນຢັນວ່າຮັບເງິນແລ້ວ"
+    },
+    "usdt": {
+      "title": "ຈ່າຍດ້ວຍ USDT",
+      "selectNetwork": "ເລືອກເຄືອຂ່າຍ",
+      "networkFee": "ຄ່າທຳນຽມເຄືອຂ່າຍ",
+      "generating": "ກຳລັງສ້າງການຈ່າຍ...",
+      "sendExactly": "ສົ່ງພໍດີ",
+      "exactAmountWarning": "ສົ່ງຈຳນວນພໍດີເພື່ອຮັບປະກັນການກວດຈັບອັດຕະໂນມັດ",
+      "sendTo": "ສົ່ງ USDT ໄປທີ່ທີ່ຢູ່ນີ້",
+      "expiresIn": "ໝົດອາຍຸໃນ",
+      "copyAddress": "ສຳເນົາທີ່ຢູ່",
+      "networkFeeNote": "ຄ່າທຳນຽມເຄືອຂ່າຍປະມານ",
+      "success": "ການຈ່າຍສຳເລັດ!",
+      "error": "ການຈ່າຍລົ້ມເຫຼວ",
+      "expired": "ຄຳຂໍຈ່າຍເງິນໝົດອາຍຸ",
+      "noNetworksConfigured": "ບໍ່ມີທີ່ຢູ່ USDT ຕັ້ງຄ່າໄວ້",
+      "manualConfirmHint": "ຖ້າກວດຈັບອັດຕະໂນມັດບໍ່ເຮັດວຽກ, ຢືນຢັນດ້ວຍຕົນເອງຫຼັງກວດສອບ.",
+      "confirmReceived": "ຢືນຢັນວ່າຮັບເງິນແລ້ວ"
+    },
+    "closingIn": "ກຳລັງປິດໃນ {seconds} ວິນາທີ..."
   }
 }
