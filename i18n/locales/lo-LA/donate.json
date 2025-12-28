@@ -1,7 +1,7 @@
 {
   "donate": {
     "title": "ສະໜັບສະໜູນຜູ້ພັດທະນາ",
-    "subtitle": "ຊ່ວຍໃຫ້ BitSpace POS ຟຣີ ແລະ ໂອເພັນຊອດ",
+    "subtitle": "ຊ່ວຍໃຫ້ bnos.space ຟຣີ ແລະ ໂອເພັນຊອດ",
     "lightning": "Bitcoin Lightning",
     "lightningDesc": "ສະແກນດ້ວຍ Lightning wallet ຫຼື ຄລິກເພື່ອກັອບປີ້",
     "noLightning": "ບໍ່ມີທີ່ຢູ່ Lightning",

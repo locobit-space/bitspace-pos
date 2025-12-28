@@ -1,5 +1,5 @@
 // ============================================
-// 🚀 BITSPACE POS - FUTURISTIC TYPE SYSTEM
+// 🚀 bnos.space - FUTURISTIC TYPE SYSTEM
 // Lightning + Nostr + Decentralised Commerce
 // ============================================
 

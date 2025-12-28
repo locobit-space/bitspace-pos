@@ -339,7 +339,7 @@ export const useAuth = () => {
           ["method", "GET"],
           ["u", window.location.origin],
         ],
-        content: "BitSpace POS Login",
+        content: "BNOS Login",
       };
 
       let signedEvent: object;

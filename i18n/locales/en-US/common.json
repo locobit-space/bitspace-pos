@@ -166,7 +166,7 @@
     "support": {
       "title": "Support Development",
       "subtitle": "Buy the developer a coffee!",
-      "message": "Thank you for using BitSpace POS! Your support helps us build better software.",
+      "message": "Thank you for using bnos.space POS! Your support helps us build better software.",
       "orSendDirectly": "Or send directly to:",
       "noAddressConfigured": "Lightning address not configured",
       "nostrZap": "You can also zap us on Nostr!",

@@ -1,4 +1,4 @@
-# 📐 BitSpace POS - Database Schema Documentation
+# 📐 bnos.space - Database Schema Documentation
 
 > **Version:** 2.0  
 > **Last Updated:** 2024  
@@ -6,11 +6,11 @@
 
 ## 🏗️ Architecture Overview
 
-BitSpace POS uses a **hybrid data architecture** combining three storage layers:
+bnos.space uses a **hybrid data architecture** combining three storage layers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      BitSpace POS Data Layer                     │
+│                      bnos.space Data Layer                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐       │
@@ -40,6 +40,7 @@ Local offline-first storage using IndexedDB via Dexie.js.
 ### Database: `POSDatabase`
 
 #### Table: `events` - Nostr Events Cache
+
 ```typescript
 {
   id: string;           // Primary Key - Nostr event ID (32-byte hex)
@@ -52,9 +53,11 @@ Local offline-first storage using IndexedDB via Dexie.js.
   synced?: boolean;     // Sync status with relays
 }
 ```
+
 **Indexes:** `id`, `kind`, `created_at`, `pubkey`
 
 #### Table: `meta` - Categories, Units, Payment Terms
+
 ```typescript
 {
   id: string;           // Primary Key - UUID
@@ -67,9 +70,11 @@ Local offline-first storage using IndexedDB via Dexie.js.
   created_at: number;   // Unix timestamp
 }
 ```
+
 **Indexes:** `id`, `type`
 
 #### Table: `pendingSync` - Offline Sync Queue
+
 ```typescript
 {
   id?: number;          // Auto-increment Primary Key
@@ -78,42 +83,48 @@ Local offline-first storage using IndexedDB via Dexie.js.
   lastAttempt?: number; // Unix timestamp of last sync attempt
 }
 ```
+
 **Indexes:** `id (auto)`, `status`
 
 #### Table: `offlinePayments` - Offline Payment Records
+
 ```typescript
 {
-  id: string;           // Primary Key - UUID
-  orderId: string;      // Indexed - Reference to order
-  paymentHash: string;  // Lightning payment hash
-  preimage: string;     // Payment proof
-  amount: number;       // Amount in sats
-  method: string;       // Payment method
-  createdAt: number;    // Indexed - Unix timestamp
-  syncStatus: "pending" | "synced" | "failed";  // Indexed
+  id: string; // Primary Key - UUID
+  orderId: string; // Indexed - Reference to order
+  paymentHash: string; // Lightning payment hash
+  preimage: string; // Payment proof
+  amount: number; // Amount in sats
+  method: string; // Payment method
+  createdAt: number; // Indexed - Unix timestamp
+  syncStatus: "pending" | "synced" | "failed"; // Indexed
   syncAttempts: number;
-  orderData: string;    // JSON string of full order
+  orderData: string; // JSON string of full order
 }
 ```
+
 **Indexes:** `id`, `orderId`, `syncStatus`, `createdAt`
 
 #### Table: `loyaltyMembers` - Customer Loyalty Program
+
 ```typescript
 {
-  id: string;           // Primary Key - UUID
-  nostrPubkey: string;  // Indexed - Customer's Nostr pubkey
-  points: number;       // Indexed - Loyalty points balance
-  tier: string;         // Indexed - bronze | silver | gold | platinum
-  totalSpent: number;   // Lifetime spend amount
-  visitCount: number;   // Number of visits
-  lastVisit: number;    // Unix timestamp
-  joinedAt: number;     // Unix timestamp
-  rewardsJson: string;  // JSON array of ZapReward objects
+  id: string; // Primary Key - UUID
+  nostrPubkey: string; // Indexed - Customer's Nostr pubkey
+  points: number; // Indexed - Loyalty points balance
+  tier: string; // Indexed - bronze | silver | gold | platinum
+  totalSpent: number; // Lifetime spend amount
+  visitCount: number; // Number of visits
+  lastVisit: number; // Unix timestamp
+  joinedAt: number; // Unix timestamp
+  rewardsJson: string; // JSON array of ZapReward objects
 }
 ```
+
 **Indexes:** `id`, `nostrPubkey`, `tier`, `points`
 
 #### Table: `localOrders` - Local Order Cache
+
 ```typescript
 {
   id: string;           // Primary Key - UUID
@@ -126,22 +137,26 @@ Local offline-first storage using IndexedDB via Dexie.js.
   syncedAt?: number;    // Indexed - When synced to server
 }
 ```
+
 **Indexes:** `id`, `status`, `createdAt`, `syncedAt`
 
 #### Table: `exchangeRates` - Currency Exchange Rate Cache
+
 ```typescript
 {
-  id: string;           // Primary Key - e.g., "BTC-USD"
-  from: string;         // Source currency code
-  to: string;           // Target currency code
-  rate: number;         // Exchange rate
-  source: string;       // Data source (api | manual | oracle)
-  updatedAt: number;    // Indexed - Unix timestamp
+  id: string; // Primary Key - e.g., "BTC-USD"
+  from: string; // Source currency code
+  to: string; // Target currency code
+  rate: number; // Exchange rate
+  source: string; // Data source (api | manual | oracle)
+  updatedAt: number; // Indexed - Unix timestamp
 }
 ```
+
 **Indexes:** `id`, `updatedAt`
 
 #### Table: `posSessions` - POS Terminal Sessions
+
 ```typescript
 {
   id: string;           // Primary Key - UUID
@@ -158,6 +173,7 @@ Local offline-first storage using IndexedDB via Dexie.js.
   status: "active" | "closed";  // Indexed
 }
 ```
+
 **Indexes:** `id`, `branchId`, `staffId`, `status`, `startedAt`
 
 ---
@@ -232,6 +248,7 @@ Relational database for server-side persistence via Hasura GraphQL.
 ### Table Definitions
 
 #### `branches` - Business Locations
+
 ```sql
 CREATE TABLE branches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -253,6 +270,7 @@ CREATE INDEX idx_branches_nostr_pubkey ON branches(nostr_pubkey);
 ```
 
 #### `categories` - Product Categories
+
 ```sql
 CREATE TABLE categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -269,6 +287,7 @@ CREATE INDEX idx_categories_parent ON categories(parent_id);
 ```
 
 #### `units` - Measurement Units
+
 ```sql
 CREATE TABLE units (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -280,6 +299,7 @@ CREATE TABLE units (
 ```
 
 #### `products` - Product Catalog
+
 ```sql
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -289,7 +309,7 @@ CREATE TABLE products (
   category_id UUID REFERENCES categories(id),
   unit_id UUID REFERENCES units(id),
   branch_id UUID NOT NULL REFERENCES branches(id),
-  
+
   -- Pricing
   price DECIMAL(18, 8) NOT NULL,
   price_lak DECIMAL(18, 2),
@@ -297,29 +317,29 @@ CREATE TABLE products (
   price_usd DECIMAL(18, 2),
   price_btc DECIMAL(18, 8),
   price_sats BIGINT,
-  
+
   -- Inventory
   stock INTEGER DEFAULT 0,
   min_stock INTEGER DEFAULT 0,
   track_inventory BOOLEAN DEFAULT true,
-  
+
   -- Status
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'discontinued')),
-  
+
   -- Media
   image TEXT,
   images JSONB DEFAULT '[]',
-  
+
   -- AI/Analytics
   upsell_products UUID[] DEFAULT '{}',
   complementary_products UUID[] DEFAULT '{}',
   popularity_score DECIMAL(5, 2) DEFAULT 0,
-  
+
   -- Metadata
   tags TEXT[] DEFAULT '{}',
   attributes JSONB DEFAULT '{}',
   nostr_event_id VARCHAR(64),
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -332,6 +352,7 @@ CREATE INDEX idx_products_name_search ON products USING GIN (to_tsvector('englis
 ```
 
 #### `customers` - Customer CRM
+
 ```sql
 CREATE TABLE customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -341,22 +362,22 @@ CREATE TABLE customers (
   email VARCHAR(255),
   phone VARCHAR(50),
   address TEXT,
-  
+
   -- Loyalty
   loyalty_tier VARCHAR(20) DEFAULT 'bronze' CHECK (loyalty_tier IN ('bronze', 'silver', 'gold', 'platinum')),
   loyalty_points INTEGER DEFAULT 0,
   total_spent DECIMAL(18, 2) DEFAULT 0,
   visit_count INTEGER DEFAULT 0,
   last_visit TIMESTAMPTZ,
-  
+
   -- Lightning
   lud16 VARCHAR(255),  -- Lightning address
-  
+
   -- Metadata
   notes TEXT,
   tags TEXT[] DEFAULT '{}',
   preferences JSONB DEFAULT '{}',
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -368,6 +389,7 @@ CREATE INDEX idx_customers_loyalty_tier ON customers(loyalty_tier);
 ```
 
 #### `orders` - Sales Orders
+
 ```sql
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -376,7 +398,7 @@ CREATE TABLE orders (
   customer_id UUID REFERENCES customers(id),
   staff_id UUID,
   session_id UUID,
-  
+
   -- Totals
   subtotal DECIMAL(18, 8) NOT NULL,
   tax DECIMAL(18, 8) DEFAULT 0,
@@ -385,28 +407,28 @@ CREATE TABLE orders (
   total DECIMAL(18, 8) NOT NULL,
   total_sats BIGINT,
   currency VARCHAR(10) DEFAULT 'LAK',
-  
+
   -- Payment
   payment_method VARCHAR(20) CHECK (payment_method IN ('lightning', 'bolt12', 'lnurl', 'onchain', 'cash', 'qr_static')),
   payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'processing', 'completed', 'failed', 'expired', 'refunded', 'offline_pending')),
   payment_hash VARCHAR(64),
-  
+
   -- Loyalty
   loyalty_points_earned INTEGER DEFAULT 0,
   loyalty_points_redeemed INTEGER DEFAULT 0,
-  
+
   -- Status
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled')),
   notes TEXT,
-  
+
   -- Offline Support
   is_offline BOOLEAN DEFAULT false,
   synced_at TIMESTAMPTZ,
-  
+
   -- Nostr
   nostr_event_id VARCHAR(64),
   e_receipt_id VARCHAR(64),
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -421,6 +443,7 @@ CREATE INDEX idx_orders_created_at ON orders(created_at DESC);
 ```
 
 #### `order_items` - Order Line Items
+
 ```sql
 CREATE TABLE order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -440,37 +463,38 @@ CREATE INDEX idx_order_items_product ON order_items(product_id);
 ```
 
 #### `payments` - Payment Records
+
 ```sql
 CREATE TABLE payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES orders(id),
-  
+
   -- Lightning Details
   payment_hash VARCHAR(64) UNIQUE,
   preimage VARCHAR(64),
   bolt11 TEXT,
   bolt12_offer TEXT,
-  
+
   -- Amount
   amount BIGINT NOT NULL,  -- in sats
   amount_fiat DECIMAL(18, 2),
   currency VARCHAR(10),
-  
+
   -- Method & Status
   method VARCHAR(20) NOT NULL CHECK (method IN ('lightning', 'bolt12', 'lnurl', 'onchain', 'cash', 'qr_static')),
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'expired', 'refunded')),
-  
+
   -- Offline Support
   is_offline BOOLEAN DEFAULT false,
   synced_at TIMESTAMPTZ,
-  
+
   -- Nostr
   nostr_event_id VARCHAR(64),
-  
+
   -- Metadata
   metadata JSONB DEFAULT '{}',
   error_message TEXT,
-  
+
   expires_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -483,24 +507,25 @@ CREATE INDEX idx_payments_method ON payments(method);
 ```
 
 #### `inventory` - Inventory Movements
+
 ```sql
 CREATE TABLE inventory (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID NOT NULL REFERENCES products(id),
   branch_id UUID NOT NULL REFERENCES branches(id),
-  
+
   -- Movement
   quantity INTEGER NOT NULL,  -- Positive = in, Negative = out
   movement_type VARCHAR(20) NOT NULL CHECK (movement_type IN ('purchase', 'sale', 'adjustment', 'transfer_in', 'transfer_out', 'return', 'damage', 'expired')),
-  
+
   -- Reference
   reference_id UUID,  -- Order ID, Transfer ID, etc.
   reference_type VARCHAR(50),
-  
+
   -- Balance
   balance_before INTEGER NOT NULL,
   balance_after INTEGER NOT NULL,
-  
+
   -- Metadata
   notes TEXT,
   created_by UUID,
@@ -514,24 +539,25 @@ CREATE INDEX idx_inventory_created_at ON inventory(created_at DESC);
 ```
 
 #### `receipts` - E-Receipts
+
 ```sql
 CREATE TABLE receipts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES orders(id),
-  
+
   -- Nostr
   nostr_event_id VARCHAR(64) UNIQUE,
   merchant_pubkey VARCHAR(64),
   customer_pubkey VARCHAR(64),
-  
+
   -- Data
   receipt_data JSONB NOT NULL,
   signature VARCHAR(128),
-  
+
   -- Delivery
   sent_via VARCHAR(20),  -- nostr_dm, email, print
   sent_at TIMESTAMPTZ,
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -541,22 +567,23 @@ CREATE INDEX idx_receipts_customer ON receipts(customer_pubkey);
 ```
 
 #### `loyalty_rewards` - Loyalty Zap Rewards
+
 ```sql
 CREATE TABLE loyalty_rewards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id),
-  
+
   -- Reward
   amount BIGINT NOT NULL,  -- in sats
   reason VARCHAR(50) NOT NULL CHECK (reason IN ('purchase', 'referral', 'loyalty', 'promotion', 'birthday')),
-  
+
   -- Reference
   order_id UUID REFERENCES orders(id),
-  
+
   -- Zap
   zap_event_id VARCHAR(64),
   zap_status VARCHAR(20) DEFAULT 'pending' CHECK (zap_status IN ('pending', 'sent', 'claimed', 'failed')),
-  
+
   -- Metadata
   notes TEXT,
   expires_at TIMESTAMPTZ,
@@ -570,27 +597,28 @@ CREATE INDEX idx_loyalty_rewards_status ON loyalty_rewards(zap_status);
 ```
 
 #### `pos_sessions` - POS Terminal Sessions
+
 ```sql
 CREATE TABLE pos_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   branch_id UUID NOT NULL REFERENCES branches(id),
   staff_id UUID,
   terminal_id VARCHAR(50),
-  
+
   -- Cash Drawer
   opening_balance DECIMAL(18, 2) NOT NULL,
   closing_balance DECIMAL(18, 2),
-  
+
   -- Totals
   total_sales DECIMAL(18, 2) DEFAULT 0,
   total_orders INTEGER DEFAULT 0,
   cash_sales DECIMAL(18, 2) DEFAULT 0,
   lightning_sales BIGINT DEFAULT 0,  -- in sats
-  
+
   -- Status
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'closed', 'reconciled')),
   notes TEXT,
-  
+
   started_at TIMESTAMPTZ DEFAULT NOW(),
   ended_at TIMESTAMPTZ
 );
@@ -602,6 +630,7 @@ CREATE INDEX idx_pos_sessions_started_at ON pos_sessions(started_at DESC);
 ```
 
 #### `staff` - Staff/Employees
+
 ```sql
 CREATE TABLE staff (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -609,17 +638,17 @@ CREATE TABLE staff (
   email VARCHAR(255) UNIQUE,
   phone VARCHAR(50),
   nostr_pubkey VARCHAR(64),
-  
+
   -- Role
   role VARCHAR(50) DEFAULT 'cashier' CHECK (role IN ('admin', 'manager', 'cashier', 'staff')),
   branch_id UUID REFERENCES branches(id),
-  
+
   -- Authentication
   pin_hash VARCHAR(255),  -- Hashed PIN for quick POS login
-  
+
   -- Status
   is_active BOOLEAN DEFAULT true,
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -630,6 +659,7 @@ CREATE INDEX idx_staff_role ON staff(role);
 ```
 
 #### `suppliers` - Supplier Management (ERP)
+
 ```sql
 CREATE TABLE suppliers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -639,19 +669,19 @@ CREATE TABLE suppliers (
   email VARCHAR(255),
   phone VARCHAR(50),
   address TEXT,
-  
+
   -- Payment
   payment_terms INTEGER DEFAULT 30,  -- Days
   currency VARCHAR(10) DEFAULT 'LAK',
-  
+
   -- Lightning
   nostr_pubkey VARCHAR(64),
   lud16 VARCHAR(255),
-  
+
   -- Status
   is_active BOOLEAN DEFAULT true,
   notes TEXT,
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -660,31 +690,32 @@ CREATE INDEX idx_suppliers_code ON suppliers(code);
 ```
 
 #### `purchase_orders` - Purchase Orders (ERP)
+
 ```sql
 CREATE TABLE purchase_orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   po_number VARCHAR(50) UNIQUE NOT NULL,
   supplier_id UUID NOT NULL REFERENCES suppliers(id),
   branch_id UUID NOT NULL REFERENCES branches(id),
-  
+
   -- Totals
   subtotal DECIMAL(18, 2) NOT NULL,
   tax DECIMAL(18, 2) DEFAULT 0,
   total DECIMAL(18, 2) NOT NULL,
   currency VARCHAR(10) DEFAULT 'LAK',
-  
+
   -- Status
   status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'approved', 'ordered', 'partial', 'received', 'cancelled')),
-  
+
   -- Dates
   order_date DATE,
   expected_date DATE,
   received_date DATE,
-  
+
   notes TEXT,
   created_by UUID REFERENCES staff(id),
   approved_by UUID REFERENCES staff(id),
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -695,6 +726,7 @@ CREATE INDEX idx_purchase_orders_status ON purchase_orders(status);
 ```
 
 #### `accounts` - Chart of Accounts (Accounting)
+
 ```sql
 CREATE TABLE accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -702,15 +734,15 @@ CREATE TABLE accounts (
   name VARCHAR(255) NOT NULL,
   type VARCHAR(20) NOT NULL CHECK (type IN ('asset', 'liability', 'equity', 'revenue', 'expense')),
   parent_id UUID REFERENCES accounts(id),
-  
+
   -- Balances
   balance DECIMAL(18, 2) DEFAULT 0,
   balance_sats BIGINT DEFAULT 0,
-  
+
   -- Settings
   is_active BOOLEAN DEFAULT true,
   is_system BOOLEAN DEFAULT false,
-  
+
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -722,20 +754,21 @@ CREATE INDEX idx_accounts_parent ON accounts(parent_id);
 ```
 
 #### `journal_entries` - Accounting Journal (Accounting)
+
 ```sql
 CREATE TABLE journal_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   entry_number VARCHAR(50) UNIQUE NOT NULL,
   entry_date DATE NOT NULL,
   description TEXT,
-  
+
   -- Reference
   reference_type VARCHAR(50),  -- order, payment, adjustment
   reference_id UUID,
-  
+
   -- Status
   status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'posted', 'void')),
-  
+
   posted_at TIMESTAMPTZ,
   posted_by UUID REFERENCES staff(id),
   created_by UUID REFERENCES staff(id),
@@ -747,16 +780,17 @@ CREATE INDEX idx_journal_entries_status ON journal_entries(status);
 ```
 
 #### `journal_lines` - Journal Entry Lines
+
 ```sql
 CREATE TABLE journal_lines (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   entry_id UUID NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
   account_id UUID NOT NULL REFERENCES accounts(id),
-  
+
   -- Amounts
   debit DECIMAL(18, 2) DEFAULT 0,
   credit DECIMAL(18, 2) DEFAULT 0,
-  
+
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -773,23 +807,24 @@ Nostr events for decentralized data storage following NIPs.
 
 ### Event Kinds Used
 
-| Kind | NIP | Description |
-|------|-----|-------------|
-| 0 | NIP-01 | Metadata (Merchant Profile) |
-| 1 | NIP-01 | Short Text Note |
-| 4 | NIP-04 | Encrypted Direct Message (E-Receipt) |
-| 9734 | NIP-57 | Zap Request |
-| 9735 | NIP-57 | Zap Receipt |
-| 30017 | NIP-15 | Marketplace Stall |
-| 30018 | NIP-15 | Marketplace Product |
-| 30019 | Custom | Order Event |
-| 30020 | Custom | E-Receipt Event |
-| 30021 | Custom | Inventory Event |
-| 30022 | Custom | Customer Loyalty Event |
+| Kind  | NIP    | Description                          |
+| ----- | ------ | ------------------------------------ |
+| 0     | NIP-01 | Metadata (Merchant Profile)          |
+| 1     | NIP-01 | Short Text Note                      |
+| 4     | NIP-04 | Encrypted Direct Message (E-Receipt) |
+| 9734  | NIP-57 | Zap Request                          |
+| 9735  | NIP-57 | Zap Receipt                          |
+| 30017 | NIP-15 | Marketplace Stall                    |
+| 30018 | NIP-15 | Marketplace Product                  |
+| 30019 | Custom | Order Event                          |
+| 30020 | Custom | E-Receipt Event                      |
+| 30021 | Custom | Inventory Event                      |
+| 30022 | Custom | Customer Loyalty Event               |
 
 ### Event Structures
 
 #### Kind 0: Merchant Profile
+
 ```json
 {
   "kind": 0,
@@ -801,6 +836,7 @@ Nostr events for decentralized data storage following NIPs.
 ```
 
 #### Kind 30017: Marketplace Stall (Product Catalog)
+
 ```json
 {
   "kind": 30017,
@@ -817,6 +853,7 @@ Nostr events for decentralized data storage following NIPs.
 ```
 
 #### Kind 30018: Marketplace Product
+
 ```json
 {
   "kind": 30018,
@@ -837,6 +874,7 @@ Nostr events for decentralized data storage following NIPs.
 ```
 
 #### Kind 30019: Order Event (Custom)
+
 ```json
 {
   "kind": 30019,
@@ -857,6 +895,7 @@ Nostr events for decentralized data storage following NIPs.
 ```
 
 #### Kind 30020: E-Receipt Event (Custom)
+
 ```json
 {
   "kind": 30020,
@@ -874,6 +913,7 @@ Nostr events for decentralized data storage following NIPs.
 ```
 
 #### Kind 30022: Customer Loyalty Event (Custom)
+
 ```json
 {
   "kind": 30022,
@@ -891,19 +931,19 @@ Nostr events for decentralized data storage following NIPs.
 ```
 
 #### Kind 4: E-Receipt DM (NIP-04)
+
 ```json
 {
   "kind": 4,
   "pubkey": "merchant_hex_pubkey",
   "created_at": 1700000000,
-  "tags": [
-    ["p", "customer_pubkey"]
-  ],
+  "tags": [["p", "customer_pubkey"]],
   "content": "NIP-04_ENCRYPTED_RECEIPT_DATA"
 }
 ```
 
 #### Kind 9735: Zap Receipt (Loyalty Reward)
+
 ```json
 {
   "kind": 9735,
@@ -927,13 +967,13 @@ Nostr events for decentralized data storage following NIPs.
 ### Sync Priority Levels
 
 | Priority | Data Type | Sync Frequency | Conflict Resolution |
-|----------|-----------|----------------|---------------------|
-| Critical | Payments | Real-time | Server wins |
-| High | Orders | Real-time | Last-write wins |
-| High | Inventory | Real-time | Sum conflicts |
-| Medium | Products | 5 min poll | Last-write wins |
-| Medium | Customers | 5 min poll | Merge fields |
-| Low | Analytics | Hourly | Server aggregates |
+| -------- | --------- | -------------- | ------------------- |
+| Critical | Payments  | Real-time      | Server wins         |
+| High     | Orders    | Real-time      | Last-write wins     |
+| High     | Inventory | Real-time      | Sum conflicts       |
+| Medium   | Products  | 5 min poll     | Last-write wins     |
+| Medium   | Customers | 5 min poll     | Merge fields        |
+| Low      | Analytics | Hourly         | Server aggregates   |
 
 ### Offline Sync Flow
 
@@ -987,10 +1027,7 @@ subscription OrderUpdates($branchId: uuid!) {
 
 subscription InventoryAlerts($branchId: uuid!) {
   products(
-    where: {
-      branch_id: { _eq: $branchId }
-      stock: { _lt: min_stock }
-    }
+    where: { branch_id: { _eq: $branchId }, stock: { _lt: min_stock } }
   ) {
     id
     name
@@ -1016,7 +1053,7 @@ subscription InventoryAlerts($branchId: uuid!) {
 -- Hasura Row Level Security Example
 CREATE POLICY branch_isolation ON orders
   USING (branch_id IN (
-    SELECT branch_id FROM staff 
+    SELECT branch_id FROM staff
     WHERE id = current_user_id()
   ));
 ```
@@ -1032,9 +1069,10 @@ CREATE POLICY branch_isolation ON orders
 ## 📊 Analytics Views
 
 ### Sales Summary View
+
 ```sql
 CREATE VIEW sales_summary AS
-SELECT 
+SELECT
   DATE(created_at) as date,
   branch_id,
   COUNT(*) as order_count,
@@ -1049,9 +1087,10 @@ GROUP BY DATE(created_at), branch_id;
 ```
 
 ### Product Performance View
+
 ```sql
 CREATE VIEW product_performance AS
-SELECT 
+SELECT
   p.id,
   p.name,
   p.category_id,
@@ -1066,9 +1105,10 @@ GROUP BY p.id, p.name, p.category_id;
 ```
 
 ### Customer Lifetime Value View
+
 ```sql
 CREATE VIEW customer_ltv AS
-SELECT 
+SELECT
   c.id,
   c.name,
   c.loyalty_tier,
@@ -1088,6 +1128,7 @@ GROUP BY c.id, c.name, c.loyalty_tier, c.loyalty_points;
 ## 🚀 Migration Scripts
 
 ### Initial Setup
+
 ```sql
 -- Run these in order
 \i 01_branches.sql
@@ -1103,6 +1144,7 @@ GROUP BY c.id, c.name, c.loyalty_tier, c.loyalty_points;
 ```
 
 ### Hasura Metadata
+
 ```yaml
 # hasura/metadata/tables.yaml
 - table:
@@ -1111,7 +1153,7 @@ GROUP BY c.id, c.name, c.loyalty_tier, c.loyalty_points;
   select_permissions:
     - role: user
       permission:
-        columns: '*'
+        columns: "*"
         filter:
           branch_id:
             _eq: X-Hasura-Branch-Id

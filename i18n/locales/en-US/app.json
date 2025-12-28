@@ -1,8 +1,8 @@
 {
   "app": {
-    "name": "BitSpace POS",
+    "name": "bnos.space",
     "tagline": "Lightning-powered Point of Sale",
-    "copyright": "BitSpace POS. Powered by ⚡ Lightning",
+    "copyright": "bnos.space. Powered by ⚡ Lightning",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
   }

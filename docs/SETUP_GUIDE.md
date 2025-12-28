@@ -1,10 +1,10 @@
-# BitSpace POS - Setup Guide
+# bnos.space - Setup Guide
 
 ## 📱 For Store Owners
 
 ### Step 1: Create Your Account
 
-1. Open BitSpace POS in your browser
+1. Open bnos.space in your browser
 2. Click **"Staff"** tab → **"Login as Owner"**
 3. Enter your Nostr private key (nsec) OR use browser extension
 4. Your store is created automatically!
@@ -56,7 +56,7 @@
 
 **Method 1 - Scan QR:**
 
-1. Open BitSpace POS
+1. Open bnos.space
 2. Go to **Staff** tab
 3. Click **"Scan QR to Join"**
 4. Point camera at owner's QR code

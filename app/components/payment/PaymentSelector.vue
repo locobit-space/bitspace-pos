@@ -286,7 +286,7 @@ onMounted(async () => {
       >
         <PaymentStaticQR
           :offer="lightning.staticOffers.value[0]"
-          :merchant-name="'BitSpace POS'"
+          :merchant-name="'bnos.space'"
           :description="'Payment for order ' + orderId"
         />
 

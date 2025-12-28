@@ -537,7 +537,7 @@ export const useReceipt = () => {
   
   <div class="footer">
     <div class="footer-message">${settings.value.footerMessage}</div>
-    <div>Powered by BitSpace POS ⚡</div>
+    <div>Powered by BNOS SPACE ⚡</div>
   </div>
 </body>
 </html>`;
@@ -698,7 +698,7 @@ export const useReceipt = () => {
     // Footer
     lines.push(divider);
     lines.push(center(settings.value.footerMessage));
-    lines.push(center("Powered by BitSpace POS ⚡"));
+    lines.push(center("Powered by BNOS bnos.space ⚡"));
     lines.push("");
     lines.push("");
 

@@ -8,7 +8,7 @@ definePageMeta({
 const { t } = useI18n();
 
 useHead({
-  title: t("auth.signin.title") + " - Bitspace POS",
+  title: t("auth.signin.title") + " - bnos.space",
 });
 
 const auth = useAuth();
@@ -125,8 +125,6 @@ const handleCompanyCodeSubmit = async () => {
       }
     }
 
-
-
     // Fetch staff from Nostr using company code
     const staff = await nostrData.fetchStaffByCompanyCode(
       companyCodeInput.value,
@@ -157,7 +155,6 @@ const handleCompanyCodeSubmit = async () => {
     // Reinitialize users composable to pick up new users
     await usersComposable.refreshFromNostr();
 
-
     companyCodeInput.value = ""; // Clear input
   } catch (e) {
     console.error("[Signin] Company code error:", e);
@@ -171,8 +168,6 @@ const handleCompanyCodeSubmit = async () => {
 const invite = useInvite();
 
 const handleQrScanned = async (data: string) => {
-
-
   try {
     // Parse the invite link
     const result = await invite.parseInviteLink(data);
@@ -192,8 +187,6 @@ const handleQrScanned = async (data: string) => {
 
     // Refresh users
     await usersComposable.refreshFromNostr();
-
-
 
     // If we have users now, they'll show up in the staff list
   } catch (error) {
@@ -244,12 +237,8 @@ const triggerNos2xPopup = async () => {
       return;
     }
 
-
-
     // This should trigger the nos2x popup
     const pubkey = await win.nostr.getPublicKey();
-
-
 
     if (
       !pubkey ||
@@ -330,7 +319,6 @@ const handleNsecSignIn = async () => {
 
     const pubkeyHex = userInfo.pubkey;
 
-
     // Set cookie for middleware
     const nostrCookie = useCookie("nostr-pubkey", {
       maxAge: 60 * 60 * 24 * 30,
@@ -343,7 +331,6 @@ const handleNsecSignIn = async () => {
     // Initialize company code for owner (generates if not exists)
     const companyCode = await company.initializeCompany(pubkeyHex);
 
-
     // Publish company index for cross-device discovery
     const codeHash = await company.hashCompanyCode(companyCode);
     await nostrData.publishCompanyIndex(codeHash);
@@ -351,7 +338,6 @@ const handleNsecSignIn = async () => {
     // IMPORTANT: Re-fetch users from Nostr now that we have keys
     // This enables staff logins on new devices!
     await usersComposable.refreshFromNostr();
-
 
     // Clear the input
     manualNsec.value = "";
@@ -371,8 +357,6 @@ const handleStaffLogin = async (
   user: { id: string; name: string },
   _method: string
 ) => {
-
-
   // Make sure the user is set as current in useUsers composable
   // (StaffLogin component uses staffAuth which doesn't update useUsers)
   const fullUser = usersComposable.users.value.find((u) => u.id === user.id);
@@ -427,25 +411,31 @@ onMounted(async () => {
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center">
+    class="min-h-screen bg-gradient-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center"
+  >
     <!-- Background Pattern -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <!-- Top right glow -->
       <div
-        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl" />
+        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl"
+      />
       <!-- Bottom left glow -->
       <div
-        class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl" />
+        class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl"
+      />
       <!-- Center subtle glow -->
       <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl" />
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl"
+      />
     </div>
 
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
       <!-- Back to Home -->
       <div class="mb-6">
-        <NuxtLink to="/"
-          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+        <NuxtLink
+          to="/"
+          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           {{ t("common.back") }}
         </NuxtLink>
@@ -455,7 +445,8 @@ onMounted(async () => {
       <div class="text-center mb-8">
         <div class="flex justify-center mb-4">
           <div
-            class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+            class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20"
+          >
             <span class="text-3xl">⚡</span>
           </div>
         </div>
@@ -469,13 +460,19 @@ onMounted(async () => {
 
       <!-- Sign In Card -->
       <div
-        class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+      >
         <!-- Tabs -->
         <div class="flex border-b border-gray-200 dark:border-gray-800">
-          <button class="flex-1 py-4 text-center font-medium transition-colors" :class="activeTab === 'nostr'
-              ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
-              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            " @click="activeTab = 'nostr'">
+          <button
+            class="flex-1 py-4 text-center font-medium transition-colors"
+            :class="
+              activeTab === 'nostr'
+                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            "
+            @click="activeTab = 'nostr'"
+          >
             <span class="mr-2">⚡</span>
             {{ t("auth.signin.tabNostr") }}
           </button>
@@ -491,13 +488,18 @@ onMounted(async () => {
             <span class="mr-2">📧</span>
             {{ t("auth.signin.tabEmail") }}
           </button> -->
-          <button class="flex-1 py-4 text-center font-medium transition-colors" :class="activeTab === 'staff'
-              ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
-              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            " @click="
+          <button
+            class="flex-1 py-4 text-center font-medium transition-colors"
+            :class="
+              activeTab === 'staff'
+                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            "
+            @click="
               activeTab = 'staff';
-            showPinPad = false;
-            ">
+              showPinPad = false;
+            "
+          >
             <span class="mr-2">👤</span>
             {{ t("auth.signin.tabStaff") || "Staff" }}
           </button>
@@ -505,43 +507,79 @@ onMounted(async () => {
 
         <div class="p-6">
           <!-- Error Message -->
-          <div v-if="auth.error.value"
-            class="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+          <div
+            v-if="auth.error.value"
+            class="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+          >
             {{ auth.error.value }}
           </div>
 
           <!-- Email Sign In -->
           <div v-if="activeTab === 'email'" class="space-y-4">
             <!-- Google Sign In -->
-            <UButton block size="lg" color="neutral" variant="outline" :loading="auth.isLoading.value"
-              icon="material-icon-theme:google" @click="handleGoogleSignIn">
+            <UButton
+              block
+              size="lg"
+              color="neutral"
+              variant="outline"
+              :loading="auth.isLoading.value"
+              icon="material-icon-theme:google"
+              @click="handleGoogleSignIn"
+            >
               {{ t("auth.google.signIn") }}
             </UButton>
 
-            <USeparator :label="t('common.or') +
-              ' ' +
-              t('auth.signin.signIn').toLowerCase() +
-              ' with email'
-              " />
+            <USeparator
+              :label="
+                t('common.or') +
+                ' ' +
+                t('auth.signin.signIn').toLowerCase() +
+                ' with email'
+              "
+            />
 
             <form class="space-y-4" @submit.prevent="handleEmailSignIn">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t("auth.signin.email")
-                  }}</label>
-                <UInput v-model="email" type="email" placeholder="you@example.com" size="lg" required class="w-full" />
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ t("auth.signin.email") }}</label
+                >
+                <UInput
+                  v-model="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  size="lg"
+                  required
+                  class="w-full"
+                />
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
                   {{ t("auth.signin.password") }}
                 </label>
-                <UInput v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="••••••••" size="lg"
-                  required class="w-full">
+                <UInput
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  size="lg"
+                  required
+                  class="w-full"
+                >
                   <template #trailing>
-                    <UButton color="neutral" variant="ghost" size="xs" :icon="showPassword
-                        ? 'i-heroicons-eye-slash'
-                        : 'i-heroicons-eye'
-                      " @click="showPassword = !showPassword" />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      :icon="
+                        showPassword
+                          ? 'i-heroicons-eye-slash'
+                          : 'i-heroicons-eye'
+                      "
+                      @click="showPassword = !showPassword"
+                    />
                   </template>
                 </UInput>
               </div>
@@ -551,14 +589,23 @@ onMounted(async () => {
                   <UCheckbox v-model="rememberMe" />
                   <span class="text-sm text-gray-600 dark:text-gray-400">{{
                     t("auth.signin.rememberMe")
-                    }}</span>
+                  }}</span>
                 </label>
-                <NuxtLink to="/auth/forgot-password" class="text-sm text-amber-500 hover:text-amber-400">
+                <NuxtLink
+                  to="/auth/forgot-password"
+                  class="text-sm text-amber-500 hover:text-amber-400"
+                >
                   {{ t("auth.signin.forgotPassword") }}
                 </NuxtLink>
               </div>
 
-              <UButton type="submit" block size="lg" color="primary" :loading="auth.isLoading.value">
+              <UButton
+                type="submit"
+                block
+                size="lg"
+                color="primary"
+                :loading="auth.isLoading.value"
+              >
                 {{ t("auth.signin.signIn") }}
               </UButton>
             </form>
@@ -567,7 +614,10 @@ onMounted(async () => {
           <!-- Staff Login -->
           <div v-else-if="activeTab === 'staff'" class="space-y-4">
             <div v-if="isLoadingUsers" class="text-center py-8">
-              <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500 mx-auto" />
+              <UIcon
+                name="i-heroicons-arrow-path"
+                class="w-8 h-8 animate-spin text-primary-500 mx-auto"
+              />
               <p class="text-gray-500 mt-2">{{ t("common.loading") }}</p>
             </div>
 
@@ -575,10 +625,13 @@ onMounted(async () => {
               <!-- Company Code Input -->
               <div v-if="!companyCodeInput" class="space-y-4">
                 <div
-                  class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                  class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3"
+                >
                   <span class="text-3xl opacity-50">🏪</span>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
+                >
                   {{
                     t("auth.signin.enterCompanyCode") || "Enter Company Code"
                   }}
@@ -591,13 +644,26 @@ onMounted(async () => {
                 </p>
 
                 <div class="max-w-xs mx-auto">
-                  <UInput v-model="companyCodeInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
-                    size="lg" class="text-center text-2xl tracking-[0.5em] font-mono" :placeholder="'000000'"
-                    @keyup.enter="handleCompanyCodeSubmit" />
+                  <UInput
+                    v-model="companyCodeInput"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="6"
+                    size="lg"
+                    class="text-center text-2xl tracking-[0.5em] font-mono"
+                    :placeholder="'000000'"
+                    @keyup.enter="handleCompanyCodeSubmit"
+                  />
                 </div>
 
-                <UButton :loading="isLoadingCompanyCode" :disabled="companyCodeInput.length !== 6" color="primary"
-                  class="mt-4" @click="handleCompanyCodeSubmit">
+                <UButton
+                  :loading="isLoadingCompanyCode"
+                  :disabled="companyCodeInput.length !== 6"
+                  color="primary"
+                  class="mt-4"
+                  @click="handleCompanyCodeSubmit"
+                >
                   {{ t("auth.signin.connectWithCode") || "Connect" }}
                 </UButton>
 
@@ -609,7 +675,9 @@ onMounted(async () => {
               <!-- OR Divider -->
               <div class="relative my-4">
                 <div class="absolute inset-0 flex items-center">
-                  <div class="w-full border-t border-gray-200 dark:border-gray-700" />
+                  <div
+                    class="w-full border-t border-gray-200 dark:border-gray-700"
+                  />
                 </div>
                 <div class="relative flex justify-center text-sm">
                   <span class="bg-white dark:bg-gray-900 px-2 text-gray-500">
@@ -619,10 +687,15 @@ onMounted(async () => {
               </div>
 
               <!-- QR Scanner Button -->
-              <AuthQrScanner @scanned="handleQrScanned" @error="handleQrError" />
+              <AuthQrScanner
+                @scanned="handleQrScanned"
+                @error="handleQrError"
+              />
 
               <!-- Fallback: Create account link for owners -->
-              <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <div
+                class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800"
+              >
                 <p class="text-gray-500 text-sm">
                   {{ t("auth.signin.noCodeQuestion") || "Don't have a code?" }}
                 </p>
@@ -637,7 +710,9 @@ onMounted(async () => {
               <!-- Staff User Grid -->
               <div v-if="!showPinPad">
                 <div class="text-center mb-6">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3
+                    class="text-lg font-semibold text-gray-900 dark:text-white"
+                  >
                     {{ t("auth.staffLogin") || "Who is working?" }}
                   </h3>
                   <p class="text-sm text-gray-500 mt-1">
@@ -647,19 +722,31 @@ onMounted(async () => {
                   </p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
-                  <button v-for="user in staffUsers" :key="user.id"
+                <div
+                  class="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto p-1 custom-scrollbar"
+                >
+                  <button
+                    v-for="user in staffUsers"
+                    :key="user.id"
                     class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all group"
-                    @click="showPinPad = true">
+                    @click="showPinPad = true"
+                  >
                     <div
-                      class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:bg-white dark:group-hover:bg-gray-800 transition-colors">
-                      <UIcon name="i-heroicons-user"
-                        class="w-6 h-6 text-gray-500 group-hover:text-primary-500 transition-colors" />
+                      class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:bg-white dark:group-hover:bg-gray-800 transition-colors"
+                    >
+                      <UIcon
+                        name="i-heroicons-user"
+                        class="w-6 h-6 text-gray-500 group-hover:text-primary-500 transition-colors"
+                      />
                     </div>
-                    <span class="font-medium text-gray-900 dark:text-white text-sm line-clamp-1">
+                    <span
+                      class="font-medium text-gray-900 dark:text-white text-sm line-clamp-1"
+                    >
                       {{ user.name }}
                     </span>
-                    <span class="text-xs text-gray-500 group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                    <span
+                      class="text-xs text-gray-500 group-hover:text-primary-600 dark:group-hover:text-primary-400"
+                    >
                       {{
                         user.role === "admin"
                           ? t("settings.users.roleAdmin") || "Admin"
@@ -676,12 +763,21 @@ onMounted(async () => {
               <!-- PIN Pad Component -->
               <div v-else>
                 <div class="mb-4">
-                  <UButton variant="ghost" icon="i-heroicons-arrow-left" class="mb-2" @click="showPinPad = false">
+                  <UButton
+                    variant="ghost"
+                    icon="i-heroicons-arrow-left"
+                    class="mb-2"
+                    @click="showPinPad = false"
+                  >
                     {{ t("common.back") }}
                   </UButton>
                 </div>
-                <AuthStaffLogin :users="staffUsers" :show-nostr="true" :show-password="true"
-                  @login="handleStaffLogin" />
+                <AuthStaffLogin
+                  :users="staffUsers"
+                  :show-nostr="true"
+                  :show-password="true"
+                  @login="handleStaffLogin"
+                />
               </div>
             </div>
           </div>
@@ -691,10 +787,14 @@ onMounted(async () => {
             <!-- Nostr Extension Available -->
             <template v-if="hasNostr">
               <div class="text-center py-4">
-                <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div
+                  class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+                >
                   <span class="text-3xl">🔑</span>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
+                >
                   {{ t("auth.nostr.signIn") }}
                 </h3>
                 <p class="text-gray-600 dark:text-gray-400 text-sm">
@@ -704,14 +804,17 @@ onMounted(async () => {
 
               <!-- Detected Extension Badge -->
               <div v-if="detectedExtension" class="flex justify-center mb-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" :class="{
-                  'bg-amber-500/20 text-amber-600 dark:text-amber-400':
-                    detectedExtension === 'alby',
-                  'bg-purple-500/20 text-purple-600 dark:text-purple-400':
-                    detectedExtension === 'nos2x',
-                  'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400':
-                    detectedExtension === 'unknown',
-                }">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                  :class="{
+                    'bg-amber-500/20 text-amber-600 dark:text-amber-400':
+                      detectedExtension === 'alby',
+                    'bg-purple-500/20 text-purple-600 dark:text-purple-400':
+                      detectedExtension === 'nos2x',
+                    'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400':
+                      detectedExtension === 'unknown',
+                  }"
+                >
                   <span v-if="detectedExtension === 'alby'">🐝</span>
                   <span v-else-if="detectedExtension === 'nos2x'">🔐</span>
                   <span v-else>🔌</span>
@@ -719,24 +822,31 @@ onMounted(async () => {
                     detectedExtension === "alby"
                       ? t("auth.nostr.albyDetected")
                       : detectedExtension === "nos2x"
-                        ? t("auth.nostr.nos2xDetected")
-                        : t("auth.nostr.extensionDetected")
+                      ? t("auth.nostr.nos2xDetected")
+                      : t("auth.nostr.extensionDetected")
                   }}
                 </span>
               </div>
 
               <!-- Nostr Error -->
-              <div v-if="nostrError"
-                class="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm whitespace-pre-line">
+              <div
+                v-if="nostrError"
+                class="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm whitespace-pre-line"
+              >
                 {{ nostrError }}
               </div>
 
               <!-- Extension Connect Buttons -->
               <div class="space-y-2">
                 <!-- Alby Button -->
-                <UButton block size="lg" :color="detectedExtension === 'alby' ? 'primary' : 'neutral'"
-                  :variant="detectedExtension === 'alby' ? 'solid' : 'outline'" :loading="nostrConnecting"
-                  @click="handleNostrSignIn">
+                <UButton
+                  block
+                  size="lg"
+                  :color="detectedExtension === 'alby' ? 'primary' : 'neutral'"
+                  :variant="detectedExtension === 'alby' ? 'solid' : 'outline'"
+                  :loading="nostrConnecting"
+                  @click="handleNostrSignIn"
+                >
                   <template #leading>
                     <span class="text-lg">🐝</span>
                   </template>
@@ -744,9 +854,14 @@ onMounted(async () => {
                 </UButton>
 
                 <!-- nos2x Button -->
-                <UButton block size="lg" :color="detectedExtension === 'nos2x' ? 'primary' : 'neutral'"
-                  :variant="detectedExtension === 'nos2x' ? 'solid' : 'outline'" :loading="nostrConnecting"
-                  @click="triggerNos2xPopup">
+                <UButton
+                  block
+                  size="lg"
+                  :color="detectedExtension === 'nos2x' ? 'primary' : 'neutral'"
+                  :variant="detectedExtension === 'nos2x' ? 'solid' : 'outline'"
+                  :loading="nostrConnecting"
+                  @click="triggerNos2xPopup"
+                >
                   <template #leading>
                     <span class="text-lg">🔐</span>
                   </template>
@@ -758,11 +873,19 @@ onMounted(async () => {
               <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
                 <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
                   <span class="text-amber-400">💡</span>
-                  <strong v-if="detectedExtension === 'alby'" class="text-gray-700 dark:text-gray-300">Alby
-                    Tips:</strong>
-                  <strong v-else-if="detectedExtension === 'nos2x'" class="text-gray-700 dark:text-gray-300">nos2x
-                    Tips:</strong>
-                  <strong v-else class="text-gray-700 dark:text-gray-300">Tips:</strong>
+                  <strong
+                    v-if="detectedExtension === 'alby'"
+                    class="text-gray-700 dark:text-gray-300"
+                    >Alby Tips:</strong
+                  >
+                  <strong
+                    v-else-if="detectedExtension === 'nos2x'"
+                    class="text-gray-700 dark:text-gray-300"
+                    >nos2x Tips:</strong
+                  >
+                  <strong v-else class="text-gray-700 dark:text-gray-300"
+                    >Tips:</strong
+                  >
                 </p>
                 <ul class="text-xs text-gray-500 dark:text-gray-500 space-y-1">
                   <template v-if="detectedExtension === 'alby'">
@@ -783,11 +906,14 @@ onMounted(async () => {
 
               <!-- Manual npub fallback -->
               <div class="mt-4">
-                <button type="button"
-                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center" @click="
+                <button
+                  type="button"
+                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center"
+                  @click="
                     showManualNpub = !showManualNpub;
-                  showNsecInput = false;
-                  ">
+                    showNsecInput = false;
+                  "
+                >
                   {{
                     showManualNpub
                       ? "← Back to extension"
@@ -796,9 +922,19 @@ onMounted(async () => {
                 </button>
 
                 <div v-if="showManualNpub" class="mt-3 space-y-3">
-                  <UInput v-model="manualNpub" placeholder="npub1... or hex pubkey" size="lg" class="w-full" />
-                  <UButton block color="neutral" :loading="auth.isLoading.value" :disabled="!manualNpub.trim()"
-                    @click="handleNpubSignIn">
+                  <UInput
+                    v-model="manualNpub"
+                    placeholder="npub1... or hex pubkey"
+                    size="lg"
+                    class="w-full"
+                  />
+                  <UButton
+                    block
+                    color="neutral"
+                    :loading="auth.isLoading.value"
+                    :disabled="!manualNpub.trim()"
+                    @click="handleNpubSignIn"
+                  >
                     Sign in with npub
                   </UButton>
                   <p class="text-xs text-gray-500 text-center">
@@ -809,12 +945,14 @@ onMounted(async () => {
 
               <!-- Login with nsec (Private Key) -->
               <div class="mt-3">
-                <button type="button"
+                <button
+                  type="button"
                   class="text-sm text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 w-full text-center"
                   @click="
                     showNsecInput = !showNsecInput;
-                  showManualNpub = false;
-                  ">
+                    showManualNpub = false;
+                  "
+                >
                   {{
                     showNsecInput
                       ? "← Hide private key login"
@@ -824,7 +962,9 @@ onMounted(async () => {
 
                 <div v-if="showNsecInput" class="mt-3 space-y-3">
                   <!-- Security Warning -->
-                  <div class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <div
+                    class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
+                  >
                     <p class="text-xs text-red-400 flex items-start gap-2">
                       <span class="text-base">⚠️</span>
                       <span>
@@ -835,11 +975,21 @@ onMounted(async () => {
                     </p>
                   </div>
 
-                  <UInput v-model="manualNsec" type="password" placeholder="nsec1... or 64-char hex private key"
-                    size="lg" class="w-full" />
+                  <UInput
+                    v-model="manualNsec"
+                    type="password"
+                    placeholder="nsec1... or 64-char hex private key"
+                    size="lg"
+                    class="w-full"
+                  />
 
-                  <UButton block color="primary" :loading="nostrConnecting" :disabled="!manualNsec.trim()"
-                    @click="handleNsecSignIn">
+                  <UButton
+                    block
+                    color="primary"
+                    :loading="nostrConnecting"
+                    :disabled="!manualNsec.trim()"
+                    @click="handleNsecSignIn"
+                  >
                     <template #leading>
                       <span class="text-lg">🔐</span>
                     </template>
@@ -858,10 +1008,13 @@ onMounted(async () => {
             <template v-else>
               <div class="text-center py-4">
                 <div
-                  class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                  class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3"
+                >
                   <span class="text-3xl opacity-50">🔌</span>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
+                >
                   Install Nostr Extension
                 </h3>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
@@ -871,14 +1024,21 @@ onMounted(async () => {
 
               <div class="flex flex-col gap-2">
                 <!-- Alby -->
-                <a href="https://getalby.com" target="_blank"
-                  class="block p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-colors">
+                <a
+                  href="https://getalby.com"
+                  target="_blank"
+                  class="block p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-colors"
+                >
                   <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                    <div
+                      class="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center"
+                    >
                       <span class="text-2xl">🐝</span>
                     </div>
                     <div class="flex-1 text-left">
-                      <div class="font-semibold text-amber-600 dark:text-amber-400">
+                      <div
+                        class="font-semibold text-amber-600 dark:text-amber-400"
+                      >
                         Alby
                       </div>
                       <div class="text-xs text-gray-600 dark:text-gray-400">
@@ -891,22 +1051,32 @@ onMounted(async () => {
                   </div>
                   <div class="mt-2 flex gap-2">
                     <span
-                      class="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded">Recommended</span>
+                      class="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded"
+                      >Recommended</span
+                    >
                     <span
-                      class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">Lightning</span>
+                      class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded"
+                      >Lightning</span
+                    >
                   </div>
                 </a>
 
                 <!-- nos2x -->
-                <a href="https://chrome.google.com/webstore/detail/nos2x/kpgefcfmnafjgpblomihpgmejjdanjjp"
+                <a
+                  href="https://chrome.google.com/webstore/detail/nos2x/kpgefcfmnafjgpblomihpgmejjdanjjp"
                   target="_blank"
-                  class="block p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl hover:bg-purple-500/20 transition-colors">
+                  class="block p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl hover:bg-purple-500/20 transition-colors"
+                >
                   <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <div
+                      class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center"
+                    >
                       <span class="text-2xl">🔐</span>
                     </div>
                     <div class="flex-1 text-left">
-                      <div class="font-semibold text-purple-600 dark:text-purple-400">
+                      <div
+                        class="font-semibold text-purple-600 dark:text-purple-400"
+                      >
                         nos2x
                       </div>
                       <div class="text-xs text-gray-600 dark:text-gray-400">
@@ -919,29 +1089,48 @@ onMounted(async () => {
                   </div>
                   <div class="mt-2 flex gap-2">
                     <span
-                      class="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded">Lightweight</span>
+                      class="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded"
+                      >Lightweight</span
+                    >
                     <span
-                      class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">Chrome</span>
+                      class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded"
+                      >Chrome</span
+                    >
                   </div>
                 </a>
               </div>
 
               <!-- Manual npub for users without extension -->
-              <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-                <button type="button"
-                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center" @click="
+              <div
+                class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800"
+              >
+                <button
+                  type="button"
+                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center"
+                  @click="
                     showManualNpub = !showManualNpub;
-                  showNsecInput = false;
-                  ">
+                    showNsecInput = false;
+                  "
+                >
                   {{
                     showManualNpub ? "← Hide" : "Already have a key? Enter npub"
                   }}
                 </button>
 
                 <div v-if="showManualNpub" class="mt-3 space-y-3">
-                  <UInput v-model="manualNpub" placeholder="npub1... or hex pubkey" size="lg" class="w-full" />
-                  <UButton block color="neutral" :loading="auth.isLoading.value" :disabled="!manualNpub.trim()"
-                    @click="handleNpubSignIn">
+                  <UInput
+                    v-model="manualNpub"
+                    placeholder="npub1... or hex pubkey"
+                    size="lg"
+                    class="w-full"
+                  />
+                  <UButton
+                    block
+                    color="neutral"
+                    :loading="auth.isLoading.value"
+                    :disabled="!manualNpub.trim()"
+                    @click="handleNpubSignIn"
+                  >
                     Sign in with npub
                   </UButton>
                   <p class="text-xs text-gray-500 text-center">
@@ -952,12 +1141,14 @@ onMounted(async () => {
 
               <!-- Login with nsec (Private Key) for users without extension -->
               <div class="mt-3">
-                <button type="button"
+                <button
+                  type="button"
                   class="text-sm text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 w-full text-center"
                   @click="
                     showNsecInput = !showNsecInput;
-                  showManualNpub = false;
-                  ">
+                    showManualNpub = false;
+                  "
+                >
                   {{
                     showNsecInput
                       ? "← Hide private key login"
@@ -967,7 +1158,9 @@ onMounted(async () => {
 
                 <div v-if="showNsecInput" class="mt-3 space-y-3">
                   <!-- Security Warning -->
-                  <div class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <div
+                    class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
+                  >
                     <p class="text-xs text-red-400 flex items-start gap-2">
                       <span class="text-base">⚠️</span>
                       <span>
@@ -978,11 +1171,21 @@ onMounted(async () => {
                     </p>
                   </div>
 
-                  <UInput v-model="manualNsec" type="password" placeholder="nsec1... or 64-char hex private key"
-                    size="lg" class="w-full" />
+                  <UInput
+                    v-model="manualNsec"
+                    type="password"
+                    placeholder="nsec1... or 64-char hex private key"
+                    size="lg"
+                    class="w-full"
+                  />
 
-                  <UButton block color="primary" :loading="nostrConnecting" :disabled="!manualNsec.trim()"
-                    @click="handleNsecSignIn">
+                  <UButton
+                    block
+                    color="primary"
+                    :loading="nostrConnecting"
+                    :disabled="!manualNsec.trim()"
+                    @click="handleNsecSignIn"
+                  >
                     <template #leading>
                       <span class="text-lg">🔐</span>
                     </template>
@@ -999,7 +1202,9 @@ onMounted(async () => {
 
             <!-- Nostr Benefits -->
             <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-xl">
-              <h4 class="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3">
+              <h4
+                class="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3"
+              >
                 Why Nostr?
               </h4>
               <ul class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
@@ -1026,13 +1231,16 @@ onMounted(async () => {
 
         <!-- Footer -->
         <div
-          class="px-6 py-5 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-800/50 border-t border-gray-200 dark:border-gray-800">
+          class="px-6 py-5 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-800/50 border-t border-gray-200 dark:border-gray-800"
+        >
           <div class="flex items-center justify-center gap-2 text-sm">
             <span class="text-gray-600 dark:text-gray-400">
               {{ t("auth.signin.noAccount") }}
             </span>
-            <NuxtLink to="/auth/signup"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium rounded-full transition-all duration-200 hover:scale-105">
+            <NuxtLink
+              to="/auth/signup"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium rounded-full transition-all duration-200 hover:scale-105"
+            >
               <UIcon name="i-heroicons-user-plus" class="w-4 h-4" />
               {{ t("auth.signin.createAccount") }}
             </NuxtLink>
@@ -1043,17 +1251,25 @@ onMounted(async () => {
       <!-- Bottom Links -->
       <div class="mt-8 text-center">
         <div class="flex items-center justify-center gap-6">
-          <a href="#"
-            class="group inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-            <UIcon name="i-heroicons-shield-check"
-              class="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors" />
+          <a
+            href="#"
+            class="group inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            <UIcon
+              name="i-heroicons-shield-check"
+              class="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors"
+            />
             {{ t("app.privacyPolicy") }}
           </a>
           <span class="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
-          <a href="#"
-            class="group inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-            <UIcon name="i-heroicons-document-text"
-              class="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors" />
+          <a
+            href="#"
+            class="group inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            <UIcon
+              name="i-heroicons-document-text"
+              class="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors"
+            />
             {{ t("app.termsOfService") }}
           </a>
         </div>

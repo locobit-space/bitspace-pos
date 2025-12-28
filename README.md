@@ -1,9 +1,9 @@
-# ⚡ BitSpace POS
+# ⚡ BNOS - Business OS
 
 > **Lightning-Powered Point of Sale System & Business OS**  
 > Built on Nostr Protocol | Decentralized | Sovereign | Offline-First
 
-![BitSpace POS](https://img.shields.io/badge/Nuxt-4.2-00DC82?style=flat&logo=nuxt.js)
+![BNOS](https://img.shields.io/badge/Nuxt-4.2-00DC82?style=flat&logo=nuxt.js)
 ![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?style=flat&logo=vue.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=flat&logo=typescript)
 ![Nostr](https://img.shields.io/badge/Nostr-Protocol-8B5CF6?style=flat)
@@ -14,9 +14,9 @@
 
 ## 🌟 Overview
 
-**BitSpace POS** is a modern, decentralized Point of Sale (POS) system designed for sovereign businesses. Built on the **Nostr protocol** for data storage and **Bitcoin Lightning Network** for instant payments, it provides a privacy-focused alternative to traditional POS systems.
+**BNOS** is a modern, decentralized Point of Sale (POS) system designed for sovereign businesses. Built on the **Nostr protocol** for data storage and **Bitcoin Lightning Network** for instant payments, it provides a privacy-focused alternative to traditional POS systems.
 
-### Why BitSpace POS?
+### Why BNOS?
 
 - 🔐 **Data Sovereignty** - Your data stays on Nostr relays you control
 - ⚡ **Instant Payments** - Accept Bitcoin via Lightning Network
@@ -172,7 +172,7 @@ NUXT_PUBLIC_NOSTR_RELAYS=wss://relay.example.com,wss://relay2.example.com
 
 ### Lightning Wallet Setup
 
-BitSpace POS supports multiple Lightning backends:
+BNOS supports multiple Lightning backends:
 
 | Provider              | Configuration                                   |
 | --------------------- | ----------------------------------------------- |
@@ -270,7 +270,7 @@ yarn test
 
 ## 📱 PWA & Offline Support
 
-BitSpace POS is a **Progressive Web App** with full offline support:
+bnos.space is a **Progressive Web App** with full offline support:
 
 - ✅ Installable on mobile/desktop
 - ✅ Works without internet

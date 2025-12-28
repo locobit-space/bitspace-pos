@@ -1,7 +1,7 @@
 {
   "donate": {
     "title": "Support the Developer",
-    "subtitle": "Help keep BitSpace POS free and open source",
+    "subtitle": "Help keep bnos.space free and open source",
     "lightning": "Bitcoin Lightning",
     "lightningDesc": "Scan with any Lightning wallet or click to copy",
     "noLightning": "No Lightning address available",

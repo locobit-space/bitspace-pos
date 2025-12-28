@@ -8,7 +8,7 @@ definePageMeta({
 const { t } = useI18n();
 
 useHead({
-  title: t("auth.signup.title") + " - Bitspace POS",
+  title: t("auth.signup.title") + " - bnos.space",
 });
 
 const auth = useAuth();
@@ -402,12 +402,16 @@ onMounted(() => {
               <UCheckbox v-model="agreeTerms" class="mt-0.5" />
               <span class="text-sm text-gray-600 dark:text-gray-400">
                 I agree to the
-                <a href="#" class="text-amber-500 hover:text-amber-400"
-                  >Terms of Service</a
+                <NuxtLink
+                  to="/legal/terms"
+                  class="text-amber-500 hover:text-amber-400"
+                  >Terms of Service</NuxtLink
                 >
                 and
-                <a href="#" class="text-amber-500 hover:text-amber-400"
-                  >Privacy Policy</a
+                <NuxtLink
+                  to="/legal/privacy"
+                  class="text-amber-500 hover:text-amber-400"
+                  >Privacy Policy</NuxtLink
                 >
               </span>
             </label>

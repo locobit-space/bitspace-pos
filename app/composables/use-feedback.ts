@@ -25,7 +25,8 @@ const FEEDBACK_STORAGE_KEY = "bitspace_feedback_history";
 const DEVELOPER_NPUB_KEY = "bitspace_developer_npub";
 
 // Hardcoded developer npub - fallback if not configured
-const DEFAULT_DEVELOPER_NPUB = "npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk";
+const DEFAULT_DEVELOPER_NPUB =
+  "npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk";
 
 export function useFeedback() {
   const config = useRuntimeConfig();
@@ -163,11 +164,23 @@ export function useFeedback() {
 
     try {
       // Build human-readable message content (standard Nostr format)
-      const typeEmoji = submission.type === "bug" ? "🐛" : submission.type === "feature" ? "💡" : "❓";
-      const typeLabel = submission.type === "bug" ? "Bug Report" : submission.type === "feature" ? "Feature Request" : "Question";
-      const priorityLabel = submission.priority ? ` [${submission.priority.toUpperCase()}]` : "";
-      
-      const messageContent = `${typeEmoji} ${typeLabel}${priorityLabel} - BitSpace POS
+      const typeEmoji =
+        submission.type === "bug"
+          ? "🐛"
+          : submission.type === "feature"
+          ? "💡"
+          : "❓";
+      const typeLabel =
+        submission.type === "bug"
+          ? "Bug Report"
+          : submission.type === "feature"
+          ? "Feature Request"
+          : "Question";
+      const priorityLabel = submission.priority
+        ? ` [${submission.priority.toUpperCase()}]`
+        : "";
+
+      const messageContent = `${typeEmoji} ${typeLabel}${priorityLabel} - BNOS Business OS
 
 📝 ${submission.title}
 
@@ -177,7 +190,7 @@ ${submission.description}
 📱 ${submission.deviceInfo} | 📍 ${submission.page}
 🏷️ v${submission.appVersion}
 
-#BitSpacePOS #Feedback #${submission.type}`;
+#BitSpacePOS #BusinessOS #bnos #Feedback #${submission.type}`;
 
       // Try to send via Nostr (public Kind 1 note tagging developer)
       const nostrData = useNostrData();
@@ -201,7 +214,12 @@ ${submission.description}
       ];
 
       // Create and send public note
-      const event = await nostrData.publishEvent(1, messageContent, tags, false);
+      const event = await nostrData.publishEvent(
+        1,
+        messageContent,
+        tags,
+        false
+      );
 
       if (event) {
         submission.status = "sent";
@@ -245,7 +263,8 @@ ${submission.description}
 
       toast.add({
         title: t("common.feedback.submitFailed") || "Submission Failed",
-        description: t("common.feedback.tryAgainLater") || "Please try again later",
+        description:
+          t("common.feedback.tryAgainLater") || "Please try again later",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });

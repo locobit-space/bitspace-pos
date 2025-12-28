@@ -53,7 +53,7 @@
       "invalidAmount": "กรุณาใส่จำนวนเงินที่ถูกต้อง",
       "enterAmount": "ใส่จำนวนเงิน"
     },
-    "title": "BitSpace POS",
+    "title": "bnos.space",
     "terminal": "เครื่อง POS",
     "currentOrder": "คำสั่งซื้อปัจจุบัน",
     "cart": "ตะกร้า",

@@ -1,10 +1,10 @@
 <!-- pages/receipt/[id].vue -->
 <!-- 📱 E-Bill Public Page - Customer Digital Receipt -->
 <script setup lang="ts">
-import type { EReceipt } from '~/composables/use-receipt';
+import type { EReceipt } from "~/composables/use-receipt";
 
 definePageMeta({
-  layout: 'blank',
+  layout: "blank",
 });
 
 const route = useRoute();
@@ -20,40 +20,40 @@ const canShare = ref(false);
 // Load receipt
 onMounted(async () => {
   // Check if Web Share API is supported
-  canShare.value = typeof navigator !== 'undefined' && !!navigator.share;
-  
-  await currency.init('LAK');
-  
+  canShare.value = typeof navigator !== "undefined" && !!navigator.share;
+
+  await currency.init("LAK");
+
   const receiptId = route.params.id as string;
-  
+
   if (!receiptId) {
-    error.value = 'Receipt ID not provided';
+    error.value = "Receipt ID not provided";
     loading.value = false;
     return;
   }
 
   // Try to retrieve from storage
   const storedReceipt = receipt.retrieveEBill(receiptId);
-  
+
   if (storedReceipt) {
     eBill.value = storedReceipt;
   } else {
     // In production, fetch from server/Nostr
-    error.value = 'Receipt not found or expired';
+    error.value = "Receipt not found or expired";
   }
-  
+
   loading.value = false;
 });
 
 // Format date
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
@@ -69,7 +69,10 @@ const shareReceipt = async () => {
     try {
       await navigator.share({
         title: `Receipt from ${eBill.value.merchantName}`,
-        text: `Order ${eBill.value.orderId} - ${currency.format(eBill.value.total, eBill.value.currency)}`,
+        text: `Order ${eBill.value.orderId} - ${currency.format(
+          eBill.value.total,
+          eBill.value.currency
+        )}`,
         url: window.location.href,
       });
     } catch {
@@ -80,24 +83,33 @@ const shareReceipt = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+  <div
+    class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900"
+  >
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <div class="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <div
+          class="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+        />
         <p class="text-gray-500">Loading receipt...</p>
       </div>
     </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="flex items-center justify-center min-h-screen p-6">
+    <div
+      v-else-if="error"
+      class="flex items-center justify-center min-h-screen p-6"
+    >
       <div class="text-center max-w-md">
         <div class="text-6xl mb-6">📄</div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Receipt Not Found</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Receipt Not Found
+        </h1>
         <p class="text-gray-500 mb-6">{{ error }}</p>
         <p class="text-sm text-gray-400">
-          This receipt may have expired or the link is invalid.
-          Please contact the merchant for assistance.
+          This receipt may have expired or the link is invalid. Please contact
+          the merchant for assistance.
         </p>
       </div>
     </div>
@@ -105,35 +117,55 @@ const shareReceipt = async () => {
     <!-- E-Bill Content -->
     <div v-else-if="eBill" class="max-w-lg mx-auto p-4 py-8">
       <!-- Receipt Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden"
+      >
         <!-- Header -->
-        <div class="bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-center text-white">
-          <div class="text-5xl mb-3">{{ receipt.settings.value.logoEmoji || '☕' }}</div>
-          <h1 class="text-2xl font-bold">{{ eBill.merchantName || 'BitSpace POS' }}</h1>
+        <div
+          class="bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-center text-white"
+        >
+          <div class="text-5xl mb-3">
+            {{ receipt.settings.value.logoEmoji || "☕" }}
+          </div>
+          <h1 class="text-2xl font-bold">
+            {{ eBill.merchantName || "bnos.space" }}
+          </h1>
           <p class="text-amber-100 text-sm mt-1">{{ eBill.merchantAddress }}</p>
         </div>
 
         <!-- Receipt Number -->
         <div class="bg-amber-50 dark:bg-amber-900/20 px-6 py-3 text-center">
-          <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">RECEIPT</p>
-          <p class="font-mono text-sm text-amber-700 dark:text-amber-300">{{ eBill.id }}</p>
+          <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">
+            RECEIPT
+          </p>
+          <p class="font-mono text-sm text-amber-700 dark:text-amber-300">
+            {{ eBill.id }}
+          </p>
         </div>
 
         <!-- Order Info -->
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">Order</span>
-            <span class="font-semibold text-gray-900 dark:text-white">{{ eBill.orderId }}</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{
+              eBill.orderId
+            }}</span>
           </div>
           <div class="flex justify-between text-sm mt-2">
             <span class="text-gray-500">Date</span>
-            <span class="text-gray-700 dark:text-gray-300">{{ formatDate(eBill.createdAt) }}</span>
+            <span class="text-gray-700 dark:text-gray-300">{{
+              formatDate(eBill.createdAt)
+            }}</span>
           </div>
         </div>
 
         <!-- Items -->
         <div class="px-6 py-4">
-          <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Items</h3>
+          <h3
+            class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+          >
+            Items
+          </h3>
           <div class="space-y-3">
             <div
               v-for="(item, index) in eBill.items"
@@ -142,18 +174,31 @@ const shareReceipt = async () => {
             >
               <div class="flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-xs flex items-center justify-center font-semibold">
+                  <span
+                    class="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-xs flex items-center justify-center font-semibold"
+                  >
                     {{ item.quantity }}
                   </span>
-                  <span class="font-medium text-gray-900 dark:text-white">{{ item.name }}</span>
+                  <span class="font-medium text-gray-900 dark:text-white">{{
+                    item.name
+                  }}</span>
                 </div>
-                <div v-if="item.variant" class="text-xs text-amber-600 dark:text-amber-400 ml-8 mt-0.5">
+                <div
+                  v-if="item.variant"
+                  class="text-xs text-amber-600 dark:text-amber-400 ml-8 mt-0.5"
+                >
                   {{ item.variant }}
                 </div>
-                <div v-if="item.modifiers?.length" class="text-xs text-gray-500 ml-8 mt-0.5">
-                  + {{ item.modifiers.join(', ') }}
+                <div
+                  v-if="item.modifiers?.length"
+                  class="text-xs text-gray-500 ml-8 mt-0.5"
+                >
+                  + {{ item.modifiers.join(", ") }}
                 </div>
-                <div v-if="item.notes" class="text-xs text-blue-500 ml-8 mt-0.5 italic">
+                <div
+                  v-if="item.notes"
+                  class="text-xs text-blue-500 ml-8 mt-0.5 italic"
+                >
                   "{{ item.notes }}"
                 </div>
               </div>
@@ -165,7 +210,9 @@ const shareReceipt = async () => {
         </div>
 
         <!-- Divider -->
-        <div class="mx-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700" />
+        <div
+          class="mx-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700"
+        />
 
         <!-- Totals -->
         <div class="px-6 py-4 space-y-2">
@@ -177,9 +224,14 @@ const shareReceipt = async () => {
             <span>Tax</span>
             <span>{{ currency.format(eBill.tax, eBill.currency) }}</span>
           </div>
-          <div v-if="eBill.tip && eBill.tip > 0" class="flex justify-between text-gray-500">
+          <div
+            v-if="eBill.tip && eBill.tip > 0"
+            class="flex justify-between text-gray-500"
+          >
             <span>Tip</span>
-            <span class="text-amber-600">{{ currency.format(eBill.tip, eBill.currency) }}</span>
+            <span class="text-amber-600">{{
+              currency.format(eBill.tip, eBill.currency)
+            }}</span>
           </div>
         </div>
 
@@ -191,7 +243,10 @@ const shareReceipt = async () => {
               {{ currency.format(eBill.total, eBill.currency) }}
             </span>
           </div>
-          <div v-if="eBill.totalSats" class="flex justify-between items-center mt-2 pt-2 border-t border-gray-800">
+          <div
+            v-if="eBill.totalSats"
+            class="flex justify-between items-center mt-2 pt-2 border-t border-gray-800"
+          >
             <span class="text-gray-500">≈ Sats</span>
             <span class="text-xl font-semibold text-amber-500">
               ⚡ {{ eBill.totalSats.toLocaleString() }}
@@ -201,15 +256,22 @@ const shareReceipt = async () => {
 
         <!-- Payment Info -->
         <div class="px-6 pb-6">
-          <div class="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
-            <div class="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 mb-1">
+          <div
+            class="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center"
+          >
+            <div
+              class="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 mb-1"
+            >
               <span class="text-xl">✓</span>
               <span class="font-semibold">Payment Verified</span>
             </div>
             <p class="text-sm text-green-700 dark:text-green-300">
               {{ receipt.getPaymentMethodLabel(eBill.paymentMethod) }}
             </p>
-            <p v-if="eBill.paymentProof?.paymentHash" class="text-xs text-green-600/70 dark:text-green-400/70 mt-2 font-mono">
+            <p
+              v-if="eBill.paymentProof?.paymentHash"
+              class="text-xs text-green-600/70 dark:text-green-400/70 mt-2 font-mono"
+            >
               Hash: {{ eBill.paymentProof.paymentHash.slice(0, 16) }}...
             </p>
           </div>
@@ -217,8 +279,10 @@ const shareReceipt = async () => {
 
         <!-- Footer -->
         <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 text-center">
-          <p class="text-sm text-gray-500 mb-2">{{ receipt.settings.value.footerMessage }}</p>
-          <p class="text-xs text-gray-400">Powered by BitSpace POS ⚡</p>
+          <p class="text-sm text-gray-500 mb-2">
+            {{ receipt.settings.value.footerMessage }}
+          </p>
+          <p class="text-xs text-gray-400">Powered by bnos.space ⚡</p>
         </div>
       </div>
 
@@ -251,7 +315,7 @@ const shareReceipt = async () => {
       <div class="mt-8 text-center print:hidden">
         <p class="text-xs text-gray-400">
           Digital receipt by
-          <a href="/" class="text-amber-500 hover:underline">BitSpace POS</a>
+          <a href="/" class="text-amber-500 hover:underline">bnos.space</a>
         </p>
       </div>
     </div>
@@ -263,7 +327,7 @@ const shareReceipt = async () => {
   body {
     background: white !important;
   }
-  
+
   .print\\:hidden {
     display: none !important;
   }

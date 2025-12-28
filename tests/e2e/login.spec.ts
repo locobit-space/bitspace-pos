@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test("login page loads", async ({ page }) => {
   await page.goto("/auth/signin");
-  await expect(page).toHaveTitle(/BitSpace POS/);
-  await expect(page.getByText("Sign in to BitSpace POS")).toBeVisible();
+  await expect(page).toHaveTitle(/bnos.space/);
+  await expect(page.getByText("Sign in to bnos.space")).toBeVisible();
 });
 
 test("login fails with invalid credentials", async ({ page }) => {

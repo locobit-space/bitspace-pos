@@ -20,7 +20,7 @@
         <!-- App Details -->
         <div class="flex-1 text-center md:text-left">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            BitSpace POS
+            bnos.space
           </h1>
           <p class="text-muted mt-1">
             {{ $t("settings.about.tagline") }}

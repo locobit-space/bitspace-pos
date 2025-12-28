@@ -11,7 +11,7 @@
           <span class="text-white text-lg">⚡</span>
         </div>
         <div>
-          <h2 class="font-bold text-gray-900 dark:text-white">BitSpace POS</h2>
+          <h2 class="font-bold text-gray-900 dark:text-white">bnos.space</h2>
           <p class="text-xs text-gray-500 dark:text-gray-400">
             {{ $t("navigation.menu") || "Menu" }}
           </p>

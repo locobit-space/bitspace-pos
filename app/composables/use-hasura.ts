@@ -1,18 +1,18 @@
 // composables/use-hasura.ts
-// 🚀 Hasura GraphQL Integration for BitSpace POS
+// 🚀 Hasura GraphQL Integration for bnos.space
 // Provides type-safe GraphQL operations with Hasura backend
 
-import type { 
-  Product, 
-  Order, 
+import type {
+  Product,
+  Order,
   OrderItem,
   Branch,
   Category,
   Unit,
   LoyaltyMember,
   EReceipt,
-  PaymentProof 
-} from '~/types';
+  PaymentProof,
+} from "~/types";
 
 // GraphQL Response Types
 interface GraphQLResponse<T> {
@@ -32,13 +32,14 @@ interface HasuraConfig {
 
 export function useHasura() {
   const config = useRuntimeConfig();
-  
+
   // Default Hasura configuration
   const hasuraConfig = ref<HasuraConfig>({
-    endpoint: config.public.hasuraEndpoint || 'http://localhost:8080/v1/graphql',
+    endpoint:
+      config.public.hasuraEndpoint || "http://localhost:8080/v1/graphql",
     adminSecret: config.hasuraAdminSecret,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
 
@@ -64,29 +65,33 @@ export function useHasura() {
 
       // Add admin secret if available
       if (hasuraConfig.value.adminSecret) {
-        headers['x-hasura-admin-secret'] = hasuraConfig.value.adminSecret;
+        headers["x-hasura-admin-secret"] = hasuraConfig.value.adminSecret;
       }
 
-      const response = await $fetch<GraphQLResponse<T>>(hasuraConfig.value.endpoint, {
-        method: 'POST',
-        headers,
-        body: {
-          query,
-          variables,
-          operationName,
-        },
-      });
+      const response = await $fetch<GraphQLResponse<T>>(
+        hasuraConfig.value.endpoint,
+        {
+          method: "POST",
+          headers,
+          body: {
+            query,
+            variables,
+            operationName,
+          },
+        }
+      );
 
       if (response.errors && response.errors.length > 0) {
         error.value = response.errors[0].message;
-        console.error('GraphQL Error:', response.errors);
+        console.error("GraphQL Error:", response.errors);
         return null;
       }
 
       return response.data || null;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Unknown error occurred';
-      console.error('Hasura Error:', err);
+      error.value =
+        err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Hasura Error:", err);
       return null;
     } finally {
       loading.value = false;
@@ -146,14 +151,19 @@ export function useHasura() {
       }
     `;
 
-    const result = await executeGraphQL<{ products: Product[] }>(query, filters);
+    const result = await executeGraphQL<{ products: Product[] }>(
+      query,
+      filters
+    );
     return result?.products || [];
   }
 
   /**
    * Create a new product
    */
-  async function createProduct(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product | null> {
+  async function createProduct(
+    product: Omit<Product, "id" | "createdAt" | "updatedAt">
+  ): Promise<Product | null> {
     const mutation = `
       mutation CreateProduct($object: products_insert_input!) {
         insert_products_one(object: $object) {
@@ -175,21 +185,24 @@ export function useHasura() {
       }
     `;
 
-    const result = await executeGraphQL<{ insert_products_one: Product }>(mutation, {
-      object: {
-        name: product.name,
-        sku: product.sku,
-        description: product.description,
-        category_id: product.categoryId,
-        unit_id: product.unitId,
-        price: product.price,
-        stock: product.stock,
-        min_stock: product.minStock,
-        branch_id: product.branchId,
-        status: product.status,
-        image: product.image,
-      },
-    });
+    const result = await executeGraphQL<{ insert_products_one: Product }>(
+      mutation,
+      {
+        object: {
+          name: product.name,
+          sku: product.sku,
+          description: product.description,
+          category_id: product.categoryId,
+          unit_id: product.unitId,
+          price: product.price,
+          stock: product.stock,
+          min_stock: product.minStock,
+          branch_id: product.branchId,
+          status: product.status,
+          image: product.image,
+        },
+      }
+    );
 
     return result?.insert_products_one || null;
   }
@@ -197,7 +210,10 @@ export function useHasura() {
   /**
    * Update an existing product
    */
-  async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
+  async function updateProduct(
+    id: string,
+    updates: Partial<Product>
+  ): Promise<Product | null> {
     const mutation = `
       mutation UpdateProduct($id: uuid!, $updates: products_set_input!) {
         update_products_by_pk(pk_columns: { id: $id }, _set: $updates) {
@@ -219,19 +235,22 @@ export function useHasura() {
       }
     `;
 
-    const result = await executeGraphQL<{ update_products_by_pk: Product }>(mutation, {
-      id,
-      updates: {
-        name: updates.name,
-        sku: updates.sku,
-        description: updates.description,
-        price: updates.price,
-        stock: updates.stock,
-        min_stock: updates.minStock,
-        status: updates.status,
-        image: updates.image,
-      },
-    });
+    const result = await executeGraphQL<{ update_products_by_pk: Product }>(
+      mutation,
+      {
+        id,
+        updates: {
+          name: updates.name,
+          sku: updates.sku,
+          description: updates.description,
+          price: updates.price,
+          stock: updates.stock,
+          min_stock: updates.minStock,
+          status: updates.status,
+          image: updates.image,
+        },
+      }
+    );
 
     return result?.update_products_by_pk || null;
   }
@@ -239,10 +258,14 @@ export function useHasura() {
   /**
    * Update product stock
    */
-  async function updateStock(productId: string, quantity: number, operation: 'add' | 'subtract' | 'set'): Promise<boolean> {
+  async function updateStock(
+    productId: string,
+    quantity: number,
+    operation: "add" | "subtract" | "set"
+  ): Promise<boolean> {
     let mutation: string;
 
-    if (operation === 'set') {
+    if (operation === "set") {
       mutation = `
         mutation SetStock($id: uuid!, $stock: Int!) {
           update_products_by_pk(pk_columns: { id: $id }, _set: { stock: $stock }) {
@@ -252,7 +275,7 @@ export function useHasura() {
         }
       `;
     } else {
-      const increment = operation === 'add' ? quantity : -quantity;
+      const increment = operation === "add" ? quantity : -quantity;
       mutation = `
         mutation UpdateStock($id: uuid!, $increment: Int!) {
           update_products_by_pk(pk_columns: { id: $id }, _inc: { stock: $increment }) {
@@ -263,9 +286,13 @@ export function useHasura() {
       `;
     }
 
-    const result = await executeGraphQL<{ update_products_by_pk: { id: string } }>(
+    const result = await executeGraphQL<{
+      update_products_by_pk: { id: string };
+    }>(
       mutation,
-      operation === 'set' ? { id: productId, stock: quantity } : { id: productId, increment: quantity }
+      operation === "set"
+        ? { id: productId, stock: quantity }
+        : { id: productId, increment: quantity }
     );
 
     return result?.update_products_by_pk !== null;
@@ -383,28 +410,31 @@ export function useHasura() {
       }
     `;
 
-    const result = await executeGraphQL<{ insert_orders_one: Order }>(mutation, {
-      order: {
-        customer_name: order.customer,
-        customer_pubkey: order.customerPubkey,
-        branch_id: order.branchId,
-        total: order.total,
-        total_sats: order.totalSats,
-        currency: order.currency,
-        status: 'pending',
-        payment_method: order.paymentMethod,
-        notes: order.notes,
-        tip: order.tip,
-        order_items: {
-          data: order.items.map((item) => ({
-            product_id: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-            total: item.total,
-          })),
+    const result = await executeGraphQL<{ insert_orders_one: Order }>(
+      mutation,
+      {
+        order: {
+          customer_name: order.customer,
+          customer_pubkey: order.customerPubkey,
+          branch_id: order.branchId,
+          total: order.total,
+          total_sats: order.totalSats,
+          currency: order.currency,
+          status: "pending",
+          payment_method: order.paymentMethod,
+          notes: order.notes,
+          tip: order.tip,
+          order_items: {
+            data: order.items.map((item) => ({
+              product_id: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.total,
+            })),
+          },
         },
-      },
-    });
+      }
+    );
 
     return result?.insert_orders_one || null;
   }
@@ -412,7 +442,10 @@ export function useHasura() {
   /**
    * Update order status
    */
-  async function updateOrderStatus(orderId: string, status: string): Promise<boolean> {
+  async function updateOrderStatus(
+    orderId: string,
+    status: string
+  ): Promise<boolean> {
     const mutation = `
       mutation UpdateOrderStatus($id: uuid!, $status: String!) {
         update_orders_by_pk(pk_columns: { id: $id }, _set: { status: $status }) {
@@ -422,7 +455,9 @@ export function useHasura() {
       }
     `;
 
-    const result = await executeGraphQL<{ update_orders_by_pk: { id: string } }>(mutation, {
+    const result = await executeGraphQL<{
+      update_orders_by_pk: { id: string };
+    }>(mutation, {
       id: orderId,
       status,
     });
@@ -462,14 +497,21 @@ export function useHasura() {
       }
     `;
 
-    const result = await executeGraphQL<{ loyalty_members: LoyaltyMember[] }>(query, filters);
+    const result = await executeGraphQL<{ loyalty_members: LoyaltyMember[] }>(
+      query,
+      filters
+    );
     return result?.loyalty_members || [];
   }
 
   /**
    * Add loyalty points to a customer
    */
-  async function addLoyaltyPoints(memberId: string, points: number, reason: string): Promise<boolean> {
+  async function addLoyaltyPoints(
+    memberId: string,
+    points: number,
+    reason: string
+  ): Promise<boolean> {
     const mutation = `
       mutation AddLoyaltyPoints($id: uuid!, $points: Int!, $reason: String!) {
         update_loyalty_members_by_pk(
@@ -490,7 +532,9 @@ export function useHasura() {
       }
     `;
 
-    const result = await executeGraphQL<{ update_loyalty_members_by_pk: { id: string } }>(mutation, {
+    const result = await executeGraphQL<{
+      update_loyalty_members_by_pk: { id: string };
+    }>(mutation, {
       id: memberId,
       points,
       reason,
@@ -575,7 +619,12 @@ export function useHasura() {
     totalRevenue: number;
     totalOrders: number;
     averageOrderValue: number;
-    topProducts: Array<{ productId: string; name: string; quantity: number; revenue: number }>;
+    topProducts: Array<{
+      productId: string;
+      name: string;
+      quantity: number;
+      revenue: number;
+    }>;
   } | null> {
     const query = `
       query GetSalesAnalytics($branchId: uuid, $startDate: timestamptz!, $endDate: timestamptz!) {
@@ -678,7 +727,7 @@ export function useHasura() {
     `;
 
     // TODO: Implement WebSocket connection
-    console.log('Subscription query:', subscriptionQuery, branchId);
+    console.log("Subscription query:", subscriptionQuery, branchId);
 
     // Return unsubscribe function
     return () => {
@@ -690,36 +739,36 @@ export function useHasura() {
     // State
     loading,
     error,
-    
+
     // Configuration
     hasuraConfig,
-    
+
     // Core
     executeGraphQL,
-    
+
     // Products
     getProducts,
     createProduct,
     updateProduct,
     updateStock,
-    
+
     // Orders
     getOrders,
     createOrder,
     updateOrderStatus,
-    
+
     // Customers/Loyalty
     getCustomers,
     addLoyaltyPoints,
-    
+
     // Meta
     getBranches,
     getCategories,
     getUnits,
-    
+
     // Analytics
     getSalesAnalytics,
-    
+
     // Subscriptions
     subscribeToOrders,
   };

@@ -1,8 +1,8 @@
-# 🔐 BitSpace POS - Encryption System Documentation
+# 🔐 bnos.space - Encryption System Documentation
 
 ## Overview
 
-BitSpace POS uses enterprise-grade encryption to protect sensitive business data. The system supports multiple encryption algorithms for different use cases.
+bnos.space uses enterprise-grade encryption to protect sensitive business data. The system supports multiple encryption algorithms for different use cases.
 
 ---
 

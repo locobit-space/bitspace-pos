@@ -20,7 +20,7 @@
           <span class="text-white font-bold text-sm">⚡</span>
         </div>
         <span class="hidden sm:block font-bold text-gray-900 dark:text-white">
-          BitSpace POS
+          BNOS
         </span>
       </NuxtLinkLocale>
     </div>
@@ -386,6 +386,32 @@
                     class="text-gray-500 dark:text-gray-400"
                   />
                   {{ $t("settings.general.title") }}
+                </NuxtLinkLocale>
+              </li>
+              <li>
+                <NuxtLinkLocale
+                  to="/legal/privacy"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
+                >
+                  <Icon
+                    name="i-heroicons-shield-check"
+                    size="18"
+                    class="text-gray-500 dark:text-gray-400"
+                  />
+                  {{ $t("legal.privacy.title") }}
+                </NuxtLinkLocale>
+              </li>
+              <li>
+                <NuxtLinkLocale
+                  to="/legal/terms"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
+                >
+                  <Icon
+                    name="i-heroicons-document-text"
+                    size="18"
+                    class="text-gray-500 dark:text-gray-400"
+                  />
+                  {{ $t("legal.terms.title") }}
                 </NuxtLinkLocale>
               </li>
             </ul>

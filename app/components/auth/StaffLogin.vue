@@ -435,7 +435,7 @@ async function handleNip07Login() {
       kind: 22242,
       created_at: Math.floor(Date.now() / 1000),
       tags: [["challenge", challenge.challenge]],
-      content: "Authenticate to BitSpace POS",
+      content: "Authenticate to bnos.space",
     });
 
     // Verify signature

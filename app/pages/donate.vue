@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+  <div
+    class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900"
+  >
     <div class="container mx-auto px-4 py-12 max-w-2xl">
       <!-- Header -->
       <div class="text-center mb-10">
@@ -7,7 +9,9 @@
           {{ t("donate.title") || "Support the Developer" }}
         </h1>
         <p class="text-gray-400">
-          {{ t("donate.subtitle") || "Help keep BitSpace POS free and open source" }}
+          {{
+            t("donate.subtitle") || "Help keep bnos.space free and open source"
+          }}
         </p>
       </div>
 
@@ -17,7 +21,10 @@
       >
         <!-- Loading State -->
         <div v-if="isLoading" class="flex items-center justify-center py-8">
-          <Icon name="i-heroicons-arrow-path" class="animate-spin text-3xl text-purple-400" />
+          <Icon
+            name="i-heroicons-arrow-path"
+            class="animate-spin text-3xl text-purple-400"
+          />
         </div>
 
         <!-- Profile Info -->
@@ -56,7 +63,10 @@
             <p v-if="profile?.nip05" class="text-purple-400 text-sm">
               {{ profile.nip05 }}
             </p>
-            <p v-if="profile?.about" class="text-gray-400 text-sm mt-2 line-clamp-2">
+            <p
+              v-if="profile?.about"
+              class="text-gray-400 text-sm mt-2 line-clamp-2"
+            >
               {{ profile.about }}
             </p>
 
@@ -66,7 +76,9 @@
               class="inline-flex items-center gap-2 mt-3 px-3 py-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full"
             >
               <Icon name="i-heroicons-bolt" class="text-amber-400" />
-              <span class="text-amber-300 text-sm font-mono">{{ lightningAddress }}</span>
+              <span class="text-amber-300 text-sm font-mono">{{
+                lightningAddress
+              }}</span>
             </div>
           </div>
         </div>
@@ -89,23 +101,26 @@
           </div>
 
           <!-- QR Code -->
-          <div
-            class="bg-white p-4 rounded-xl inline-block mb-4 shadow-lg"
-          >
+          <div class="bg-white p-4 rounded-xl inline-block mb-4 shadow-lg">
             <QRCodeVue
               v-if="lightningAddress"
               :value="`lightning:${lightningAddress}`"
               :size="200"
               level="M"
             />
-            <div v-else class="w-[200px] h-[200px] flex items-center justify-center text-gray-400">
+            <div
+              v-else
+              class="w-[200px] h-[200px] flex items-center justify-center text-gray-400"
+            >
               {{ t("donate.noLightning") || "No Lightning address" }}
             </div>
           </div>
 
           <!-- Address Display -->
           <div class="flex items-center justify-center gap-2 mb-4">
-            <code class="text-amber-300 text-sm bg-gray-800/50 px-3 py-2 rounded-lg">
+            <code
+              class="text-amber-300 text-sm bg-gray-800/50 px-3 py-2 rounded-lg"
+            >
               {{ lightningAddress || "Loading..." }}
             </code>
             <UButton
@@ -118,7 +133,10 @@
           </div>
 
           <p class="text-gray-400 text-sm">
-            {{ t("donate.lightningDesc") || "Scan with any Lightning wallet or click to copy" }}
+            {{
+              t("donate.lightningDesc") ||
+              "Scan with any Lightning wallet or click to copy"
+            }}
           </p>
         </div>
       </div>
@@ -130,18 +148,21 @@
       >
         <div class="text-center">
           <div class="flex items-center justify-center gap-2 mb-4">
-            <Icon name="i-heroicons-building-library" class="text-2xl text-blue-400" />
+            <Icon
+              name="i-heroicons-building-library"
+              class="text-2xl text-blue-400"
+            />
             <h3 class="text-lg font-semibold text-white">
               {{ t("donate.bank") || "Bank Transfer (BCEL)" }}
             </h3>
           </div>
 
           <!-- Bank QR Placeholder -->
-          <div
-            class="bg-white p-4 rounded-xl inline-block mb-4 shadow-lg"
-          >
+          <div class="bg-white p-4 rounded-xl inline-block mb-4 shadow-lg">
             <!-- Replace with actual BCEL QR image -->
-            <div class="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 rounded-lg">
+            <div
+              class="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 rounded-lg"
+            >
               <div class="text-center text-gray-500">
                 <Icon name="i-heroicons-qr-code" class="text-5xl mb-2" />
                 <p class="text-xs">BCEL QR</p>
@@ -153,11 +174,16 @@
           <!-- Bank Info -->
           <div class="space-y-2 text-sm">
             <p class="text-gray-300">
-              <span class="text-gray-500">{{ t("donate.bankName") || "Bank" }}:</span>
+              <span class="text-gray-500"
+                >{{ t("donate.bankName") || "Bank" }}:</span
+              >
               BCEL (Banque pour le Commerce Extérieur Lao)
             </p>
             <p class="text-gray-400">
-              {{ t("donate.bankDesc") || "Scan with BCEL One or any Lao banking app" }}
+              {{
+                t("donate.bankDesc") ||
+                "Scan with BCEL One or any Lao banking app"
+              }}
             </p>
           </div>
         </div>
@@ -166,7 +192,10 @@
       <!-- Thank You Message -->
       <div class="mt-8 text-center">
         <p class="text-gray-500 text-sm">
-          {{ t("donate.thanks") || "Thank you for supporting open source software! ❤️" }}
+          {{
+            t("donate.thanks") ||
+            "Thank you for supporting open source software! ❤️"
+          }}
         </p>
       </div>
 
@@ -190,7 +219,8 @@ import QRCodeVue from "qrcode.vue";
 import { nip19 } from "nostr-tools";
 
 // Developer's npub
-const DEVELOPER_NPUB = "npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk";
+const DEVELOPER_NPUB =
+  "npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk";
 
 useHead({
   title: "Donate",
@@ -216,7 +246,11 @@ const activeTab = ref("lightning");
 
 const tabs = [
   { key: "lightning", label: "⚡ Lightning", icon: "i-heroicons-bolt" },
-  { key: "bank", label: "🏦 Bank (BCEL)", icon: "i-heroicons-building-library" },
+  {
+    key: "bank",
+    label: "🏦 Bank (BCEL)",
+    icon: "i-heroicons-building-library",
+  },
 ];
 
 // Decode npub to hex

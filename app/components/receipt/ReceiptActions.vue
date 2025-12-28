@@ -127,7 +127,7 @@ const sendEmail = async () => {
     // In production, send via API
     // For now, open mailto
     window.open(
-      `mailto:${customerEmail.value}?subject=Receipt from BitSpace POS&body=View your receipt here: ${url}`
+      `mailto:${customerEmail.value}?subject=Receipt from BNOS&body=View your receipt here: ${url}`
     );
 
     showEmailInput.value = false;

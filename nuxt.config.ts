@@ -35,10 +35,10 @@ export default defineNuxtConfig({
   pwa: {
     registerType: "autoUpdate",
     manifest: {
-      name: "BitSpace POS",
-      short_name: "BitSpace",
+      name: "BNOS - Business OS",
+      short_name: "BNOS",
       description:
-        "Lightning-powered Point of Sale System, Business OS - Nostr",
+        "Lightning-powered Point of Sale System, Business OS - Nostr BNOS",
       theme_color: "#f59e0b",
       background_color: "#111827",
       display: "standalone",
@@ -69,14 +69,14 @@ export default defineNuxtConfig({
           sizes: "750x1334",
           type: "image/png",
           form_factor: "narrow",
-          label: "BitSpace POS - Mobile",
+          label: "BNOS - Mobile",
         },
         {
           src: "/screenshots/tablet-splash.png",
           sizes: "1024x768",
           type: "image/png",
           form_factor: "wide",
-          label: "BitSpace POS - Tablet",
+          label: "BNOS - Tablet",
         },
       ],
       // iOS specific splash screen settings
@@ -228,6 +228,7 @@ export default defineNuxtConfig({
           "lo-LA/delivery.json",
           "lo-LA/contracts.json",
           "lo-LA/employees.json",
+          "lo-LA/legal.json",
         ],
       },
       {
@@ -270,6 +271,7 @@ export default defineNuxtConfig({
           "en-US/delivery.json",
           "en-US/contracts.json",
           "en-US/employees.json",
+          "en-US/legal.json",
         ],
       },
       {
@@ -307,6 +309,7 @@ export default defineNuxtConfig({
           "th-TH/delivery.json",
           "th-TH/contracts.json",
           "th-TH/employees.json",
+          "th-TH/legal.json",
         ],
       },
     ],
