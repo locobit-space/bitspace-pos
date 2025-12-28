@@ -522,6 +522,7 @@
     <ProductsProductLookupModal
       v-model:open="showLookupModal"
       @import="handleLookupImport"
+      @edit="handleLookupEdit"
     />
 
     <!-- Delete Confirmation Modal -->
@@ -1137,8 +1138,6 @@ const productsStore = useProductsStore();
 const toast = useToast();
 const { canEditProducts, canDeleteProducts } = usePermissions();
 
-
-
 interface Unit {
   id: string;
   name: string;
@@ -1600,6 +1599,35 @@ const handleLookupImport = async (
       color: "success",
     });
   }
+};
+
+// Handler for editing a product from lookup - fills form for user to review/edit before saving
+const handleLookupEdit = (
+  product: import("~/composables/use-product-lookup").PublicProduct
+) => {
+  // Create a partial product object with lookup data
+  selectedProduct.value = {
+    id: "", // New product, no ID
+    name: product.name,
+    sku: `SKU-${Date.now().toString(36).toUpperCase()}`,
+    description: product.description || "",
+    categoryId: "", // User will choose
+    unitId: "", // User will choose
+    price: product.suggestedPrice || 0,
+    stock: 0,
+    minStock: 0,
+    branchId: selectedBranch.value !== "all" ? selectedBranch.value : "",
+    status: "active" as const,
+    image: product.image || "",
+    barcode: product.barcode,
+    productType: "good" as const,
+    trackStock: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  // Open the product modal for editing
+  showProductModal.value = true;
 };
 
 // Handler for ProductModal save event

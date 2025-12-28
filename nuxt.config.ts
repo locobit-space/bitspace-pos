@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ["~/assets/css/main.css"],
+  css: ["~/assets/fonts/stylesheet.css", "~/assets/css/main.css"],
 
   modules: [
     "@nuxt/ui",

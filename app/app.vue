@@ -1,9 +1,15 @@
+<script setup lang="ts">
+const { locale } = useI18n();
+</script>
+
 <template>
-  <UApp>
-    <NuxtRouteAnnouncer />
-    <VitePwaManifest />
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
-  </UApp>
+  <Body :class="locale">
+    <UApp>
+      <NuxtRouteAnnouncer />
+      <VitePwaManifest />
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+    </UApp>
+  </Body>
 </template>

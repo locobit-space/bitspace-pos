@@ -59,7 +59,6 @@
           <UButton
             color="neutral"
             variant="outline"
-            class="!text-white !border-gray-600"
             @click="navigateTo('/settings/account#edit')"
           >
             {{ $t("account.editProfile") || "Edit profile" }}

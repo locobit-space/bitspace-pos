@@ -22,3 +22,11 @@
   --color-purple-900: #421d95;
   --color-purple-950: #2a1065;
 }
+
+.lo,
+.lo div,
+.lo p,
+.lo span {
+  font-family: "Noto Sans Lao Looped", "Phetsarath OT", "Saysettha OT",
+    "Noto Sans Lao", sans-serif;
+}
