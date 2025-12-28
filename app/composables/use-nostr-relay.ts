@@ -5,9 +5,10 @@ import type { Event, Filter } from "nostr-tools";
 
 // Default relays - Production relays
 const DEFAULT_RELAYS = [
+  "wss://relay.bnos.space",
   "wss://relay.damus.io",
   "wss://nos.lol",
-  // "wss://relay.nostr.band",
+  "wss://nostr-01.yakihonne.com",
   "wss://nostr-pub.wellorder.net",
   "wss://yabu.me",
   // Uncomment for local development:

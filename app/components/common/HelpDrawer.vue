@@ -15,12 +15,17 @@ const searchResults = computed(() => {
   // Search both Nostr and static help
   const nostrResults = nostrHelp.searchHelp(searchQuery.value);
   const staticResults = help.searchHelp(searchQuery.value);
-  return [...nostrResults.map((a: { id: string; title: string; description: string }) => ({
-    id: a.id,
-    title: a.title,
-    content: a.description,
-    icon: "i-heroicons-document-text",
-  })), ...staticResults];
+  return [
+    ...nostrResults.map(
+      (a: { id: string; title: string; description: string }) => ({
+        id: a.id,
+        title: a.title,
+        content: a.description,
+        icon: "i-heroicons-document-text",
+      })
+    ),
+    ...staticResults,
+  ];
 });
 
 const showSearch = computed(() => searchQuery.value.trim().length > 0);
@@ -92,8 +97,14 @@ function handleWriteNew() {
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-4">
           <!-- Loading State -->
-          <div v-if="nostrHelp.isLoading.value" class="flex items-center justify-center py-8">
-            <Icon name="i-heroicons-arrow-path" class="animate-spin text-2xl text-gray-400" />
+          <div
+            v-if="nostrHelp.isLoading.value"
+            class="flex items-center justify-center py-8"
+          >
+            <Icon
+              name="i-heroicons-arrow-path"
+              class="animate-spin text-2xl text-gray-400"
+            />
           </div>
 
           <!-- Search Results -->
@@ -195,7 +206,9 @@ function handleWriteNew() {
 
             <!-- Nostr Meta Info -->
             <div
-              v-if="currentHelp.updatedAt && !currentHelp.id.startsWith('static_')"
+              v-if="
+                currentHelp.updatedAt && !currentHelp.id.startsWith('static_')
+              "
               class="text-xs text-gray-400 flex items-center gap-1"
             >
               <Icon name="i-heroicons-cloud" class="text-sm" />
@@ -235,6 +248,20 @@ function handleWriteNew() {
         <div
           class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
         >
+          <!-- Browse All Community Docs -->
+          <NuxtLink to="/help" @click="help.closeHelp()">
+            <UButton
+              color="primary"
+              variant="soft"
+              icon="i-heroicons-book-open"
+              size="sm"
+              block
+              class="mb-3"
+            >
+              {{ t("help.browseCommunityDocs") || "Browse All Community Docs" }}
+            </UButton>
+          </NuxtLink>
+
           <p class="text-xs text-gray-500 mb-3 text-center">
             {{ t("help.needMoreHelp") || "Need more help?" }}
           </p>

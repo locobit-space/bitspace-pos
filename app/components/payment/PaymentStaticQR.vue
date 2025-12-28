@@ -1,7 +1,7 @@
 <!-- components/payment/PaymentStaticQR.vue -->
 <!-- 📡 BOLT12 Static QR - One QR forever! -->
 <script setup lang="ts">
-import type { BOLT12Offer } from '~/types';
+import type { BOLT12Offer } from "~/types";
 
 const props = defineProps<{
   offer?: BOLT12Offer;
@@ -20,7 +20,7 @@ const qrData = computed(() => {
   if (props.offer?.offer) {
     return props.offer.offer;
   }
-  return '';
+  return "";
 });
 
 const copyOffer = async () => {
@@ -48,10 +48,12 @@ const copyOffer = async () => {
       <div class="bg-white p-4 rounded-xl inline-block">
         <img
           v-if="qrData"
-          :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`"
+          :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+            qrData
+          )}`"
           alt="BOLT12 Offer QR"
           class="w-48 h-48"
-        >
+        />
       </div>
 
       <!-- Offer Info -->
@@ -67,7 +69,7 @@ const copyOffer = async () => {
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-400">Accepts any amount</span>
           <UBadge :color="offer.allowsAnyAmount ? 'success' : 'warning'">
-            {{ offer.allowsAnyAmount ? 'Yes' : 'No' }}
+            {{ offer.allowsAnyAmount ? "Yes" : "No" }}
           </UBadge>
         </div>
       </div>
@@ -78,7 +80,7 @@ const copyOffer = async () => {
           class="text-sm text-gray-400 hover:text-white"
           @click="showFullOffer = !showFullOffer"
         >
-          {{ showFullOffer ? 'Hide' : 'Show' }} offer string
+          {{ showFullOffer ? "Hide" : "Show" }} offer string
         </button>
         <div
           v-if="showFullOffer"
@@ -98,10 +100,7 @@ const copyOffer = async () => {
         >
           Copy
         </UButton>
-        <UButton
-          color="primary"
-          icon="i-heroicons-arrow-down-tray"
-        >
+        <UButton color="primary" icon="i-heroicons-arrow-down-tray">
           Download QR
         </UButton>
       </div>
@@ -112,13 +111,10 @@ const copyOffer = async () => {
       <div class="text-5xl mb-4">🔮</div>
       <h4 class="font-medium mb-2">No Static QR Yet</h4>
       <p class="text-sm text-gray-400 mb-4">
-        Create a BOLT12 offer for your store.<br>
+        Create a BOLT12 offer for your store.<br />
         Customers can pay any amount, anytime!
       </p>
-      <UButton
-        color="primary"
-        @click="emit('create')"
-      >
+      <UButton color="primary" block @click="emit('create')">
         Create Static QR
       </UButton>
     </div>

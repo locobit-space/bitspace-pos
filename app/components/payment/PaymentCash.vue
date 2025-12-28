@@ -319,6 +319,7 @@ const goBack = () => {
           variant="outline"
           size="lg"
           class="flex-1"
+          block
           @click="goBack"
         >
           {{ t("common.back") }}
@@ -329,6 +330,7 @@ const goBack = () => {
           class="flex-1"
           :loading="isProcessing"
           icon="i-heroicons-check-circle"
+          block
           @click="processPayment"
         >
           {{ t("payment.cash.complete") }}

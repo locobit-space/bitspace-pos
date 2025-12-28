@@ -485,6 +485,7 @@ onUnmounted(() => {
           :loading="checkingPayment"
           icon="i-heroicons-check-circle"
           class="w-full"
+          block
           @click="confirmPaymentReceived"
         >
           {{ t("payment.lightning.confirmReceived") }}
@@ -647,7 +648,7 @@ onUnmounted(() => {
 
     <!-- Cancel Button (when not in error state) -->
     <div v-if="paymentStep !== 'error'" class="mt-6">
-      <UButton color="neutral" variant="ghost" @click="emit('cancel')">
+      <UButton color="neutral" variant="ghost" block @click="emit('cancel')">
         {{ t("payment.lightning.cancelPayment") }}
       </UButton>
     </div>
@@ -712,13 +713,14 @@ onUnmounted(() => {
           </div>
 
           <div class="flex justify-center gap-3">
-            <UButton color="primary" size="lg" @click="handleTryAgain">
+            <UButton color="primary" size="lg" block @click="handleTryAgain">
               {{ t("common.tryAgain") }}
             </UButton>
             <UButton
               color="neutral"
               variant="outline"
               size="lg"
+              block
               @click="handleCancel"
             >
               {{ t("payment.lightning.cancelPayment") }}

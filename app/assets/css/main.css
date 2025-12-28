@@ -1,11 +1,14 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-
 @theme static {
   --font-sans: "Public Sans", sans-serif;
 
   --breakpoint-3xl: 1920px;
+
+  /* Explicit white/black for bg-white, bg-black to work */
+  --color-white: #ffffff;
+  --color-black: #000000;
 
   --color-purple-50: #f7f3ff;
   --color-purple-100: #efe9fe;

@@ -193,6 +193,7 @@ const copyToClipboard = (text: string) => {
           variant="outline"
           size="lg"
           class="flex-1"
+          block
           @click="goBack"
         >
           {{ t("common.back") }}
@@ -201,6 +202,7 @@ const copyToClipboard = (text: string) => {
           color="primary"
           size="lg"
           class="flex-1"
+          block
           :loading="isProcessing"
           @click="confirmTransfer"
         >

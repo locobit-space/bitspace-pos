@@ -174,6 +174,7 @@ const goBack = () => {
           variant="outline"
           size="lg"
           class="flex-1"
+          block
           @click="goBack"
         >
           {{ t("common.back") }}
@@ -183,6 +184,7 @@ const goBack = () => {
           size="lg"
           class="flex-1"
           :loading="isProcessing"
+          block
           icon="i-heroicons-check-circle"
           @click="confirmPayment"
         >
@@ -232,6 +234,7 @@ const goBack = () => {
           v-model="paymentReference"
           :placeholder="t('payment.external.referencePlaceholder')"
           size="lg"
+          class="w-full"
         />
       </div>
 

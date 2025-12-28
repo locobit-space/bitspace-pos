@@ -48,6 +48,7 @@
                       :placeholder="
                         $t('settings.general.company_name_placeholder')
                       "
+                      class="w-full"
                     />
                   </UFormField>
 
@@ -62,6 +63,7 @@
                       :placeholder="
                         $t('settings.general.company_email_placeholder')
                       "
+                      class="w-full"
                     />
                   </UFormField>
 
@@ -74,6 +76,7 @@
                       :placeholder="
                         $t('settings.general.company_phone_placeholder')
                       "
+                      class="w-full"
                     />
                   </UFormField>
 
@@ -86,6 +89,7 @@
                       :placeholder="
                         $t('settings.general.tax_number_placeholder')
                       "
+                      class="w-full"
                     />
                   </UFormField>
                 </div>
@@ -210,14 +214,27 @@
 
               <!-- Branches Table -->
               <div v-if="loadingBranches" class="text-center py-8">
-                <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin text-gray-400" />
-                <p class="mt-2 text-gray-500">{{ $t('common.loading') }}</p>
+                <UIcon
+                  name="i-heroicons-arrow-path"
+                  class="w-6 h-6 animate-spin text-gray-400"
+                />
+                <p class="mt-2 text-gray-500">{{ $t("common.loading") }}</p>
               </div>
-              
+
               <div v-else-if="branches.length === 0" class="text-center py-8">
-                <UIcon name="i-heroicons-building-storefront" class="w-12 h-12 text-gray-300 mx-auto" />
-                <p class="mt-2 text-gray-500">{{ $t('settings.branches.noBranches') || 'No branches yet' }}</p>
-                <p class="text-sm text-gray-400">{{ $t('settings.branches.addFirst') || 'Add your first branch to get started' }}</p>
+                <UIcon
+                  name="i-heroicons-building-storefront"
+                  class="w-12 h-12 text-gray-300 mx-auto"
+                />
+                <p class="mt-2 text-gray-500">
+                  {{ $t("settings.branches.noBranches") || "No branches yet" }}
+                </p>
+                <p class="text-sm text-gray-400">
+                  {{
+                    $t("settings.branches.addFirst") ||
+                    "Add your first branch to get started"
+                  }}
+                </p>
               </div>
 
               <div v-else class="overflow-x-auto">
@@ -237,7 +254,7 @@
                       <th
                         class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
                       >
-                        {{ $t("settings.branches.address") || 'Address' }}
+                        {{ $t("settings.branches.address") || "Address" }}
                       </th>
                       <th
                         class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
@@ -265,7 +282,7 @@
                         </UBadge>
                       </td>
                       <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                        {{ branch.address || '-' }}
+                        {{ branch.address || "-" }}
                       </td>
                       <td class="py-3 px-4">
                         <div class="flex space-x-2">
@@ -391,8 +408,13 @@
                   {{ $t("settings.security.dataEncryptionDesc") }}
                 </p>
 
-                <div v-if="!security.isEncryptionEnabled.value" class="space-y-4">
-                  <UFormField :label="$t('settings.security.setupMasterPassword')">
+                <div
+                  v-if="!security.isEncryptionEnabled.value"
+                  class="space-y-4"
+                >
+                  <UFormField
+                    :label="$t('settings.security.setupMasterPassword')"
+                  >
                     <UInput
                       v-model="masterPassword"
                       type="password"
@@ -408,7 +430,10 @@
                   </UFormField>
                   <UButton
                     color="primary"
-                    :disabled="!masterPassword || masterPassword !== confirmMasterPassword"
+                    :disabled="
+                      !masterPassword ||
+                      masterPassword !== confirmMasterPassword
+                    "
                     @click="enableEncryption"
                   >
                     {{ $t("settings.security.enableEncryption") }}
@@ -417,18 +442,30 @@
 
                 <div v-else class="space-y-4">
                   <UAlert
-                    :icon="security.isLocked.value ? 'i-heroicons-lock-closed' : 'i-heroicons-lock-open'"
+                    :icon="
+                      security.isLocked.value
+                        ? 'i-heroicons-lock-closed'
+                        : 'i-heroicons-lock-open'
+                    "
                     :color="security.isLocked.value ? 'yellow' : 'green'"
                     variant="subtle"
-                    :title="security.isLocked.value ? $t('settings.security.locked') : $t('settings.security.unlocked')"
+                    :title="
+                      security.isLocked.value
+                        ? $t('settings.security.locked')
+                        : $t('settings.security.unlocked')
+                    "
                   />
 
                   <div v-if="security.isLocked.value" class="space-y-3">
-                    <UFormField :label="$t('settings.security.enterMasterPassword')">
+                    <UFormField
+                      :label="$t('settings.security.enterMasterPassword')"
+                    >
                       <UInput
                         v-model="unlockPassword"
                         type="password"
-                        :placeholder="$t('settings.security.masterPasswordHint')"
+                        :placeholder="
+                          $t('settings.security.masterPasswordHint')
+                        "
                         @keyup.enter="unlockEncryption"
                       />
                     </UFormField>
@@ -439,7 +476,10 @@
 
                   <div v-else>
                     <UButton variant="outline" @click="lockEncryption">
-                      <UIcon name="i-heroicons-lock-closed" class="w-4 h-4 mr-2" />
+                      <UIcon
+                        name="i-heroicons-lock-closed"
+                        class="w-4 h-4 mr-2"
+                      />
                       {{ $t("settings.security.lock") }}
                     </UButton>
                   </div>
@@ -515,7 +555,10 @@
                   class="w-full"
                 />
                 <template #hint>
-                  <span class="text-xs text-gray-500">{{ $t('settings.branches.bolt12Hint') || 'Lightning BOLT12 offer for this branch' }}</span>
+                  <span class="text-xs text-gray-500">{{
+                    $t("settings.branches.bolt12Hint") ||
+                    "Lightning BOLT12 offer for this branch"
+                  }}</span>
                 </template>
               </UFormField>
             </div>
@@ -550,8 +593,8 @@ const security = useSecurity();
 // Page meta
 definePageMeta({
   title: "General Settings",
-  layout: 'default',
-  middleware: ['auth'],
+  layout: "default",
+  middleware: ["auth"],
 });
 
 // Form refs
@@ -577,7 +620,10 @@ onMounted(() => {
 
 // Encryption functions
 const enableEncryption = async () => {
-  if (masterPassword.value && masterPassword.value === confirmMasterPassword.value) {
+  if (
+    masterPassword.value &&
+    masterPassword.value === confirmMasterPassword.value
+  ) {
     const success = await security.setupMasterPassword(masterPassword.value);
     if (success) {
       masterPassword.value = "";
@@ -789,38 +835,49 @@ const loadSettings = async () => {
     const settings = await nostrData.getSettings();
     if (settings) {
       // Handle BOTH new flat structure and legacy nested structure
-      
+
       // New flat structure fields
       if (settings.companyName) state.companyName = settings.companyName;
       if (settings.companyEmail) state.companyEmail = settings.companyEmail;
       if (settings.companyPhone) state.companyPhone = settings.companyPhone;
       if (settings.taxNumber) state.taxNumber = settings.taxNumber;
-      if (settings.companyAddress) state.companyAddress = settings.companyAddress;
-      if (settings.defaultCurrency) state.defaultCurrency = settings.defaultCurrency;
-      if (settings.defaultLanguage) state.defaultLanguage = settings.defaultLanguage;
+      if (settings.companyAddress)
+        state.companyAddress = settings.companyAddress;
+      if (settings.defaultCurrency)
+        state.defaultCurrency = settings.defaultCurrency;
+      if (settings.defaultLanguage)
+        state.defaultLanguage = settings.defaultLanguage;
       if (settings.dateFormat) state.dateFormat = settings.dateFormat;
       if (settings.timeFormat) state.timeFormat = settings.timeFormat;
       if (settings.timezone) state.timezone = settings.timezone;
-      if (settings.decimalPlaces !== undefined) state.decimalPlaces = settings.decimalPlaces;
-      
+      if (settings.decimalPlaces !== undefined)
+        state.decimalPlaces = settings.decimalPlaces;
+
       // Legacy nested structure (from old settings format)
       if (settings.general) {
-        if (settings.general.storeName) state.companyName = settings.general.storeName;
-        if (settings.general.storeAddress) state.companyAddress = settings.general.storeAddress;
-        if (settings.general.storePhone) state.companyPhone = settings.general.storePhone;
-        if (settings.general.defaultCurrency) state.defaultCurrency = settings.general.defaultCurrency;
-        if (settings.general.timezone) state.timezone = settings.general.timezone;
+        if (settings.general.storeName)
+          state.companyName = settings.general.storeName;
+        if (settings.general.storeAddress)
+          state.companyAddress = settings.general.storeAddress;
+        if (settings.general.storePhone)
+          state.companyPhone = settings.general.storePhone;
+        if (settings.general.defaultCurrency)
+          state.defaultCurrency = settings.general.defaultCurrency;
+        if (settings.general.timezone)
+          state.timezone = settings.general.timezone;
         if (settings.general.language) {
           // Map 'en-US' to 'en', 'lo-LA' to 'lo'
-          const langMap: Record<string, string> = { 'en-US': 'en', 'lo-LA': 'lo' };
-          state.defaultLanguage = langMap[settings.general.language] || settings.general.language;
+          const langMap: Record<string, string> = {
+            "en-US": "en",
+            "lo-LA": "lo",
+          };
+          state.defaultLanguage =
+            langMap[settings.general.language] || settings.general.language;
         }
       }
-      
-
     }
   } catch (err) {
-    console.error('[general.vue] Failed to load settings:', err);
+    console.error("[general.vue] Failed to load settings:", err);
   }
 };
 
