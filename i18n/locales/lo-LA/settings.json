@@ -424,7 +424,18 @@
         "title": "ການຕັ້ງຄ່າໂລໂກ້",
         "upload": "ອັບໂຫລດໂລໂກ້",
         "remove": "ລົບ",
-        "showOnReceipt": "ສະແດງໂລໂກ້ໃນໃບບິນ"
+        "showOnReceipt": "ສະແດງໂລໂກ້ໃນໃບບິນ",
+        "storageType": "ປະເພດການເກັບຮັກສາ",
+        "storageLocal": "ເກັບໃນເຄື່ອງ",
+        "storageLocalDesc": "ເກັບໂລໂກ້ເປັນ base64 ໃນບຣາວເຊີ (ໃຊ້ໄດ້ແບບອອບໄລນ໌)",
+        "storageCloudinary": "Cloudinary",
+        "storageCloudinaryDesc": "ອັບໂຫລດໄປຄລາວເພື່ອປະສິດທິພາບທີ່ດີກວ່າ",
+        "uploading": "ກຳລັງອັບໂຫລດ...",
+        "uploadSuccess": "ອັບໂຫລດໂລໂກ້ໄປ Cloudinary ແລ້ວ",
+        "uploadFailed": "ອັບໂຫລດໂລໂກ້ລົ້ມເຫລວ",
+        "cloudinaryNotConfigured": "ກະລຸນາຕັ້ງຄ່າ Cloudinary ໃນ ການຕັ້ງຄ່າ → ການເຊື່ອມຕໍ່ ກ່ອນ",
+        "dragDrop": "ລາກວາງ ຫຼື ຄລິກເພື່ອອັບໂຫລດ",
+        "maxSize": "ຂະໜາດໄຟລ໌ສູງສຸດ: 2MB"
       },
       "header": {
         "title": "ການຕັ້ງຄ່າສ່ວນຫົວ",
@@ -447,7 +458,7 @@
         "itemPrice": "ລາຄາຕໍ່ໜ່ວຍ",
         "subtotal": "ລວມຍ່ອຍ",
         "discount": "ສ່ວນຫຼຸດ",
-        "tax": "ພາສີ",
+        "tax": "ອາກອນ",
         "taxBreakdown": "ລາຍລະອຽດພາສີ",
         "paymentMethod": "ວິທີການຊຳລະ",
         "change": "ເງິນທອນ"
@@ -464,7 +475,10 @@
         "showBarcode": "ສະແດງ Barcode",
         "showSocialMedia": "ສະແດງໂຊຊຽລມີເດຍ",
         "showWebsite": "ສະແດງ URL ເວັບໄຊ",
-        "websiteUrl": "URL ເວັບໄຊ"
+        "websiteUrl": "URL ເວັບໄຊ",
+        "eBillBaseUrl": "URL E-Bill (ສຳລັບສະແກນ QR)",
+        "eBillBaseUrlPlaceholder": "http://192.168.1.100:3000",
+        "eBillBaseUrlHint": "ປ່ອຍວ່າງເພື່ອກວດຫາອັດຕະໂນມັດ. ຕັ້ງເປັນ IP LAN ຂອງທ່ານສຳລັບການສະແກນໂທລະສັບ"
       },
       "paper": {
         "title": "ການຕັ້ງຄ່າເຈ້ຍ ແລະ ການພິມ",
@@ -485,11 +499,29 @@
         "items": "ລາຍການ",
         "subtotal": "ລວມຍ່ອຍ",
         "discount": "ສ່ວນຫຼຸດ",
-        "tax": "ພາສີ",
+        "tax": "ອາກອນ",
         "total": "ລວມທັງໝົດ",
         "paymentMethod": "ການຊຳລະ",
         "received": "ຮັບ",
         "change": "ເງິນທອນ"
+      },
+      "templates": {
+        "title": "ແມ່ແບບທີ່ບັນທຶກໄວ້",
+        "saveAsTemplate": "ບັນທຶກເປັນແມ່ແບບ",
+        "empty": "ບໍ່ມີແມ່ແບບທີ່ບັນທຶກໄວ້. ບັນທຶກການຕັ້ງຄ່າປັດຈຸບັນເປັນແມ່ແບບ.",
+        "default": "ເລີ່ມຕົ້ນ",
+        "saveTitle": "ບັນທຶກແມ່ແບບ",
+        "name": "ຊື່ແມ່ແບບ",
+        "setAsDefault": "ຕັ້ງເປັນແມ່ແບບເລີ່ມຕົ້ນ"
+      },
+      "messages": {
+        "saveSuccess": "ບັນທຶກການຕັ້ງຄ່າໃບບິນແລ້ວ",
+        "saveError": "ບັນທຶກການຕັ້ງຄ່າລົ້ມເຫຼວ",
+        "templateNameRequired": "ຕ້ອງໃສ່ຊື່ແມ່ແບບ",
+        "templateSaved": "ບັນທຶກແມ່ແບບແລ້ວ",
+        "templateLoaded": "ໂຫຼດແມ່ແບບແລ້ວ",
+        "templateDeleted": "ລຶບແມ່ແບບແລ້ວ",
+        "defaultSet": "ຕັ້ງແມ່ແບບເລີ່ມຕົ້ນແລ້ວ"
       }
     },
     "backup": {

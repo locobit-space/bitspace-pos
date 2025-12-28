@@ -26,7 +26,7 @@
     "quantity": "ຈຳນວນ",
     "subtotal": "ລວມຍ່ອຍ",
     "discount": "ສ່ວນຫຼຸດ",
-    "tax": "ພາສີ",
+    "tax": "ອາກອນ",
     "orderTotal": "ລວມອໍເດີ້",
     "timeline": "ເສັ້ນເວລາອໍເດີ້",
     "orderPlaced": "ສ້າງອໍເດີ້",
@@ -66,6 +66,7 @@
     "walkInCustomer": "ລູກຄ້າ Walk-in",
     "paymentHash": "Payment Hash",
     "preimage": "Preimage",
-    "history": "ປະຫວັດອໍເດີ້"
+    "history": "ປະຫວັດອໍເດີ້",
+    "orderId": "ລະຫັດອໍເດີ້"
   }
 }

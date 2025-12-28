@@ -2,13 +2,9 @@
 // 🧾 Receipt & E-Bill System
 // Supports: Thermal/POS printers (ESC/POS), Browser print, E-Bill via QR
 
-import { ref } from 'vue';
-import type { 
-  Order, 
-  PaymentProof, 
-  CurrencyCode,
-  PaymentMethod,
-} from '~/types';
+import { ref, computed } from "vue";
+import type { Order, PaymentProof, CurrencyCode, PaymentMethod } from "~/types";
+import QRCode from "qrcode";
 
 // ============================================
 // Receipt Types
@@ -44,29 +40,31 @@ export interface EReceipt {
 }
 
 // ============================================
-// Receipt Settings
+// Receipt Settings (Legacy interface for backward compatibility)
 // ============================================
 export interface ReceiptSettings {
   merchantName: string;
   merchantAddress?: string;
   merchantPhone?: string;
   merchantTaxId?: string;
+  merchantEmail?: string;
   logoEmoji: string;
+  logoUrl?: string;
   footerMessage: string;
   showPaymentProof: boolean;
   showQrCode: boolean;
-  paperWidth: '58mm' | '80mm';
+  paperWidth: "58mm" | "80mm" | "112mm";
 }
 
 const defaultSettings: ReceiptSettings = {
-  merchantName: 'Berkeley Café',
-  merchantAddress: 'Vientiane, Laos',
-  merchantPhone: '+856 20 1234 5678',
-  logoEmoji: '☕',
-  footerMessage: 'Thank you for your visit!',
+  merchantName: "My Store",
+  merchantAddress: "123 Main Street, City, Country",
+  merchantPhone: "+1 234 567 890",
+  logoEmoji: "🛒",
+  footerMessage: "Thank you for your purchase!",
   showPaymentProof: true,
   showQrCode: true,
-  paperWidth: '80mm',
+  paperWidth: "80mm",
 };
 
 // E-Bill storage (in-memory for demo, use IndexedDB in production)
@@ -74,29 +72,48 @@ const eBillStorage = new Map<string, EReceipt>();
 
 export const useReceipt = () => {
   const currency = useCurrency();
-  
+  const receiptSettings = useReceiptSettings();
+
   // State
   const lastReceipt = ref<EReceipt | null>(null);
   const isSending = ref(false);
   const isPrinting = ref(false);
   const error = ref<string | null>(null);
-  const settings = ref<ReceiptSettings>({ ...defaultSettings });
+
+  // Computed settings that merge saved settings with legacy format
+  const settings = computed<ReceiptSettings>(() => {
+    const saved = receiptSettings.settings.value;
+    return {
+      merchantName: saved.header.businessName || defaultSettings.merchantName,
+      merchantAddress: saved.header.address || defaultSettings.merchantAddress,
+      merchantPhone: saved.header.phone || defaultSettings.merchantPhone,
+      merchantTaxId: saved.header.taxId,
+      merchantEmail: saved.header.email,
+      logoEmoji: "🛒", // Default emoji fallback
+      logoUrl: saved.logo || undefined,
+      footerMessage:
+        saved.footer.thankYouMessage || defaultSettings.footerMessage,
+      showPaymentProof: saved.content.showPaymentMethod,
+      showQrCode: saved.footer.showQrCode,
+      paperWidth: saved.paper.width as "58mm" | "80mm" | "112mm",
+    };
+  });
 
   // ============================================
   // Generate Receipt from Order
   // ============================================
   const generateReceipt = (
-    order: Order, 
+    order: Order,
     paymentProof?: PaymentProof,
     merchantPubkey?: string
   ): EReceipt => {
-    const items: ReceiptItem[] = order.items.map(item => ({
+    const items: ReceiptItem[] = order.items.map((item) => ({
       name: item.product.name,
       quantity: item.quantity,
       unitPrice: item.price,
       total: item.total,
       variant: item.selectedVariant?.name,
-      modifiers: item.selectedModifiers?.map(m => m.name),
+      modifiers: item.selectedModifiers?.map((m) => m.name),
       notes: item.notes,
     }));
 
@@ -105,12 +122,14 @@ export const useReceipt = () => {
     const tip = order.tip || 0;
 
     // Generate unique receipt ID
-    const receiptId = `RCP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const receiptId = `RCP-${Date.now()
+      .toString(36)
+      .toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
     const receipt: EReceipt = {
       id: receiptId,
       orderId: order.id,
-      merchantPubkey: merchantPubkey || '',
+      merchantPubkey: merchantPubkey || "",
       customerPubkey: order.customerPubkey,
       items,
       subtotal,
@@ -118,16 +137,16 @@ export const useReceipt = () => {
       tip,
       total: order.total,
       totalSats: order.totalSats,
-      currency: order.currency || 'LAK',
+      currency: order.currency || "LAK",
       paymentMethod: order.paymentMethod,
       paymentProof: paymentProof || {
         id: `proof_${Date.now()}`,
         orderId: order.id,
-        paymentHash: '',
-        preimage: '',
+        paymentHash: "",
+        preimage: "",
         amount: order.totalSats || 0,
         receivedAt: new Date().toISOString(),
-        method: order.paymentMethod || 'cash',
+        method: order.paymentMethod || "cash",
         isOffline: false,
       },
       createdAt: new Date().toISOString(),
@@ -136,17 +155,20 @@ export const useReceipt = () => {
     };
 
     lastReceipt.value = receipt;
-    
+
     // Store for e-bill access
     eBillStorage.set(receiptId, receipt);
-    
+
     return receipt;
   };
 
   // ============================================
   // Format Currency
   // ============================================
-  const formatAmount = (amount: number, currencyCode: CurrencyCode = 'LAK'): string => {
+  const formatAmount = (
+    amount: number,
+    currencyCode: CurrencyCode = "LAK"
+  ): string => {
     return currency.format(amount, currencyCode);
   };
 
@@ -154,7 +176,18 @@ export const useReceipt = () => {
   // Generate E-Bill URL
   // ============================================
   const generateEBillUrl = (receiptId: string): string => {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    // Use configured base URL if available, otherwise auto-detect
+    const savedSettings = receiptSettings.settings.value;
+    let baseUrl = savedSettings.eBillBaseUrl?.trim() || "";
+
+    if (!baseUrl && typeof window !== "undefined") {
+      // Auto-detect: use current origin (works for localhost and network access)
+      baseUrl = window.location.origin;
+    }
+
+    // Remove trailing slash if present
+    baseUrl = baseUrl.replace(/\/$/, "");
+
     return `${baseUrl}/receipt/${receiptId}`;
   };
 
@@ -173,7 +206,7 @@ export const useReceipt = () => {
   const storeEBill = (receipt: EReceipt): void => {
     eBillStorage.set(receipt.id, receipt);
     // Also store in sessionStorage for page refresh
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
         sessionStorage.setItem(`ebill_${receipt.id}`, JSON.stringify(receipt));
       } catch {
@@ -189,7 +222,7 @@ export const useReceipt = () => {
     if (memReceipt) return memReceipt;
 
     // Try sessionStorage
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
         const stored = sessionStorage.getItem(`ebill_${receiptId}`);
         if (stored) {
@@ -210,23 +243,52 @@ export const useReceipt = () => {
   // ============================================
   const getPaymentMethodLabel = (method?: PaymentMethod | string): string => {
     const labels: Record<string, string> = {
-      lightning: '⚡ Lightning',
-      bolt12: '⚡ BOLT12',
-      lnurl: '⚡ LNURL',
-      cash: '💵 Cash',
-      bank_transfer: '🏦 Bank Transfer',
-      external: '📱 External',
-      qr_static: '📱 QR Code',
+      lightning: "⚡ Lightning",
+      bolt12: "⚡ BOLT12",
+      lnurl: "⚡ LNURL",
+      cash: "💵 Cash",
+      bank_transfer: "🏦 Bank Transfer",
+      external: "📱 External",
+      qr_static: "📱 QR Code",
     };
-    return labels[method || ''] || method || 'Other';
+    return labels[method || ""] || method || "Other";
+  };
+
+  // ============================================
+  // Generate QR Code as Data URL (Native, no external API)
+  // ============================================
+  const generateQRCodeDataUrl = async (
+    data: string,
+    size: number = 150
+  ): Promise<string> => {
+    try {
+      return await QRCode.toDataURL(data, {
+        width: size,
+        margin: 1,
+        color: {
+          dark: "#000000",
+          light: "#ffffff",
+        },
+      });
+    } catch (error) {
+      console.error("Failed to generate QR code:", error);
+      return "";
+    }
   };
 
   // ============================================
   // Generate HTML Receipt for Browser Print
   // ============================================
-  const generateHtmlReceipt = (receipt: EReceipt): string => {
-    const paperWidth = settings.value.paperWidth === '58mm' ? '58mm' : '80mm';
-    
+  const generateHtmlReceipt = async (receipt: EReceipt): Promise<string> => {
+    const paperWidth = settings.value.paperWidth === "58mm" ? "58mm" : "80mm";
+
+    // Generate QR code data URL if needed
+    let qrCodeDataUrl = "";
+    if (settings.value.showQrCode) {
+      const eBillUrl = generateEBillUrl(receipt.id);
+      qrCodeDataUrl = await generateQRCodeDataUrl(eBillUrl, 120);
+    }
+
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -335,10 +397,32 @@ export const useReceipt = () => {
 </head>
 <body>
   <div class="header">
-    <div class="logo">${settings.value.logoEmoji}</div>
+    ${
+      settings.value.logoUrl
+        ? `<div class="logo"><img src="${settings.value.logoUrl}" alt="Logo" style="max-height: 48px; max-width: 100%; object-fit: contain;"></div>`
+        : `<div class="logo">${settings.value.logoEmoji}</div>`
+    }
     <div class="merchant-name">${settings.value.merchantName}</div>
-    ${settings.value.merchantAddress ? `<div class="merchant-info">${settings.value.merchantAddress}</div>` : ''}
-    ${settings.value.merchantPhone ? `<div class="merchant-info">${settings.value.merchantPhone}</div>` : ''}
+    ${
+      settings.value.merchantAddress
+        ? `<div class="merchant-info">${settings.value.merchantAddress}</div>`
+        : ""
+    }
+    ${
+      settings.value.merchantPhone
+        ? `<div class="merchant-info">${settings.value.merchantPhone}</div>`
+        : ""
+    }
+    ${
+      settings.value.merchantEmail
+        ? `<div class="merchant-info">${settings.value.merchantEmail}</div>`
+        : ""
+    }
+    ${
+      settings.value.merchantTaxId
+        ? `<div class="merchant-info">Tax ID: ${settings.value.merchantTaxId}</div>`
+        : ""
+    }
   </div>
   
   <div class="order-info">
@@ -348,17 +432,32 @@ export const useReceipt = () => {
   </div>
   
   <div class="items">
-    ${receipt.items.map(item => `
+    ${receipt.items
+      .map(
+        (item) => `
       <div class="item">
         <div class="item-line">
           <span class="item-name">${item.quantity}× ${item.name}</span>
-          <span class="item-price">${formatAmount(item.total, receipt.currency)}</span>
+          <span class="item-price">${formatAmount(
+            item.total,
+            receipt.currency
+          )}</span>
         </div>
-        ${item.variant ? `<div class="item-details">└ ${item.variant}</div>` : ''}
-        ${item.modifiers?.length ? `<div class="item-details">+ ${item.modifiers.join(', ')}</div>` : ''}
-        ${item.notes ? `<div class="item-notes">📝 "${item.notes}"</div>` : ''}
+        ${
+          item.variant
+            ? `<div class="item-details">└ ${item.variant}</div>`
+            : ""
+        }
+        ${
+          item.modifiers?.length
+            ? `<div class="item-details">+ ${item.modifiers.join(", ")}</div>`
+            : ""
+        }
+        ${item.notes ? `<div class="item-notes">📝 "${item.notes}"</div>` : ""}
       </div>
-    `).join('')}
+    `
+      )
+      .join("")}
   </div>
   
   <div class="divider"></div>
@@ -368,18 +467,26 @@ export const useReceipt = () => {
       <span>Subtotal</span>
       <span>${formatAmount(receipt.subtotal, receipt.currency)}</span>
     </div>
-    ${receipt.tax > 0 ? `
+    ${
+      receipt.tax > 0
+        ? `
       <div class="total-line">
         <span>Tax</span>
         <span>${formatAmount(receipt.tax, receipt.currency)}</span>
       </div>
-    ` : ''}
-    ${receipt.tip && receipt.tip > 0 ? `
+    `
+        : ""
+    }
+    ${
+      receipt.tip && receipt.tip > 0
+        ? `
       <div class="total-line">
         <span>Tip</span>
         <span>${formatAmount(receipt.tip, receipt.currency)}</span>
       </div>
-    ` : ''}
+    `
+        : ""
+    }
   </div>
   
   <div class="grand-total">
@@ -387,32 +494,46 @@ export const useReceipt = () => {
       <span>TOTAL</span>
       <span>${formatAmount(receipt.total, receipt.currency)}</span>
     </div>
-    ${receipt.totalSats ? `
+    ${
+      receipt.totalSats
+        ? `
       <div class="total-line sats-total">
         <span>≈ Sats</span>
         <span>⚡ ${receipt.totalSats.toLocaleString()}</span>
       </div>
-    ` : ''}
+    `
+        : ""
+    }
   </div>
   
   <div class="payment-method">
     Paid via: ${getPaymentMethodLabel(receipt.paymentMethod)}
   </div>
   
-  ${receipt.paymentProof?.preimage && settings.value.showPaymentProof ? `
+  ${
+    receipt.paymentProof?.preimage && settings.value.showPaymentProof
+      ? `
     <div class="payment-verified">
       ⚡ Payment Verified<br>
-      <small>Hash: ${receipt.paymentProof.paymentHash?.slice(0, 20) || 'N/A'}...</small>
+      <small>Hash: ${
+        receipt.paymentProof.paymentHash?.slice(0, 20) || "N/A"
+      }...</small>
     </div>
-  ` : ''}
+  `
+      : ""
+  }
   
-  ${settings.value.showQrCode ? `
+  ${
+    settings.value.showQrCode && qrCodeDataUrl
+      ? `
     <div class="qr-section">
       <div class="qr-label">📱 E-Bill</div>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(generateEBillUrl(receipt.id))}" alt="E-Bill QR">
+      <img src="${qrCodeDataUrl}" alt="E-Bill QR" style="width: 120px; height: 120px;" decoding="sync" loading="eager">
       <div class="qr-label">Scan for digital receipt</div>
     </div>
-  ` : ''}
+  `
+      : ""
+  }
   
   <div class="footer">
     <div class="footer-message">${settings.value.footerMessage}</div>
@@ -425,25 +546,65 @@ export const useReceipt = () => {
   // ============================================
   // Print Receipt (Browser)
   // ============================================
-  const printReceipt = (receipt: EReceipt): void => {
+  const printReceipt = async (receipt: EReceipt): Promise<void> => {
     isPrinting.value = true;
-    
-    const html = generateHtmlReceipt(receipt);
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-      
-      // Wait for images to load then print
-      printWindow.onload = () => {
-        setTimeout(() => {
+
+    try {
+      const html = await generateHtmlReceipt(receipt);
+      const printWindow = window.open("", "_blank", "width=400,height=600");
+
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        // Wait for all images to fully load before printing
+        const waitForImages = () => {
+          return new Promise<void>((resolve) => {
+            const images = printWindow.document.querySelectorAll("img");
+
+            if (images.length === 0) {
+              // No images, resolve immediately
+              resolve();
+              return;
+            }
+
+            let loaded = 0;
+            const checkAllLoaded = () => {
+              loaded++;
+              if (loaded >= images.length) {
+                resolve();
+              }
+            };
+
+            images.forEach((img) => {
+              if (img.complete) {
+                checkAllLoaded();
+              } else {
+                img.onload = checkAllLoaded;
+                img.onerror = checkAllLoaded; // Don't block on error
+              }
+            });
+
+            // Safety timeout - don't wait forever
+            setTimeout(resolve, 3000);
+          });
+        };
+
+        // Wait for document ready + images + small buffer for rendering
+        printWindow.onload = async () => {
+          await waitForImages();
+          // Extra delay for browser to render QR
+          await new Promise((r) => setTimeout(r, 100));
           printWindow.print();
           isPrinting.value = false;
-        }, 500);
-      };
-    } else {
-      error.value = 'Could not open print window. Please allow popups.';
+        };
+      } else {
+        error.value = "Could not open print window. Please allow popups.";
+        isPrinting.value = false;
+      }
+    } catch (e) {
+      console.error("Print error:", e);
+      error.value = "Failed to generate receipt for printing.";
       isPrinting.value = false;
     }
   };
@@ -452,32 +613,34 @@ export const useReceipt = () => {
   // Generate Thermal Printer Receipt (ESC/POS text)
   // ============================================
   const generateThermalReceipt = (receipt: EReceipt): string => {
-    const width = settings.value.paperWidth === '58mm' ? 32 : 48;
-    const divider = '─'.repeat(width);
-    const doubleDivider = '═'.repeat(width);
-    
+    const width = settings.value.paperWidth === "58mm" ? 32 : 48;
+    const divider = "─".repeat(width);
+    const doubleDivider = "═".repeat(width);
+
     const center = (text: string) => {
       const padding = Math.max(0, Math.floor((width - text.length) / 2));
-      return ' '.repeat(padding) + text;
+      return " ".repeat(padding) + text;
     };
 
     const rightAlign = (left: string, right: string) => {
       const space = Math.max(1, width - left.length - right.length);
-      return left + ' '.repeat(space) + right;
+      return left + " ".repeat(space) + right;
     };
 
     const lines: string[] = [];
 
     // Header
-    lines.push('');
-    lines.push(center(settings.value.logoEmoji + ' ' + settings.value.merchantName));
+    lines.push("");
+    lines.push(
+      center(settings.value.logoEmoji + " " + settings.value.merchantName)
+    );
     if (settings.value.merchantAddress) {
       lines.push(center(settings.value.merchantAddress));
     }
     if (settings.value.merchantPhone) {
       lines.push(center(settings.value.merchantPhone));
     }
-    lines.push('');
+    lines.push("");
     lines.push(doubleDivider);
 
     // Order Info
@@ -487,46 +650,59 @@ export const useReceipt = () => {
     lines.push(divider);
 
     // Items
-    receipt.items.forEach(item => {
+    receipt.items.forEach((item) => {
       const itemTotal = formatAmount(item.total, receipt.currency);
       lines.push(`${item.quantity}x ${item.name}`);
       if (item.variant) lines.push(`   └ ${item.variant}`);
-      if (item.modifiers?.length) lines.push(`   + ${item.modifiers.join(', ')}`);
+      if (item.modifiers?.length)
+        lines.push(`   + ${item.modifiers.join(", ")}`);
       if (item.notes) lines.push(`   📝 ${item.notes}`);
-      lines.push(rightAlign('', itemTotal));
+      lines.push(rightAlign("", itemTotal));
     });
 
     lines.push(divider);
 
     // Totals
-    lines.push(rightAlign('Subtotal:', formatAmount(receipt.subtotal, receipt.currency)));
+    lines.push(
+      rightAlign("Subtotal:", formatAmount(receipt.subtotal, receipt.currency))
+    );
     if (receipt.tax > 0) {
-      lines.push(rightAlign('Tax:', formatAmount(receipt.tax, receipt.currency)));
+      lines.push(
+        rightAlign("Tax:", formatAmount(receipt.tax, receipt.currency))
+      );
     }
     if (receipt.tip && receipt.tip > 0) {
-      lines.push(rightAlign('Tip:', formatAmount(receipt.tip, receipt.currency)));
+      lines.push(
+        rightAlign("Tip:", formatAmount(receipt.tip, receipt.currency))
+      );
     }
 
     lines.push(doubleDivider);
-    lines.push(rightAlign('TOTAL:', formatAmount(receipt.total, receipt.currency)));
-    
+    lines.push(
+      rightAlign("TOTAL:", formatAmount(receipt.total, receipt.currency))
+    );
+
     if (receipt.totalSats && receipt.totalSats > 0) {
-      lines.push(rightAlign('≈ Sats:', `⚡ ${receipt.totalSats.toLocaleString()}`));
+      lines.push(
+        rightAlign("≈ Sats:", `⚡ ${receipt.totalSats.toLocaleString()}`)
+      );
     }
     lines.push(doubleDivider);
 
     // Payment Method
-    lines.push(center(`Paid via: ${getPaymentMethodLabel(receipt.paymentMethod)}`));
-    lines.push('');
+    lines.push(
+      center(`Paid via: ${getPaymentMethodLabel(receipt.paymentMethod)}`)
+    );
+    lines.push("");
 
     // Footer
     lines.push(divider);
     lines.push(center(settings.value.footerMessage));
-    lines.push(center('Powered by BitSpace POS ⚡'));
-    lines.push('');
-    lines.push('');
+    lines.push(center("Powered by BitSpace POS ⚡"));
+    lines.push("");
+    lines.push("");
 
-    return lines.join('\n');
+    return lines.join("\n");
   };
 
   // ============================================
@@ -538,8 +714,8 @@ export const useReceipt = () => {
 
     try {
       // Check for Web Serial API support
-      if (!('serial' in navigator)) {
-        console.log('Web Serial not supported, using browser print');
+      if (!("serial" in navigator)) {
+        console.log("Web Serial not supported, using browser print");
         printReceipt(receipt);
         return true;
       }
@@ -549,27 +725,27 @@ export const useReceipt = () => {
       await port.open({ baudRate: 9600 });
 
       const writer = port.writable?.getWriter();
-      if (!writer) throw new Error('Could not get writer');
+      if (!writer) throw new Error("Could not get writer");
 
       const encoder = new TextEncoder();
       const text = generateThermalReceipt(receipt);
-      
+
       // ESC/POS Commands
-      const ESC = 0x1B;
-      const GS = 0x1D;
-      
+      const ESC = 0x1b;
+      const GS = 0x1d;
+
       // Initialize printer
       await writer.write(new Uint8Array([ESC, 0x40]));
       await writer.write(new Uint8Array([ESC, 0x74, 0x10])); // UTF-8
       await writer.write(encoder.encode(text));
       await writer.write(new Uint8Array([GS, 0x56, 0x00])); // Cut paper
-      
+
       writer.releaseLock();
       await port.close();
-      
+
       return true;
     } catch (e) {
-      console.error('Thermal print error:', e);
+      console.error("Thermal print error:", e);
       printReceipt(receipt);
       return true;
     } finally {
@@ -581,7 +757,33 @@ export const useReceipt = () => {
   // Update Settings
   // ============================================
   const updateSettings = (newSettings: Partial<ReceiptSettings>) => {
-    settings.value = { ...settings.value, ...newSettings };
+    // Map legacy format to new settings format
+    if (newSettings.merchantName) {
+      receiptSettings.updateHeader({ businessName: newSettings.merchantName });
+    }
+    if (newSettings.merchantAddress) {
+      receiptSettings.updateHeader({ address: newSettings.merchantAddress });
+    }
+    if (newSettings.merchantPhone) {
+      receiptSettings.updateHeader({ phone: newSettings.merchantPhone });
+    }
+    if (newSettings.merchantTaxId) {
+      receiptSettings.updateHeader({ taxId: newSettings.merchantTaxId });
+    }
+    if (newSettings.footerMessage) {
+      receiptSettings.updateFooter({
+        thankYouMessage: newSettings.footerMessage,
+      });
+    }
+    if (newSettings.showQrCode !== undefined) {
+      receiptSettings.updateFooter({ showQrCode: newSettings.showQrCode });
+    }
+    if (newSettings.paperWidth) {
+      receiptSettings.updatePaper({ width: newSettings.paperWidth });
+    }
+    if (newSettings.logoUrl) {
+      receiptSettings.setLogo(newSettings.logoUrl);
+    }
   };
 
   return {
@@ -596,6 +798,7 @@ export const useReceipt = () => {
     generateReceipt,
     generateEBillUrl,
     generateEBillQrData,
+    generateQRCodeDataUrl,
     getEBill,
     storeEBill,
     retrieveEBill,

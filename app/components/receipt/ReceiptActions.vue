@@ -2,6 +2,7 @@
 <!-- 🧾 Post-Payment Receipt Options -->
 <script setup lang="ts">
 import type { Order, PaymentMethod } from "~/types";
+import QRCodeVue3 from "qrcode.vue";
 
 const props = defineProps<{
   order: Order;
@@ -22,7 +23,6 @@ const { t } = useI18n();
 const showPreview = ref(false);
 const showQRModal = ref(false);
 const eBillUrl = ref("");
-const eBillQR = ref("");
 const isPrinting = ref(false);
 const isSending = ref(false);
 const countdown = ref(10);
@@ -67,12 +67,13 @@ const handlePrint = async () => {
     // Store receipt first for e-bill access
     receipt.storeEBill(currentReceipt.value);
 
+    // Generate HTML with QR code (async)
+    const html = await receipt.generateHtmlReceipt(currentReceipt.value);
+
     // Try to print via browser
     const printWindow = window.open("", "_blank");
     if (printWindow) {
-      printWindow.document.write(
-        receipt.generateHtmlReceipt(currentReceipt.value)
-      );
+      printWindow.document.write(html);
       printWindow.document.close();
       printWindow.print();
     }
@@ -94,9 +95,7 @@ const handleEBill = () => {
 
   const url = receipt.generateEBillUrl(currentReceipt.value.id);
   eBillUrl.value = url;
-  eBillQR.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-    url
-  )}`;
+  // QR is now generated natively via component, no external API needed
   showQRModal.value = true;
 };
 
@@ -370,13 +369,14 @@ const paymentMethodDisplay = computed(() => {
             {{ t("receipt.scanDescription") }}
           </p>
 
-          <!-- QR Code -->
+          <!-- QR Code - Native generation for privacy -->
           <div class="bg-white p-4 rounded-xl inline-block shadow-lg mb-4">
-            <img
-              v-if="eBillQR"
-              :src="eBillQR"
-              alt="E-Bill QR Code"
-              class="w-48 h-48"
+            <QRCodeVue3
+              v-if="eBillUrl"
+              :value="eBillUrl"
+              :size="192"
+              level="M"
+              render-as="svg"
             />
           </div>
 

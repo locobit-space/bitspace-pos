@@ -1,8 +1,9 @@
 <!-- components/receipt/ReceiptPreview.vue -->
 <!-- 🧾 Receipt Preview Modal - Print & E-Bill Options -->
 <script setup lang="ts">
-import type { Order, PaymentProof } from '~/types';
-import type { EReceipt } from '~/composables/use-receipt';
+import type { Order, PaymentProof } from "~/types";
+import type { EReceipt } from "~/composables/use-receipt";
+import QRCodeVue3 from "qrcode.vue";
 
 const props = defineProps<{
   order: Order;
@@ -23,28 +24,35 @@ const { t } = useI18n();
 // State
 const currentReceipt = ref<EReceipt | null>(null);
 const showEBillQr = ref(false);
-const eBillUrl = ref('');
+const eBillUrl = ref("");
 
 // Generate receipt when opened
-watch(() => props.open, (isOpen) => {
-  if (isOpen && props.order) {
-    currentReceipt.value = receipt.generateReceipt(props.order, props.paymentProof);
-    eBillUrl.value = receipt.generateEBillUrl(currentReceipt.value.id);
-    receipt.storeEBill(currentReceipt.value);
-  }
-}, { immediate: true });
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen && props.order) {
+      currentReceipt.value = receipt.generateReceipt(
+        props.order,
+        props.paymentProof
+      );
+      eBillUrl.value = receipt.generateEBillUrl(currentReceipt.value.id);
+      receipt.storeEBill(currentReceipt.value);
+    }
+  },
+  { immediate: true }
+);
 
 // Actions
 const handlePrint = () => {
   if (!currentReceipt.value) return;
   receipt.printReceipt(currentReceipt.value);
-  emit('printed');
+  emit("printed");
 };
 
 const handleThermalPrint = async () => {
   if (!currentReceipt.value) return;
   await receipt.printToThermalPrinter(currentReceipt.value);
-  emit('printed');
+  emit("printed");
 };
 
 const showEBill = () => {
@@ -57,7 +65,7 @@ const copyEBillLink = async () => {
 
 const close = () => {
   showEBillQr.value = false;
-  emit('close');
+  emit("close");
 };
 </script>
 
@@ -67,9 +75,11 @@ const close = () => {
       <div class="p-6 bg-white dark:bg-gray-900 max-w-lg">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2
+            class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
+          >
             <span class="text-2xl">🧾</span>
-            {{ t('receipt.title') || 'Receipt' }}
+            {{ t("receipt.title") || "Receipt" }}
           </h2>
           <UButton
             icon="i-heroicons-x-mark"
@@ -81,22 +91,37 @@ const close = () => {
         </div>
 
         <!-- Receipt Preview Card -->
-        <div v-if="currentReceipt" class="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mb-6 font-mono text-sm">
+        <div
+          v-if="currentReceipt"
+          class="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mb-6 font-mono text-sm"
+        >
           <!-- Header -->
-          <div class="text-center mb-4 pb-4 border-b border-dashed border-gray-300 dark:border-gray-700">
-            <div class="text-3xl mb-2">{{ receipt.settings.value.logoEmoji }}</div>
-            <div class="font-bold text-lg">{{ receipt.settings.value.merchantName }}</div>
-            <div class="text-xs text-gray-500">{{ receipt.settings.value.merchantAddress }}</div>
+          <div
+            class="text-center mb-4 pb-4 border-b border-dashed border-gray-300 dark:border-gray-700"
+          >
+            <div class="text-3xl mb-2">
+              {{ receipt.settings.value.logoEmoji }}
+            </div>
+            <div class="font-bold text-lg">
+              {{ receipt.settings.value.merchantName }}
+            </div>
+            <div class="text-xs text-gray-500">
+              {{ receipt.settings.value.merchantAddress }}
+            </div>
           </div>
 
           <!-- Order Info -->
-          <div class="text-xs text-gray-500 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700">
+          <div
+            class="text-xs text-gray-500 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700"
+          >
             <div>Order: {{ currentReceipt.orderId }}</div>
             <div>{{ new Date(currentReceipt.createdAt).toLocaleString() }}</div>
           </div>
 
           <!-- Items -->
-          <div class="space-y-2 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700">
+          <div
+            class="space-y-2 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700"
+          >
             <div
               v-for="(item, index) in currentReceipt.items"
               :key="index"
@@ -104,9 +129,13 @@ const close = () => {
             >
               <div class="flex-1">
                 <span>{{ item.quantity }}× {{ item.name }}</span>
-                <div v-if="item.variant" class="text-xs text-gray-500 pl-3">└ {{ item.variant }}</div>
+                <div v-if="item.variant" class="text-xs text-gray-500 pl-3">
+                  └ {{ item.variant }}
+                </div>
               </div>
-              <span>{{ currency.format(item.total, currentReceipt.currency) }}</span>
+              <span>{{
+                currency.format(item.total, currentReceipt.currency)
+              }}</span>
             </div>
           </div>
 
@@ -114,40 +143,71 @@ const close = () => {
           <div class="space-y-1">
             <div class="flex justify-between text-gray-500">
               <span>Subtotal</span>
-              <span>{{ currency.format(currentReceipt.subtotal, currentReceipt.currency) }}</span>
+              <span>{{
+                currency.format(
+                  currentReceipt.subtotal,
+                  currentReceipt.currency
+                )
+              }}</span>
             </div>
-            <div v-if="currentReceipt.tip" class="flex justify-between text-gray-500">
+            <div
+              v-if="currentReceipt.tip"
+              class="flex justify-between text-gray-500"
+            >
               <span>Tip</span>
-              <span>{{ currency.format(currentReceipt.tip, currentReceipt.currency) }}</span>
+              <span>{{
+                currency.format(currentReceipt.tip, currentReceipt.currency)
+              }}</span>
             </div>
-            <div class="flex justify-between font-bold text-lg pt-2 border-t border-double border-gray-400 dark:border-gray-600">
+            <div
+              class="flex justify-between font-bold text-lg pt-2 border-t border-double border-gray-400 dark:border-gray-600"
+            >
               <span>TOTAL</span>
-              <span>{{ currency.format(currentReceipt.total, currentReceipt.currency) }}</span>
+              <span>{{
+                currency.format(currentReceipt.total, currentReceipt.currency)
+              }}</span>
             </div>
-            <div v-if="currentReceipt.totalSats" class="flex justify-between text-amber-600 dark:text-amber-400">
+            <div
+              v-if="currentReceipt.totalSats"
+              class="flex justify-between text-amber-600 dark:text-amber-400"
+            >
               <span>≈ Sats</span>
               <span>⚡ {{ currentReceipt.totalSats.toLocaleString() }}</span>
             </div>
           </div>
 
           <!-- Payment Method -->
-          <div class="text-center mt-4 pt-3 border-t border-dashed border-gray-300 dark:border-gray-700 text-xs text-gray-500">
-            Paid via: {{ receipt.getPaymentMethodLabel(currentReceipt.paymentMethod) }}
+          <div
+            class="text-center mt-4 pt-3 border-t border-dashed border-gray-300 dark:border-gray-700 text-xs text-gray-500"
+          >
+            Paid via:
+            {{ receipt.getPaymentMethodLabel(currentReceipt.paymentMethod) }}
           </div>
         </div>
 
         <!-- E-Bill QR Display -->
         <Transition name="fade">
-          <div v-if="showEBillQr" class="mb-6 p-6 bg-white dark:bg-gray-800 rounded-2xl text-center border border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">📱 E-Bill QR Code</h3>
+          <div
+            v-if="showEBillQr"
+            class="mb-6 p-6 bg-white dark:bg-gray-800 rounded-2xl text-center border border-gray-200 dark:border-gray-700"
+          >
+            <h3
+              class="text-lg font-semibold mb-4 text-gray-900 dark:text-white"
+            >
+              📱 E-Bill QR Code
+            </h3>
             <div class="bg-white p-4 rounded-xl inline-block mb-4">
-              <img
-                :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(eBillUrl)}`"
-                alt="E-Bill QR"
-                class="w-48 h-48"
-              >
+              <!-- Native QR Code - No external API for privacy -->
+              <QRCodeVue3
+                :value="eBillUrl"
+                :size="192"
+                level="M"
+                render-as="svg"
+              />
             </div>
-            <p class="text-sm text-gray-500 mb-3">Customer can scan to view receipt on their phone</p>
+            <p class="text-sm text-gray-500 mb-3">
+              Customer can scan to view receipt on their phone
+            </p>
             <div class="flex justify-center gap-2">
               <UButton
                 color="neutral"
@@ -174,9 +234,9 @@ const close = () => {
               class="flex-1"
               @click="handlePrint"
             >
-              {{ t('receipt.print') || 'Print Receipt' }}
+              {{ t("receipt.print") || "Print Receipt" }}
             </UButton>
-            
+
             <UButton
               color="neutral"
               variant="outline"
@@ -185,7 +245,7 @@ const close = () => {
               class="flex-1"
               @click="showEBill"
             >
-              {{ t('receipt.eBill') || 'E-Bill' }}
+              {{ t("receipt.eBill") || "E-Bill" }}
             </UButton>
           </div>
 
@@ -202,14 +262,9 @@ const close = () => {
                 <span>POS Printer</span>
               </span>
             </UButton>
-            
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="md"
-              @click="close"
-            >
-              {{ t('receipt.noReceipt') || 'No Receipt' }}
+
+            <UButton color="neutral" variant="ghost" size="md" @click="close">
+              {{ t("receipt.noReceipt") || "No Receipt" }}
             </UButton>
           </div>
         </div>

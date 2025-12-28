@@ -61,6 +61,7 @@
     "walkInCustomer": "Walk-in Customer",
     "paymentHash": "Payment Hash",
     "preimage": "Preimage",
-    "history": "Order History"
+    "history": "Order History",
+    "orderId": "Order ID"
   }
 }

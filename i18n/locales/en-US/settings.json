@@ -540,7 +540,18 @@
         "title": "Logo Settings",
         "upload": "Upload Logo",
         "remove": "Remove",
-        "showOnReceipt": "Show logo on receipt"
+        "showOnReceipt": "Show logo on receipt",
+        "storageType": "Storage Type",
+        "storageLocal": "Local Storage",
+        "storageLocalDesc": "Store logo as base64 in browser (offline-capable)",
+        "storageCloudinary": "Cloudinary",
+        "storageCloudinaryDesc": "Upload to cloud for better performance",
+        "uploading": "Uploading...",
+        "uploadSuccess": "Logo uploaded to Cloudinary",
+        "uploadFailed": "Failed to upload logo",
+        "cloudinaryNotConfigured": "Please configure Cloudinary in Settings → Integrations first",
+        "dragDrop": "Drag and drop or click to upload",
+        "maxSize": "Max file size: 2MB"
       },
       "header": {
         "title": "Header Settings",
@@ -580,7 +591,10 @@
         "showBarcode": "Show Barcode",
         "showSocialMedia": "Show Social Media",
         "showWebsite": "Show Website URL",
-        "websiteUrl": "Website URL"
+        "websiteUrl": "Website URL",
+        "eBillBaseUrl": "E-Bill URL (for QR scanning)",
+        "eBillBaseUrlPlaceholder": "http://192.168.1.100:3000",
+        "eBillBaseUrlHint": "Leave empty to auto-detect. Set to your LAN IP for phone scanning (e.g., http://192.168.1.100:3000)"
       },
       "paper": {
         "title": "Paper & Print Settings",
