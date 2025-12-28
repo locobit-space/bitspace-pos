@@ -164,7 +164,7 @@ const stats = computed(() => {
     (o) => new Date(o.date) >= today
   );
 
-  const completedToday = todayOrders.filter(o => o.status === 'completed');
+  const completedToday = todayOrders.filter((o) => o.status === "completed");
 
   return {
     total: ordersStore.orders.value.length,
@@ -177,9 +177,12 @@ const stats = computed(() => {
 // Status badge styles
 const getStatusStyle = (status: string) => {
   const styles: Record<string, string> = {
-    pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    processing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    pending:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    processing:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    completed:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
     cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
     refunded: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   };
@@ -229,7 +232,7 @@ const toggleSelectAll = () => {
     selectedOrders.value = new Set();
     selectAll.value = false;
   } else {
-    selectedOrders.value = new Set(paginatedOrders.value.map(o => o.id));
+    selectedOrders.value = new Set(paginatedOrders.value.map((o) => o.id));
     selectAll.value = true;
   }
 };
@@ -293,7 +296,7 @@ const bulkDelete = async () => {
 
 const bulkExport = () => {
   const selectedData = filteredOrders.value
-    .filter(o => selectedOrders.value.has(o.id))
+    .filter((o) => selectedOrders.value.has(o.id))
     .map((order) => ({
       "Order ID": order.id,
       Date: formatDate(order.date),
@@ -309,7 +312,10 @@ const bulkExport = () => {
   const ws = XLSX.utils.json_to_sheet(selectedData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Orders");
-  XLSX.writeFile(wb, `Orders_Selected_${new Date().toISOString().split("T")[0]}.xlsx`);
+  XLSX.writeFile(
+    wb,
+    `Orders_Selected_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
 
   toast.add({
     title: "Export Complete",
@@ -368,86 +374,142 @@ onMounted(async () => {
 <template>
   <div>
     <!-- Header -->
-    <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+    <div
+      class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10"
+    >
       <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div
+          class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+        >
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ t('orders.title') || 'Orders' }}
+              {{ t("orders.title") || "Orders" }}
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {{ t('orders.description') || 'Manage all your orders' }}
+              {{ t("orders.description") || "Manage all your orders" }}
             </p>
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
             <!-- Sync Status -->
-            <UButton v-if="ordersStore.syncPending.value > 0" icon="i-heroicons-arrow-path" color="amber" variant="soft"
-              size="sm" :loading="ordersStore.isLoading.value" @click="handleSync">
+            <UButton
+              v-if="ordersStore.syncPending.value > 0"
+              icon="i-heroicons-arrow-path"
+              color="amber"
+              variant="soft"
+              size="sm"
+              :loading="ordersStore.isLoading.value"
+              @click="handleSync"
+            >
               {{ ordersStore.syncPending.value }} pending
             </UButton>
 
             <!-- Export Button -->
-            <UButton icon="i-heroicons-arrow-down-tray" variant="outline" color="gray" @click="exportAllOrders">
-              {{ t('common.export') || 'Export' }}
+            <UButton
+              icon="i-heroicons-arrow-down-tray"
+              variant="outline"
+              color="gray"
+              @click="exportAllOrders"
+            >
+              {{ t("common.export") || "Export" }}
             </UButton>
 
             <!-- Create Order Button -->
-            <UButton v-if="canCreateOrders" icon="i-heroicons-plus" color="primary" to="/orders/create">
-              {{ t('orders.newOrder') || 'New Order' }}
+            <UButton
+              v-if="canCreateOrders"
+              icon="i-heroicons-plus"
+              color="primary"
+              to="/orders/create"
+            >
+              {{ t("orders.newOrder") || "New Order" }}
             </UButton>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="max-w-7xl mx-auto py-6 space-y-6">
+    <div class="py-6 space-y-6">
       <!-- Stats Cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 px-4 gap-4">
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4"
+        >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <UIcon name="i-heroicons-clipboard-document-list" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div
+              class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-clipboard-document-list"
+                class="w-5 h-5 text-blue-600 dark:text-blue-400"
+              />
             </div>
             <div>
-              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ stats.total }}
+              </p>
               <p class="text-xs text-gray-500">Total Orders</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4"
+        >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <UIcon name="i-heroicons-calendar-days" class="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div
+              class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-calendar-days"
+                class="w-5 h-5 text-green-600 dark:text-green-400"
+              />
             </div>
             <div>
-              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.today }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ stats.today }}
+              </p>
               <p class="text-xs text-gray-500">Today's Orders</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4"
+        >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <UIcon name="i-heroicons-banknotes" class="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <div
+              class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-banknotes"
+                class="w-5 h-5 text-amber-600 dark:text-amber-400"
+              />
             </div>
             <div>
-              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ currency.format(stats.todayRevenue, 'LAK')
-                }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ currency.format(stats.todayRevenue, "LAK") }}
+              </p>
               <p class="text-xs text-gray-500">Today's Revenue</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4"
+        >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-              <UIcon name="i-heroicons-clock" class="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <div
+              class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-clock"
+                class="w-5 h-5 text-yellow-600 dark:text-yellow-400"
+              />
             </div>
             <div>
-              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.pending }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ stats.pending }}
+              </p>
               <p class="text-xs text-gray-500">Pending</p>
             </div>
           </div>
@@ -456,21 +518,43 @@ onMounted(async () => {
 
       <!-- Filters Bar -->
       <div class="px-4">
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4"
+        >
           <div class="flex flex-col lg:flex-row gap-4">
             <!-- Search -->
             <div class="flex-1">
-              <UInput v-model="searchQuery" icon="i-heroicons-magnifying-glass"
-                :placeholder="t('common.search') || 'Search orders...'" size="lg" />
+              <UInput
+                v-model="searchQuery"
+                icon="i-heroicons-magnifying-glass"
+                :placeholder="t('common.search') || 'Search orders...'"
+                size="lg"
+              />
             </div>
 
             <!-- Filters -->
             <div class="flex gap-3 flex-wrap">
-              <USelect v-model="dateFilter" :items="dateFilterOptions" value-key="value" label-key="label"
-                class="w-36" />
-              <USelect v-model="statusFilter" :items="statusOptions" value-key="value" label-key="label" class="w-36" />
-              <UButton icon="i-heroicons-arrow-path" variant="soft" color="gray" :loading="ordersStore.isLoading.value"
-                @click="ordersStore.init()">
+              <USelect
+                v-model="dateFilter"
+                :items="dateFilterOptions"
+                value-key="value"
+                label-key="label"
+                class="w-36"
+              />
+              <USelect
+                v-model="statusFilter"
+                :items="statusOptions"
+                value-key="value"
+                label-key="label"
+                class="w-36"
+              />
+              <UButton
+                icon="i-heroicons-arrow-path"
+                variant="soft"
+                color="gray"
+                :loading="ordersStore.isLoading.value"
+                @click="ordersStore.init()"
+              >
                 Refresh
               </UButton>
             </div>
@@ -479,30 +563,62 @@ onMounted(async () => {
       </div>
 
       <!-- Bulk Actions Bar (appears when items selected) -->
-      <Transition enter-active-class="transition-all duration-200" leave-active-class="transition-all duration-200"
-        enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0"
-        leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+      <Transition
+        enter-active-class="transition-all duration-200"
+        leave-active-class="transition-all duration-200"
+        enter-from-class="opacity-0 -translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 -translate-y-2"
+      >
         <div v-if="selectedOrders.size > 0" class="px-4">
           <div
-            class="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex items-center justify-between">
+            class="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex items-center justify-between"
+          >
             <div class="flex items-center gap-3">
               <span class="font-medium text-primary-700 dark:text-primary-300">
                 {{ selectedOrders.size }} orders selected
               </span>
             </div>
             <div class="flex items-center gap-2">
-              <UButton icon="i-heroicons-check-circle" variant="soft" color="green" size="sm" @click="bulkMarkAsPaid">
+              <UButton
+                icon="i-heroicons-check-circle"
+                variant="soft"
+                color="green"
+                size="sm"
+                @click="bulkMarkAsPaid"
+              >
                 Mark Paid
               </UButton>
-              <UButton icon="i-heroicons-arrow-down-tray" variant="soft" color="gray" size="sm" @click="bulkExport">
+              <UButton
+                icon="i-heroicons-arrow-down-tray"
+                variant="soft"
+                color="gray"
+                size="sm"
+                @click="bulkExport"
+              >
                 Export
               </UButton>
-              <UButton v-if="canVoidOrders" icon="i-heroicons-trash" variant="soft" color="red" size="sm"
-                @click="bulkDelete">
+              <UButton
+                v-if="canVoidOrders"
+                icon="i-heroicons-trash"
+                variant="soft"
+                color="red"
+                size="sm"
+                @click="bulkDelete"
+              >
                 Delete
               </UButton>
-              <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" size="sm"
-                @click="selectedOrders = new Set(); selectAll = false">
+              <UButton
+                icon="i-heroicons-x-mark"
+                variant="ghost"
+                color="gray"
+                size="sm"
+                @click="
+                  selectedOrders = new Set();
+                  selectAll = false;
+                "
+              >
                 Clear
               </UButton>
             </div>
@@ -510,115 +626,194 @@ onMounted(async () => {
         </div>
       </Transition>
 
-      <!-- Loading State -->
-      <div v-if="ordersStore.isLoading.value" class="flex justify-center py-16">
+      <!-- Loading State (initial load only) -->
+      <div
+        v-if="
+          ordersStore.isLoading.value && ordersStore.orders.value.length === 0
+        "
+        class="flex justify-center py-16"
+      >
         <div class="text-center">
-          <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary-500 mb-4" />
+          <UIcon
+            name="i-heroicons-arrow-path"
+            class="w-10 h-10 animate-spin text-primary-500 mb-4"
+          />
           <p class="text-gray-500">Loading orders...</p>
         </div>
       </div>
 
+      <!-- Syncing Indicator (background sync) -->
+      <div v-if="ordersStore.isSyncing?.value" class="px-4 mb-4">
+        <div
+          class="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400"
+        >
+          <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
+          <span>Syncing with Nostr...</span>
+        </div>
+      </div>
+
       <!-- Empty State -->
-      <div v-else-if="filteredOrders.length === 0"
-        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-16 text-center">
+      <div
+        v-else-if="filteredOrders.length === 0"
+        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-16 text-center"
+      >
         <div class="text-6xl mb-4">📋</div>
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           No orders yet
         </h3>
         <p class="text-gray-500 mb-6 max-w-md mx-auto">
-          Create your first order to start tracking sales and managing your business.
+          Create your first order to start tracking sales and managing your
+          business.
         </p>
-        <UButton to="/orders/create" color="primary" size="lg" icon="i-heroicons-plus">
+        <UButton
+          to="/orders/create"
+          color="primary"
+          size="lg"
+          icon="i-heroicons-plus"
+        >
           Create First Order
         </UButton>
       </div>
 
       <!-- Orders Table -->
-      <div v-else class="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div
+        v-else
+        class="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 overflow-hidden"
+      >
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+              <tr
+                class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+              >
                 <!-- Select All Checkbox -->
                 <th class="py-3 px-4 w-12">
-                  <input type="checkbox" :checked="selectAll"
-                    class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
-                    @change="toggleSelectAll" />
+                  <UCheckbox
+                    :model-value="selectAll"
+                    @update:model-value="toggleSelectAll"
+                  />
                 </th>
                 <th
                   class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
-                  @click="toggleSort('id')">
+                  @click="toggleSort('id')"
+                >
                   <div class="flex items-center gap-1">
                     Order
-                    <UIcon v-if="sortKey === 'id'"
-                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                      class="w-4 h-4" />
+                    <UIcon
+                      v-if="sortKey === 'id'"
+                      :name="
+                        sortOrder === 'asc'
+                          ? 'i-heroicons-chevron-up'
+                          : 'i-heroicons-chevron-down'
+                      "
+                      class="w-4 h-4"
+                    />
                   </div>
                 </th>
                 <th
                   class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
-                  @click="toggleSort('date')">
+                  @click="toggleSort('date')"
+                >
                   <div class="flex items-center gap-1">
                     Date
-                    <UIcon v-if="sortKey === 'date'"
-                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                      class="w-4 h-4" />
+                    <UIcon
+                      v-if="sortKey === 'date'"
+                      :name="
+                        sortOrder === 'asc'
+                          ? 'i-heroicons-chevron-up'
+                          : 'i-heroicons-chevron-down'
+                      "
+                      class="w-4 h-4"
+                    />
                   </div>
                 </th>
                 <th
                   class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
-                  @click="toggleSort('customer')">
+                  @click="toggleSort('customer')"
+                >
                   <div class="flex items-center gap-1">
                     Customer
-                    <UIcon v-if="sortKey === 'customer'"
-                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                      class="w-4 h-4" />
+                    <UIcon
+                      v-if="sortKey === 'customer'"
+                      :name="
+                        sortOrder === 'asc'
+                          ? 'i-heroicons-chevron-up'
+                          : 'i-heroicons-chevron-down'
+                      "
+                      class="w-4 h-4"
+                    />
                   </div>
                 </th>
-                <th class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm">
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm"
+                >
                   Items
                 </th>
-                <th class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm">
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm"
+                >
                   Payment
                 </th>
                 <th
                   class="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
-                  @click="toggleSort('total')">
+                  @click="toggleSort('total')"
+                >
                   <div class="flex items-center gap-1 justify-end">
                     Total
-                    <UIcon v-if="sortKey === 'total'"
-                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                      class="w-4 h-4" />
+                    <UIcon
+                      v-if="sortKey === 'total'"
+                      :name="
+                        sortOrder === 'asc'
+                          ? 'i-heroicons-chevron-up'
+                          : 'i-heroicons-chevron-down'
+                      "
+                      class="w-4 h-4"
+                    />
                   </div>
                 </th>
                 <th
                   class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
-                  @click="toggleSort('status')">
+                  @click="toggleSort('status')"
+                >
                   <div class="flex items-center gap-1">
                     Status
-                    <UIcon v-if="sortKey === 'status'"
-                      :name="sortOrder === 'asc' ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                      class="w-4 h-4" />
+                    <UIcon
+                      v-if="sortKey === 'status'"
+                      :name="
+                        sortOrder === 'asc'
+                          ? 'i-heroicons-chevron-up'
+                          : 'i-heroicons-chevron-down'
+                      "
+                      class="w-4 h-4"
+                    />
                   </div>
                 </th>
                 <th class="py-3 px-4 w-24"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-              <tr v-for="order in paginatedOrders" :key="order.id"
+              <tr
+                v-for="order in paginatedOrders"
+                :key="order.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
-                :class="{ 'bg-primary-50 dark:bg-primary-900/10': isSelected(order.id) }"
-                @click="router.push(`/orders/${order.id}`)">
+                :class="{
+                  'bg-primary-50 dark:bg-primary-900/10': isSelected(order.id),
+                }"
+                @click="router.push(`/orders/${order.id}`)"
+              >
                 <!-- Checkbox -->
                 <td class="py-4 px-4" @click.stop>
-                  <input type="checkbox" :checked="isSelected(order.id)"
-                    class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
-                    @change="toggleOrderSelection(order.id)" />
+                  <UCheckbox
+                    :model-value="isSelected(order.id)"
+                    @update:model-value="toggleOrderSelection(order.id)"
+                  />
                 </td>
 
                 <!-- Order ID -->
                 <td class="py-4 px-4">
-                  <span class="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                  <span
+                    class="font-mono text-sm font-medium text-gray-900 dark:text-white"
+                  >
                     #{{ order.id.slice(-6).toUpperCase() }}
                   </span>
                 </td>
@@ -632,11 +827,16 @@ onMounted(async () => {
                 <td class="py-4 px-4">
                   <div class="flex items-center gap-3">
                     <div
-                      class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
-                      {{ (order.customerName || order.customer || 'W')[0].toUpperCase() }}
+                      class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300"
+                    >
+                      {{
+                        (order.customerName ||
+                          order.customer ||
+                          "W")[0].toUpperCase()
+                      }}
                     </div>
                     <span class="text-sm text-gray-900 dark:text-white">
-                      {{ order.customerName || order.customer || 'Walk-in' }}
+                      {{ order.customerName || order.customer || "Walk-in" }}
                     </span>
                   </div>
                 </td>
@@ -663,15 +863,20 @@ onMounted(async () => {
                   <div class="font-semibold text-gray-900 dark:text-white">
                     {{ currency.format(order.total, "LAK") }}
                   </div>
-                  <div v-if="order.totalSats" class="text-xs text-amber-600 dark:text-amber-400">
+                  <div
+                    v-if="order.totalSats"
+                    class="text-xs text-amber-600 dark:text-amber-400"
+                  >
                     ⚡ {{ order.totalSats.toLocaleString() }} sats
                   </div>
                 </td>
 
                 <!-- Status -->
                 <td class="py-4 px-4">
-                  <span :class="getStatusStyle(order.status)"
-                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium">
+                  <span
+                    :class="getStatusStyle(order.status)"
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  >
                     {{ t(`orders.status.${order.status}`) || order.status }}
                   </span>
                 </td>
@@ -679,12 +884,28 @@ onMounted(async () => {
                 <!-- Actions -->
                 <td class="py-4 px-4" @click.stop>
                   <div class="flex justify-end gap-1">
-                    <UButton icon="i-heroicons-eye" variant="ghost" color="gray" size="xs"
-                      :to="`/orders/${order.id}`" />
-                    <UButton icon="i-heroicons-printer" variant="ghost" color="gray" size="xs"
-                      :to="`/orders/${order.id}/print`" />
-                    <UButton v-if="canVoidOrders" icon="i-heroicons-trash" variant="ghost" color="red" size="xs"
-                      @click="deleteOrder(order.id)" />
+                    <UButton
+                      icon="i-heroicons-eye"
+                      variant="ghost"
+                      color="gray"
+                      size="xs"
+                      :to="`/orders/${order.id}`"
+                    />
+                    <UButton
+                      icon="i-heroicons-printer"
+                      variant="ghost"
+                      color="gray"
+                      size="xs"
+                      :to="`/orders/${order.id}/print`"
+                    />
+                    <UButton
+                      v-if="canVoidOrders"
+                      icon="i-heroicons-trash"
+                      variant="ghost"
+                      color="red"
+                      size="xs"
+                      @click="deleteOrder(order.id)"
+                    />
                   </div>
                 </td>
               </tr>
@@ -694,18 +915,30 @@ onMounted(async () => {
 
         <!-- Table Footer with Pagination -->
         <div
-          class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4"
+        >
           <span class="text-sm text-gray-500 dark:text-gray-400">
-            Showing {{ paginatedOrders.length }} of {{ filteredOrders.length }} orders
+            Showing {{ paginatedOrders.length }} of
+            {{ filteredOrders.length }} orders
           </span>
-          <UPagination v-model:page="currentPage" :items-per-page="itemsPerPage" :total="filteredOrders.length" />
+          <UPagination
+            v-model:page="currentPage"
+            :items-per-page="itemsPerPage"
+            :total="filteredOrders.length"
+          />
         </div>
       </div>
 
       <!-- Sync Info Footer -->
       <div class="text-center text-sm text-gray-400 dark:text-gray-500 py-4">
         📡 Orders synced with Nostr relays
-        <UBadge v-if="ordersStore.syncPending.value > 0" color="amber" variant="soft" size="xs" class="ml-2">
+        <UBadge
+          v-if="ordersStore.syncPending.value > 0"
+          color="amber"
+          variant="soft"
+          size="xs"
+          class="ml-2"
+        >
           {{ ordersStore.syncPending.value }} pending sync
         </UBadge>
       </div>

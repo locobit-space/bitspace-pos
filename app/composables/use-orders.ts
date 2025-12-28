@@ -15,10 +15,12 @@ import { db, type LocalOrder } from "~/db/db";
 // Singleton state
 const orders = ref<Order[]>([]);
 const isLoading = ref(false);
+const isSyncing = ref(false); // NEW: Background sync indicator
 const error = ref<string | null>(null);
 const syncPending = ref(0);
 const lastSyncAt = ref<number>(0);
 let backgroundSyncInterval: ReturnType<typeof setInterval> | null = null;
+let isInitialized = false; // Session cache flag
 
 export function useOrders() {
   const nostrData = useNostrData();
@@ -103,10 +105,19 @@ export function useOrders() {
   }
 
   /**
-   * Initialize - load from local first, then sync with Nostr
+   * Initialize - OPTIMIZED: Show local first, sync in background
+   * Uses session cache to skip re-init on page revisits
    */
   async function init(): Promise<void> {
-    isLoading.value = true;
+    // Session cache: If already initialized with data, just trigger background sync
+    if (isInitialized && orders.value.length > 0) {
+      console.log("[Orders] Session cache hit, triggering background sync");
+      if (offline.isOnline.value && !isSyncing.value) {
+        syncWithNostr({ batchSize: 50 }); // Fire and forget
+      }
+      return;
+    }
+
     error.value = null;
 
     try {
@@ -118,20 +129,35 @@ export function useOrders() {
         }
       }
 
-      // Load from local DB first (fast)
+      // STEP 1: Load from local DB first (fast) - UI can render immediately
+      isLoading.value = true;
       orders.value = await loadFromLocal();
+      isLoading.value = false; // UI renders NOW with local data
+
+      // Mark as initialized for session caching
+      isInitialized = true;
 
       // Check for pending orders from customer order pages (localStorage broadcast)
       await pickupPendingCustomerOrders();
 
-      // Then sync with Nostr if online
-      if (offline.isOnline.value) {
-        await syncWithNostr({ batchSize: 50 });
-      }
-
       // Count pending syncs
       const pending = await db.localOrders.where("syncedAt").equals(0).count();
       syncPending.value = pending;
+
+      // STEP 2: Sync with Nostr in BACKGROUND (non-blocking)
+      if (offline.isOnline.value) {
+        isSyncing.value = true;
+        syncWithNostr({ batchSize: 50 })
+          .then(() => {
+            console.log("[Orders] Background sync completed");
+          })
+          .catch((e) => {
+            console.warn("[Orders] Background sync failed:", e);
+          })
+          .finally(() => {
+            isSyncing.value = false;
+          });
+      }
 
       // Listen for new orders from customer tabs (same browser)
       if (import.meta.client) {
@@ -146,7 +172,6 @@ export function useOrders() {
       }
     } catch (e) {
       error.value = `Failed to initialize orders: ${e}`;
-    } finally {
       isLoading.value = false;
     }
   }
@@ -863,6 +888,7 @@ export function useOrders() {
     // State
     orders,
     isLoading,
+    isSyncing, // NEW: Background sync indicator
     error,
     syncPending,
 
