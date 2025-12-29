@@ -6,16 +6,57 @@ const notificationsStore = useNotifications();
 const { t } = useI18n();
 const router = useRouter();
 
-// We use local state for the slideover if it's not controlled globally,
-// but the store has `isNotificationCenterOpen`. Let's sync them.
+// Slideover state synced with store
 const isOpen = computed({
   get: () => notificationsStore.isNotificationCenterOpen.value,
   set: (value) => (notificationsStore.isNotificationCenterOpen.value = value),
 });
 
+// Filters
 const searchQuery = ref("");
 const activeTab = ref<"all" | "unread" | "system">("all");
+const priorityFilter = ref<"all" | "critical" | "high" | "medium" | "low">(
+  "all"
+);
+const showSettings = ref(false);
 
+// Notification preferences (stored in localStorage)
+const notificationPreferences = ref({
+  soundEnabled: true,
+  showPayments: true,
+  showOrders: true,
+  showStock: true,
+  showSystem: true,
+});
+
+// Load preferences on mount
+onMounted(() => {
+  const saved = localStorage.getItem("bnos_notification_preferences");
+  if (saved) {
+    try {
+      notificationPreferences.value = {
+        ...notificationPreferences.value,
+        ...JSON.parse(saved),
+      };
+    } catch {
+      /* ignore */
+    }
+  }
+});
+
+// Save preferences when changed
+watch(
+  notificationPreferences,
+  (newVal) => {
+    localStorage.setItem(
+      "bnos_notification_preferences",
+      JSON.stringify(newVal)
+    );
+  },
+  { deep: true }
+);
+
+// Filtered notifications
 const filteredNotifications = computed(() => {
   let list = notificationsStore.notifications.value;
 
@@ -26,6 +67,11 @@ const filteredNotifications = computed(() => {
     list = list.filter(
       (n) => n.type === "system_update" || n.type === "system"
     );
+  }
+
+  // Filter by priority
+  if (priorityFilter.value !== "all") {
+    list = list.filter((n) => n.priority === priorityFilter.value);
   }
 
   // Filter by search
@@ -41,6 +87,59 @@ const filteredNotifications = computed(() => {
   return list;
 });
 
+// Group notifications by date
+const groupedNotifications = computed(() => {
+  const groups: { label: string; notifications: POSNotification[] }[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const thisWeek = new Date(today);
+  thisWeek.setDate(thisWeek.getDate() - 7);
+
+  const todayList: POSNotification[] = [];
+  const yesterdayList: POSNotification[] = [];
+  const thisWeekList: POSNotification[] = [];
+  const olderList: POSNotification[] = [];
+
+  for (const n of filteredNotifications.value) {
+    const date = new Date(n.createdAt);
+    if (date >= today) {
+      todayList.push(n);
+    } else if (date >= yesterday) {
+      yesterdayList.push(n);
+    } else if (date >= thisWeek) {
+      thisWeekList.push(n);
+    } else {
+      olderList.push(n);
+    }
+  }
+
+  if (todayList.length)
+    groups.push({
+      label: t("notifications.today", "Today"),
+      notifications: todayList,
+    });
+  if (yesterdayList.length)
+    groups.push({
+      label: t("notifications.yesterday", "Yesterday"),
+      notifications: yesterdayList,
+    });
+  if (thisWeekList.length)
+    groups.push({
+      label: t("notifications.thisWeek", "This Week"),
+      notifications: thisWeekList,
+    });
+  if (olderList.length)
+    groups.push({
+      label: t("notifications.older", "Older"),
+      notifications: olderList,
+    });
+
+  return groups;
+});
+
+// Counts
 const unreadCount = computed(() => {
   return notificationsStore.notifications.value.filter(
     (n) => !n.read && n.type !== "system_update"
@@ -53,57 +152,71 @@ const systemUnreadCount = computed(() => {
   ).length;
 });
 
-function getIcon(type: string) {
-  switch (type) {
-    case "payment":
-      return "i-heroicons-bolt";
-    case "order":
-      return "i-heroicons-shopping-bag";
-    case "stock":
-      return "i-heroicons-archive-box";
-    case "loyalty":
-      return "i-heroicons-star";
-    case "ai_insight":
-      return "i-heroicons-sparkles";
-    case "alert":
-      return "i-heroicons-exclamation-triangle";
-    case "system":
-      return "i-heroicons-cog-6-tooth";
-    case "system_update":
-      return "i-heroicons-megaphone";
-    default:
-      return "i-heroicons-bell";
+const totalUnread = computed(() => notificationsStore.unreadCount.value);
+
+// Has new notification animation
+const hasNewNotification = ref(false);
+watch(totalUnread, (newVal, oldVal) => {
+  if (newVal > oldVal) {
+    hasNewNotification.value = true;
+    setTimeout(() => {
+      hasNewNotification.value = false;
+    }, 2000);
   }
+});
+
+// Icon mapping
+function getIcon(type: string) {
+  const icons: Record<string, string> = {
+    payment: "i-heroicons-bolt",
+    order: "i-heroicons-shopping-bag",
+    stock: "i-heroicons-archive-box",
+    loyalty: "i-heroicons-star",
+    ai_insight: "i-heroicons-sparkles",
+    alert: "i-heroicons-exclamation-triangle",
+    system: "i-heroicons-cog-6-tooth",
+    system_update: "i-heroicons-megaphone",
+  };
+  return icons[type] || "i-heroicons-bell";
 }
 
+// Color mapping
 function getColor(type: string, priority?: NotificationPriority) {
   if (priority === "critical")
     return "text-red-500 bg-red-50 dark:bg-red-900/20";
   if (priority === "high")
     return "text-orange-500 bg-orange-50 dark:bg-orange-900/20";
 
-  switch (type) {
-    case "payment":
-      return "text-green-500 bg-green-50 dark:bg-green-900/20";
-    case "order":
-      return "text-blue-500 bg-blue-50 dark:bg-blue-900/20";
-    case "stock":
-      return "text-amber-500 bg-amber-50 dark:bg-amber-900/20";
-    case "loyalty":
-      return "text-purple-500 bg-purple-50 dark:bg-purple-900/20";
-    case "ai_insight":
-      return "text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20";
-    case "alert":
-      return "text-red-500 bg-red-50 dark:bg-red-900/20";
-    case "system":
-      return "text-gray-500 bg-gray-50 dark:bg-gray-900/20";
-    case "system_update":
-      return "text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20";
+  const colors: Record<string, string> = {
+    payment: "text-green-500 bg-green-50 dark:bg-green-900/20",
+    order: "text-blue-500 bg-blue-50 dark:bg-blue-900/20",
+    stock: "text-amber-500 bg-amber-50 dark:bg-amber-900/20",
+    loyalty: "text-purple-500 bg-purple-50 dark:bg-purple-900/20",
+    ai_insight: "text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20",
+    alert: "text-red-500 bg-red-50 dark:bg-red-900/20",
+    system: "text-gray-500 bg-gray-50 dark:bg-gray-900/20",
+    system_update: "text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20",
+  };
+  return colors[type] || "text-gray-500 bg-gray-50 dark:bg-gray-900/20";
+}
+
+// Priority badge color
+function getPriorityColor(priority?: NotificationPriority) {
+  switch (priority) {
+    case "critical":
+      return "red";
+    case "high":
+      return "orange";
+    case "medium":
+      return "yellow";
+    case "low":
+      return "gray";
     default:
-      return "text-gray-500 bg-gray-50 dark:bg-gray-900/20";
+      return "gray";
   }
 }
 
+// Actions
 function markAsRead(id: string) {
   notificationsStore.markAsRead(id);
 }
@@ -122,80 +235,182 @@ function deleteNotification(id: string) {
 
 function handleNotificationClick(notification: POSNotification) {
   markAsRead(notification.id);
-  // Close slideover on click if mobile? Or maybe keep open.
-  // If it has a link, we navigate.
   if (notification.actionUrl) {
     router.push(notification.actionUrl);
     isOpen.value = false;
   }
 }
 
+// Time formatting
 const formatTime = (isoString: string) => {
   try {
     const date = new Date(isoString);
     const now = new Date();
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
+    if (diff < 60) return t("common.justNow");
+    if (diff < 3600) {
+      const n = Math.floor(diff / 60);
+      return `${n}m ago`;
+    }
+    if (diff < 86400) {
+      const n = Math.floor(diff / 3600);
+      return `${n}h ago`;
+    }
+    const n = Math.floor(diff / 86400);
+    return `${n}d ago`;
   } catch {
     return "";
   }
 };
+
+// Tab labels with counts
+const tabs = computed(() => [
+  {
+    key: "all" as const,
+    label: t("common.all", "All"),
+    count: notificationsStore.notifications.value.length,
+  },
+  {
+    key: "unread" as const,
+    label: t("notifications.unread", "Unread"),
+    count: unreadCount.value,
+    dot: "red",
+  },
+  {
+    key: "system" as const,
+    label: t("notifications.system", "System"),
+    count: systemUnreadCount.value,
+    dot: "indigo",
+  },
+]);
+
+// Priority filter options
+const priorityOptions = [
+  { value: "all", label: t("common.all", "All") },
+  {
+    value: "critical",
+    label: t("notifications.critical", "Critical"),
+    color: "red",
+  },
+  { value: "high", label: t("notifications.high", "High"), color: "orange" },
+  {
+    value: "medium",
+    label: t("notifications.medium", "Medium"),
+    color: "yellow",
+  },
+  { value: "low", label: t("notifications.low", "Low"), color: "gray" },
+];
 </script>
 
 <template>
   <div>
     <div class="inline-block">
-      <!-- Trigger Button (Bell) -->
+      <!-- Trigger Button (Bell) with pulse animation -->
       <UButton
         variant="ghost"
         color="gray"
         class="relative"
+        :class="{ 'animate-pulse': hasNewNotification }"
         @click="isOpen = true"
       >
         <UIcon name="i-heroicons-bell" class="w-6 h-6" />
 
         <!-- Unread Badge -->
         <span
-          v-if="notificationsStore.unreadCount.value > 0"
-          class="absolute top-0 right-0 -mt-1 -mr-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-900"
+          v-if="totalUnread > 0"
+          class="absolute top-0 right-0 -mt-1 -mr-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-900 transition-transform"
+          :class="{ 'scale-110': hasNewNotification }"
         >
-          {{
-            notificationsStore.unreadCount.value > 99
-              ? "99+"
-              : notificationsStore.unreadCount.value
-          }}
+          {{ totalUnread > 99 ? "99+" : totalUnread }}
         </span>
       </UButton>
     </div>
+
     <!-- Slideover -->
     <USlideover
       v-model:open="isOpen"
-      title="Notifications"
-      description="Notifications"
+      :title="t('notifications.title', 'Notifications')"
+      :description="
+        t('notifications.description', 'View and manage your notifications')
+      "
     >
       <template #content>
         <div class="flex flex-col h-full bg-white dark:bg-gray-900">
           <!-- Header -->
           <div
-            class="px-4 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between z-10"
+            class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between"
           >
-            <h2
-              class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"
-            >
-              <UIcon name="i-heroicons-bell" class="w-5 h-5 text-gray-400" />
-              {{ t("notifications.title", "Notifications") }}
-            </h2>
-            <UButton
-              color="gray"
-              variant="ghost"
-              icon="i-heroicons-x-mark"
-              @click="isOpen = false"
-            />
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-bell" class="w-5 h-5 text-primary-500" />
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+                {{ t("notifications.title", "Notifications") }}
+              </h2>
+              <UBadge
+                v-if="totalUnread > 0"
+                size="xs"
+                color="red"
+                variant="solid"
+              >
+                {{ totalUnread }}
+              </UBadge>
+            </div>
+            <div class="flex items-center gap-1">
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-cog-6-tooth"
+                size="sm"
+                @click="showSettings = !showSettings"
+              />
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-x-mark"
+                @click="isOpen = false"
+              />
+            </div>
           </div>
+
+          <!-- Settings Panel (collapsible) -->
+          <Transition name="slide">
+            <div
+              v-if="showSettings"
+              class="p-4 bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 space-y-3"
+            >
+              <h3
+                class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2"
+              >
+                <UIcon
+                  name="i-heroicons-adjustments-horizontal"
+                  class="w-4 h-4"
+                />
+                {{ t("notifications.preferences", "Preferences") }}
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <UCheckbox
+                  v-model="notificationPreferences.soundEnabled"
+                  :label="t('notifications.soundEnabled', 'Sound')"
+                  name="sound"
+                />
+                <UCheckbox
+                  v-model="notificationPreferences.showPayments"
+                  :label="t('notifications.showPayments', 'Payments')"
+                  name="payments"
+                />
+                <UCheckbox
+                  v-model="notificationPreferences.showOrders"
+                  :label="t('notifications.showOrders', 'Orders')"
+                  name="orders"
+                />
+                <UCheckbox
+                  v-model="notificationPreferences.showStock"
+                  :label="t('notifications.showStock', 'Stock Alerts')"
+                  name="stock"
+                />
+              </div>
+            </div>
+          </Transition>
 
           <!-- Tabs -->
           <div
@@ -203,37 +418,48 @@ const formatTime = (isoString: string) => {
           >
             <div class="flex p-1 bg-gray-200 dark:bg-gray-800 rounded-lg">
               <button
-                v-for="tab in ['all', 'unread', 'system'] as const"
-                :key="tab"
-                class="flex-1 py-1.5 text-xs font-medium rounded-md transition-all relative"
+                v-for="tab in tabs"
+                :key="tab.key"
+                class="flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-all relative flex items-center justify-center gap-1"
                 :class="
-                  activeTab === tab
+                  activeTab === tab.key
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 "
-                @click="activeTab = tab"
+                @click="activeTab = tab.key"
               >
-                <span class="capitalize">{{ tab }}</span>
-                <!-- Tab Badge -->
+                <span>{{ tab.label }}</span>
                 <span
-                  v-if="tab === 'unread' && unreadCount > 0"
-                  class="absolute top-0 right-1 w-2 h-2 bg-red-500 rounded-full"
-                ></span>
-                <span
-                  v-if="tab === 'system' && systemUnreadCount > 0"
-                  class="absolute top-0 right-1 w-2 h-2 bg-indigo-500 rounded-full"
-                ></span>
+                  v-if="tab.count && tab.count > 0 && tab.key !== 'all'"
+                  class="text-[10px] px-1.5 py-0.5 rounded-full"
+                  :class="
+                    tab.dot === 'red'
+                      ? 'bg-red-100 text-red-600 dark:bg-red-900/50'
+                      : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50'
+                  "
+                >
+                  {{ tab.count }}
+                </span>
               </button>
             </div>
 
-            <!-- Search -->
-            <div class="mt-3">
+            <!-- Priority Filter + Search -->
+            <div class="mt-3 flex gap-2">
+              <USelect
+                v-model="priorityFilter"
+                :items="priorityOptions"
+                label-key="label"
+                value-key="value"
+                size="sm"
+                class="w-28"
+                :placeholder="t('notifications.priority', 'Priority')"
+              />
               <UInput
                 v-model="searchQuery"
                 icon="i-heroicons-magnifying-glass"
-                placeholder="Search..."
+                :placeholder="t('common.search', 'Search...')"
                 size="sm"
-                class="w-full"
+                class="flex-1"
               >
                 <template #trailing>
                   <UButton
@@ -249,127 +475,184 @@ const formatTime = (isoString: string) => {
             </div>
           </div>
 
-          <!-- List -->
-          <div
-            class="flex-1 overflow-y-auto bg-gray-50/50 divide-y divide-gray-200 dark:divide-gray-800"
-          >
+          <!-- Notification List (Grouped by Date) -->
+          <div class="flex-1 overflow-y-auto">
+            <!-- Empty State -->
             <div
               v-if="filteredNotifications.length === 0"
-              class="flex flex-col items-center justify-center h-48 text-gray-400"
+              class="flex flex-col items-center justify-center h-full text-gray-400 py-12"
             >
-              <UIcon
-                name="i-heroicons-bell-slash"
-                class="w-12 h-12 mb-2 opacity-30"
-              />
-              <p class="text-sm font-medium">No notifications</p>
-              <p class="text-xs opacity-70">You're all caught up!</p>
+              <div
+                class="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4"
+              >
+                <UIcon
+                  name="i-heroicons-bell-slash"
+                  class="w-10 h-10 opacity-50"
+                />
+              </div>
+              <p class="text-sm font-medium">
+                {{ t("notifications.noNotifications", "No notifications") }}
+              </p>
+              <p class="text-xs opacity-70 mt-1">
+                {{ t("notifications.allCaughtUp", "You're all caught up!") }}
+              </p>
             </div>
 
-            <TransitionGroup name="list">
+            <!-- Grouped Notifications -->
+            <div v-else>
               <div
-                v-for="notification in filteredNotifications"
-                :key="notification.id"
-                class="group relative bg-white dark:bg-gray-800 p-4 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
-                :class="[
-                  notification.read
-                    ? 'border-gray-100 dark:border-gray-800 opacity-75 hover:opacity-100'
-                    : 'border-gray-100 dark:border-gray-800 bg-primary-50/10',
-                ]"
-                @click="handleNotificationClick(notification)"
+                v-for="group in groupedNotifications"
+                :key="group.label"
+                class="mb-2"
               >
-                <div class="flex gap-4">
-                  <!-- Icon -->
+                <!-- Date Group Header -->
+                <div
+                  class="sticky top-0 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider z-10"
+                >
+                  {{ group.label }}
+                </div>
+
+                <!-- Notifications in Group -->
+                <TransitionGroup name="list">
                   <div
-                    class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-                    :class="getColor(notification.type, notification.priority)"
+                    v-for="notification in group.notifications"
+                    :key="notification.id"
+                    class="group relative bg-white dark:bg-gray-900 p-4 border-b border-gray-100 dark:border-gray-800 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                    :class="[
+                      !notification.read &&
+                        'bg-primary-50/30 dark:bg-primary-900/10 border-l-2 border-l-primary-500',
+                    ]"
+                    @click="handleNotificationClick(notification)"
                   >
-                    <UIcon :name="getIcon(notification.type)" class="w-5 h-5" />
-                  </div>
-
-                  <!-- Content -->
-                  <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-start gap-2">
-                      <h3
-                        class="text-sm font-bold text-gray-900 dark:text-gray-100 truncate pr-6"
-                      >
-                        {{ notification.title }}
-                      </h3>
-                      <span
-                        class="text-[10px] uppercase font-bold text-gray-400 whitespace-nowrap"
-                      >
-                        {{ formatTime(notification.createdAt) }}
-                      </span>
-                    </div>
-
-                    <div
-                      class="mt-1 text-sm text-gray-600 dark:text-gray-300 leading-relaxed break-words"
-                      :class="{
-                        'line-clamp-2': !notification.message.includes('\n'),
-                        'whitespace-pre-line': true,
-                      }"
-                    >
-                      {{ notification.message }}
-                    </div>
-
-                    <!-- Metadata Badge -->
-                    <div
-                      v-if="notification.type === 'system_update'"
-                      class="mt-3 flex items-center gap-2"
-                    >
-                      <UBadge
-                        size="xs"
-                        color="indigo"
-                        variant="subtle"
-                        class="rounded-full px-2"
+                    <div class="flex gap-3">
+                      <!-- Icon -->
+                      <div
+                        class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                        :class="
+                          getColor(notification.type, notification.priority)
+                        "
                       >
                         <UIcon
-                          name="i-heroicons-shield-check"
-                          class="w-3 h-3 mr-1"
+                          :name="getIcon(notification.type)"
+                          class="w-5 h-5"
                         />
-                        Official Announcement
-                      </UBadge>
+                      </div>
+
+                      <!-- Content -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start gap-2">
+                          <div class="flex items-center gap-2">
+                            <h3
+                              class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate"
+                              :class="{ 'font-bold': !notification.read }"
+                            >
+                              {{ notification.title }}
+                            </h3>
+                            <!-- Priority Badge -->
+                            <UBadge
+                              v-if="
+                                notification.priority &&
+                                notification.priority !== 'low'
+                              "
+                              size="xs"
+                              :color="getPriorityColor(notification.priority)"
+                              variant="subtle"
+                            >
+                              {{ notification.priority }}
+                            </UBadge>
+                          </div>
+                          <span
+                            class="text-[10px] uppercase font-medium text-gray-400 whitespace-nowrap"
+                          >
+                            {{ formatTime(notification.createdAt) }}
+                          </span>
+                        </div>
+
+                        <p
+                          class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2"
+                        >
+                          {{ notification.message }}
+                        </p>
+
+                        <!-- System Update Badge -->
+                        <div
+                          v-if="notification.type === 'system_update'"
+                          class="mt-2"
+                        >
+                          <UBadge
+                            size="xs"
+                            color="indigo"
+                            variant="subtle"
+                            class="rounded-full"
+                          >
+                            <UIcon
+                              name="i-heroicons-shield-check"
+                              class="w-3 h-3 mr-1"
+                            />
+                            {{
+                              t(
+                                "notifications.officialAnnouncement",
+                                "Official Announcement"
+                              )
+                            }}
+                          </UBadge>
+                        </div>
+
+                        <!-- Action URL indicator -->
+                        <div v-if="notification.actionUrl" class="mt-2">
+                          <span
+                            class="text-xs text-primary-500 flex items-center gap-1"
+                          >
+                            {{ t("notifications.viewDetails", "View Details") }}
+                            <UIcon
+                              name="i-heroicons-arrow-right"
+                              class="w-3 h-3"
+                            />
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Unread Indicator -->
+                      <div
+                        v-if="!notification.read"
+                        class="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-2"
+                      />
+                    </div>
+
+                    <!-- Delete Action (On Hover) -->
+                    <div
+                      class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <UButton
+                        color="gray"
+                        variant="ghost"
+                        icon="i-heroicons-trash"
+                        size="xs"
+                        @click.stop="deleteNotification(notification.id)"
+                      />
                     </div>
                   </div>
-
-                  <!-- Unread Dot -->
-                  <div
-                    v-if="!notification.read"
-                    class="absolute top-4 right-4 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-white dark:ring-gray-800"
-                  ></div>
-                </div>
-
-                <!-- Delete Action (On Hover) -->
-                <div
-                  class="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0"
-                >
-                  <UButton
-                    color="gray"
-                    variant="solid"
-                    icon="i-heroicons-trash"
-                    size="xs"
-                    class="rounded-full"
-                    @click.stop="deleteNotification(notification.id)"
-                  />
-                </div>
+                </TransitionGroup>
               </div>
-            </TransitionGroup>
+            </div>
           </div>
 
-          <!-- Footer -->
+          <!-- Footer Actions -->
           <div
             v-if="notificationsStore.notifications.value.length > 0"
             class="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
           >
-            <div class="grid grid-cols-2 gap-3">
+            <div class="flex gap-2">
               <UButton
                 block
                 variant="soft"
-                color="gray"
+                color="primary"
                 size="sm"
                 icon="i-heroicons-check-circle"
+                :disabled="totalUnread === 0"
                 @click="markAllAsRead"
               >
-                Mark all read
+                {{ t("notifications.markAllRead", "Mark all read") }}
               </UButton>
               <UButton
                 block
@@ -379,7 +662,7 @@ const formatTime = (isoString: string) => {
                 icon="i-heroicons-trash"
                 @click="clearAll"
               >
-                Clear all
+                {{ t("common.clearAll", "Clear all") }}
               </UButton>
             </div>
           </div>
@@ -397,6 +680,35 @@ const formatTime = (isoString: string) => {
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(20px);
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.2s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.slide-enter-to,
+.slide-leave-from {
+  max-height: 200px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+.animate-pulse {
+  animation: pulse 0.5s ease-in-out 3;
 }
 </style>

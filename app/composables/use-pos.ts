@@ -31,6 +31,8 @@ const tipAmount = ref(0);
 // taxRate is now managed by useTax composable
 const customerNote = ref("");
 const customerPubkey = ref<string | null>(null);
+const customerName = ref<string | null>(null);
+const customerId = ref<string | null>(null);
 const currentSession = ref<POSSession | null>(null);
 
 // Order type state (dine-in, take-away, delivery, pickup)
@@ -409,6 +411,8 @@ export const usePOS = () => {
     tipAmount.value = 0;
     customerNote.value = "";
     customerPubkey.value = null;
+    customerName.value = null;
+    customerId.value = null;
     // Reset order type to defaults
     orderType.value = "dine_in";
     tableNumber.value = "";
@@ -416,6 +420,30 @@ export const usePOS = () => {
     customerPhone.value = "";
     scheduledTime.value = "";
     broadcastCartClear();
+  };
+
+  /**
+   * Set customer for the order
+   */
+  const setCustomer = (
+    customer: {
+      id?: string;
+      name?: string;
+      nostrPubkey?: string;
+      phone?: string;
+    } | null
+  ) => {
+    if (customer) {
+      customerId.value = customer.id || null;
+      customerName.value = customer.name || null;
+      customerPubkey.value = customer.nostrPubkey || null;
+      if (customer.phone) customerPhone.value = customer.phone;
+    } else {
+      customerId.value = null;
+      customerName.value = null;
+      customerPubkey.value = null;
+    }
+    broadcastCartState();
   };
 
   /**
@@ -507,12 +535,18 @@ export const usePOS = () => {
    */
   const createOrder = (paymentMethod: PaymentMethod): Order => {
     const { id: orderId, code: orderCode } = EntityId.order();
+
+    // Determine customer display name
+    const customerDisplay =
+      customerName.value ||
+      (customerPubkey.value
+        ? `nostr:${customerPubkey.value.slice(0, 8)}`
+        : "Walk-in");
+
     const order: Order = {
       id: orderId,
       code: orderCode,
-      customer: customerPubkey.value
-        ? `nostr:${customerPubkey.value.slice(0, 8)}`
-        : "Walk-in",
+      customer: customerDisplay,
       customerPubkey: customerPubkey.value || undefined,
       branch: currentSession.value?.branchId || "default",
       date: new Date().toISOString(),
@@ -524,6 +558,12 @@ export const usePOS = () => {
       notes: customerNote.value || undefined,
       tip: tipAmount.value > 0 ? tipAmount.value : undefined,
       kitchenStatus: "new",
+      // Order type fields
+      orderType: orderType.value,
+      tableNumber: tableNumber.value || undefined,
+      deliveryAddress: deliveryAddress.value || undefined,
+      customerPhone: customerPhone.value || undefined,
+      scheduledTime: scheduledTime.value || undefined,
       items: cartItems.value.map((item) => ({
         id: generateUUIDv7(),
         productId: item.product.id,
@@ -696,6 +736,8 @@ export const usePOS = () => {
     taxSettings: taxHelper.settings, // Tax settings from useTax
     customerNote,
     customerPubkey,
+    customerName,
+    customerId,
 
     // Computed
     subtotal,
@@ -745,5 +787,8 @@ export const usePOS = () => {
     customerPhone,
     scheduledTime,
     setOrderType,
+
+    // Customer
+    setCustomer,
   };
 };

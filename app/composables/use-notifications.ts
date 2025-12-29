@@ -566,68 +566,118 @@ export const useNotifications = () => {
 /**
  * Initialize system notifications from Nostr
  * Subscribes to the official Bitspace announcement channel
+ * Includes both initial fetch and real-time subscription
  */
 async function initSystemNotifications() {
   const { $nostr } = useNuxtApp();
   const notificationsStore = useNotifications();
 
-  // BITSPACE OFFICIAL ADMIN PUBKEY (Placeholder - Replace with actual key)
-  // For now, this is a random key. In production, this should be the specific admin key.
-  const ADMIN_PUBKEY = "npub1..."; // TODO: User to provide or set in config
+  // Track processed event IDs to prevent duplicates from multiple relays
+  const processedEventIds = new Set<string>();
 
-  if (!ADMIN_PUBKEY) return;
+  // Announcement tags to listen for
+  const ANNOUNCEMENT_TAGS = [
+    "bnos.space-announcement",
+    "bitspace-announcement",
+    "bnospace-announcement",
+    "bnos-space-announcement",
+    "test-announcement",
+  ];
 
-  // We actually need the hex pubkey usually, assuming we have a hex converter or the user provides hex.
-  // For this implementation, I'll assume we look for a specific consistent tag
-  // OR just listen to any event with #bitspace-announcement for now if key is not strict.
-  // Better to use the tag `#bitspace-announcement` as the primary filter.
+  // Relays to query
+  const RELAYS = [
+    "wss://relay.bnos.space",
+    "wss://nos.lol",
+    "wss://nostr-01.yakihonne.com",
+  ];
+
+  // Helper to process incoming events (with deduplication)
+  const processEvent = (event: any) => {
+    // Skip if already processed this event ID (from another relay)
+    if (processedEventIds.has(event.id)) {
+      return;
+    }
+    processedEventIds.add(event.id);
+
+    // Also check if we already have this notification in storage
+    const existing = notificationsStore.notifications.value.find(
+      (n) => n.data?.nostrEventId === event.id
+    );
+
+    if (!existing) {
+      // Parse title from content (first line or use default)
+      const contentLines = event.content.split("\n");
+      const title = contentLines[0]?.startsWith("#")
+        ? contentLines[0].replace(/^#+\s*/, "")
+        : "📢 System Announcement";
+      const message = contentLines[0]?.startsWith("#")
+        ? contentLines.slice(1).join("\n").trim()
+        : event.content;
+
+      // Create notification
+      notificationsStore.addNotification({
+        type: "system_update",
+        title,
+        message: message || event.content,
+        priority: "medium",
+        data: {
+          nostrEventId: event.id,
+          pubkey: event.pubkey,
+          timestamp: event.created_at,
+        },
+      });
+    }
+  };
 
   try {
     const filter = {
       kinds: [1],
-      "#t": [
-        "bnos.space-announcement",
-        "bitspace-announcement",
-        "bnospace-announcement",
-        "bnos-space-announcement",
-      ],
-      limit: 10, // Get last 10 announcements
+      "#t": ANNOUNCEMENT_TAGS,
+      limit: 10,
     };
 
-    const events = await $nostr.pool.querySync(
-      [
-        "wss://relay.bnos.space",
-        "wss://nos.lol",
+    // Get all relay URLs (deduplicated)
+    const allRelays = [
+      ...new Set([
+        ...RELAYS,
         ...useNostrRelay().DEFAULT_RELAYS.map((r) => r.url),
-      ],
-      filter
-    );
+      ]),
+    ];
 
-    events.forEach((event: any) => {
-      // Check if we already have this notification to avoid duplicates
-      // We use the Nostr event ID as part of our internal ID or check against it
-      const existing = notificationsStore.notifications.value.find(
-        (n) => n.data?.nostrEventId === event.id
-      );
+    // Initial fetch of recent announcements
+    const events = await $nostr.pool.querySync(allRelays, filter);
 
-      if (!existing) {
-        // Create notification
-        notificationsStore.addNotification({
-          type: "system_update",
-          title: "📢 System Announcement", // Could parse from content if formatted
-          message: event.content,
-          priority: "medium", // Default
-          data: {
-            nostrEventId: event.id,
-            pubkey: event.pubkey,
-            timestamp: event.created_at,
-          },
-        });
+    // Deduplicate events by ID before processing
+    const uniqueEvents = new Map<string, any>();
+    for (const event of events) {
+      if (!uniqueEvents.has(event.id)) {
+        uniqueEvents.set(event.id, event);
       }
-    });
+    }
 
-    // Real-time subscription could go here
+    // Sort by timestamp (newest first) and process
+    Array.from(uniqueEvents.values())
+      .sort((a: any, b: any) => b.created_at - a.created_at)
+      .forEach(processEvent);
+
+    // Set up real-time subscription for new announcements
+    const realtimeFilter = {
+      kinds: [1],
+      "#t": ANNOUNCEMENT_TAGS,
+      since: Math.floor(Date.now() / 1000), // Only new events from now
+    };
+
+    // Subscribe to real-time updates (fewer relays for real-time to reduce duplicates)
+    $nostr.pool.subscribeMany(RELAYS.slice(0, 2), [realtimeFilter], {
+      onevent(event: any) {
+        processEvent(event);
+      },
+      oneose() {
+        // End of stored events, subscription continues for real-time
+        console.log("[Notifications] Real-time subscription active");
+      },
+    });
   } catch (e) {
-    console.error("Failed to fetch system notifications:", e);
+    console.error("Failed to initialize system notifications:", e);
   }
 }

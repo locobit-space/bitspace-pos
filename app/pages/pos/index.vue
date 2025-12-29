@@ -142,6 +142,13 @@ const selectCustomer = (
   customer: (typeof customersStore.customers.value)[0]
 ) => {
   selectedCustomer.value = customer;
+  // Set customer in POS composable for order creation
+  pos.setCustomer({
+    id: customer.id,
+    name: customer.name,
+    nostrPubkey: customer.nostrPubkey,
+    phone: customer.phone,
+  });
   showCustomerModal.value = false;
   const toast = useToast();
   toast.add({
@@ -152,6 +159,7 @@ const selectCustomer = (
 };
 const clearCustomer = () => {
   selectedCustomer.value = null;
+  pos.setCustomer(null);
 };
 
 // Pending customer orders count (for kitchen badge)
@@ -1158,7 +1166,7 @@ onMounted(async () => {
       (t) => t.id === tableId || t.name === tableId || t.number === tableId
     );
     if (foundTable) {
-      pos.tableNumber.value = foundTable.name || foundTable.number;
+      pos.tableNumber.value = foundTable.name || foundTable.number || tableId;
     } else {
       // Fallback: use tableName from query or tableId
       pos.tableNumber.value = (route.query.tableName as string) || tableId;
@@ -1907,7 +1915,7 @@ onUnmounted(() => {
           <div
             v-for="(item, index) in pos.cartItems.value"
             :key="`${item.product.id}-${index}`"
-            class="p-3 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors"
+            class="p-3 hover:bg-gray-50/50 dark:hover:bg-gray-700/30"
           >
             <div class="flex gap-3">
               <!-- Product Image -->

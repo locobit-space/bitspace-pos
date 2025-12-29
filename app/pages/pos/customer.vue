@@ -151,7 +151,7 @@ const formatDate = computed(() => {
   });
 });
 
-const receiptSettings = useReceiptSettings();
+const { settings } = useReceipt();
 </script>
 
 <template>
@@ -163,14 +163,23 @@ const receiptSettings = useReceiptSettings();
       class="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800"
     >
       <div class="flex items-center gap-4">
-        <div
-          class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center"
-        >
-          <span class="text-2xl">☕</span>
+        <div>
+          <div
+            class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 p-2 flex items-center justify-center"
+          >
+            <img
+              v-if="settings?.logoUrl"
+              :src="`${settings.logoUrl}`"
+              class="w-full h-full object-contain"
+            />
+            <span v-else class="text-2xl"
+              >{{ settings?.logoEmoji || "⚡" }}
+            </span>
+          </div>
         </div>
         <div>
           <h1 class="text-xl font-semibold tracking-tight">
-            {{ receiptSettings?.merchantName || "bnos.space" }}
+            {{ settings?.merchantName || "bnos.space" }}
           </h1>
           <p class="text-sm text-gray-400 font-light">{{ formatDate }}</p>
         </div>
