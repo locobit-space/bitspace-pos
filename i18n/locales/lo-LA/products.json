@@ -75,6 +75,7 @@
     "addUnit": "ເພີ່ມຫົວໜ່ວຍ",
     "descriptionPlaceholder": "ພິມຄຳອະທິບາຍສິນຄ້າ",
     "imageHint": "ເລືອກ emoji ຫຼື ວາງ URL ຮູບພາບ",
+    "imageUrl": "URL ຮູບພາບ",
     "imageUrlPlaceholder": "https://example.com/image.jpg",
     "skuPlaceholder": "ສ້າງອັດຕະໂນມັດຖ້າວ່າງ",
     "pricePlaceholder": "0",

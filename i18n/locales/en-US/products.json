@@ -93,6 +93,7 @@
     "addUnit": "Add Unit",
     "descriptionPlaceholder": "Enter product description",
     "imageHint": "Select an emoji or paste image URL",
+    "imageUrl": "Image URL",
     "imageUrlPlaceholder": "https://example.com/image.jpg",
     "skuPlaceholder": "Auto-generated if empty",
     "barcodePlaceholder": "Scan or enter barcode",
