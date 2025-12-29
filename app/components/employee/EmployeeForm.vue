@@ -277,7 +277,11 @@ async function handleSubmit() {
             />
           </UFormField>
           <UFormField :label="t('employees.phone')">
-            <UInput v-model="form.phone" icon="i-heroicons-phone" />
+            <UInput
+              v-model="form.phone"
+              icon="i-heroicons-phone"
+              class="w-full"
+            />
           </UFormField>
         </div>
 
