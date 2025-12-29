@@ -209,9 +209,9 @@ const paymentMethodDisplay = computed(() => {
         <span class="text-gray-500 dark:text-gray-400 text-sm">{{
           t("orders.orderId")
         }}</span>
-        <span class="font-mono text-sm text-gray-900 dark:text-white">{{
-          order.id
-        }}</span>
+        <span class="font-mono text-sm text-gray-900 dark:text-white">
+          {{ order?.code || order.id }}
+        </span>
       </div>
       <div class="text-3xl font-bold text-gray-900 dark:text-white">
         {{ currency.format(order.total, order.currency || "LAK") }}
@@ -359,7 +359,11 @@ const paymentMethodDisplay = computed(() => {
     </div>
 
     <!-- E-Bill QR Modal -->
-    <UModal v-model:open="showQRModal">
+    <UModal
+      v-model:open="showQRModal"
+      title="E-Bill"
+      description="Scan QR code to view e-bill"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 text-center">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">

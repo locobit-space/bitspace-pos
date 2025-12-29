@@ -814,7 +814,7 @@ onMounted(async () => {
                   <span
                     class="font-mono text-sm font-medium text-gray-900 dark:text-white"
                   >
-                    #{{ order.id.slice(-6).toUpperCase() }}
+                    #{{ order?.code || order.id.slice(-6).toUpperCase() }}
                   </span>
                 </td>
 
@@ -829,14 +829,10 @@ onMounted(async () => {
                     <div
                       class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300"
                     >
-                      {{
-                        (order.customerName ||
-                          order.customer ||
-                          "W")[0].toUpperCase()
-                      }}
+                      {{ `${order.customer || "W"}`[0].toUpperCase() }}
                     </div>
                     <span class="text-sm text-gray-900 dark:text-white">
-                      {{ order.customerName || order.customer || "Walk-in" }}
+                      {{ order.customer || "Walk-in" }}
                     </span>
                   </div>
                 </td>

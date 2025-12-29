@@ -22,6 +22,7 @@ export interface ReceiptItem {
 export interface EReceipt {
   id: string;
   orderId: string;
+  orderCode?: string;
   merchantPubkey?: string;
   customerPubkey?: string;
   items: ReceiptItem[];
@@ -129,6 +130,7 @@ export const useReceipt = () => {
     const receipt: EReceipt = {
       id: receiptId,
       orderId: order.id,
+      orderCode: order.code,
       merchantPubkey: merchantPubkey || "",
       customerPubkey: order.customerPubkey,
       items,
@@ -426,7 +428,7 @@ export const useReceipt = () => {
   </div>
   
   <div class="order-info">
-    <div>Order: <strong>${receipt.orderId}</strong></div>
+    <div>Order: <strong>${receipt.orderCode || receipt.orderId}</strong></div>
     <div>Date: ${new Date(receipt.createdAt).toLocaleString()}</div>
     <div>Receipt: ${receipt.id}</div>
   </div>

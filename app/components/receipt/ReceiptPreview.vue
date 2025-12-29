@@ -70,7 +70,12 @@ const close = () => {
 </script>
 
 <template>
-  <UModal :open="open" @close="close">
+  <UModal
+    :open="open"
+    title="Receipt"
+    description="Receipt Preview"
+    @close="close"
+  >
     <template #content>
       <div class="p-6 bg-white dark:bg-gray-900 max-w-lg">
         <!-- Header -->

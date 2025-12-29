@@ -506,9 +506,10 @@ export const usePOS = () => {
    * Create order from cart
    */
   const createOrder = (paymentMethod: PaymentMethod): Order => {
-    const { id: orderId } = EntityId.order();
+    const { id: orderId, code: orderCode } = EntityId.order();
     const order: Order = {
       id: orderId,
+      code: orderCode,
       customer: customerPubkey.value
         ? `nostr:${customerPubkey.value.slice(0, 8)}`
         : "Walk-in",

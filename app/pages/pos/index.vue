@@ -436,9 +436,9 @@ const sendToKitchen = async () => {
     const toast = useToast();
     toast.add({
       title: t("pos.orderSentToKitchen") || "Order Sent to Kitchen!",
-      description: `${t("pos.orderNumber") || "Order"}: ${order.id} - ${
-        t("pos.payLater") || "Pay when ready to leave"
-      }`,
+      description: `${t("pos.orderNumber") || "Order"}: ${
+        order.code || order.id
+      } - ${t("pos.payLater") || "Pay when ready to leave"}`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -549,7 +549,7 @@ const loadOrderForEditing = (order: Order) => {
     title: t("pos.editingOrder") || "Editing Order",
     description: `${
       t("pos.addMoreItems") || "Add items and click Update Order"
-    } - #${order.id}`,
+    } - #${order.code || order.id}`,
     color: "blue",
   });
 };
@@ -2524,7 +2524,12 @@ onUnmounted(() => {
     <!-- ============================================ -->
 
     <!-- Payment Modal -->
-    <UModal v-model:open="showPaymentModal" :dismissable="!isProcessing">
+    <UModal
+      v-model:open="showPaymentModal"
+      :dismissable="!isProcessing"
+      title="Payment"
+      description="Select a payment method"
+    >
       <template #content>
         <div
           class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto"
@@ -2588,7 +2593,12 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Receipt Actions Modal -->
-    <UModal v-model:open="showReceiptModal" :dismissable="false">
+    <UModal
+      v-model:open="showReceiptModal"
+      :dismissable="false"
+      title="Receipt Actions"
+      description="Choose an action for the receipt"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg">
           <ReceiptActions
@@ -2606,7 +2616,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Discount Modal -->
-    <UModal v-model:open="showDiscountModal">
+    <UModal
+      v-model:open="showDiscountModal"
+      title="Apply Discount"
+      description="Apply a discount to the order"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3
@@ -2678,7 +2692,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Custom Item Modal -->
-    <UModal v-model:open="showCustomItemModal">
+    <UModal
+      v-model:open="showCustomItemModal"
+      title="Add Custom Item"
+      description="Add a custom item to the cart"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3
@@ -2735,7 +2753,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Held Orders Modal -->
-    <UModal v-model:open="showHeldOrdersModal">
+    <UModal
+      v-model:open="showHeldOrdersModal"
+      title="Held Orders"
+      description="Orders that are on hold"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3
@@ -2801,7 +2823,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Pending Orders Modal (Bills waiting for payment) -->
-    <UModal v-model:open="showPendingOrdersModal">
+    <UModal
+      v-model:open="showPendingOrdersModal"
+      title="Pending Orders"
+      description="Bills waiting for payment"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3
@@ -2832,7 +2858,7 @@ onUnmounted(() => {
                   <p
                     class="font-medium text-gray-900 dark:text-white flex items-center gap-2"
                   >
-                    {{ order.id }}
+                    {{ order?.code || order.id }}
                     <span
                       v-if="order.tableNumber"
                       class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full"
@@ -2919,7 +2945,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Split Bill Modal -->
-    <UModal v-model:open="showSplitBillModal">
+    <UModal
+      v-model:open="showSplitBillModal"
+      title="Split Bill"
+      description="Split the bill into multiple orders"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px]">
           <h3
@@ -3067,7 +3097,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Numpad Modal -->
-    <UModal v-model:open="showNumpad">
+    <UModal
+      v-model:open="showNumpad"
+      title="Enter Quantity"
+      description="Enter the quantity of the item"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -3127,7 +3161,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Settings Modal -->
-    <UModal v-model:open="showSettingsModal">
+    <UModal
+      v-model:open="showSettingsModal"
+      title="POS Settings"
+      description="Settings for the POS system"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 overflow-y-auto">
           <h2
@@ -3348,7 +3386,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Product Options Modal (Variants & Modifiers) -->
-    <UModal v-model:open="showProductOptionsModal">
+    <UModal
+      v-model:open="showProductOptionsModal"
+      title="Product Options"
+      description="Select options for the product"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 max-h-[80vh] overflow-auto">
           <div v-if="selectedProduct" class="space-y-5">
@@ -3556,7 +3598,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Item Notes Modal -->
-    <UModal v-model:open="showItemNotesModal">
+    <UModal
+      v-model:open="showItemNotesModal"
+      title="Item Notes"
+      description="Add special instructions for kitchen"
+    >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3
@@ -3625,7 +3671,11 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <!-- Table Switcher Modal -->
     <!-- ============================================ -->
-    <UModal v-model:open="showTableSwitcher">
+    <UModal
+      v-model:open="showTableSwitcher"
+      title="Select Table"
+      description="Select a table to switch to"
+    >
       <template #content>
         <div class="p-6 max-h-[80vh] overflow-auto">
           <div class="flex items-center gap-3 mb-6">
@@ -3821,7 +3871,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Customer Lookup Modal -->
-    <UModal v-model:open="showCustomerModal" :ui="{ width: 'sm:max-w-lg' }">
+    <UModal
+      v-model:open="showCustomerModal"
+      title="Customer Lookup"
+      description="Search for a customer"
+    >
       <template #content>
         <div class="p-6">
           <div class="flex items-center justify-between mb-4">

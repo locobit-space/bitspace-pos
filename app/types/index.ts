@@ -1523,6 +1523,7 @@ export type OrderType = "dine_in" | "take_away" | "delivery" | "pickup";
 
 export interface Order {
   id: string;
+  code?: string; // Human-readable code (e.g., ABC-12345)
   customer: string;
   customerEmail?: string;
   customerPubkey?: string; // Nostr pubkey for loyalty
@@ -1537,9 +1538,12 @@ export interface Order {
   notes?: string;
   items: OrderItem[];
   tip?: number;
+  tax?: number;
+  discount?: number;
   loyaltyPointsEarned?: number;
   eReceiptId?: string;
   isOffline?: boolean;
+  updatedAt?: string;
   // Order type
   orderType?: OrderType;
   tableNumber?: string; // For dine-in

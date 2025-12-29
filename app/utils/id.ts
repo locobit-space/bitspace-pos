@@ -144,7 +144,29 @@ export function generateCode(prefix: string): string {
 /**
  * Alias for generateCode (backward compatibility)
  */
+/**
+ * Alias for generateCode (backward compatibility)
+ */
 export const generateReadableId = generateCode;
+
+/**
+ * Generate a short, unique code (ABC-XXXXX)
+ * @param prefix Prefix string (e.g., "ORD", "ABC")
+ * @param length Length of the random part (default 5)
+ */
+export function generateShortCode(prefix: string, length: number = 5): string {
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // Remove I, O, 0, 1
+  const randomPart = Array.from({ length }, () => {
+    if (typeof window !== "undefined" && window.crypto) {
+      const array = new Uint8Array(1);
+      window.crypto.getRandomValues(array);
+      return chars[array[0]! % chars.length];
+    }
+    return chars[Math.floor(Math.random() * chars.length)];
+  }).join("");
+
+  return `${prefix}-${randomPart}`;
+}
 
 // ============================================
 // 📦 ENTITY ID GENERATORS

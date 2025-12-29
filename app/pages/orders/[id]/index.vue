@@ -325,7 +325,7 @@ onMounted(async () => {
                 <!-- Order Title with Status -->
                 <div class="flex items-center gap-3 flex-wrap">
                   <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                    Order #{{ order.id.slice(-6).toUpperCase() }}
+                    Order #{{ order.code || order.id.slice(-6).toUpperCase() }}
                   </h1>
                   <span
                     :class="getStatusStyle(order.status)"
@@ -340,16 +340,14 @@ onMounted(async () => {
                   class="flex items-center gap-3 mt-1 text-sm text-gray-500 dark:text-gray-400 flex-wrap"
                 >
                   <span
-                    >{{ t("orders.ordered") || "Ordered" }}:
+                    >{{ t("orders.created", "Created") }}:
                     {{ formatShortDate(order.date) }}</span
                   >
                   <span>•</span>
-                  <span
-                    >📦 {{ itemCount }} {{ t("pos.items") || "items" }}</span
-                  >
+                  <span>📦 {{ itemCount }} {{ t("pos.items", "items") }}</span>
                   <span v-if="order.tableNumber">•</span>
                   <span v-if="order.tableNumber"
-                    >🪑 {{ t("orders.table") || "Table" }}
+                    >🪑 {{ t("orders.table", "Table") }}
                     {{ order.tableNumber }}</span
                   >
                 </div>
@@ -364,7 +362,7 @@ onMounted(async () => {
                 color="gray"
                 @click="exportOrder"
               >
-                {{ t("common.export") || "Export" }}
+                {{ t("common.export", "Export") }}
               </UButton>
               <UButton
                 icon="i-heroicons-printer"
@@ -372,7 +370,7 @@ onMounted(async () => {
                 color="gray"
                 @click="printOrder"
               >
-                {{ t("common.print") || "Print" }}
+                {{ t("common.print", "Print") }}
               </UButton>
 
               <!-- Primary Action Button -->
@@ -667,7 +665,7 @@ onMounted(async () => {
                   "
                   @click="activeSidebarTab = 'payments'"
                 >
-                  {{ t("orders.payments") || "Payments" }}
+                  {{ t("orders.payments", "Payments") }}
                 </button>
                 <button
                   class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
@@ -678,7 +676,7 @@ onMounted(async () => {
                   "
                   @click="activeSidebarTab = 'notes'"
                 >
-                  {{ t("orders.notes") || "Notes" }}
+                  {{ t("orders.notes", "Notes") }}
                 </button>
               </div>
 
@@ -698,7 +696,7 @@ onMounted(async () => {
                       Invoice
                     </p>
                     <p class="text-xs text-gray-500">
-                      INV-{{ order.id.slice(-6).toUpperCase() }}
+                      {{ order?.code || order.id.slice(-6).toUpperCase() }}
                     </p>
                   </div>
                   <p class="font-semibold text-gray-900 dark:text-white">
