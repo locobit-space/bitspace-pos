@@ -142,9 +142,8 @@
               </template>
             </UFormField>
 
-            <UAlert icon="i-heroicons-information-circle" color="blue" variant="subtle"
-              title="Manual Confirmation Required"
-              description="Payments must be confirmed manually. Check your wallet and confirm when payment is received." />
+            <UAlert icon="i-heroicons-information-circle" color="green" variant="subtle" title="Auto-Detection Enabled"
+              description="Payments are automatically detected via Mempool.space (free). You can also confirm manually if needed." />
           </template>
 
           <!-- Confirmation Requirements -->

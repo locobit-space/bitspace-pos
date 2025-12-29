@@ -2,6 +2,7 @@
 <!-- 💵 USDT Stablecoin Payment Component -->
 <script setup lang="ts">
 import type { CurrencyCode, USDTNetwork } from "~/types";
+import QrcodeVue from "qrcode.vue";
 
 const props = defineProps<{
   amount: number; // Fiat amount
@@ -60,7 +61,7 @@ const availableNetworks = computed(() => networks.value.filter((n) => n.availabl
 
 onMounted(async () => {
   await crypto.loadSettings();
-  
+
   // Skip network selection if only one available
   if (availableNetworks.value.length === 1 && availableNetworks.value[0]) {
     selectedNetwork.value = availableNetworks.value[0].id;
@@ -184,9 +185,7 @@ onUnmounted(() => {
   <div class="text-center">
     <!-- Header -->
     <div class="mb-6">
-      <h2
-        class="text-2xl font-bold flex items-center justify-center gap-2 text-gray-900 dark:text-white"
-      >
+      <h2 class="text-2xl font-bold flex items-center justify-center gap-2 text-gray-900 dark:text-white">
         <span class="text-3xl">💵</span>
         {{ t("payment.usdt.title") }}
       </h2>
@@ -202,12 +201,9 @@ onUnmounted(() => {
       <p class="text-gray-500">{{ t("payment.usdt.selectNetwork") }}</p>
 
       <div class="space-y-3 max-w-sm mx-auto">
-        <button
-          v-for="network in availableNetworks"
-          :key="network.id"
+        <button v-for="network in availableNetworks" :key="network.id"
           class="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-all flex items-center gap-4 group"
-          @click="selectNetwork(network.id)"
-        >
+          @click="selectNetwork(network.id)">
           <div class="text-3xl">{{ network.icon }}</div>
           <div class="flex-1 text-left">
             <p class="font-medium text-gray-900 dark:text-white">
@@ -217,10 +213,7 @@ onUnmounted(() => {
               {{ t("payment.usdt.networkFee") }}: {{ network.fee }}
             </p>
           </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 group-hover:text-green-500"
-          />
+          <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 group-hover:text-green-500" />
         </button>
       </div>
 
@@ -231,9 +224,7 @@ onUnmounted(() => {
 
     <!-- Generating State -->
     <div v-else-if="paymentStep === 'generating'" class="py-12">
-      <div
-        class="animate-spin w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto"
-      />
+      <div class="animate-spin w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto" />
       <p class="mt-4 text-gray-500 dark:text-gray-400">
         {{ t("payment.usdt.generating") }}
       </p>
@@ -243,8 +234,8 @@ onUnmounted(() => {
     <div v-else-if="paymentStep === 'waiting'" class="space-y-4">
       <!-- Network Badge -->
       <div class="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm">
-        <span>{{ networks.find(n => n.id === selectedNetwork)?.icon }}</span>
-        <span>{{ networks.find(n => n.id === selectedNetwork)?.name }}</span>
+        <span>{{networks.find(n => n.id === selectedNetwork)?.icon}}</span>
+        <span>{{networks.find(n => n.id === selectedNetwork)?.name}}</span>
       </div>
 
       <!-- Amount to Send -->
@@ -254,13 +245,8 @@ onUnmounted(() => {
           <span class="text-3xl font-bold text-green-600">
             {{ crypto.currentUSDTPayment.value?.amountUSDT }} USDT
           </span>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            icon="i-heroicons-clipboard-document"
-            @click="copyAmount"
-          />
+          <UButton color="neutral" variant="ghost" size="xs" icon="i-heroicons-clipboard-document"
+            @click="copyAmount" />
         </div>
         <p class="text-xs text-amber-600 mt-2">
           ⚠️ {{ t("payment.usdt.exactAmountWarning") }}
@@ -269,13 +255,8 @@ onUnmounted(() => {
 
       <!-- QR Code -->
       <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl inline-block shadow-lg">
-        <QRCodeVue3
-          :value="crypto.currentUSDTPayment.value?.address || ''"
-          :width="200"
-          :height="200"
-          :dots-options="{ type: 'rounded', color: '#22c55e' }"
-          :corners-square-options="{ type: 'extra-rounded', color: '#22c55e' }"
-        />
+        <QrcodeVue :value="crypto.currentUSDTPayment.value?.address || ''" :size="200" level="M" render-as="svg"
+          background="#ffffff" foreground="#000000" />
       </div>
 
       <!-- Address Display -->
@@ -294,12 +275,7 @@ onUnmounted(() => {
 
       <!-- Actions -->
       <div class="flex justify-center gap-3">
-        <UButton
-          color="neutral"
-          variant="outline"
-          icon="i-heroicons-clipboard-document"
-          @click="copyAddress"
-        >
+        <UButton color="neutral" variant="outline" icon="i-heroicons-clipboard-document" @click="copyAddress">
           {{ t("payment.usdt.copyAddress") }}
         </UButton>
       </div>
@@ -314,12 +290,7 @@ onUnmounted(() => {
         <p class="text-xs text-gray-500 mb-2">
           {{ t("payment.usdt.manualConfirmHint") }}
         </p>
-        <UButton
-          color="primary"
-          variant="soft"
-          size="sm"
-          @click="confirmPaymentReceived"
-        >
+        <UButton color="primary" variant="soft" size="sm" @click="confirmPaymentReceived">
           {{ t("payment.usdt.confirmReceived") }}
         </UButton>
       </div>
@@ -332,9 +303,7 @@ onUnmounted(() => {
 
     <!-- Success State -->
     <div v-else-if="paymentStep === 'success'" class="py-12 space-y-4">
-      <div
-        class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse"
-      >
+      <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
         <UIcon name="i-heroicons-check" class="w-10 h-10 text-green-500" />
       </div>
       <h3 class="text-xl font-bold text-green-600">
@@ -347,9 +316,7 @@ onUnmounted(() => {
 
     <!-- Error State -->
     <div v-else-if="paymentStep === 'error'" class="py-12 space-y-4">
-      <div
-        class="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto"
-      >
+      <div class="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
         <UIcon name="i-heroicons-x-mark" class="w-10 h-10 text-red-500" />
       </div>
       <h3 class="text-xl font-bold text-red-600">

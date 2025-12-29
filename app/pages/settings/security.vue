@@ -121,7 +121,8 @@
 
           <div class="space-y-3 mb-4">
             <UFormField :label="$t('settings.security.relays')">
-              <UTextarea v-model="nostrRelays" placeholder="wss://relay.damus.io&#10;wss://nos.lol" :rows="3" />
+              <UTextarea v-model="nostrRelays" placeholder="wss://relay.damus.io&#10;wss://nos.lol" class="w-full"
+                :rows="3" />
             </UFormField>
           </div>
 
@@ -222,24 +223,27 @@
         </div>
       </template>
 
-      <div class="py-4">
-        <p class="mb-4">{{ $t('settings.security.rotateConfirmDesc') }}</p>
+      <template #body>
+        <div class="py-4">
+          <p class="mb-4">{{ $t('settings.security.rotateConfirmDesc') }}</p>
 
-        <UAlert icon="i-heroicons-information-circle" color="info" class="mb-4">
-          <template #description>
-            <ul class="list-disc list-inside text-sm">
-              <li>{{ $t('settings.security.rotateNote1') }}</li>
-              <li>{{ $t('settings.security.rotateNote2') }}</li>
-              <li>{{ $t('settings.security.rotateNote3') }}</li>
-            </ul>
-          </template>
-        </UAlert>
+          <UAlert icon="i-heroicons-information-circle" color="info" class="mb-4">
+            <template #description>
+              <ul class="list-disc list-inside text-sm">
+                <li>{{ $t('settings.security.rotateNote1') }}</li>
+                <li>{{ $t('settings.security.rotateNote2') }}</li>
+                <li>{{ $t('settings.security.rotateNote3') }}</li>
+              </ul>
+            </template>
+          </UAlert>
 
-        <UFormField :label="$t('settings.security.confirmPassword')">
-          <UInput v-model="confirmPassword" type="password" :placeholder="$t('settings.security.enterPassword')" />
-        </UFormField>
-      </div>
+          <UFormField :label="$t('settings.security.confirmPassword')">
+            <UInput v-model="confirmPassword" class="w-full" type="password"
+              :placeholder="$t('settings.security.enterPassword')" />
+          </UFormField>
+        </div>
 
+      </template>
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" @click="showRotateModal = false">
@@ -283,7 +287,7 @@ const showRotateModal = ref(false);
 const confirmPassword = ref('');
 
 // Nostr backup state
-const nostrRelays = ref('wss://relay.damus.io\nwss://nos.lol\nwss://relay.nostr.band');
+const nostrRelays = ref('wss://bnos.space\nwss://relay.damus.io\nwss://nos.lol\nwss://relay.nostr.band');
 const backingUpToNostr = ref(false);
 const restoringFromNostr = ref(false);
 const lastNostrBackup = ref<string | null>(null);

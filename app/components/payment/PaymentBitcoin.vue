@@ -2,6 +2,7 @@
 <!-- ₿ Bitcoin On-Chain Payment Component with QR Code -->
 <script setup lang="ts">
 import type { CurrencyCode } from "~/types";
+import QrcodeVue from 'qrcode.vue';
 
 const props = defineProps<{
   amount: number; // Fiat amount
@@ -153,9 +154,7 @@ onUnmounted(() => {
   <div class="text-center">
     <!-- Header -->
     <div class="mb-6">
-      <h2
-        class="text-2xl font-bold flex items-center justify-center gap-2 text-gray-900 dark:text-white"
-      >
+      <h2 class="text-2xl font-bold flex items-center justify-center gap-2 text-gray-900 dark:text-white">
         <span class="text-3xl">₿</span>
         {{ t("payment.bitcoin.title") }}
       </h2>
@@ -172,25 +171,19 @@ onUnmounted(() => {
 
     <!-- Generating State -->
     <div v-if="paymentStep === 'generating'" class="py-12">
-      <div
-        class="animate-spin w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto"
-      />
+      <div class="animate-spin w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto" />
       <p class="mt-4 text-gray-500 dark:text-gray-400">
         {{ t("payment.bitcoin.generating") }}
       </p>
     </div>
 
     <!-- Waiting for Payment -->
+    <!-- Waiting for Payment -->
     <div v-else-if="paymentStep === 'waiting'" class="space-y-4">
       <!-- QR Code -->
       <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl inline-block shadow-lg">
-        <QRCodeVue3
-          :value="bitcoinUri"
-          :width="220"
-          :height="220"
-          :dots-options="{ type: 'rounded', color: '#f97316' }"
-          :corners-square-options="{ type: 'extra-rounded', color: '#f97316' }"
-        />
+        <QrcodeVue :value="bitcoinUri" :size="220" level="M" render-as="svg" background="#ffffff"
+          foreground="#000000" />
       </div>
 
       <!-- Address Display -->
@@ -209,12 +202,7 @@ onUnmounted(() => {
 
       <!-- Actions -->
       <div class="flex justify-center gap-3">
-        <UButton
-          color="neutral"
-          variant="outline"
-          icon="i-heroicons-clipboard-document"
-          @click="copyAddress"
-        >
+        <UButton color="neutral" variant="outline" icon="i-heroicons-clipboard-document" @click="copyAddress">
           {{ t("payment.bitcoin.copyAddress") }}
         </UButton>
       </div>
@@ -222,8 +210,7 @@ onUnmounted(() => {
       <!-- Confirmation Status -->
       <div
         v-if="crypto.currentBitcoinPayment.value?.confirmations && crypto.currentBitcoinPayment.value.confirmations > 0"
-        class="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl"
-      >
+        class="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
         <div class="flex items-center justify-center gap-2 text-green-600">
           <UIcon name="i-heroicons-check-circle" class="w-5 h-5" />
           <span>{{ t("payment.bitcoin.txDetected") }}</span>
@@ -233,10 +220,8 @@ onUnmounted(() => {
             {{ t("payment.bitcoin.confirmations", { count: confirmationText }) }}
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-            <div
-              class="bg-green-500 h-2 rounded-full transition-all duration-500"
-              :style="{ width: `${confirmationProgress}%` }"
-            />
+            <div class="bg-green-500 h-2 rounded-full transition-all duration-500"
+              :style="{ width: `${confirmationProgress}%` }" />
           </div>
         </div>
       </div>
@@ -246,12 +231,7 @@ onUnmounted(() => {
         <p class="text-xs text-gray-500 mb-2">
           {{ t("payment.bitcoin.manualConfirmHint") }}
         </p>
-        <UButton
-          color="primary"
-          variant="soft"
-          size="sm"
-          @click="confirmPaymentReceived"
-        >
+        <UButton color="primary" variant="soft" size="sm" @click="confirmPaymentReceived">
           {{ t("payment.bitcoin.confirmReceived") }}
         </UButton>
       </div>
@@ -264,9 +244,7 @@ onUnmounted(() => {
 
     <!-- Success State -->
     <div v-else-if="paymentStep === 'success'" class="py-12 space-y-4">
-      <div
-        class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse"
-      >
+      <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
         <UIcon name="i-heroicons-check" class="w-10 h-10 text-green-500" />
       </div>
       <h3 class="text-xl font-bold text-green-600">
@@ -279,9 +257,7 @@ onUnmounted(() => {
 
     <!-- Error State -->
     <div v-else-if="paymentStep === 'error'" class="py-12 space-y-4">
-      <div
-        class="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto"
-      >
+      <div class="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
         <UIcon name="i-heroicons-x-mark" class="w-10 h-10 text-red-500" />
       </div>
       <h3 class="text-xl font-bold text-red-600">

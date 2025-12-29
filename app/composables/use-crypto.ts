@@ -172,6 +172,10 @@ export const useCrypto = () => {
   /**
    * Create Bitcoin payment request via BTCPay Server
    */
+  /**
+   * Create Bitcoin payment request
+   * Supports: BTCPay Server, Manual (Mempool.space)
+   */
   const createBitcoinInvoice = async (
     orderId: string,
     amountFiat: number,
@@ -196,6 +200,8 @@ export const useCrypto = () => {
           currency,
           description
         );
+      } else if (settings.bitcoinProvider === "manual") {
+        return await createManualBitcoinInvoice(orderId, amountFiat, currency);
       }
       throw new Error(`Unsupported provider: ${settings.bitcoinProvider}`);
     } catch (e) {
@@ -209,7 +215,6 @@ export const useCrypto = () => {
 
   /**
    * Create invoice via BTCPay Server Green Field API
-   * https://docs.btcpayserver.org/API/Greenfield/v1/
    */
   const createBTCPayInvoice = async (
     orderId: string,
@@ -217,6 +222,7 @@ export const useCrypto = () => {
     currency: CurrencyCode,
     description?: string
   ): Promise<BitcoinPayment> => {
+    // ... [Existing BTCPay implementation] ...
     const settings = cryptoSettings.value;
     const baseUrl = settings.btcpayServerUrl?.replace(/\/$/, "");
 
@@ -236,12 +242,7 @@ export const useCrypto = () => {
             posApp: "bitspace-pos",
           },
           checkout: {
-            speedPolicy:
-              settings.bitcoinRequiredConfirmations === 1
-                ? "LowSpeed"
-                : settings.bitcoinRequiredConfirmations === 3
-                ? "MediumSpeed"
-                : "HighSpeed",
+            speedPolicy: "MediumSpeed",
             paymentMethods: ["BTC-OnChain"],
             expirationMinutes: 30,
           },
@@ -293,11 +294,150 @@ export const useCrypto = () => {
   };
 
   /**
-   * Check Bitcoin payment status via BTCPay
+   * Create Manual Bitcoin Invoice (Static Address)
+   */
+  const createManualBitcoinInvoice = async (
+    orderId: string,
+    amountFiat: number,
+    currency: CurrencyCode
+  ): Promise<BitcoinPayment> => {
+    const settings = cryptoSettings.value;
+    // 1. Get Exchange Rate
+    const rate = await getBTCExchangeRate(currency);
+
+    // 2. Calculate Amount
+    const amountBTC = amountFiat / rate;
+    const amountSats = Math.round(amountBTC * 100000000);
+
+    // 3. Create Payment Object
+    const payment: BitcoinPayment = {
+      id: `manual_${Date.now()}_${orderId}`,
+      orderId,
+      address: settings.bitcoinAddress || "",
+      amountBTC: amountBTC.toFixed(8),
+      amountSats,
+      amountFiat,
+      currency,
+      exchangeRate: rate,
+      confirmations: 0,
+      requiredConfirmations: settings.bitcoinRequiredConfirmations,
+      status: "pending",
+      expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 mins
+      createdAt: new Date().toISOString(),
+    };
+
+    currentBitcoinPayment.value = payment;
+    return payment;
+  };
+
+  /**
+   * Check Mempool.space for payment
+   * API: https://mempool.space/api/address/:address/txs
+   */
+  const checkMempoolSpaceStatus = async (
+    address: string,
+    amountSats: number,
+    createdAfter: number // timestamp in ms
+  ): Promise<{
+    status: PaymentStatus;
+    confirmations: number;
+    txid?: string;
+  }> => {
+    try {
+      const response = await fetch(
+        `https://mempool.space/api/address/${address}/txs`
+      );
+      if (!response.ok) return { status: "pending", confirmations: 0 };
+
+      const txs = await response.json();
+
+      // Look for a matching transaction
+      // 1. Time > createdAfter
+      // 2. Output address == our address
+      // 3. Value >= amountSats (allowing small buffer or exact match)
+
+      for (const tx of txs) {
+        // Skip old transactions (if confirmed)
+        if (tx.status.block_time && tx.status.block_time * 1000 < createdAfter)
+          continue;
+
+        // Find output to our address
+        const output = tx.vout.find(
+          (out: any) => out.scriptpubkey_address === address
+        );
+
+        if (output && output.value >= amountSats) {
+          // Found match!
+          const isConfirmed = tx.status.confirmed;
+          const currentHeight = await getMempoolBlockHeight();
+          const confirmations =
+            isConfirmed && tx.status.block_height
+              ? currentHeight - tx.status.block_height + 1
+              : 0;
+
+          const required = cryptoSettings.value.bitcoinRequiredConfirmations;
+          const status: PaymentStatus =
+            confirmations >= required
+              ? "completed"
+              : confirmations > 0
+              ? "processing"
+              : "processing"; // Mempool = processing
+
+          return { status, confirmations, txid: tx.txid };
+        }
+      }
+
+      return { status: "pending", confirmations: 0 };
+    } catch (e) {
+      console.error("Mempool.space check failed:", e);
+      return { status: "pending", confirmations: 0 };
+    }
+  };
+
+  const getMempoolBlockHeight = async (): Promise<number> => {
+    try {
+      const res = await fetch("https://mempool.space/api/blocks/tip/height");
+      return parseInt(await res.text());
+    } catch {
+      return 0;
+    }
+  };
+
+  /**
+   * Check Bitcoin payment status
+   * Dispatches to correct provider
    */
   const checkBitcoinPaymentStatus = async (
+    payment: BitcoinPayment
+  ): Promise<PaymentStatus> => {
+    const settings = cryptoSettings.value;
+
+    if (settings.bitcoinProvider === "btcpay") {
+      return checkBTCPayStatus(payment.id);
+    } else if (settings.bitcoinProvider === "manual") {
+      const createdTime = new Date(payment.createdAt).getTime();
+      const result = await checkMempoolSpaceStatus(
+        payment.address,
+        payment.amountSats,
+        createdTime
+      );
+
+      // Update payment object with live data
+      if (currentBitcoinPayment.value && result.txid) {
+        currentBitcoinPayment.value.txid = result.txid;
+        currentBitcoinPayment.value.confirmations = result.confirmations;
+      }
+
+      return result.status;
+    }
+
+    return "pending";
+  };
+
+  const checkBTCPayStatus = async (
     invoiceId: string
   ): Promise<PaymentStatus> => {
+    // ... [Existing BTCPay status logic] ...
     const settings = cryptoSettings.value;
     const baseUrl = settings.btcpayServerUrl?.replace(/\/$/, "");
 
@@ -315,7 +455,6 @@ export const useCrypto = () => {
 
       const invoice = await response.json();
 
-      // Map BTCPay status to our PaymentStatus
       switch (invoice.status) {
         case "New":
           return "pending";
@@ -339,11 +478,15 @@ export const useCrypto = () => {
   /**
    * Watch for Bitcoin payment completion
    */
-  const watchBitcoinPayment = (invoiceId: string, onPaid: () => void) => {
+  const watchBitcoinPayment = (paymentId: string, onPaid: () => void) => {
     let pollInterval: ReturnType<typeof setInterval> | null = null;
 
     const checkPayment = async () => {
-      const status = await checkBitcoinPaymentStatus(invoiceId);
+      // Find valid payment object
+      const payment = currentBitcoinPayment.value;
+      if (!payment || payment.id !== paymentId) return;
+
+      const status = await checkBitcoinPaymentStatus(payment);
 
       if (currentBitcoinPayment.value) {
         currentBitcoinPayment.value.status = status;
@@ -357,11 +500,9 @@ export const useCrypto = () => {
       }
     };
 
-    // Poll every 5 seconds
-    pollInterval = setInterval(checkPayment, 5000);
-    checkPayment(); // Initial check
+    pollInterval = setInterval(checkPayment, 5000); // 5s poll
+    checkPayment();
 
-    // Return cleanup function
     return () => {
       if (pollInterval) clearInterval(pollInterval);
     };
