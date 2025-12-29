@@ -746,7 +746,7 @@ export interface ChatMessageRecord {
 // Chat Conversation Record
 export interface ChatConversationRecord {
   id: string;
-  type: "direct" | "group";
+  type: "direct" | "channel" | "group";
   participantPubkeys: string; // JSON array
   participantNames: string; // JSON array
   groupName?: string;
@@ -757,6 +757,8 @@ export interface ChatConversationRecord {
   unreadCount: number;
   isPinned: boolean;
   isMuted: boolean;
+  isPrivate?: boolean;
+  key?: string; // AES key for private channels
   createdAt: number;
   updatedAt: number;
 }
@@ -1212,6 +1214,114 @@ export class POSDatabase extends Dexie {
         "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, synced",
       chatConversations:
         "id, type, lastMessageTime, unreadCount, isPinned, updatedAt",
+    });
+    // Version 12: Add index for nostrEventId in chatMessages
+    this.version(12).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      accounts: "id, code, name, type, category, isActive, synced, updatedAt",
+      journalEntries: "id, entryNumber, date, status, synced, createdAt",
+      expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
+      employees:
+        "id, employeeCode, firstName, lastName, status, branchId, department, position, synced, updatedAt",
+      chatMessages:
+        "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, nostrEventId, synced",
+      chatConversations:
+        "id, type, lastMessageTime, unreadCount, isPinned, updatedAt",
+    });
+    // Version 13: Add private channel support
+    this.version(13).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      accounts: "id, code, name, type, category, isActive, synced, updatedAt",
+      journalEntries: "id, entryNumber, date, status, synced, createdAt",
+      expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
+      employees:
+        "id, employeeCode, firstName, lastName, status, branchId, department, position, synced, updatedAt",
+      chatMessages:
+        "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, nostrEventId, synced",
+      chatConversations:
+        "id, type, lastMessageTime, unreadCount, isPinned, isPrivate, updatedAt",
     });
   }
 }

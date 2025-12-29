@@ -13,6 +13,7 @@ import {
   type ChatConversationRecord,
 } from "~/db/db";
 import type { StoreUser } from "~/types";
+import CryptoJS from "crypto-js";
 
 // ============================================
 // Types
@@ -34,7 +35,7 @@ export interface ChatMessage {
 
 export interface ChatConversation {
   id: string;
-  type: "direct" | "group";
+  type: "direct" | "channel" | "group";
   participants: { pubkey: string; name: string; avatar?: string }[];
   groupName?: string;
   groupAvatar?: string;
@@ -46,6 +47,8 @@ export interface ChatConversation {
   unreadCount: number;
   isPinned: boolean;
   isMuted: boolean;
+  isPrivate?: boolean;
+  key?: string;
 }
 
 export interface ChatContact {
@@ -84,6 +87,18 @@ export function useChat() {
   const nostrKey = useNostrKey();
   const sound = useSound();
   const { DEFAULT_RELAYS } = useNostrRelay();
+
+  // ============================================
+  // State
+  // ============================================
+
+  const isOpen = useState("chat-is-open", () => false);
+  const isSending = ref(false);
+  const searchQuery = ref("");
+
+  const openChat = () => (isOpen.value = true);
+  const closeChat = () => (isOpen.value = false);
+  const toggleChat = () => (isOpen.value = !isOpen.value);
 
   // ============================================
   // Computed
@@ -300,6 +315,28 @@ export function useChat() {
   }
 
   // ============================================
+  // Crypto Operations
+  // ============================================
+
+  const generateChannelKey = (): string => {
+    return CryptoJS.lib.WordArray.random(32).toString(); // 256-bit key
+  };
+
+  const encryptChannelMessage = (content: string, key: string): string => {
+    return CryptoJS.AES.encrypt(content, key).toString();
+  };
+
+  const decryptChannelMessage = (encrypted: string, key: string): string => {
+    try {
+      const bytes = CryptoJS.AES.decrypt(encrypted, key);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch (e) {
+      console.error("[Chat] Failed to decrypt channel message", e);
+      return "[Encrypted Message]";
+    }
+  };
+
+  // ============================================
   // Nostr Operations
   // ============================================
 
@@ -440,7 +477,9 @@ export function useChat() {
     conversationId: string,
     otherPubkey: string,
     otherName: string,
-    message: ChatMessage
+    message: ChatMessage,
+    type: "direct" | "channel" = "direct",
+    channelName?: string
   ): Promise<void> {
     const currentUser = usersStore.currentUser.value;
     const existingConv = conversations.value.find(
@@ -458,15 +497,19 @@ export function useChat() {
       // Create new conversation
       const newConversation: ChatConversation = {
         id: conversationId,
-        type: "direct",
-        participants: [
-          {
-            pubkey: currentUser!.pubkeyHex!,
-            name: currentUser!.name,
-            avatar: currentUser!.avatar,
-          },
-          { pubkey: otherPubkey, name: otherName },
-        ],
+        type,
+        participants:
+          type === "direct"
+            ? [
+                {
+                  pubkey: currentUser!.pubkeyHex!,
+                  name: currentUser!.name,
+                  avatar: currentUser!.avatar,
+                },
+                { pubkey: otherPubkey, name: otherName },
+              ]
+            : [], // Channels don't track all participants in this list usually, or we add creator
+        groupName: channelName,
         lastMessage: {
           content: message.content,
           timestamp: message.timestamp,
@@ -482,6 +525,176 @@ export function useChat() {
   }
 
   // ============================================
+  // Channel Operations
+  // ============================================
+
+  async function createChannel(
+    name: string,
+    about: string = "",
+    isPrivate: boolean = false
+  ): Promise<string | null> {
+    const keys = getUserKeys();
+    if (!keys?.privkey) {
+      console.error("[Chat] No private key to create channel");
+      return null;
+    }
+
+    try {
+      const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey);
+      const privateKey = hexToBytes(privateKeyHex);
+
+      const secretKey = isPrivate ? generateChannelKey() : undefined;
+
+      const content = {
+        name,
+        about,
+        picture: "",
+        isPrivate, // Custom field to indicate privacy
+      };
+
+      const eventTemplate = {
+        kind: 40, // NIP-28 Channel Creation
+        content: JSON.stringify(content),
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [],
+      };
+
+      const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const pubs = $nostr.pool.publish(relayUrls, signedEvent);
+      await Promise.race(pubs).catch(() => null);
+
+      if (signedEvent) {
+        // Create local conversation for the new channel
+        const conversationId = signedEvent.id;
+        const newConversation: ChatConversation = {
+          id: conversationId,
+          type: "channel",
+          participants: [],
+          groupName: name,
+          lastMessage: {
+            content: "Channel created",
+            timestamp: Date.now(),
+            senderName: "System",
+          },
+          unreadCount: 0,
+          isPinned: false,
+          isMuted: false,
+          isPrivate,
+          key: secretKey,
+        };
+        conversations.value.unshift(newConversation);
+        await saveConversationToLocal(newConversation);
+        return conversationId;
+      }
+    } catch (e) {
+      console.error("[Chat] Failed to create channel:", e);
+    }
+    return null;
+  }
+
+  async function inviteToChannel(
+    channelId: string,
+    pubkey: string
+  ): Promise<boolean> {
+    const conv = conversations.value.find((c) => c.id === channelId);
+    if (!conv || !conv.isPrivate || !conv.key) {
+      console.error(
+        "[Chat] Cannot invite: Channel not found, not private, or missing key"
+      );
+      return false;
+    }
+
+    // We send the key securely via DM (Kind 4)
+    const inviteContent = JSON.stringify({
+      type: "channel_invite",
+      channelId: conv.id,
+      channelName: conv.groupName,
+      key: conv.key,
+    });
+
+    return await sendMessage(pubkey, inviteContent, "User"); // This sends Kind 4
+  }
+
+  async function sendChannelMessage(
+    channelId: string,
+    content: string
+  ): Promise<boolean> {
+    const keys = getUserKeys();
+    const currentUser = usersStore.currentUser.value;
+
+    if (!keys?.privkey) return false;
+
+    const conv = conversations.value.find((c) => c.id === channelId);
+    let finalContent = content;
+
+    if (conv?.isPrivate && conv.key) {
+      finalContent = encryptChannelMessage(content, conv.key);
+    }
+
+    isSending.value = true;
+    const messageId = generateMessageId();
+
+    const message: ChatMessage = {
+      id: messageId,
+      conversationId: channelId,
+      senderPubkey: keys.pubkey,
+      senderName: currentUser?.name || "Me",
+      senderAvatar: currentUser?.avatar,
+      recipientPubkey: "", // Public channel
+      content: content, // We store decrypted locally
+      timestamp: Date.now(),
+      status: "sending",
+    };
+
+    // Optimistic update
+    const currentMessages = messages.value.get(channelId) || [];
+    messages.value.set(channelId, [...currentMessages, message]);
+    await saveMessageToLocal(message);
+
+    try {
+      const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey);
+      const privateKey = hexToBytes(privateKeyHex);
+
+      const eventTemplate = {
+        kind: 42, // NIP-28 Channel Message
+        content: finalContent,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [["e", channelId, "", "root"]],
+      };
+
+      const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const pubs = $nostr.pool.publish(relayUrls, signedEvent);
+      await Promise.race(pubs).catch(() => null);
+
+      if (signedEvent) {
+        message.status = "sent";
+        message.nostrEventId = signedEvent.id;
+        await saveMessageToLocal(message);
+
+        // Update conversation last message
+        await updateConversationWithMessage(
+          channelId,
+          "",
+          "", // No specific recipient for channel
+          message,
+          "channel"
+        );
+        isSending.value = false;
+        return true;
+      }
+    } catch (e) {
+      console.error("[Chat] Failed to send channel message:", e);
+      message.status = "failed";
+      await saveMessageToLocal(message);
+    }
+
+    isSending.value = false;
+    return false;
+  }
+
+  // ============================================
   // Real-time Subscription
   // ============================================
 
@@ -491,111 +704,313 @@ export function useChat() {
 
     const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
 
-    // Subscribe to DMs sent TO me
+    // Subscribe to DMs sent TO me AND Channel events
     const filter = {
-      kinds: [4],
-      "#p": [currentPubkey],
-      since: Math.floor(Date.now() / 1000) - 86400, // Last 24 hours
+      kinds: [4, 40, 42],
+      // For Kind 4 (DM), we filter by #p (recipient)
+      // For Kind 42 (Channel Msg), we might want to filter by channels we're in, but for now we get all and filter locally
+      // OR we can't filter complexly in one filter. Better to use multiple filters if needed.
+      // A simple approach for small teams: get all 40/42, but only 4 for me.
     };
 
-    chatSubscription = $nostr.pool.subscribeMany(relayUrls, [filter], {
-      async onevent(event: NostrEvent) {
-        await handleIncomingMessage(event);
-      },
-      oneose() {
-        console.log("[Chat] Subscription established");
-      },
-    });
+    // Filter 1: DMs to me
+    const dmFilter = {
+      kinds: [4],
+      "#p": [currentPubkey],
+      since: Math.floor(Date.now() / 1000) - 86400,
+    };
+
+    // Filter 2: Public Channels (Creation & Messages)
+    // In a real app we'd limit this to subscribed channels, but for "Team Chat" we can listen to global 40/42 from our relays
+    const channelFilter = {
+      kinds: [40, 42],
+      since: Math.floor(Date.now() / 1000) - 86400,
+    };
+
+    chatSubscription = $nostr.pool.subscribeMany(
+      relayUrls,
+      [dmFilter, channelFilter],
+      {
+        async onevent(event: NostrEvent) {
+          await handleIncomingMessage(event);
+        },
+        oneose() {
+          console.log("[Chat] Subscription established");
+        },
+      }
+    );
   }
 
   async function handleIncomingMessage(event: NostrEvent): Promise<void> {
     const currentUser = usersStore.currentUser.value;
     if (!currentUser?.pubkeyHex) return;
 
-    // Skip if it's my own message
-    if (event.pubkey === currentUser.pubkeyHex) return;
-
-    // Check if we already have this message
-    const existingMsg = await db.chatMessages
-      .where("nostrEventId")
-      .equals(event.id)
-      .first();
+    // Check if we already have this message/event
+    const existingMsg =
+      (await db.chatMessages.where("nostrEventId").equals(event.id).first()) ||
+      (await db.chatConversations.where("id").equals(event.id).first()); // Check conv ID for kind 40 too
     if (existingMsg) return;
 
     try {
-      // Decrypt message
-      const content = await decryptMessage(event.content, event.pubkey);
-      const conversationId = generateConversationId(
-        currentUser.pubkeyHex,
-        event.pubkey
-      );
+      // HANDLE DM (Kind 4)
+      if (event.kind === 4) {
+        // Skip if it's my own message
+        if (event.pubkey === currentUser.pubkeyHex) return;
 
-      // Find sender info
-      const sender = usersStore.users.value.find(
-        (u) => u.pubkeyHex === event.pubkey
-      );
-      const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
+        // Decrypt message
+        const content = await decryptMessage(event.content, event.pubkey);
 
-      const message: ChatMessage = {
-        id: generateMessageId(),
-        conversationId,
-        senderPubkey: event.pubkey,
-        senderName,
-        senderAvatar: sender?.avatar,
-        recipientPubkey: currentUser.pubkeyHex,
-        content,
-        timestamp: event.created_at * 1000,
-        status: "delivered",
-        nostrEventId: event.id,
-      };
+        // CHECK FOR INVITE
+        try {
+          const parsed = JSON.parse(content);
+          if (
+            parsed.type === "channel_invite" &&
+            parsed.channelId &&
+            parsed.key
+          ) {
+            // It's an invite!
+            // Check if we already have this channel
+            let existingConv = conversations.value.find(
+              (c) => c.id === parsed.channelId
+            );
+            if (existingConv) {
+              // Update key if missing
+              if (!existingConv.key) {
+                existingConv.key = parsed.key;
+                existingConv.isPrivate = true;
+                await saveConversationToLocal(existingConv);
+              }
+            } else {
+              // Create new channel placeholder with key
+              const newConv: ChatConversation = {
+                id: parsed.channelId,
+                type: "channel",
+                participants: [],
+                groupName: parsed.channelName || "Private Channel",
+                lastMessage: {
+                  content: "You were invited to this private channel",
+                  timestamp: event.created_at * 1000,
+                  senderName: "System",
+                },
+                unreadCount: 1,
+                isPinned: false,
+                isMuted: false,
+                isPrivate: true,
+                key: parsed.key,
+              };
+              conversations.value.unshift(newConv);
+              await saveConversationToLocal(newConv);
+              sound.playSuccess();
+              return; // Stop processing as normal DM
+            }
+          }
+        } catch (e) {
+          // Not JSON, normal DM
+        }
 
-      // Save to DB
-      await saveMessageToLocal(message);
+        const conversationId = generateConversationId(
+          currentUser.pubkeyHex,
+          event.pubkey
+        );
 
-      // Update state
-      const currentMessages = messages.value.get(conversationId) || [];
-      messages.value.set(conversationId, [...currentMessages, message]);
+        // Find sender info
+        const sender = usersStore.users.value.find(
+          (u) => u.pubkeyHex === event.pubkey
+        );
+        const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
 
-      // Update conversation
-      await updateConversationWithMessage(
-        conversationId,
-        event.pubkey,
-        senderName,
-        message
-      );
+        const message: ChatMessage = {
+          id: generateMessageId(),
+          conversationId,
+          senderPubkey: event.pubkey,
+          senderName,
+          senderAvatar: sender?.avatar,
+          recipientPubkey: currentUser.pubkeyHex,
+          content,
+          timestamp: event.created_at * 1000,
+          status: "delivered",
+          nostrEventId: event.id,
+        };
 
-      // Increment unread if not active
-      if (activeConversationId.value !== conversationId) {
-        const conv = conversations.value.find((c) => c.id === conversationId);
-        if (conv) {
-          conv.unreadCount++;
-          await saveConversationToLocal(conv);
+        await saveMessageToLocal(message);
+
+        // Update state
+        const currentMessages = messages.value.get(conversationId) || [];
+        messages.value.set(conversationId, [...currentMessages, message]);
+
+        await updateConversationWithMessage(
+          conversationId,
+          event.pubkey,
+          senderName,
+          message
+        );
+
+        // Notify
+        if (activeConversationId.value !== conversationId) {
+          const conv = conversations.value.find((c) => c.id === conversationId);
+          if (conv && !conv.isMuted) {
+            conv.unreadCount++;
+            await saveConversationToLocal(conv);
+            sound.playNotification();
+
+            if (!isOpen.value) {
+              const toast = useToast();
+              toast.add({
+                title: senderName,
+                description:
+                  message.content.length > 60
+                    ? message.content.substring(0, 60) + "..."
+                    : message.content,
+                icon: "i-heroicons-chat-bubble-left-right",
+                timeout: 5000,
+                click: () => {
+                  openChat();
+                  selectConversation(conversationId);
+                },
+              });
+            }
+          }
         }
       }
+      // HANDLE CHANNEL CREATION (Kind 40)
+      else if (event.kind === 40) {
+        const content = JSON.parse(event.content);
+        const conversationId = event.id;
 
-      // Play notification sound if enabled
-      sound.playSuccess();
+        const newConversation: ChatConversation = {
+          id: conversationId,
+          type: "channel",
+          participants: [],
+          groupName: content.name || "Unnamed Channel",
+          lastMessage: {
+            content: content.about || "Channel created",
+            timestamp: event.created_at * 1000,
+            senderName: "System",
+          },
+          unreadCount: 0,
+          isPinned: false,
+          isMuted: false,
+          isPrivate: content.isPrivate || false,
+        };
 
-      console.log("[Chat] Received new message from:", senderName);
+        // Check if exists (might be loaded from local)
+        const existing = conversations.value.find(
+          (c) => c.id === conversationId
+        );
+        if (!existing) {
+          conversations.value.unshift(newConversation);
+          await saveConversationToLocal(newConversation);
+        } else {
+          // Update metadata if it exists
+          if (content.isPrivate !== undefined)
+            existing.isPrivate = content.isPrivate;
+          await saveConversationToLocal(existing);
+        }
+      }
+      // HANDLE CHANNEL MESSAGE (Kind 42)
+      else if (event.kind === 42) {
+        const rootTag =
+          event.tags.find((t) => t[0] === "e" && t[3] === "root") ||
+          event.tags.find((t) => t[0] === "e");
+
+        if (!rootTag || !rootTag[1]) return;
+        const channelId = rootTag[1];
+
+        // Ensure we know about this channel
+        let conv = conversations.value.find((c) => c.id === channelId);
+
+        if (!conv) {
+          // Placeholder creation if we missed Kind 40
+          conv = {
+            id: channelId,
+            type: "channel",
+            participants: [],
+            groupName: "Unknown Channel",
+            lastMessage: {
+              content: "",
+              timestamp: 0,
+              senderName: "",
+            },
+            unreadCount: 0,
+            isPinned: false,
+            isMuted: false,
+          };
+          conversations.value.unshift(conv);
+          // We should ideally fetch channel metadata here
+        }
+
+        const sender = usersStore.users.value.find(
+          (u) => u.pubkeyHex === event.pubkey
+        );
+        const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
+
+        let content = event.content;
+        // Decrypt if private
+        if (conv.isPrivate && conv.key) {
+          content = decryptChannelMessage(event.content, conv.key);
+        } else if (conv.isPrivate && !conv.key) {
+          content = "🔒 Encrypted Message (Key missing)";
+        }
+
+        const message: ChatMessage = {
+          id: generateMessageId(),
+          conversationId: channelId,
+          senderPubkey: event.pubkey,
+          senderName,
+          senderAvatar: sender?.avatar,
+          recipientPubkey: "",
+          content: content,
+          timestamp: event.created_at * 1000,
+          status: "delivered",
+          nostrEventId: event.id,
+        };
+
+        await saveMessageToLocal(message);
+
+        // Update memory
+        const currentMessages = messages.value.get(channelId) || [];
+        messages.value.set(channelId, [...currentMessages, message]);
+
+        await updateConversationWithMessage(
+          channelId,
+          "",
+          "",
+          message,
+          "channel",
+          conv.groupName
+        );
+
+        // Notify
+        if (
+          activeConversationId.value !== channelId &&
+          event.pubkey !== currentUser.pubkeyHex &&
+          !conv.isMuted
+        ) {
+          conv.unreadCount++;
+          await saveConversationToLocal(conv);
+          sound.playNotification();
+
+          if (!isOpen.value) {
+            const toast = useToast();
+            toast.add({
+              title: `#${conv.groupName} - ${senderName}`,
+              description:
+                message.content.length > 60
+                  ? message.content.substring(0, 60) + "..."
+                  : message.content,
+              icon: "i-heroicons-hashtag",
+              timeout: 5000,
+              click: () => {
+                openChat();
+                selectConversation(channelId);
+              },
+            });
+          }
+        }
+      }
     } catch (e) {
       console.error("[Chat] Failed to process incoming message:", e);
     }
-  }
-
-  // ============================================
-  // UI Actions
-  // ============================================
-
-  function openChat(): void {
-    isOpen.value = true;
-  }
-
-  function closeChat(): void {
-    isOpen.value = false;
-  }
-
-  function toggleChat(): void {
-    isOpen.value = !isOpen.value;
   }
 
   async function selectConversation(conversationId: string): Promise<void> {
@@ -739,18 +1154,21 @@ export function useChat() {
     sortedConversations,
     availableContacts,
 
-    // Actions
+    // Functions
     init,
     cleanup,
     openChat,
     closeChat,
     toggleChat,
-    sendMessage,
-    selectConversation,
     startNewChat,
+    sendMessage,
+    createChannel,
+    sendChannelMessage,
+    inviteToChannel,
+    selectConversation,
+    deleteConversation,
     togglePinConversation,
     toggleMuteConversation,
-    deleteConversation,
 
     // Utilities
     generateConversationId,
