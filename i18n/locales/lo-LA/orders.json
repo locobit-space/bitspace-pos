@@ -77,7 +77,15 @@
     "scheduledTime": "ເວລານັດໝາຍ",
     "deliveryAddress": "ທີ່ຢູ່ສົ່ງ",
     "kitchenNotes": "ໝາຍເຫດຄົວ",
-    "kitchenStatus": "ສະຖານະຄົວ"
+    "kitchenStatus": "ສະຖານະຄົວ",
+    "preparedAt": "ເຮັດແລ້ວ",
+    "servedAt": "ເສີບແລ້ວ",
+    "eReceipt": "ໃບຮັບເງິນອີເລັກໂຕຣນິກ",
+    "lastUpdated": "ແກ້ໄຂລ່າສຸດ",
+    "offline": "ອອບລາຍ",
+    "points": "ຄະແນນ",
+    "created": "ສ້າງ",
+    "invoice": "ໃບແຈ້ງໜີ້"
   },
   "kitchen": {
     "new": "ໃໝ່",

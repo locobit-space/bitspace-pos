@@ -138,6 +138,31 @@ const formatScheduledTime = (isoString: string) => {
   }
 };
 
+// Format sats with comma separator
+const formatSats = (sats: number) => {
+  if (sats >= 1000000) {
+    return `${(sats / 1000000).toFixed(2)}M sats`;
+  } else if (sats >= 1000) {
+    return `${(sats / 1000).toFixed(1)}k sats`;
+  }
+  return `${sats.toLocaleString()} sats`;
+};
+
+// Format date with time for timestamps
+const formatDateTime = (isoString: string) => {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return isoString;
+  }
+};
+
 // Get customer initials
 const customerInitials = computed(() => {
   const name = order.value?.customer || "WC";
@@ -343,6 +368,13 @@ onMounted(async () => {
                   >
                     ● {{ t(`orders.status.${order.status}`) || order.status }}
                   </span>
+                  <!-- Offline Badge -->
+                  <span
+                    v-if="order.isOffline"
+                    class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                  >
+                    📴 {{ t("orders.offline", "Offline") }}
+                  </span>
                 </div>
 
                 <!-- Order Meta Info -->
@@ -355,11 +387,44 @@ onMounted(async () => {
                   >
                   <span>•</span>
                   <span>📦 {{ itemCount }} {{ t("pos.items", "items") }}</span>
-                  <span v-if="order.tableNumber">•</span>
-                  <span v-if="order.tableNumber"
-                    >🪑 {{ t("orders.table", "Table") }}
-                    {{ order.tableNumber }}</span
+
+                  <!-- Branch -->
+                  <template v-if="order.branch && order.branch !== 'default'">
+                    <span>•</span>
+                    <span>🏪 {{ order.branch }}</span>
+                  </template>
+
+                  <!-- Table -->
+                  <template v-if="order.tableNumber">
+                    <span>•</span>
+                    <span
+                      >🪑 {{ t("orders.table", "Table") }}
+                      {{ order.tableNumber }}</span
+                    >
+                  </template>
+
+                  <!-- Loyalty Points Earned -->
+                  <template
+                    v-if="
+                      order.loyaltyPointsEarned && order.loyaltyPointsEarned > 0
+                    "
                   >
+                    <span>•</span>
+                    <span class="text-amber-600 dark:text-amber-400">
+                      ⭐ +{{ order.loyaltyPointsEarned }}
+                      {{ t("orders.points", "pts") }}
+                    </span>
+                  </template>
+
+                  <!-- BTC/Sats Amount (for Lightning payments) -->
+                  <template v-if="order.totalSats && order.totalSats > 0">
+                    <span>•</span>
+                    <span
+                      class="text-orange-500 dark:text-orange-400 font-medium"
+                    >
+                      ⚡ {{ formatSats(order.totalSats) }}
+                    </span>
+                  </template>
                 </div>
               </div>
             </div>
@@ -662,6 +727,97 @@ onMounted(async () => {
                       </p>
                     </div>
                   </div>
+                </div>
+
+                <!-- Kitchen Timestamps (preparedAt, servedAt) -->
+                <div
+                  v-if="order.preparedAt || order.servedAt"
+                  class="mt-4 grid grid-cols-2 gap-3"
+                >
+                  <div
+                    v-if="order.preparedAt"
+                    class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">👨‍🍳</span>
+                      <div>
+                        <p
+                          class="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide"
+                        >
+                          {{ t("orders.preparedAt", "Prepared") }}
+                        </p>
+                        <p
+                          class="text-sm font-medium text-gray-900 dark:text-white"
+                        >
+                          {{ formatDateTime(order.preparedAt) }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    v-if="order.servedAt"
+                    class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">🍽️</span>
+                      <div>
+                        <p
+                          class="text-xs text-green-600 dark:text-green-400 uppercase tracking-wide"
+                        >
+                          {{ t("orders.servedAt", "Served") }}
+                        </p>
+                        <p
+                          class="text-sm font-medium text-gray-900 dark:text-white"
+                        >
+                          {{ formatDateTime(order.servedAt) }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- E-Receipt Link -->
+                <div
+                  v-if="order.eReceiptId"
+                  class="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <UIcon
+                        name="i-heroicons-document-text"
+                        class="w-5 h-5 text-indigo-500"
+                      />
+                      <div>
+                        <p
+                          class="text-xs text-indigo-600 dark:text-indigo-400 uppercase tracking-wide"
+                        >
+                          {{ t("orders.eReceipt", "E-Receipt") }}
+                        </p>
+                        <p
+                          class="text-sm font-mono text-gray-900 dark:text-white"
+                        >
+                          {{ order.eReceiptId }}
+                        </p>
+                      </div>
+                    </div>
+                    <UButton
+                      size="xs"
+                      variant="soft"
+                      color="indigo"
+                      icon="i-heroicons-arrow-top-right-on-square"
+                    >
+                      {{ t("common.view", "View") }}
+                    </UButton>
+                  </div>
+                </div>
+
+                <!-- Last Updated -->
+                <div
+                  v-if="order.updatedAt && order.updatedAt !== order.date"
+                  class="mt-4 text-xs text-gray-400 dark:text-gray-500 text-right"
+                >
+                  {{ t("orders.lastUpdated", "Last updated") }}:
+                  {{ formatDateTime(order.updatedAt) }}
                 </div>
               </div>
             </div>

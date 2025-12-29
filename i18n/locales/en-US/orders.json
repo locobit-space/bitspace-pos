@@ -83,7 +83,15 @@
     "scheduledTime": "Scheduled",
     "deliveryAddress": "Delivery Address",
     "kitchenNotes": "Kitchen Notes",
-    "kitchenStatus": "Kitchen Status"
+    "kitchenStatus": "Kitchen Status",
+    "preparedAt": "Prepared",
+    "servedAt": "Served",
+    "eReceipt": "E-Receipt",
+    "lastUpdated": "Last updated",
+    "offline": "Offline",
+    "points": "pts",
+    "created": "Created",
+    "invoice": "Invoice"
   },
   "kitchen": {
     "new": "New",
