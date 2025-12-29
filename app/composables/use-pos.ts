@@ -3,20 +3,21 @@
 // 🔗 SINGLETON STATE - Shared across all screens (staff POS + customer display)
 // 📡 Uses BroadcastChannel for cross-window sync
 
-import { ref, computed, watch } from 'vue';
-import type { 
-  Product, 
+import { ref, computed, watch } from "vue";
+import type {
+  Product,
   ProductVariant,
   ProductModifier,
-  Cart, 
-  CartItem, 
-  Order, 
+  Cart,
+  CartItem,
+  Order,
   POSSession,
   CurrencyCode,
   PaymentMethod,
-  OrderType 
-} from '~/types';
-import { useCurrency } from './use-currency';
+  OrderType,
+} from "~/types";
+import { useCurrency } from "./use-currency";
+import { useTax } from "./use-tax";
 
 // ============================================
 // GLOBAL SINGLETON STATE
@@ -24,29 +25,29 @@ import { useCurrency } from './use-currency';
 // This enables dual-screen sync (staff POS ↔ customer display)
 // ============================================
 const cartItems = ref<CartItem[]>([]);
-const selectedCurrency = ref<CurrencyCode>('LAK');
+const selectedCurrency = ref<CurrencyCode>("LAK");
 const tipAmount = ref(0);
-const taxRate = ref(0); // 0% default for Laos
-const customerNote = ref('');
+// taxRate is now managed by useTax composable
+const customerNote = ref("");
 const customerPubkey = ref<string | null>(null);
 const currentSession = ref<POSSession | null>(null);
 
 // Order type state (dine-in, take-away, delivery, pickup)
-const orderType = ref<OrderType>('dine_in');
-const tableNumber = ref<string>('');
-const deliveryAddress = ref<string>('');
-const customerPhone = ref<string>('');
-const scheduledTime = ref<string>('');
+const orderType = ref<OrderType>("dine_in");
+const tableNumber = ref<string>("");
+const deliveryAddress = ref<string>("");
+const customerPhone = ref<string>("");
+const scheduledTime = ref<string>("");
 
 // Payment state for customer display sync
 const paymentState = ref<{
-  status: 'idle' | 'pending' | 'paid' | 'cancelled';
-  method?: 'lightning' | 'cash' | 'bank_transfer' | 'external';
+  status: "idle" | "pending" | "paid" | "cancelled";
+  method?: "lightning" | "cash" | "bank_transfer" | "external";
   invoiceData?: string;
   amount?: number;
   satsAmount?: number;
   // Bank transfer specific
-  bankCode?: string;  // 'bcel' | 'ldb' | 'jdb' | 'apb' etc
+  bankCode?: string; // 'bcel' | 'ldb' | 'jdb' | 'apb' etc
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
@@ -56,7 +57,7 @@ const paymentState = ref<{
   // E-Bill for customer (after payment success)
   eBillUrl?: string;
   eBillId?: string;
-}>({ status: 'idle' });
+}>({ status: "idle" });
 
 // ============================================
 // CROSS-WINDOW SYNC via BroadcastChannel
@@ -66,68 +67,72 @@ let broadcastChannel: BroadcastChannel | null = null;
 let isReceivingBroadcast = false;
 
 const initBroadcastChannel = () => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   if (broadcastChannel) return; // Already initialized
-  
-  broadcastChannel = new BroadcastChannel('pos-cart-sync');
-  
+
+  broadcastChannel = new BroadcastChannel("pos-cart-sync");
+
   // Listen for updates from other windows
   broadcastChannel.onmessage = (event) => {
     isReceivingBroadcast = true;
     const { type, payload } = event.data;
-    
-    if (type === 'cart-update') {
+
+    if (type === "cart-update") {
       cartItems.value = payload.cartItems || [];
       tipAmount.value = payload.tipAmount || 0;
-      selectedCurrency.value = payload.selectedCurrency || 'LAK';
-      customerNote.value = payload.customerNote || '';
+      selectedCurrency.value = payload.selectedCurrency || "LAK";
+      customerNote.value = payload.customerNote || "";
       // Order type sync
-      orderType.value = payload.orderType || 'dine_in';
-      tableNumber.value = payload.tableNumber || '';
-      deliveryAddress.value = payload.deliveryAddress || '';
-      customerPhone.value = payload.customerPhone || '';
-      scheduledTime.value = payload.scheduledTime || '';
-    } else if (type === 'cart-clear') {
+      orderType.value = payload.orderType || "dine_in";
+      tableNumber.value = payload.tableNumber || "";
+      deliveryAddress.value = payload.deliveryAddress || "";
+      customerPhone.value = payload.customerPhone || "";
+      scheduledTime.value = payload.scheduledTime || "";
+    } else if (type === "cart-clear") {
       cartItems.value = [];
       tipAmount.value = 0;
-      customerNote.value = '';
-      orderType.value = 'dine_in';
-      tableNumber.value = '';
-      deliveryAddress.value = '';
-      customerPhone.value = '';
-      scheduledTime.value = '';
-      paymentState.value = { status: 'idle' };
-    } else if (type === 'payment-update') {
+      customerNote.value = "";
+      orderType.value = "dine_in";
+      tableNumber.value = "";
+      deliveryAddress.value = "";
+      customerPhone.value = "";
+      scheduledTime.value = "";
+      paymentState.value = { status: "idle" };
+    } else if (type === "payment-update") {
       paymentState.value = payload;
-    } else if (type === 'request-sync') {
+    } else if (type === "request-sync") {
       // Another window is asking for current state
       broadcastCartState();
       broadcastPaymentState();
     }
-    
+
     isReceivingBroadcast = false;
   };
-  
+
   // Request current state from any existing POS window
-  broadcastChannel.postMessage({ type: 'request-sync' });
+  broadcastChannel.postMessage({ type: "request-sync" });
 };
 
 const broadcastCartState = () => {
   if (!broadcastChannel || isReceivingBroadcast) return;
-  
+
   // Serialize cart items to plain objects (remove any non-clonable data)
-  const serializedItems = cartItems.value.map(item => ({
+  const serializedItems = cartItems.value.map((item) => ({
     product: JSON.parse(JSON.stringify(item.product)),
     quantity: item.quantity,
     price: item.price,
     total: item.total,
-    selectedVariant: item.selectedVariant ? JSON.parse(JSON.stringify(item.selectedVariant)) : undefined,
-    selectedModifiers: item.selectedModifiers ? JSON.parse(JSON.stringify(item.selectedModifiers)) : undefined,
+    selectedVariant: item.selectedVariant
+      ? JSON.parse(JSON.stringify(item.selectedVariant))
+      : undefined,
+    selectedModifiers: item.selectedModifiers
+      ? JSON.parse(JSON.stringify(item.selectedModifiers))
+      : undefined,
     notes: item.notes,
   }));
-  
+
   broadcastChannel.postMessage({
-    type: 'cart-update',
+    type: "cart-update",
     payload: {
       cartItems: serializedItems,
       tipAmount: tipAmount.value,
@@ -139,18 +144,18 @@ const broadcastCartState = () => {
       deliveryAddress: deliveryAddress.value,
       customerPhone: customerPhone.value,
       scheduledTime: scheduledTime.value,
-    }
+    },
   });
 };
 
 const broadcastCartClear = () => {
   if (!broadcastChannel) return;
-  broadcastChannel.postMessage({ type: 'cart-clear' });
+  broadcastChannel.postMessage({ type: "cart-clear" });
 };
 
 const broadcastPaymentState = () => {
   if (!broadcastChannel || isReceivingBroadcast) return;
-  
+
   // Serialize payment state to plain object
   const serializedState = {
     status: paymentState.value.status,
@@ -170,9 +175,9 @@ const broadcastPaymentState = () => {
     eBillUrl: paymentState.value.eBillUrl || undefined,
     eBillId: paymentState.value.eBillId || undefined,
   };
-  
+
   broadcastChannel.postMessage({
-    type: 'payment-update',
+    type: "payment-update",
     payload: serializedState,
   });
 };
@@ -185,15 +190,18 @@ const setPaymentState = (state: typeof paymentState.value) => {
 
 export const usePOS = () => {
   // Initialize broadcast channel on first use
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     initBroadcastChannel();
   }
-  
-  // Initialize currency composable
+
+  // Initialize composables
   const currency = useCurrency();
+  const taxHelper = useTax();
 
   // Session computed (uses global state)
-  const isSessionActive = computed(() => currentSession.value?.status === 'active');
+  const isSessionActive = computed(
+    () => currentSession.value?.status === "active"
+  );
 
   // ============================================
   // Price Calculation Helpers
@@ -211,7 +219,7 @@ export const usePOS = () => {
 
     // Add variant price modifier
     if (variant) {
-      if (variant.priceModifierType === 'fixed') {
+      if (variant.priceModifierType === "fixed") {
         basePrice += variant.priceModifier;
       } else {
         basePrice += basePrice * (variant.priceModifier / 100);
@@ -220,7 +228,7 @@ export const usePOS = () => {
 
     // Add modifier prices
     if (modifiers && modifiers.length > 0) {
-      modifiers.forEach(mod => {
+      modifiers.forEach((mod) => {
         basePrice += mod.price;
       });
     }
@@ -239,7 +247,10 @@ export const usePOS = () => {
     let key = productId;
     if (variant) key += `-${variant.id}`;
     if (modifiers && modifiers.length > 0) {
-      key += `-${modifiers.map(m => m.id).sort().join(',')}`;
+      key += `-${modifiers
+        .map((m) => m.id)
+        .sort()
+        .join(",")}`;
     }
     return key;
   };
@@ -252,7 +263,7 @@ export const usePOS = () => {
    * Add product to cart with optional variant and modifiers
    */
   const addToCart = (
-    product: Product, 
+    product: Product,
     quantity: number = 1,
     options?: {
       variant?: ProductVariant;
@@ -266,10 +277,10 @@ export const usePOS = () => {
 
     // Find existing item with same product + variant + modifiers
     const itemKey = getCartItemKey(product.id, variant, modifiers);
-    const existingItem = cartItems.value.find(item => {
+    const existingItem = cartItems.value.find((item) => {
       const existingKey = getCartItemKey(
-        item.product.id, 
-        item.selectedVariant, 
+        item.product.id,
+        item.selectedVariant,
         item.selectedModifiers
       );
       return existingKey === itemKey && item.notes === notes;
@@ -280,7 +291,7 @@ export const usePOS = () => {
       existingItem.total = existingItem.quantity * existingItem.price;
     } else {
       const price = calculateItemPrice(product, variant, modifiers);
-      
+
       cartItems.value.push({
         product,
         quantity,
@@ -291,7 +302,7 @@ export const usePOS = () => {
         notes,
       });
     }
-    
+
     // Broadcast to other windows
     broadcastCartState();
   };
@@ -310,7 +321,9 @@ export const usePOS = () => {
    * Remove by product ID (removes first match)
    */
   const removeFromCartById = (productId: string) => {
-    const index = cartItems.value.findIndex(item => item.product.id === productId);
+    const index = cartItems.value.findIndex(
+      (item) => item.product.id === productId
+    );
     if (index !== -1) {
       cartItems.value.splice(index, 1);
       broadcastCartState();
@@ -337,7 +350,9 @@ export const usePOS = () => {
    * Update item quantity by product ID (for backward compatibility)
    */
   const updateQuantityById = (productId: string, quantity: number) => {
-    const index = cartItems.value.findIndex(item => item.product.id === productId);
+    const index = cartItems.value.findIndex(
+      (item) => item.product.id === productId
+    );
     if (index !== -1) {
       updateQuantity(index, quantity);
     }
@@ -360,7 +375,11 @@ export const usePOS = () => {
     const item = cartItems.value[index];
     if (item) {
       item.selectedVariant = variant;
-      item.price = calculateItemPrice(item.product, variant, item.selectedModifiers);
+      item.price = calculateItemPrice(
+        item.product,
+        variant,
+        item.selectedModifiers
+      );
       item.total = item.quantity * item.price;
     }
   };
@@ -372,7 +391,11 @@ export const usePOS = () => {
     const item = cartItems.value[index];
     if (item) {
       item.selectedModifiers = modifiers;
-      item.price = calculateItemPrice(item.product, item.selectedVariant, modifiers);
+      item.price = calculateItemPrice(
+        item.product,
+        item.selectedVariant,
+        modifiers
+      );
       item.total = item.quantity * item.price;
     }
   };
@@ -383,29 +406,33 @@ export const usePOS = () => {
   const clearCart = () => {
     cartItems.value = [];
     tipAmount.value = 0;
-    customerNote.value = '';
+    customerNote.value = "";
     customerPubkey.value = null;
     // Reset order type to defaults
-    orderType.value = 'dine_in';
-    tableNumber.value = '';
-    deliveryAddress.value = '';
-    customerPhone.value = '';
-    scheduledTime.value = '';
+    orderType.value = "dine_in";
+    tableNumber.value = "";
+    deliveryAddress.value = "";
+    customerPhone.value = "";
+    scheduledTime.value = "";
     broadcastCartClear();
   };
 
   /**
    * Set order type with optional details
    */
-  const setOrderType = (type: OrderType, details?: {
-    tableNumber?: string;
-    deliveryAddress?: string;
-    customerPhone?: string;
-    scheduledTime?: string;
-  }) => {
+  const setOrderType = (
+    type: OrderType,
+    details?: {
+      tableNumber?: string;
+      deliveryAddress?: string;
+      customerPhone?: string;
+      scheduledTime?: string;
+    }
+  ) => {
     orderType.value = type;
     if (details?.tableNumber) tableNumber.value = details.tableNumber;
-    if (details?.deliveryAddress) deliveryAddress.value = details.deliveryAddress;
+    if (details?.deliveryAddress)
+      deliveryAddress.value = details.deliveryAddress;
     if (details?.customerPhone) customerPhone.value = details.customerPhone;
     if (details?.scheduledTime) scheduledTime.value = details.scheduledTime;
     broadcastCartState();
@@ -436,7 +463,13 @@ export const usePOS = () => {
   });
 
   const tax = computed(() => {
-    return Math.round(subtotal.value * taxRate.value);
+    // Use tax composable with category-aware calculation
+    // Each cart item can have a category from product
+    const itemsWithCategory = cartItems.value.map((item) => ({
+      total: item.total,
+      category: item.product.categoryId, // Use categoryId from Product type
+    }));
+    return taxHelper.calculateTax(itemsWithCategory);
   });
 
   const total = computed(() => {
@@ -474,18 +507,20 @@ export const usePOS = () => {
   const createOrder = (paymentMethod: PaymentMethod): Order => {
     const order: Order = {
       id: `ORD-${Date.now().toString(36).toUpperCase()}`,
-      customer: customerPubkey.value ? `nostr:${customerPubkey.value.slice(0, 8)}` : 'Walk-in',
+      customer: customerPubkey.value
+        ? `nostr:${customerPubkey.value.slice(0, 8)}`
+        : "Walk-in",
       customerPubkey: customerPubkey.value || undefined,
-      branch: currentSession.value?.branchId || 'default',
+      branch: currentSession.value?.branchId || "default",
       date: new Date().toISOString(),
       total: total.value,
       totalSats: totalSats.value,
       currency: selectedCurrency.value,
-      status: 'pending',
+      status: "pending",
       paymentMethod,
       notes: customerNote.value || undefined,
       tip: tipAmount.value > 0 ? tipAmount.value : undefined,
-      kitchenStatus: 'new',
+      kitchenStatus: "new",
       items: cartItems.value.map((item, index) => ({
         id: `${index + 1}`,
         productId: item.product.id,
@@ -498,7 +533,7 @@ export const usePOS = () => {
         selectedVariant: item.selectedVariant,
         selectedModifiers: item.selectedModifiers,
         notes: item.notes,
-        kitchenStatus: 'pending',
+        kitchenStatus: "pending",
       })),
       isOffline: !navigator.onLine,
     };
@@ -513,7 +548,11 @@ export const usePOS = () => {
   /**
    * Start new POS session
    */
-  const startSession = (branchId: string, staffId: string, openingBalance: number = 0): POSSession => {
+  const startSession = (
+    branchId: string,
+    staffId: string,
+    openingBalance: number = 0
+  ): POSSession => {
     const session: POSSession = {
       id: `SES-${Date.now().toString(36).toUpperCase()}`,
       branchId,
@@ -524,13 +563,13 @@ export const usePOS = () => {
       totalOrders: 0,
       cashSales: 0,
       lightningSales: 0,
-      status: 'active',
+      status: "active",
     };
 
     currentSession.value = session;
-    
+
     // Store in localStorage for persistence
-    localStorage.setItem('pos_session', JSON.stringify(session));
+    localStorage.setItem("pos_session", JSON.stringify(session));
 
     return session;
   };
@@ -543,12 +582,12 @@ export const usePOS = () => {
 
     currentSession.value.endedAt = new Date().toISOString();
     currentSession.value.closingBalance = closingBalance;
-    currentSession.value.status = 'closed';
+    currentSession.value.status = "closed";
 
     const session = { ...currentSession.value };
-    
+
     // Clear session
-    localStorage.removeItem('pos_session');
+    localStorage.removeItem("pos_session");
     currentSession.value = null;
 
     return session;
@@ -563,28 +602,31 @@ export const usePOS = () => {
     currentSession.value.totalSales += order.total;
     currentSession.value.totalOrders += 1;
 
-    if (order.paymentMethod === 'cash') {
+    if (order.paymentMethod === "cash") {
       currentSession.value.cashSales += order.total;
-    } else if (order.paymentMethod === 'lightning' || order.paymentMethod === 'bolt12') {
+    } else if (
+      order.paymentMethod === "lightning" ||
+      order.paymentMethod === "bolt12"
+    ) {
       currentSession.value.lightningSales += order.total;
     }
 
-    localStorage.setItem('pos_session', JSON.stringify(currentSession.value));
+    localStorage.setItem("pos_session", JSON.stringify(currentSession.value));
   };
 
   /**
    * Restore session from localStorage
    */
   const restoreSession = () => {
-    const stored = localStorage.getItem('pos_session');
+    const stored = localStorage.getItem("pos_session");
     if (stored) {
       try {
         const session = JSON.parse(stored) as POSSession;
-        if (session.status === 'active') {
+        if (session.status === "active") {
           currentSession.value = session;
         }
       } catch {
-        localStorage.removeItem('pos_session');
+        localStorage.removeItem("pos_session");
       }
     }
   };
@@ -596,17 +638,17 @@ export const usePOS = () => {
   /**
    * Apply discount
    */
-  const applyDiscount = (type: 'percentage' | 'fixed', value: number) => {
-    if (type === 'percentage') {
+  const applyDiscount = (type: "percentage" | "fixed", value: number) => {
+    if (type === "percentage") {
       // Apply percentage discount to each item
-      cartItems.value.forEach(item => {
+      cartItems.value.forEach((item) => {
         item.price = item.price * (1 - value / 100);
         item.total = item.quantity * item.price;
       });
     } else {
       // Apply fixed discount proportionally
       const discountRatio = value / subtotal.value;
-      cartItems.value.forEach(item => {
+      cartItems.value.forEach((item) => {
         item.price = item.price * (1 - discountRatio);
         item.total = item.quantity * item.price;
       });
@@ -621,13 +663,17 @@ export const usePOS = () => {
     selectedCurrency.value = newCurrency;
 
     // Convert prices
-    cartItems.value.forEach(item => {
+    cartItems.value.forEach((item) => {
       item.price = currency.convert(item.price, oldCurrency, newCurrency);
       item.total = item.quantity * item.price;
     });
 
     if (tipAmount.value > 0) {
-      tipAmount.value = currency.convert(tipAmount.value, oldCurrency, newCurrency);
+      tipAmount.value = currency.convert(
+        tipAmount.value,
+        oldCurrency,
+        newCurrency
+      );
     }
   };
 
@@ -644,10 +690,10 @@ export const usePOS = () => {
     cartItems,
     selectedCurrency,
     tipAmount,
-    taxRate,
+    taxSettings: taxHelper.settings, // Tax settings from useTax
     customerNote,
     customerPubkey,
-    
+
     // Computed
     subtotal,
     tax,
@@ -684,11 +730,11 @@ export const usePOS = () => {
     endSession,
     updateSessionTotals,
     restoreSession,
-    
+
     // Payment state (for customer display sync)
     paymentState,
     setPaymentState,
-    
+
     // Order type
     orderType,
     tableNumber,

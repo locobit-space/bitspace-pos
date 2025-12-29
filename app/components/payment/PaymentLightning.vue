@@ -2,6 +2,7 @@
 <!-- ⚡ Lightning Payment Component with QR Code -->
 <script setup lang="ts">
 import type { CurrencyCode } from "~/types";
+import QrcodeVue from 'qrcode.vue';
 
 const props = defineProps<{
   amount: number; // in sats
@@ -127,14 +128,16 @@ onMounted(async () => {
   // Initialize security first
   security.initialize();
 
-  // Check if encryption is enabled but locked
-  if (security.isEncryptionEnabled.value && security.isLocked.value) {
+  // Load settings first to check configuration
+  await lightning.loadSettings();
+
+  // Check if we can access API keys (handles encrypted data case)
+  if (!lightning.canAccessKeys()) {
     paymentStep.value = "locked";
     return;
   }
 
-  // Load settings and generate invoice
-  await lightning.loadSettings();
+  // Generate invoice
   await generateInvoice();
 });
 
@@ -171,8 +174,8 @@ const generateInvoice = async () => {
   showErrorModal.value = false;
 
   try {
-    // Check if still locked (shouldn't happen but safety check)
-    if (security.isEncryptionEnabled.value && security.isLocked.value) {
+    // Check if we can access API keys (shouldn't happen but safety check)
+    if (!lightning.canAccessKeys()) {
       paymentStep.value = "locked";
       return;
     }
@@ -437,9 +440,8 @@ onUnmounted(() => {
 
       <!-- QR Code -->
       <div class="bg-white p-4 rounded-2xl inline-block shadow-lg">
-        <img v-if="lightning.invoiceQR.value" :src="`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-          lightning.invoiceQR.value
-        )}`" alt="Lightning Invoice QR" class="w-64 h-64" />
+        <QrcodeVue v-if="lightning.invoiceQR.value" :value="lightning.invoiceQR.value" :size="250" level="M"
+          render-as="svg" background="#ffffff" foreground="#000000" />
         <div v-else class="w-64 h-64 bg-gray-200 flex items-center justify-center">
           <span class="text-gray-400">No QR</span>
         </div>

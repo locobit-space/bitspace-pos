@@ -2,6 +2,7 @@
 <!-- 📡 BOLT12 Static QR - One QR forever! -->
 <script setup lang="ts">
 import type { BOLT12Offer } from "~/types";
+import QrcodeVue from 'qrcode.vue';
 
 const props = defineProps<{
   offer?: BOLT12Offer;
@@ -46,14 +47,8 @@ const copyOffer = async () => {
     <!-- QR Display -->
     <div v-if="offer" class="space-y-4">
       <div class="bg-white p-4 rounded-xl inline-block">
-        <img
-          v-if="qrData"
-          :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-            qrData
-          )}`"
-          alt="BOLT12 Offer QR"
-          class="w-48 h-48"
-        />
+        <QrcodeVue v-if="qrData" :value="qrData" :size="200" level="M" render-as="svg" background="#ffffff"
+          foreground="#000000" />
       </div>
 
       <!-- Offer Info -->
@@ -76,28 +71,18 @@ const copyOffer = async () => {
 
       <!-- Offer String (collapsible) -->
       <div>
-        <button
-          class="text-sm text-gray-400 hover:text-white"
-          @click="showFullOffer = !showFullOffer"
-        >
+        <button class="text-sm text-gray-400 hover:text-white" @click="showFullOffer = !showFullOffer">
           {{ showFullOffer ? "Hide" : "Show" }} offer string
         </button>
-        <div
-          v-if="showFullOffer"
-          class="mt-2 p-3 bg-gray-900 rounded-lg text-xs font-mono text-gray-500 break-all max-h-24 overflow-auto"
-        >
+        <div v-if="showFullOffer"
+          class="mt-2 p-3 bg-gray-900 rounded-lg text-xs font-mono text-gray-500 break-all max-h-24 overflow-auto">
           {{ offer.offer }}
         </div>
       </div>
 
       <!-- Actions -->
       <div class="flex gap-2 justify-center">
-        <UButton
-          color="neutral"
-          variant="outline"
-          icon="i-heroicons-clipboard-document"
-          @click="copyOffer"
-        >
+        <UButton color="neutral" variant="outline" icon="i-heroicons-clipboard-document" @click="copyOffer">
           Copy
         </UButton>
         <UButton color="primary" icon="i-heroicons-arrow-down-tray">

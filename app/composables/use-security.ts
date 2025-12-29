@@ -302,6 +302,47 @@ export function useSecurity() {
   }
 
   /**
+   * Disable encryption (requires password verification)
+   * This will decrypt all sensitive data and store in plain format
+   */
+  async function disableEncryption(password: string): Promise<boolean> {
+    try {
+      // First verify password is correct
+      const stored = localStorage.getItem(MASTER_HASH_KEY);
+      if (!stored) return false;
+
+      const { hash, salt } = JSON.parse(stored);
+      const inputHash = await hashPassword(password + salt);
+      if (inputHash !== hash) {
+        console.warn("Password verification failed for disableEncryption");
+        return false;
+      }
+
+      // Remove master password hash
+      localStorage.removeItem(MASTER_HASH_KEY);
+
+      // Update settings
+      securitySettings.value.dataEncryption = false;
+      masterPasswordHash.value = null;
+      encryptionKey.value = null;
+      isLocked.value = false;
+
+      // Clear session unlock state
+      sessionStorage.removeItem(SESSION_UNLOCK_KEY);
+      sessionStorage.removeItem(SESSION_UNLOCK_KEY + "_salt");
+
+      await saveSettings();
+      await addAuditLog("settings_change", "system", "Encryption disabled");
+
+      console.log("[Security] Encryption disabled successfully");
+      return true;
+    } catch (error) {
+      console.error("Failed to disable encryption:", error);
+      return false;
+    }
+  }
+
+  /**
    * Update activity timestamp
    */
   function updateActivity(): void {
@@ -464,6 +505,7 @@ export function useSecurity() {
     // State
     isLocked: computed(() => isLocked.value),
     isEncryptionEnabled: computed(() => securitySettings.value.dataEncryption),
+    hasEncryptionKey: computed(() => encryptionKey.value !== null), // Whether key is actually available
     settings: computed(() => securitySettings.value),
     auditLogs: computed(() => auditLogs.value),
     hasMasterPassword,
@@ -478,6 +520,7 @@ export function useSecurity() {
     setupMasterPassword,
     unlock,
     lock,
+    disableEncryption,
     updateActivity,
 
     // Settings

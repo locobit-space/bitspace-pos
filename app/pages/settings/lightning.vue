@@ -527,9 +527,9 @@ const resetForm = () => {
 };
 
 // Initialize
-onMounted(() => {
-  lightning.loadSettings();
-  loadSettings();
+onMounted(async () => {
+  await lightning.loadSettings();  // Wait for settings to load (including sensitive keys)
+  loadSettings();  // Now populate form with loaded settings
 });
 
 // Watch for settings changes

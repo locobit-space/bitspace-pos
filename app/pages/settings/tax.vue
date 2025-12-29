@@ -229,6 +229,8 @@
 </template>
 
 <script setup lang="ts">
+import { useTax, type TaxRate } from '~/composables/use-tax';
+
 definePageMeta({
   layout: "default",
   middleware: ["auth", "permission"],
@@ -237,17 +239,10 @@ definePageMeta({
 const { t } = useI18n();
 const toast = useToast();
 
-interface TaxRate {
-  id: string;
-  name: string;
-  rate: number;
-  description?: string;
-  categories?: string[];
-  isActive: boolean;
-  isDefault: boolean;
-}
+// Use shared tax composable
+const tax = useTax();
 
-// State
+// Local UI State
 const showTaxRateModal = ref(false);
 const showDeleteModal = ref(false);
 const savingSettings = ref(false);
@@ -256,12 +251,11 @@ const deletingRate = ref(false);
 const editingRate = ref<TaxRate | null>(null);
 const rateToDelete = ref<TaxRate | null>(null);
 
-const settings = reactive({
-  taxEnabled: true,
-  pricesIncludeTax: false,
-  showTaxOnReceipt: true,
-  roundingMethod: "round",
-});
+// Settings is now synced with composable
+const settings = tax.settings;
+
+// Tax rates from composable
+const taxRates = tax.rates;
 
 const rateForm = reactive({
   name: "",
@@ -271,37 +265,6 @@ const rateForm = reactive({
   isActive: true,
   isDefault: false,
 });
-
-// Mock tax rates
-const taxRates = ref<TaxRate[]>([
-  {
-    id: "1",
-    name: "Standard VAT",
-    rate: 10,
-    description: "Standard value-added tax rate",
-    categories: ["Food", "Beverages"],
-    isActive: true,
-    isDefault: true,
-  },
-  {
-    id: "2",
-    name: "Reduced VAT",
-    rate: 5,
-    description: "Reduced rate for essential goods",
-    categories: ["Groceries"],
-    isActive: true,
-    isDefault: false,
-  },
-  {
-    id: "3",
-    name: "Zero Rate",
-    rate: 0,
-    description: "Tax exempt items",
-    categories: [],
-    isActive: true,
-    isDefault: false,
-  },
-]);
 
 const productCategories = [
   "Food",
@@ -365,8 +328,8 @@ async function saveSettings() {
   savingSettings.value = true;
 
   try {
-    // Save to localStorage or backend
-    localStorage.setItem("taxSettings", JSON.stringify(settings));
+    // Save using composable
+    tax.saveSettings();
 
     toast.add({
       title: t("settings.tax.settingsSaved"),
@@ -447,8 +410,8 @@ async function saveRate() {
       });
     }
 
-    // Save to localStorage
-    localStorage.setItem("taxRates", JSON.stringify(taxRates.value));
+    // Save using composable
+    tax.saveRates();
     showTaxRateModal.value = false;
   } catch (error) {
     console.error("Failed to save rate:", error);
@@ -472,14 +435,8 @@ async function deleteRate() {
   deletingRate.value = true;
 
   try {
-    const index = taxRates.value.findIndex(
-      (r) => r.id === rateToDelete.value?.id
-    );
-    if (index !== -1) {
-      taxRates.value.splice(index, 1);
-    }
-
-    localStorage.setItem("taxRates", JSON.stringify(taxRates.value));
+    // Delete using composable
+    tax.deleteTaxRate(rateToDelete.value.id);
 
     toast.add({
       title: t("settings.tax.rateDeleted"),
@@ -498,16 +455,5 @@ async function deleteRate() {
   }
 }
 
-// Load settings and rates on mount
-onMounted(() => {
-  const savedSettings = localStorage.getItem("taxSettings");
-  if (savedSettings) {
-    Object.assign(settings, JSON.parse(savedSettings));
-  }
-
-  const savedRates = localStorage.getItem("taxRates");
-  if (savedRates) {
-    taxRates.value = JSON.parse(savedRates);
-  }
-});
+// Composable auto-loads settings on initialization - no onMounted needed
 </script>
