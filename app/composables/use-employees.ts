@@ -5,6 +5,7 @@
 
 import type { Employee, EmployeeStatus } from "~/types";
 import { db, type EmployeeRecord } from "~/db/db";
+import * as XLSX from "xlsx";
 
 // Singleton state
 const employees = ref<Employee[]>([]);
@@ -16,6 +17,10 @@ const isInitialized = ref(false);
 const searchQuery = ref("");
 const selectedStatus = ref<EmployeeStatus | "all">("all");
 const selectedDepartment = ref<string>("all");
+
+// Sorting
+const sortBy = ref<string>("firstName");
+const sortOrder = ref<"asc" | "desc">("asc");
 
 /**
  * 👥 EMPLOYEES STORE
@@ -29,9 +34,55 @@ export function useEmployeesStore() {
   // 📊 COMPUTED
   // ============================================
 
-  // Filtered employees
+  // Sorted employees
+  const sortedEmployees = computed(() => {
+    const sorted = [...employees.value].sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+
+      switch (sortBy.value) {
+        case "firstName":
+        case "name":
+          aVal = `${a.firstName} ${a.lastName}`.toLowerCase();
+          bVal = `${b.firstName} ${b.lastName}`.toLowerCase();
+          break;
+        case "position":
+          aVal = (a.position || "").toLowerCase();
+          bVal = (b.position || "").toLowerCase();
+          break;
+        case "department":
+          aVal = (a.department || "").toLowerCase();
+          bVal = (b.department || "").toLowerCase();
+          break;
+        case "status":
+          aVal = a.status;
+          bVal = b.status;
+          break;
+        case "baseSalary":
+        case "salary":
+          aVal = a.baseSalary || 0;
+          bVal = b.baseSalary || 0;
+          break;
+        case "hireDate":
+          aVal = a.hireDate ? new Date(a.hireDate).getTime() : 0;
+          bVal = b.hireDate ? new Date(b.hireDate).getTime() : 0;
+          break;
+        default:
+          aVal = (a as any)[sortBy.value] || "";
+          bVal = (b as any)[sortBy.value] || "";
+      }
+
+      if (aVal < bVal) return sortOrder.value === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder.value === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  });
+
+  // Filtered employees (with sorting applied)
   const filteredEmployees = computed(() => {
-    let result = employees.value;
+    let result = sortedEmployees.value;
 
     // Search filter
     if (searchQuery.value) {
@@ -66,13 +117,24 @@ export function useEmployeesStore() {
   );
 
   // Employee count by status
-  const employeeStats = computed(() => ({
-    total: employees.value.length,
-    active: employees.value.filter((e) => e.status === "active").length,
-    inactive: employees.value.filter((e) => e.status === "inactive").length,
-    onLeave: employees.value.filter((e) => e.status === "on-leave").length,
-    terminated: employees.value.filter((e) => e.status === "terminated").length,
-  }));
+  const employeeStats = computed(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    return {
+      total: employees.value.length,
+      active: employees.value.filter((e) => e.status === "active").length,
+      inactive: employees.value.filter((e) => e.status === "inactive").length,
+      onLeave: employees.value.filter((e) => e.status === "on-leave").length,
+      terminated: employees.value.filter((e) => e.status === "terminated")
+        .length,
+      newThisMonth: employees.value.filter((e) => {
+        if (!e.hireDate) return false;
+        const hireDate = new Date(e.hireDate);
+        return hireDate >= startOfMonth;
+      }).length,
+    };
+  });
 
   // Unique departments
   const departments = computed(() => {
@@ -91,6 +153,20 @@ export function useEmployeesStore() {
     });
     return Array.from(pos).sort();
   });
+
+  // ============================================
+  // 🔀 SORTING
+  // ============================================
+
+  function setSorting(field: string, order?: "asc" | "desc") {
+    if (sortBy.value === field && !order) {
+      // Toggle order if same field
+      sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+    } else {
+      sortBy.value = field;
+      sortOrder.value = order || "asc";
+    }
+  }
 
   // ============================================
   // 🗄️ LOCAL STORAGE (Dexie)
@@ -219,7 +295,6 @@ export function useEmployeesStore() {
     if (index === -1) return false;
 
     // Soft delete - just mark as terminated
-    const employee = employees.value[index]!;
     await updateEmployee(id, {
       status: "terminated",
       terminationDate: new Date().toISOString(),
@@ -243,7 +318,44 @@ export function useEmployeesStore() {
       await db.employees.delete(id);
     }
 
+    toast.add({
+      title: t("employees.hardDeleteSuccess"),
+      icon: "i-heroicons-check-circle",
+      color: "success",
+    });
+
     return true;
+  }
+
+  // ============================================
+  // 📋 DUPLICATE EMPLOYEE
+  // ============================================
+
+  async function duplicateEmployee(id: string): Promise<Employee | null> {
+    const employee = employees.value.find((e) => e.id === id);
+    if (!employee) return null;
+
+    // Create a copy without id, code, dates
+    const {
+      id: _id,
+      employeeCode: _code,
+      createdAt: _created,
+      updatedAt: _updated,
+      ...data
+    } = employee;
+
+    const duplicated = await addEmployee({
+      ...data,
+      firstName: `${employee.firstName} (Copy)`,
+    });
+
+    toast.add({
+      title: t("employees.duplicateSuccess"),
+      icon: "i-heroicons-document-duplicate",
+      color: "success",
+    });
+
+    return duplicated;
   }
 
   // ============================================
@@ -326,6 +438,48 @@ export function useEmployeesStore() {
   }
 
   // ============================================
+  // 📥 EXPORT TO EXCEL
+  // ============================================
+
+  function exportToExcel() {
+    const data = filteredEmployees.value.map((e) => ({
+      "Employee Code": e.employeeCode,
+      "First Name": e.firstName,
+      "Last Name": e.lastName,
+      "Display Name": e.displayName || "",
+      Email: e.email || "",
+      Phone: e.phone || "",
+      Department: e.department || "",
+      Position: e.position || "",
+      "Employment Type": e.employmentType,
+      Status: e.status,
+      "Hire Date": e.hireDate || "",
+      "Base Salary": e.baseSalary,
+      Currency: e.currency,
+      "Salary Type": e.salaryType,
+      "Annual Leave": e.annualLeaveBalance,
+      "Sick Leave": e.sickLeaveBalance,
+      "Personal Leave": e.personalLeaveBalance,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Employees");
+
+    // Generate filename with date
+    const date = new Date().toISOString().split("T")[0];
+    const fileName = `employees_${date}.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+
+    toast.add({
+      title: t("employees.export.success"),
+      icon: "i-heroicons-document-arrow-down",
+      color: "success",
+    });
+  }
+
+  // ============================================
   // 📤 EXPORT
   // ============================================
 
@@ -341,6 +495,11 @@ export function useEmployeesStore() {
     selectedStatus,
     selectedDepartment,
 
+    // Sorting
+    sortBy,
+    sortOrder,
+    setSorting,
+
     // Computed
     filteredEmployees,
     activeEmployees,
@@ -354,6 +513,7 @@ export function useEmployeesStore() {
     updateEmployee,
     deleteEmployee,
     hardDeleteEmployee,
+    duplicateEmployee,
     getEmployee,
     getEmployeeByCode,
     getEmployeesByBranch,
@@ -361,5 +521,6 @@ export function useEmployeesStore() {
     adjustLeaveBalance,
     calculateMonthlyPay,
     generateEmployeeCode,
+    exportToExcel,
   };
 }

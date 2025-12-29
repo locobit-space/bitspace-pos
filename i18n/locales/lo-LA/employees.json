@@ -13,6 +13,7 @@
     "createSuccess": "ເພີ່ມພະນັກງານສຳເລັດແລ້ວ",
     "updateSuccess": "ອັບເດດພະນັກງານສຳເລັດແລ້ວ",
     "deleteSuccess": "ຢຸດການເຮັດວຽກສຳເລັດແລ້ວ",
+    "hardDeleteSuccess": "ລຶບພະນັກງານຖາວອນແລ້ວ",
 
     "status": {
       "label": "ສະຖານະ",
@@ -113,6 +114,48 @@
 
     "employmentInfo": "ຂໍ້ມູນການຈ້າງງານ",
     "contactInfo": "ຂໍ້ມູນຕິດຕໍ່",
-    "tenure": "ໄລຍະເວລາເຮັດວຽກ"
+    "tenure": "ໄລຍະເວລາເຮັດວຽກ",
+
+    "actions": {
+      "view": "ເບິ່ງລາຍລະອຽດ",
+      "edit": "ແກ້ໄຂພະນັກງານ",
+      "duplicate": "ສຳເນົາ",
+      "terminate": "ຢຸດເຮັດວຽກ",
+      "deletePermanently": "ລຶບຖາວອນ",
+      "export": "ສົ່ງອອກເປັນ Excel"
+    },
+
+    "confirm": {
+      "terminateTitle": "ຢຸດການເຮັດວຽກພະນັກງານ",
+      "terminateMessage": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການໃຫ້ {name} ຢຸດເຮັດວຽກ? ນີ້ຈະໝາຍເຖິງການຢຸດເຮັດວຽກແຕ່ຍັງເກັບຮັກສາຂໍ້ມູນໄວ້.",
+      "deleteTitle": "ລຶບຖາວອນ",
+      "deleteMessage": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບ {name} ຖາວອນ? ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້.",
+      "confirm": "ຢືນຢັນ",
+      "cancel": "ຍົກເລີກ"
+    },
+
+    "stats": {
+      "totalEmployees": "ພະນັກງານທັງໝົດ",
+      "activeEmployees": "ເຮັດວຽກ",
+      "onLeaveEmployees": "ພັກຜ່ອນ",
+      "newThisMonth": "ໃໝ່ເດືອນນີ້"
+    },
+
+    "sort": {
+      "name": "ຊື່",
+      "position": "ຕຳແໜ່ງ",
+      "department": "ພະແນກ",
+      "status": "ສະຖານະ",
+      "salary": "ເງິນເດືອນ",
+      "hireDate": "ວັນທີເຂົ້າເຮັດວຽກ"
+    },
+
+    "export": {
+      "title": "ສົ່ງອອກພະນັກງານ",
+      "fileName": "ພະນັກງານ",
+      "success": "ສົ່ງອອກລາຍຊື່ພະນັກງານສຳເລັດແລ້ວ"
+    },
+
+    "duplicateSuccess": "ສຳເນົາພະນັກງານສຳເລັດແລ້ວ"
   }
 }

@@ -16,7 +16,11 @@ const viewMode = ref<"grid" | "table">("grid");
 // Modal states
 const showCreateModal = ref(false);
 const showDetailModal = ref(false);
+const showEditModal = ref(false);
+const showTerminateModal = ref(false);
+const showDeleteModal = ref(false);
 const selectedEmployee = ref<Employee | null>(null);
+const employeeToEdit = ref<Employee | null>(null);
 
 // Status options
 const statusOptions = [
@@ -80,6 +84,44 @@ function viewEmployee(employee: Employee) {
   showDetailModal.value = true;
 }
 
+// Edit employee
+function editEmployee(employee: Employee) {
+  employeeToEdit.value = employee;
+  showEditModal.value = true;
+}
+
+// Duplicate employee
+async function handleDuplicate(employee: Employee) {
+  await employeesStore.duplicateEmployee(employee.id);
+}
+
+// Terminate employee (soft delete)
+function confirmTerminate(employee: Employee) {
+  selectedEmployee.value = employee;
+  showTerminateModal.value = true;
+}
+
+async function handleTerminate() {
+  if (!selectedEmployee.value) return;
+  await employeesStore.deleteEmployee(selectedEmployee.value.id);
+  showTerminateModal.value = false;
+  selectedEmployee.value = null;
+}
+
+// Delete permanently
+function confirmDelete(employee: Employee) {
+  selectedEmployee.value = employee;
+  showDeleteModal.value = true;
+}
+
+async function handleDelete() {
+  if (!selectedEmployee.value) return;
+  await employeesStore.hardDeleteEmployee(selectedEmployee.value.id);
+  showDeleteModal.value = false;
+  showDetailModal.value = false;
+  selectedEmployee.value = null;
+}
+
 // Format currency
 function formatCurrency(amount: number, currency: string = "LAK"): string {
   return new Intl.NumberFormat("lo-LA", {
@@ -94,6 +136,58 @@ const departmentOptions = computed(() => [
   { value: "all", label: t("common.all") },
   ...employeesStore.departments.value.map((d) => ({ value: d, label: d })),
 ]);
+
+// Actions dropdown items
+function getActionItems(employee: Employee) {
+  return [
+    [
+      {
+        label: t("employees.actions.view"),
+        icon: "i-heroicons-eye",
+        click: () => viewEmployee(employee),
+      },
+      {
+        label: t("employees.actions.edit"),
+        icon: "i-heroicons-pencil-square",
+        click: () => editEmployee(employee),
+      },
+      {
+        label: t("employees.actions.duplicate"),
+        icon: "i-heroicons-document-duplicate",
+        click: () => handleDuplicate(employee),
+      },
+    ],
+    [
+      {
+        label: t("employees.actions.terminate"),
+        icon: "i-heroicons-no-symbol",
+        color: "warning" as const,
+        click: () => confirmTerminate(employee),
+        disabled: employee.status === "terminated",
+      },
+      {
+        label: t("employees.actions.deletePermanently"),
+        icon: "i-heroicons-trash",
+        color: "error" as const,
+        click: () => confirmDelete(employee),
+      },
+    ],
+  ];
+}
+
+// Sorting
+function handleSort(field: string) {
+  employeesStore.setSorting(field);
+}
+
+// Get sort icon
+function getSortIcon(field: string) {
+  if (employeesStore.sortBy.value !== field)
+    return "i-heroicons-chevron-up-down";
+  return employeesStore.sortOrder.value === "asc"
+    ? "i-heroicons-chevron-up"
+    : "i-heroicons-chevron-down";
+}
 </script>
 
 <template>
@@ -133,12 +227,104 @@ const departmentOptions = computed(() => [
           <!-- Actions -->
           <div class="flex items-center gap-2">
             <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-heroicons-document-arrow-down"
+              @click="employeesStore.exportToExcel"
+            >
+              {{ t("employees.actions.export") }}
+            </UButton>
+            <UButton
               color="primary"
               icon="i-heroicons-plus"
               @click="showCreateModal = true"
             >
               {{ t("employees.addEmployee") }}
             </UButton>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          <div
+            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+                <UIcon
+                  name="i-heroicons-users"
+                  class="w-5 h-5 text-primary-500"
+                />
+              </div>
+              <div>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ employeesStore.employeeStats.value.total }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ t("employees.stats.totalEmployees") }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <div class="p-2 bg-success-100 dark:bg-success-900/30 rounded-lg">
+                <UIcon
+                  name="i-heroicons-check-circle"
+                  class="w-5 h-5 text-success-500"
+                />
+              </div>
+              <div>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ employeesStore.employeeStats.value.active }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ t("employees.stats.activeEmployees") }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg">
+                <UIcon
+                  name="i-heroicons-calendar"
+                  class="w-5 h-5 text-warning-500"
+                />
+              </div>
+              <div>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ employeesStore.employeeStats.value.onLeave }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ t("employees.stats.onLeaveEmployees") }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <div class="p-2 bg-info-100 dark:bg-info-900/30 rounded-lg">
+                <UIcon
+                  name="i-heroicons-sparkles"
+                  class="w-5 h-5 text-info-500"
+                />
+              </div>
+              <div>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ employeesStore.employeeStats.value.newThisMonth }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ t("employees.stats.newThisMonth") }}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -241,47 +427,69 @@ const departmentOptions = computed(() => [
         <div
           v-for="employee in employeesStore.filteredEmployees.value"
           :key="employee.id"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow cursor-pointer"
-          @click="viewEmployee(employee)"
+          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow cursor-pointer group"
         >
-          <!-- Avatar & Status -->
+          <!-- Avatar & Status & Actions -->
           <div class="flex items-start justify-between mb-3">
-            <UAvatar
-              :src="employee.avatar"
-              :alt="`${employee.firstName} ${employee.lastName}`"
-              size="xl"
-              class="ring-2 ring-white dark:ring-gray-800"
-            />
-            <UBadge :color="getStatusColor(employee.status)" size="sm">
-              {{ t(`employees.status.${employee.status}`) }}
-            </UBadge>
+            <div
+              class="flex items-center gap-3"
+              @click="viewEmployee(employee)"
+            >
+              <UAvatar
+                :src="employee.avatar"
+                :alt="`${employee.firstName} ${employee.lastName}`"
+                size="xl"
+                class="ring-2 ring-white dark:ring-gray-800"
+              />
+            </div>
+            <div class="flex items-center gap-1">
+              <UBadge :color="getStatusColor(employee.status)" size="sm">
+                {{ t(`employees.status.${employee.status}`) }}
+              </UBadge>
+              <UDropdownMenu :items="getActionItems(employee)">
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-heroicons-ellipsis-vertical"
+                  size="xs"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity"
+                  @click.stop
+                />
+              </UDropdownMenu>
+            </div>
           </div>
 
           <!-- Info -->
-          <h3 class="font-semibold text-gray-900 dark:text-white truncate">
-            {{ employee.firstName }} {{ employee.lastName }}
-          </h3>
-          <p class="text-sm text-gray-500 truncate">
-            {{ employee.position || t("employees.noPosition") }}
-          </p>
-          <p class="text-xs text-gray-400 mt-1">{{ employee.employeeCode }}</p>
+          <div @click="viewEmployee(employee)">
+            <h3 class="font-semibold text-gray-900 dark:text-white truncate">
+              {{ employee.firstName }} {{ employee.lastName }}
+            </h3>
+            <p class="text-sm text-gray-500 truncate">
+              {{ employee.position || t("employees.noPosition") }}
+            </p>
+            <p class="text-xs text-gray-400 mt-1">
+              {{ employee.employeeCode }}
+            </p>
 
-          <!-- Quick Info -->
-          <div
-            class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700"
-          >
-            <UBadge color="neutral" variant="subtle" size="xs">
-              {{ employmentTypeLabels[employee.employmentType] }}
-            </UBadge>
-            <span class="text-xs text-gray-500">{{ employee.department }}</span>
-          </div>
+            <!-- Quick Info -->
+            <div
+              class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700"
+            >
+              <UBadge color="neutral" variant="subtle" size="xs">
+                {{ employmentTypeLabels[employee.employmentType] }}
+              </UBadge>
+              <span class="text-xs text-gray-500">{{
+                employee.department
+              }}</span>
+            </div>
 
-          <!-- Contact -->
-          <div class="flex items-center gap-3 mt-3 text-sm text-gray-500">
-            <span v-if="employee.phone" class="flex items-center gap-1">
-              <UIcon name="i-heroicons-phone" class="w-3 h-3" />
-              {{ employee.phone }}
-            </span>
+            <!-- Contact -->
+            <div class="flex items-center gap-3 mt-3 text-sm text-gray-500">
+              <span v-if="employee.phone" class="flex items-center gap-1">
+                <UIcon name="i-heroicons-phone" class="w-3 h-3" />
+                {{ employee.phone }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -295,29 +503,49 @@ const departmentOptions = computed(() => [
           <thead class="bg-gray-50 dark:bg-gray-900">
             <tr>
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                @click="handleSort('firstName')"
               >
-                {{ t("employees.employee") }}
+                <div class="flex items-center gap-1">
+                  {{ t("employees.employee") }}
+                  <UIcon :name="getSortIcon('firstName')" class="w-4 h-4" />
+                </div>
               </th>
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                @click="handleSort('position')"
               >
-                {{ t("employees.position") }}
+                <div class="flex items-center gap-1">
+                  {{ t("employees.position") }}
+                  <UIcon :name="getSortIcon('position')" class="w-4 h-4" />
+                </div>
               </th>
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                @click="handleSort('department')"
               >
-                {{ t("employees.department") }}
+                <div class="flex items-center gap-1">
+                  {{ t("employees.department") }}
+                  <UIcon :name="getSortIcon('department')" class="w-4 h-4" />
+                </div>
               </th>
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                @click="handleSort('status')"
               >
-                {{ t("employees.status.label") }}
+                <div class="flex items-center gap-1">
+                  {{ t("employees.status.label") }}
+                  <UIcon :name="getSortIcon('status')" class="w-4 h-4" />
+                </div>
               </th>
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                @click="handleSort('baseSalary')"
               >
-                {{ t("employees.salary") }}
+                <div class="flex items-center gap-1">
+                  {{ t("employees.salary") }}
+                  <UIcon :name="getSortIcon('baseSalary')" class="w-4 h-4" />
+                </div>
               </th>
               <th
                 class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -374,13 +602,15 @@ const departmentOptions = computed(() => [
                 >
               </td>
               <td class="px-4 py-3 text-right">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-heroicons-ellipsis-vertical"
-                  size="sm"
-                  @click.stop
-                />
+                <UDropdownMenu :items="getActionItems(employee)">
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-heroicons-ellipsis-vertical"
+                    size="sm"
+                    @click.stop
+                  />
+                </UDropdownMenu>
               </td>
             </tr>
           </tbody>
@@ -403,6 +633,29 @@ const departmentOptions = computed(() => [
       </template>
     </UModal>
 
+    <!-- Edit Employee Modal -->
+    <UModal
+      v-model:open="showEditModal"
+      :ui="{
+        content: 'max-w-2xl ',
+      }"
+    >
+      <template #content>
+        <EmployeeForm
+          v-if="employeeToEdit"
+          :employee="employeeToEdit"
+          @close="
+            showEditModal = false;
+            employeeToEdit = null;
+          "
+          @saved="
+            showEditModal = false;
+            employeeToEdit = null;
+          "
+        />
+      </template>
+    </UModal>
+
     <!-- Employee Detail Modal -->
     <UModal v-model:open="showDetailModal" fullscreen>
       <template #content>
@@ -411,10 +664,88 @@ const departmentOptions = computed(() => [
           :employee="selectedEmployee"
           @close="showDetailModal = false"
           @edit="
-            showCreateModal = true;
+            employeeToEdit = selectedEmployee;
+            showEditModal = true;
             showDetailModal = false;
           "
         />
+      </template>
+    </UModal>
+
+    <!-- Terminate Confirmation Modal -->
+    <UModal v-model:open="showTerminateModal">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="p-3 bg-warning-100 dark:bg-warning-900/30 rounded-full">
+              <UIcon
+                name="i-heroicons-exclamation-triangle"
+                class="w-6 h-6 text-warning-500"
+              />
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ t("employees.confirm.terminateTitle") }}
+              </h3>
+            </div>
+          </div>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            {{
+              t("employees.confirm.terminateMessage", {
+                name: `${selectedEmployee?.firstName} ${selectedEmployee?.lastName}`,
+              })
+            }}
+          </p>
+          <div class="flex justify-end gap-3">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              @click="showTerminateModal = false"
+            >
+              {{ t("employees.confirm.cancel") }}
+            </UButton>
+            <UButton color="warning" @click="handleTerminate">
+              {{ t("employees.confirm.confirm") }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Delete Confirmation Modal -->
+    <UModal v-model:open="showDeleteModal">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="p-3 bg-error-100 dark:bg-error-900/30 rounded-full">
+              <UIcon name="i-heroicons-trash" class="w-6 h-6 text-error-500" />
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ t("employees.confirm.deleteTitle") }}
+              </h3>
+            </div>
+          </div>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            {{
+              t("employees.confirm.deleteMessage", {
+                name: `${selectedEmployee?.firstName} ${selectedEmployee?.lastName}`,
+              })
+            }}
+          </p>
+          <div class="flex justify-end gap-3">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              @click="showDeleteModal = false"
+            >
+              {{ t("employees.confirm.cancel") }}
+            </UButton>
+            <UButton color="error" @click="handleDelete">
+              {{ t("employees.confirm.confirm") }}
+            </UButton>
+          </div>
+        </div>
       </template>
     </UModal>
   </div>

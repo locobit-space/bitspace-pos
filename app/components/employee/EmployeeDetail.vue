@@ -9,6 +9,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "edit"): void;
+  (e: "duplicate", id: string): void;
+  (e: "terminate", id: string): void;
+  (e: "delete", id: string): void;
 }>();
 
 const { t } = useI18n();
@@ -305,10 +308,31 @@ const tenure = computed(() => {
     <div
       class="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
     >
-      <div class="text-xs text-gray-500">
-        {{ t("common.lastUpdated") }}: {{ formatDate(employee.updatedAt) }}
+      <div class="flex items-center gap-2">
+        <div class="text-xs text-gray-500">
+          {{ t("common.lastUpdated") }}: {{ formatDate(employee.updatedAt) }}
+        </div>
       </div>
       <div class="flex items-center gap-2">
+        <UButton
+          v-if="employee.status !== 'terminated'"
+          color="warning"
+          variant="ghost"
+          icon="i-heroicons-no-symbol"
+          size="sm"
+          @click="emit('terminate', employee.id)"
+        >
+          {{ t("employees.actions.terminate") }}
+        </UButton>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-document-duplicate"
+          size="sm"
+          @click="emit('duplicate', employee.id)"
+        >
+          {{ t("employees.actions.duplicate") }}
+        </UButton>
         <UButton color="neutral" variant="ghost" @click="emit('close')">
           {{ t("common.close") }}
         </UButton>

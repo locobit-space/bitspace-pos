@@ -44,5 +44,24 @@
       "applyTemplatesDesc": "Import {categories} categories and {products} sample products",
       "noTemplateProducts": "No preset products, add your own"
     }
+  },
+  "branch": {
+    "title": "Branches",
+    "name": "Branch Name",
+    "namePlaceholder": "e.g., Main Branch, Downtown Store",
+    "code": "Branch Code",
+    "codePlaceholder": "MAIN",
+    "codeHint": "Short unique identifier",
+    "address": "Branch Address",
+    "addressPlaceholder": "Enter branch address",
+    "phone": "Branch Phone",
+    "phonePlaceholder": "+856 20 1234 5678",
+    "branch": "Branch",
+    "selectBranch": "Select Branch",
+    "currentBranch": "Current Branch",
+    "add": "Add Branch",
+    "edit": "Edit Branch",
+    "delete": "Delete Branch",
+    "manage": "Manage Branches"
   }
 }

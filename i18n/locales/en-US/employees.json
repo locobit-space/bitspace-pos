@@ -13,6 +13,7 @@
     "createSuccess": "Employee added successfully",
     "updateSuccess": "Employee updated successfully",
     "deleteSuccess": "Employee terminated successfully",
+    "hardDeleteSuccess": "Employee permanently deleted",
 
     "status": {
       "label": "Status",
@@ -113,6 +114,48 @@
 
     "employmentInfo": "Employment Information",
     "contactInfo": "Contact Information",
-    "tenure": "Tenure"
+    "tenure": "Tenure",
+
+    "actions": {
+      "view": "View Details",
+      "edit": "Edit Employee",
+      "duplicate": "Duplicate",
+      "terminate": "Terminate",
+      "deletePermanently": "Delete Permanently",
+      "export": "Export to Excel"
+    },
+
+    "confirm": {
+      "terminateTitle": "Terminate Employee",
+      "terminateMessage": "Are you sure you want to terminate {name}? This will mark the employee as terminated but keep their records.",
+      "deleteTitle": "Delete Permanently",
+      "deleteMessage": "Are you sure you want to permanently delete {name}? This action cannot be undone.",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+
+    "stats": {
+      "totalEmployees": "Total Employees",
+      "activeEmployees": "Active",
+      "onLeaveEmployees": "On Leave",
+      "newThisMonth": "New This Month"
+    },
+
+    "sort": {
+      "name": "Name",
+      "position": "Position",
+      "department": "Department",
+      "status": "Status",
+      "salary": "Salary",
+      "hireDate": "Hire Date"
+    },
+
+    "export": {
+      "title": "Export Employees",
+      "fileName": "employees",
+      "success": "Employee list exported successfully"
+    },
+
+    "duplicateSuccess": "Employee duplicated successfully"
   }
 }

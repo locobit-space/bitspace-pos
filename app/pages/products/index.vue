@@ -1136,6 +1136,7 @@ useHead({
 // Use real products store with Nostr sync & encryption
 const productsStore = useProductsStore();
 const toast = useToast();
+const { t } = useI18n();
 const { canEditProducts, canDeleteProducts } = usePermissions();
 
 interface Unit {
@@ -1696,7 +1697,8 @@ const handleProductSave = async (data: {
       variants: data.hasVariants ? data.variants : undefined,
     };
 
-    if (selectedProduct.value) {
+    if (selectedProduct.value && selectedProduct.value.id) {
+      // Only update if we have an existing product with a real ID
       await productsStore.updateProduct(selectedProduct.value.id, productData);
       toast.add({
         title: "Product updated",
@@ -1705,6 +1707,7 @@ const handleProductSave = async (data: {
         color: "green",
       });
     } else {
+      // Create new product (including when coming from lookup with empty ID)
       await productsStore.addProduct({
         ...productData,
         createdAt: new Date().toISOString(),

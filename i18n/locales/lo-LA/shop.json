@@ -1,0 +1,67 @@
+{
+  "shop": {
+    "title": "ຮ້ານ",
+    "name": "ຊື່ຮ້ານ",
+    "namePlaceholder": "ປ້ອນຊື່ຮ້ານຂອງທ່ານ",
+    "address": "ທີ່ຢູ່",
+    "addressPlaceholder": "ປ້ອນທີ່ຢູ່ຮ້ານ",
+    "phone": "ເບີໂທ",
+    "phonePlaceholder": "+856 20 1234 5678",
+    "email": "ອີເມວ",
+    "emailPlaceholder": "shop{'@'}example.com",
+    "logo": "ໂລໂກ້",
+    "setup": {
+      "title": "ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ bnos.space",
+      "subtitle": "ມາຕັ້ງຄ່າທຸລະກິດຂອງທ່ານດ້ວຍຂັ້ນຕອນງ່າຍໆ",
+      "step1": {
+        "title": "ຂໍ້ມູນຮ້ານ",
+        "subtitle": "ລາຍລະອຽດພື້ນຖານກ່ຽວກັບທຸລະກິດຂອງທ່ານ"
+      },
+      "step2": {
+        "title": "ປະເພດຮ້ານ",
+        "subtitle": "ເລືອກປະເພດທຸລະກິດຂອງທ່ານເພື່ອໃຫ້ເໝາະສົມກັບແມ່ແບບ"
+      },
+      "step3": {
+        "title": "ຕັ້ງຄ່າສາຂາ",
+        "subtitle": "ກຳນົດສະຖານທີ່ທຳອິດຂອງທ່ານ"
+      },
+      "step4": {
+        "title": "ການຕັ້ງຄ່າ ແລະ ແມ່ແບບ",
+        "subtitle": "ປັບແຕ່ງຄວາມມັກ ແລະ ນຳເຂົ້າສິນຄ້າເລີ່ມຕົ້ນ"
+      },
+      "success": "ຕັ້ງຄ່າສຳເລັດແລ້ວ!",
+      "successDescription": "ຮ້ານຂອງທ່ານໄດ້ຖືກກຳນົດຄ່າສຳເລັດແລ້ວ",
+      "summary": "ສະຫຼຸບ",
+      "complete": "ຕັ້ງຄ່າສຳເລັດ",
+      "skipForNow": "ຂ້າມໄປກ່ອນ",
+      "visibility": "ການເບິ່ງເຫັນຮ້ານ",
+      "private": "ສ່ວນຕົວ",
+      "privateDesc": "ເບິ່ງເຫັນໄດ້ພາຍໃນລະບົບ POS ເທົ່ານັ້ນ",
+      "public": "ສາທາລະນະ",
+      "publicDesc": "ສາມາດຄົ້ນຫາໄດ້ໃນ marketplace",
+      "shopType": "ປະເພດຮ້ານ",
+      "applyTemplates": "ນຳໃຊ້ແມ່ແບບສິນຄ້າ",
+      "applyTemplatesDesc": "ນຳເຂົ້າ {categories} ໝວດໝູ່ ແລະ {products} ສິນຄ້າຕັວຢ່າງ",
+      "noTemplateProducts": "ບໍ່ມີສິນຄ້າທີ່ກຳນົດໄວ້, ເພີ່ມເອງ"
+    }
+  },
+  "branch": {
+    "title": "ສາຂາ",
+    "name": "ຊື່ສາຂາ",
+    "namePlaceholder": "ເຊັ່ນ: ສາຂາຫຼັກ, ຮ້ານໃຈກາງ",
+    "code": "ລະຫັດສາຂາ",
+    "codePlaceholder": "MAIN",
+    "codeHint": "ລະຫັດສັ້ນທີ່ບໍ່ຊ້ຳກັນ",
+    "address": "ທີ່ຢູ່ສາຂາ",
+    "addressPlaceholder": "ປ້ອນທີ່ຢູ່ສາຂາ",
+    "phone": "ເບີໂທສາຂາ",
+    "phonePlaceholder": "+856 20 1234 5678",
+    "branch": "ສາຂາ",
+    "selectBranch": "ເລືອກສາຂາ",
+    "currentBranch": "ສາຂາປັດຈຸບັນ",
+    "add": "ເພີ່ມສາຂາ",
+    "edit": "ແກ້ໄຂສາຂາ",
+    "delete": "ລຶບສາຂາ",
+    "manage": "ຈັດການສາຂາ"
+  }
+}
