@@ -17,7 +17,7 @@ const _t = useI18n();
 const pos = usePOS();
 const currency = useCurrency();
 
-import QrcodeVue from 'qrcode.vue';
+import QrcodeVue from "qrcode.vue";
 
 // ============================================
 // Display States
@@ -153,13 +153,17 @@ const formatDate = computed(() => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
+  <div
+    class="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden"
+  >
     <!-- Minimal Header -->
     <header
-      class="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800">
+      class="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800"
+    >
       <div class="flex items-center gap-4">
         <div
-          class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+          class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center"
+        >
           <span class="text-2xl">☕</span>
         </div>
         <div>
@@ -168,9 +172,13 @@ const formatDate = computed(() => {
         </div>
       </div>
       <div class="flex items-center gap-8">
-        <div v-if="pos.cartItems.value.length > 0" class="flex items-center gap-2 text-gray-500">
+        <div
+          v-if="pos.cartItems.value.length > 0"
+          class="flex items-center gap-2 text-gray-500"
+        >
           <span
-            class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center justify-center">
+            class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center justify-center"
+          >
             {{ pos.itemCount.value }}
           </span>
           <span class="text-sm">items</span>
@@ -186,17 +194,25 @@ const formatDate = computed(() => {
       <!-- ============================================ -->
       <!-- IDLE STATE -->
       <!-- ============================================ -->
-      <div v-if="displayState === 'idle'"
-        class="h-full flex flex-col items-center justify-center bg-white dark:bg-gray-950">
+      <div
+        v-if="displayState === 'idle'"
+        class="h-full flex flex-col items-center justify-center bg-white dark:bg-gray-950"
+      >
         <!-- Promo Content -->
-        <div class="text-center transition-all duration-300 ease-out" :class="isPromoTransitioning
-            ? 'opacity-0 translate-y-4'
-            : 'opacity-100 translate-y-0'
-          ">
+        <div
+          class="text-center transition-all duration-300 ease-out"
+          :class="
+            isPromoTransitioning
+              ? 'opacity-0 translate-y-4'
+              : 'opacity-100 translate-y-0'
+          "
+        >
           <div class="text-9xl mb-6 filter drop-shadow-sm">
             {{ promoMessages[currentPromoIndex]?.icon }}
           </div>
-          <h2 class="text-5xl font-light text-gray-800 dark:text-gray-100 tracking-tight">
+          <h2
+            class="text-5xl font-light text-gray-800 dark:text-gray-100 tracking-tight"
+          >
             {{ promoMessages[currentPromoIndex]?.title }}
           </h2>
           <p class="text-xl text-gray-400 font-light mt-3">
@@ -206,25 +222,35 @@ const formatDate = computed(() => {
 
         <!-- Promo Dots -->
         <div class="flex gap-2 mt-12">
-          <span v-for="(_, i) in promoMessages" :key="i" class="w-2 h-2 rounded-full transition-all duration-300"
-            :class="i === currentPromoIndex
+          <span
+            v-for="(_, i) in promoMessages"
+            :key="i"
+            class="w-2 h-2 rounded-full transition-all duration-300"
+            :class="
+              i === currentPromoIndex
                 ? 'w-6 bg-amber-500'
                 : 'bg-gray-200 dark:bg-gray-800'
-              " />
+            "
+          />
         </div>
 
         <!-- Payment methods -->
         <div class="absolute bottom-16 flex gap-10">
-          <div class="flex items-center gap-3 px-5 py-3 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-500">
+          <div
+            class="flex items-center gap-3 px-5 py-3 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-500"
+          >
             <span class="text-xl">💵</span>
             <span class="font-medium">Cash</span>
           </div>
           <div
-            class="flex items-center gap-3 px-5 py-3 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+            class="flex items-center gap-3 px-5 py-3 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+          >
             <span class="text-xl">⚡</span>
             <span class="font-medium">Lightning</span>
           </div>
-          <div class="flex items-center gap-3 px-5 py-3 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-500">
+          <div
+            class="flex items-center gap-3 px-5 py-3 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-500"
+          >
             <span class="text-xl">📱</span>
             <span class="font-medium">QR Pay</span>
           </div>
@@ -239,13 +265,18 @@ const formatDate = computed(() => {
         <div class="flex-1 flex flex-col bg-white dark:bg-gray-950">
           <!-- Order Type Badge -->
           <div class="px-8 pt-6 pb-2">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
-              :class="orderTypeInfo.color">
+            <div
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+              :class="orderTypeInfo.color"
+            >
               <span class="text-lg">{{ orderTypeInfo.icon }}</span>
               <span>{{ orderTypeInfo.label }}</span>
-              <span v-if="
-                pos.orderType.value === 'dine_in' && pos.tableNumber.value
-              " class="font-bold">
+              <span
+                v-if="
+                  pos.orderType.value === 'dine_in' && pos.tableNumber.value
+                "
+                class="font-bold"
+              >
                 · Table {{ pos.tableNumber.value }}
               </span>
             </div>
@@ -253,11 +284,15 @@ const formatDate = computed(() => {
 
           <div class="flex-1 overflow-y-auto px-8 py-4">
             <TransitionGroup name="list" tag="div" class="space-y-3">
-              <div v-for="(item, index) in pos.cartItems.value" :key="`${item.product?.id || index}-${index}`"
-                class="flex items-center gap-5 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+              <div
+                v-for="(item, index) in pos.cartItems.value"
+                :key="`${item.product?.id || index}-${index}`"
+                class="flex items-center gap-5 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+              >
                 <!-- Icon -->
                 <div
-                  class="w-14 h-14 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-2xl">
+                  class="w-14 h-14 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-2xl"
+                >
                   {{ item.product?.image || "📦" }}
                 </div>
 
@@ -266,18 +301,31 @@ const formatDate = computed(() => {
                   <h3 class="text-lg font-medium truncate">
                     {{ item.product?.name || "Product" }}
                   </h3>
-                  <div v-if="
-                    item.selectedVariant || item.selectedModifiers?.length
-                  " class="text-sm text-gray-400 mt-0.5">
-                    <span v-if="item.selectedVariant" class="text-amber-600 dark:text-amber-400">{{
-                      item.selectedVariant.name }}</span>
-                    <span v-if="item.selectedModifiers?.length" class="text-gray-400">
+                  <div
+                    v-if="
+                      item.selectedVariant || item.selectedModifiers?.length
+                    "
+                    class="text-sm text-gray-400 mt-0.5"
+                  >
+                    <span
+                      v-if="item.selectedVariant"
+                      class="text-amber-600 dark:text-amber-400"
+                      >{{ item.selectedVariant.name }}</span
+                    >
+                    <span
+                      v-if="item.selectedModifiers?.length"
+                      class="text-gray-400"
+                    >
                       ·
                       {{
                         item.selectedModifiers.map((m) => m.name).join(", ")
-                      }}</span>
+                      }}</span
+                    >
                   </div>
-                  <p v-if="item.notes" class="text-sm text-blue-500 mt-1 italic">
+                  <p
+                    v-if="item.notes"
+                    class="text-sm text-blue-500 mt-1 italic"
+                  >
                     "{{ item.notes }}"
                   </p>
                 </div>
@@ -287,7 +335,7 @@ const formatDate = computed(() => {
                   <span class="text-gray-400">×</span>
                   <span class="text-xl font-semibold w-8 text-center">{{
                     item.quantity
-                    }}</span>
+                  }}</span>
                 </div>
 
                 <!-- Price -->
@@ -305,23 +353,29 @@ const formatDate = computed(() => {
 
         <!-- Summary Panel -->
         <div
-          class="w-96 bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col justify-end p-8 border-l border-gray-200 dark:border-gray-800">
+          class="w-96 bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col justify-end p-8 border-l border-gray-200 dark:border-gray-800"
+        >
           <div class="space-y-4">
             <div class="flex justify-between text-lg text-gray-500">
               <span>Subtotal</span>
               <span class="font-medium text-gray-700 dark:text-gray-300">{{
                 currency.format(pos.subtotal.value, pos.selectedCurrency.value)
-                }}</span>
+              }}</span>
             </div>
-            <div v-if="pos.tipAmount.value > 0" class="flex justify-between text-lg text-gray-500">
+            <div
+              v-if="pos.tipAmount.value > 0"
+              class="flex justify-between text-lg text-gray-500"
+            >
               <span>Tip</span>
               <span class="font-medium text-gray-700 dark:text-gray-300">{{
                 currency.format(pos.tipAmount.value, pos.selectedCurrency.value)
-                }}</span>
+              }}</span>
             </div>
           </div>
 
-          <div class="border-t-2 border-gray-200 dark:border-gray-800 mt-6 pt-6">
+          <div
+            class="border-t-2 border-gray-200 dark:border-gray-800 mt-6 pt-6"
+          >
             <div class="flex justify-between items-end">
               <span class="text-xl text-gray-500">Total</span>
               <div class="text-right">
@@ -330,8 +384,10 @@ const formatDate = computed(() => {
                     currency.format(pos.total.value, pos.selectedCurrency.value)
                   }}
                 </div>
-                <div v-if="pos.totalSats.value > 0"
-                  class="text-xl text-amber-500 font-medium mt-2 flex items-center justify-end gap-1">
+                <div
+                  v-if="pos.totalSats.value > 0"
+                  class="text-xl text-amber-500 font-medium mt-2 flex items-center justify-end gap-1"
+                >
                   <span>⚡</span>
                   <span>{{ pos.totalSats.value.toLocaleString() }} sats</span>
                 </div>
@@ -344,29 +400,49 @@ const formatDate = computed(() => {
       <!-- ============================================ -->
       <!-- PAYMENT STATE: Multiple Payment Methods -->
       <!-- ============================================ -->
-      <div v-else-if="displayState === 'payment'"
-        class="h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+      <div
+        v-else-if="displayState === 'payment'"
+        class="h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900"
+      >
         <!-- ==================== -->
         <!-- LIGHTNING PAYMENT -->
         <!-- ==================== -->
-        <div v-if="
-          pos.paymentState.value.method === 'lightning' ||
-          pos.paymentState.value.invoiceData
-        " class="flex items-center justify-center gap-24 w-full">
+        <div
+          v-if="
+            pos.paymentState.value.method === 'lightning' ||
+            pos.paymentState.value.invoiceData
+          "
+          class="flex items-center justify-center gap-24 w-full"
+        >
           <!-- QR Code -->
           <div class="text-center">
             <div class="relative">
-              <div v-if="pos.paymentState.value.invoiceData"
-                class="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-none dark:border dark:border-gray-800">
-                <QrcodeVue :value="pos.paymentState.value.invoiceData" :size="288" level="M" render-as="svg"
-                  background="#ffffff" foreground="#000000" />
+              <div
+                v-if="pos.paymentState.value.invoiceData"
+                class="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-none dark:border dark:border-gray-800"
+              >
+                <QrcodeVue
+                  :value="pos.paymentState.value.invoiceData"
+                  :size="288"
+                  level="M"
+                  render-as="svg"
+                  background="#ffffff"
+                  foreground="#000000"
+                />
               </div>
-              <div v-else class="w-72 h-72 bg-gray-100 dark:bg-gray-900 rounded-3xl flex items-center justify-center">
+              <div
+                v-else
+                class="w-72 h-72 bg-gray-100 dark:bg-gray-900 rounded-3xl flex items-center justify-center"
+              >
                 <span class="text-7xl animate-pulse">⚡</span>
               </div>
               <!-- Corner accent -->
-              <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full animate-ping opacity-75" />
-              <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full" />
+              <div
+                class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full animate-ping opacity-75"
+              />
+              <div
+                class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full"
+              />
             </div>
             <p class="text-gray-500 mt-6 text-lg">Scan with Lightning wallet</p>
           </div>
@@ -374,12 +450,15 @@ const formatDate = computed(() => {
           <!-- Amount -->
           <div class="text-center">
             <div
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 mb-4">
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 mb-4"
+            >
               <span class="text-xl">⚡</span>
               <span class="font-semibold">Lightning Payment</span>
             </div>
             <p class="text-gray-400 text-lg mb-2">Amount Due</p>
-            <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
+            <div
+              class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-4"
+            >
               {{
                 currency.format(
                   pos.paymentState.value.amount || pos.total.value,
@@ -388,21 +467,26 @@ const formatDate = computed(() => {
               }}
             </div>
             <div
-              class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-2xl font-semibold">
+              class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-2xl font-semibold"
+            >
               <span>⚡</span>
-              <span>{{
-                (
-                  pos.paymentState.value.satsAmount || pos.totalSats.value
-                ).toLocaleString()
-              }}
-                sats</span>
+              <span
+                >{{
+                  (
+                    pos.paymentState.value.satsAmount || pos.totalSats.value
+                  ).toLocaleString()
+                }}
+                sats</span
+              >
             </div>
 
             <!-- Waiting indicator -->
             <div class="mt-12">
               <div class="flex items-center justify-center gap-3">
                 <div class="payment-loader" />
-                <span class="text-gray-500 text-lg">Waiting for payment...</span>
+                <span class="text-gray-500 text-lg"
+                  >Waiting for payment...</span
+                >
               </div>
             </div>
           </div>
@@ -411,30 +495,58 @@ const formatDate = computed(() => {
         <!-- ==================== -->
         <!-- BANK TRANSFER -->
         <!-- ==================== -->
-        <div v-else-if="pos.paymentState.value.method === 'bank_transfer'"
-          class="flex items-center justify-center gap-20 w-full px-12">
+        <div
+          v-else-if="pos.paymentState.value.method === 'bank_transfer'"
+          class="flex items-center justify-center gap-20 w-full px-12"
+        >
           <!-- Bank QR Code -->
           <div class="text-center">
             <div class="relative">
               <!-- Bank Logo -->
               <div class="absolute -top-4 -left-4 z-10">
-                <div class="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center">
-                  <span v-if="pos.paymentState.value.bankCode === 'bcel'" class="text-3xl">🏦</span>
-                  <span v-else-if="pos.paymentState.value.bankCode === 'ldb'" class="text-3xl">🏛️</span>
-                  <span v-else-if="pos.paymentState.value.bankCode === 'jdb'" class="text-3xl">💳</span>
+                <div
+                  class="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center"
+                >
+                  <span
+                    v-if="pos.paymentState.value.bankCode === 'bcel'"
+                    class="text-3xl"
+                    >🏦</span
+                  >
+                  <span
+                    v-else-if="pos.paymentState.value.bankCode === 'ldb'"
+                    class="text-3xl"
+                    >🏛️</span
+                  >
+                  <span
+                    v-else-if="pos.paymentState.value.bankCode === 'jdb'"
+                    class="text-3xl"
+                    >💳</span
+                  >
                   <span v-else class="text-3xl">🏦</span>
                 </div>
               </div>
 
-              <div v-if="pos.paymentState.value.bankQrData"
-                class="bg-white p-8 rounded-3xl shadow-xl shadow-blue-200/50 dark:shadow-none dark:border dark:border-gray-800">
-                <QrcodeVue :value="pos.paymentState.value.bankQrData" :size="288" level="M" render-as="svg"
-                  background="#ffffff" foreground="#000000" />
+              <div
+                v-if="pos.paymentState.value.bankQrData"
+                class="bg-white p-8 rounded-3xl shadow-xl shadow-blue-200/50 dark:shadow-none dark:border dark:border-gray-800"
+              >
+                <QrcodeVue
+                  :value="pos.paymentState.value.bankQrData"
+                  :size="288"
+                  level="M"
+                  render-as="svg"
+                  background="#ffffff"
+                  foreground="#000000"
+                />
               </div>
-              <div v-else
-                class="w-72 h-72 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-blue-300 dark:border-blue-700">
+              <div
+                v-else
+                class="w-72 h-72 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-blue-300 dark:border-blue-700"
+              >
                 <span class="text-6xl mb-4">🏦</span>
-                <span class="text-blue-600 dark:text-blue-400 font-medium">Bank Transfer</span>
+                <span class="text-blue-600 dark:text-blue-400 font-medium"
+                  >Bank Transfer</span
+                >
               </div>
             </div>
             <p class="text-gray-500 mt-6 text-lg">Scan with banking app</p>
@@ -444,16 +556,19 @@ const formatDate = computed(() => {
           <div class="text-center max-w-md">
             <!-- Bank Badge -->
             <div
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-6">
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-6"
+            >
               <span class="text-xl">🏦</span>
               <span class="font-semibold">{{
                 pos.paymentState.value.bankName || "Bank Transfer"
-                }}</span>
+              }}</span>
             </div>
 
             <!-- Amount -->
             <p class="text-gray-400 text-lg mb-2">Amount Due</p>
-            <div class="text-6xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
+            <div
+              class="text-6xl font-bold tracking-tight text-gray-900 dark:text-white mb-6"
+            >
               {{
                 currency.format(
                   pos.paymentState.value.amount || pos.total.value,
@@ -463,24 +578,31 @@ const formatDate = computed(() => {
             </div>
 
             <!-- Account Details -->
-            <div v-if="pos.paymentState.value.accountNumber"
-              class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 text-left space-y-3">
+            <div
+              v-if="pos.paymentState.value.accountNumber"
+              class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 text-left space-y-3"
+            >
               <div class="flex justify-between">
                 <span class="text-gray-400">Bank</span>
                 <span class="font-semibold text-gray-700 dark:text-gray-300">{{
                   pos.paymentState.value.bankName
-                  }}</span>
+                }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-400">Account</span>
-                <span class="font-mono font-semibold text-gray-700 dark:text-gray-300">{{
-                  pos.paymentState.value.accountNumber }}</span>
+                <span
+                  class="font-mono font-semibold text-gray-700 dark:text-gray-300"
+                  >{{ pos.paymentState.value.accountNumber }}</span
+                >
               </div>
-              <div v-if="pos.paymentState.value.accountName" class="flex justify-between">
+              <div
+                v-if="pos.paymentState.value.accountName"
+                class="flex justify-between"
+              >
                 <span class="text-gray-400">Name</span>
                 <span class="font-semibold text-gray-700 dark:text-gray-300">{{
                   pos.paymentState.value.accountName
-                  }}</span>
+                }}</span>
               </div>
             </div>
 
@@ -488,7 +610,9 @@ const formatDate = computed(() => {
             <div class="mt-8">
               <div class="flex items-center justify-center gap-3">
                 <div class="payment-loader border-blue-500 border-t-blue-200" />
-                <span class="text-gray-500 text-lg">Waiting for transfer...</span>
+                <span class="text-gray-500 text-lg"
+                  >Waiting for transfer...</span
+                >
               </div>
             </div>
           </div>
@@ -497,22 +621,29 @@ const formatDate = computed(() => {
         <!-- ==================== -->
         <!-- CASH PAYMENT -->
         <!-- ==================== -->
-        <div v-else-if="pos.paymentState.value.method === 'cash'" class="text-center">
+        <div
+          v-else-if="pos.paymentState.value.method === 'cash'"
+          class="text-center"
+        >
           <div class="mb-8">
             <div
-              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center">
+              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center"
+            >
               <span class="text-8xl">💵</span>
             </div>
           </div>
 
           <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-6">
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-6"
+          >
             <span class="text-xl">💵</span>
             <span class="font-semibold">Cash Payment</span>
           </div>
 
           <p class="text-gray-400 text-xl mb-3">Please pay</p>
-          <div class="text-8xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">
+          <div
+            class="text-8xl font-bold tracking-tight text-gray-900 dark:text-white mb-8"
+          >
             {{
               currency.format(
                 pos.paymentState.value.amount || pos.total.value,
@@ -530,24 +661,31 @@ const formatDate = computed(() => {
         <!-- ==================== -->
         <!-- EXTERNAL / OTHER PAYMENT -->
         <!-- ==================== -->
-        <div v-else-if="pos.paymentState.value.method === 'external'" class="text-center">
+        <div
+          v-else-if="pos.paymentState.value.method === 'external'"
+          class="text-center"
+        >
           <div class="mb-8">
             <div
-              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center"
+            >
               <span class="text-8xl">📱</span>
             </div>
           </div>
 
           <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6"
+          >
             <span class="text-xl">📱</span>
             <span class="font-semibold">{{
               pos.paymentState.value.externalMethod || "External Payment"
-              }}</span>
+            }}</span>
           </div>
 
           <p class="text-gray-400 text-xl mb-3">Amount Due</p>
-          <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">
+          <div
+            class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-8"
+          >
             {{
               currency.format(
                 pos.paymentState.value.amount || pos.total.value,
@@ -572,13 +710,16 @@ const formatDate = computed(() => {
         <div v-else class="text-center">
           <div class="mb-8">
             <div
-              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center"
+            >
               <span class="text-8xl animate-pulse">💳</span>
             </div>
           </div>
 
           <p class="text-gray-400 text-xl mb-3">Amount Due</p>
-          <div class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">
+          <div
+            class="text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-8"
+          >
             {{
               currency.format(
                 pos.paymentState.value.amount || pos.total.value,
@@ -597,10 +738,14 @@ const formatDate = computed(() => {
       <!-- ============================================ -->
       <!-- SUCCESS STATE -->
       <!-- ============================================ -->
-      <div v-else-if="displayState === 'success'"
-        class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900">
+      <div
+        v-else-if="displayState === 'success'"
+        class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900"
+      >
         <div class="text-center w-full max-w-4xl mx-auto px-8">
-          <div class="flex flex-col lg:flex-row items-center justify-center gap-16">
+          <div
+            class="flex flex-col lg:flex-row items-center justify-center gap-16"
+          >
             <!-- Left: Success Message -->
             <div class="text-center flex-1">
               <!-- Animated checkmark -->
@@ -612,7 +757,9 @@ const formatDate = computed(() => {
                   <div class="icon-fix" />
                 </div>
               </div>
-              <h2 class="text-6xl font-light text-green-600 dark:text-green-400 mb-4 tracking-tight">
+              <h2
+                class="text-6xl font-light text-green-600 dark:text-green-400 mb-4 tracking-tight"
+              >
                 Thank You!
               </h2>
               <p class="text-2xl text-gray-500 font-light mb-8">
@@ -620,8 +767,10 @@ const formatDate = computed(() => {
               </p>
 
               <!-- Amount Display -->
-              <div v-if="pos.paymentState.value.amount"
-                class="p-6 bg-white/70 dark:bg-gray-800/50 rounded-2xl backdrop-blur-sm inline-block">
+              <div
+                v-if="pos.paymentState.value.amount"
+                class="p-6 bg-white/70 dark:bg-gray-800/50 rounded-2xl backdrop-blur-sm inline-block"
+              >
                 <p class="text-sm text-gray-400 uppercase tracking-wide mb-1">
                   Amount Paid
                 </p>
@@ -633,8 +782,10 @@ const formatDate = computed(() => {
                     )
                   }}
                 </p>
-                <p v-if="pos.paymentState.value.satsAmount"
-                  class="text-lg text-amber-600 dark:text-amber-400 mt-2 flex items-center justify-center gap-1">
+                <p
+                  v-if="pos.paymentState.value.satsAmount"
+                  class="text-lg text-amber-600 dark:text-amber-400 mt-2 flex items-center justify-center gap-1"
+                >
                   <span>⚡</span>
                   {{
                     currency.format(pos.paymentState.value.satsAmount, "SATS")
@@ -644,8 +795,10 @@ const formatDate = computed(() => {
             </div>
 
             <!-- Right: E-Bill QR Code -->
-            <div v-if="pos.paymentState.value.eBillUrl"
-              class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-2xl shadow-gray-200/50 dark:shadow-none">
+            <div
+              v-if="pos.paymentState.value.eBillUrl"
+              class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-2xl shadow-gray-200/50 dark:shadow-none"
+            >
               <div class="text-center mb-6">
                 <p class="text-xl font-semibold text-gray-900 dark:text-white">
                   📱 Digital Receipt
@@ -654,16 +807,23 @@ const formatDate = computed(() => {
               </div>
 
               <!-- QR Code -->
-              <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-2xl">
-                <QrcodeVue :value="pos.paymentState.value.eBillUrl" :size="192" level="M" render-as="svg"
-                  background="#f9fafb" foreground="#000000" class="mx-auto" />
+              <div class="bg-white p-4 rounded-2xl">
+                <QrcodeVue
+                  :value="pos.paymentState.value.eBillUrl"
+                  :size="192"
+                  level="M"
+                  render-as="svg"
+                  background="#f9fafb"
+                  foreground="#000000"
+                  class="mx-auto"
+                />
               </div>
 
               <p class="mt-5 text-sm text-gray-400 text-center">
                 Receipt ID:
                 <span class="font-mono text-amber-600 dark:text-amber-400">{{
                   pos.paymentState.value.eBillId
-                  }}</span>
+                }}</span>
               </p>
             </div>
           </div>
@@ -676,7 +836,8 @@ const formatDate = computed(() => {
 
     <!-- Minimal Footer -->
     <footer
-      class="px-8 py-3 bg-white dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex justify-between text-sm text-gray-400">
+      class="px-8 py-3 bg-white dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex justify-between text-sm text-gray-400"
+    >
       <span class="font-medium">bnos.space</span>
       <div class="flex items-center gap-4">
         <span class="flex items-center gap-2">

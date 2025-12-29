@@ -16,6 +16,28 @@ definePageMeta({
   middleware: ["auth"],
 });
 
+useHead({
+  title: "POS - bnos.space",
+  meta: [
+    {
+      name: "description",
+      content: "POS - bnos.space",
+    },
+    {
+      name: "keywords",
+      content: "POS, bnos.space",
+    },
+    {
+      name: "author",
+      content: "bnos.space",
+    },
+    {
+      name: "robots",
+      content: "index, follow",
+    },
+  ],
+});
+
 // ============================================
 // Composables
 // ============================================
@@ -1550,6 +1572,19 @@ onUnmounted(() => {
                 {{ t("pos.pendingBills") || "Bills" }}</span
               >
             </UButton>
+
+            <!-- Customer Monitor -->
+            <UTooltip text="Customer Monitor">
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="soft"
+                to="/pos/customer"
+                icon="material-symbols-light:screenshot-monitor-outline"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            </UTooltip>
           </div>
         </div>
 

@@ -6,6 +6,28 @@ definePageMeta({
   middleware: ["auth"],
 });
 
+useHead({
+  title: "bnos.space - BNOS Business Operation System",
+  meta: [
+    {
+      name: "description",
+      content: "BNOS Business Operation System",
+    },
+    {
+      name: "keywords",
+      content: "POS, bnos.space",
+    },
+    {
+      name: "author",
+      content: "bnos.space",
+    },
+    {
+      name: "robots",
+      content: "index, follow",
+    },
+  ],
+});
+
 const { t } = useI18n();
 const ordersStore = useOrders();
 const productsStore = useProducts();
@@ -239,7 +261,6 @@ onMounted(async () => {
     isInitialLoad.value = false;
   }
 });
-
 </script>
 
 <template>
@@ -276,7 +297,11 @@ onMounted(async () => {
         <CommonButtonGroup
           v-model="selectedPeriod"
           :items="[
-            { value: 'today', label: t('dashboard.today'), indicator: { show: true } },
+            {
+              value: 'today',
+              label: t('dashboard.today'),
+              indicator: { show: true },
+            },
             { value: 'week', label: t('dashboard.week') },
             { value: 'month', label: t('dashboard.month') },
           ]"

@@ -616,7 +616,7 @@ onMounted(async () => {
               />
               <div class="mt-3 flex justify-end">
                 <UButton size="sm" :loading="isSaving" @click="saveChanges">
-                  {{ t("common.saveNotes") || "Save Notes" }}
+                  {{ t("common.save", "Save Notes") }}
                 </UButton>
               </div>
             </div>
@@ -632,7 +632,9 @@ onMounted(async () => {
               <div
                 class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between"
               >
-                <span class="text-sm font-medium text-gray-500">STATUS</span>
+                <span class="text-sm font-medium text-gray-500">{{
+                  t("common.status", "STATUS")
+                }}</span>
                 <span
                   :class="[
                     'px-3 py-1 rounded-full text-xs font-semibold border',
@@ -646,10 +648,10 @@ onMounted(async () => {
                   ●
                   {{
                     paymentStatus === "paid"
-                      ? "Paid"
+                      ? t("orders.status.paid", "Paid")
                       : paymentStatus === "partial"
-                      ? "Partially paid"
-                      : "Pending"
+                      ? t("orders.status.partial", "Partially paid")
+                      : t("orders.status.pending", "Pending")
                   }}
                 </span>
               </div>
@@ -693,7 +695,7 @@ onMounted(async () => {
                     <p
                       class="text-sm font-medium text-gray-900 dark:text-white"
                     >
-                      Invoice
+                      {{ t("orders.invoice", "Invoice") }}
                     </p>
                     <p class="text-xs text-gray-500">
                       {{ order?.code || order.id.slice(-6).toUpperCase() }}
@@ -709,7 +711,7 @@ onMounted(async () => {
                   <h4
                     class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
                   >
-                    💳 {{ t("orders.paymentReceive") || "Payment Received" }}
+                    💳 {{ t("orders.paymentReceive", "Payment Received") }}
                     <span
                       class="bg-gray-100 dark:bg-gray-800 text-xs px-1.5 py-0.5 rounded"
                       >1</span
@@ -739,17 +741,17 @@ onMounted(async () => {
                   class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2"
                 >
                   <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">{{
-                      t("orders.paid") || "Paid"
-                    }}</span>
+                    <span class="text-gray-500">
+                      {{ t("orders.paid", "Paid") }}
+                    </span>
                     <span class="text-gray-900 dark:text-white">{{
                       formatCurrency(totalPaid)
                     }}</span>
                   </div>
                   <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">{{
-                      t("orders.outstanding") || "Outstanding"
-                    }}</span>
+                    <span class="text-gray-500">
+                      {{ t("orders.outstanding", "Outstanding") }}
+                    </span>
                     <span
                       :class="
                         outstandingAmount > 0
@@ -773,7 +775,7 @@ onMounted(async () => {
                   @click="markAsPaid"
                   :loading="isSaving"
                 >
-                  {{ t("orders.recordPayment") || "Record Payment" }}
+                  {{ t("orders.recordPayment", "Record Payment") }}
                 </UButton>
               </div>
 
@@ -796,7 +798,7 @@ onMounted(async () => {
               class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5"
             >
               <h3 class="font-semibold text-gray-900 dark:text-white mb-4">
-                {{ t("orders.timeline") || "Timeline" }}
+                {{ t("orders.timeline", "Timeline") }}
               </h3>
               <div class="space-y-4">
                 <!-- Created -->
