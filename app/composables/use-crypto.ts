@@ -151,17 +151,58 @@ export const useCrypto = () => {
 
   /**
    * Get current BTC exchange rate
+   * Handles currencies not supported by CoinGecko (like LAK) via USD conversion
    */
   const getBTCExchangeRate = async (
     currency: CurrencyCode
   ): Promise<number> => {
     try {
-      // Use CoinGecko API for rate (free tier)
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${currency.toLowerCase()}`
-      );
-      const data = await response.json();
-      return data.bitcoin?.[currency.toLowerCase()] || 0;
+      // Define supported currencies by CoinGecko
+      const supportedCurrencies = [
+        "usd",
+        "eur",
+        "gbp",
+        "jpy",
+        "cny",
+        "krw",
+        "thb",
+        "vnd",
+        "php",
+        "idr",
+        "myr",
+        "sgd",
+        "aud",
+        "cad",
+      ];
+      const currencyLower = currency.toLowerCase();
+
+      if (supportedCurrencies.includes(currencyLower)) {
+        // Direct rate from CoinGecko
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${currencyLower}`
+        );
+        const data = await response.json();
+        return data.bitcoin?.[currencyLower] || 0;
+      } else {
+        // For unsupported currencies (like LAK), convert via USD
+        // 1. Get BTC/USD rate
+        const btcResponse = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd`
+        );
+        const btcData = await btcResponse.json();
+        const btcUsdRate = btcData.bitcoin?.usd || 100000;
+
+        // 2. Apply local currency conversion
+        // LAK approximate rate: 1 USD ≈ 20,800 LAK (update as needed)
+        const usdToLocalRates: Record<string, number> = {
+          lak: 20800, // Lao Kip
+          mmk: 2100, // Myanmar Kyat
+          khr: 4100, // Cambodian Riel
+        };
+
+        const localRate = usdToLocalRates[currencyLower] || 1;
+        return btcUsdRate * localRate;
+      }
     } catch (e) {
       console.error("Failed to fetch BTC rate:", e);
       // Fallback to approximate rate

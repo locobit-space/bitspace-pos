@@ -132,6 +132,7 @@
       "enterMasterPassword": "ໃສ່ລະຫັດຜ່ານຫຼັກ",
       "masterPasswordHint": "ລະຫັດຜ່ານນີ້ຈະໃຊ້ເພື່ອເຂົ້າລະຫັດຂໍ້ມູນຂອງທ່ານ",
       "wrongPassword": "ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ",
+      "passwordRequired": "ຕ້ອງການລະຫັດຜ່ານ",
       "unlock": "ປົດລັອກ",
       "lock": "ລັອກ",
       "locked": "ລັອກແລ້ວ",

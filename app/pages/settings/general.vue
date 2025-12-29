@@ -548,6 +548,7 @@
                       <UInput
                         v-model="unlockPassword"
                         type="password"
+                        class="w-full"
                         :placeholder="
                           $t('settings.security.masterPasswordHint')
                         "

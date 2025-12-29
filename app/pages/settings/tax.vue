@@ -1,9 +1,6 @@
 <template>
   <UContainer>
-    <CommonPageHeader
-      :title="$t('settings.tax.title')"
-      :description="$t('settings.tax.description')"
-    />
+    <CommonPageHeader :title="$t('settings.tax.title')" :description="$t('settings.tax.description')" />
 
     <!-- Tax Summary -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -73,22 +70,13 @@
               {{ $t("settings.tax.roundingMethodDesc") }}
             </p>
           </div>
-          <USelect
-            v-model="settings.roundingMethod"
-            :items="roundingOptions"
-            value-key="value"
-            label-key="label"
-            class="w-40"
-          />
+          <USelect v-model="settings.roundingMethod" :items="roundingOptions" value-key="value" label-key="label"
+            class="w-40" />
         </div>
       </div>
 
       <template #footer>
-        <UButton
-          icon="i-heroicons-check"
-          :loading="savingSettings"
-          @click="saveSettings"
-        >
+        <UButton icon="i-heroicons-check" :loading="savingSettings" @click="saveSettings">
           {{ $t("common.save") }}
         </UButton>
       </template>
@@ -99,11 +87,7 @@
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t("settings.tax.taxRates") }}</h3>
-          <UButton
-            icon="i-heroicons-plus"
-            size="sm"
-            @click="openTaxRateModal()"
-          >
+          <UButton icon="i-heroicons-plus" size="sm" @click="openTaxRateModal()">
             {{ $t("settings.tax.addRate") }}
           </UButton>
         </div>
@@ -112,47 +96,24 @@
       <div v-if="taxRates.length === 0" class="text-center py-8">
         <UIcon name="i-heroicons-calculator" class="text-4xl text-muted mb-2" />
         <p class="text-muted">{{ $t("settings.tax.noRates") }}</p>
-        <UButton
-          variant="outline"
-          class="mt-4"
-          icon="i-heroicons-plus"
-          @click="openTaxRateModal()"
-        >
+        <UButton variant="outline" class="mt-4" icon="i-heroicons-plus" @click="openTaxRateModal()">
           {{ $t("settings.tax.addFirstRate") }}
         </UButton>
       </div>
 
       <div v-else class="divide-y divide-slate-100 dark:divide-slate-800">
-        <div
-          v-for="rate in taxRates"
-          :key="rate.id"
-          class="py-4 flex items-center justify-between"
-        >
+        <div v-for="rate in taxRates" :key="rate.id" class="py-4 flex items-center justify-between">
           <div class="flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center"
-            >
-              <span class="text-lg font-bold text-primary"
-                >{{ rate.rate }}%</span
-              >
+            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span class="text-lg font-bold text-primary">{{ rate.rate }}%</span>
             </div>
             <div>
               <div class="flex items-center gap-2">
                 <p class="font-medium">{{ rate.name }}</p>
-                <UBadge
-                  v-if="rate.isDefault"
-                  color="primary"
-                  variant="subtle"
-                  size="xs"
-                >
+                <UBadge v-if="rate.isDefault" color="primary" variant="subtle" size="xs">
                   {{ $t("settings.tax.default") }}
                 </UBadge>
-                <UBadge
-                  v-if="!rate.isActive"
-                  color="neutral"
-                  variant="subtle"
-                  size="xs"
-                >
+                <UBadge v-if="!rate.isActive" color="neutral" variant="subtle" size="xs">
                   {{ $t("settings.tax.inactive") }}
                 </UBadge>
               </div>
@@ -167,20 +128,9 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <UButton
-              variant="ghost"
-              icon="i-heroicons-pencil"
-              size="sm"
-              @click="openTaxRateModal(rate)"
-            />
-            <UButton
-              variant="ghost"
-              icon="i-heroicons-trash"
-              color="error"
-              size="sm"
-              :disabled="rate.isDefault"
-              @click="confirmDeleteRate(rate)"
-            />
+            <UButton variant="ghost" icon="i-heroicons-pencil" size="sm" @click="openTaxRateModal(rate)" />
+            <UButton variant="ghost" icon="i-heroicons-trash" color="error" size="sm" :disabled="rate.isDefault"
+              @click="confirmDeleteRate(rate)" />
           </div>
         </div>
       </div>
@@ -198,68 +148,48 @@
         </h3>
       </template>
 
-      <div class="p-4 space-y-4">
-        <UFormField :label="$t('settings.tax.rateName')" required>
-          <UInput
-            v-model="rateForm.name"
-            :placeholder="$t('settings.tax.rateNamePlaceholder')"
-          />
-        </UFormField>
+      <template #body>
+        <div class="p-4 space-y-4">
+          <UFormField :label="$t('settings.tax.rateName')" required>
+            <UInput v-model="rateForm.name" :placeholder="$t('settings.tax.rateNamePlaceholder')" class="w-full" />
+          </UFormField>
 
-        <UFormField :label="$t('settings.tax.ratePercent')" required>
-          <UInput
-            v-model.number="rateForm.rate"
-            type="number"
-            min="0"
-            max="100"
-            step="0.01"
-            :placeholder="$t('settings.tax.ratePercentPlaceholder')"
-          >
-            <template #trailing>%</template>
-          </UInput>
-        </UFormField>
+          <UFormField :label="$t('settings.tax.ratePercent')" required>
+            <UInput v-model.number="rateForm.rate" type="number" min="0" max="100" step="0.01"
+              :placeholder="$t('settings.tax.ratePercentPlaceholder')">
+              <template #trailing>%</template>
+            </UInput>
+          </UFormField>
 
-        <UFormField :label="$t('settings.tax.rateDescription')">
-          <UTextarea
-            v-model="rateForm.description"
-            :placeholder="$t('settings.tax.rateDescriptionPlaceholder')"
-            :rows="2"
-          />
-        </UFormField>
+          <UFormField :label="$t('settings.tax.rateDescription')">
+            <UTextarea v-model="rateForm.description" :placeholder="$t('settings.tax.rateDescriptionPlaceholder')"
+              :rows="2" class="w-full" />
+          </UFormField>
 
-        <UFormField :label="$t('settings.tax.appliesTo')">
-          <div class="space-y-2">
-            <UCheckbox
-              v-for="category in productCategories"
-              :key="category"
-              :model-value="rateForm.categories.includes(category)"
-              :label="category"
-              @update:model-value="toggleCategory(category, $event)"
-            />
+          <UFormField :label="$t('settings.tax.appliesTo')">
+            <div class="space-y-2">
+              <UCheckbox v-for="category in productCategories" :key="category"
+                :model-value="rateForm.categories.includes(category)" :label="category"
+                @update:model-value="toggleCategory(category, $event)" />
+            </div>
+          </UFormField>
+
+          <div class="flex items-center justify-between">
+            <UCheckbox v-model="rateForm.isActive" :label="$t('settings.tax.rateActive')" />
           </div>
-        </UFormField>
 
-        <div class="flex items-center justify-between">
-          <UCheckbox
-            v-model="rateForm.isActive"
-            :label="$t('settings.tax.rateActive')"
-          />
+          <div class="flex items-center justify-between">
+            <UCheckbox v-model="rateForm.isDefault" :label="$t('settings.tax.setAsDefault')" />
+          </div>
         </div>
 
-        <div class="flex items-center justify-between">
-          <UCheckbox
-            v-model="rateForm.isDefault"
-            :label="$t('settings.tax.setAsDefault')"
-          />
-        </div>
-      </div>
-
+      </template>
       <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton variant="ghost" @click="showTaxRateModal = false">
+        <div class="flex w-full justify-end gap-2">
+          <UButton variant="ghost" block @click="showTaxRateModal = false">
             {{ $t("common.cancel") }}
           </UButton>
-          <UButton :loading="savingRate" @click="saveRate">
+          <UButton :loading="savingRate" block @click="saveRate">
             {{ editingRate ? $t("common.update") : $t("common.create") }}
           </UButton>
         </div>
@@ -274,13 +204,15 @@
         </h3>
       </template>
 
-      <div class="p-4">
-        <p>
-          {{
-            $t("settings.tax.deleteRateConfirm", { name: rateToDelete?.name })
-          }}
-        </p>
-      </div>
+      <template #body>
+        <div class="p-4">
+          <p>
+            {{
+              $t("settings.tax.deleteRateConfirm", { name: rateToDelete?.name })
+            }}
+          </p>
+        </div>
+      </template>
 
       <template #footer>
         <div class="flex justify-end gap-2">

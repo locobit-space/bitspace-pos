@@ -254,7 +254,7 @@ onUnmounted(() => {
       </div>
 
       <!-- QR Code -->
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl inline-block shadow-lg">
+      <div class="bg-white p-4 rounded-2xl inline-block shadow-lg">
         <QrcodeVue :value="crypto.currentUSDTPayment.value?.address || ''" :size="200" level="M" render-as="svg"
           background="#ffffff" foreground="#000000" />
       </div>

@@ -143,6 +143,7 @@
       "enterMasterPassword": "Enter Master Password",
       "masterPasswordHint": "This password will be used to encrypt your data",
       "wrongPassword": "Incorrect password",
+      "passwordRequired": "Password is required",
       "unlock": "Unlock",
       "lock": "Lock",
       "locked": "Locked",

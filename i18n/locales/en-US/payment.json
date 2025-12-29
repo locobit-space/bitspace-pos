@@ -57,7 +57,9 @@
       "manualApproveHint": "If auto-detection fails, you can manually approve the payment after verifying it was received.",
       "manualApprove": "⚠️ Manually Approve Payment",
       "manualApproveWarning": "Only use if you have confirmed payment was received.",
-      "manualApproveAvailableIn": "Manual override available in"
+      "manualApproveAvailableIn": "Manual override available in",
+      "unlockRequired": "Unlock Required",
+      "unlockDescription": "Enter your master password to access encrypted API keys."
     },
     "cash": {
       "title": "Cash Payment",

@@ -1,15 +1,10 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Header -->
-    <CommonPageHeader 
-      :title="$t('settings.lightning.title')" 
-      :subtitle="$t('settings.lightning.subtitle')"
-    >
+    <CommonPageHeader :title="$t('settings.lightning.title')" :subtitle="$t('settings.lightning.subtitle')">
       <template #actions>
-        <NuxtLink 
-          to="/settings"
-          class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-        >
+        <NuxtLink to="/settings"
+          class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
           <UIcon name="i-heroicons-arrow-left" class="w-5 h-5" />
           {{ $t('common.back') }}
         </NuxtLink>
@@ -18,44 +13,22 @@
 
     <div class="container mx-auto px-4 py-8 max-w-4xl">
       <!-- Security Lock Warning -->
-      <UAlert
-        v-if="security.isEncryptionEnabled.value && security.isLocked.value"
-        icon="i-heroicons-lock-closed"
-        color="yellow"
-        variant="subtle"
-        class="mb-6"
-        :title="$t('settings.lightning.securityLocked')"
-        :description="$t('settings.lightning.securityLockedDescription')"
-      >
+      <UAlert v-if="security.isEncryptionEnabled.value && security.isLocked.value" icon="i-heroicons-lock-closed"
+        color="yellow" variant="subtle" class="mb-6" :title="$t('settings.lightning.securityLocked')"
+        :description="$t('settings.lightning.securityLockedDescription')">
         <template #actions>
-          <UButton
-            color="yellow"
-            variant="solid"
-            size="sm"
-            @click="goToSecurity"
-          >
+          <UButton color="yellow" variant="solid" size="sm" @click="goToSecurity">
             {{ $t('settings.security.unlock') }}
           </UButton>
         </template>
       </UAlert>
 
       <!-- API Key Protection Info -->
-      <UAlert
-        v-if="!security.isEncryptionEnabled.value && hasApiKeys"
-        icon="i-heroicons-shield-exclamation"
-        color="orange"
-        variant="subtle"
-        class="mb-6"
-        :title="$t('settings.lightning.keysNotEncrypted')"
-        :description="$t('settings.lightning.keysNotEncryptedDescription')"
-      >
+      <UAlert v-if="!security.isEncryptionEnabled.value && hasApiKeys" icon="i-heroicons-shield-exclamation"
+        color="orange" variant="subtle" class="mb-6" :title="$t('settings.lightning.keysNotEncrypted')"
+        :description="$t('settings.lightning.keysNotEncryptedDescription')">
         <template #actions>
-          <UButton
-            color="orange"
-            variant="solid"
-            size="sm"
-            @click="goToSecurity"
-          >
+          <UButton color="orange" variant="solid" size="sm" @click="goToSecurity">
             {{ $t('settings.lightning.enableEncryption') }}
           </UButton>
         </template>
@@ -66,30 +39,25 @@
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div 
-                :class="[
-                  'w-3 h-3 rounded-full',
-                  isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                ]"
-              />
+              <div :class="[
+                'w-3 h-3 rounded-full',
+                isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+              ]" />
               <span class="font-medium text-gray-900 dark:text-white">
                 {{ $t('settings.lightning.connectionStatus') }}
               </span>
             </div>
-            <UBadge 
-              :color="isConnected ? 'green' : settings?.isConfigured ? 'yellow' : 'red'"
-              variant="subtle"
-            >
-              {{ isConnected 
-                ? $t('settings.lightning.connected') 
-                : settings?.isConfigured 
+            <UBadge :color="isConnected ? 'green' : settings?.isConfigured ? 'yellow' : 'red'" variant="subtle">
+              {{ isConnected
+                ? $t('settings.lightning.connected')
+                : settings?.isConfigured
                   ? $t('settings.lightning.configured')
-                  : $t('settings.lightning.notConfigured') 
+                  : $t('settings.lightning.notConfigured')
               }}
             </UBadge>
           </div>
         </template>
-        
+
         <div v-if="settings?.lastTestedAt" class="text-sm text-gray-500 dark:text-gray-400">
           {{ $t('settings.lightning.lastTested') }}: {{ formatDate(settings.lastTestedAt) }}
         </div>
@@ -104,17 +72,12 @@
         </template>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            v-for="provider in providers"
-            :key="provider.id"
-            :class="[
-              'p-4 rounded-xl border-2 transition-all duration-200 text-left',
-              selectedProvider === provider.id
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700'
-            ]"
-            @click="selectedProvider = provider.id"
-          >
+          <button v-for="provider in providers" :key="provider.id" :class="[
+            'p-4 rounded-xl border-2 transition-all duration-200 text-left',
+            selectedProvider === provider.id
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+              : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700'
+          ]" @click="selectedProvider = provider.id">
             <div class="flex items-center gap-3 mb-2">
               <UIcon :name="provider.icon" class="w-8 h-8 text-primary-500" />
               <span class="font-semibold text-gray-900 dark:text-white">{{ provider.name }}</span>
@@ -135,23 +98,16 @@
         <!-- LNbits Configuration -->
         <div v-if="selectedProvider === 'lnbits'" class="space-y-4">
           <UFormField :label="$t('settings.lightning.lnbitsUrl')" required>
-            <UInput
-              v-model="form.nodeUrl"
-              placeholder="https://legend.lnbits.com"
-              icon="i-heroicons-globe-alt"
-            />
+            <UInput v-model="form.nodeUrl" placeholder="https://legend.lnbits.com" icon="i-heroicons-globe-alt"
+              class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.lnbitsUrlHint') }}
             </template>
           </UFormField>
 
           <UFormField :label="$t('settings.lightning.apiKey')" required>
-            <UInput
-              v-model="form.apiKey"
-              type="password"
-              placeholder="Your Invoice/Admin key"
-              icon="i-heroicons-key"
-            />
+            <UInput v-model="form.apiKey" type="password" placeholder="Your Invoice/Admin key" icon="i-heroicons-key"
+              class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.apiKeyHint') }}
             </template>
@@ -160,32 +116,21 @@
 
         <!-- Alby Hub API Configuration -->
         <div v-else-if="selectedProvider === 'alby-hub'" class="space-y-4">
-          <UAlert
-            icon="i-heroicons-information-circle"
-            color="blue"
-            variant="subtle"
+          <UAlert icon="i-heroicons-information-circle" color="blue" variant="subtle"
             :title="$t('settings.lightning.albyHubInfo')"
-            :description="$t('settings.lightning.albyHubInfoDescription')"
-          />
-          
+            :description="$t('settings.lightning.albyHubInfoDescription')" />
+
           <UFormField :label="$t('settings.lightning.albyHubUrl')" required>
-            <UInput
-              v-model="form.nodeUrl"
-              placeholder="https://your-alby-hub.com"
-              icon="i-heroicons-globe-alt"
-            />
+            <UInput v-model="form.nodeUrl" placeholder="https://your-alby-hub.com" icon="i-heroicons-globe-alt"
+              class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.albyHubUrlHint') }}
             </template>
           </UFormField>
 
           <UFormField :label="$t('settings.lightning.accessToken')" required>
-            <UInput
-              v-model="form.accessToken"
-              type="password"
-              placeholder="Your Alby Hub access token"
-              icon="i-heroicons-key"
-            />
+            <UInput v-model="form.accessToken" type="password" placeholder="Your Alby Hub access token"
+              icon="i-heroicons-key" class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.accessTokenHint') }}
             </template>
@@ -194,26 +139,17 @@
 
         <!-- Blink Configuration -->
         <div v-else-if="selectedProvider === 'blink'" class="space-y-4">
-          <UAlert
-            icon="i-heroicons-sparkles"
-            color="purple"
-            variant="subtle"
-            :title="$t('settings.lightning.blinkInfo')"
-            :description="$t('settings.lightning.blinkInfoDescription')"
-          />
-          
+          <UAlert icon="i-heroicons-sparkles" color="purple" variant="subtle"
+            :title="$t('settings.lightning.blinkInfo')" :description="$t('settings.lightning.blinkInfoDescription')" />
+
           <UFormField :label="$t('settings.lightning.blinkApiKey')" required>
-            <UInput
-              v-model="form.blinkApiKey"
-              type="password"
-              placeholder="blink_..."
-              icon="i-heroicons-key"
-            />
+            <UInput v-model="form.blinkApiKey" type="password" placeholder="blink_..." icon="i-heroicons-key"
+              class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.blinkApiKeyHint') }}
             </template>
           </UFormField>
-          
+
           <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
             <h4 class="font-medium text-gray-900 dark:text-white mb-2">
               {{ $t('settings.lightning.blinkFeatures') }}
@@ -228,24 +164,15 @@
 
         <!-- Alby WebLN Configuration -->
         <div v-else-if="selectedProvider === 'alby'" class="space-y-4">
-          <UAlert
-            icon="i-heroicons-information-circle"
-            color="blue"
-            variant="subtle"
-            :title="$t('settings.lightning.albyInfo')"
-            :description="$t('settings.lightning.albyInfoDescription')"
-          />
-          
+          <UAlert icon="i-heroicons-information-circle" color="blue" variant="subtle"
+            :title="$t('settings.lightning.albyInfo')" :description="$t('settings.lightning.albyInfoDescription')" />
+
           <div class="flex items-center gap-4">
-            <UButton
-              :loading="checkingAlby"
-              variant="outline"
-              @click="checkAlbyExtension"
-            >
+            <UButton :loading="checkingAlby" variant="outline" @click="checkAlbyExtension">
               <UIcon name="i-heroicons-puzzle-piece" class="w-5 h-5 mr-2" />
               {{ $t('settings.lightning.checkAlby') }}
             </UButton>
-            
+
             <UBadge v-if="albyAvailable" color="green" variant="subtle">
               <UIcon name="i-heroicons-check-circle" class="w-4 h-4 mr-1" />
               {{ $t('settings.lightning.albyDetected') }}
@@ -256,56 +183,37 @@
         <!-- NWC Configuration -->
         <div v-else-if="selectedProvider === 'nwc'" class="space-y-4">
           <UFormField :label="$t('settings.lightning.nwcString')" required>
-            <UTextarea
-              v-model="form.nwcConnectionString"
-              placeholder="nostr+walletconnect://..."
-              :rows="3"
-            />
+            <UTextarea v-model="form.nwcConnectionString" placeholder="nostr+walletconnect://..." :rows="3"
+              class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.nwcHint') }}
             </template>
           </UFormField>
 
-          <UAlert
-            icon="i-heroicons-light-bulb"
-            color="yellow"
-            variant="subtle"
-            :title="$t('settings.lightning.nwcTip')"
-            :description="$t('settings.lightning.nwcTipDescription')"
-          />
+          <UAlert icon="i-heroicons-light-bulb" color="yellow" variant="subtle" :title="$t('settings.lightning.nwcTip')"
+            :description="$t('settings.lightning.nwcTipDescription')" />
         </div>
 
         <!-- Lightning Address (LNURL) Configuration -->
         <div v-else-if="selectedProvider === 'lnurl'" class="space-y-4">
           <UFormField :label="$t('settings.lightning.lightningAddress')" required>
-            <UInput
-              v-model="form.lightningAddress"
-              placeholder="satoshi@walletofsatoshi.com"
-              icon="i-heroicons-at-symbol"
-            />
+            <UInput v-model="form.lightningAddress" placeholder="satoshi@walletofsatoshi.com" class="w-full"
+              icon="i-heroicons-at-symbol" />
             <template #hint>
               {{ $t('settings.lightning.lnurlHint') }}
             </template>
           </UFormField>
 
-          <UAlert
-            icon="i-heroicons-information-circle"
-            color="blue"
-            variant="subtle"
-            :title="$t('settings.lightning.lnurlInfo')"
-            :description="$t('settings.lightning.lnurlInfoDescription')"
-          />
+          <UAlert icon="i-heroicons-information-circle" color="blue" variant="subtle"
+            :title="$t('settings.lightning.lnurlInfo')" :description="$t('settings.lightning.lnurlInfoDescription')" />
 
           <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
             <h4 class="font-medium text-gray-900 dark:text-white mb-3">
               {{ $t('settings.lightning.supportedWallets') }}
             </h4>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div 
-                v-for="wallet in supportedLNURLWallets" 
-                :key="wallet.name"
-                class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-              >
+              <div v-for="wallet in supportedLNURLWallets" :key="wallet.name"
+                class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <span>{{ wallet.icon }}</span>
                 <span>{{ wallet.name }}</span>
               </div>
@@ -324,22 +232,15 @@
 
         <div class="space-y-4">
           <UFormField :label="$t('settings.lightning.lightningAddress')">
-            <UInput
-              v-model="form.lightningAddress"
-              placeholder="satoshi@getalby.com"
-              icon="i-heroicons-at-symbol"
-            />
+            <UInput v-model="form.lightningAddress" placeholder="satoshi@getalby.com" icon="i-heroicons-at-symbol"
+              class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.lightningAddressHint') }}
             </template>
           </UFormField>
 
           <UFormField :label="$t('settings.lightning.bolt12Offer')">
-            <UTextarea
-              v-model="form.bolt12Offer"
-              placeholder="lno1..."
-              :rows="2"
-            />
+            <UTextarea v-model="form.bolt12Offer" placeholder="lno1..." :rows="2" class="w-full" />
             <template #hint>
               {{ $t('settings.lightning.bolt12OfferHint') }}
             </template>
@@ -349,31 +250,17 @@
 
       <!-- Action Buttons -->
       <div class="flex items-center justify-between gap-4">
-        <UButton
-          :loading="testing"
-          variant="outline"
-          size="lg"
-          @click="testConnection"
-        >
+        <UButton :loading="testing" variant="outline" size="lg" @click="testConnection">
           <UIcon name="i-heroicons-signal" class="w-5 h-5 mr-2" />
           {{ $t('settings.lightning.testConnection') }}
         </UButton>
 
         <div class="flex items-center gap-4">
-          <UButton
-            variant="ghost"
-            size="lg"
-            @click="resetForm"
-          >
+          <UButton variant="ghost" size="lg" @click="resetForm">
             {{ $t('common.reset') }}
           </UButton>
-          
-          <UButton
-            :loading="saving"
-            color="primary"
-            size="lg"
-            @click="saveConfiguration"
-          >
+
+          <UButton :loading="saving" color="primary" size="lg" @click="saveConfiguration">
             <UIcon name="i-heroicons-check" class="w-5 h-5 mr-2" />
             {{ $t('common.save') }}
           </UButton>
@@ -386,13 +273,10 @@
           <UCard>
             <template #header>
               <div class="flex items-center gap-3">
-                <UIcon 
-                  :name="testResult?.success ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'"
-                  :class="[
-                    'w-6 h-6',
-                    testResult?.success ? 'text-green-500' : 'text-red-500'
-                  ]"
-                />
+                <UIcon :name="testResult?.success ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'" :class="[
+                  'w-6 h-6',
+                  testResult?.success ? 'text-green-500' : 'text-red-500'
+                ]" />
                 <span class="font-semibold text-gray-900 dark:text-white">
                   {{ $t('settings.lightning.testResult') }}
                 </span>
@@ -579,7 +463,7 @@ const testConnection = async () => {
   }
 
   testing.value = true;
-  
+
   // First save the form values
   await lightning.saveSettings({
     provider: selectedProvider.value,
@@ -609,7 +493,7 @@ const saveConfiguration = async () => {
   }
 
   saving.value = true;
-  
+
   const success = await lightning.updateConfig({
     provider: selectedProvider.value,
     nodeUrl: form.nodeUrl,
