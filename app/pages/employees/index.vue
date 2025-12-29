@@ -639,6 +639,8 @@ function getSortIcon(field: string) {
       :ui="{
         content: 'max-w-2xl ',
       }"
+      title="Edit Employee"
+      description="Edit employee details"
     >
       <template #content>
         <EmployeeForm
@@ -657,7 +659,12 @@ function getSortIcon(field: string) {
     </UModal>
 
     <!-- Employee Detail Modal -->
-    <UModal v-model:open="showDetailModal" fullscreen>
+    <UModal
+      v-model:open="showDetailModal"
+      fullscreen
+      title="Employee Details"
+      description="View employee details"
+    >
       <template #content>
         <EmployeeDetail
           v-if="selectedEmployee"
@@ -673,7 +680,11 @@ function getSortIcon(field: string) {
     </UModal>
 
     <!-- Terminate Confirmation Modal -->
-    <UModal v-model:open="showTerminateModal">
+    <UModal
+      v-model:open="showTerminateModal"
+      title="Terminate Employee"
+      description="Terminate employee"
+    >
       <template #content>
         <div class="p-6">
           <div class="flex items-center gap-4 mb-4">
@@ -713,7 +724,11 @@ function getSortIcon(field: string) {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="showDeleteModal">
+    <UModal
+      v-model:open="showDeleteModal"
+      title="Delete Employee"
+      description="Delete employee"
+    >
       <template #content>
         <div class="p-6">
           <div class="flex items-center gap-4 mb-4">

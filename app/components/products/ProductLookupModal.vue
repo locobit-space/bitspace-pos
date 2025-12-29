@@ -212,6 +212,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
               icon="i-heroicons-magnifying-glass"
               size="lg"
               autofocus
+              class="w-full"
             />
 
             <!-- Loading -->
@@ -390,7 +391,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
               <UInput
                 v-model="barcodeInput"
                 :placeholder="t('products.lookup.barcodePlaceholder')"
-                class="flex-1"
+                class="w-full"
                 size="lg"
                 @keyup.enter="lookupBarcode"
               />

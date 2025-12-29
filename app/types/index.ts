@@ -981,7 +981,8 @@ export type PaymentStatus =
   | "failed"
   | "expired"
   | "refunded"
-  | "offline_pending"; // For offline mode
+  | "offline_pending"
+  | "cancelled"; // For offline mode
 
 // USDT Network Types
 export type USDTNetwork = "tron" | "polygon" | "ethereum" | "arbitrum";
@@ -1523,6 +1524,7 @@ export type OrderType = "dine_in" | "take_away" | "delivery" | "pickup";
 export interface Order {
   id: string;
   customer: string;
+  customerEmail?: string;
   customerPubkey?: string; // Nostr pubkey for loyalty
   branch: string;
   date: string;

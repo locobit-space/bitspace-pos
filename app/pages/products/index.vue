@@ -144,7 +144,7 @@
           label-key="label"
           value-key="value"
           class="w-full"
-          :placeholder="$t('common.selectStatus')"
+          :placeholder="$t('common.select', { name: $t('common.status') })"
         />
       </UFormField>
 

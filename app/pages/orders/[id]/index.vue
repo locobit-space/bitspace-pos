@@ -399,7 +399,7 @@ onMounted(async () => {
                   color="primary"
                   trailing-icon="i-heroicons-chevron-down"
                 >
-                  {{ t("orders.actions") || "Actions" }}
+                  {{ t("orders.actions", "Actions") }}
                 </UButton>
               </UDropdownMenu>
 
@@ -410,7 +410,7 @@ onMounted(async () => {
                 color="red"
                 @click="refundOrder"
               >
-                {{ t("orders.refund") || "Refund" }}
+                {{ t("orders.refund", "Refund") }}
               </UButton>
             </div>
           </div>
@@ -449,7 +449,7 @@ onMounted(async () => {
                       />
                     </div>
                     <p class="text-sm text-gray-500">
-                      {{ order.customerEmail ? "Customer" : "Walk-in" }}
+                      {{ order?.customerEmail ? "Customer" : "Walk-in" }}
                     </p>
                   </div>
                 </div>
@@ -457,13 +457,13 @@ onMounted(async () => {
                 <!-- Customer Quick Actions -->
                 <div class="flex items-center gap-2">
                   <UButton
-                    v-if="order.customerEmail"
+                    v-if="order?.customerEmail"
                     icon="i-heroicons-envelope"
                     variant="soft"
                     size="sm"
                     color="gray"
                   >
-                    {{ t("common.email") || "Email" }}
+                    {{ t("common.email", "Email") }}
                   </UButton>
                   <UButton
                     v-if="order.customerPhone"
@@ -487,7 +487,7 @@ onMounted(async () => {
                 class="px-5 py-4 border-b border-gray-200 dark:border-gray-800"
               >
                 <h3 class="font-semibold text-gray-900 dark:text-white">
-                  {{ t("orders.items") || "Order Items" }} ({{
+                  {{ t("orders.items", "Order Items") }} ({{
                     order.items?.length || 0
                   }})
                 </h3>

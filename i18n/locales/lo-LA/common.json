@@ -1,5 +1,7 @@
 {
   "common": {
+    "generate": "ສ້າງ",
+    "custom": "ກຳນົດເອງ",
     "data": "ຂໍ້ມູນ",
     "justNow": "ເມື່ອກີ້",
     "clear": "ລຶບ",
@@ -43,6 +45,7 @@
     "allBranches": "ສາຂາທັງໝົດ",
     "branch": "ສາຂາ",
     "selectBranch": "ເລືອກສາຂາ",
+    "select": "ເລືອກ {name}",
     "notes": "ໝາຍເຫດ",
     "showing": "ສະແດງ",
     "of": "ຂອງ",

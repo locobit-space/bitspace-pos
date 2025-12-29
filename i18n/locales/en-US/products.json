@@ -25,6 +25,7 @@
     "lowStock": "Low Stock",
     "addProduct": "Add Product",
     "editProduct": "Edit Product",
+    "newProductHint": "Fill in product details below",
     "viewProduct": "View Product",
     "deleteProduct": "Delete Product",
     "deleteWarning": "This action cannot be undone.",

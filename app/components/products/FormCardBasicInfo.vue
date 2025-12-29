@@ -1,6 +1,8 @@
 <!-- components/products/FormCardBasicInfo.vue -->
 <!-- Basic Information Form Card -->
 <script setup lang="ts">
+import { generateCode } from "~/utils/id";
+
 const { t } = useI18n();
 const { generateBarcode } = useBarcode();
 
@@ -34,6 +36,11 @@ function handleGenerateBarcode() {
   } else {
     form.value.barcode = generateBarcode("numeric", { length: 8 });
   }
+}
+
+// Generate product SKU code
+function handleGenerateSku() {
+  form.value.sku = generateCode("PRO");
 }
 </script>
 
@@ -99,18 +106,32 @@ function handleGenerateBarcode() {
 
         <!-- SKU -->
         <UFormField :label="t('products.sku')" name="sku">
-          <UInput
-            v-model="form.sku"
-            :placeholder="
-              t('products.skuPlaceholder') || 'Auto-generated if empty'
-            "
-            size="lg"
-            class="text-lg w-full"
-          >
-            <template #leading>
-              <UIcon name="i-heroicons-hashtag" class="w-4 h-4 text-gray-400" />
-            </template>
-          </UInput>
+          <div class="flex gap-2">
+            <UInput
+              v-model="form.sku"
+              :placeholder="
+                t('products.skuPlaceholder') || 'Auto-generated if empty'
+              "
+              size="lg"
+              class="text-lg flex-1"
+            >
+              <template #leading>
+                <UIcon
+                  name="i-heroicons-hashtag"
+                  class="w-4 h-4 text-gray-400"
+                />
+              </template>
+            </UInput>
+            <UButton
+              color="primary"
+              variant="soft"
+              size="lg"
+              icon="i-heroicons-sparkles"
+              @click="handleGenerateSku"
+            >
+              {{ t("common.generate") || "Gen" }}
+            </UButton>
+          </div>
         </UFormField>
       </div>
 
