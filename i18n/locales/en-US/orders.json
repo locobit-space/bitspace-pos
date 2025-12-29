@@ -62,6 +62,17 @@
     "paymentHash": "Payment Hash",
     "preimage": "Preimage",
     "history": "Order History",
-    "orderId": "Order ID"
+    "orderId": "Order ID",
+    "saved": "Order saved",
+    "cancelled": "Order cancelled",
+    "ordered": "Ordered",
+    "payments": "Payments",
+    "paymentReceive": "Payment Received",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "recordPayment": "Record Payment",
+    "actionsLabel": "Actions",
+    "markAsPaid": "Mark as Paid",
+    "cancelOrder": "Cancel Order"
   }
 }

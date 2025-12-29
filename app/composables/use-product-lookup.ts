@@ -11,7 +11,7 @@ export interface PublicProduct {
   brand?: string;
   category?: string;
   suggestedPrice?: number;
-  source: 'openfoodfacts' | 'barcode' | 'nostr' | 'template';
+  source: "openfoodfacts" | "barcode" | "nostr" | "template";
   sourceData?: Record<string, unknown>;
 }
 
@@ -55,11 +55,13 @@ export function useProductLookup() {
   const searchError = ref<string | null>(null);
   const searchTotal = ref(0);
   const currentPage = ref(1);
-  const currentQuery = ref('');
-  const hasMore = computed(() => searchResults.value.length < searchTotal.value);
+  const currentQuery = ref("");
+  const hasMore = computed(
+    () => searchResults.value.length < searchTotal.value
+  );
 
   // Open Food Facts API Base URL
-  const OFF_API_BASE = 'https://world.openfoodfacts.org';
+  const OFF_API_BASE = "https://world.openfoodfacts.org";
 
   /**
    * Convert Open Food Facts product to PublicProduct
@@ -67,13 +69,19 @@ export function useProductLookup() {
   function offToPublicProduct(offProduct: OFFProduct): PublicProduct {
     return {
       id: `off-${offProduct.code}`,
-      name: offProduct.product_name || offProduct.product_name_en || 'Unknown Product',
+      name:
+        offProduct.product_name ||
+        offProduct.product_name_en ||
+        "Unknown Product",
       description: offProduct.quantity || undefined,
       barcode: offProduct.code,
-      image: offProduct.image_front_url || offProduct.image_small_url || offProduct.image_url,
+      image:
+        offProduct.image_front_url ||
+        offProduct.image_small_url ||
+        offProduct.image_url,
       brand: offProduct.brands,
-      category: offProduct.categories?.split(',')[0]?.trim(),
-      source: 'openfoodfacts',
+      category: offProduct.categories?.split(",")[0]?.trim(),
+      source: "openfoodfacts",
       sourceData: offProduct as unknown as Record<string, unknown>,
     };
   }
@@ -81,7 +89,11 @@ export function useProductLookup() {
   /**
    * Search Open Food Facts database
    */
-  async function searchOpenFoodFacts(query: string, page = 1, append = false): Promise<PublicProduct[]> {
+  async function searchOpenFoodFacts(
+    query: string,
+    page = 1,
+    append = false
+  ): Promise<PublicProduct[]> {
     if (!query.trim()) return [];
 
     // If new search, reset
@@ -92,7 +104,7 @@ export function useProductLookup() {
     } else {
       isLoadingMore.value = true;
     }
-    
+
     searchError.value = null;
     currentQuery.value = query;
 
@@ -103,11 +115,12 @@ export function useProductLookup() {
           params: {
             search_terms: query,
             search_simple: 1,
-            action: 'process',
+            action: "process",
             json: 1,
             page_size: 20,
             page,
-            fields: 'code,product_name,product_name_en,brands,categories,image_url,image_small_url,image_front_url,quantity',
+            fields:
+              "code,product_name,product_name_en,brands,categories,image_url,image_small_url,image_front_url,quantity",
           },
         }
       );
@@ -115,18 +128,18 @@ export function useProductLookup() {
       const products = response.products?.map(offToPublicProduct) || [];
       searchTotal.value = response.count || 0;
       currentPage.value = page;
-      
+
       if (append) {
         // Append to existing results
         searchResults.value = [...searchResults.value, ...products];
       } else {
         searchResults.value = products;
       }
-      
+
       return products;
     } catch (error) {
       searchError.value = `Search failed: ${error}`;
-      console.error('Open Food Facts search error:', error);
+      console.error("Open Food Facts search error:", error);
       return [];
     } finally {
       isSearching.value = false;
@@ -156,7 +169,8 @@ export function useProductLookup() {
         `${OFF_API_BASE}/api/v2/product/${barcode}`,
         {
           params: {
-            fields: 'code,product_name,product_name_en,brands,categories,image_url,image_small_url,image_front_url,quantity',
+            fields:
+              "code,product_name,product_name_en,brands,categories,image_url,image_small_url,image_front_url,quantity",
           },
         }
       );
@@ -168,12 +182,214 @@ export function useProductLookup() {
         return product;
       }
 
-      searchError.value = 'Product not found in database';
+      searchError.value = "Product not found in database";
       return null;
     } catch (error) {
       searchError.value = `Barcode lookup failed: ${error}`;
-      console.error('Barcode lookup error:', error);
+      console.error("Barcode lookup error:", error);
       return null;
+    } finally {
+      isSearching.value = false;
+    }
+  }
+
+  // ============================================
+  // 🍲 TheMealDB API - Free Meal/Recipe Database
+  // ============================================
+
+  interface MealDBMeal {
+    idMeal: string;
+    strMeal: string;
+    strCategory: string;
+    strArea: string;
+    strMealThumb: string;
+    strInstructions?: string;
+  }
+
+  interface MealDBResponse {
+    meals: MealDBMeal[] | null;
+  }
+
+  /**
+   * Search TheMealDB for meals/recipes
+   * Free API: https://www.themealdb.com/api.php
+   */
+  async function searchTheMealDB(query: string): Promise<PublicProduct[]> {
+    if (!query.trim()) return [];
+
+    isSearching.value = true;
+    searchError.value = null;
+
+    try {
+      const response = await $fetch<MealDBResponse>(
+        `https://www.themealdb.com/api/json/v1/1/search.php`,
+        { params: { s: query } }
+      );
+
+      const products: PublicProduct[] = (response.meals || []).map((meal) => ({
+        id: `meal-${meal.idMeal}`,
+        name: meal.strMeal,
+        description: `${meal.strCategory} • ${meal.strArea}`,
+        category: meal.strCategory,
+        image: meal.strMealThumb,
+        source: "template" as const,
+        sourceData: { api: "themealdb", meal },
+      }));
+
+      searchResults.value = products;
+      searchTotal.value = products.length;
+      return products;
+    } catch (error) {
+      searchError.value = `MealDB search failed: ${error}`;
+      console.error("TheMealDB search error:", error);
+      return [];
+    } finally {
+      isSearching.value = false;
+    }
+  }
+
+  // ============================================
+  // 🍹 TheCocktailDB API - Free Drink Database
+  // ============================================
+
+  interface CocktailDBDrink {
+    idDrink: string;
+    strDrink: string;
+    strCategory: string;
+    strDrinkThumb: string;
+    strInstructions?: string;
+  }
+
+  interface CocktailDBResponse {
+    drinks: CocktailDBDrink[] | null;
+  }
+
+  /**
+   * Search TheCocktailDB for drinks
+   * Free API: https://www.thecocktaildb.com/api.php
+   */
+  async function searchTheCocktailDB(query: string): Promise<PublicProduct[]> {
+    if (!query.trim()) return [];
+
+    isSearching.value = true;
+    searchError.value = null;
+
+    try {
+      const response = await $fetch<CocktailDBResponse>(
+        `https://www.thecocktaildb.com/api/json/v1/1/search.php`,
+        { params: { s: query } }
+      );
+
+      const products: PublicProduct[] = (response.drinks || []).map(
+        (drink) => ({
+          id: `drink-${drink.idDrink}`,
+          name: drink.strDrink,
+          description: drink.strCategory,
+          category: drink.strCategory,
+          image: drink.strDrinkThumb,
+          source: "template" as const,
+          sourceData: { api: "thecocktaildb", drink },
+        })
+      );
+
+      searchResults.value = products;
+      searchTotal.value = products.length;
+      return products;
+    } catch (error) {
+      searchError.value = `CocktailDB search failed: ${error}`;
+      console.error("TheCocktailDB search error:", error);
+      return [];
+    } finally {
+      isSearching.value = false;
+    }
+  }
+
+  // ============================================
+  // 🛒 Fake Store API - Mock E-commerce Products
+  // ============================================
+
+  interface FakeStoreProduct {
+    id: number;
+    title: string;
+    price: number;
+    description: string;
+    category: string;
+    image: string;
+  }
+
+  /**
+   * Get products from Fake Store API (mock retail products)
+   * Free API: https://fakestoreapi.com/
+   */
+  async function searchFakeStore(category?: string): Promise<PublicProduct[]> {
+    isSearching.value = true;
+    searchError.value = null;
+
+    try {
+      const url = category
+        ? `https://fakestoreapi.com/products/category/${category}`
+        : "https://fakestoreapi.com/products";
+
+      const response = await $fetch<FakeStoreProduct[]>(url);
+
+      const products: PublicProduct[] = response.map((item) => ({
+        id: `fakestore-${item.id}`,
+        name: item.title,
+        description: item.description.slice(0, 100) + "...",
+        category: item.category,
+        image: item.image,
+        suggestedPrice: Math.round(item.price * 20000), // Convert USD to LAK approx
+        source: "template" as const,
+        sourceData: { api: "fakestore", item },
+      }));
+
+      searchResults.value = products;
+      searchTotal.value = products.length;
+      return products;
+    } catch (error) {
+      searchError.value = `FakeStore search failed: ${error}`;
+      console.error("FakeStore search error:", error);
+      return [];
+    } finally {
+      isSearching.value = false;
+    }
+  }
+
+  // ============================================
+  // 🔄 Universal Search (All APIs)
+  // ============================================
+
+  /**
+   * Search all external APIs and combine results
+   */
+  async function searchAllAPIs(query: string): Promise<PublicProduct[]> {
+    if (!query.trim()) return [];
+
+    isSearching.value = true;
+    searchError.value = null;
+
+    try {
+      // Search all APIs in parallel
+      const [meals, drinks, openFood] = await Promise.allSettled([
+        searchTheMealDB(query),
+        searchTheCocktailDB(query),
+        searchOpenFoodFacts(query),
+      ]);
+
+      // Combine successful results
+      const allProducts: PublicProduct[] = [];
+
+      if (meals.status === "fulfilled") allProducts.push(...meals.value);
+      if (drinks.status === "fulfilled") allProducts.push(...drinks.value);
+      if (openFood.status === "fulfilled") allProducts.push(...openFood.value);
+
+      searchResults.value = allProducts;
+      searchTotal.value = allProducts.length;
+      return allProducts;
+    } catch (error) {
+      searchError.value = `Multi-API search failed: ${error}`;
+      console.error("Multi-API search error:", error);
+      return [];
     } finally {
       isSearching.value = false;
     }
@@ -183,10 +399,12 @@ export function useProductLookup() {
    * Search Nostr marketplace for products
    * Uses NIP-15 Marketplace (kind: 30018)
    */
-  async function searchNostrMarketplace(query: string): Promise<PublicProduct[]> {
+  async function searchNostrMarketplace(
+    query: string
+  ): Promise<PublicProduct[]> {
     // TODO: Implement Nostr marketplace search
     // This would query relays for kind:30018 events
-    console.log('Nostr marketplace search not yet implemented:', query);
+    console.log("Nostr marketplace search not yet implemented:", query);
     return [];
   }
 
@@ -198,19 +416,49 @@ export function useProductLookup() {
     searchTotal.value = 0;
     searchError.value = null;
     currentPage.value = 1;
-    currentQuery.value = '';
+    currentQuery.value = "";
   }
 
   /**
    * Popular product categories for browsing
    */
   const popularCategories = [
-    { id: 'beverages', name: 'Beverages', nameLao: 'ເຄື່ອງດື່ມ', icon: '🥤', query: 'beverages' },
-    { id: 'snacks', name: 'Snacks', nameLao: 'ຂອງກິນຫຼິ້ນ', icon: '🍿', query: 'snacks' },
-    { id: 'coffee', name: 'Coffee', nameLao: 'ກາເຟ', icon: '☕', query: 'coffee' },
-    { id: 'dairy', name: 'Dairy', nameLao: 'ນົມ', icon: '🥛', query: 'dairy' },
-    { id: 'noodles', name: 'Noodles', nameLao: 'ເສັ້ນ', icon: '🍜', query: 'noodles instant' },
-    { id: 'candy', name: 'Candy', nameLao: 'ເຂົ້າໜົມຫວານ', icon: '🍬', query: 'candy chocolate' },
+    {
+      id: "beverages",
+      name: "Beverages",
+      nameLao: "ເຄື່ອງດື່ມ",
+      icon: "🥤",
+      query: "beverages",
+    },
+    {
+      id: "snacks",
+      name: "Snacks",
+      nameLao: "ຂອງກິນຫຼິ້ນ",
+      icon: "🍿",
+      query: "snacks",
+    },
+    {
+      id: "coffee",
+      name: "Coffee",
+      nameLao: "ກາເຟ",
+      icon: "☕",
+      query: "coffee",
+    },
+    { id: "dairy", name: "Dairy", nameLao: "ນົມ", icon: "🥛", query: "dairy" },
+    {
+      id: "noodles",
+      name: "Noodles",
+      nameLao: "ເສັ້ນ",
+      icon: "🍜",
+      query: "noodles instant",
+    },
+    {
+      id: "candy",
+      name: "Candy",
+      nameLao: "ເຂົ້າໜົມຫວານ",
+      icon: "🍬",
+      query: "candy chocolate",
+    },
   ];
 
   return {
@@ -226,6 +474,10 @@ export function useProductLookup() {
 
     // Methods
     searchOpenFoodFacts,
+    searchTheMealDB,
+    searchTheCocktailDB,
+    searchFakeStore,
+    searchAllAPIs,
     loadMore,
     lookupBarcode,
     searchNostrMarketplace,
