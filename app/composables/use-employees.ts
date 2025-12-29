@@ -5,6 +5,7 @@
 
 import type { Employee, EmployeeStatus } from "~/types";
 import { db, type EmployeeRecord } from "~/db/db";
+import { generateUUIDv7, generateReadableId } from "~/utils/id";
 import * as XLSX from "xlsx";
 
 // Singleton state
@@ -230,11 +231,11 @@ export function useEmployeesStore() {
   function generateEmployeeCode(): string {
     const prefix = "EMP";
     const num = employees.value.length + 1;
-    return `${prefix}${num.toString().padStart(4, "0")}`;
+    return `${prefix}${num.toString().padStart(4, "0")}`.toUpperCase();
   }
 
   function generateId(): string {
-    return `emp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateUUIDv7();
   }
 
   async function addEmployee(

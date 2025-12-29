@@ -11,6 +11,7 @@ import {
   type UnitRecord,
   type BranchRecord,
 } from "~/db/db";
+import { EntityId, generateUUIDv7 } from "~/utils/id";
 
 // ============================================
 // 📋 DEFAULT DATA (Initial Seed)
@@ -559,9 +560,11 @@ export function useProductsStore() {
     productData: Omit<Product, "id" | "createdAt" | "updatedAt">
   ): Promise<Product> {
     const currentUser = getCurrentUser();
+    const { id, code } = EntityId.product();
     const product: Product = {
       ...productData,
-      id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id,
+      sku: productData.sku || code, // Use code as SKU if not provided
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: currentUser?.id,
@@ -741,6 +744,48 @@ export function useProductsStore() {
     return activeProducts.value.filter((p) => p.categoryId === categoryId);
   }
 
+  /**
+   * Get a product by ID with fallback to Nostr relay
+   * Tries: 1) Memory cache → 2) Local DB → 3) Nostr relay
+   * Use this for dynamic pages that need to load on refresh
+   */
+  async function getProductById(id: string): Promise<Product | null> {
+    // 1. Try memory cache first (fastest)
+    const cached = products.value.find((p) => p.id === id);
+    if (cached) return cached;
+
+    // 2. Try local Dexie DB
+    try {
+      const record = await db.products.get(id);
+      if (record) {
+        const product = JSON.parse(record.data) as Product;
+        // Add to memory cache for future use
+        products.value.push(product);
+        return product;
+      }
+    } catch (e) {
+      console.error("Failed to load product from local DB:", e);
+    }
+
+    // 3. Fallback to Nostr relay (slowest, but works for shared links)
+    if (offline.isOnline.value) {
+      try {
+        const nostrProduct = await nostrData.getProduct(id);
+        if (nostrProduct) {
+          // Save to local DB for future use
+          await saveProductToLocal(nostrProduct);
+          // Add to memory cache
+          products.value.push(nostrProduct);
+          return nostrProduct;
+        }
+      } catch (e) {
+        console.error("Failed to load product from Nostr:", e);
+      }
+    }
+
+    return null;
+  }
+
   // ============================================
   // 📁 CATEGORY CRUD
   // ============================================
@@ -748,9 +793,10 @@ export function useProductsStore() {
   async function addCategory(
     categoryData: Omit<Category, "id">
   ): Promise<Category> {
+    const { id } = EntityId.category();
     const category: Category = {
       ...categoryData,
-      id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id,
       sortOrder: categories.value.length,
     };
 
@@ -819,7 +865,7 @@ export function useProductsStore() {
   async function addUnit(unitData: Omit<Unit, "id">): Promise<Unit> {
     const unit: Unit = {
       ...unitData,
-      id: `unit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUIDv7(),
     };
 
     units.value.push(unit);
@@ -857,9 +903,10 @@ export function useProductsStore() {
   // ============================================
 
   async function addBranch(branchData: Omit<Branch, "id">): Promise<Branch> {
+    const { id } = EntityId.branch();
     const branch: Branch = {
       ...branchData,
-      id: `branch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id,
     };
 
     branches.value.push(branch);
@@ -952,7 +999,7 @@ export function useProductsStore() {
 
     // Record stock adjustment
     const adjustmentRecord = {
-      id: `adj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUIDv7(),
       productId,
       previousStock,
       newStock,
@@ -1066,7 +1113,7 @@ export function useProductsStore() {
     const currentUser = getCurrentUser();
 
     const log = {
-      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUIDv7(),
       productId: options.productId,
       action: options.action,
       userId: currentUser?.id || "system",
@@ -1317,6 +1364,7 @@ export function useProductsStore() {
     updateProduct,
     deleteProduct,
     getProduct,
+    getProductById,
     getProductBySku,
     getProductByBarcode,
     findProductByCode,

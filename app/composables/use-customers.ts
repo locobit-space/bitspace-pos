@@ -5,6 +5,7 @@
 
 import type { LoyaltyMember, ZapReward } from "~/types";
 import { db, type CustomerRecord } from "~/db/db";
+import { EntityId, generateUUIDv7 } from "~/utils/id";
 
 // Loyalty tier configuration
 const LOYALTY_TIERS = {
@@ -184,8 +185,9 @@ export function useCustomers() {
 
     if (!customer) {
       // Create new customer
+      const { id } = EntityId.customer();
       customer = {
-        id: `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id,
         nostrPubkey,
         points: 0,
         tier: "bronze",
@@ -239,8 +241,9 @@ export function useCustomers() {
     }
 
     // Create new customer
+    const { id } = EntityId.customer();
     const customer: LoyaltyMember = {
-      id: `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id,
       nostrPubkey: data.nostrPubkey || "",
       name: data.name,
       email: data.email,
@@ -310,6 +313,58 @@ export function useCustomers() {
     return customers.value.find((c) => c.nostrPubkey === pubkey);
   }
 
+  /**
+   * Get customer by ID with fallback to Nostr relay
+   * Tries: 1) Memory cache → 2) Local DB → 3) Nostr relay
+   * Use this for dynamic pages that need to load on refresh
+   */
+  async function getCustomerById(id: string): Promise<LoyaltyMember | null> {
+    // 1. Try memory cache first (fastest)
+    const cached = customers.value.find((c) => c.id === id);
+    if (cached) return cached;
+
+    // 2. Try local Dexie DB
+    try {
+      const record = await db.customers.get(id);
+      if (record) {
+        const customer: LoyaltyMember = {
+          id: record.id,
+          nostrPubkey: record.nostrPubkey,
+          points: record.points,
+          tier: record.tier as LoyaltyMember["tier"],
+          totalSpent: record.totalSpent,
+          visitCount: record.visitCount,
+          lastVisit: new Date(record.lastVisit).toISOString(),
+          joinedAt: new Date(record.joinedAt).toISOString(),
+          zapRewards: [],
+        };
+        // Add to memory cache for future use
+        customers.value.push(customer);
+        return customer;
+      }
+    } catch (e) {
+      console.error("Failed to load customer from local DB:", e);
+    }
+
+    // 3. Fallback to Nostr relay (slowest, but works for shared links)
+    // Note: Customers in Nostr are typically stored by pubkey, not local ID
+    // This fallback is limited - it mainly relies on local DB
+    if (offline.isOnline.value) {
+      try {
+        // Customers are typically keyed by pubkey in Nostr, not by local ID
+        // For now, we can only load from local DB. Full Nostr lookup would
+        // require iterating all customers which is expensive.
+        console.warn(
+          "Customer not found in local DB. Nostr fallback requires pubkey, not ID."
+        );
+      } catch (e) {
+        console.error("Failed to load customer from Nostr:", e);
+      }
+    }
+
+    return null;
+  }
+
   // ============================================
   // ⭐ LOYALTY POINTS
   // ============================================
@@ -373,7 +428,7 @@ export function useCustomers() {
     }
 
     const reward: ZapReward = {
-      id: `reward_${Date.now()}`,
+      id: generateUUIDv7(),
       memberId: customerId,
       amount: points,
       reason: "loyalty",
@@ -528,6 +583,7 @@ export function useCustomers() {
     getOrCreateCustomer,
     updateCustomer,
     getCustomer,
+    getCustomerById,
     getCustomerByPubkey,
 
     // Loyalty

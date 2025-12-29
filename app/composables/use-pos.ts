@@ -18,6 +18,7 @@ import type {
 } from "~/types";
 import { useCurrency } from "./use-currency";
 import { useTax } from "./use-tax";
+import { EntityId, generateUUIDv7 } from "~/utils/id";
 
 // ============================================
 // GLOBAL SINGLETON STATE
@@ -505,8 +506,9 @@ export const usePOS = () => {
    * Create order from cart
    */
   const createOrder = (paymentMethod: PaymentMethod): Order => {
+    const { id: orderId } = EntityId.order();
     const order: Order = {
-      id: `ORD-${Date.now().toString(36).toUpperCase()}`,
+      id: orderId,
       customer: customerPubkey.value
         ? `nostr:${customerPubkey.value.slice(0, 8)}`
         : "Walk-in",
@@ -521,8 +523,8 @@ export const usePOS = () => {
       notes: customerNote.value || undefined,
       tip: tipAmount.value > 0 ? tipAmount.value : undefined,
       kitchenStatus: "new",
-      items: cartItems.value.map((item, index) => ({
-        id: `${index + 1}`,
+      items: cartItems.value.map((item) => ({
+        id: generateUUIDv7(),
         productId: item.product.id,
         quantity: item.quantity,
         price: item.price,
@@ -554,7 +556,7 @@ export const usePOS = () => {
     openingBalance: number = 0
   ): POSSession => {
     const session: POSSession = {
-      id: `SES-${Date.now().toString(36).toUpperCase()}`,
+      id: generateUUIDv7(),
       branchId,
       staffId,
       startedAt: new Date().toISOString(),

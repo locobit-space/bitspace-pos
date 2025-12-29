@@ -11,6 +11,7 @@ import type {
   CurrencyCode,
 } from "~/types";
 import { db, type LocalOrder } from "~/db/db";
+import { generateUUIDv7 } from "~/utils/id";
 
 // Singleton state
 const orders = ref<Order[]>([]);
@@ -387,7 +388,7 @@ export function useOrders() {
       paymentMethod,
       paymentProof: paymentProof
         ? {
-            id: `proof_${Date.now()}`,
+            id: generateUUIDv7(),
             orderId,
             paymentHash: paymentProof.paymentHash || "",
             preimage: paymentProof.preimage || "",
@@ -497,7 +498,7 @@ export function useOrders() {
     // Clone items from source to avoid reference issues
     const newItems = sourceOrder.items.map((item) => ({
       ...item,
-      id: `merged_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, // Generate new IDs
+      id: generateUUIDv7(), // Generate new IDs
     }));
 
     // Combine items
@@ -681,6 +682,48 @@ export function useOrders() {
    */
   function getOrder(id: string): Order | undefined {
     return orders.value.find((o) => o.id === id);
+  }
+
+  /**
+   * Get order by ID with fallback to Nostr relay
+   * Tries: 1) Memory cache → 2) Local DB → 3) Nostr relay
+   * Use this for dynamic pages that need to load on refresh
+   */
+  async function getOrderById(id: string): Promise<Order | null> {
+    // 1. Try memory cache first (fastest)
+    const cached = orders.value.find((o) => o.id === id);
+    if (cached) return cached;
+
+    // 2. Try local Dexie DB
+    try {
+      const record = await db.localOrders.get(id);
+      if (record) {
+        const order = JSON.parse(record.data) as Order;
+        // Add to memory cache for future use
+        orders.value.push(order);
+        return order;
+      }
+    } catch (e) {
+      console.error("Failed to load order from local DB:", e);
+    }
+
+    // 3. Fallback to Nostr relay (slowest, but works for shared links)
+    if (offline.isOnline.value) {
+      try {
+        const nostrOrder = await nostrData.getOrder(id);
+        if (nostrOrder) {
+          // Save to local DB for future use
+          await saveToLocal(nostrOrder);
+          // Add to memory cache
+          orders.value.push(nostrOrder);
+          return nostrOrder;
+        }
+      } catch (e) {
+        console.error("Failed to load order from Nostr:", e);
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -923,6 +966,7 @@ export function useOrders() {
 
     // Query
     getOrder,
+    getOrderById,
     getOrdersByDateRange,
     getOrdersByCustomer,
     getOrdersByPaymentMethod,
