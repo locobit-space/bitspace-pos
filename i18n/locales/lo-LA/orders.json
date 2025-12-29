@@ -67,6 +67,22 @@
     "paymentHash": "Payment Hash",
     "preimage": "Preimage",
     "history": "ປະຫວັດອໍເດີ້",
-    "orderId": "ລະຫັດອໍເດີ້"
+    "orderId": "ລະຫັດອໍເດີ້",
+    "orderType": "ປະເພດອໍເດີ້",
+    "dineIn": "ທານໃນຮ້ານ",
+    "takeAway": "ຫໍ່ກັບ",
+    "delivery": "ສົ່ງ",
+    "pickup": "ມາຮັບເອງ",
+    "walkIn": "Walk-in",
+    "scheduledTime": "ເວລານັດໝາຍ",
+    "deliveryAddress": "ທີ່ຢູ່ສົ່ງ",
+    "kitchenNotes": "ໝາຍເຫດຄົວ",
+    "kitchenStatus": "ສະຖານະຄົວ"
+  },
+  "kitchen": {
+    "new": "ໃໝ່",
+    "preparing": "ກຳລັງເຮັດ",
+    "ready": "ພ້ອມແລ້ວ",
+    "served": "ເສີບແລ້ວ"
   }
 }

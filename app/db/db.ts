@@ -175,6 +175,9 @@ export interface CustomerRecord {
   name?: string;
   phone?: string;
   email?: string;
+  address?: string;
+  lud16?: string;
+  tags?: string; // JSON string array
   points: number;
   tier: string;
   totalSpent: number;

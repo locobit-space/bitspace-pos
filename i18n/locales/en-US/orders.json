@@ -73,6 +73,22 @@
     "recordPayment": "Record Payment",
     "actionsLabel": "Actions",
     "markAsPaid": "Mark as Paid",
-    "cancelOrder": "Cancel Order"
+    "cancelOrder": "Cancel Order",
+    "orderType": "Order Type",
+    "dineIn": "Dine-in",
+    "takeAway": "Take Away",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "walkIn": "Walk-in",
+    "scheduledTime": "Scheduled",
+    "deliveryAddress": "Delivery Address",
+    "kitchenNotes": "Kitchen Notes",
+    "kitchenStatus": "Kitchen Status"
+  },
+  "kitchen": {
+    "new": "New",
+    "preparing": "Preparing",
+    "ready": "Ready",
+    "served": "Served"
   }
 }

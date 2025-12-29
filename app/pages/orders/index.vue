@@ -693,6 +693,7 @@ onMounted(async () => {
                     @update:model-value="toggleSelectAll"
                   />
                 </th>
+
                 <th
                   class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
                   @click="toggleSort('id')"
@@ -726,6 +727,22 @@ onMounted(async () => {
                       class="w-4 h-4"
                     />
                   </div>
+                </th>
+                <!-- Order Type -->
+                <th
+                  class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
+                  @click="toggleSort('orderType')"
+                >
+                  Order Type
+                  <UIcon
+                    v-if="sortKey === 'orderType'"
+                    :name="
+                      sortOrder === 'asc'
+                        ? 'i-heroicons-chevron-up'
+                        : 'i-heroicons-chevron-down'
+                    "
+                    class="w-4 h-4"
+                  />
                 </th>
                 <th
                   class="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400 text-sm cursor-pointer hover:text-gray-900 dark:hover:text-white"
@@ -821,6 +838,15 @@ onMounted(async () => {
                 <!-- Date -->
                 <td class="py-4 px-4 text-sm text-gray-600 dark:text-gray-400">
                   {{ formatDate(order.date) }}
+                </td>
+
+                <!-- Order Type -->
+                <td class="py-4 px-4">
+                  <span
+                    class="font-mono text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    {{ order.orderType || "Unknown" }}
+                  </span>
                 </td>
 
                 <!-- Customer -->

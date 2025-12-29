@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useNotifications } from "~/composables/use-notifications";
+import { parseMarkdown } from "~/utils/markdown";
 import type { POSNotification, NotificationPriority } from "~/types";
 
 const notificationsStore = useNotifications();
@@ -568,7 +569,14 @@ const priorityOptions = [
                           </span>
                         </div>
 
+                        <!-- Message (with markdown support for system updates) -->
+                        <div
+                          v-if="notification.type === 'system_update'"
+                          class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed prose prose-sm dark:prose-invert max-w-none line-clamp-3"
+                          v-html="parseMarkdown(notification.message)"
+                        />
                         <p
+                          v-else
                           class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2"
                         >
                           {{ notification.message }}

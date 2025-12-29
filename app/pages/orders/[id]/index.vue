@@ -128,6 +128,16 @@ const paymentStatus = computed(() => {
   return "pending";
 });
 
+// Format scheduled time for pickup/delivery
+const formatScheduledTime = (isoString: string) => {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return isoString;
+  }
+};
+
 // Get customer initials
 const customerInitials = computed(() => {
   const name = order.value?.customer || "WC";
@@ -419,11 +429,14 @@ onMounted(async () => {
         <div class="flex flex-col lg:flex-row gap-6">
           <!-- ========== LEFT COLUMN (Main Content) ========== -->
           <div class="flex-1 space-y-6">
-            <!-- Customer Card -->
+            <!-- Customer & Order Info Card -->
             <div
               class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5"
             >
-              <div class="flex items-center justify-between">
+              <div
+                class="flex flex-col md:flex-row md:items-start justify-between gap-4"
+              >
+                <!-- Customer Info -->
                 <div class="flex items-center gap-4">
                   <!-- Customer Avatar -->
                   <div
@@ -452,7 +465,7 @@ onMounted(async () => {
                 </div>
 
                 <!-- Customer Quick Actions -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <UButton
                     v-if="order?.customerEmail"
                     icon="i-heroicons-envelope"
@@ -471,6 +484,184 @@ onMounted(async () => {
                   >
                     {{ order.customerPhone }}
                   </UButton>
+                </div>
+              </div>
+
+              <!-- Order Type & Details Section -->
+              <div
+                class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800"
+              >
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <!-- Order Type Badge -->
+                  <div>
+                    <p
+                      class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                    >
+                      {{ t("orders.orderType", "Order Type") }}
+                    </p>
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
+                        :class="{
+                          'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400':
+                            order.orderType === 'dine_in',
+                          'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400':
+                            order.orderType === 'take_away',
+                          'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400':
+                            order.orderType === 'delivery',
+                          'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400':
+                            order.orderType === 'pickup',
+                          'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400':
+                            !order.orderType,
+                        }"
+                      >
+                        <span>{{
+                          order.orderType === "dine_in"
+                            ? "🍽️"
+                            : order.orderType === "take_away"
+                            ? "🥡"
+                            : order.orderType === "delivery"
+                            ? "🚚"
+                            : order.orderType === "pickup"
+                            ? "🏃"
+                            : "🛒"
+                        }}</span>
+                        <span>{{
+                          order.orderType === "dine_in"
+                            ? t("orders.dineIn", "Dine-in")
+                            : order.orderType === "take_away"
+                            ? t("orders.takeAway", "Take Away")
+                            : order.orderType === "delivery"
+                            ? t("orders.delivery", "Delivery")
+                            : order.orderType === "pickup"
+                            ? t("orders.pickup", "Pickup")
+                            : t("orders.walkIn", "Walk-in")
+                        }}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Table Number (for dine-in) -->
+                  <div
+                    v-if="order.orderType === 'dine_in' && order.tableNumber"
+                  >
+                    <p
+                      class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                    >
+                      {{ t("orders.table", "Table") }}
+                    </p>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-lg">🪑</span>
+                      <span class="font-semibold text-gray-900 dark:text-white">
+                        {{ order.tableNumber }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Scheduled Time (for pickup/delivery) -->
+                  <div v-if="order.scheduledTime">
+                    <p
+                      class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                    >
+                      {{ t("orders.scheduledTime", "Scheduled") }}
+                    </p>
+                    <div class="flex items-center gap-1.5">
+                      <UIcon
+                        name="i-heroicons-clock"
+                        class="w-4 h-4 text-gray-500"
+                      />
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ formatScheduledTime(order.scheduledTime) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Kitchen Status -->
+                  <div v-if="order.kitchenStatus">
+                    <p
+                      class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                    >
+                      {{ t("orders.kitchenStatus", "Kitchen") }}
+                    </p>
+                    <span
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
+                      :class="{
+                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400':
+                          order.kitchenStatus === 'new',
+                        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400':
+                          order.kitchenStatus === 'preparing',
+                        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
+                          order.kitchenStatus === 'ready',
+                        'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400':
+                          order.kitchenStatus === 'served',
+                      }"
+                    >
+                      <span>{{
+                        order.kitchenStatus === "new"
+                          ? "🆕"
+                          : order.kitchenStatus === "preparing"
+                          ? "👨‍🍳"
+                          : order.kitchenStatus === "ready"
+                          ? "✅"
+                          : "🍽️"
+                      }}</span>
+                      <span>{{
+                        order.kitchenStatus === "new"
+                          ? t("kitchen.new", "New")
+                          : order.kitchenStatus === "preparing"
+                          ? t("kitchen.preparing", "Preparing")
+                          : order.kitchenStatus === "ready"
+                          ? t("kitchen.ready", "Ready")
+                          : t("kitchen.served", "Served")
+                      }}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Delivery Address (for delivery orders) -->
+                <div
+                  v-if="order.orderType === 'delivery' && order.deliveryAddress"
+                  class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800"
+                >
+                  <div class="flex items-start gap-2">
+                    <UIcon
+                      name="i-heroicons-map-pin"
+                      class="w-5 h-5 text-purple-500 mt-0.5"
+                    />
+                    <div>
+                      <p
+                        class="text-xs text-purple-600 dark:text-purple-400 uppercase tracking-wide mb-0.5"
+                      >
+                        {{ t("orders.deliveryAddress", "Delivery Address") }}
+                      </p>
+                      <p class="text-sm text-gray-900 dark:text-white">
+                        {{ order.deliveryAddress }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Kitchen Notes -->
+                <div
+                  v-if="order.kitchenNotes"
+                  class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800"
+                >
+                  <div class="flex items-start gap-2">
+                    <UIcon
+                      name="i-heroicons-chat-bubble-bottom-center-text"
+                      class="w-5 h-5 text-amber-500 mt-0.5"
+                    />
+                    <div>
+                      <p
+                        class="text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-0.5"
+                      >
+                        {{ t("orders.kitchenNotes", "Kitchen Notes") }}
+                      </p>
+                      <p class="text-sm text-gray-900 dark:text-white">
+                        {{ order.kitchenNotes }}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
