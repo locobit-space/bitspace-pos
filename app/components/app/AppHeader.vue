@@ -27,143 +27,8 @@
 
     <!-- Right: Notifications + Profile -->
     <div class="flex items-center gap-1">
-      <!-- Notification Bell -->
-      <UPopover
-        :ui="{
-          content:
-            'w-80 p-0 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 rounded-2xl shadow-2xl border-white/20 dark:border-gray-700/50 overflow-hidden',
-        }"
-      >
-        <span class="relative">
-          <button
-            class="p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <Icon
-              name="i-heroicons-bell"
-              size="22"
-              :class="{ 'text-primary-500': unreadCount > 0 }"
-            />
-            <!-- Badge -->
-            <span
-              v-if="unreadCount > 0"
-              class="absolute top-1 right-1 flex items-center justify-center min-w-4 h-4 px-1 text-xs font-bold text-white bg-red-500 rounded-full"
-            >
-              {{ unreadCount > 9 ? "9+" : unreadCount }}
-            </span>
-          </button>
-        </span>
-
-        <template #content>
-          <!-- Notification Header -->
-          <div
-            class="flex items-center justify-between px-4 py-3 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
-          >
-            <div class="flex items-center gap-2">
-              <Icon
-                name="i-heroicons-bell"
-                size="18"
-                class="text-primary-500"
-              />
-              <span class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("notifications.title") }}
-              </span>
-              <UBadge
-                v-if="unreadCount > 0"
-                :label="String(unreadCount)"
-                size="xs"
-                color="primary"
-              />
-            </div>
-            <div class="flex items-center gap-1">
-              <UButton
-                v-if="unreadCount > 0"
-                icon="i-heroicons-check-circle"
-                variant="ghost"
-                size="xs"
-                :title="$t('notifications.markAllRead')"
-                @click="markAllAsRead"
-              />
-              <UButton
-                v-if="notifications.length > 0"
-                icon="i-heroicons-trash"
-                variant="ghost"
-                size="xs"
-                color="error"
-                :title="$t('notifications.clearAll')"
-                @click="clearAll"
-              />
-            </div>
-          </div>
-
-          <!-- Notification List -->
-          <div class="max-h-80 overflow-y-auto">
-            <div v-if="notifications.length === 0" class="p-8 text-center">
-              <Icon
-                name="i-heroicons-bell-slash"
-                size="40"
-                class="text-gray-300 dark:text-gray-600 mx-auto mb-2"
-              />
-              <p class="text-gray-500 dark:text-gray-400 text-sm">
-                {{ $t("notifications.empty") }}
-              </p>
-            </div>
-
-            <div v-else class="divide-y divide-gray-100 dark:divide-gray-700">
-              <div
-                v-for="notification in notifications.slice(0, 5)"
-                :key="notification.id"
-                class="p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
-                :class="{
-                  'bg-primary-50/50 dark:bg-primary-900/10': !notification.read,
-                }"
-                @click="handleNotificationClick(notification)"
-              >
-                <div class="flex items-start gap-3">
-                  <div
-                    class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-primary-100 dark:bg-primary-900/30"
-                  >
-                    <Icon
-                      :name="getNotificationIcon(notification.type)"
-                      size="16"
-                      class="text-primary-600 dark:text-primary-400"
-                    />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p
-                      class="font-medium text-gray-900 dark:text-white text-sm truncate"
-                    >
-                      {{ notification.title }}
-                    </p>
-                    <p
-                      class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1"
-                    >
-                      {{ notification.message }}
-                    </p>
-                  </div>
-                  <div
-                    v-if="!notification.read"
-                    class="shrink-0 w-2 h-2 rounded-full bg-primary-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div
-            v-if="notifications.length > 0"
-            class="p-2 border-t border-gray-200 dark:border-gray-700"
-          >
-            <NuxtLinkLocale
-              to="/notifications"
-              class="flex items-center justify-center gap-2 w-full py-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
-            >
-              {{ $t("notifications.viewAll") }}
-              <Icon name="i-heroicons-arrow-right" size="14" />
-            </NuxtLinkLocale>
-          </div>
-        </template>
-      </UPopover>
+      <!-- Notification Center -->
+      <NotificationCenter />
 
       <!-- Help & Support Button -->
       <UDropdownMenu
@@ -461,9 +326,6 @@ const { t } = useI18n();
 const help = useHelp();
 const feedback = useFeedback();
 
-const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } =
-  useNotifications();
-
 // Help & Support
 const showSupportModal = ref(false);
 
@@ -623,27 +485,6 @@ const providerBadgeClass = computed(() => {
       return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400";
   }
 });
-
-// Notification helpers
-function getNotificationIcon(type: POSNotification["type"]): string {
-  const icons: Record<POSNotification["type"], string> = {
-    payment: "i-heroicons-bolt",
-    order: "i-heroicons-shopping-bag",
-    stock: "i-heroicons-archive-box",
-    loyalty: "i-heroicons-star",
-    ai_insight: "i-heroicons-sparkles",
-    alert: "i-heroicons-exclamation-triangle",
-    system: "i-heroicons-cog-6-tooth",
-  };
-  return icons[type] || "i-heroicons-bell";
-}
-
-function handleNotificationClick(notification: POSNotification) {
-  markAsRead(notification.id);
-  if (notification.actionUrl) {
-    router.push(notification.actionUrl);
-  }
-}
 
 // Logout
 const handleLogout = async () => {

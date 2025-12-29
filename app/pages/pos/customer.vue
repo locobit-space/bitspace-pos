@@ -150,6 +150,8 @@ const formatDate = computed(() => {
     day: "numeric",
   });
 });
+
+const receiptSettings = useReceiptSettings();
 </script>
 
 <template>
@@ -167,7 +169,9 @@ const formatDate = computed(() => {
           <span class="text-2xl">☕</span>
         </div>
         <div>
-          <h1 class="text-xl font-semibold tracking-tight">Berkeley Café</h1>
+          <h1 class="text-xl font-semibold tracking-tight">
+            {{ receiptSettings?.merchantName || "bnos.space" }}
+          </h1>
           <p class="text-sm text-gray-400 font-light">{{ formatDate }}</p>
         </div>
       </div>

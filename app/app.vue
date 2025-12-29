@@ -1,5 +1,10 @@
 <script setup lang="ts">
 const { locale } = useI18n();
+const { initSystemNotifications } = useNotifications();
+
+onMounted(() => {
+  initSystemNotifications();
+});
 </script>
 
 <template>

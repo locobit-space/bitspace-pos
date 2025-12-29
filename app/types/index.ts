@@ -1678,7 +1678,8 @@ export interface POSNotification {
     | "loyalty"
     | "ai_insight"
     | "alert"
-    | "system";
+    | "system"
+    | "system_update"; // New type for global announcements
   title: string;
   message: string;
   data?: Record<string, unknown>;

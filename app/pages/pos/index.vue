@@ -2748,6 +2748,7 @@ onUnmounted(() => {
               <UInput
                 v-model="customItem.name"
                 placeholder="e.g., Special Order"
+                class="w-full"
               />
             </div>
 
@@ -2768,14 +2769,14 @@ onUnmounted(() => {
               <UButton
                 color="neutral"
                 variant="outline"
-                class="flex-1"
+                blcok
                 @click="showCustomItemModal = false"
               >
                 Cancel
               </UButton>
               <UButton
                 color="primary"
-                class="flex-1"
+                blcok
                 :disabled="!customItem.name || customItem.price <= 0"
                 @click="addCustomItem"
               >
@@ -2837,7 +2838,7 @@ onUnmounted(() => {
                 <UButton
                   size="sm"
                   color="primary"
-                  class="flex-1"
+                  block
                   @click="recallOrder(order.id)"
                 >
                   Recall
@@ -3613,14 +3614,15 @@ onUnmounted(() => {
                 <UButton
                   color="neutral"
                   variant="outline"
-                  class="flex-1"
+                  blcok
                   @click="showProductOptionsModal = false"
                 >
                   Cancel
                 </UButton>
                 <UButton
                   color="primary"
-                  class="flex-1 bg-linear-to-r from-amber-500 to-orange-500"
+                  class="bg-linear-to-r from-amber-500 to-orange-500"
+                  block
                   @click="addProductWithOptions"
                 >
                   Add to Cart
@@ -3657,6 +3659,7 @@ onUnmounted(() => {
               placeholder="Enter notes for this item..."
               :rows="3"
               autofocus
+              class="w-full"
             />
 
             <!-- Quick Notes -->
@@ -3689,12 +3692,12 @@ onUnmounted(() => {
               <UButton
                 color="neutral"
                 variant="outline"
-                class="flex-1"
+                block
                 @click="showItemNotesModal = false"
               >
                 Cancel
               </UButton>
-              <UButton color="primary" class="flex-1" @click="saveItemNotes">
+              <UButton color="primary" block @click="saveItemNotes">
                 Save Notes
               </UButton>
             </div>
@@ -3930,7 +3933,7 @@ onUnmounted(() => {
             placeholder="Search customers..."
             size="lg"
             autofocus
-            class="mb-4"
+            class="mb-4 w-full"
           />
           <div class="max-h-64 overflow-y-auto space-y-2">
             <div
@@ -3970,13 +3973,14 @@ onUnmounted(() => {
             <UButton
               variant="outline"
               color="gray"
-              class="flex-1"
+              block
               @click="showCustomerModal = false"
-              >Cancel</UButton
             >
-            <UButton color="primary" class="flex-1" icon="i-heroicons-plus"
-              >New Customer</UButton
-            >
+              Cancel
+            </UButton>
+            <UButton color="primary" block icon="i-heroicons-plus">
+              New Customer
+            </UButton>
           </div>
         </div>
       </template>

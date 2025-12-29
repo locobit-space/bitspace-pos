@@ -353,7 +353,6 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
-
             <!-- Action Buttons -->
             <div class="flex items-center gap-2 flex-wrap">
               <UButton
