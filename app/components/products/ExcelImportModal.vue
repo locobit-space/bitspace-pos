@@ -1,5 +1,9 @@
 <template>
-  <UModal v-model:open="isOpen">
+  <UModal
+    v-model:open="isOpen"
+    title="Import Products"
+    description="Import products from an Excel file"
+  >
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="text-xl font-bold flex items-center gap-2">

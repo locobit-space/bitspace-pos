@@ -169,7 +169,11 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <UModal v-model:open="open">
+  <UModal
+    v-model:open="open"
+    title="Product Variant"
+    description="Add a new variant or edit an existing one"
+  >
     <template #content>
       <UCard v-if="product" class="max-h-[90vh] overflow-hidden flex flex-col">
         <!-- Header with Product Info -->

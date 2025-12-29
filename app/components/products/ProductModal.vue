@@ -259,7 +259,12 @@ function handleCancel() {
 </script>
 
 <template>
-  <UModal v-model:open="open" fullscreen>
+  <UModal
+    v-model:open="open"
+    title="Product"
+    description="Add a new product or edit an existing one"
+    fullscreen
+  >
     <template #content>
       <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
         <!-- Header -->

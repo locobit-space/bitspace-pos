@@ -119,7 +119,7 @@ function onTypeChange(value: string) {
               :items="unitOptions"
               label-key="name"
               value-key="id"
-              :placeholder="t('products.selectUnit')"
+              :placeholder="t('common.select', { name: $t('products.unit') })"
               class="w-full"
             />
             <UTooltip :text="t('common.add') + ' ' + t('products.unit')">
