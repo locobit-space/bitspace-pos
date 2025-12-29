@@ -217,5 +217,27 @@
       "systemUpdate": "ອັບເດດລະບົບ",
       "newAnnouncement": "ແຈ້ງການໃໝ່"
     }
+  },
+  "chat": {
+    "title": "ແຊັດທີມ",
+    "description": "ສົ່ງຂໍ້ຄວາມຫາສະມາຊິກທີມ",
+    "search": "ຄົ້ນຫາແຊັດ...",
+    "noConversations": "ຍັງບໍ່ມີການສົນທະນາ",
+    "startFirst": "ເລີ່ມແຊັດຄັ້ງທຳອິດ",
+    "noMessages": "ຍັງບໍ່ມີຂໍ້ຄວາມ",
+    "selectConversation": "ເລືອກການສົນທະນາ",
+    "selectHint": "ເລືອກການສົນທະນາຈາກລາຍການ ຫຼື ເລີ່ມແຊັດໃໝ່ກັບສະມາຊິກທີມ",
+    "startConversation": "ເລີ່ມການສົນທະນາ!",
+    "typeMessage": "ພິມຂໍ້ຄວາມ...",
+    "newChat": "ແຊັດໃໝ່",
+    "searchContacts": "ຄົ້ນຫາສະມາຊິກທີມ...",
+    "noContacts": "ບໍ່ມີສະມາຊິກທີມ",
+    "online": "ອອນລາຍ",
+    "offline": "ອອບລາຍ",
+    "pin": "ປັກໝຸດ",
+    "unpin": "ຖອນປັກໝຸດ",
+    "mute": "ປິດສຽງ",
+    "unmute": "ເປີດສຽງ",
+    "delete": "ລຶບແຊັດ"
   }
 }

@@ -228,5 +228,27 @@
       "systemUpdate": "System Update",
       "newAnnouncement": "New Announcement"
     }
+  },
+  "chat": {
+    "title": "Team Chat",
+    "description": "Message your team members",
+    "search": "Search chats...",
+    "noConversations": "No conversations yet",
+    "startFirst": "Start your first chat",
+    "noMessages": "No messages yet",
+    "selectConversation": "Select a conversation",
+    "selectHint": "Choose a conversation from the list or start a new chat with a team member",
+    "startConversation": "Start the conversation!",
+    "typeMessage": "Type a message...",
+    "newChat": "New Chat",
+    "searchContacts": "Search team members...",
+    "noContacts": "No team members available",
+    "online": "Online",
+    "offline": "Offline",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "delete": "Delete chat"
   }
 }

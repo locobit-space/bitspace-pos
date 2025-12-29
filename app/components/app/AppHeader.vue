@@ -30,6 +30,33 @@
       <!-- Notification Center -->
       <NotificationCenter />
 
+      <!-- Chat Button -->
+      <button
+        class="relative p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        :title="$t('chat.title') || 'Team Chat'"
+        @click="chatStore.toggleChat()"
+      >
+        <Icon
+          name="i-heroicons-chat-bubble-left-right"
+          size="22"
+          class="text-gray-600 dark:text-gray-400"
+        />
+        <!-- Unread badge -->
+        <span
+          v-if="chatStore.unreadCount.value > 0"
+          class="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-primary-500 rounded-full px-1"
+        >
+          {{
+            chatStore.unreadCount.value > 99
+              ? "99+"
+              : chatStore.unreadCount.value
+          }}
+        </span>
+      </button>
+
+      <!-- Chat Center Slideover -->
+      <ChatCenter />
+
       <!-- Help & Support Button -->
       <UDropdownMenu
         :items="helpMenuItems"
@@ -325,6 +352,7 @@ const appConfig = useAppConfig();
 const { t } = useI18n();
 const help = useHelp();
 const feedback = useFeedback();
+const chatStore = useChat();
 
 // Help & Support
 const showSupportModal = ref(false);
