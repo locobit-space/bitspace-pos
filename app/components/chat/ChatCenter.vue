@@ -314,34 +314,6 @@ const typingText = computed(() => {
 });
 </script>
 
-<style scoped>
-/* Mobile safe area support */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 1rem);
-}
-
-/* Smooth scroll for messages */
-.messages-container {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Touch feedback */
-.active\:scale-95:active {
-  transform: scale(0.95);
-}
-
-.active\:scale-98:active {
-  transform: scale(0.98);
-}
-
-/* Prevent text selection on buttons */
-button {
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-</style>
-
 <template>
   <USlideover
     v-model:open="chat.isOpen.value"
@@ -479,7 +451,7 @@ button {
                   <div class="flex items-center gap-3">
                     <div class="relative">
                       <div
-                        class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-sm font-bold"
+                        class="w-8 h-8 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-sm font-bold"
                       >
                         {{
                           getOtherParticipant(conversation)?.name?.charAt(0) ||
@@ -555,7 +527,7 @@ button {
               </button>
               <div
                 v-if="chat.activeConversation.value.type === 'direct'"
-                class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
+                class="w-10 h-10 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
               >
                 {{
                   getOtherParticipant(
@@ -746,7 +718,7 @@ button {
                         'justify-end': isMyMessage(message.senderPubkey),
                       }"
                     >
-                      <span class="text-[10px] word-break-no-wrap">
+                      <span class="text-[10px] whitespace-nowrap">
                         {{ formatTime(message.timestamp) }}
                       </span>
                       <!-- Status icons for sent messages -->
@@ -970,7 +942,7 @@ button {
             @click="startChat(contact)"
           >
             <div
-              class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
+              class="w-10 h-10 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
             >
               {{ contact.name.charAt(0) }}
             </div>
@@ -1092,7 +1064,7 @@ button {
             @click="inviteUser(contact)"
           >
             <div
-              class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
+              class="w-10 h-10 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
             >
               {{ contact.name.charAt(0) }}
             </div>
@@ -1113,3 +1085,31 @@ button {
     </template>
   </UModal>
 </template>
+
+<style scoped>
+/* Mobile safe area support */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Smooth scroll for messages */
+.messages-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Touch feedback */
+.active\:scale-95:active {
+  transform: scale(0.95);
+}
+
+.active\:scale-98:active {
+  transform: scale(0.98);
+}
+
+/* Prevent text selection on buttons */
+button {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+</style>
