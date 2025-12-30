@@ -5,11 +5,11 @@ import type { EncryptedEnvelope } from "~/composables/use-encryption";
 // 📦 STORAGE KEYS (Aligned with use-users.ts)
 // ============================================
 const STORAGE_KEYS = {
-  NOSTR_KEYS: 'nostrUser',              // Nostr private/public keys
-  NOSTR_PROFILE: 'nostr_user_profile',  // Nostr profile data (name, picture, etc)
-  ACCOUNTS_LIST: 'userList',            // List of all Nostr accounts
-  CURRENT_USER: 'bitspace_current_user', // Current logged-in staff user (shared with use-users.ts)
-  ENCRYPTED_DATA_PREFIX: 'encrypted:',   // Prefix for encrypted data storage
+  NOSTR_KEYS: "nostrUser", // Nostr private/public keys
+  NOSTR_PROFILE: "nostr_user_profile", // Nostr profile data (name, picture, etc)
+  ACCOUNTS_LIST: "userList", // List of all Nostr accounts
+  CURRENT_USER: "bitspace_current_user", // Current logged-in staff user (shared with use-users.ts)
+  ENCRYPTED_DATA_PREFIX: "encrypted:", // Prefix for encrypted data storage
 } as const;
 
 export const useNostrStorage = () => {
@@ -24,25 +24,31 @@ export const useNostrStorage = () => {
 
     // Save user keys
     if (userInfo.userKeys) {
-      localStorage.setItem(STORAGE_KEYS.NOSTR_KEYS, JSON.stringify(userInfo.userKeys));
+      localStorage.setItem(
+        STORAGE_KEYS.NOSTR_KEYS,
+        JSON.stringify(userInfo.userKeys)
+      );
     }
 
     // Save profile data (unified key)
-    localStorage.setItem(STORAGE_KEYS.NOSTR_PROFILE, JSON.stringify({
-      pubkey: userInfo.pubkey,
-      name: userInfo.name,
-      display_name: userInfo.displayName || userInfo.display_name,
-      picture: userInfo.picture,
-      about: userInfo.about,
-      nip05: userInfo.nip05,
-      banner: userInfo.banner,
-      lud16: userInfo.lud16,
-      website: userInfo.website,
-    }));
-    
+    localStorage.setItem(
+      STORAGE_KEYS.NOSTR_PROFILE,
+      JSON.stringify({
+        pubkey: userInfo.pubkey,
+        name: userInfo.name,
+        display_name: userInfo.displayName || userInfo.display_name,
+        picture: userInfo.picture,
+        about: userInfo.about,
+        nip05: userInfo.nip05,
+        banner: userInfo.banner,
+        lud16: userInfo.lud16,
+        website: userInfo.website,
+      })
+    );
+
     // Update bitspace_current_user if it exists and matches the pubkey
     updateCurrentUserProfile(userInfo);
-    
+
     // Update accounts list
     updateAccountsList(userInfo);
   };
@@ -52,37 +58,52 @@ export const useNostrStorage = () => {
    */
   const updateCurrentUserProfile = (userInfo: UserInfo) => {
     if (!import.meta.client) return;
-    
+
     const currentUserData = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     if (!currentUserData) return;
-    
+
     try {
       const currentUser = JSON.parse(currentUserData);
-      
+
       // Check if the current user matches by pubkey (user.nostrPubkey or nested user.user.nostrPubkey)
-      const currentPubkey = currentUser.nostrPubkey || currentUser.user?.nostrPubkey;
-      
+      const currentPubkey =
+        currentUser.nostrPubkey || currentUser.user?.nostrPubkey;
+
       if (currentPubkey && currentPubkey === userInfo.pubkey) {
         // Update the staff user's name and avatar from Nostr profile
         if (currentUser.user) {
           // AuthState structure: { user: { ... }, accessToken, ... }
-          currentUser.user.displayName = userInfo.displayName || userInfo.display_name || userInfo.name || currentUser.user.displayName;
+          currentUser.user.displayName =
+            userInfo.displayName ||
+            userInfo.display_name ||
+            userInfo.name ||
+            currentUser.user.displayName;
           if (userInfo.picture) {
             currentUser.user.avatar = userInfo.picture;
           }
         } else if (currentUser.name !== undefined) {
           // Direct StoreUser structure
-          currentUser.name = userInfo.displayName || userInfo.display_name || userInfo.name || currentUser.name;
+          currentUser.name =
+            userInfo.displayName ||
+            userInfo.display_name ||
+            userInfo.name ||
+            currentUser.name;
           if (userInfo.picture) {
             currentUser.avatar = userInfo.picture;
           }
         }
-        
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-        console.log('[NostrStorage] Updated bitspace_current_user with new profile:', userInfo.name);
+
+        localStorage.setItem(
+          STORAGE_KEYS.CURRENT_USER,
+          JSON.stringify(currentUser)
+        );
+        console.log(
+          "[NostrStorage] Updated bitspace_current_user with new profile:",
+          userInfo.name
+        );
       }
     } catch (e) {
-      console.error('[NostrStorage] Failed to update current user profile:', e);
+      console.error("[NostrStorage] Failed to update current user profile:", e);
     }
   };
 
@@ -130,7 +151,9 @@ export const useNostrStorage = () => {
   const loadUser = (pubkey: string): UserInfo | null => {
     if (!import.meta.client) return null;
 
-    const storedList = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]");
+    const storedList = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]"
+    );
     return storedList.find((item: UserInfo) => item.pubkey === pubkey) || null;
   };
 
@@ -165,7 +188,9 @@ export const useNostrStorage = () => {
   const loadAllAccounts = (): UserInfo[] => {
     if (!import.meta.client) return [];
 
-    const items = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]");
+    const items = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]"
+    );
     accounts.value = items;
     return items;
   };
@@ -182,7 +207,9 @@ export const useNostrStorage = () => {
 
   // remove account
   const removeAccount = (pubkey: string) => {
-    const storedList = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]");
+    const storedList = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ACCOUNTS_LIST) || "[]"
+    );
     const _items = storedList.filter(
       (item: UserInfo) => item.pubkey !== pubkey
     );
@@ -200,21 +227,27 @@ export const useNostrStorage = () => {
    * @param key - Unique identifier (e.g., 'company:encryption:key')
    * @param data - Encrypted envelope to store
    */
-  const saveEncryptedData = async (key: string, data: EncryptedEnvelope): Promise<boolean> => {
+  const saveEncryptedData = async (
+    key: string,
+    data: EncryptedEnvelope
+  ): Promise<boolean> => {
     if (!import.meta.client) return false;
 
     try {
       const storageKey = `${STORAGE_KEYS.ENCRYPTED_DATA_PREFIX}${key}`;
-      localStorage.setItem(storageKey, JSON.stringify({
-        data,
-        savedAt: new Date().toISOString(),
-        version: 1,
-      }));
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          data,
+          savedAt: new Date().toISOString(),
+          version: 1,
+        })
+      );
 
       // TODO: In production, also publish to Nostr relays as kind 30078 event
       // const event = {
       //   kind: 30078,
-      //   tags: [['d', key], ['client', 'bitspace-pos']],
+      //   tags: [['d', key], ['client', 'bnos.space']],
       //   content: JSON.stringify(data),
       // };
       // await publishToRelays(event);
@@ -222,7 +255,7 @@ export const useNostrStorage = () => {
       console.log(`[NostrStorage] Saved encrypted data: ${key}`);
       return true;
     } catch (error) {
-      console.error('[NostrStorage] Failed to save encrypted data:', error);
+      console.error("[NostrStorage] Failed to save encrypted data:", error);
       return false;
     }
   };
@@ -233,13 +266,15 @@ export const useNostrStorage = () => {
    * @param key - Unique identifier
    * @returns Encrypted envelope or null
    */
-  const loadEncryptedData = async (key: string): Promise<EncryptedEnvelope | null> => {
+  const loadEncryptedData = async (
+    key: string
+  ): Promise<EncryptedEnvelope | null> => {
     if (!import.meta.client) return null;
 
     try {
       const storageKey = `${STORAGE_KEYS.ENCRYPTED_DATA_PREFIX}${key}`;
       const stored = localStorage.getItem(storageKey);
-      
+
       if (!stored) {
         // TODO: In production, try fetching from Nostr relays
         // const event = await fetchFromRelays({ kinds: [30078], '#d': [key] });
@@ -250,7 +285,7 @@ export const useNostrStorage = () => {
       const parsed = JSON.parse(stored);
       return parsed.data as EncryptedEnvelope;
     } catch (error) {
-      console.error('[NostrStorage] Failed to load encrypted data:', error);
+      console.error("[NostrStorage] Failed to load encrypted data:", error);
       return null;
     }
   };
@@ -267,7 +302,7 @@ export const useNostrStorage = () => {
       localStorage.removeItem(storageKey);
       return true;
     } catch (error) {
-      console.error('[NostrStorage] Failed to delete encrypted data:', error);
+      console.error("[NostrStorage] Failed to delete encrypted data:", error);
       return false;
     }
   };

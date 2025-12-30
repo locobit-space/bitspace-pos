@@ -280,7 +280,7 @@ export const useCrypto = () => {
           currency: currency,
           metadata: {
             orderId,
-            posApp: "bitspace-pos",
+            posApp: "bnos.space",
           },
           checkout: {
             speedPolicy: "MediumSpeed",

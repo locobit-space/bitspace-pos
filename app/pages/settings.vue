@@ -69,6 +69,11 @@ const navItems = computed(() => [
     icon: "i-heroicons-cloud-arrow-up",
   },
   {
+    label: t("auth.deviceSync.title"),
+    to: "/settings/device-sync",
+    icon: "i-heroicons-arrow-path",
+  },
+  {
     label: t("settings.auditLog.title"),
     to: "/settings/audit-log",
     icon: "i-heroicons-shield-check",

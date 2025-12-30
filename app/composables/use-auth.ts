@@ -582,7 +582,7 @@ export const useAuth = () => {
   };
 
   /**
-   * Sign out
+   * Sign out - clears ALL application data for a clean slate
    */
   const signOut = async () => {
     // Call Hasura signout if we have a token
@@ -604,8 +604,44 @@ export const useAuth = () => {
     accessToken.value = null;
     refreshToken.value = null;
 
-    // Clear localStorage
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    // Clear ALL localStorage data (clean slate)
+    const keysToRemove = [
+      AUTH_STORAGE_KEY,
+      // Company code
+      "bitspace_company_code",
+      "bitspace_company_code_hash",
+      "bitspace_company_code_enabled",
+      "bitspace_company_owner_pubkey",
+      // Shop settings
+      "bitspace_shop_config",
+      "bitspace_shop_setup_complete",
+      "bitspace_current_branch",
+      // Nostr
+      "nostrUser",
+      "nostr_user_profile",
+      "nostr-pubkey",
+      // Session
+      "company_banner_dismissed",
+    ];
+
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+
+    // Also clear any cookies
+    const nostrCookie = useCookie("nostr-pubkey");
+    nostrCookie.value = null;
+
+    // Clear IndexedDB (Dexie database) for complete data cleanup
+    try {
+      const { db } = await import("~/db/db");
+      await db.delete();
+      console.log("[Auth] Cleared IndexedDB");
+    } catch (e) {
+      console.warn("[Auth] Failed to clear IndexedDB:", e);
+    }
+
+    console.log("[Auth] Signed out - all data cleared");
 
     // Redirect to login
     navigateTo("/auth/signin");
