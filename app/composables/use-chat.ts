@@ -748,6 +748,7 @@ export function useChat() {
               isReadOnly: newConversation.isReadOnly,
               memberPubkeys: newConversation.memberPubkeys,
               isPrivate: newConversation.isPrivate,
+              key: newConversation.key, // Sync encryption key for private channels
             });
             console.log("[Chat] Team conversation synced to Nostr:", name);
           } catch (err) {
@@ -894,9 +895,14 @@ export function useChat() {
 
   async function subscribeToMessages(): Promise<void> {
     const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
-    if (!currentPubkey || !$nostr?.pool) return;
+    if (!currentPubkey || !$nostr?.pool) {
+      console.warn("[Chat] Cannot subscribe - no pubkey or nostr pool");
+      return;
+    }
 
     const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+
+    console.log("[Chat] Setting up subscription for:", currentPubkey.slice(0, 8));
 
     // Filter 1: DMs to me
     const dmFilter = {
@@ -904,6 +910,11 @@ export function useChat() {
       "#p": [currentPubkey],
       since: Math.floor(Date.now() / 1000) - 86400,
     };
+
+    console.log("[Chat] DM filter:", {
+      kinds: dmFilter.kinds,
+      targetPubkey: currentPubkey.slice(0, 8),
+    });
 
     //Filter 2: Team Channels (with company code hash)
     const filters: any[] = [dmFilter];
@@ -953,14 +964,24 @@ export function useChat() {
 
   async function handleIncomingMessage(event: NostrEvent): Promise<void> {
     const currentUser = usersStore.currentUser.value;
-    if (!currentUser?.pubkeyHex) return;
+    if (!currentUser?.pubkeyHex) {
+      console.warn("[Chat] No current user pubkey, cannot process message");
+      return;
+    }
+
+    console.log("[Chat] Received event:", {
+      kind: event.kind,
+      from: event.pubkey.slice(0, 8),
+      currentUser: currentUser.pubkeyHex.slice(0, 8),
+      isOwnMessage: event.pubkey === currentUser.pubkeyHex,
+    });
 
     // Check if we already have this message/event
     const existingMsg =
       (await db.chatMessages.where("nostrEventId").equals(event.id).first()) ||
       (await db.chatConversations.where("id").equals(event.id).first()); // Check conv ID for kind 40 too
     if (existingMsg) {
-      console.log("[Chat] Duplicate event, ignoring");
+      console.log("[Chat] Duplicate event, ignoring (already in DB)");
       return;
     }
 
@@ -973,13 +994,24 @@ export function useChat() {
           return;
         }
 
+        console.log("[Chat] Processing message from other user");
+
         // Verify company code if in team mode (fallback filter may include unwanted messages)
         if (
           company.isCompanyCodeEnabled.value &&
           company.companyCodeHash.value
         ) {
           const messageCompanyCode = event.tags.find((t) => t[0] === "c")?.[1];
+          console.log("[Chat] Company code check:", {
+            myCode: company.companyCodeHash.value.slice(0, 8),
+            messageCode: messageCompanyCode?.slice(0, 8),
+            match: messageCompanyCode === company.companyCodeHash.value,
+          });
           if (messageCompanyCode !== company.companyCodeHash.value) {
+            console.warn(
+              "[Chat] Message from different company, ignoring:",
+              messageCompanyCode?.slice(0, 8)
+            );
             return; // Silently ignore messages from different companies
           }
         }
@@ -993,12 +1025,39 @@ export function useChat() {
           return;
         }
 
-        const conversation = conversations.value.find(
+        console.log("[Chat] Looking for channel:", channelId.slice(0, 16));
+
+        let conversation = conversations.value.find(
           (c) => c.id === channelId
         );
         if (!conversation) {
-          console.warn("[Chat] Channel not found:", channelId);
-          return;
+          console.warn("[Chat] Channel not found, auto-creating:", channelId.slice(0, 16));
+
+          // Auto-create channel placeholder when receiving a message for unknown channel
+          // This ensures messages aren't lost when channels aren't synced properly
+          conversation = {
+            id: channelId,
+            type: "channel",
+            participants: [],
+            groupName: "Team Channel", // Placeholder name, will be updated by sync
+            lastMessage: {
+              content: "",
+              timestamp: 0,
+              senderName: "",
+            },
+            unreadCount: 0,
+            isPinned: false,
+            isMuted: false,
+          };
+          conversations.value.unshift(conversation);
+          await saveConversationToLocal(conversation);
+
+          // Trigger a sync to get the proper channel metadata
+          if (company.isCompanyCodeEnabled.value) {
+            syncConversations().catch((e) =>
+              console.error("[Chat] Failed to sync after auto-create:", e)
+            );
+          }
         }
 
         // Parse message content
@@ -1056,8 +1115,11 @@ export function useChat() {
           return;
         }
 
+        console.log("[Chat] Processing DM from:", event.pubkey.slice(0, 8));
+
         // Decrypt message
         const content = await decryptMessage(event.content, event.pubkey);
+        console.log("[Chat] DM decrypted successfully");
 
         // CHECK FOR INVITE
         try {
@@ -1449,6 +1511,8 @@ export function useChat() {
             existing.groupAvatar = conv.groupAvatar;
             existing.scope = conv.scope;
             existing.tags = conv.tags;
+            existing.isPrivate = conv.isPrivate || existing.isPrivate;
+            existing.key = conv.key || existing.key; // Update key if provided
             await saveConversationToLocal(existing);
             console.log(
               `[Chat] Updated conversation metadata: ${conv.groupName}`
@@ -1470,7 +1534,8 @@ export function useChat() {
             unreadCount: 0,
             isPinned: false,
             isMuted: false,
-            isPrivate: false,
+            isPrivate: conv.isPrivate || false,
+            key: conv.key, // Load encryption key from Nostr
             shopId: conv.shopId,
             scope: conv.scope,
             tags: conv.tags,
@@ -1538,6 +1603,8 @@ export function useChat() {
               existing.groupAvatar = data.groupAvatar;
               existing.scope = data.scope;
               existing.tags = data.tags;
+              existing.isPrivate = data.isPrivate || existing.isPrivate;
+              existing.key = data.key || existing.key; // Update key if provided
               await saveConversationToLocal(existing);
               console.log(`[Chat] Real-time update: ${data.groupName}`);
             } else {
@@ -1557,6 +1624,7 @@ export function useChat() {
                 isPinned: false,
                 isMuted: false,
                 isPrivate: data.isPrivate || false,
+                key: data.key, // Load encryption key from real-time update
                 shopId: data.shopId,
                 scope: data.scope,
                 tags: data.tags,
@@ -1582,6 +1650,29 @@ export function useChat() {
     isLoading.value = true;
     try {
       await loadConversationsFromLocal();
+
+      // Log diagnostic info
+      const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+      console.log("[Chat] Initializing with:", {
+        currentUser: usersStore.currentUser.value?.name,
+        currentPubkey: currentPubkey?.slice(0, 8),
+        isTeamMode: company.isCompanyCodeEnabled.value,
+        companyCode: company.companyCodeHash.value?.slice(0, 8),
+        totalUsers: usersStore.users.value.length,
+        usersWithPubkey: usersStore.users.value.filter((u) => u.pubkeyHex)
+          .length,
+      });
+
+      // Log all users and their pubkeys (for debugging)
+      console.log(
+        "[Chat] Available users:",
+        usersStore.users.value.map((u) => ({
+          name: u.name,
+          role: u.role,
+          hasPubkey: !!u.pubkeyHex,
+          pubkey: u.pubkeyHex?.slice(0, 8),
+        }))
+      );
 
       // NEW: Initial sync + real-time subscription (NO setInterval!)
       if (company.isCompanyCodeEnabled.value) {

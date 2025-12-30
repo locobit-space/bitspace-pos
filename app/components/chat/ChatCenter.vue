@@ -7,7 +7,6 @@ import type { ChatContact, ChatConversation } from "~/composables/use-chat";
 
 const { t } = useI18n();
 const chat = useChat();
-const pos = usePOS();
 
 // Local state
 const messageInput = ref("");
