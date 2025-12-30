@@ -239,6 +239,24 @@ const handleFocus = () => {
     });
   }
 };
+
+// Typing indicator handling
+const handleTypingIndicator = () => {
+  if (chat.activeConversationId.value) {
+    chat.handleTyping(chat.activeConversationId.value);
+  }
+};
+
+// Get typing users for active conversation
+const typingText = computed(() => {
+  if (!chat.activeConversationId.value) return "";
+
+  const users = chat.getTypingUsers.value(chat.activeConversationId.value);
+  if (users.length === 0) return "";
+  if (users.length === 1) return `${users[0]} is typing...`;
+  if (users.length === 2) return `${users[0]} and ${users[1]} are typing...`;
+  return `${users[0]} and ${users.length - 1} others are typing...`;
+});
 </script>
 
 <style scoped>
@@ -692,6 +710,21 @@ button {
             </template>
           </div>
 
+          <!-- Typing Indicator -->
+          <div
+            v-if="chat.activeConversation.value && typingText"
+            class="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <div class="flex gap-1">
+                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+              </div>
+              <span class="italic">{{ typingText }}</span>
+            </div>
+          </div>
+
           <!-- Message Input (Touch-optimized with safe area for mobile keyboards) -->
           <div
             v-if="chat.activeConversation.value"
@@ -740,6 +773,7 @@ button {
                   autoresize
                   :maxrows="isMobile ? 3 : 4"
                   class="w-full text-base md:text-sm"
+                  @input="handleTypingIndicator"
                   @focus="handleFocus"
                   @keydown="handleKeydown"
                 />

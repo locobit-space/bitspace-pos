@@ -83,6 +83,10 @@ const typingUsers = ref<Map<string, { name: string; timestamp: number }>>(
 // Real-time subscription reference
 let chatSubscription: { close: () => void } | null = null;
 
+// Typing indicator state
+let typingTimeout: NodeJS.Timeout | null = null;
+let lastTypingTime = 0;
+
 // ============================================
 // Composable
 // ============================================
@@ -896,6 +900,177 @@ export function useChat() {
   }
 
   // ============================================
+  // Push Notifications
+  // ============================================
+
+  /**
+   * Request notification permission
+   */
+  async function requestNotificationPermission(): Promise<boolean> {
+    if (!("Notification" in window)) {
+      console.warn("[Chat] Browser doesn't support notifications");
+      return false;
+    }
+
+    if (Notification.permission === "granted") {
+      return true;
+    }
+
+    if (Notification.permission !== "denied") {
+      const permission = await Notification.requestPermission();
+      return permission === "granted";
+    }
+
+    return false;
+  }
+
+  /**
+   * Show browser push notification
+   */
+  function showPushNotification(
+    title: string,
+    body: string,
+    conversationId: string,
+    icon?: string
+  ): void {
+    if (Notification.permission !== "granted") return;
+
+    try {
+      const notification = new Notification(title, {
+        body,
+        icon: icon || "/icon.png",
+        badge: "/icon.png",
+        tag: conversationId, // Prevent duplicate notifications
+        requireInteraction: false,
+        silent: false,
+      });
+
+      // Click to open chat
+      notification.onclick = () => {
+        window.focus();
+        openChat();
+        selectConversation(conversationId);
+        notification.close();
+      };
+
+      // Auto-close after 5 seconds
+      setTimeout(() => notification.close(), 5000);
+    } catch (e) {
+      console.error("[Chat] Failed to show notification:", e);
+    }
+  }
+
+  // ============================================
+  // Typing Indicators
+  // ============================================
+
+  /**
+   * Send typing indicator (ephemeral event)
+   * Throttled to avoid spamming - max once per 3 seconds
+   */
+  async function sendTypingIndicator(conversationId: string): Promise<void> {
+    const currentUser = usersStore.currentUser.value;
+    if (!currentUser?.pubkeyHex || !$nostr?.pool) return;
+
+    // Throttle typing events
+    const now = Date.now();
+    if (now - lastTypingTime < 3000) return;
+    lastTypingTime = now;
+
+    const conversation = conversations.value.find((c) => c.id === conversationId);
+    if (!conversation) return;
+
+    try {
+      const keys = getUserKeys();
+      if (!keys?.privkey) return;
+
+      const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey);
+      const privateKey = hexToBytes(privateKeyHex);
+
+      const tags: string[][] = [];
+
+      // Add conversation reference
+      if (conversation.type === "channel" || conversation.type === "group") {
+        tags.push(["h", conversationId]); // Channel ID
+        // Add company code for team channels
+        if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
+          tags.push(["c", company.companyCodeHash.value]);
+        }
+      } else if (conversation.type === "direct") {
+        // For DMs, tag the other participant
+        const otherParticipant = conversation.participants.find(
+          (p) => p.pubkey !== currentUser.pubkeyHex
+        );
+        if (otherParticipant) {
+          tags.push(["p", otherParticipant.pubkey]);
+        }
+      }
+
+      // Create ephemeral typing event (kind 1040)
+      const eventTemplate = {
+        kind: 1040, // Typing indicator kind (ephemeral)
+        content: JSON.stringify({ typing: true, conversation: conversationId }),
+        created_at: Math.floor(Date.now() / 1000),
+        tags,
+      };
+
+      const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const pubs = $nostr.pool.publish(relayUrls, signedEvent);
+      await Promise.race(pubs).catch(() => null);
+
+      console.log("[Chat] Typing indicator sent");
+    } catch (e) {
+      console.error("[Chat] Failed to send typing indicator:", e);
+    }
+  }
+
+  /**
+   * Stop typing indicator
+   */
+  function stopTyping(conversationId: string): void {
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+      typingTimeout = null;
+    }
+  }
+
+  /**
+   * Handle typing from input
+   */
+  function handleTyping(conversationId: string): void {
+    sendTypingIndicator(conversationId);
+
+    // Auto-stop after 3 seconds
+    if (typingTimeout) clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      stopTyping(conversationId);
+    }, 3000);
+  }
+
+  /**
+   * Get typing users for a conversation
+   */
+  const getTypingUsers = computed(() => (conversationId: string) => {
+    const typing = typingUsers.value.get(conversationId);
+    if (!typing) return [];
+
+    // Clean up old typing indicators (> 5 seconds old)
+    const now = Date.now();
+    const activeTyping: Array<{ name: string; timestamp: number }> = [];
+
+    typing.forEach((value, key) => {
+      if (now - value.timestamp < 5000) {
+        activeTyping.push(value);
+      } else {
+        typing.delete(key);
+      }
+    });
+
+    return activeTyping.map((t) => t.name);
+  });
+
+  // ============================================
   // Real-time Subscription
   // ============================================
 
@@ -934,6 +1109,14 @@ export function useChat() {
         since: Math.floor(Date.now() / 1000) - 86400,
       };
       filters.push(teamChannelFilter);
+
+      // Typing indicators for team channels
+      const typingFilter = {
+        kinds: [1040], // Typing indicator (ephemeral)
+        "#c": [company.companyCodeHash.value],
+        since: Math.floor(Date.now() / 1000),
+      };
+      filters.push(typingFilter);
 
       // Fallback filter: subscribe to all kind 9 messages (for relays that don't support #c)
       // This catches all group messages and we filter by company code in handleIncomingMessage
@@ -1134,6 +1317,14 @@ export function useChat() {
         conversation.unreadCount += 1;
         await saveConversationToLocal(conversation);
 
+        // Move conversation to top (like WhatsApp/Telegram)
+        const index = conversations.value.findIndex((c) => c.id === channelId);
+        if (index > 0) {
+          const [movedConv] = conversations.value.splice(index, 1);
+          conversations.value.unshift(movedConv);
+          console.log("[Chat] Moved conversation to top");
+        }
+
         // Play sound
         sound.playNotification();
         console.log("[Chat] ✅ Group message received and displayed");
@@ -1249,13 +1440,23 @@ export function useChat() {
             sound.playNotification();
 
             if (!isOpen.value) {
+              // Show push notification if permission granted
+              const messagePreview =
+                message.content.length > 60
+                  ? message.content.substring(0, 60) + "..."
+                  : message.content;
+
+              showPushNotification(
+                `💬 ${senderName}`,
+                messagePreview,
+                conversationId
+              );
+
+              // Also show toast as fallback
               const toast = useToast();
               toast.add({
                 title: senderName,
-                description:
-                  message.content.length > 60
-                    ? message.content.substring(0, 60) + "..."
-                    : message.content,
+                description: messagePreview,
                 icon: "i-heroicons-chat-bubble-left-right",
                 timeout: 5000,
                 click: () => {
@@ -1266,6 +1467,15 @@ export function useChat() {
             }
           }
         }
+
+        // Move conversation to top (like WhatsApp/Telegram)
+        const index = conversations.value.findIndex((c) => c.id === conversationId);
+        if (index > 0) {
+          const [movedConv] = conversations.value.splice(index, 1);
+          conversations.value.unshift(movedConv);
+          console.log("[Chat] Moved DM conversation to top");
+        }
+
         console.log("[Chat] ✅ Direct message received and displayed");
         return;
       }
@@ -1405,6 +1615,49 @@ export function useChat() {
             });
           }
         }
+      }
+
+      // HANDLE TYPING INDICATOR (Kind 1040 - Ephemeral)
+      else if (event.kind === 1040) {
+        // Skip own typing indicators
+        if (event.pubkey === currentUser.pubkeyHex) return;
+
+        try {
+          const data = JSON.parse(event.content);
+          const conversationId = data.conversation;
+
+          if (!conversationId) return;
+
+          // Get sender info
+          const sender = usersStore.users.value.find(
+            (u) => u.pubkeyHex === event.pubkey
+          );
+          const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
+
+          // Update typing state
+          if (!typingUsers.value.has(conversationId)) {
+            typingUsers.value.set(conversationId, new Map());
+          }
+
+          const convTyping = typingUsers.value.get(conversationId)!;
+          convTyping.set(event.pubkey, {
+            name: senderName,
+            timestamp: Date.now(),
+          });
+
+          console.log("[Chat] Typing indicator:", senderName, "in", conversationId.slice(0, 8));
+
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            const convTyping = typingUsers.value.get(conversationId);
+            if (convTyping) {
+              convTyping.delete(event.pubkey);
+            }
+          }, 5000);
+        } catch (e) {
+          console.error("[Chat] Failed to parse typing indicator:", e);
+        }
+        return;
       }
     } catch (e) {
       console.error("[Chat] Failed to process incoming message:", e);
@@ -1702,6 +1955,9 @@ export function useChat() {
   async function init(): Promise<void> {
     isLoading.value = true;
     try {
+      // Request notification permission on first init
+      await requestNotificationPermission();
+
       await loadConversationsFromLocal();
 
       // Log diagnostic info
@@ -1799,6 +2055,14 @@ export function useChat() {
     addChannelMember,
     removeChannelMember,
     getChannelMembers,
+
+    // Typing Indicators
+    handleTyping,
+    stopTyping,
+    getTypingUsers,
+
+    // Push Notifications
+    requestNotificationPermission,
 
     // Utilities
     generateConversationId,
