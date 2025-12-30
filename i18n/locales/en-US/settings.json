@@ -658,7 +658,12 @@
         "tax": "Tax",
         "taxBreakdown": "Tax Breakdown",
         "paymentMethod": "Payment Method",
-        "change": "Change Amount"
+        "change": "Change Amount",
+        "dailyOrderNumber": "Daily Order Sequence",
+        "currentSequence": "Current Sequence",
+        "sequenceHint": "Reset this to 0 at the start of each day manually if needed.",
+        "autoResetDaily": "Auto-reset sequence daily",
+        "autoResetDailyHint": "When enabled, the sequence resets to 0 at the start of each day. When disabled, the sequence continues indefinitely."
       },
       "footer": {
         "title": "Footer Settings",
@@ -718,7 +723,8 @@
         "templateSaved": "Template saved",
         "templateLoaded": "Template loaded",
         "templateDeleted": "Template deleted",
-        "defaultSet": "Default template set"
+        "defaultSet": "Default template set",
+        "orderNumberUpdated": "Order sequence updated"
       }
     },
     "relays": {

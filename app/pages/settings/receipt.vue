@@ -253,6 +253,10 @@
 
             <div class="grid grid-cols-2 gap-3">
               <UCheckbox
+                v-model="settings.content.showOrderSequence"
+                :label="$t('settings.receipt.content.currentSequence')"
+              />
+              <UCheckbox
                 v-model="settings.content.showOrderNumber"
                 :label="$t('settings.receipt.content.orderNumber')"
               />
@@ -300,6 +304,55 @@
                 v-model="settings.content.showChange"
                 :label="$t('settings.receipt.content.change')"
               />
+            </div>
+
+            <!-- Daily Order Number Reset -->
+            <div
+              class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800"
+            >
+              <h4 class="text-sm font-medium mb-3">
+                {{
+                  $t("settings.receipt.content.dailyOrderNumber") ||
+                  "Daily Order Number Sequence"
+                }}
+              </h4>
+              <div class="flex items-end gap-3">
+                <UFormField
+                  :label="
+                    $t('settings.receipt.content.currentSequence') ||
+                    'Current Sequence'
+                  "
+                  name="orderNumber"
+                  class="flex-1"
+                >
+                  <UInput
+                    v-model="currentOrderSequence"
+                    type="number"
+                    min="0"
+                  />
+                </UFormField>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">
+                {{
+                  $t("settings.receipt.content.sequenceHint") ||
+                  "Manually reset the daily counter. The next order will be this number + 1."
+                }}
+              </p>
+              <div class="mt-3">
+                <UCheckbox
+                  v-model="autoResetDailyLocal"
+                  :label="
+                    $t('settings.receipt.content.autoResetDaily') ||
+                    'Auto-reset daily'
+                  "
+                />
+                <p class="text-xs text-gray-500 mt-1 ml-6">
+                  {{
+                    $t("settings.receipt.content.autoResetDailyHint") ||
+                    "When enabled, the sequence resets to 0 at the start of each day. When disabled, the sequence continues indefinitely."
+                  }}
+                </p>
+              </div>
             </div>
           </div>
         </UCard>
@@ -416,7 +469,7 @@
             <UFormField :label="$t('settings.receipt.paper.width')">
               <USelect
                 v-model="settings.paper.width"
-                :options="paperWidthOptions"
+                :items="paperWidthOptions"
                 class="w-full"
               />
             </UFormField>
@@ -424,7 +477,7 @@
             <UFormField :label="$t('settings.receipt.paper.fontSize')">
               <USelect
                 v-model="settings.paper.fontSize"
-                :options="fontSizeOptions"
+                :items="fontSizeOptions"
                 class="w-full"
               />
             </UFormField>
@@ -536,6 +589,13 @@
                 <div
                   class="border-b border-dashed border-gray-400 pb-2 mb-2 text-xs"
                 >
+                  <div
+                    v-if="settings.content.showOrderSequence"
+                    class="flex justify-between"
+                  >
+                    <span> No: </span>
+                    <span>#{{ currentOrderSequence }}</span>
+                  </div>
                   <div
                     v-if="settings.content.showOrderNumber"
                     class="flex justify-between"
@@ -850,6 +910,9 @@ definePageMeta({
 
 const { t } = useI18n();
 const toast = useToast();
+const shop = useShop();
+const receipt = useReceipt(); // Use the composable
+const orderNumberStore = useOrderNumber();
 const { formatCurrency } = useCurrency();
 const cloudinary = useCloudinary();
 
@@ -875,6 +938,7 @@ interface ReceiptSettings {
     customText: string;
   };
   content: {
+    showOrderSequence: boolean;
     showOrderNumber: boolean;
     showDateTime: boolean;
     showCashier: boolean;
@@ -920,14 +984,15 @@ const defaultSettings: ReceiptSettings = {
   showLogo: true,
   eBillBaseUrl: "", // Empty = auto-detect from current URL
   header: {
-    businessName: "My Store",
-    address: "123 Main Street, City, Country",
-    phone: "+1 234 567 890",
-    email: "info@mystore.com",
-    taxId: "TAX-123456789",
+    businessName: "bnos.space",
+    address: "",
+    phone: "",
+    email: "",
+    taxId: "",
     customText: "",
   },
   content: {
+    showOrderSequence: true,
     showOrderNumber: true,
     showDateTime: true,
     showCashier: true,
@@ -969,6 +1034,8 @@ const activeTemplateId = ref<string | null>(null);
 const showTemplateModal = ref(false);
 const newTemplateName = ref("");
 const newTemplateIsDefault = ref(false);
+const currentOrderSequence = ref(0);
+const autoResetDailyLocal = ref(true);
 
 // Options
 const paperWidthOptions = [
@@ -1089,6 +1156,8 @@ async function saveSettings() {
       "pos_receipt_settings",
       JSON.stringify(settings.value)
     );
+    orderNumberStore.resetSequence(Number(currentOrderSequence.value));
+    orderNumberStore.setAutoResetDaily(autoResetDailyLocal.value);
     toast.add({
       title: t("settings.receipt.messages.saveSuccess"),
       color: "success",
@@ -1238,6 +1307,12 @@ function saveTemplates() {
 function loadData() {
   // Load settings
   const savedSettings = localStorage.getItem("pos_receipt_settings");
+  const savedSequence = localStorage.getItem("bitspace_order_sequence");
+  const savedAutoReset = localStorage.getItem(
+    "bitspace_order_auto_reset_daily"
+  );
+  currentOrderSequence.value = savedSequence ? parseInt(savedSequence) : 0;
+  autoResetDailyLocal.value = savedAutoReset !== "false"; // Default to true
   if (savedSettings) {
     try {
       const parsed = JSON.parse(savedSettings);

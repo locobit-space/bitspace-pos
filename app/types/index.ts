@@ -1523,6 +1523,7 @@ export type OrderType = "dine_in" | "take_away" | "delivery" | "pickup";
 
 export interface Order {
   id: string;
+  orderNumber?: number; // Daily sequential number (1, 2, 3...)
   code?: string; // Human-readable code (e.g., ABC-12345)
   customer: string;
   customerEmail?: string;

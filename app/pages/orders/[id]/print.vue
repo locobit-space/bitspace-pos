@@ -67,6 +67,12 @@
             <p class="text-lg font-semibold mt-1 text-gray-900 dark:text-white">
               #{{ billData.invoiceNumber }}
             </p>
+            <p
+              v-if="billData.orderNumber"
+              class="text-3xl font-bold text-gray-900 dark:text-white mt-1"
+            >
+              #{{ billData.orderNumber }}
+            </p>
             <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
               {{ $t("common.branch") }}: {{ currentBranch?.name }}
             </p>
@@ -408,6 +414,7 @@ interface BillItem {
 
 interface BillData {
   invoiceNumber: string;
+  orderNumber?: number;
   date: string;
   dueDate: string;
   paymentTerms: string;
@@ -461,6 +468,7 @@ const companyInfo = computed<CompanyInfo>(() => ({
 
 const billData = ref<BillData>({
   invoiceNumber: "",
+  orderNumber: undefined,
   date: new Date().toISOString(),
   dueDate: "",
   paymentTerms: "",
@@ -542,6 +550,7 @@ onMounted(async () => {
         // Map Order to BillData
         billData.value = {
           invoiceNumber: order.code || order.id.slice(0, 8).toUpperCase(),
+          orderNumber: order.orderNumber,
           date: order.date,
           // Default due date to 30 days if not set (business logic can be improved)
           dueDate: new Date(

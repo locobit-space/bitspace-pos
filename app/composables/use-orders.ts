@@ -286,6 +286,12 @@ export function useOrders() {
    * Local save is awaited (critical), Nostr sync is fire-and-forget (resilient)
    */
   async function createOrder(order: Order): Promise<Order> {
+    // Assign daily order number if not present
+    if (import.meta.client && !order.orderNumber) {
+      const { getNextNumber } = useOrderNumber();
+      order.orderNumber = getNextNumber();
+    }
+
     // Add to state immediately
     orders.value.unshift(order);
 

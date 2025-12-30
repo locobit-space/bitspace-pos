@@ -119,7 +119,12 @@ const close = () => {
           <div
             class="text-xs text-gray-500 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700"
           >
-            <div>Order: {{ currentReceipt.orderId }}</div>
+            <div>
+              <span v-if="currentReceipt.orderNumber" class="text-lg font-bold">
+                #{{ currentReceipt.orderNumber }}
+              </span>
+              <span>Order: {{ currentReceipt.orderId }}</span>
+            </div>
             <div>{{ new Date(currentReceipt.createdAt).toLocaleString() }}</div>
           </div>
 
@@ -148,12 +153,14 @@ const close = () => {
           <div class="space-y-1">
             <div class="flex justify-between text-gray-500">
               <span>Subtotal</span>
-              <span>{{
-                currency.format(
-                  currentReceipt.subtotal,
-                  currentReceipt.currency
-                )
-              }}</span>
+              <span>
+                {{
+                  currency.format(
+                    currentReceipt.subtotal,
+                    currentReceipt.currency
+                  )
+                }}
+              </span>
             </div>
             <div
               v-if="currentReceipt.tip"

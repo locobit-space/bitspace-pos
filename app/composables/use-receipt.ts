@@ -3,12 +3,9 @@
 // Supports: Thermal/POS printers (ESC/POS), Browser print, E-Bill via QR
 
 import { ref, computed } from "vue";
-import type { Order, PaymentProof, CurrencyCode, PaymentMethod } from "~/types";
+import type { Order, PaymentProof, CurrencyCode, PaymentMethod } from "~/types"; // Re-add CartItem if needed but ReceiptItem is local
 import QRCode from "qrcode";
 
-// ============================================
-// Receipt Types
-// ============================================
 export interface ReceiptItem {
   name: string;
   quantity: number;
@@ -22,19 +19,25 @@ export interface ReceiptItem {
 export interface EReceipt {
   id: string;
   orderId: string;
+  orderNumber?: number; // Daily sequential number
   orderCode?: string;
   merchantPubkey?: string;
   customerPubkey?: string;
   items: ReceiptItem[];
   subtotal: number;
+  discount: number;
   tax: number;
   tip?: number;
   total: number;
   totalSats?: number;
   currency: CurrencyCode;
-  paymentMethod?: PaymentMethod;
+  paymentMethod?: PaymentMethod | string;
   paymentProof?: PaymentProof;
   createdAt: string;
+  validUntil?: string;
+  timestamp?: number;
+  // Metadata for verification
+  signature?: string;
   merchantName?: string;
   merchantAddress?: string;
   nostrEventId?: string;
@@ -58,10 +61,10 @@ export interface ReceiptSettings {
 }
 
 const defaultSettings: ReceiptSettings = {
-  merchantName: "My Store",
-  merchantAddress: "123 Main Street, City, Country",
-  merchantPhone: "+1 234 567 890",
-  logoEmoji: "🛒",
+  merchantName: "bnos.space",
+  merchantAddress: "",
+  merchantPhone: "",
+  logoEmoji: "⚡",
   footerMessage: "Thank you for your purchase!",
   showPaymentProof: true,
   showQrCode: true,
@@ -130,27 +133,32 @@ export const useReceipt = () => {
     const receipt: EReceipt = {
       id: receiptId,
       orderId: order.id,
+      orderNumber: order.orderNumber,
       orderCode: order.code,
-      merchantPubkey: merchantPubkey || "",
+      merchantPubkey: undefined, // Filled in by Nostr layer
       customerPubkey: order.customerPubkey,
-      items,
-      subtotal,
-      tax,
-      tip,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        unitPrice: item.price,
+        quantity: item.quantity,
+        total: item.total,
+        variant: item.selectedVariant?.name,
+        modifiers: item.selectedModifiers?.map((m) => m.name),
+        notes: item.notes,
+        sku: item.product.sku,
+        productId: item.product.id,
+        image: item.product.image,
+      })),
+      subtotal: order.total - (order.tax || 0) + (order.discount || 0),
+      discount: order.discount || 0,
+      tax: order.tax || 0,
+      tip: order.tip,
       total: order.total,
       totalSats: order.totalSats,
-      currency: order.currency || "LAK",
+      currency: (order.currency as CurrencyCode) || "LAK",
       paymentMethod: order.paymentMethod,
-      paymentProof: paymentProof || {
-        id: `proof_${Date.now()}`,
-        orderId: order.id,
-        paymentHash: "",
-        preimage: "",
-        amount: order.totalSats || 0,
-        receivedAt: new Date().toISOString(),
-        method: order.paymentMethod || "cash",
-        isOffline: false,
-      },
+      paymentProof:
+        paymentProof || (order.paymentProof ? order.paymentProof : undefined),
       createdAt: new Date().toISOString(),
       merchantName: settings.value.merchantName,
       merchantAddress: settings.value.merchantAddress,
@@ -428,6 +436,7 @@ export const useReceipt = () => {
   </div>
   
   <div class="order-info">
+    <div>#: <strong>${receipt.orderNumber || "-"}</strong></div>
     <div>Order: <strong>${receipt.orderCode || receipt.orderId}</strong></div>
     <div>Date: ${new Date(receipt.createdAt).toLocaleString()}</div>
     <div>Receipt: ${receipt.id}</div>
@@ -646,7 +655,11 @@ export const useReceipt = () => {
     lines.push(doubleDivider);
 
     // Order Info
-    lines.push(`Order: ${receipt.orderId}`);
+    lines.push(
+      `Order: ${
+        receipt.orderNumber ? "#" + receipt.orderNumber : receipt.orderId
+      }`
+    );
     lines.push(`Date: ${new Date(receipt.createdAt).toLocaleString()}`);
     lines.push(`Receipt: ${receipt.id}`);
     lines.push(divider);
