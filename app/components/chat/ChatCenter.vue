@@ -500,7 +500,7 @@ button {
                         >
                           {{ getOtherParticipant(conversation)?.name }}
                         </span>
-                        <span class="text-[10px] text-gray-400">
+                        <span class="text-[10px] text-gray-400 whitespace-nowrap">
                           {{ formatTime(conversation.lastMessage.timestamp) }}
                         </span>
                       </div>
@@ -715,7 +715,7 @@ button {
                 <div class="group relative" :class="{ 'flex flex-col items-end': isMyMessage(message.senderPubkey), 'flex flex-col items-start': !isMyMessage(message.senderPubkey) }">
                   <!-- Message Bubble -->
                   <div
-                    class="max-w-[75%] rounded-2xl px-4 py-2 relative"
+                    class="max-w-[80%] rounded-2xl px-4 py-2 relative wrap-break-word"
                     :class="{
                       'bg-primary-500 text-white rounded-br-md': isMyMessage(
                         message.senderPubkey
@@ -737,7 +737,7 @@ button {
                       <div class="line-clamp-2">{{ message.replyToContent }}</div>
                     </div>
 
-                    <p class="text-sm leading-relaxed whitespace-pre-wrap">
+                    <p class="text-sm leading-relaxed whitespace-pre-wrap wrap-break-word">
                       {{ message.content }}
                     </p>
                     <div
@@ -746,7 +746,7 @@ button {
                         'justify-end': isMyMessage(message.senderPubkey),
                       }"
                     >
-                      <span class="text-[10px]">
+                      <span class="text-[10px] word-break-no-wrap">
                         {{ formatTime(message.timestamp) }}
                       </span>
                       <!-- Status icons for sent messages -->
