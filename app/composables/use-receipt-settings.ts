@@ -111,7 +111,7 @@ const defaultSettings: SavedReceiptSettings = {
     thankYouMessage: "🥰 ຂອບມຸກຄອບຫໍ່ 🙏 !",
     returnPolicy: "",
     customText: "",
-    showQrCode: false,
+    showQrCode: true,
     showBarcode: true,
     showSocialMedia: false,
     showWebsite: false,

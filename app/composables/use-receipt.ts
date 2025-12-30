@@ -510,30 +510,47 @@ export const useReceipt = () => {
   <div class="divider"></div>
   
   <div class="totals">
-    ${receiptSettings.settings.value.content.showSubtotal ? `
+    ${
+      receiptSettings.settings.value.content.showSubtotal
+        ? `
     <div class="total-line">
       <span>Subtotal</span>
       <span>${formatAmount(receipt.subtotal, receipt.currency)}</span>
     </div>
-    ` : ""}
-    ${receiptSettings.settings.value.content.showDiscount && receipt.discount > 0 ? `
+    `
+        : ""
+    }
+    ${
+      receiptSettings.settings.value.content.showDiscount &&
+      receipt.discount > 0
+        ? `
       <div class="total-line" style="color: #16a34a;">
         <span>Discount</span>
         <span>-${formatAmount(receipt.discount, receipt.currency)}</span>
       </div>
-    ` : ""}
-    ${receiptSettings.settings.value.content.showTax && receipt.tax > 0 ? `
+    `
+        : ""
+    }
+    ${
+      receiptSettings.settings.value.content.showTax && receipt.tax > 0
+        ? `
       <div class="total-line">
         <span>Tax</span>
         <span>${formatAmount(receipt.tax, receipt.currency)}</span>
       </div>
-    ` : ""}
-    ${receipt.tip && receipt.tip > 0 ? `
+    `
+        : ""
+    }
+    ${
+      receipt.tip && receipt.tip > 0
+        ? `
       <div class="total-line">
         <span>Tip</span>
         <span>${formatAmount(receipt.tip, receipt.currency)}</span>
       </div>
-    ` : ""}
+    `
+        : ""
+    }
   </div>
   
   <div class="grand-total">
@@ -541,19 +558,27 @@ export const useReceipt = () => {
       <span>TOTAL</span>
       <span>${formatAmount(receipt.total, receipt.currency)}</span>
     </div>
-    ${receipt.totalSats ? `
+    ${
+      receipt.totalSats
+        ? `
       <div class="total-line sats-total">
         <span>≈ Sats</span>
         <span>⚡ ${receipt.totalSats.toLocaleString()}</span>
       </div>
-    ` : ""}
+    `
+        : ""
+    }
   </div>
   
-  ${receiptSettings.settings.value.content.showPaymentMethod ? `
+  ${
+    receiptSettings.settings.value.content.showPaymentMethod
+      ? `
   <div class="payment-method">
     Paid via: ${getPaymentMethodLabel(receipt.paymentMethod)}
   </div>
-  ` : ""}
+  `
+      : ""
+  }
   
   ${
     receipt.paymentProof?.preimage && settings.value.showPaymentProof
@@ -568,23 +593,38 @@ export const useReceipt = () => {
       : ""
   }
   
-  ${
-    settings.value.showQrCode && qrCodeDataUrl
-      ? `
-    <div class="qr-section">
-      <div class="qr-label">📱 E-Bill</div>
-      <img src="${qrCodeDataUrl}" alt="E-Bill QR" style="width: 120px; height: 120px;" decoding="sync" loading="eager">
-      <div class="qr-label">Scan for digital receipt</div>
-    </div>
-  `
-      : ""
-  }
-  
   <div class="footer">
+    ${
+      settings.value.showQrCode && qrCodeDataUrl
+        ? `
+      <div class="qr-section">
+        <div class="qr-label">📱 E-Bill</div>
+        <img src="${qrCodeDataUrl}" alt="E-Bill QR" style="width: 100px; height: 100px;" decoding="sync" loading="eager">
+        <div class="qr-label">Scan for digital receipt</div>
+      </div>
+      <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+    `
+        : ""
+    }
     <div class="footer-message">${settings.value.footerMessage}</div>
-    ${receiptSettings.settings.value.footer.returnPolicy ? `<div class="return-policy" style="font-size: 9px; margin: 6px 0; padding: 4px; background: #f5f5f5; border-radius: 2px;">${receiptSettings.settings.value.footer.returnPolicy}</div>` : ""}
-    ${receiptSettings.settings.value.footer.customText ? `<div class="custom-footer-text" style="margin: 4px 0;">${receiptSettings.settings.value.footer.customText}</div>` : ""}
-    ${receiptSettings.settings.value.footer.showWebsite && receiptSettings.settings.value.footer.websiteUrl ? `<div class="website-url" style="margin: 4px 0;">🌐 ${receiptSettings.settings.value.footer.websiteUrl}</div>` : ""}
+    ${
+      receiptSettings.settings.value.footer.returnPolicy
+        ? `<div class="return-policy" style="font-size: 9px; margin: 6px 0; padding: 4px; background: #f5f5f5; border-radius: 2px;">${receiptSettings.settings.value.footer.returnPolicy}</div>`
+        : ""
+    }
+    ${
+      receiptSettings.settings.value.footer.customText
+        ? `<div class="custom-footer-text" style="margin: 4px 0;">${receiptSettings.settings.value.footer.customText}</div>`
+        : ""
+    }
+    ${
+      receiptSettings.settings.value.footer.showWebsite &&
+      receiptSettings.settings.value.footer.websiteUrl
+        ? `<div class="website-url" style="margin: 4px 0;">🌐 ${receiptSettings.settings.value.footer.websiteUrl}</div>`
+        : ""
+    }
+
+    <div>BNOS.SPACE</div>
     <div>Powered by Nostr & Bitcoin Lightning ⚡</div>
   </div>
 </body>
@@ -716,15 +756,21 @@ export const useReceipt = () => {
 
     // Totals - respect content settings
     const contentSettings = receiptSettings.settings.value.content;
-    
+
     if (contentSettings.showSubtotal) {
       lines.push(
-        rightAlign("Subtotal:", formatAmount(receipt.subtotal, receipt.currency))
+        rightAlign(
+          "Subtotal:",
+          formatAmount(receipt.subtotal, receipt.currency)
+        )
       );
     }
     if (contentSettings.showDiscount && receipt.discount > 0) {
       lines.push(
-        rightAlign("Discount:", `-${formatAmount(receipt.discount, receipt.currency)}`)
+        rightAlign(
+          "Discount:",
+          `-${formatAmount(receipt.discount, receipt.currency)}`
+        )
       );
     }
     if (contentSettings.showTax && receipt.tax > 0) {
@@ -761,26 +807,26 @@ export const useReceipt = () => {
     // Footer
     lines.push(divider);
     lines.push(center(settings.value.footerMessage));
-    
+
     // Return policy
     const footerSettings = receiptSettings.settings.value.footer;
     if (footerSettings.returnPolicy) {
       lines.push("");
       lines.push(center(footerSettings.returnPolicy));
     }
-    
+
     // Custom footer text
     if (footerSettings.customText) {
       lines.push("");
       lines.push(center(footerSettings.customText));
     }
-    
+
     // Website URL
     if (footerSettings.showWebsite && footerSettings.websiteUrl) {
       lines.push("");
       lines.push(center(`🌐 ${footerSettings.websiteUrl}`));
     }
-    
+
     lines.push("");
     lines.push(center("Powered by Nostr & Lightning ⚡"));
     lines.push("");
