@@ -26,11 +26,35 @@ export function useCompany() {
   // ============================================
 
   /**
-   * Generate a new 6-digit company code
+   * Generate a secure company code in format: XXXX-XXXX-XXXX
+   * Uses alphanumeric characters (no confusing ones like 0/O, 1/I/L)
    */
   function generateCompanyCode(): string {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    return code;
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // Exclude confusing chars
+    const segments = 3;
+    const segmentLength = 4;
+
+    const generateSegment = () => {
+      let segment = "";
+      for (let i = 0; i < segmentLength; i++) {
+        segment += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return segment;
+    };
+
+    const code = Array(segments)
+      .fill(0)
+      .map(() => generateSegment())
+      .join("-");
+    return code; // e.g., "A7K3-BX9P-M4NH"
+  }
+
+  /**
+   * Validate company code format
+   */
+  function isValidCompanyCode(code: string): boolean {
+    const pattern = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+    return pattern.test(code.toUpperCase());
   }
 
   /**
@@ -310,6 +334,7 @@ export function useCompany() {
 
     // Code management
     generateCompanyCode,
+    isValidCompanyCode,
     hashCompanyCode,
     setCompanyCode,
     loadCompanyCode,

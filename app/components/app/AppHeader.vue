@@ -1,22 +1,19 @@
 <template>
   <header
-    class="sticky top-0 z-40 flex items-center justify-between h-14 px-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
-  >
+    class="sticky top-0 z-40 flex items-center justify-between h-14 px-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
     <!-- Left: Hamburger (mobile) + Logo -->
     <div class="flex items-center gap-1">
       <!-- Hamburger Menu (Mobile Only) -->
       <button
         class="lg:hidden p-2 -ml-2 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        @click="$emit('toggle-sidebar')"
-      >
+        @click="$emit('toggle-sidebar')">
         <Icon name="i-heroicons-bars-3" size="24" />
       </button>
 
       <!-- Logo -->
       <NuxtLinkLocale to="/" class="flex items-center gap-2">
         <div
-          class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow"
-        >
+          class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow">
           <span class="text-white font-bold text-sm">⚡</span>
         </div>
         <span class="hidden sm:block font-bold text-gray-900 dark:text-white">
@@ -58,79 +55,46 @@
       <ChatCenter />
 
       <!-- Help & Support Button -->
-      <UDropdownMenu
-        :items="helpMenuItems"
-        :ui="{
-          content: 'w-56',
-        }"
-      >
-        <button
-          class="p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          :title="$t('help.title') || 'Help & Support'"
-        >
-          <Icon
-            name="i-heroicons-question-mark-circle"
-            size="22"
-            class="text-gray-600 dark:text-gray-400"
-          />
+      <UDropdownMenu :items="helpMenuItems" :ui="{
+        content: 'w-56',
+      }">
+        <button class="p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          :title="$t('help.title') || 'Help & Support'">
+          <Icon name="i-heroicons-question-mark-circle" size="22" class="text-gray-600 dark:text-gray-400" />
         </button>
       </UDropdownMenu>
 
       <!-- Profile Avatar -->
-      <UPopover
-        :ui="{
-          content:
-            'w-72 p-4 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 rounded-2xl shadow-xl border-white/20 dark:border-gray-700/50',
-        }"
-      >
-        <button
-          class="p-1 overflow-hidden rounded-full hover:ring-2 hover:ring-primary-500/50 transition-all"
-        >
-          <div
-            v-if="userAvatar"
-            class="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-800"
-          >
-            <img
-              :src="userAvatar"
-              alt="Profile"
-              class="w-full h-full object-cover"
-            />
+      <UPopover :ui="{
+        content:
+          'w-72 p-4 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 rounded-2xl shadow-xl border-white/20 dark:border-gray-700/50',
+      }">
+        <button class="p-1 overflow-hidden rounded-full hover:ring-2 hover:ring-primary-500/50 transition-all">
+          <div v-if="userAvatar" class="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-800">
+            <img :src="userAvatar" alt="Profile" class="w-full h-full object-cover" />
           </div>
-          <div
-            v-else
-            class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-primary-300 dark:ring-gray-800"
-          >
+          <div v-else
+            class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-primary-300 dark:ring-gray-800">
             <Icon name="i-heroicons-user" size="16" class="text-white" />
           </div>
         </button>
 
         <template #content>
-          <div class="">
+          <div class="overflow-y-auto max-h-[calc(100vh-10rem)]">
             <!-- User Info with gradient accent -->
             <div
-              class="relative px-3 py-3 mb-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary-100 dark:border-primary-800/30"
-            >
+              class="relative px-3 py-3 mb-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary-100 dark:border-primary-800/30">
               <div class="flex items-center gap-3">
-                <div
-                  v-if="userAvatar"
-                  class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-md"
-                >
-                  <img
-                    :src="userAvatar"
-                    alt="Profile"
-                    class="w-full h-full object-cover"
-                  />
+                <div v-if="userAvatar"
+                  class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-md">
+                  <img :src="userAvatar" alt="Profile" class="w-full h-full object-cover" />
                 </div>
-                <div
-                  v-else
-                  class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-md"
-                >
+                <div v-else
+                  class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-md">
                   <Icon name="i-heroicons-user" size="20" class="text-white" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p
-                    class="text-sm font-semibold text-gray-900 dark:text-white truncate"
-                  >
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {{ userDisplayName }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -138,16 +102,14 @@
                   </p>
                 </div>
               </div>
-              <span
-                class="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-medium shadow-sm"
-                :class="providerBadgeClass"
-              >
+              <span class="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-medium shadow-sm"
+                :class="providerBadgeClass">
                 {{
                   userProvider === "nostr"
                     ? "⚡ Nostr"
                     : userProvider === "password"
-                    ? "🔑 Password"
-                    : "🔢 PIN"
+                      ? "🔑 Password"
+                      : "🔢 PIN"
                 }}
               </span>
             </div>
@@ -155,17 +117,11 @@
             <!-- Account Switcher Button -->
             <button
               class="flex w-full items-center gap-3 px-3 py-2.5 mb-4 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-50/80 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl transition-all duration-200"
-              @click="openAccountSwitcher"
-            >
-              <Icon
-                name="i-heroicons-arrows-right-left"
-                size="18"
-                class="text-primary-500"
-              />
+              @click="openAccountSwitcher">
+              <Icon name="i-heroicons-arrows-right-left" size="18" class="text-primary-500" />
               {{ $t("account.switchAccount") }}
               <span
-                class="ml-auto text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full"
-              >
+                class="ml-auto text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full">
                 {{ accountCount }}
               </span>
             </button>
@@ -174,21 +130,13 @@
             <div class="space-y-4 mb-4">
               <!-- Dark Mode Toggle -->
               <div
-                class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50"
-              >
+                class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 dark:from-indigo-500 dark:to-purple-600 flex items-center justify-center shadow-sm"
-                  >
-                    <Icon
-                      :name="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"
-                      size="16"
-                      class="text-white"
-                    />
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 dark:from-indigo-500 dark:to-purple-600 flex items-center justify-center shadow-sm">
+                    <Icon :name="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'" size="16" class="text-white" />
                   </div>
-                  <span
-                    class="text-sm font-medium text-gray-700 dark:text-gray-200"
-                  >
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
                     {{ $t("account.dark_mode") }}
                   </span>
                 </div>
@@ -197,38 +145,24 @@
 
               <!-- Theme Color Selector -->
               <div
-                class="px-3 py-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50"
-              >
+                class="px-3 py-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
                 <div class="flex items-center gap-3 mb-3">
                   <div
-                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-sm"
-                  >
-                    <Icon
-                      name="i-heroicons-swatch"
-                      size="16"
-                      class="text-white"
-                    />
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-sm">
+                    <Icon name="i-heroicons-swatch" size="16" class="text-white" />
                   </div>
-                  <span
-                    class="text-sm font-medium text-gray-700 dark:text-gray-200"
-                  >
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
                     {{ $t("account.theme_color") }}
                   </span>
                 </div>
                 <div class="flex flex-wrap gap-2 pl-11">
-                  <button
-                    v-for="color in themeColors"
-                    :key="color.value"
-                    :title="color.label"
-                    :class="[
-                      'w-6 h-6 rounded-full transition-all duration-200 shadow-sm',
-                      color.class,
-                      selectedColor === color.value
-                        ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 ring-gray-900 dark:ring-white scale-110 shadow-md'
-                        : 'hover:scale-110 hover:shadow-md opacity-80 hover:opacity-100',
-                    ]"
-                    @click="setThemeColor(color.value)"
-                  />
+                  <button v-for="color in themeColors" :key="color.value" :title="color.label" :class="[
+                    'w-6 h-6 rounded-full transition-all duration-200 shadow-sm',
+                    color.class,
+                    selectedColor === color.value
+                      ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 ring-gray-900 dark:ring-white scale-110 shadow-md'
+                      : 'hover:scale-110 hover:shadow-md opacity-80 hover:opacity-100',
+                  ]" @click="setThemeColor(color.value)" />
                 </div>
               </div>
             </div>
@@ -236,10 +170,7 @@
             <!-- Language Selector -->
             <div>
               <div class="flex items-center gap-2 mb-2">
-                <UIcon
-                  name="i-heroicons-language"
-                  class="w-5 h-5 text-gray-600 dark:text-gray-400"
-                />
+                <UIcon name="i-heroicons-language" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">
                   {{ $t("account.language") }}
                 </span>
@@ -248,76 +179,47 @@
             </div>
 
             <!-- Divider -->
-            <div
-              class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-3"
-            />
+            <div class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-3" />
 
             <!-- Menu Items -->
             <ul class="space-y-1">
               <li>
-                <NuxtLinkLocale
-                  to="/settings/account"
-                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
-                >
-                  <Icon
-                    name="i-heroicons-user-circle"
-                    size="18"
-                    class="text-gray-500 dark:text-gray-400"
-                  />
+                <NuxtLinkLocale to="/settings/account"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200">
+                  <Icon name="i-heroicons-user-circle" size="18" class="text-gray-500 dark:text-gray-400" />
                   {{ $t("settings.account.title") }}
                 </NuxtLinkLocale>
               </li>
               <li>
-                <NuxtLinkLocale
-                  to="/settings"
-                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
-                >
-                  <Icon
-                    name="i-heroicons-cog-6-tooth"
-                    size="18"
-                    class="text-gray-500 dark:text-gray-400"
-                  />
+                <NuxtLinkLocale to="/settings"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200">
+                  <Icon name="i-heroicons-cog-6-tooth" size="18" class="text-gray-500 dark:text-gray-400" />
                   {{ $t("settings.general.title") }}
                 </NuxtLinkLocale>
               </li>
               <li>
-                <NuxtLinkLocale
-                  to="/legal/privacy"
-                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
-                >
-                  <Icon
-                    name="i-heroicons-shield-check"
-                    size="18"
-                    class="text-gray-500 dark:text-gray-400"
-                  />
+                <NuxtLinkLocale to="/legal/privacy"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200">
+                  <Icon name="i-heroicons-shield-check" size="18" class="text-gray-500 dark:text-gray-400" />
                   {{ $t("legal.privacy.title") }}
                 </NuxtLinkLocale>
               </li>
               <li>
-                <NuxtLinkLocale
-                  to="/legal/terms"
-                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
-                >
-                  <Icon
-                    name="i-heroicons-document-text"
-                    size="18"
-                    class="text-gray-500 dark:text-gray-400"
-                  />
+                <NuxtLinkLocale to="/legal/terms"
+                  class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200">
+                  <Icon name="i-heroicons-document-text" size="18" class="text-gray-500 dark:text-gray-400" />
                   {{ $t("legal.terms.title") }}
                 </NuxtLinkLocale>
               </li>
             </ul>
 
             <!-- Divider -->
-            <div
-              class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent my-3"
-            />
+            <div class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent my-3" />
 
             <!-- Sign Out -->
             <button
               class="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
-              @click="handleLogout"
-            >
+              @click="handleLogout">
               <Icon name="i-heroicons-arrow-right-on-rectangle" size="18" />
               {{ $t("common.signOut") }}
             </button>
@@ -328,10 +230,7 @@
   </header>
 
   <!-- Account Switch Modal -->
-  <AccountSwitchModal
-    v-model:open="showAccountSwitcher"
-    @switched="onAccountSwitched"
-  />
+  <AccountSwitchModal v-model:open="showAccountSwitcher" @switched="onAccountSwitched" />
 
   <!-- Help & Support Modals -->
   <CommonHelpDrawer />

@@ -452,6 +452,7 @@ export function useNostrData() {
     } = {}
   ): Promise<Event[]> {
     const keys = getUserKeys();
+    const company = useCompany();
 
     // IMPORTANT: Always filter by current user's pubkey to avoid getting other users' data
     // If no keys available, return empty array instead of querying all authors
@@ -462,9 +463,24 @@ export function useNostrData() {
       return [];
     }
 
+    // Build authors list
+    let authors = options.authors;
+    if (!authors) {
+      authors = [keys!.pubkey];
+
+      // If company code is enabled and we have owner pubkey, also include it
+      // This allows staff to see owner's products/orders
+      if (company.isCompanyCodeEnabled.value && company.ownerPubkey.value) {
+        const ownerPubkey = company.ownerPubkey.value;
+        if (ownerPubkey && !authors.includes(ownerPubkey)) {
+          authors.push(ownerPubkey);
+        }
+      }
+    }
+
     const filter: Record<string, unknown> = {
       kinds,
-      authors: options.authors || [keys!.pubkey],
+      authors,
     };
 
     if (options.dTags) {
@@ -714,16 +730,16 @@ export function useNostrData() {
    * The order is tagged with owner's pubkey so admin can subscribe to it
    */
   async function saveOrderAsAnonymous(
-    order: Order, 
+    order: Order,
     ownerPubkey: string
   ): Promise<Event | null> {
     if (!import.meta.client) return null;
-    
+
     try {
       // Generate ephemeral keypair for this session
       const { $nostr } = useNuxtApp();
       const ephemeralKeys = $nostr.generateKeys();
-      
+
       // Create order event with owner tag
       const content = JSON.stringify(order);
       const tags = [
@@ -736,7 +752,7 @@ export function useNostrData() {
         ["type", "customer-order"], // Mark as customer order
         ["encrypted", "false"],
       ];
-      
+
       const unsignedEvent: UnsignedEvent = {
         kind: NOSTR_KINDS.ORDER,
         created_at: Math.floor(Date.now() / 1000),
@@ -744,17 +760,20 @@ export function useNostrData() {
         content,
         pubkey: ephemeralKeys.publicKey,
       };
-      
+
       // Sign with ephemeral key
-      const signedEvent = finalizeEvent(unsignedEvent, hexToBytes(ephemeralKeys.privateKey));
-      
+      const signedEvent = finalizeEvent(
+        unsignedEvent,
+        hexToBytes(ephemeralKeys.privateKey)
+      );
+
       // Publish to relay
       const success = await relay.publishEvent(signedEvent);
       if (!success) {
         console.error("[NostrData] Failed to publish anonymous order");
         return null;
       }
-      
+
       console.log("[NostrData] Anonymous order published:", order.id);
       return signedEvent;
     } catch (e) {
@@ -775,17 +794,20 @@ export function useNostrData() {
         "#p": [ownerPubkey],
         limit: 100,
       };
-      
-      const events = await relay.queryEvents(filter as Parameters<typeof relay.queryEvents>[0]);
+
+      const events = await relay.queryEvents(
+        filter as Parameters<typeof relay.queryEvents>[0]
+      );
       const orders: Order[] = [];
-      
+
       for (const event of events) {
         try {
-          const isEncrypted = event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
-          const data = isEncrypted 
+          const isEncrypted =
+            event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+          const data = isEncrypted
             ? await decryptData<Order>(event.content)
             : JSON.parse(event.content);
-          
+
           if (data && data.id) {
             orders.push(data);
           }
@@ -793,10 +815,10 @@ export function useNostrData() {
           // Skip invalid events
         }
       }
-      
+
       // Sort by date descending
-      return orders.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+      return orders.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
     } catch (e) {
       console.error("[NostrData] Failed to get store orders:", e);
@@ -933,11 +955,6 @@ export function useNostrData() {
       const events = await relay.queryEvents(
         filter as Parameters<typeof relay.queryEvents>[0]
       );
-      console.log(
-        "[NostrData] Found",
-        events.length,
-        "staff events with company code"
-      );
 
       const results: StoreUser[] = [];
 
@@ -1012,7 +1029,7 @@ export function useNostrData() {
     const tags = [
       ["d", companyCodeHash], // Use code hash as d-tag for replaceability
       ["c", companyCodeHash], // Also as c-tag for filtering
-      ["client", "bitspace-pos"],
+      ["client", "bnos.space"],
     ];
 
     const event = await createEvent(NOSTR_KINDS.COMPANY_INDEX, content, tags);
@@ -1023,11 +1040,6 @@ export function useNostrData() {
       error.value = "Failed to publish company index";
       return null;
     }
-
-    console.log(
-      "[NostrData] Published company index:",
-      companyCodeHash.slice(0, 8)
-    );
     return event;
   }
 
@@ -1040,11 +1052,6 @@ export function useNostrData() {
   ): Promise<string | null> {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
-
-    console.log(
-      "[NostrData] Discovering owner by company code hash:",
-      codeHash.slice(0, 8)
-    );
 
     // Query public events with company code tag - NO author filter since we don't know who owns it
     const filter = {
