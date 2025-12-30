@@ -1048,33 +1048,16 @@ export function useChat() {
         return;
       }
 
-      // HANDLE CHANNEL MESSAGE (Kind 42 - Legacy NIP-28)
-      if (event.kind === 42) {
+      // HANDLE DIRECT MESSAGE (Kind 4 - NIP-04)
+      if (event.kind === 4) {
         // Skip if it's my own message
         if (event.pubkey === currentUser.pubkeyHex) {
-          console.log("[Chat] Own kind 42 message, ignoring");
+          console.log("[Chat] Own DM, ignoring");
           return;
         }
 
-        // Try to parse content (may be encrypted or plain text)
-        let content = event.content;
-
-        // Check if it's encrypted (starts with specific pattern or has encrypted tag)
-        const isEncrypted = event.tags.some(
-          (t) => t[0] === "encrypted" && t[1] === "true"
-        );
-
-        if (isEncrypted) {
-          try {
-            content = await decryptMessage(event.content, event.pubkey);
-          } catch (e) {
-            console.warn(
-              "[Chat] Failed to decrypt kind 42 message, using plain text:",
-              e
-            );
-            // Use plain text content as fallback
-          }
-        }
+        // Decrypt message
+        const content = await decryptMessage(event.content, event.pubkey);
 
         // CHECK FOR INVITE
         try {
@@ -1084,7 +1067,7 @@ export function useChat() {
             parsed.channelId &&
             parsed.key
           ) {
-            // It's an invite!
+            // It's a channel invite!
             // Check if we already have this channel
             let existingConv = conversations.value.find(
               (c) => c.id === parsed.channelId
@@ -1117,11 +1100,12 @@ export function useChat() {
               conversations.value.unshift(newConv);
               await saveConversationToLocal(newConv);
               sound.playSuccess();
-              return; // Stop processing as normal DM
             }
+            console.log("[Chat] ✅ Channel invite received");
+            return; // Stop processing as normal DM
           }
         } catch (e) {
-          // Not JSON, continue as normal channel message
+          // Not JSON, normal DM
         }
 
         const conversationId = generateConversationId(
@@ -1187,7 +1171,10 @@ export function useChat() {
             }
           }
         }
+        console.log("[Chat] ✅ Direct message received and displayed");
+        return;
       }
+
       // HANDLE CHANNEL CREATION (Kind 40)
       else if (event.kind === 40) {
         const content = JSON.parse(event.content);
