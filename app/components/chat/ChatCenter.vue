@@ -2,6 +2,7 @@
 /**
  * 💬 Chat Center
  * Main slideover component for employee messaging
+ * Mobile-optimized with responsive drawer and touch-friendly controls
  */
 import type { ChatContact, ChatConversation } from "~/composables/use-chat";
 
@@ -14,6 +15,26 @@ const showNewChatModal = ref(false);
 const showCreateChannelModal = ref(false);
 const showEmojiPicker = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
+
+// Mobile state
+const showMobileConversations = ref(true); // Show conversation list on mobile by default
+const isMobile = ref(false);
+
+// Detect mobile device
+onMounted(() => {
+  const checkMobile = () => {
+    isMobile.value = window.innerWidth < 768; // md breakpoint
+    if (!isMobile.value) {
+      showMobileConversations.value = true; // Always show on desktop
+    }
+  };
+  checkMobile();
+  window.addEventListener("resize", checkMobile);
+
+  onUnmounted(() => {
+    window.removeEventListener("resize", checkMobile);
+  });
+});
 
 // Create Channel Form
 const newChannelName = ref("");
@@ -45,6 +66,22 @@ const channels = computed(() => {
     (c) => c.type === "channel" || c.type === "group"
   );
 });
+
+// Handle conversation selection on mobile
+const selectConversationMobile = async (conversationId: string) => {
+  await chat.selectConversation(conversationId);
+  if (isMobile.value) {
+    showMobileConversations.value = false; // Hide conversation list, show chat
+  }
+};
+
+// Back to conversations on mobile
+const backToConversations = () => {
+  if (isMobile.value) {
+    showMobileConversations.value = true;
+    chat.activeConversationId.value = null;
+  }
+};
 
 // Initialize chat on mount
 onMounted(async () => {
@@ -189,7 +226,48 @@ const insertEmoji = (emoji: string) => {
   messageInput.value += emoji;
   showEmojiPicker.value = false;
 };
+
+// Mobile keyboard handling
+const handleFocus = () => {
+  if (isMobile.value) {
+    // Scroll to bottom when keyboard opens
+    nextTick(() => {
+      messagesContainer.value?.scrollTo({
+        top: messagesContainer.value.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  }
+};
 </script>
+
+<style scoped>
+/* Mobile safe area support */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Smooth scroll for messages */
+.messages-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Touch feedback */
+.active\:scale-95:active {
+  transform: scale(0.95);
+}
+
+.active\:scale-98:active {
+  transform: scale(0.98);
+}
+
+/* Prevent text selection on buttons */
+button {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+</style>
 
 <template>
   <USlideover
@@ -197,13 +275,15 @@ const insertEmoji = (emoji: string) => {
     :title="t('chat.title', 'Team Chat')"
     :description="t('chat.description', 'Message your team members')"
     side="right"
-    :ui="{ content: 'max-w-2xl', body: 'p-0 sm:p-0' }"
+    :ui="{ content: 'max-w-2xl md:max-w-3xl lg:max-w-4xl', body: 'p-0 sm:p-0' }"
   >
     <template #body>
-      <div class="flex h-full">
-        <!-- Conversation List (Left Side) -->
+      <div class="flex h-full relative">
+        <!-- Conversation List (Responsive: Full width on mobile, sidebar on desktop) -->
         <div
-          class="w-72 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900/50"
+          v-show="!isMobile || showMobileConversations"
+          class="w-full md:w-72 lg:w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900/50"
+          :class="{ 'absolute inset-0 z-10 md:relative': isMobile && showMobileConversations }"
         >
           <!-- Search & New Chat -->
           <div
@@ -223,9 +303,9 @@ const insertEmoji = (emoji: string) => {
                 block
                 icon="i-heroicons-hashtag"
                 color="gray"
-                size="sm"
+                :size="isMobile ? 'md' : 'sm'"
                 variant="solid"
-                class="flex-1"
+                class="flex-1 min-h-11"
                 @click="showCreateChannelModal = true"
               >
                 {{ t("chat.newChannel", "New Channel") }}
@@ -234,9 +314,9 @@ const insertEmoji = (emoji: string) => {
                 block
                 icon="i-heroicons-user-plus"
                 color="primary"
-                size="sm"
+                :size="isMobile ? 'md' : 'sm'"
                 variant="solid"
-                class="flex-1"
+                class="flex-1 min-h-11"
                 @click="showNewChatModal = true"
               >
                 {{ t("chat.newDM", "New DM") }}
@@ -257,12 +337,12 @@ const insertEmoji = (emoji: string) => {
                 <button
                   v-for="conversation in channels"
                   :key="conversation.id"
-                  class="w-full text-left p-2 rounded-md transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
+                  class="w-full text-left p-3 min-h-[56px] rounded-md transition-all hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-98"
                   :class="{
                     'bg-primary-50 dark:bg-primary-900/20':
                       chat.activeConversationId.value === conversation.id,
                   }"
-                  @click="chat.selectConversation(conversation.id)"
+                  @click="selectConversationMobile(conversation.id)"
                 >
                   <div class="flex items-center gap-2">
                     <div
@@ -316,12 +396,12 @@ const insertEmoji = (emoji: string) => {
                 <button
                   v-for="conversation in directMessages"
                   :key="conversation.id"
-                  class="w-full text-left p-2 rounded-md transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
+                  class="w-full text-left p-3 min-h-[64px] rounded-md transition-all hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-98"
                   :class="{
                     'bg-primary-50 dark:bg-primary-900/20':
                       chat.activeConversationId.value === conversation.id,
                   }"
-                  @click="chat.selectConversation(conversation.id)"
+                  @click="selectConversationMobile(conversation.id)"
                 >
                   <div class="flex items-center gap-3">
                     <div class="relative">
@@ -380,14 +460,26 @@ const insertEmoji = (emoji: string) => {
           </div>
         </div>
 
-        <!-- Chat Area (Right Side) -->
-        <div class="flex-1 flex flex-col bg-white dark:bg-gray-900">
+        <!-- Chat Area (Responsive: Full width on mobile when conversation selected) -->
+        <div
+          v-show="!isMobile || !showMobileConversations"
+          class="flex-1 flex flex-col bg-white dark:bg-gray-900"
+          :class="{ 'absolute inset-0 z-20 md:relative': isMobile && !showMobileConversations }"
+        >
           <!-- Chat Header -->
           <div
             v-if="chat.activeConversation.value"
-            class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"
+            class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between min-h-[64px]"
           >
             <div class="flex items-center gap-3">
+              <!-- Mobile Back Button -->
+              <button
+                v-if="isMobile"
+                class="min-w-11 min-h-11 -ml-2 flex items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-transform"
+                @click="backToConversations"
+              >
+                <UIcon name="i-heroicons-arrow-left" class="w-5 h-5" />
+              </button>
               <div
                 v-if="chat.activeConversation.value.type === 'direct'"
                 class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
@@ -488,10 +580,10 @@ const insertEmoji = (emoji: string) => {
             </div>
           </div>
 
-          <!-- Messages -->
+          <!-- Messages (Optimized scrolling) -->
           <div
             ref="messagesContainer"
-            class="flex-1 overflow-y-auto p-4 space-y-4"
+            class="flex-1 overflow-y-auto p-4 space-y-4 messages-container"
           >
             <!-- No conversation selected -->
             <div
@@ -600,10 +692,11 @@ const insertEmoji = (emoji: string) => {
             </template>
           </div>
 
-          <!-- Message Input -->
+          <!-- Message Input (Touch-optimized with safe area for mobile keyboards) -->
           <div
             v-if="chat.activeConversation.value"
-            class="p-4 border-t border-gray-200 dark:border-gray-700"
+            class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+            :class="{ 'pb-safe': isMobile }"
           >
             <div class="flex items-end gap-2">
               <!-- Emoji picker -->
@@ -612,10 +705,11 @@ const insertEmoji = (emoji: string) => {
                   icon="i-heroicons-face-smile"
                   variant="ghost"
                   color="gray"
-                  size="sm"
+                  :size="isMobile ? 'md' : 'sm'"
+                  class="min-w-11 min-h-11"
                   @click="showEmojiPicker = !showEmojiPicker"
                 />
-                <!-- Quick emoji panel -->
+                <!-- Quick emoji panel (Touch-optimized) -->
                 <div
                   v-if="showEmojiPicker"
                   class="absolute bottom-full left-0 mb-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 flex gap-1 z-10"
@@ -623,7 +717,7 @@ const insertEmoji = (emoji: string) => {
                   <button
                     v-for="emoji in quickEmojis"
                     :key="emoji"
-                    class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-xl transition-colors"
+                    class="min-w-11 min-h-11 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-xl transition-colors active:scale-95"
                     @click="insertEmoji(emoji)"
                   >
                     {{ emoji }}
@@ -642,20 +736,23 @@ const insertEmoji = (emoji: string) => {
                           ?.name || ''
                       : '#' + chat.activeConversation.value.groupName)
                   "
-                  :rows="1"
+                  :rows="isMobile ? 2 : 1"
                   autoresize
-                  :maxrows="4"
-                  class="w-full"
+                  :maxrows="isMobile ? 3 : 4"
+                  class="w-full text-base md:text-sm"
+                  @focus="handleFocus"
                   @keydown="handleKeydown"
                 />
               </div>
 
-              <!-- Send button -->
+              <!-- Send button (Touch-optimized) -->
               <UButton
                 icon="i-heroicons-paper-airplane"
                 color="primary"
+                :size="isMobile ? 'lg' : 'md'"
                 :loading="chat.isSending.value"
                 :disabled="!messageInput.trim()"
+                class="min-w-11 min-h-11"
                 @click="sendMessage"
               />
             </div>
