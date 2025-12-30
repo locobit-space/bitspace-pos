@@ -1036,6 +1036,14 @@ export function useChat() {
         let conversation = conversations.value.find(
           (c) => c.id === channelId
         );
+
+        console.log("[Chat] Channel found:", {
+          found: !!conversation,
+          name: conversation?.groupName,
+          isPrivate: conversation?.isPrivate,
+          hasKey: !!conversation?.key,
+        });
+
         if (!conversation) {
           console.warn("[Chat] Channel not found, auto-creating:", channelId.slice(0, 16));
 
@@ -1068,12 +1076,31 @@ export function useChat() {
 
         // Parse message content
         let content = event.content;
-        try {
-          const parsed = JSON.parse(event.content);
-          content = parsed.content || event.content;
-        } catch {
-          // Content is plain text
+
+        // Decrypt if this is a private channel
+        if (conversation.isPrivate && conversation.key) {
+          console.log("[Chat] Decrypting private channel message");
+          content = decryptChannelMessage(event.content, conversation.key);
+        } else if (conversation.isPrivate && !conversation.key) {
+          console.warn("[Chat] Private channel message but no key available yet");
+          // Try to sync to get the key
+          if (company.isCompanyCodeEnabled.value) {
+            syncConversations().catch((e) =>
+              console.error("[Chat] Failed to sync for key:", e)
+            );
+          }
+          content = "🔒 [Encrypted - waiting for key sync...]";
+        } else {
+          // Try to parse as JSON for non-private channels
+          try {
+            const parsed = JSON.parse(event.content);
+            content = parsed.content || event.content;
+          } catch {
+            // Content is plain text
+          }
         }
+
+        console.log("[Chat] Message content:", content.substring(0, 50));
 
         // Get sender info
         const sender = usersStore.users.value.find(
