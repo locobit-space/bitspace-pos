@@ -296,7 +296,13 @@ export const useReceipt = () => {
     let qrCodeDataUrl = "";
     if (settings.value.showQrCode) {
       const eBillUrl = generateEBillUrl(receipt.id);
+      console.log("[Receipt] Generating QR for:", eBillUrl);
+      const startTime = performance.now();
       qrCodeDataUrl = await generateQRCodeDataUrl(eBillUrl, 120);
+      const duration = performance.now() - startTime;
+      console.log(`[Receipt] QR generated in ${duration.toFixed(2)}ms:`, qrCodeDataUrl ? "✓" : "✗ (empty)");
+    } else {
+      console.log("[Receipt] QR code disabled in settings");
     }
 
     return `
@@ -636,9 +642,27 @@ export const useReceipt = () => {
   // ============================================
   const printReceipt = async (receipt: EReceipt): Promise<void> => {
     isPrinting.value = true;
+    error.value = null;
 
     try {
+      console.log("[Receipt] Starting print...");
+      
+      // Pre-generate QR code before opening dialog
+      let qrCodeDataUrl = "";
+      if (settings.value.showQrCode) {
+        console.log("[Receipt] Pre-generating QR code...");
+        const eBillUrl = generateEBillUrl(receipt.id);
+        qrCodeDataUrl = await generateQRCodeDataUrl(eBillUrl, 120);
+        console.log("[Receipt] QR pre-generated:", qrCodeDataUrl ? "✓" : "✗");
+      }
+
+      // Generate HTML with QR already included
       const html = await generateHtmlReceipt(receipt);
+      
+      // Small delay to ensure QR is ready
+      await new Promise((r) => setTimeout(r, 100));
+      
+      console.log("[Receipt] Opening print window...");
       const printWindow = window.open("", "_blank", "width=400,height=600");
 
       if (printWindow) {
@@ -651,14 +675,16 @@ export const useReceipt = () => {
             const images = printWindow.document.querySelectorAll("img");
 
             if (images.length === 0) {
-              // No images, resolve immediately
+              console.log("[Receipt] No images to load");
               resolve();
               return;
             }
 
+            console.log(`[Receipt] Waiting for ${images.length} image(s) to load...`);
             let loaded = 0;
             const checkAllLoaded = () => {
               loaded++;
+              console.log(`[Receipt] Image loaded: ${loaded}/${images.length}`);
               if (loaded >= images.length) {
                 resolve();
               }
@@ -669,23 +695,47 @@ export const useReceipt = () => {
                 checkAllLoaded();
               } else {
                 img.onload = checkAllLoaded;
-                img.onerror = checkAllLoaded; // Don't block on error
+                img.onerror = () => {
+                  console.warn("[Receipt] Image failed to load:", img.src?.slice(0, 50));
+                  checkAllLoaded(); // Don't block on error
+                };
               }
             });
 
             // Safety timeout - don't wait forever
-            setTimeout(resolve, 3000);
+            setTimeout(() => {
+              console.log("[Receipt] Image timeout reached");
+              resolve();
+            }, 2000);
           });
         };
 
-        // Wait for document ready + images + small buffer for rendering
+        // Wait for document ready + images + rendering
         printWindow.onload = async () => {
+          console.log("[Receipt] Print window loaded");
           await waitForImages();
-          // Extra delay for browser to render QR
-          await new Promise((r) => setTimeout(r, 100));
+          
+          // Ensure browser has rendered everything
+          await new Promise((r) => setTimeout(r, 200));
+          
+          console.log("[Receipt] Printing...");
           printWindow.print();
-          isPrinting.value = false;
+          
+          // Keep window open for a moment, then close
+          setTimeout(() => {
+            printWindow.close();
+            isPrinting.value = false;
+          }, 500);
         };
+
+        // Fallback timeout if onload doesn't fire
+        setTimeout(() => {
+          if (isPrinting.value) {
+            console.warn("[Receipt] Fallback: forcing print");
+            printWindow.print();
+            isPrinting.value = false;
+          }
+        }, 5000);
       } else {
         error.value = "Could not open print window. Please allow popups.";
         isPrinting.value = false;
