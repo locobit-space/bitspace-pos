@@ -428,7 +428,27 @@
       "active": "Active",
       "inactive": "Inactive",
       "revoked": "Revoked",
-      "expired": "Expired"
+      "expired": "Expired",
+      "companyCode": "Company Code",
+      "companyCodeDescription": "Share this code with staff to connect their devices",
+      "enterCompanyCode": "Enter code",
+      "editCode": "Edit Code",
+      "regenerateCode": "Generate New Code",
+      "showDeleted": "Show Deleted",
+      "pinSet": "PIN Set",
+      "expiresOn": "Expires on",
+      "restore": "Restore",
+      "generateInvite": "Generate Invite",
+      "authMethods": "Authentication Methods",
+      "recommended": "Recommended",
+      "traditional": "Traditional",
+      "quickAccess": "Quick Access",
+      "authDesc": {
+        "nostr": "Most secure. Uses cryptographic keys for login.",
+        "password": "Email and password authentication.",
+        "pin": "Quick 4-6 digit PIN for fast staff switching."
+      },
+      "passwordPlaceholderEdit": "Leave blank to keep current password"
     },
     "account": {
       "title": "Account Settings",

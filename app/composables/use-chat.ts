@@ -910,15 +910,26 @@ export function useChat() {
 
     // If team mode, subscribe to team channel messages
     if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
+      // Primary filter: by company code tag (for relays that support #c)
       const teamChannelFilter = {
         kinds: [9, 40, 42], // NIP-29 (kind 9) + NIP-28 (40, 42) for compatibility
         "#c": [company.companyCodeHash.value], // Filter by company code
         since: Math.floor(Date.now() / 1000) - 86400,
       };
       filters.push(teamChannelFilter);
+
+      // Fallback filter: subscribe to all kind 9 messages (for relays that don't support #c)
+      // This catches all group messages and we filter by company code in handleIncomingMessage
+      const fallbackChannelFilter = {
+        kinds: [9],
+        since: Math.floor(Date.now() / 1000) - 86400,
+      };
+      filters.push(fallbackChannelFilter);
+
       console.log("[Chat] Subscribing to team channels:", {
         kinds: [9, 40, 42],
         companyCodeHash: company.companyCodeHash.value.slice(0, 8),
+        hasFallback: true,
       });
     } else {
       // Solo mode: subscribe to all public channels
@@ -960,6 +971,17 @@ export function useChat() {
         if (event.pubkey === currentUser.pubkeyHex) {
           console.log("[Chat] Own message, ignoring");
           return;
+        }
+
+        // Verify company code if in team mode (fallback filter may include unwanted messages)
+        if (
+          company.isCompanyCodeEnabled.value &&
+          company.companyCodeHash.value
+        ) {
+          const messageCompanyCode = event.tags.find((t) => t[0] === "c")?.[1];
+          if (messageCompanyCode !== company.companyCodeHash.value) {
+            return; // Silently ignore messages from different companies
+          }
         }
 
         const channelId =

@@ -417,7 +417,27 @@
       "active": "ເປີດໃຊ້ງານ",
       "inactive": "ປິດໃຊ້ງານ",
       "revoked": "ຖືກຖອນ",
-      "expired": "ໝົດອາຍຸ"
+      "expired": "ໝົດອາຍຸ",
+      "companyCode": "ລະຫັດບໍລິສັດ",
+      "companyCodeDescription": "ແບ່ງປັນລະຫັດນີ້ກັບພະນັກງານເພື່ອເຊື່ອມຕໍ່ອຸປະກອນ",
+      "enterCompanyCode": "ປ້ອນລະຫັດ",
+      "editCode": "ແກ້ໄຂລະຫັດ",
+      "regenerateCode": "ສ້າງລະຫັດໃໝ່",
+      "showDeleted": "ສະແດງທີ່ລຶບແລ້ວ",
+      "pinSet": "ຕັ້ງ PIN ແລ້ວ",
+      "expiresOn": "ໝົດອາຍຸວັນທີ",
+      "restore": "ກູ້ຄືນ",
+      "generateInvite": "ສ້າງຄຳເຊີນ",
+      "authMethods": "ວິທີການເຂົ້າສູ່ລະບົບ",
+      "recommended": "ແນະນຳ",
+      "traditional": "ແບບດັ້ງເດີມ",
+      "quickAccess": "ເຂົ້າໄວ",
+      "authDesc": {
+        "nostr": "ປອດໄພທີ່ສຸດ. ໃຊ້ກະແຈເຂົ້າລະຫັດສຳລັບເຂົ້າສູ່ລະບົບ.",
+        "password": "ການພິສູດຕົວຕົນດ້ວຍອີເມວ ແລະ ລະຫັດຜ່ານ.",
+        "pin": "PIN 4-6 ໂຕເລກສຳລັບສະຫຼັບພະນັກງານໄວ."
+      },
+      "passwordPlaceholderEdit": "ເວັ້ນວ່າງໄວ້ເພື່ອຮັກສາລະຫັດຜ່ານປັດຈຸບັນ"
     },
     "tax": {
       "title": "ຕັ້ງຄ່າອາກອນ",

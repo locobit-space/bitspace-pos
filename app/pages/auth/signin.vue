@@ -206,8 +206,22 @@ const handleNostrSignIn = async () => {
   try {
     const success = await auth.signInWithNostr();
     if (success) {
-      // Sync with staff user system
-      await syncNostrOwner();
+      // First fetch existing users from Nostr
+      await usersComposable.refreshFromNostr();
+
+      // Check if this user already exists
+      const nostrPubkeyCookie = useCookie("nostr-pubkey");
+      const existingUser = usersComposable.users.value.find(
+        (u) => u.pubkeyHex === nostrPubkeyCookie.value
+      );
+
+      if (existingUser) {
+        usersComposable.setCurrentUser(existingUser);
+      } else {
+        // New user - create owner
+        await syncNostrOwner();
+      }
+
       router.push("/");
     }
   } catch (e) {
@@ -283,8 +297,21 @@ const handleNpubSignIn = async () => {
 
   const success = await auth.signInWithNpub(manualNpub.value);
   if (success) {
-    // Sync with staff user system
-    await syncNostrOwner();
+    // First fetch existing users from Nostr
+    await usersComposable.refreshFromNostr();
+
+    // Check if this user already exists
+    const nostrPubkeyCookie = useCookie("nostr-pubkey");
+    const existingUser = usersComposable.users.value.find(
+      (u) => u.pubkeyHex === nostrPubkeyCookie.value
+    );
+
+    if (existingUser) {
+      usersComposable.setCurrentUser(existingUser);
+    } else {
+      await syncNostrOwner();
+    }
+
     router.push("/");
   }
 };
@@ -325,19 +352,28 @@ const handleNsecSignIn = async () => {
     });
     nostrCookie.value = pubkeyHex;
 
-    // Sync with staff user system (creates/links owner account)
-    await syncNostrOwner();
-
-    // Initialize company code for owner (generates if not exists)
-    const companyCode = await company.initializeCompany(pubkeyHex);
-
-    // Publish company index for cross-device discovery
-    const codeHash = await company.hashCompanyCode(companyCode);
-    await nostrData.publishCompanyIndex(codeHash);
-
-    // IMPORTANT: Re-fetch users from Nostr now that we have keys
-    // This enables staff logins on new devices!
+    // IMPORTANT: First try to fetch existing users from Nostr to check if this is staff
     await usersComposable.refreshFromNostr();
+
+    // Check if this user already exists (either as staff or owner)
+    const existingUser = usersComposable.users.value.find(
+      (u) => u.pubkeyHex === pubkeyHex
+    );
+
+    if (existingUser) {
+      // User exists - just log them in (could be staff or owner)
+      usersComposable.setCurrentUser(existingUser);
+    } else {
+      // No existing user - this is a new owner setup
+      await syncNostrOwner();
+
+      // Initialize company code for owner (generates if not exists)
+      const companyCode = await company.initializeCompany(pubkeyHex);
+
+      // Publish company index for cross-device discovery
+      const codeHash = await company.hashCompanyCode(companyCode);
+      await nostrData.publishCompanyIndex(codeHash);
+    }
 
     // Clear the input
     manualNsec.value = "";
