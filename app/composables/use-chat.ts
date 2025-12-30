@@ -49,6 +49,12 @@ export interface ChatConversation {
   isMuted: boolean;
   isPrivate?: boolean;
   key?: string;
+  // NEW: Shop/Team Context
+  shopId?: string; // Filter by specific shop
+  scope?: "shop" | "company" | "department"; // Channel visibility level
+  tags?: string[]; // Categorization tags (e.g., ['sales', 'kitchen'])
+  isReadOnly?: boolean; // For announcement channels
+  memberPubkeys?: string[]; // Private channel members list
 }
 
 export interface ChatContact {
@@ -87,6 +93,8 @@ export function useChat() {
   const nostrKey = useNostrKey();
   const sound = useSound();
   const { DEFAULT_RELAYS } = useNostrRelay();
+  const nostrData = useNostrData();
+  const company = useCompany();
 
   // ============================================
   // State
@@ -236,6 +244,14 @@ export function useChat() {
         unreadCount: r.unreadCount,
         isPinned: r.isPinned,
         isMuted: r.isMuted,
+        isPrivate: r.isPrivate,
+        key: r.key,
+        // NEW: Shop/Team Context
+        shopId: r.shopId,
+        scope: r.scope as "shop" | "company" | "department" | undefined,
+        tags: r.tags ? JSON.parse(r.tags) : [],
+        isReadOnly: r.isReadOnly,
+        memberPubkeys: r.memberPubkeys ? JSON.parse(r.memberPubkeys) : [],
       }));
     } catch (e) {
       console.error("[Chat] Failed to load conversations:", e);
@@ -262,6 +278,16 @@ export function useChat() {
       unreadCount: conversation.unreadCount,
       isPinned: conversation.isPinned,
       isMuted: conversation.isMuted,
+      isPrivate: conversation.isPrivate,
+      key: conversation.key,
+      // NEW: Shop/Team Context
+      shopId: conversation.shopId,
+      scope: conversation.scope,
+      tags: conversation.tags ? JSON.stringify(conversation.tags) : undefined,
+      isReadOnly: conversation.isReadOnly,
+      memberPubkeys: conversation.memberPubkeys
+        ? JSON.stringify(conversation.memberPubkeys)
+        : undefined,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -525,13 +551,121 @@ export function useChat() {
   }
 
   // ============================================
+  // Shop Context & Filtering
+  // ============================================
+
+  /**
+   * Get channels for a specific shop
+   */
+  const getShopChannels = (shopId: string): ChatConversation[] => {
+    return conversations.value.filter(
+      (c) => c.type === "channel" && c.scope === "shop" && c.shopId === shopId
+    );
+  };
+
+  /**
+   * Get company-wide channels
+   */
+  const getCompanyChannels = (): ChatConversation[] => {
+    return conversations.value.filter(
+      (c) => c.type === "channel" && c.scope === "company"
+    );
+  };
+
+  /**
+   * Get department channels
+   */
+  const getDepartmentChannels = (department: string): ChatConversation[] => {
+    return conversations.value.filter(
+      (c) =>
+        c.type === "channel" &&
+        c.scope === "department" &&
+        c.tags?.includes(department)
+    );
+  };
+
+  /**
+   * Check if current user can access a channel
+   */
+  const canAccessChannel = (channelId: string): boolean => {
+    const channel = conversations.value.find((c) => c.id === channelId);
+    if (!channel) return false;
+
+    // Public channels are accessible to all
+    if (!channel.isPrivate) return true;
+
+    // For private channels, check member list
+    const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+    if (!currentPubkey) return false;
+
+    return channel.memberPubkeys?.includes(currentPubkey) || false;
+  };
+
+  /**
+   * Add member to private channel
+   */
+  async function addChannelMember(
+    channelId: string,
+    pubkey: string
+  ): Promise<boolean> {
+    const channel = conversations.value.find((c) => c.id === channelId);
+    if (!channel || !channel.isPrivate) return false;
+
+    // Add to member list if not already present
+    if (!channel.memberPubkeys) {
+      channel.memberPubkeys = [];
+    }
+
+    if (!channel.memberPubkeys.includes(pubkey)) {
+      channel.memberPubkeys.push(pubkey);
+      await saveConversationToLocal(channel);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Remove member from private channel
+   */
+  async function removeChannelMember(
+    channelId: string,
+    pubkey: string
+  ): Promise<boolean> {
+    const channel = conversations.value.find((c) => c.id === channelId);
+    if (!channel || !channel.isPrivate) return false;
+
+    if (channel.memberPubkeys) {
+      const index = channel.memberPubkeys.indexOf(pubkey);
+      if (index > -1) {
+        channel.memberPubkeys.splice(index, 1);
+        await saveConversationToLocal(channel);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Get channel members
+   */
+  const getChannelMembers = (channelId: string): string[] => {
+    const channel = conversations.value.find((c) => c.id === channelId);
+    return channel?.memberPubkeys || [];
+  };
+
+  // ============================================
   // Channel Operations
   // ============================================
 
   async function createChannel(
     name: string,
     about: string = "",
-    isPrivate: boolean = false
+    isPrivate: boolean = false,
+    shopId?: string,
+    scope: "shop" | "company" | "department" = "company",
+    tags: string[] = []
   ): Promise<string | null> {
     const keys = getUserKeys();
     if (!keys?.privkey) {
@@ -550,6 +684,9 @@ export function useChat() {
         about,
         picture: "",
         isPrivate, // Custom field to indicate privacy
+        shopId, // NEW: Shop context
+        scope, // NEW: Visibility scope
+        tags, // NEW: Categorization tags
       };
 
       const eventTemplate = {
@@ -567,6 +704,8 @@ export function useChat() {
       if (signedEvent) {
         // Create local conversation for the new channel
         const conversationId = signedEvent.id;
+        const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+
         const newConversation: ChatConversation = {
           id: conversationId,
           type: "channel",
@@ -582,9 +721,40 @@ export function useChat() {
           isMuted: false,
           isPrivate,
           key: secretKey,
+          // NEW: Shop/Team Context
+          shopId,
+          scope,
+          tags,
+          isReadOnly: false,
+          memberPubkeys: isPrivate && currentPubkey ? [currentPubkey] : [], // Add creator to private channel
         };
         conversations.value.unshift(newConversation);
         await saveConversationToLocal(newConversation);
+
+        // NEW: Sync to Nostr if team mode and not a DM
+        if (
+          company.isCompanyCodeEnabled.value &&
+          newConversation.type !== "direct"
+        ) {
+          try {
+            await nostrData.saveConversation({
+              id: newConversation.id,
+              type: newConversation.type,
+              groupName: newConversation.groupName,
+              groupAvatar: newConversation.groupAvatar,
+              shopId: newConversation.shopId,
+              scope: newConversation.scope,
+              tags: newConversation.tags,
+              isReadOnly: newConversation.isReadOnly,
+              memberPubkeys: newConversation.memberPubkeys,
+              isPrivate: newConversation.isPrivate,
+            });
+            console.log("[Chat] Team conversation synced to Nostr:", name);
+          } catch (err) {
+            console.warn("[Chat] Failed to sync conversation to Nostr:", err);
+          }
+        }
+
         return conversationId;
       }
     } catch (e) {
@@ -656,12 +826,35 @@ export function useChat() {
       const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey);
       const privateKey = hexToBytes(privateKeyHex);
 
+      // Use NIP-29 kind 9 for better cross-client compatibility
+      const tags: string[][] = [
+        ["h", channelId], // NIP-29: group/channel reference
+        ["e", channelId, "", "root"], // Backward compatibility
+      ];
+
+      // Add company code hash for team filtering (CRITICAL!)
+      if (company.companyCodeHash.value) {
+        tags.push(["c", company.companyCodeHash.value]);
+        console.log(
+          "[Chat] Publishing message with company code:",
+          company.companyCodeHash.value.slice(0, 8)
+        );
+      } else {
+        console.warn("[Chat] No company code hash - message may not sync!");
+      }
+
       const eventTemplate = {
-        kind: 42, // NIP-28 Channel Message
+        kind: 9, // NIP-29 Group Chat Message (better compatibility)
         content: finalContent,
         created_at: Math.floor(Date.now() / 1000),
-        tags: [["e", channelId, "", "root"]],
+        tags,
       };
+
+      console.log("[Chat] Publishing message:", {
+        kind: eventTemplate.kind,
+        channelId,
+        hasCompanyCode: !!company.companyCodeHash.value,
+      });
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
       const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
@@ -669,6 +862,7 @@ export function useChat() {
       await Promise.race(pubs).catch(() => null);
 
       if (signedEvent) {
+        console.log("[Chat] Message published successfully:", signedEvent.id);
         message.status = "sent";
         message.nostrEventId = signedEvent.id;
         await saveMessageToLocal(message);
@@ -704,15 +898,6 @@ export function useChat() {
 
     const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
 
-    // Subscribe to DMs sent TO me AND Channel events
-    const filter = {
-      kinds: [4, 40, 42],
-      // For Kind 4 (DM), we filter by #p (recipient)
-      // For Kind 42 (Channel Msg), we might want to filter by channels we're in, but for now we get all and filter locally
-      // OR we can't filter complexly in one filter. Better to use multiple filters if needed.
-      // A simple approach for small teams: get all 40/42, but only 4 for me.
-    };
-
     // Filter 1: DMs to me
     const dmFilter = {
       kinds: [4],
@@ -720,25 +905,39 @@ export function useChat() {
       since: Math.floor(Date.now() / 1000) - 86400,
     };
 
-    // Filter 2: Public Channels (Creation & Messages)
-    // In a real app we'd limit this to subscribed channels, but for "Team Chat" we can listen to global 40/42 from our relays
-    const channelFilter = {
-      kinds: [40, 42],
-      since: Math.floor(Date.now() / 1000) - 86400,
-    };
+    //Filter 2: Team Channels (with company code hash)
+    const filters: any[] = [dmFilter];
 
-    chatSubscription = $nostr.pool.subscribeMany(
-      relayUrls,
-      [dmFilter, channelFilter],
-      {
-        async onevent(event: NostrEvent) {
-          await handleIncomingMessage(event);
-        },
-        oneose() {
-          console.log("[Chat] Subscription established");
-        },
-      }
-    );
+    // If team mode, subscribe to team channel messages
+    if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
+      const teamChannelFilter = {
+        kinds: [9, 40, 42], // NIP-29 (kind 9) + NIP-28 (40, 42) for compatibility
+        "#c": [company.companyCodeHash.value], // Filter by company code
+        since: Math.floor(Date.now() / 1000) - 86400,
+      };
+      filters.push(teamChannelFilter);
+      console.log("[Chat] Subscribing to team channels:", {
+        kinds: [9, 40, 42],
+        companyCodeHash: company.companyCodeHash.value.slice(0, 8),
+      });
+    } else {
+      // Solo mode: subscribe to all public channels
+      const channelFilter = {
+        kinds: [9, 40, 42],
+        since: Math.floor(Date.now() / 1000) - 86400,
+      };
+      filters.push(channelFilter);
+      console.log("[Chat] Subscribing to public channels (solo mode)");
+    }
+
+    chatSubscription = $nostr.pool.subscribeMany(relayUrls, filters, {
+      async onevent(event: NostrEvent) {
+        await handleIncomingMessage(event);
+      },
+      oneose() {
+        console.log("[Chat] Subscription established");
+      },
+    });
   }
 
   async function handleIncomingMessage(event: NostrEvent): Promise<void> {
@@ -749,16 +948,111 @@ export function useChat() {
     const existingMsg =
       (await db.chatMessages.where("nostrEventId").equals(event.id).first()) ||
       (await db.chatConversations.where("id").equals(event.id).first()); // Check conv ID for kind 40 too
-    if (existingMsg) return;
+    if (existingMsg) {
+      console.log("[Chat] Duplicate event, ignoring");
+      return;
+    }
 
     try {
-      // HANDLE DM (Kind 4)
-      if (event.kind === 4) {
+      // HANDLE GROUP CHAT MESSAGE (Kind 9 - NIP-29)
+      if (event.kind === 9) {
         // Skip if it's my own message
-        if (event.pubkey === currentUser.pubkeyHex) return;
+        if (event.pubkey === currentUser.pubkeyHex) {
+          console.log("[Chat] Own message, ignoring");
+          return;
+        }
 
-        // Decrypt message
-        const content = await decryptMessage(event.content, event.pubkey);
+        const channelId =
+          event.tags.find((t) => t[0] === "h")?.[1] ||
+          event.tags.find((t) => t[0] === "e")?.[1];
+
+        if (!channelId) {
+          console.warn("[Chat] Kind 9 message without channel ID");
+          return;
+        }
+
+        const conversation = conversations.value.find(
+          (c) => c.id === channelId
+        );
+        if (!conversation) {
+          console.warn("[Chat] Channel not found:", channelId);
+          return;
+        }
+
+        // Parse message content
+        let content = event.content;
+        try {
+          const parsed = JSON.parse(event.content);
+          content = parsed.content || event.content;
+        } catch {
+          // Content is plain text
+        }
+
+        // Get sender info
+        const sender = usersStore.users.value.find(
+          (u) => u.pubkeyHex === event.pubkey
+        );
+
+        const newMessage: ChatMessage = {
+          id: event.id,
+          conversationId: channelId,
+          senderPubkey: event.pubkey,
+          senderName: sender?.name || "Unknown",
+          senderAvatar: sender?.avatar,
+          recipientPubkey: "",
+          content,
+          timestamp: event.created_at * 1000,
+          status: "delivered",
+          nostrEventId: event.id,
+        };
+
+        // Add to messages
+        const currentMessages = messages.value.get(channelId) || [];
+        messages.value.set(channelId, [...currentMessages, newMessage]);
+        await saveMessageToLocal(newMessage);
+
+        // Update conversation
+        conversation.lastMessage = {
+          content,
+          timestamp: newMessage.timestamp,
+          senderName: newMessage.senderName,
+        };
+        conversation.unreadCount += 1;
+        await saveConversationToLocal(conversation);
+
+        // Play sound
+        sound.playNotification();
+        console.log("[Chat] ✅ Group message received and displayed");
+        return;
+      }
+
+      // HANDLE CHANNEL MESSAGE (Kind 42 - Legacy NIP-28)
+      if (event.kind === 42) {
+        // Skip if it's my own message
+        if (event.pubkey === currentUser.pubkeyHex) {
+          console.log("[Chat] Own kind 42 message, ignoring");
+          return;
+        }
+
+        // Try to parse content (may be encrypted or plain text)
+        let content = event.content;
+
+        // Check if it's encrypted (starts with specific pattern or has encrypted tag)
+        const isEncrypted = event.tags.some(
+          (t) => t[0] === "encrypted" && t[1] === "true"
+        );
+
+        if (isEncrypted) {
+          try {
+            content = await decryptMessage(event.content, event.pubkey);
+          } catch (e) {
+            console.warn(
+              "[Chat] Failed to decrypt kind 42 message, using plain text:",
+              e
+            );
+            // Use plain text content as fallback
+          }
+        }
 
         // CHECK FOR INVITE
         try {
@@ -805,7 +1099,7 @@ export function useChat() {
             }
           }
         } catch (e) {
-          // Not JSON, normal DM
+          // Not JSON, continue as normal channel message
         }
 
         const conversationId = generateConversationId(
@@ -1112,10 +1406,180 @@ export function useChat() {
   // Initialize
   // ============================================
 
+  /**
+   * Sync team conversations from Nostr
+   * Fetches channel metadata and updates existing conversations
+   */
+  async function syncConversations(): Promise<void> {
+    if (!company.isCompanyCodeEnabled.value || !company.companyCodeHash.value) {
+      // Solo mode: only local conversations
+      return;
+    }
+
+    try {
+      // Query team conversations by company code hash
+      const teamConversations = await nostrData.getAllConversations({
+        companyCodeHash: company.companyCodeHash.value,
+      });
+
+      console.log(
+        `[Chat] Found ${teamConversations.length} team conversations from Nostr`
+      );
+
+      // Merge with local conversations
+      for (const conv of teamConversations) {
+        const existingIndex = conversations.value.findIndex(
+          (c) => c.id === conv.id
+        );
+
+        if (existingIndex >= 0) {
+          // UPDATE existing conversation metadata (fixes "Unknown Channel")
+          const existing = conversations.value[existingIndex]!;
+          if (conv.groupName && existing.groupName !== conv.groupName) {
+            existing.groupName = conv.groupName;
+            existing.groupAvatar = conv.groupAvatar;
+            existing.scope = conv.scope;
+            existing.tags = conv.tags;
+            await saveConversationToLocal(existing);
+            console.log(
+              `[Chat] Updated conversation metadata: ${conv.groupName}`
+            );
+          }
+        } else {
+          // ADD new conversation
+          const newConv: ChatConversation = {
+            id: conv.id,
+            type: conv.type,
+            participants: [],
+            groupName: conv.groupName || "Unknown Channel",
+            groupAvatar: conv.groupAvatar,
+            lastMessage: {
+              content: "Channel synced from team",
+              timestamp: Date.now(),
+              senderName: "System",
+            },
+            unreadCount: 0,
+            isPinned: false,
+            isMuted: false,
+            isPrivate: false,
+            shopId: conv.shopId,
+            scope: conv.scope,
+            tags: conv.tags,
+            isReadOnly: conv.isReadOnly,
+            memberPubkeys: conv.memberPubkeys,
+          };
+          conversations.value.push(newConv);
+          await saveConversationToLocal(newConv);
+          console.log(
+            "[Chat] Synced new team conversation:",
+            conv.groupName || conv.id
+          );
+        }
+      }
+    } catch (e) {
+      console.error("[Chat] Failed to sync conversations:", e);
+    }
+  }
+
+  /**
+   * Subscribe to real-time conversation updates
+   * Replaces setInterval polling with efficient Nostr subscription
+   */
+  let conversationSubscription: { close: () => void } | null = null;
+
+  async function subscribeToConversations(): Promise<void> {
+    if (!company.isCompanyCodeEnabled.value || !company.companyCodeHash.value) {
+      return;
+    }
+
+    if (!$nostr?.pool) {
+      console.warn(
+        "[Chat] Nostr pool not available for conversation subscription"
+      );
+      return;
+    }
+
+    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+
+    // Subscribe to team channel updates (kind 30900)
+    const conversationFilter = {
+      kinds: [30900], // CHAT_CHANNEL from nostr-kinds
+      "#c": [company.companyCodeHash.value],
+      since: Math.floor(Date.now() / 1000),
+    };
+
+    console.log("[Chat] Subscribing to real-time conversation updates");
+
+    conversationSubscription = $nostr.pool.subscribeMany(
+      relayUrls,
+      [conversationFilter],
+      {
+        async onevent(event: NostrEvent) {
+          try {
+            // Parse conversation from event
+            const data = JSON.parse(event.content);
+            const existingIndex = conversations.value.findIndex(
+              (c) => c.id === data.id
+            );
+
+            if (existingIndex >= 0) {
+              // Update existing
+              const existing = conversations.value[existingIndex]!;
+              existing.groupName = data.groupName || existing.groupName;
+              existing.groupAvatar = data.groupAvatar;
+              existing.scope = data.scope;
+              existing.tags = data.tags;
+              await saveConversationToLocal(existing);
+              console.log(`[Chat] Real-time update: ${data.groupName}`);
+            } else {
+              // Add new conversation
+              const newConv: ChatConversation = {
+                id: data.id,
+                type: data.type || "channel",
+                participants: [],
+                groupName: data.groupName || "Unknown Channel",
+                groupAvatar: data.groupAvatar,
+                lastMessage: {
+                  content: "Channel created",
+                  timestamp: Date.now(),
+                  senderName: "System",
+                },
+                unreadCount: 0,
+                isPinned: false,
+                isMuted: false,
+                isPrivate: data.isPrivate || false,
+                shopId: data.shopId,
+                scope: data.scope,
+                tags: data.tags,
+                isReadOnly: data.isReadOnly,
+                memberPubkeys: data.memberPubkeys,
+              };
+              conversations.value.push(newConv);
+              await saveConversationToLocal(newConv);
+              console.log(`[Chat] Real-time new channel: ${data.groupName}`);
+            }
+          } catch (e) {
+            console.warn("[Chat] Failed to process conversation event:", e);
+          }
+        },
+        oneose() {
+          console.log("[Chat] Conversation subscription established");
+        },
+      }
+    );
+  }
+
   async function init(): Promise<void> {
     isLoading.value = true;
     try {
       await loadConversationsFromLocal();
+
+      // NEW: Initial sync + real-time subscription (NO setInterval!)
+      if (company.isCompanyCodeEnabled.value) {
+        await syncConversations();
+        await subscribeToConversations(); // Real-time updates!
+      }
+
       await subscribeToMessages();
       console.log("[Chat] Initialized successfully");
     } catch (e) {
@@ -1128,6 +1592,10 @@ export function useChat() {
     if (chatSubscription) {
       chatSubscription.close();
       chatSubscription = null;
+    }
+    if (conversationSubscription) {
+      conversationSubscription.close();
+      conversationSubscription = null;
     }
   }
 
@@ -1169,6 +1637,15 @@ export function useChat() {
     deleteConversation,
     togglePinConversation,
     toggleMuteConversation,
+
+    // NEW: Shop Context & Filtering
+    getShopChannels,
+    getCompanyChannels,
+    getDepartmentChannels,
+    canAccessChannel,
+    addChannelMember,
+    removeChannelMember,
+    getChannelMembers,
 
     // Utilities
     generateConversationId,

@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 const appConfig = useAppConfig();
-
+const { initSystemNotifications } = useNotifications();
 // Sidebar state for mobile
 const sidebarOpen = ref(false);
 
@@ -66,6 +66,8 @@ onMounted(() => {
   if (savedColor) {
     appConfig.ui.colors.primary = savedColor;
   }
+  // Initialize system notifications
+  initSystemNotifications();
 });
 </script>
 

@@ -41,7 +41,7 @@ const selectedPeriod = ref<"today" | "week" | "month">("today");
 const isInitialLoad = ref(true);
 const isRefreshing = ref(false);
 const showWelcome = ref(false); // Show choice screen
-const showSetup = ref(false);   // Show owner setup wizard
+const showSetup = ref(false); // Show owner setup wizard
 
 // Current time for greeting
 const currentTime = ref(new Date());
@@ -76,7 +76,11 @@ const hasCachedData = computed(() => {
 
 // Check if user is new (no setup AND no company code)
 const isNewUser = computed(() => {
-  return !shop.isSetupComplete.value && !company.hasCompanyCode.value && !hasCachedData.value;
+  return (
+    !shop.isSetupComplete.value &&
+    !company.hasCompanyCode.value &&
+    !hasCachedData.value
+  );
 });
 
 // Check if needs owner setup
@@ -107,8 +111,8 @@ const kpis = computed(() => {
     selectedPeriod.value === "today"
       ? today
       : selectedPeriod.value === "week"
-        ? weekStart
-        : monthStart;
+      ? weekStart
+      : monthStart;
 
   const periodOrders = ordersStore.orders.value.filter((o) => {
     const orderDate = new Date(o.date);
@@ -270,14 +274,6 @@ onMounted(async () => {
   await shop.init();
   company.loadCompanyCode();
 
-  // Debug: log company state
-  console.log("[Dashboard] Company state:", {
-    hasCompanyCode: company.hasCompanyCode.value,
-    isCompanyCodeEnabled: company.isCompanyCodeEnabled.value,
-    shopSetupComplete: shop.isSetupComplete.value,
-    hasCachedData: hasCachedData.value,
-  });
-
   // If company code is enabled, user is staff - go straight to dashboard
   if (company.isCompanyCodeEnabled.value) {
     console.log("[Dashboard] Company code enabled - skipping setup");
@@ -315,7 +311,11 @@ onMounted(async () => {
 
 <template>
   <!-- Welcome Choice (Join vs Create) -->
-  <DashboardWelcomeChoice v-if="showWelcome" @join="handleWelcomeJoin" @create="handleWelcomeCreate" />
+  <DashboardWelcomeChoice
+    v-if="showWelcome"
+    @join="handleWelcomeJoin"
+    @create="handleWelcomeCreate"
+  />
 
   <!-- Shop Setup Wizard (for owners) -->
   <DashboardShopSetup v-else-if="showSetup" @complete="handleSetupComplete" />
@@ -323,7 +323,9 @@ onMounted(async () => {
   <!-- Main Dashboard -->
   <div v-else class="min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4"
+    >
       <div class="flex items-center gap-3">
         <span class="text-xl">{{ greeting.emoji }}</span>
         <div>
@@ -334,8 +336,10 @@ onMounted(async () => {
             {{ t("dashboard.title") }}
           </h1>
         </div>
-        <span v-if="isRefreshing"
-          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400">
+        <span
+          v-if="isRefreshing"
+          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400"
+        >
           <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
           {{ t("common.syncing") }}
         </span>
@@ -343,15 +347,18 @@ onMounted(async () => {
 
       <div class="flex items-center gap-2">
         <!-- Period Selector -->
-        <CommonButtonGroup v-model="selectedPeriod" :items="[
-          {
-            value: 'today',
-            label: t('dashboard.today'),
-            indicator: { show: true },
-          },
-          { value: 'week', label: t('dashboard.week') },
-          { value: 'month', label: t('dashboard.month') },
-        ]" />
+        <CommonButtonGroup
+          v-model="selectedPeriod"
+          :items="[
+            {
+              value: 'today',
+              label: t('dashboard.today'),
+              indicator: { show: true },
+            },
+            { value: 'week', label: t('dashboard.week') },
+            { value: 'month', label: t('dashboard.month') },
+          ]"
+        />
 
         <NuxtLink to="/pos">
           <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
@@ -364,8 +371,14 @@ onMounted(async () => {
     <!-- Loading Skeletons -->
     <template v-if="isInitialLoad && !hasCachedData">
       <div class="grid grid-cols-12 gap-3">
-        <div v-for="i in 4" :key="i" class="col-span-12 sm:col-span-6 lg:col-span-3">
-          <div class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+        <div
+          v-for="i in 4"
+          :key="i"
+          class="col-span-12 sm:col-span-6 lg:col-span-3"
+        >
+          <div
+            class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+          >
             <USkeleton class="h-3 w-16 mb-2" />
             <USkeleton class="h-6 w-28" />
           </div>
@@ -378,12 +391,19 @@ onMounted(async () => {
       <div class="grid grid-cols-12 gap-3">
         <!-- KPI Cards -->
         <div class="col-span-12">
-          <DashboardKPICards :kpis="kpis" :today-stats="todayStats" :selected-period="selectedPeriod" />
+          <DashboardKPICards
+            :kpis="kpis"
+            :today-stats="todayStats"
+            :selected-period="selectedPeriod"
+          />
         </div>
 
         <!-- Sales Chart -->
         <div class="col-span-12 lg:col-span-8">
-          <DashboardSalesChart :hourly-sales="hourlySales" :peak-hour="peakHour" />
+          <DashboardSalesChart
+            :hourly-sales="hourlySales"
+            :peak-hour="peakHour"
+          />
         </div>
 
         <!-- Business Health -->

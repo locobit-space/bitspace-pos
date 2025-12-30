@@ -468,13 +468,22 @@ export function useNostrData() {
     if (!authors) {
       authors = [keys!.pubkey];
 
-      // If company code is enabled and we have owner pubkey, also include it
-      // This allows staff to see owner's products/orders
-      if (company.isCompanyCodeEnabled.value && company.ownerPubkey.value) {
+      // CRITICAL: Include team members in query when company code is enabled
+      // IMPORTANT: We can't call useUsers() here as it creates infinite recursion
+      // Instead, we only add owner pubkey for staff, and rely on company code hash tag
+      if (company.hasCompanyCode.value && company.isCompanyCodeEnabled.value) {
         const ownerPubkey = company.ownerPubkey.value;
-        if (ownerPubkey && !authors.includes(ownerPubkey)) {
-          authors.push(ownerPubkey);
+
+        // For STAFF: Add owner pubkey
+        if (ownerPubkey && ownerPubkey !== keys!.pubkey) {
+          if (!authors.includes(ownerPubkey)) {
+            authors.push(ownerPubkey);
+            console.log("[NostrData] Staff: Including owner pubkey in query");
+          }
         }
+        // For OWNER: We can't fetch staff list here (circular dependency)
+        // Instead, queries should use company code hash tag (#c) to filter
+        // Or pass staff pubkeys explicitly when calling queryEvents
       }
     }
 
@@ -674,6 +683,13 @@ export function useNostrData() {
   // ============================================
 
   async function saveOrder(order: Order): Promise<Event | null> {
+    const company = useCompany();
+
+    // IMPORTANT: Do NOT encrypt orders when company code is enabled
+    // This allows owner and staff to see each other's orders
+    // Orders without company code are encrypted for privacy
+    const shouldEncrypt = !company.isCompanyCodeEnabled.value;
+
     return publishEvent(
       NOSTR_KINDS.ORDER,
       order,
@@ -684,7 +700,12 @@ export function useNostrData() {
         ["t", order.date],
         ["amount", order.total.toString()],
         order.customerPubkey ? ["p", order.customerPubkey] : [],
-      ].filter((t) => t.length > 0) as string[][]
+        // Add company code hash tag for team sync
+        company.companyCodeHash.value
+          ? ["c", company.companyCodeHash.value]
+          : [],
+      ].filter((t) => t.length > 0) as string[][],
+      shouldEncrypt
     );
   }
 
@@ -707,6 +728,63 @@ export function useNostrData() {
   async function getAllOrders(
     options: { since?: number; limit?: number } = {}
   ): Promise<Order[]> {
+    const company = useCompany();
+
+    // If company code is enabled, query by company code hash tag instead of authors
+    // This allows owner and staff to see all team orders without circular dependencies
+    if (
+      company.hasCompanyCode.value &&
+      company.isCompanyCodeEnabled.value &&
+      company.companyCodeHash.value
+    ) {
+      try {
+        const filter: Record<string, unknown> = {
+          kinds: [NOSTR_KINDS.ORDER],
+          "#c": [company.companyCodeHash.value], // Query by company code tag
+        };
+
+        if (options.since) {
+          filter.since = options.since;
+        }
+        if (options.limit) {
+          filter.limit = options.limit;
+        }
+
+        const events = await relay.queryEvents(
+          filter as Parameters<typeof relay.queryEvents>[0]
+        );
+
+        const orders: Order[] = [];
+        for (const event of events) {
+          try {
+            const isEncrypted =
+              event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+            const data = isEncrypted
+              ? await decryptData<Order>(event.content)
+              : JSON.parse(event.content);
+
+            if (data && data.id) {
+              orders.push(data);
+            }
+          } catch {
+            // Skip invalid events
+          }
+        }
+
+        // Sort by date descending
+        return orders.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      } catch (e) {
+        console.warn(
+          "[NostrData] Company code query failed, falling back to normal query:",
+          e
+        );
+        // Fall through to normal query
+      }
+    }
+
+    // Normal query by authors (for non-team mode)
     const results = await getAllEventsOfKind<Order>(NOSTR_KINDS.ORDER, options);
     // Sort by date descending
     return results
@@ -856,6 +934,383 @@ export function useNostrData() {
       NOSTR_KINDS.CUSTOMER
     );
     return results.map((r) => r.data);
+  }
+
+  // ============================================
+  // 💬 CHAT CONVERSATION OPERATIONS
+  // ============================================
+
+  /**
+   * Save team chat conversation to Nostr
+   * Only syncs team channels (not DMs which stay local)
+   */
+  async function saveConversation(conversation: {
+    id: string;
+    type: "direct" | "channel" | "group";
+    groupName?: string;
+    groupAvatar?: string;
+    shopId?: string;
+    scope?: "shop" | "company" | "department";
+    tags?: string[];
+    isReadOnly?: boolean;
+    memberPubkeys?: string[];
+    isPrivate?: boolean;
+  }): Promise<Event | null> {
+    const company = useCompany();
+
+    // Build tags for conversation
+    const tags: string[][] = [
+      ["type", conversation.type],
+      conversation.scope ? ["scope", conversation.scope] : [],
+      conversation.shopId ? ["shop", conversation.shopId] : [],
+      conversation.groupName ? ["name", conversation.groupName] : [],
+      conversation.isReadOnly ? ["read-only", "true"] : [],
+      // Add company code hash for team sync
+      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+      // Add custom tags
+      ...(conversation.tags || []).map((t) => ["t", t]),
+      // Add member pubkeys for private channels
+      ...(conversation.memberPubkeys || []).map((p) => ["p", p]),
+    ].filter((t) => t.length > 0) as string[][];
+
+    // Decide encryption: team channels are unencrypted for easy sync
+    const shouldEncrypt =
+      conversation.isPrivate ||
+      !company.isCompanyCodeEnabled.value ||
+      conversation.type === "direct";
+
+    return publishReplaceableEvent(
+      NOSTR_KINDS.CHAT_CHANNEL,
+      conversation,
+      conversation.id,
+      tags,
+      shouldEncrypt
+    );
+  }
+
+  /**
+   * Get all team conversations (channels) from Nostr
+   * Filters by company code hash for team mode
+   */
+  async function getAllConversations(
+    options: {
+      companyCodeHash?: string;
+      scope?: string;
+      shopId?: string;
+    } = {}
+  ): Promise<
+    Array<{
+      id: string;
+      type: "direct" | "channel" | "group";
+      groupName?: string;
+      groupAvatar?: string;
+      shopId?: string;
+      scope?: "shop" | "company" | "department";
+      tags?: string[];
+      isReadOnly?: boolean;
+      memberPubkeys?: string[];
+    }>
+  > {
+    try {
+      // Build filter
+      const filter: Record<string, unknown> = {
+        kinds: [NOSTR_KINDS.CHAT_CHANNEL],
+      };
+
+      if (options.companyCodeHash) {
+        filter["#c"] = [options.companyCodeHash];
+      }
+
+      if (options.scope) {
+        filter["#scope"] = [options.scope];
+      }
+
+      if (options.shopId) {
+        filter["#shop"] = [options.shopId];
+      }
+
+      const events = await relay.queryEvents(
+        filter as Parameters<typeof relay.queryEvents>[0]
+      );
+
+      const conversations: Array<{
+        id: string;
+        type: "direct" | "channel" | "group";
+        groupName?: string;
+        groupAvatar?: string;
+        shopId?: string;
+        scope?: "shop" | "company" | "department";
+        tags?: string[];
+        isReadOnly?: boolean;
+        memberPubkeys?: string[];
+      }> = [];
+      for (const event of events) {
+        try {
+          const isEncrypted =
+            event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+          const data = isEncrypted
+            ? await decryptData<(typeof conversations)[0]>(event.content)
+            : JSON.parse(event.content);
+
+          if (data && data.id) {
+            conversations.push(data);
+          }
+        } catch (e) {
+          console.warn("[NostrData] Failed to parse conversation:", e);
+        }
+      }
+
+      return conversations;
+    } catch (e) {
+      console.error("[NostrData] Failed to get conversations:", e);
+      return [];
+    }
+  }
+
+  /**
+   * Get single conversation by ID
+   */
+  async function getConversationById(id: string): Promise<{
+    id: string;
+    type: "direct" | "channel" | "group";
+    groupName?: string;
+    shopId?: string;
+    scope?: "shop" | "company" | "department";
+    tags?: string[];
+    memberPubkeys?: string[];
+  } | null> {
+    const result = await getReplaceableEvent<{
+      id: string;
+      type: "direct" | "channel" | "group";
+      groupName?: string;
+      shopId?: string;
+      scope?: "shop" | "company" | "department";
+      tags?: string[];
+      memberPubkeys?: string[];
+    }>(NOSTR_KINDS.CHAT_CHANNEL, id);
+    return result?.data || null;
+  }
+
+  // ============================================
+  // 👥 NIP-29 GROUP CHAT OPERATIONS
+  // ============================================
+
+  /**
+   * Generate unique group ID
+   */
+  function generateGroupId(): string {
+    return `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Publish group metadata (kind 39000)
+   * Creates or updates a group's basic information
+   */
+  async function publishGroupMetadata(params: {
+    groupId: string;
+    name: string;
+    about?: string;
+    picture?: string;
+    isPrivate?: boolean;
+  }): Promise<Event | null> {
+    const company = useCompany();
+
+    const metadata = {
+      id: params.groupId,
+      name: params.name,
+      about: params.about || "",
+      picture: params.picture || "",
+      isPrivate: params.isPrivate !== false,
+      createdAt: new Date().toISOString(),
+    };
+
+    const tags: string[][] = [
+      ["d", params.groupId],
+      ["name", params.name],
+      ["picture", params.picture || ""],
+      ["about", params.about || ""],
+      params.isPrivate ? ["private"] : ["public"],
+      // Company code for team filtering
+      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+    ].filter((t) => t.length > 0 && t[1] !== "") as string[][];
+
+    return publishReplaceableEvent(
+      NOSTR_KINDS.GROUP_METADATA,
+      metadata,
+      params.groupId,
+      tags,
+      false // Unencrypted for team visibility
+    );
+  }
+
+  /**
+   * Publish group admins list (kind 39001)
+   */
+  async function publishGroupAdmins(
+    groupId: string,
+    adminPubkeys: string[]
+  ): Promise<Event | null> {
+    const company = useCompany();
+
+    const tags: string[][] = [
+      ["d", groupId],
+      ...adminPubkeys.map((pubkey) => ["p", pubkey, "", "admin"]),
+      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+    ].filter((t) => t.length > 0) as string[][];
+
+    return publishReplaceableEvent(
+      NOSTR_KINDS.GROUP_ADMINS,
+      { groupId, admins: adminPubkeys },
+      groupId,
+      tags,
+      false
+    );
+  }
+
+  /**
+   * Publish group members list (kind 39002)
+   */
+  async function publishGroupMembers(
+    groupId: string,
+    memberPubkeys: string[]
+  ): Promise<Event | null> {
+    const company = useCompany();
+
+    const tags: string[][] = [
+      ["d", groupId],
+      ...memberPubkeys.map((pubkey) => ["p", pubkey, "", "member"]),
+      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+    ].filter((t) => t.length > 0) as string[][];
+
+    return publishReplaceableEvent(
+      NOSTR_KINDS.GROUP_MEMBERS,
+      { groupId, members: memberPubkeys },
+      groupId,
+      tags,
+      false
+    );
+  }
+
+  /**
+   * Send group chat message (kind 9)
+   */
+  async function sendGroupMessage(params: {
+    groupId: string;
+    content: string;
+    replyTo?: string;
+  }): Promise<Event | null> {
+    const company = useCompany();
+
+    const tags: string[][] = [
+      ["h", params.groupId], // NIP-29: group reference
+      params.replyTo ? ["e", params.replyTo, "", "reply"] : [],
+      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+    ].filter((t) => t.length > 0) as string[][];
+
+    return publishEvent(
+      NOSTR_KINDS.GROUP_CHAT_MESSAGE,
+      { content: params.content },
+      tags,
+      false // Plain text for now
+    );
+  }
+
+  /**
+   * Get group metadata
+   */
+  async function getGroupMetadata(groupId: string): Promise<{
+    id: string;
+    name: string;
+    about: string;
+    picture: string;
+    isPrivate: boolean;
+  } | null> {
+    const result = await getReplaceableEvent<{
+      id: string;
+      name: string;
+      about: string;
+      picture: string;
+      isPrivate: boolean;
+    }>(NOSTR_KINDS.GROUP_METADATA, groupId);
+    return result?.data || null;
+  }
+
+  /**
+   * Get group admins
+   */
+  async function getGroupAdmins(groupId: string): Promise<string[]> {
+    const result = await getReplaceableEvent<{
+      groupId: string;
+      admins: string[];
+    }>(NOSTR_KINDS.GROUP_ADMINS, groupId);
+    return result?.data?.admins || [];
+  }
+
+  /**
+   * Get group members
+   */
+  async function getGroupMembers(groupId: string): Promise<string[]> {
+    const result = await getReplaceableEvent<{
+      groupId: string;
+      members: string[];
+    }>(NOSTR_KINDS.GROUP_MEMBERS, groupId);
+    return result?.data?.members || [];
+  }
+
+  /**
+   * Get all groups for current team
+   */
+  async function getAllGroups(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      about: string;
+      picture: string;
+      isPrivate: boolean;
+      memberCount?: number;
+    }>
+  > {
+    const company = useCompany();
+
+    if (!company.companyCodeHash.value) {
+      return [];
+    }
+
+    try {
+      const filter: Record<string, unknown> = {
+        kinds: [NOSTR_KINDS.GROUP_METADATA],
+        "#c": [company.companyCodeHash.value],
+      };
+
+      const events = await relay.queryEvents(
+        filter as Parameters<typeof relay.queryEvents>[0]
+      );
+
+      const groups: Array<{
+        id: string;
+        name: string;
+        about: string;
+        picture: string;
+        isPrivate: boolean;
+        memberCount?: number;
+      }> = [];
+
+      for (const event of events) {
+        try {
+          const data = JSON.parse(event.content);
+          if (data && data.id) {
+            groups.push(data);
+          }
+        } catch (e) {
+          console.warn("[NostrData] Failed to parse group:", e);
+        }
+      }
+
+      return groups;
+    } catch (e) {
+      console.error("[NostrData] Failed to get groups:", e);
+      return [];
+    }
   }
 
   // ============================================
@@ -1271,6 +1726,22 @@ export function useNostrData() {
     saveCustomer,
     getCustomer,
     getAllCustomers,
+
+    // Chat Conversations (Legacy NIP-28)
+    saveConversation,
+    getAllConversations,
+    getConversationById,
+
+    // Group Chat (NIP-29)
+    generateGroupId,
+    publishGroupMetadata,
+    publishGroupAdmins,
+    publishGroupMembers,
+    sendGroupMessage,
+    getGroupMetadata,
+    getGroupAdmins,
+    getGroupMembers,
+    getAllGroups,
 
     // Settings
     saveSettings,

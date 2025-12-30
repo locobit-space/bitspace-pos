@@ -137,6 +137,30 @@ export const NOSTR_KINDS = {
   // ─────────────────────────────────────────
   /** Dynamic help article (wiki-style) */
   HELP_ARTICLE: 30850,
+
+  // ─────────────────────────────────────────
+  // 💬 TEAM CHAT & MESSAGING (30900-30949)
+  // ─────────────────────────────────────────
+  /** Team chat channel metadata (replaceable) - Legacy NIP-28 */
+  CHAT_CHANNEL: 30900,
+  /** Chat message (regular event) - Legacy NIP-28 */
+  CHAT_MESSAGE: 1234,
+
+  // ─────────────────────────────────────────
+  // 👥 GROUP CHAT - NIP-29 (Modern)
+  // ─────────────────────────────────────────
+  /** Group metadata (name, avatar, settings) - NIP-29 */
+  GROUP_METADATA: 39000,
+  /** Group admins list - NIP-29 */
+  GROUP_ADMINS: 39001,
+  /** Group members list - NIP-29 */
+  GROUP_MEMBERS: 39002,
+  /** Group chat message - NIP-29 */
+  GROUP_CHAT_MESSAGE: 9,
+  /** Delete message from group - NIP-29 */
+  GROUP_DELETE_MESSAGE: 5,
+  /** Reaction to group message - NIP-29 */
+  GROUP_REACTION: 7,
 } as const;
 
 /**

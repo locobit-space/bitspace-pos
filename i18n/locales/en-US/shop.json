@@ -42,7 +42,24 @@
       "shopType": "Shop Type",
       "applyTemplates": "Apply Product Templates",
       "applyTemplatesDesc": "Import {categories} categories and {products} sample products",
-      "noTemplateProducts": "No preset products, add your own"
+      "noTemplateProducts": "No preset products, add your own",
+      "companyCodeHint": "Share this code with your staff to connect their devices"
+    },
+    "welcome": {
+      "title": "Welcome to BNOS",
+      "subtitle": "Choose how you want to get started",
+      "joinTitle": "Join a Company",
+      "joinSubtitle": "I'm an employee",
+      "joinDescription": "Enter company code to connect and sync data",
+      "createTitle": "Create a Company",
+      "createSubtitle": "I'm the owner",
+      "createDescription": "Set up your shop and get a code for staff",
+      "enterCode": "Enter Company Code",
+      "codeHint": "Ask your manager for this code",
+      "connect": "Connect & Sync",
+      "readyToCreate": "Ready to set up your shop?",
+      "createHint": "Setup your shop and get a unique code to share",
+      "startSetup": "Start Setup"
     }
   },
   "branch": {

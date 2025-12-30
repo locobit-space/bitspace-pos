@@ -759,6 +759,12 @@ export interface ChatConversationRecord {
   isMuted: boolean;
   isPrivate?: boolean;
   key?: string; // AES key for private channels
+  // NEW: Shop/Team Context
+  shopId?: string; // Filter by specific shop
+  scope?: string; // 'shop' | 'company' | 'department'
+  tags?: string; // JSON array of tags
+  isReadOnly?: boolean; // For announcement channels
+  memberPubkeys?: string; // JSON array of member pubkeys
   createdAt: number;
   updatedAt: number;
 }
