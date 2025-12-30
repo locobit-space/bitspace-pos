@@ -8,7 +8,7 @@
     "phone": "เบอร์โทรศัพท์",
     "phonePlaceholder": "+66 2 123 4567",
     "email": "อีเมล",
-    "emailPlaceholder": "shop@example.com",
+    "emailPlaceholder": "shop{'@'}example.com",
     "logo": "โลโก้",
     "setup": {
       "title": "ยินดีต้อนรับสู่ bnos.space",

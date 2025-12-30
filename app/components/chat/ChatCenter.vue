@@ -29,88 +29,14 @@ const newChannelShopId = ref<string | undefined>(undefined);
 const showInviteModal = ref(false);
 const inviteSearchQuery = ref("");
 
-// Channel filtering
-const selectedShopFilter = ref<string | "all">("current");
-
-// Collapsible sections (stored in localStorage)
-const sectionsCollapsed = ref({
-  pinned: false,
-  shopChannels: false,
-  companyChannels: false,
-  directMessages: false,
-});
-
-// Load collapse state from localStorage
-if (import.meta.client) {
-  const saved = localStorage.getItem("chat-sections-collapsed");
-  if (saved) {
-    try {
-      sectionsCollapsed.value = JSON.parse(saved);
-    } catch (e) {
-      // Ignore
-    }
-  }
-}
-
-// Save collapse state
-const toggleSection = (section: keyof typeof sectionsCollapsed.value) => {
-  sectionsCollapsed.value[section] = !sectionsCollapsed.value[section];
-  localStorage.setItem(
-    "chat-sections-collapsed",
-    JSON.stringify(sectionsCollapsed.value)
-  );
-};
-
 // Get current shop ID
 const currentShopId = computed(() => {
   const shop = useShop();
   return shop.currentBranch.value?.id || "";
 });
 
-// Categorized conversations
-const pinnedConversations = computed(() => {
-  return chat.sortedConversations.value.filter((c) => c.isPinned);
-});
-
-const shopChannels = computed(() => {
-  const shopId =
-    selectedShopFilter.value === "current"
-      ? currentShopId.value
-      : selectedShopFilter.value;
-  if (shopId === "all") {
-    // Show all shop channels
-    return chat.sortedConversations.value.filter(
-      (c) => c.type === "channel" && c.scope === "shop"
-    );
-  }
-  return chat.sortedConversations.value.filter(
-    (c) => c.type === "channel" && c.scope === "shop" && c.shopId === shopId
-  );
-});
-
-const companyChannels = computed(() => {
-  return chat.sortedConversations.value.filter(
-    (c) => c.type === "channel" && c.scope === "company"
-  );
-});
-
 const directMessages = computed(() => {
   return chat.sortedConversations.value.filter((c) => c.type === "direct");
-});
-
-// Categorized DMs
-const favoriteDMs = computed(() => {
-  return directMessages.value.filter((c) => c.isPinned);
-});
-
-const teamMemberDMs = computed(() => {
-  const currentShop = currentShopId.value;
-  return directMessages.value.filter((c) => {
-    if (c.isPinned) return false; // Already in favorites
-    // TODO: Check if participant is in same shop
-    // For now, return all non-pinned DMs
-    return true;
-  });
 });
 
 // TEMPORARY: Keep old channels computed for backward compatibility
@@ -904,4 +830,3 @@ const insertEmoji = (emoji: string) => {
     </template>
   </UModal>
 </template>
-```
