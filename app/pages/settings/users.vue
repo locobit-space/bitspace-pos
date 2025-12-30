@@ -578,6 +578,7 @@
                   v-model="userForm.name"
                   :placeholder="$t('settings.users.namePlaceholder')"
                   icon="i-heroicons-user"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -588,6 +589,7 @@
                   type="email"
                   :placeholder="$t('settings.users.emailPlaceholder')"
                   icon="i-heroicons-envelope"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -628,7 +630,7 @@
                     v-model="userForm.npub"
                     :placeholder="$t('settings.users.npubPlaceholder')"
                     icon="i-heroicons-key"
-                    class="font-mono"
+                    class="font-mono w-full"
                   />
                   <template #hint>
                     {{ $t("settings.users.npubHint") }}
@@ -654,6 +656,7 @@
                         : $t('settings.users.passwordPlaceholder')
                     "
                     icon="i-heroicons-lock-closed"
+                    class="w-full"
                   />
                 </UFormField>
                 <UFormField
@@ -668,6 +671,7 @@
                       $t('settings.users.confirmPasswordPlaceholder')
                     "
                     icon="i-heroicons-lock-closed"
+                    class="w-full"
                   />
                 </UFormField>
                 <!-- Password strength indicator -->
@@ -704,6 +708,7 @@
                   maxlength="6"
                   :placeholder="$t('settings.users.pinPlaceholder')"
                   icon="i-heroicons-hashtag"
+                  class="w-full"
                 />
                 <template #hint>
                   {{ $t("settings.users.pinHint") }}

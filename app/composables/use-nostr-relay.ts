@@ -10,8 +10,19 @@ import type { RelayConfig } from "~/types";
 
 const STORAGE_KEY = "bitspace_relays";
 
-// Default relays - Production relays
-const DEFAULT_RELAYS: RelayConfig[] = [
+const _DEFAULT_DEV: RelayConfig[] = [
+  {
+    url: "wss://relay.bnos.space",
+    read: true,
+    write: true,
+    outbox: false,
+    isPrimary: true,
+  },
+  // Uncomment for local development:
+  // { url: 'ws://localhost:8080', read: true, write: true, outbox: false, isPrimary: false },
+];
+
+const _DEFAULT_PROD: RelayConfig[] = [
   {
     url: "wss://relay.bnos.space",
     read: true,
@@ -54,9 +65,11 @@ const DEFAULT_RELAYS: RelayConfig[] = [
     outbox: false,
     isPrimary: false,
   },
-  // Uncomment for local development:
-  // { url: 'ws://localhost:8080', read: true, write: true, outbox: false, isPrimary: false },
 ];
+
+// Default relays - Production relays
+const DEFAULT_RELAYS: RelayConfig[] =
+  process.env.MODE === "development" ? _DEFAULT_DEV : _DEFAULT_PROD;
 
 // ============================================
 // 🔄 SHARED STATE (singleton pattern)

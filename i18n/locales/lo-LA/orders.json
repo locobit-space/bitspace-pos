@@ -85,7 +85,18 @@
     "offline": "ອອບລາຍ",
     "points": "ຄະແນນ",
     "created": "ສ້າງ",
-    "invoice": "ໃບແຈ້ງໜີ້"
+    "invoice": "ໃບແຈ້ງໜີ້",
+    "invoiceDate": "ວັນທີໃບແຈ້ງໜີ້",
+    "dueDate": "ກຳນົດຊຳລະ",
+    "paymentTerms": "ເງື່ອນໄຂການຊຳລະ",
+    "salesPerson": "ພະນັກງານຂາຍ",
+    "balanceDue": "ຍອດຄ້າງຊຳລະ",
+    "shipping": "ຄ່າຂົນສົ່ງ",
+    "billTo": "ເກັບເງິນຈາກ",
+    "taxId": "ເລກປະຈຳຕົວຜູ້ເສຍອາກອນ",
+    "net_30": "Net 30",
+    "sample_terms": "ກະລຸນາຊຳລະພາຍໃນ 30 ວັນ.",
+    "sample_notes": "ຂອບໃຈທີ່ໃຊ້ບໍລິການ."
   },
   "kitchen": {
     "new": "ໃໝ່",

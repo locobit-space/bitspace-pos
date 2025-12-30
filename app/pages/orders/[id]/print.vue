@@ -4,7 +4,7 @@
     <div class="print:hidden mb-6 flex justify-between items-center p-4">
       <div class="flex items-center gap-4">
         <UButton
-          :label="$t('bill.back_to_bills')"
+          :label="$t('orders.backToOrders')"
           icon="i-heroicons-arrow-left"
           variant="outline"
           @click="$router.go(-1)"
@@ -12,12 +12,12 @@
       </div>
       <div class="flex items-center gap-2">
         <UButton
-          :label="$t('bill.print')"
+          :label="$t('common.print')"
           icon="i-heroicons-printer"
           @click="printBill"
         />
         <UButton
-          :label="$t('bill.download_pdf')"
+          :label="$t('common.export', { type: 'PDF' })"
           icon="i-heroicons-document-arrow-down"
           variant="outline"
           @click="downloadPDF"
@@ -26,10 +26,18 @@
     </div>
 
     <!-- Print Content -->
-    <UCard class="bill-print-content max-w-4xl mx-auto">
+    <div v-if="isLoading" class="flex justify-center py-12">
+      <UIcon
+        name="i-heroicons-arrow-path"
+        class="w-10 h-10 animate-spin text-primary-500"
+      />
+    </div>
+    <UCard v-else class="bill-print-content max-w-4xl mx-auto">
       <div class="space-y-6">
         <!-- Header Section -->
-        <div class="flex justify-between items-start border-b border-gray-200 dark:border-slate-800 pb-6">
+        <div
+          class="flex justify-between items-start border-b border-gray-200 dark:border-slate-800 pb-6"
+        >
           <div class="flex items-start gap-6">
             <img
               v-if="companyInfo.logo"
@@ -38,17 +46,29 @@
               class="h-16 w-16 object-contain"
             />
             <div>
-              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ companyInfo.name }}</h1>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ companyInfo.address }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('common.phone') }}: {{ companyInfo.phone }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('common.email') }}: {{ companyInfo.email }}</p>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ companyInfo.name }}
+              </h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {{ companyInfo.address }}
+              </p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ $t("common.phone") }}: {{ companyInfo.phone }}
+              </p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ $t("common.email") }}: {{ companyInfo.email }}
+              </p>
             </div>
           </div>
           <div class="text-right">
-            <h2 class="text-2xl font-bold text-primary-600">{{ $t('bill.invoice') }}</h2>
-            <p class="text-lg font-semibold mt-1 text-gray-900 dark:text-white">#{{ billData.invoiceNumber }}</p>
+            <h2 class="text-2xl font-bold text-primary-600">
+              {{ $t("orders.invoice") }}
+            </h2>
+            <p class="text-lg font-semibold mt-1 text-gray-900 dark:text-white">
+              #{{ billData.invoiceNumber }}
+            </p>
             <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {{ $t('bill.branch') }}: {{ getCurrentBranch?.name }}
+              {{ $t("common.branch") }}: {{ currentBranch?.name }}
             </p>
           </div>
         </div>
@@ -57,41 +77,75 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Customer Information -->
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">{{ $t('bill.bill_to') }}</h3>
+            <h3
+              class="text-lg font-semibold text-gray-900 dark:text-white mb-3"
+            >
+              {{ $t("orders.billTo") }}
+            </h3>
             <div class="space-y-1">
-              <p class="font-medium text-gray-900 dark:text-white">{{ billData.customer.name }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ billData.customer.address }}</p>
+              <p class="font-medium text-gray-900 dark:text-white">
+                {{ billData.customer.name }}
+              </p>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                {{ $t('common.phone') }}: {{ billData.customer.phone }}
+                {{ billData.customer.address }}
               </p>
-              <p class="text-sm text-gray-600 dark:text-gray-400" v-if="billData.customer.email">
-                {{ $t('common.email') }}: {{ billData.customer.email }}
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ $t("common.phone") }}: {{ billData.customer.phone }}
               </p>
-              <p class="text-sm text-gray-600 dark:text-gray-400" v-if="billData.customer.taxId">
-                {{ $t('bill.tax_id') }}: {{ billData.customer.taxId }}
+              <p
+                class="text-sm text-gray-600 dark:text-gray-400"
+                v-if="billData.customer.email"
+              >
+                {{ $t("common.email") }}: {{ billData.customer.email }}
+              </p>
+              <p
+                class="text-sm text-gray-600 dark:text-gray-400"
+                v-if="billData.customer.taxId"
+              >
+                {{ $t("orders.taxId") }}: {{ billData.customer.taxId }}
               </p>
             </div>
           </div>
 
           <!-- Invoice Details -->
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">{{ $t('bill.invoice_details') }}</h3>
+            <h3
+              class="text-lg font-semibold text-gray-900 dark:text-white mb-3"
+            >
+              {{ $t("orders.orderInfo") }}
+            </h3>
             <div class="space-y-2">
               <div class="flex justify-between">
-                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.invoice_date') }}:</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ formatDate(billData.date) }}</span>
+                <span class="text-gray-600 dark:text-gray-400"
+                  >{{ $t("orders.invoiceDate") }}:</span
+                >
+                <span class="font-medium text-gray-900 dark:text-white">{{
+                  formatDate(billData.date)
+                }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.due_date') }}:</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ formatDate(billData.dueDate) }}</span>
+                <span class="text-gray-600 dark:text-gray-400"
+                  >{{ $t("orders.dueDate") }}:</span
+                >
+                <span class="font-medium text-gray-900 dark:text-white">{{
+                  formatDate(billData.dueDate)
+                }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.payment_terms') }}:</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ billData.paymentTerms }}</span>
+                <span class="text-gray-600 dark:text-gray-400"
+                  >{{ $t("orders.paymentTerms") }}:</span
+                >
+                <span class="font-medium text-gray-900 dark:text-white">{{
+                  billData.paymentTerms
+                }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.sales_person') }}:</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ billData.salesPerson }}</span>
+                <span class="text-gray-600 dark:text-gray-400"
+                  >{{ $t("orders.salesPerson") }}:</span
+                >
+                <span class="font-medium text-gray-900 dark:text-white">{{
+                  billData.salesPerson
+                }}</span>
               </div>
             </div>
           </div>
@@ -99,51 +153,93 @@
 
         <!-- Items Table -->
         <div class="overflow-x-auto">
-          <table class="w-full border-collapse border dark:border-slate-800 border-gray-300">
+          <table
+            class="w-full border-collapse border dark:border-slate-800 border-gray-300"
+          >
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ $t('bill.item') }}
+                <th
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ $t("common.items") }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ $t('bill.quantity') }}
+                <th
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ $t("common.quantity") }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ $t('bill.unit') }}
+                <th
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ $t("products.unit") }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ $t('bill.unit_price') }}
+                <th
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ $t("orders.unitPrice") }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ $t('bill.discount') }}
+                <th
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ $t("common.discount") }}
                 </th>
-                <th class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ $t('bill.total') }}
+                <th
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ $t("common.total") }}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(item, index) in billData.items" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3">
+              <tr
+                v-for="(item, index) in billData.items"
+                :key="index"
+                class="hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                <td
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3"
+                >
                   <div>
-                    <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400" v-if="item.description">{{ item.description }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500" v-if="item.sku">{{ $t('bill.sku') }}: {{ item.sku }}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">
+                      {{ item.name }}
+                    </p>
+                    <p
+                      class="text-sm text-gray-600 dark:text-gray-400"
+                      v-if="item.description"
+                    >
+                      {{ item.description }}
+                    </p>
+                    <p
+                      class="text-xs text-gray-500 dark:text-gray-500"
+                      v-if="item.sku"
+                    >
+                      {{ $t("products.sku") }}: {{ item.sku }}
+                    </p>
                   </div>
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-white">
+                <td
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-white"
+                >
                   {{ formatNumber(item.quantity) }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-white">
+                <td
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-white"
+                >
                   {{ item.unit }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-gray-900 dark:text-white">
+                <td
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-gray-900 dark:text-white"
+                >
                   {{ formatCurrency(item.unitPrice) }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-gray-900 dark:text-white">
-                  {{ item.discount > 0 ? formatCurrency(item.discount) : '-' }}
+                <td
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right text-gray-900 dark:text-white"
+                >
+                  {{ item.discount > 0 ? formatCurrency(item.discount) : "-" }}
                 </td>
-                <td class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
+                <td
+                  class="border dark:border-slate-800 border-gray-300 px-4 py-3 text-right font-medium text-gray-900 dark:text-white"
+                >
                   {{ formatCurrency(item.total) }}
                 </td>
               </tr>
@@ -154,64 +250,136 @@
         <!-- Summary Section -->
         <div class="flex justify-end">
           <div class="w-full md:w-96 space-y-3">
-            <div class="flex justify-between py-2  border-t dark:border-slate-800 border-gray-200">
-              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.subtotal') }}:</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatCurrency(billData.subtotal) }}</span>
+            <div
+              class="flex justify-between py-2 border-t dark:border-slate-800 border-gray-200"
+            >
+              <span class="text-gray-600 dark:text-gray-400"
+                >{{ $t("common.subtotal") }}:</span
+              >
+              <span class="font-medium text-gray-900 dark:text-white">{{
+                formatCurrency(billData.subtotal)
+              }}</span>
             </div>
             <div v-if="billData.discount > 0" class="flex justify-between py-2">
-              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.discount') }}:</span>
-              <span class="font-medium text-red-600">-{{ formatCurrency(billData.discount) }}</span>
+              <span class="text-gray-600 dark:text-gray-400"
+                >{{ $t("common.discount") }}:</span
+              >
+              <span class="font-medium text-red-600"
+                >-{{ formatCurrency(billData.discount) }}</span
+              >
             </div>
             <div v-if="billData.tax > 0" class="flex justify-between py-2">
-              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.tax') }} ({{ billData.taxRate }}%):</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatCurrency(billData.tax) }}</span>
+              <span class="text-gray-600 dark:text-gray-400"
+                >{{ $t("common.tax") }} ({{ billData.taxRate }}%):</span
+              >
+              <span class="font-medium text-gray-900 dark:text-white">{{
+                formatCurrency(billData.tax)
+              }}</span>
             </div>
             <div v-if="billData.shipping > 0" class="flex justify-between py-2">
-              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.shipping') }}:</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatCurrency(billData.shipping) }}</span>
+              <span class="text-gray-600 dark:text-gray-400"
+                >{{ $t("orders.shipping") }}:</span
+              >
+              <span class="font-medium text-gray-900 dark:text-white">{{
+                formatCurrency(billData.shipping)
+              }}</span>
             </div>
-            <div class="flex justify-between py-3 border-t-2 dark:border-slate-800 border-gray-300">
-              <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('bill.total') }}:</span>
-              <span class="text-lg font-bold text-primary-600">{{ formatCurrency(billData.total) }}</span>
+            <div
+              class="flex justify-between py-3 border-t-2 dark:border-slate-800 border-gray-300"
+            >
+              <span class="text-lg font-semibold text-gray-900 dark:text-white"
+                >{{ $t("common.total") }}:</span
+              >
+              <span class="text-lg font-bold text-primary-600">{{
+                formatCurrency(billData.total)
+              }}</span>
             </div>
-            <div v-if="billData.amountPaid > 0" class="flex justify-between py-2">
-              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.amount_paid') }}:</span>
-              <span class="font-medium text-green-600">{{ formatCurrency(billData.amountPaid) }}</span>
+            <div
+              v-if="billData.amountPaid > 0"
+              class="flex justify-between py-2"
+            >
+              <span class="text-gray-600 dark:text-gray-400"
+                >{{ $t("orders.paid") }}:</span
+              >
+              <span class="font-medium text-green-600">{{
+                formatCurrency(billData.amountPaid)
+              }}</span>
             </div>
             <div v-if="billData.balance > 0" class="flex justify-between py-2">
-              <span class="text-gray-600 dark:text-gray-400">{{ $t('bill.balance_due') }}:</span>
-              <span class="font-bold text-red-600">{{ formatCurrency(billData.balance) }}</span>
+              <span class="text-gray-600 dark:text-gray-400"
+                >{{ $t("orders.balanceDue") }}:</span
+              >
+              <span class="font-bold text-red-600">{{
+                formatCurrency(billData.balance)
+              }}</span>
             </div>
           </div>
         </div>
 
         <!-- Payment Information -->
-        <div v-if="billData.paymentMethod" class="border-t dark:border-slate-800 border-gray-200 pt-6">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">{{ $t('bill.payment_information') }}</h3>
+        <div
+          v-if="billData.paymentMethod"
+          class="border-t dark:border-slate-800 border-gray-200 pt-6"
+        >
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            {{ $t("orders.paymentMethod") }}
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p><span class="text-gray-600 dark:text-gray-400">{{ $t('bill.payment_method') }}:</span> <span class="font-medium text-gray-900 dark:text-white">{{ billData.paymentMethod }}</span></p>
-              <p v-if="billData.paymentReference"><span class="text-gray-600 dark:text-gray-400">{{ $t('bill.reference') }}:</span> <span class="font-medium text-gray-900 dark:text-white">{{ billData.paymentReference }}</span></p>
+              <p>
+                <span class="font-medium text-gray-900 dark:text-white">
+                  {{ billData.paymentMethod || "Cash" }}
+                </span>
+              </p>
+              <p v-if="billData.paymentReference">
+                <span class="text-gray-600 dark:text-gray-400">Reference:</span>
+                <span class="font-medium text-gray-900 dark:text-white">
+                  {{ billData.paymentReference }}
+                </span>
+              </p>
             </div>
           </div>
         </div>
 
         <!-- Notes and Terms -->
-        <div v-if="billData.notes || billData.terms" class="border-t dark:border-slate-800 border-gray-200 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div
+          v-if="billData.notes || billData.terms"
+          class="border-t dark:border-slate-800 border-gray-200 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
           <div v-if="billData.notes">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ $t('bill.notes') }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{{ billData.notes }}</p>
+            <h3
+              class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+            >
+              {{ $t("common.notes") }}
+            </h3>
+            <p
+              class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line"
+            >
+              {{ billData.notes }}
+            </p>
           </div>
           <div v-if="billData.terms">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ $t('bill.terms_conditions') }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{{ billData.terms }}</p>
+            <h3
+              class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+            >
+              {{ $t("orders.paymentTerms") }}
+            </h3>
+            <p
+              class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line"
+            >
+              {{ billData.terms }}
+            </p>
           </div>
         </div>
 
         <!-- Footer -->
-        <div class="border-t border-gray-200 dark:border-slate-800 pt-6 text-center text-sm text-gray-500">
-          <p>{{ $t('bill.thank_you_business') }}</p>
-          <p class="mt-2">{{ $t('bill.generated_on') }}: {{ formatDateTime(new Date()) }}</p>
+        <div
+          class="border-t border-gray-200 dark:border-slate-800 pt-6 text-center text-sm text-gray-500"
+        >
+          <p>{{ $t("receipt.thankYou") }}</p>
+          <p class="mt-2">
+            {{ $t("common.created") }}: {{ formatDateTime(new Date()) }}
+          </p>
         </div>
       </div>
     </UCard>
@@ -220,201 +388,220 @@
 
 <script setup lang="ts">
 interface CustomerInfo {
-  name: string
-  address: string
-  phone: string
-  email?: string
-  taxId?: string
+  name: string;
+  address: string;
+  phone: string;
+  email?: string;
+  taxId?: string;
 }
 
 interface BillItem {
-  name: string
-  description?: string
-  sku?: string
-  quantity: number
-  unit: string
-  unitPrice: number
-  discount: number
-  total: number
+  name: string;
+  description?: string;
+  sku?: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  discount: number;
+  total: number;
 }
 
 interface BillData {
-  invoiceNumber: string
-  date: string
-  dueDate: string
-  paymentTerms: string
-  salesPerson: string
-  customer: CustomerInfo
-  items: BillItem[]
-  subtotal: number
-  discount: number
-  tax: number
-  taxRate: number
-  shipping: number
-  total: number
-  amountPaid: number
-  balance: number
-  paymentMethod?: string
-  paymentReference?: string
-  notes?: string
-  terms?: string
+  invoiceNumber: string;
+  date: string;
+  dueDate: string;
+  paymentTerms: string;
+  salesPerson: string;
+  customer: CustomerInfo;
+  items: BillItem[];
+  subtotal: number;
+  discount: number;
+  tax: number;
+  taxRate: number;
+  shipping: number;
+  total: number;
+  amountPaid: number;
+  balance: number;
+  paymentMethod?: string;
+  paymentReference?: string;
+  notes?: string;
+  terms?: string;
 }
 
 interface Branch {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface CompanyInfo {
-  name: string
-  logo?: string
-  address: string
-  phone: string
-  email: string
+  name: string;
+  logo?: string;
+  address: string;
+  phone: string;
+  email: string;
 }
 
-const { t } = useI18n()
-const route = useRoute()
-
-// Reactive data
-const selectedBranch = ref<string>('')
-
-// Mock data - replace with actual data fetching
-const branches = ref<Branch[]>([
-  { id: '1', name: t('branch.main_branch') },
-  { id: '2', name: t('branch.secondary_branch') },
-  { id: '3', name: t('branch.warehouse') }
-])
-
-const companyInfo = ref<CompanyInfo>({
-  name: 'Your Company Name',
-  logo: '/logo.png',
-  address: '123 Business Street, City, Province 12345',
-  phone: '+856 20 12345678',
-  email: 'info@yourcompany.com'
-})
-
-const billData = ref<BillData>({
-  invoiceNumber: 'INV-2024-001',
-  date: '2024-01-15',
-  dueDate: '2024-02-15',
-  paymentTerms: t('bill.net_30'),
-  salesPerson: 'John Doe',
-  customer: {
-    name: 'Customer Name',
-    address: '456 Customer Street, City, Province 54321',
-    phone: '+856 20 87654321',
-    email: 'customer@email.com',
-    taxId: 'TAX123456789'
-  },
-  items: [
-    {
-      name: 'Product A',
-      description: 'High quality product with excellent features',
-      sku: 'SKU-001',
-      quantity: 2,
-      unit: t('unit.pieces'),
-      unitPrice: 150000,
-      discount: 0,
-      total: 300000
-    },
-    {
-      name: 'Product B',
-      description: 'Premium service package',
-      sku: 'SKU-002',
-      quantity: 1,
-      unit: t('unit.service'),
-      unitPrice: 500000,
-      discount: 50000,
-      total: 450000
-    },
-    {
-      name: 'Product C',
-      sku: 'SKU-003',
-      quantity: 5,
-      unit: t('unit.kg'),
-      unitPrice: 25000,
-      discount: 0,
-      total: 125000
-    }
-  ],
-  subtotal: 875000,
-  discount: 50000,
-  tax: 82500,
-  taxRate: 10,
-  shipping: 25000,
-  total: 932500,
-  amountPaid: 500000,
-  balance: 432500,
-  paymentMethod: t('payment.bank_transfer'),
-  paymentReference: 'TXN-2024-001',
-  notes: t('bill.sample_notes'),
-  terms: t('bill.sample_terms')
-})
+const { t } = useI18n();
+const route = useRoute();
+const receiptSettings = useReceiptSettings();
+const shop = useShop();
 
 // Computed
-const getCurrentBranch = computed(() => {
-  return branches.value.find(branch => branch.id === selectedBranch.value)
-})
+const currentBranch = computed(() => shop.currentBranch.value);
+
+const companyInfo = computed<CompanyInfo>(() => ({
+  name: receiptSettings.merchantName.value,
+  logo: receiptSettings.showLogo.value
+    ? receiptSettings.logoUrl.value
+    : undefined,
+  address: receiptSettings.merchantAddress.value,
+  phone: receiptSettings.merchantPhone.value,
+  email: receiptSettings.merchantEmail.value || "",
+}));
+
+const billData = ref<BillData>({
+  invoiceNumber: "",
+  date: new Date().toISOString(),
+  dueDate: "",
+  paymentTerms: "",
+  salesPerson: "",
+  customer: {
+    name: "",
+    address: "",
+    phone: "",
+    email: "",
+    taxId: "",
+  },
+  items: [],
+  subtotal: 0,
+  discount: 0,
+  tax: 0,
+  taxRate: 0,
+  shipping: 0,
+  total: 0,
+  amountPaid: 0,
+  balance: 0,
+  paymentMethod: "",
+  paymentReference: "",
+  notes: "",
+  terms: "",
+});
 
 // Methods
 const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK',
-    minimumFractionDigits: 0
-  }).format(amount)
-}
+  return new Intl.NumberFormat("lo-LA", {
+    style: "currency",
+    currency: "LAK",
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
 
 const formatNumber = (number: number): string => {
-  return new Intl.NumberFormat('lo-LA').format(number)
-}
+  return new Intl.NumberFormat("lo-LA").format(number);
+};
 
 const formatDate = (dateString: string): string => {
-  return new Intl.DateTimeFormat('lo-LA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).format(new Date(dateString))
-}
+  return new Intl.DateTimeFormat("lo-LA", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(dateString));
+};
 
 const formatDateTime = (date: Date): string => {
-  return new Intl.DateTimeFormat('lo-LA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
-}
+  return new Intl.DateTimeFormat("lo-LA", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
 
 const printBill = (): void => {
-  window.print()
-}
+  window.print();
+};
 
 const downloadPDF = (): void => {
   // Implement PDF download functionality
   // You might want to use libraries like jsPDF or html2pdf
-  console.log('Download PDF functionality to be implemented')
-}
+  console.log("Download PDF functionality to be implemented");
+};
 
 // Initialize
-onMounted(() => {
-  if (branches.value.length > 0) {
-    selectedBranch.value = branches.value[0].id
+const isLoading = ref(true);
+const ordersStore = useOrders();
+
+onMounted(async () => {
+  const orderId = route.params.id as string;
+  if (orderId) {
+    isLoading.value = true;
+    try {
+      const order = await ordersStore.getOrderById(orderId);
+      if (order) {
+        // Map Order to BillData
+        billData.value = {
+          invoiceNumber: order.code || order.id.slice(0, 8).toUpperCase(),
+          date: order.date,
+          // Default due date to 30 days if not set (business logic can be improved)
+          dueDate: new Date(
+            new Date(order.date).getTime() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          paymentTerms: t("orders.net_30"), // Could be dynamic based on customer settings
+          salesPerson: "Staff", // Could be dynamic based on logged in user or order metadata
+          customer: {
+            name: order.customer || "Guest Customer",
+            address: order.deliveryAddress || "", // Map delivery address if available
+            phone: order.customerPhone || "",
+            email: order.customerEmail || "",
+            taxId: "", // Not currently in Order type
+          },
+          items: order.items.map((item) => ({
+            name: item.product.name,
+            description: item.notes,
+            sku: item.product.sku,
+            quantity: item.quantity,
+            unit: "unit", // Default, should ideally come from product
+            unitPrice: item.price,
+            discount: 0, // Item level discount not explicitly in OrderItem yet
+            total: item.total,
+          })),
+          subtotal: order.total - (order.tax || 0) + (order.discount || 0),
+          discount: order.discount || 0,
+          tax: order.tax || 0,
+          taxRate: 0, // Derived or fixed
+          shipping: 0,
+          total: order.total,
+          amountPaid: order.status === "completed" ? order.total : 0,
+          balance: order.status === "completed" ? 0 : order.total,
+          paymentMethod: order.paymentMethod,
+          paymentReference:
+            order.paymentProof?.paymentHash || order.paymentProof?.id,
+          notes: order.notes,
+          terms: "", // Default terms
+        };
+      } else {
+        console.error("Order not found");
+        // navigateTo('/orders') // Optional: redirect if not found
+      }
+    } catch (e) {
+      console.error("Failed to fetch order", e);
+    } finally {
+      isLoading.value = false;
+    }
   }
-})
+});
 
 // Meta
 definePageMeta({
-  title: 'Bill Print',
-  layout: 'blank',
-  middleware: ['auth'],
-})
+  title: "Bill Print",
+  layout: "blank",
+  middleware: ["auth"],
+});
 
 useHead({
-  title: `${t('bill.invoice')} #${billData.value.invoiceNumber}`
-})
+  title: `${t("orders.invoice")} #${billData.value.invoiceNumber}`,
+});
 </script>
 
 <style scoped>
@@ -422,39 +609,39 @@ useHead({
   .bill-print-container {
     padding: 0;
   }
-  
+
   .bill-print-content {
     border: none;
     box-shadow: none;
     border-radius: 0;
     background: white !important;
   }
-  
+
   /* Force light mode colors for print */
   .bill-print-content * {
     color: #1f2937 !important;
     background: transparent !important;
     border-color: #e5e7eb !important;
   }
-  
+
   .bill-print-content table {
     background: white !important;
   }
-  
+
   .bill-print-content thead {
     background: #f9fafb !important;
   }
-  
+
   .bill-print-content h1,
   .bill-print-content h2,
   .bill-print-content h3 {
     color: #111827 !important;
   }
-  
+
   .text-primary-600 {
     color: #2563eb !important;
   }
-  
+
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;

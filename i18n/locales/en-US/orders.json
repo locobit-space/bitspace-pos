@@ -91,7 +91,18 @@
     "offline": "Offline",
     "points": "pts",
     "created": "Created",
-    "invoice": "Invoice"
+    "invoice": "Invoice",
+    "invoiceDate": "Invoice Date",
+    "dueDate": "Due Date",
+    "paymentTerms": "Payment Terms",
+    "salesPerson": "Sales Person",
+    "balanceDue": "Balance Due",
+    "shipping": "Shipping",
+    "billTo": "Bill To",
+    "taxId": "Tax ID",
+    "net_30": "Net 30",
+    "sample_terms": "Payment due within 30 days. Please include invoice number on your check.",
+    "sample_notes": "Thank you for your business."
   },
   "kitchen": {
     "new": "New",
