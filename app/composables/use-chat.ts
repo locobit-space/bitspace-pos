@@ -261,6 +261,12 @@ export function useChat() {
   async function saveConversationToLocal(
     conversation: ChatConversation
   ): Promise<void> {
+    // Validate required fields before saving
+    if (!conversation.id || typeof conversation.id !== "string") {
+      console.error("[Chat] Cannot save conversation without valid ID:", conversation);
+      throw new Error("Invalid conversation ID");
+    }
+
     const record: ChatConversationRecord = {
       id: conversation.id,
       type: conversation.type,
@@ -1590,8 +1596,28 @@ export function useChat() {
       {
         async onevent(event: NostrEvent) {
           try {
+            // Check if content is encrypted
+            const isEncrypted = event.tags.find((t) => t[0] === "encrypted" && t[1] === "true");
+
             // Parse conversation from event
-            const data = JSON.parse(event.content);
+            let data;
+            if (isEncrypted) {
+              // Decrypt the content first
+              data = await nostrData.decryptData(event.content);
+              if (!data) {
+                console.warn("[Chat] Failed to decrypt conversation data");
+                return;
+              }
+            } else {
+              data = JSON.parse(event.content);
+            }
+
+            // Validate required fields
+            if (!data.id || typeof data.id !== "string") {
+              console.warn("[Chat] Invalid conversation data - missing or invalid ID:", data);
+              return;
+            }
+
             const existingIndex = conversations.value.findIndex(
               (c) => c.id === data.id
             );
