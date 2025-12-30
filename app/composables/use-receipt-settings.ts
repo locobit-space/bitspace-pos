@@ -77,7 +77,6 @@ export interface SavedReceiptSettings {
 // ============================================
 
 const RECEIPT_SETTINGS_KEY = "pos_receipt_settings";
-const RECEIPT_TEMPLATES_KEY = "pos_receipt_templates";
 
 // Default settings
 const defaultSettings: SavedReceiptSettings = {
