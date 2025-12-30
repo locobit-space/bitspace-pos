@@ -19,6 +19,14 @@ import CryptoJS from "crypto-js";
 // Types
 // ============================================
 
+export interface MessageReaction {
+  emoji: string;
+  pubkey: string;
+  name: string;
+  timestamp: number;
+  eventId: string;
+}
+
 export interface ChatMessage {
   id: string;
   conversationId: string;
@@ -30,7 +38,10 @@ export interface ChatMessage {
   timestamp: number;
   status: "sending" | "sent" | "delivered" | "read" | "failed";
   replyToId?: string;
+  replyToContent?: string;
+  replyToSender?: string;
   nostrEventId?: string;
+  reactions?: Map<string, MessageReaction[]>;
 }
 
 export interface ChatConversation {
@@ -799,7 +810,8 @@ export function useChat() {
 
   async function sendChannelMessage(
     channelId: string,
-    content: string
+    content: string,
+    replyToId?: string
   ): Promise<boolean> {
     const keys = getUserKeys();
     const currentUser = usersStore.currentUser.value;
@@ -816,6 +828,20 @@ export function useChat() {
     isSending.value = true;
     const messageId = generateMessageId();
 
+    // Get reply context if replying
+    let replyToContent: string | undefined;
+    let replyToSender: string | undefined;
+    if (replyToId) {
+      const conversationMessages = messages.value.get(channelId);
+      const replyToMessage = conversationMessages?.find(
+        (m) => m.id === replyToId || m.nostrEventId === replyToId
+      );
+      if (replyToMessage) {
+        replyToContent = replyToMessage.content;
+        replyToSender = replyToMessage.senderName;
+      }
+    }
+
     const message: ChatMessage = {
       id: messageId,
       conversationId: channelId,
@@ -826,6 +852,9 @@ export function useChat() {
       content: content, // We store decrypted locally
       timestamp: Date.now(),
       status: "sending",
+      replyToId,
+      replyToContent,
+      replyToSender,
     };
 
     // Optimistic update
@@ -842,6 +871,11 @@ export function useChat() {
         ["h", channelId], // NIP-29: group/channel reference
         ["e", channelId, "", "root"], // Backward compatibility
       ];
+
+      // Add reply tags (NIP-10 threading)
+      if (replyToId) {
+        tags.push(["e", replyToId, "", "reply"]); // Reply to specific message
+      }
 
       // Add company code hash for team filtering (CRITICAL!)
       if (company.companyCodeHash.value) {
@@ -1071,6 +1105,201 @@ export function useChat() {
   });
 
   // ============================================
+  // Message Reactions (NIP-25)
+  // ============================================
+
+  /**
+   * Add reaction to a message
+   */
+  async function addReaction(
+    messageId: string,
+    emoji: string,
+    conversationId: string
+  ): Promise<boolean> {
+    const currentUser = usersStore.currentUser.value;
+    if (!currentUser?.pubkeyHex || !$nostr?.pool) return false;
+
+    try {
+      const keys = getUserKeys();
+      if (!keys?.privkey) return false;
+
+      // Find the message and get its Nostr event ID
+      const conversationMessages = messages.value.get(conversationId);
+      const message = conversationMessages?.find((m) => m.id === messageId);
+
+      if (!message?.nostrEventId) {
+        console.warn("[Chat] Cannot react: message has no nostrEventId");
+        return false;
+      }
+
+      const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey);
+      const privateKey = hexToBytes(privateKeyHex);
+
+      // Create reaction event (kind 7 - NIP-25)
+      const tags: string[][] = [
+        ["e", message.nostrEventId], // Reference to the Nostr event ID (critical for cross-device sync)
+        ["p", message.senderPubkey], // Tag the message author
+      ];
+
+      const eventTemplate = {
+        kind: 7, // Reaction
+        content: emoji,
+        created_at: Math.floor(Date.now() / 1000),
+        tags,
+      };
+
+      const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const pubs = $nostr.pool.publish(relayUrls, signedEvent);
+      await Promise.race(pubs).catch(() => null);
+
+      // Optimistically update local state
+      if (!message.reactions) {
+        message.reactions = new Map();
+      }
+
+      const emojiReactions = message.reactions.get(emoji) || [];
+      const existingIndex = emojiReactions.findIndex(
+        (r) => r.pubkey === currentUser.pubkeyHex
+      );
+
+      if (existingIndex === -1) {
+        emojiReactions.push({
+          emoji,
+          pubkey: currentUser.pubkeyHex,
+          name: currentUser.name,
+          timestamp: Date.now(),
+          eventId: signedEvent.id,
+        });
+        message.reactions.set(emoji, emojiReactions);
+      }
+
+      console.log("[Chat] Reaction added:", emoji, "to message", messageId.slice(0, 8));
+      return true;
+    } catch (e) {
+      console.error("[Chat] Failed to add reaction:", e);
+      return false;
+    }
+  }
+
+  /**
+   * Remove reaction from a message
+   */
+  async function removeReaction(
+    messageId: string,
+    emoji: string,
+    conversationId: string
+  ): Promise<boolean> {
+    const currentUser = usersStore.currentUser.value;
+    if (!currentUser?.pubkeyHex) return false;
+
+    try {
+      // Remove from local state
+      const conversationMessages = messages.value.get(conversationId);
+      const message = conversationMessages?.find((m) => m.id === messageId);
+      if (message?.reactions) {
+        const emojiReactions = message.reactions.get(emoji);
+        if (emojiReactions) {
+          const filtered = emojiReactions.filter(
+            (r) => r.pubkey !== currentUser.pubkeyHex
+          );
+          if (filtered.length === 0) {
+            message.reactions.delete(emoji);
+          } else {
+            message.reactions.set(emoji, filtered);
+          }
+        }
+      }
+
+      console.log("[Chat] Reaction removed:", emoji, "from message", messageId.slice(0, 8));
+      return true;
+    } catch (e) {
+      console.error("[Chat] Failed to remove reaction:", e);
+      return false;
+    }
+  }
+
+  /**
+   * Get reactions for a message
+   */
+  function getMessageReactions(messageId: string, conversationId: string): Map<string, MessageReaction[]> {
+    const conversationMessages = messages.value.get(conversationId);
+    const message = conversationMessages?.find((m) => m.id === messageId);
+    return message?.reactions || new Map();
+  }
+
+  // ============================================
+  // Message Search
+  // ============================================
+
+  /**
+   * Search messages across conversations
+   */
+  async function searchMessages(query: string): Promise<ChatMessage[]> {
+    if (!query.trim()) return [];
+
+    try {
+      const lowerQuery = query.toLowerCase();
+      const results: ChatMessage[] = [];
+
+      // Search in IndexedDB
+      const allMessages = await db.chatMessages.toArray();
+
+      for (const record of allMessages) {
+        if (record.content.toLowerCase().includes(lowerQuery) ||
+            record.senderName.toLowerCase().includes(lowerQuery)) {
+          results.push({
+            id: record.id,
+            conversationId: record.conversationId,
+            senderPubkey: record.senderPubkey,
+            senderName: record.senderName,
+            senderAvatar: record.senderAvatar,
+            recipientPubkey: record.recipientPubkey,
+            content: record.content,
+            timestamp: record.timestamp,
+            status: record.status as any,
+            replyToId: record.replyToId,
+            nostrEventId: record.nostrEventId,
+          });
+        }
+      }
+
+      // Sort by timestamp (newest first)
+      results.sort((a, b) => b.timestamp - a.timestamp);
+
+      console.log("[Chat] Search found", results.length, "results for:", query);
+      return results.slice(0, 50); // Limit to 50 results
+    } catch (e) {
+      console.error("[Chat] Search failed:", e);
+      return [];
+    }
+  }
+
+  /**
+   * Search in active conversation
+   */
+  async function searchInConversation(conversationId: string, query: string): Promise<ChatMessage[]> {
+    if (!query.trim()) return [];
+
+    try {
+      const lowerQuery = query.toLowerCase();
+      const conversationMessages = messages.value.get(conversationId) || [];
+
+      const results = conversationMessages.filter(
+        (msg) =>
+          msg.content.toLowerCase().includes(lowerQuery) ||
+          msg.senderName.toLowerCase().includes(lowerQuery)
+      );
+
+      console.log("[Chat] Conversation search found", results.length, "results");
+      return results;
+    } catch (e) {
+      console.error("[Chat] Conversation search failed:", e);
+      return [];
+    }
+  }
+
+  // ============================================
   // Real-time Subscription
   // ============================================
 
@@ -1100,6 +1329,14 @@ export function useChat() {
     //Filter 2: Team Channels (with company code hash)
     const filters: any[] = [dmFilter];
 
+    // Reactions on my messages (DMs and channels)
+    const dmReactionsFilter = {
+      kinds: [7], // Reactions
+      "#p": [currentPubkey], // Reactions on messages I sent or to me
+      since: Math.floor(Date.now() / 1000) - 86400,
+    };
+    filters.push(dmReactionsFilter);
+
     // If team mode, subscribe to team channel messages
     if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
       // Primary filter: by company code tag (for relays that support #c)
@@ -1117,6 +1354,14 @@ export function useChat() {
         since: Math.floor(Date.now() / 1000),
       };
       filters.push(typingFilter);
+
+      // Reactions for team messages
+      const reactionsFilter = {
+        kinds: [7], // Reactions (NIP-25)
+        "#c": [company.companyCodeHash.value],
+        since: Math.floor(Date.now() / 1000) - 86400,
+      };
+      filters.push(reactionsFilter);
 
       // Fallback filter: subscribe to all kind 9 messages (for relays that don't support #c)
       // This catches all group messages and we filter by company code in handleIncomingMessage
@@ -1659,6 +1904,79 @@ export function useChat() {
         }
         return;
       }
+
+      // HANDLE REACTION (Kind 7 - NIP-25)
+      else if (event.kind === 7) {
+        try {
+          const emoji = event.content;
+          const messageId = event.tags.find((t) => t[0] === "e")?.[1];
+
+          if (!messageId) {
+            console.warn("[Chat] Reaction without message reference");
+            return;
+          }
+
+          // Find the message in all conversations
+          let targetMessage: ChatMessage | undefined;
+          let targetConversationId: string | undefined;
+
+          for (const [conversationId, msgs] of messages.value) {
+            const msg = msgs.find((m) => m.id === messageId || m.nostrEventId === messageId);
+            if (msg) {
+              targetMessage = msg;
+              targetConversationId = conversationId;
+              break;
+            }
+          }
+
+          if (!targetMessage || !targetConversationId) {
+            console.log("[Chat] Reaction for unknown message:", messageId.slice(0, 8));
+            return;
+          }
+
+          // Get sender info
+          const sender = usersStore.users.value.find(
+            (u) => u.pubkeyHex === event.pubkey
+          );
+          const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
+
+          // Initialize reactions if needed
+          if (!targetMessage.reactions) {
+            targetMessage.reactions = new Map();
+          }
+
+          // Get or create emoji reactions array
+          const emojiReactions = targetMessage.reactions.get(emoji) || [];
+
+          // Check if this user already reacted with this emoji
+          const existingIndex = emojiReactions.findIndex(
+            (r) => r.pubkey === event.pubkey
+          );
+
+          if (existingIndex === -1) {
+            emojiReactions.push({
+              emoji,
+              pubkey: event.pubkey,
+              name: senderName,
+              timestamp: event.created_at * 1000,
+              eventId: event.id,
+            });
+            targetMessage.reactions.set(emoji, emojiReactions);
+
+            console.log(
+              "[Chat] Reaction received:",
+              emoji,
+              "from",
+              senderName,
+              "on message",
+              messageId.slice(0, 8)
+            );
+          }
+        } catch (e) {
+          console.error("[Chat] Failed to process reaction:", e);
+        }
+        return;
+      }
     } catch (e) {
       console.error("[Chat] Failed to process incoming message:", e);
     }
@@ -2063,6 +2381,15 @@ export function useChat() {
 
     // Push Notifications
     requestNotificationPermission,
+
+    // Message Reactions
+    addReaction,
+    removeReaction,
+    getMessageReactions,
+
+    // Message Search
+    searchMessages,
+    searchInConversation,
 
     // Utilities
     generateConversationId,

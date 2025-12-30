@@ -16,6 +16,12 @@ const showCreateChannelModal = ref(false);
 const showEmojiPicker = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
 
+// Reactions & Threading state
+const showReactionPicker = ref<string | null>(null); // Message ID for which picker is shown
+const replyingTo = ref<any | null>(null); // Message being replied to
+const searchQuery = ref("");
+const searchResults = ref<any[]>([]);
+
 // Mobile state
 const showMobileConversations = ref(true); // Show conversation list on mobile by default
 const isMobile = ref(false);
@@ -110,10 +116,12 @@ const sendMessage = async () => {
   if (!messageInput.value.trim() || !chat.activeConversation.value) return;
 
   const content = messageInput.value.trim();
+  const replyToId = replyingTo.value?.id;
   messageInput.value = "";
+  replyingTo.value = null; // Clear reply state
 
   if (chat.activeConversation.value.type === "channel") {
-    await chat.sendChannelMessage(chat.activeConversation.value.id, content);
+    await chat.sendChannelMessage(chat.activeConversation.value.id, content, replyToId);
   } else {
     const recipient = chat.activeConversation.value.participants.find(
       (p) => p.pubkey !== useUsers().currentUser.value?.pubkeyHex
@@ -122,6 +130,53 @@ const sendMessage = async () => {
     if (!recipient) return;
 
     await chat.sendMessage(recipient.pubkey, content, recipient.name);
+  }
+};
+
+// Reactions
+const reactionEmojis = ["👍", "❤️", "😂", "🎉", "👏", "🔥"];
+
+const toggleReaction = async (messageId: string, emoji: string) => {
+  if (!chat.activeConversationId.value) return;
+
+  const reactions = chat.getMessageReactions(messageId, chat.activeConversationId.value);
+  const currentUser = useUsers().currentUser.value;
+  const emojiReactions = reactions.get(emoji) || [];
+  const hasReacted = emojiReactions.some((r) => r.pubkey === currentUser?.pubkeyHex);
+
+  if (hasReacted) {
+    await chat.removeReaction(messageId, emoji, chat.activeConversationId.value);
+  } else {
+    await chat.addReaction(messageId, emoji, chat.activeConversationId.value);
+  }
+
+  showReactionPicker.value = null; // Close picker
+};
+
+// Reply to message
+const startReply = (message: any) => {
+  replyingTo.value = message;
+  showReactionPicker.value = null;
+};
+
+const cancelReply = () => {
+  replyingTo.value = null;
+};
+
+// Search
+const performSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    searchResults.value = [];
+    return;
+  }
+
+  if (chat.activeConversationId.value) {
+    searchResults.value = await chat.searchInConversation(
+      chat.activeConversationId.value,
+      searchQuery.value
+    );
+  } else {
+    searchResults.value = await chat.searchMessages(searchQuery.value);
   }
 };
 
@@ -657,42 +712,119 @@ button {
                   {{ message.senderName }}
                 </span>
 
-                <div
-                  class="max-w-[75%] rounded-2xl px-4 py-2"
-                  :class="{
-                    'bg-primary-500 text-white rounded-br-md': isMyMessage(
-                      message.senderPubkey
-                    ),
-                    'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-md':
-                      !isMyMessage(message.senderPubkey),
-                  }"
-                >
-                  <p class="text-sm leading-relaxed whitespace-pre-wrap">
-                    {{ message.content }}
-                  </p>
+                <div class="group relative" :class="{ 'flex flex-col items-end': isMyMessage(message.senderPubkey), 'flex flex-col items-start': !isMyMessage(message.senderPubkey) }">
+                  <!-- Message Bubble -->
                   <div
-                    class="flex items-center gap-1 mt-1 opacity-70"
+                    class="max-w-[75%] rounded-2xl px-4 py-2 relative"
                     :class="{
-                      'justify-end': isMyMessage(message.senderPubkey),
+                      'bg-primary-500 text-white rounded-br-md': isMyMessage(
+                        message.senderPubkey
+                      ),
+                      'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-md':
+                        !isMyMessage(message.senderPubkey),
                     }"
                   >
-                    <span class="text-[10px]">
-                      {{ formatTime(message.timestamp) }}
-                    </span>
-                    <!-- Status icons for sent messages -->
-                    <UIcon
-                      v-if="isMyMessage(message.senderPubkey)"
-                      :name="
-                        message.status === 'read'
-                          ? 'i-heroicons-check-circle-solid'
-                          : message.status === 'sent'
-                          ? 'i-heroicons-check'
-                          : message.status === 'failed'
-                          ? 'i-heroicons-exclamation-circle'
-                          : 'i-heroicons-clock'
-                      "
-                      class="w-3 h-3"
-                    />
+                    <!-- Reply Context -->
+                    <div
+                      v-if="message.replyToContent"
+                      class="mb-2 pb-2 border-l-2 pl-2 opacity-70 text-xs"
+                      :class="{
+                        'border-white': isMyMessage(message.senderPubkey),
+                        'border-gray-400 dark:border-gray-600': !isMyMessage(message.senderPubkey),
+                      }"
+                    >
+                      <div class="font-semibold">{{ message.replyToSender }}</div>
+                      <div class="line-clamp-2">{{ message.replyToContent }}</div>
+                    </div>
+
+                    <p class="text-sm leading-relaxed whitespace-pre-wrap">
+                      {{ message.content }}
+                    </p>
+                    <div
+                      class="flex items-center gap-1 mt-1 opacity-70"
+                      :class="{
+                        'justify-end': isMyMessage(message.senderPubkey),
+                      }"
+                    >
+                      <span class="text-[10px]">
+                        {{ formatTime(message.timestamp) }}
+                      </span>
+                      <!-- Status icons for sent messages -->
+                      <UIcon
+                        v-if="isMyMessage(message.senderPubkey)"
+                        :name="
+                          message.status === 'read'
+                            ? 'i-heroicons-check-circle-solid'
+                            : message.status === 'sent'
+                            ? 'i-heroicons-check'
+                            : message.status === 'failed'
+                            ? 'i-heroicons-exclamation-circle'
+                            : 'i-heroicons-clock'
+                        "
+                        class="w-3 h-3"
+                      />
+                    </div>
+
+                    <!-- Message Action Buttons (show on hover) -->
+                    <div
+                      class="absolute top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      :class="{
+                        'right-full mr-2': isMyMessage(message.senderPubkey),
+                        'left-full ml-2': !isMyMessage(message.senderPubkey),
+                      }"
+                    >
+                      <button
+                        class="p-1 rounded bg-white dark:bg-gray-700 shadow-md hover:bg-gray-100 dark:hover:bg-gray-600"
+                        @click="showReactionPicker = showReactionPicker === message.id ? null : message.id"
+                      >
+                        <UIcon name="i-heroicons-face-smile" class="w-4 h-4" />
+                      </button>
+                      <button
+                        class="p-1 rounded bg-white dark:bg-gray-700 shadow-md hover:bg-gray-100 dark:hover:bg-gray-600"
+                        @click="startReply(message)"
+                      >
+                        <UIcon name="i-heroicons-arrow-uturn-left" class="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <!-- Reaction Picker (Emoji Selector) -->
+                    <div
+                      v-if="showReactionPicker === message.id"
+                      class="absolute bottom-full mb-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 flex gap-1 z-20"
+                      :class="{
+                        'right-0': isMyMessage(message.senderPubkey),
+                        'left-0': !isMyMessage(message.senderPubkey),
+                      }"
+                    >
+                      <button
+                        v-for="emoji in reactionEmojis"
+                        :key="emoji"
+                        class="min-w-8 min-h-8 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-lg transition-colors active:scale-95"
+                        @click="toggleReaction(message.id, emoji)"
+                      >
+                        {{ emoji }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Reactions Display -->
+                  <div
+                    v-if="message.reactions && message.reactions.size > 0"
+                    class="flex flex-wrap gap-1 mt-1 px-1"
+                  >
+                    <button
+                      v-for="[emoji, reactions] in message.reactions"
+                      :key="emoji"
+                      class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      :class="{
+                        'ring-2 ring-primary-500': reactions.some(r => r.pubkey === useUsers().currentUser.value?.pubkeyHex)
+                      }"
+                      @click="toggleReaction(message.id, emoji)"
+                      :title="reactions.map(r => r.name).join(', ')"
+                    >
+                      <span>{{ emoji }}</span>
+                      <span class="font-medium">{{ reactions.length }}</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -731,6 +863,27 @@ button {
             class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
             :class="{ 'pb-safe': isMobile }"
           >
+            <!-- Reply Indicator -->
+            <div
+              v-if="replyingTo"
+              class="mb-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-between"
+            >
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-1">
+                  Replying to {{ replyingTo.senderName }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 truncate">
+                  {{ replyingTo.content }}
+                </div>
+              </div>
+              <button
+                @click="cancelReply"
+                class="ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+              >
+                <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
+              </button>
+            </div>
+
             <div class="flex items-end gap-2">
               <!-- Emoji picker -->
               <div class="relative">
