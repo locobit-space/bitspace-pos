@@ -98,6 +98,7 @@
     "purchaseNotes": "ໝາຍເຫດການຊື້ (ຖ້າມີ)",
     "selectProductAndQuantity": "ກະລຸນາເລືອກສິນຄ້າ ແລະ ໃສ່ຈຳນວນ",
     "exportSuccess": "ສົ່ງອອກຂໍ້ມູນຄົງຄັງສຳເລັດແລ້ວ",
+    "stockValue": "ມູນຄ່າຄົງຄັງ",
     "stockLots": "ລ໋ອດສິນຄ້າ",
     "lotNumber": "ເລກລ໋ອດ",
     "expiryDate": "ວັນໝົດອາຍຸ",

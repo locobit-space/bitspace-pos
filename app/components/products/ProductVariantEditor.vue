@@ -16,10 +16,10 @@ const { t } = useI18n();
 const { format: formatPrice } = useCurrency();
 
 // Preset templates for quick setup
-const presetTemplates = [
+const presetTemplates = computed(() => [
   {
     name: "sizes",
-    label: "📏 S / M / L",
+    label: t("products.presets.sizes"),
     variants: [
       {
         id: "s",
@@ -50,7 +50,7 @@ const presetTemplates = [
   },
   {
     name: "drinks",
-    label: "🥤 Regular / Large",
+    label: t("products.presets.drinks"),
     variants: [
       {
         id: "regular",
@@ -73,7 +73,7 @@ const presetTemplates = [
   },
   {
     name: "coffee",
-    label: "☕ Hot / Iced / Frappe",
+    label: t("products.presets.coffee"),
     variants: [
       {
         id: "hot",
@@ -104,7 +104,7 @@ const presetTemplates = [
   },
   {
     name: "portions",
-    label: "🍽️ Single / Double",
+    label: t("products.presets.portions"),
     variants: [
       {
         id: "single",
@@ -125,7 +125,7 @@ const presetTemplates = [
       },
     ],
   },
-];
+]);
 
 // State
 const showAddForm = ref(false);
@@ -140,12 +140,30 @@ const newVariant = ref<Partial<ProductVariant>>({
 });
 
 // Methods
-const applyPreset = (preset: (typeof presetTemplates)[0]) => {
+interface PresetVariant {
+  id: string;
+  name: string;
+  shortName: string;
+  priceModifier: number;
+  priceModifierType: "fixed" | "percentage";
+  sortOrder: number;
+  isDefault?: boolean;
+}
+
+interface PresetTemplate {
+  name: string;
+  label: string;
+  variants: PresetVariant[];
+}
+
+// Methods
+const applyPreset = (preset: PresetTemplate) => {
   hasVariants.value = true;
   variants.value = preset.variants.map((v, index) => ({
     ...v,
     id: `var_${Date.now()}_${index}`,
-  }));
+    isDefault: v.isDefault || false,
+  })) as ProductVariant[];
 };
 
 const addVariant = () => {
@@ -237,13 +255,9 @@ const clearAllVariants = () => {
 <template>
   <div class="space-y-4">
     <!-- Enable Variants Toggle -->
-    <div
-      class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
-    >
+    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
       <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center"
-        >
+        <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
           <span class="text-xl">📏</span>
         </div>
         <div>
@@ -269,14 +283,8 @@ const clearAllVariants = () => {
           {{ t("products.quickPresets") || "Quick presets:" }}
         </p>
         <div class="flex flex-wrap gap-2">
-          <UButton
-            v-for="preset in presetTemplates"
-            :key="preset.name"
-            color="neutral"
-            variant="soft"
-            size="sm"
-            @click="applyPreset(preset)"
-          >
+          <UButton v-for="preset in presetTemplates" :key="preset.name" color="neutral" variant="soft" size="sm"
+            @click="applyPreset(preset)">
             {{ preset.label }}
           </UButton>
         </div>
@@ -290,80 +298,34 @@ const clearAllVariants = () => {
               variants.length
             }})
           </p>
-          <UButton
-            color="red"
-            variant="ghost"
-            size="xs"
-            @click="clearAllVariants"
-          >
+          <UButton color="red" variant="ghost" size="xs" @click="clearAllVariants">
             {{ t("common.clearAll") || "Clear All" }}
           </UButton>
         </div>
 
         <!-- Draggable Variant Items -->
         <div class="space-y-2">
-          <div
-            v-for="(variant, index) in variants"
-            :key="variant.id"
-            class="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg group hover:border-primary-300 transition-colors"
-          >
+          <div v-for="(variant, index) in variants" :key="variant.id"
+            class="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg group hover:border-primary-300 transition-colors">
             <!-- Reorder Buttons -->
-            <div
-              class="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <UButton
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-chevron-up"
-                :disabled="index === 0"
-                @click="moveVariant(index, 'up')"
-              />
-              <UButton
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-chevron-down"
-                :disabled="index === variants.length - 1"
-                @click="moveVariant(index, 'down')"
-              />
+            <div class="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <UButton color="neutral" variant="ghost" size="xs" icon="i-heroicons-chevron-up" :disabled="index === 0"
+                @click="moveVariant(index, 'up')" />
+              <UButton color="neutral" variant="ghost" size="xs" icon="i-heroicons-chevron-down"
+                :disabled="index === variants.length - 1" @click="moveVariant(index, 'down')" />
             </div>
 
             <!-- Edit Mode -->
             <template v-if="editingVariant?.id === variant.id">
               <div class="flex-1 grid grid-cols-4 gap-2">
-                <UInput
-                  v-model="editingVariant.shortName"
-                  :placeholder="t('products.shortName') || 'S'"
-                  size="sm"
-                />
-                <UInput
-                  v-model="editingVariant.name"
-                  :placeholder="t('products.variantName') || 'Small'"
-                  size="sm"
-                  class="col-span-2"
-                />
-                <UInput
-                  v-model.number="editingVariant.priceModifier"
-                  type="number"
-                  :placeholder="t('products.priceModifier') || '+0'"
-                  size="sm"
-                />
+                <UInput v-model="editingVariant.shortName" :placeholder="t('products.shortName') || 'S'" size="sm" />
+                <UInput v-model="editingVariant.name" :placeholder="t('products.variantName') || 'Small'" size="sm"
+                  class="col-span-2" />
+                <UInput v-model.number="editingVariant.priceModifier" type="number"
+                  :placeholder="t('products.priceModifier') || '+0'" size="sm" />
               </div>
-              <UButton
-                color="primary"
-                variant="soft"
-                size="xs"
-                icon="i-heroicons-check"
-                @click="updateVariant"
-              />
-              <UButton
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-x-mark"
-                @click="cancelEdit"
-              />
+              <UButton color="primary" variant="soft" size="xs" icon="i-heroicons-check" @click="updateVariant" />
+              <UButton color="neutral" variant="ghost" size="xs" icon="i-heroicons-x-mark" @click="cancelEdit" />
             </template>
 
             <!-- View Mode -->
@@ -371,19 +333,13 @@ const clearAllVariants = () => {
               <!-- Variant Info -->
               <div class="flex-1 flex items-center gap-3">
                 <div
-                  class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center font-bold text-primary-600 dark:text-primary-400"
-                >
+                  class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center font-bold text-primary-600 dark:text-primary-400">
                   {{ variant.shortName }}
                 </div>
                 <div class="flex-1">
                   <p class="font-medium text-gray-900 dark:text-white">
                     {{ variant.name }}
-                    <UBadge
-                      v-if="variant.isDefault"
-                      color="primary"
-                      size="xs"
-                      class="ml-2"
-                    >
+                    <UBadge v-if="variant.isDefault" color="primary" size="xs" class="ml-2">
                       {{ t("common.default") || "Default" }}
                     </UBadge>
                   </p>
@@ -404,78 +360,41 @@ const clearAllVariants = () => {
               </div>
 
               <!-- Actions -->
-              <UButton
-                v-if="!variant.isDefault"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                @click="setDefault(variant.id)"
-              >
+              <UButton v-if="!variant.isDefault" color="neutral" variant="ghost" size="xs"
+                @click="setDefault(variant.id)">
                 {{ t("common.setDefault") || "Set Default" }}
               </UButton>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-pencil"
-                @click="startEdit(variant)"
-              />
-              <UButton
-                color="red"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-trash"
-                @click="removeVariant(variant.id)"
-              />
+              <UButton color="neutral" variant="ghost" size="xs" icon="i-heroicons-pencil"
+                @click="startEdit(variant)" />
+              <UButton color="red" variant="ghost" size="xs" icon="i-heroicons-trash"
+                @click="removeVariant(variant.id)" />
             </template>
           </div>
         </div>
       </div>
 
       <!-- Add Custom Variant Form -->
-      <div
-        v-if="showAddForm"
-        class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3"
-      >
+      <div v-if="showAddForm" class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
         <h5 class="font-semibold text-gray-900 dark:text-white text-sm">
           {{ t("products.addVariant") || "Add Custom Variant" }}
         </h5>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <UInput
-            v-model="newVariant.shortName"
-            :placeholder="t('products.shortName') || 'S, M, L...'"
-            label="Short Name"
-          />
-          <UInput
-            v-model="newVariant.name"
-            :placeholder="t('products.variantName') || 'Small, Medium...'"
-            label="Full Name"
-          />
-          <UInput
-            v-model.number="newVariant.priceModifier"
-            type="number"
-            :placeholder="t('products.priceModifier') || '0'"
-            label="Price +/-"
-          />
-          <USelect
-            v-model="newVariant.priceModifierType"
-            :items="[
-              { value: 'fixed', label: t('products.fixed') || 'Fixed' },
-              {
-                value: 'percentage',
-                label: t('products.percentage') || 'Percentage',
-              },
-            ]"
-            label="Type"
-          />
+          <UInput v-model="newVariant.shortName" :placeholder="t('products.shortName') || 'S, M, L...'"
+            label="Short Name" />
+          <UInput v-model="newVariant.name" :placeholder="t('products.variantName') || 'Small, Medium...'"
+            label="Full Name" />
+          <UInput v-model.number="newVariant.priceModifier" type="number"
+            :placeholder="t('products.priceModifier') || '0'" label="Price +/-" />
+          <USelect v-model="newVariant.priceModifierType" :items="[
+            { value: 'fixed', label: t('products.fixed') || 'Fixed' },
+            {
+              value: 'percentage',
+              label: t('products.percentage') || 'Percentage',
+            },
+          ]" label="Type" />
         </div>
         <div class="flex gap-2">
-          <UButton
-            color="primary"
-            size="sm"
-            :disabled="!newVariant.name || !newVariant.shortName"
-            @click="addVariant"
-          >
+          <UButton color="primary" size="sm" :disabled="!newVariant.name || !newVariant.shortName" @click="addVariant">
             <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
             {{ t("common.add") || "Add" }}
           </UButton>
@@ -486,14 +405,7 @@ const clearAllVariants = () => {
       </div>
 
       <!-- Add Variant Button -->
-      <UButton
-        v-if="!showAddForm"
-        color="neutral"
-        variant="soft"
-        size="sm"
-        block
-        @click="showAddForm = true"
-      >
+      <UButton v-if="!showAddForm" color="neutral" variant="soft" size="sm" block @click="showAddForm = true">
         <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
         {{ t("products.addCustomVariant") || "Add Custom Variant" }}
       </UButton>

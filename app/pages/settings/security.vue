@@ -260,9 +260,12 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default',
   middleware: ['auth', 'permission'],
   permission: 'canViewSettings',
+});
+
+useHead({
+  title: 'Settings - Security',
 });
 
 const { t } = useI18n();

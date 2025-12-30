@@ -192,6 +192,10 @@ definePageMeta({
   middleware: ['auth', 'permission']
 })
 
+useHead({
+  title: "Settings - Audit Log",
+})
+
 const { t } = useI18n()
 
 interface AuditLog {

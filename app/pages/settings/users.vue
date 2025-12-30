@@ -2,32 +2,20 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Loading State -->
     <div v-if="!isReady" class="flex items-center justify-center min-h-screen">
-      <UIcon
-        name="i-heroicons-arrow-path"
-        class="w-8 h-8 animate-spin text-primary-500"
-      />
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
     </div>
 
     <template v-else>
       <!-- Header -->
-      <CommonPageHeader
-        :title="$t('settings.users.title')"
-        :subtitle="$t('settings.users.subtitle')"
-      >
+      <CommonPageHeader :title="$t('settings.users.title')" :subtitle="$t('settings.users.subtitle')">
         <template #actions>
           <div class="flex items-center gap-4">
-            <NuxtLink
-              to="/settings"
-              class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-            >
+            <NuxtLink to="/settings"
+              class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
               <UIcon name="i-heroicons-arrow-left" class="w-5 h-5" />
               {{ $t("common.back") }}
             </NuxtLink>
-            <UButton
-              v-if="canManageUsers"
-              color="primary"
-              @click="openCreateModal"
-            >
+            <UButton v-if="canManageUsers" color="primary" @click="openCreateModal">
               <UIcon name="i-heroicons-plus" class="w-5 h-5 mr-2" />
               {{ $t("settings.users.addUser") }}
             </UButton>
@@ -40,10 +28,7 @@
         <UCard class="mb-6">
           <template #header>
             <div class="flex items-center gap-3">
-              <UIcon
-                name="i-heroicons-user-circle"
-                class="w-6 h-6 text-primary-500"
-              />
+              <UIcon name="i-heroicons-user-circle" class="w-6 h-6 text-primary-500" />
               <span class="font-semibold text-gray-900 dark:text-white">
                 {{ $t("settings.users.currentUser") }}
               </span>
@@ -52,11 +37,7 @@
 
           <div v-if="currentUser" class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-              <UAvatar
-                :src="currentUser.avatar"
-                :alt="currentUser.name"
-                size="lg"
-              />
+              <UAvatar :src="currentUser.avatar" :alt="currentUser.name" size="lg" />
               <div>
                 <h3 class="font-semibold text-gray-900 dark:text-white">
                   {{ currentUser.name }}
@@ -66,54 +47,33 @@
                 </p>
                 <!-- Show auth method badge -->
                 <div class="flex items-center gap-2 mt-1">
-                  <UBadge
-                    :color="getAuthMethodColor(currentUser.authMethod)"
-                    variant="subtle"
-                    size="xs"
-                  >
-                    <UIcon
-                      :name="getAuthMethodIcon(currentUser.authMethod)"
-                      class="w-3 h-3 mr-1"
-                    />
+                  <UBadge :color="getAuthMethodColor(currentUser.authMethod)" variant="subtle" size="xs">
+                    <UIcon :name="getAuthMethodIcon(currentUser.authMethod)" class="w-3 h-3 mr-1" />
                     {{
                       $t(
-                        `settings.users.authMethod.${
-                          currentUser.authMethod || "pin"
+                        `settings.users.authMethod.${currentUser.authMethod || "pin"
                         }`
                       )
                     }}
                   </UBadge>
-                  <span
-                    v-if="currentUser.npub"
-                    class="text-xs text-gray-400 font-mono"
-                  >
+                  <span v-if="currentUser.npub" class="text-xs text-gray-400 font-mono">
                     {{ truncateNpub(currentUser.npub) }}
                   </span>
                 </div>
               </div>
             </div>
 
-            <UBadge
-              :color="getRoleColor(currentUser.role)"
-              variant="subtle"
-              size="lg"
-            >
+            <UBadge :color="getRoleColor(currentUser.role)" variant="subtle" size="lg">
               {{ $t(`settings.users.roles.${currentUser.role}`) }}
             </UBadge>
           </div>
         </UCard>
 
         <!-- Company Code Card (for owner/admin to share with staff) -->
-        <UCard
-          v-if="isOwner && companyCode"
-          class="mb-6 border-dashed border-primary-300 dark:border-primary-700"
-        >
+        <UCard v-if="isOwner && companyCode" class="mb-6 border-dashed border-primary-300 dark:border-primary-700">
           <template #header>
             <div class="flex items-center gap-3">
-              <UIcon
-                name="i-heroicons-building-storefront"
-                class="w-6 h-6 text-primary-500"
-              />
+              <UIcon name="i-heroicons-building-storefront" class="w-6 h-6 text-primary-500" />
               <span class="font-semibold text-gray-900 dark:text-white">
                 {{ $t("settings.users.companyCode") || "Company Code" }}
               </span>
@@ -138,48 +98,27 @@
               <!-- Display Mode -->
               <template v-if="!isEditingCode">
                 <div
-                  class="text-4xl font-mono font-bold tracking-[0.5em] text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-6 py-3 rounded-lg"
-                >
+                  class="text-4xl font-mono font-bold tracking-[0.5em] text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-6 py-3 rounded-lg">
                   {{ companyCode }}
                 </div>
-                <UButton
-                  color="gray"
-                  variant="ghost"
-                  icon="i-heroicons-clipboard-document"
-                  @click="copyCompanyCode"
-                />
+                <UButton color="gray" variant="ghost" icon="i-heroicons-clipboard-document" @click="copyCompanyCode" />
               </template>
 
               <!-- Edit Mode -->
               <div v-else class="flex items-center gap-2 max-w-sm w-full">
-                <UInput
-                  v-model="editingCodeValue"
-                  class="flex-1 font-mono text-center"
-                  size="lg"
-                  :placeholder="$t('settings.users.enterCompanyCode')"
-                  @keyup.enter="saveCompanyCode"
-                />
+                <UInput v-model="editingCodeValue" class="flex-1 font-mono text-center" size="lg"
+                  :placeholder="$t('settings.users.enterCompanyCode')" @keyup.enter="saveCompanyCode" />
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="mt-4 flex items-center justify-center gap-4">
               <template v-if="!isEditingCode">
-                <UButton
-                  color="gray"
-                  variant="link"
-                  size="sm"
-                  @click="startEditingCode"
-                >
+                <UButton color="gray" variant="link" size="sm" @click="startEditingCode">
                   {{ $t("settings.users.editCode") || "Edit Code" }}
                 </UButton>
                 <span class="text-gray-300 dark:text-gray-700">|</span>
-                <UButton
-                  color="gray"
-                  variant="link"
-                  size="sm"
-                  @click="regenerateCompanyCode"
-                >
+                <UButton color="gray" variant="link" size="sm" @click="regenerateCompanyCode">
                   {{
                     $t("settings.users.regenerateCode") || "Generate New Code"
                   }}
@@ -187,11 +126,7 @@
               </template>
 
               <template v-else>
-                <UButton
-                  color="gray"
-                  variant="ghost"
-                  @click="cancelEditingCode"
-                >
+                <UButton color="gray" variant="ghost" @click="cancelEditingCode">
                   {{ $t("common.cancel") }}
                 </UButton>
                 <UButton color="primary" @click="saveCompanyCode">
@@ -203,15 +138,9 @@
         </UCard>
 
         <!-- Permission Denied Alert -->
-        <UAlert
-          v-if="!canManageUsers"
-          icon="i-heroicons-shield-exclamation"
-          color="yellow"
-          variant="subtle"
-          :title="$t('settings.users.noPermission')"
-          :description="$t('settings.users.noPermissionDescription')"
-          class="mb-6"
-        />
+        <UAlert v-if="!canManageUsers" icon="i-heroicons-shield-exclamation" color="yellow" variant="subtle"
+          :title="$t('settings.users.noPermission')" :description="$t('settings.users.noPermissionDescription')"
+          class="mb-6" />
 
         <!-- Users Table -->
         <UCard v-if="canManageUsers">
@@ -221,10 +150,7 @@
                 {{ $t("settings.users.allUsers") }}
               </h3>
               <div class="flex items-center gap-4">
-                <UCheckbox
-                  v-model="showDeleted"
-                  :label="$t('settings.users.showDeleted') || 'Show Deleted'"
-                />
+                <UCheckbox v-model="showDeleted" :label="$t('settings.users.showDeleted') || 'Show Deleted'" />
                 <UBadge color="gray" variant="subtle">
                   {{ filteredUsers.length }} {{ $t("settings.users.users") }}
                 </UBadge>
@@ -234,24 +160,16 @@
 
           <!-- User List -->
           <div class="divide-y divide-gray-200 dark:divide-gray-700">
-            <div
-              v-for="user in filteredUsers"
-              :key="user.id"
+            <div v-for="user in filteredUsers" :key="user.id"
               class="flex items-center justify-between py-4 first:pt-0 last:pb-0"
-              :class="{ 'opacity-50': user.revokedAt || !user.isActive }"
-            >
+              :class="{ 'opacity-50': user.revokedAt || !user.isActive }">
               <div class="flex items-center gap-4">
                 <div class="relative">
                   <UAvatar :src="user.avatar" :alt="user.name" size="sm" />
                   <!-- Auth method indicator -->
-                  <div
-                    class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
-                    :class="getAuthMethodBgColor(user.authMethod)"
-                  >
-                    <UIcon
-                      :name="getAuthMethodIcon(user.authMethod)"
-                      class="w-2.5 h-2.5 text-white"
-                    />
+                  <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                    :class="getAuthMethodBgColor(user.authMethod)">
+                    <UIcon :name="getAuthMethodIcon(user.authMethod)" class="w-2.5 h-2.5 text-white" />
                   </div>
                 </div>
                 <div>
@@ -260,27 +178,14 @@
                       {{ user.name }}
                     </p>
                     <!-- Revoked/Expired indicator -->
-                    <UBadge
-                      v-if="user.revokedAt"
-                      color="red"
-                      variant="subtle"
-                      size="xs"
-                    >
+                    <UBadge v-if="user.revokedAt" color="red" variant="subtle" size="xs">
                       {{ $t("settings.users.revoked") }}
                     </UBadge>
-                    <UBadge
-                      v-else-if="isExpired(user)"
-                      color="orange"
-                      variant="subtle"
-                      size="xs"
-                    >
+                    <UBadge v-else-if="isExpired(user)" color="orange" variant="subtle" size="xs">
                       {{ $t("settings.users.expired") }}
                     </UBadge>
                   </div>
-                  <p
-                    v-if="user.email"
-                    class="text-sm text-gray-500 dark:text-gray-400"
-                  >
+                  <p v-if="user.email" class="text-sm text-gray-500 dark:text-gray-400">
                     {{ user.email }}
                   </p>
                   <p v-if="user.npub" class="text-xs text-gray-400 font-mono">
@@ -301,140 +206,81 @@
                 </UBadge>
 
                 <!-- PIN indicator -->
-                <UTooltip
-                  :text="
-                    user.pin
-                      ? $t('settings.users.pinSet')
-                      : $t('settings.users.noPin')
-                  "
-                >
-                  <UIcon
-                    :name="
-                      user.pin
-                        ? 'i-heroicons-check-circle'
-                        : 'i-heroicons-minus-circle'
-                    "
-                    :class="user.pin ? 'text-green-500' : 'text-gray-400'"
-                    class="w-5 h-5"
-                  />
+                <UTooltip :text="user.pin
+                    ? $t('settings.users.pinSet')
+                    : $t('settings.users.noPin')
+                  ">
+                  <UIcon :name="user.pin
+                      ? 'i-heroicons-check-circle'
+                      : 'i-heroicons-minus-circle'
+                    " :class="user.pin ? 'text-green-500' : 'text-gray-400'" class="w-5 h-5" />
                 </UTooltip>
 
                 <!-- Expiry -->
-                <span
-                  v-if="user.expiresAt"
-                  class="text-xs text-gray-500 dark:text-gray-400"
-                >
+                <span v-if="user.expiresAt" class="text-xs text-gray-500 dark:text-gray-400">
                   {{ $t("settings.users.expiresOn") }}:
                   {{ formatDate(user.expiresAt) }}
                 </span>
 
                 <!-- Last login -->
-                <span
-                  class="text-sm text-gray-500 dark:text-gray-400 min-w-[100px]"
-                >
+                <span class="text-sm text-gray-500 dark:text-gray-400 min-w-[100px]">
                   {{ user.lastLoginAt ? formatDate(user.lastLoginAt) : "-" }}
                 </span>
 
                 <!-- Actions -->
                 <div class="flex items-center gap-1">
                   <UTooltip :text="$t('common.edit')">
-                    <UButton
-                      variant="ghost"
-                      size="xs"
-                      :disabled="
-                        user.id === currentUser?.id || !!user.deletedAt
-                      "
-                      @click="openEditModal(user)"
-                    >
+                    <UButton variant="ghost" size="xs" :disabled="user.id === currentUser?.id || !!user.deletedAt
+                      " @click="openEditModal(user)">
                       <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
                     </UButton>
                   </UTooltip>
 
                   <UTooltip :text="$t('settings.users.permissions.title')">
-                    <UButton
-                      variant="ghost"
-                      size="xs"
-                      :disabled="!!user.deletedAt"
-                      @click="openPermissionsModal(user)"
-                    >
+                    <UButton variant="ghost" size="xs" :disabled="!!user.deletedAt" @click="openPermissionsModal(user)">
                       <UIcon name="i-heroicons-shield-check" class="w-4 h-4" />
                     </UButton>
                   </UTooltip>
 
                   <!-- Revoke/Restore button -->
-                  <UTooltip
-                    v-if="user.id !== currentUser?.id && !user.deletedAt"
-                    :text="
+                  <UTooltip v-if="user.id !== currentUser?.id && !user.deletedAt" :text="user.revokedAt
+                      ? $t('settings.users.restore')
+                      : $t('settings.users.revoke')
+                    ">
+                    <UButton variant="ghost" size="xs" :color="user.revokedAt ? 'green' : 'orange'" @click="
                       user.revokedAt
-                        ? $t('settings.users.restore')
-                        : $t('settings.users.revoke')
-                    "
-                  >
-                    <UButton
-                      variant="ghost"
-                      size="xs"
-                      :color="user.revokedAt ? 'green' : 'orange'"
-                      @click="
-                        user.revokedAt
-                          ? restoreAccess(user)
-                          : openRevokeModal(user)
-                      "
-                    >
-                      <UIcon
-                        :name="
-                          user.revokedAt
-                            ? 'i-heroicons-arrow-path'
-                            : 'i-heroicons-no-symbol'
-                        "
-                        class="w-4 h-4"
-                      />
+                        ? restoreAccess(user)
+                        : openRevokeModal(user)
+                      ">
+                      <UIcon :name="user.revokedAt
+                          ? 'i-heroicons-arrow-path'
+                          : 'i-heroicons-no-symbol'
+                        " class="w-4 h-4" />
                     </UButton>
                   </UTooltip>
 
                   <!-- Generate Invite Link Button -->
-                  <UTooltip
-                    v-if="user.id !== currentUser?.id && user.isActive"
-                    :text="
-                      $t('settings.users.generateInvite') ||
-                      'Generate Invite Link'
-                    "
-                  >
-                    <UButton
-                      variant="ghost"
-                      size="xs"
-                      color="primary"
-                      @click="generateInviteLink(user)"
-                    >
+                  <UTooltip v-if="user.id !== currentUser?.id && user.isActive" :text="$t('settings.users.generateInvite') ||
+                    'Generate Invite Link'
+                    ">
+                    <UButton variant="ghost" size="xs" color="primary" @click="generateInviteLink(user)">
                       <UIcon name="i-heroicons-link" class="w-4 h-4" />
                     </UButton>
                   </UTooltip>
 
-                  <UTooltip
-                    v-if="user.id !== currentUser?.id"
-                    :text="
+                  <UTooltip v-if="user.id !== currentUser?.id" :text="user.deletedAt
+                      ? $t('common.restore')
+                      : $t('common.delete')
+                    ">
+                    <UButton variant="ghost" :color="user.deletedAt ? 'green' : 'red'" size="xs" @click="
                       user.deletedAt
-                        ? $t('common.restore')
-                        : $t('common.delete')
-                    "
-                  >
-                    <UButton
-                      variant="ghost"
-                      :color="user.deletedAt ? 'green' : 'red'"
-                      size="xs"
-                      @click="
-                        user.deletedAt
-                          ? confirmRestoreDeleted(user)
-                          : confirmDelete(user)
-                      "
-                    >
-                      <UIcon
-                        :name="
-                          user.deletedAt
-                            ? 'i-heroicons-arrow-path'
-                            : 'i-heroicons-trash'
-                        "
-                        class="w-4 h-4"
-                      />
+                        ? confirmRestoreDeleted(user)
+                        : confirmDelete(user)
+                      ">
+                      <UIcon :name="user.deletedAt
+                          ? 'i-heroicons-arrow-path'
+                          : 'i-heroicons-trash'
+                        " class="w-4 h-4" />
                     </UButton>
                   </UTooltip>
                 </div>
@@ -454,12 +300,9 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Nostr Auth -->
             <div
-              class="p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20"
-            >
+              class="p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20">
               <div class="flex items-center gap-3 mb-2">
-                <div
-                  class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center"
-                >
+                <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
                   <UIcon name="i-heroicons-key" class="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -468,7 +311,7 @@
                   </h4>
                   <UBadge color="purple" variant="subtle" size="xs">{{
                     $t("settings.users.recommended")
-                  }}</UBadge>
+                    }}</UBadge>
                 </div>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-300">
@@ -477,17 +320,10 @@
             </div>
 
             <!-- Password Auth -->
-            <div
-              class="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20"
-            >
+            <div class="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
               <div class="flex items-center gap-3 mb-2">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center"
-                >
-                  <UIcon
-                    name="i-heroicons-lock-closed"
-                    class="w-5 h-5 text-white"
-                  />
+                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                  <UIcon name="i-heroicons-lock-closed" class="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h4 class="font-medium text-gray-900 dark:text-white">
@@ -495,7 +331,7 @@
                   </h4>
                   <UBadge color="blue" variant="subtle" size="xs">{{
                     $t("settings.users.traditional")
-                  }}</UBadge>
+                    }}</UBadge>
                 </div>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-300">
@@ -504,23 +340,16 @@
             </div>
 
             <!-- PIN Auth -->
-            <div
-              class="p-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
-            >
+            <div class="p-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
               <div class="flex items-center gap-3 mb-2">
-                <div
-                  class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center"
-                >
-                  <UIcon
-                    name="i-heroicons-hashtag"
-                    class="w-5 h-5 text-white"
-                  />
+                <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                  <UIcon name="i-heroicons-hashtag" class="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h4 class="font-medium text-gray-900 dark:text-white">PIN</h4>
                   <UBadge color="green" variant="subtle" size="xs">{{
                     $t("settings.users.quickAccess")
-                  }}</UBadge>
+                    }}</UBadge>
                 </div>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-300">
@@ -539,11 +368,8 @@
           </template>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div
-              v-for="role in roleDescriptions"
-              :key="role.id"
-              class="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
-            >
+            <div v-for="role in roleDescriptions" :key="role.id"
+              class="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
               <div class="flex items-center gap-3 mb-2">
                 <UBadge :color="role.color" variant="subtle">
                   {{ $t(`settings.users.roles.${role.id}`) }}
@@ -574,64 +400,36 @@
             <div class="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
               <!-- Name -->
               <UFormField :label="$t('settings.users.name')" required>
-                <UInput
-                  v-model="userForm.name"
-                  :placeholder="$t('settings.users.namePlaceholder')"
-                  icon="i-heroicons-user"
-                  class="w-full"
-                />
+                <UInput v-model="userForm.name" :placeholder="$t('settings.users.namePlaceholder')"
+                  icon="i-heroicons-user" class="w-full" />
               </UFormField>
 
               <!-- Email -->
               <UFormField :label="$t('settings.users.email')">
-                <UInput
-                  v-model="userForm.email"
-                  type="email"
-                  :placeholder="$t('settings.users.emailPlaceholder')"
-                  icon="i-heroicons-envelope"
-                  class="w-full"
-                />
+                <UInput v-model="userForm.email" type="email" :placeholder="$t('settings.users.emailPlaceholder')"
+                  icon="i-heroicons-envelope" class="w-full" />
               </UFormField>
 
               <!-- Auth Method Selection -->
-              <UFormField
-                :label="$t('settings.users.authMethodLabel')"
-                required
-              >
+              <UFormField :label="$t('settings.users.authMethodLabel')" required>
                 <div class="grid grid-cols-3 gap-2">
-                  <button
-                    v-for="method in authMethodOptions"
-                    :key="method.value"
-                    type="button"
-                    class="p-3 rounded-lg border-2 transition-all text-center"
-                    :class="
-                      userForm.authMethod === method.value
+                  <button v-for="method in authMethodOptions" :key="method.value" type="button"
+                    class="p-3 rounded-lg border-2 transition-all text-center" :class="userForm.authMethod === method.value
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                    "
-                    @click="userForm.authMethod = method.value"
-                  >
-                    <UIcon
-                      :name="method.icon"
-                      class="w-6 h-6 mx-auto mb-1 text-primary-500"
-                    />
+                      " @click="userForm.authMethod = method.value">
+                    <UIcon :name="method.icon" class="w-6 h-6 mx-auto mb-1 text-primary-500" />
                     <p class="text-sm font-medium">{{ method.label }}</p>
                   </button>
                 </div>
               </UFormField>
 
               <!-- Nostr Auth Fields -->
-              <div
-                v-if="userForm.authMethod === 'nostr'"
-                class="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg"
-              >
+              <div v-if="userForm.authMethod === 'nostr'"
+                class="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <UFormField :label="$t('settings.users.npub')" required>
-                  <UInput
-                    v-model="userForm.npub"
-                    :placeholder="$t('settings.users.npubPlaceholder')"
-                    icon="i-heroicons-key"
-                    class="font-mono w-full"
-                  />
+                  <UInput v-model="userForm.npub" :placeholder="$t('settings.users.npubPlaceholder')"
+                    icon="i-heroicons-key" class="font-mono w-full" />
                   <template #hint>
                     {{ $t("settings.users.npubHint") }}
                   </template>
@@ -639,62 +437,29 @@
               </div>
 
               <!-- Password Auth Fields -->
-              <div
-                v-if="userForm.authMethod === 'password'"
-                class="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
-              >
-                <UFormField
-                  :label="$t('settings.users.password')"
-                  :required="!editingUser"
-                >
-                  <UInput
-                    v-model="userForm.password"
-                    type="password"
-                    :placeholder="
-                      editingUser
-                        ? $t('settings.users.passwordPlaceholderEdit')
-                        : $t('settings.users.passwordPlaceholder')
-                    "
-                    icon="i-heroicons-lock-closed"
-                    class="w-full"
-                  />
+              <div v-if="userForm.authMethod === 'password'"
+                class="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <UFormField :label="$t('settings.users.password')" :required="!editingUser">
+                  <UInput v-model="userForm.password" type="password" :placeholder="editingUser
+                      ? $t('settings.users.passwordPlaceholderEdit')
+                      : $t('settings.users.passwordPlaceholder')
+                    " icon="i-heroicons-lock-closed" class="w-full" />
                 </UFormField>
-                <UFormField
-                  v-if="userForm.password"
-                  :label="$t('settings.users.confirmPassword')"
-                  required
-                >
-                  <UInput
-                    v-model="userForm.confirmPassword"
-                    type="password"
-                    :placeholder="
-                      $t('settings.users.confirmPasswordPlaceholder')
-                    "
-                    icon="i-heroicons-lock-closed"
-                    class="w-full"
-                  />
+                <UFormField v-if="userForm.password" :label="$t('settings.users.confirmPassword')" required>
+                  <UInput v-model="userForm.confirmPassword" type="password" :placeholder="$t('settings.users.confirmPasswordPlaceholder')
+                    " icon="i-heroicons-lock-closed" class="w-full" />
                 </UFormField>
                 <!-- Password strength indicator -->
                 <div v-if="userForm.password" class="space-y-1">
                   <div class="flex gap-1">
-                    <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="h-1 flex-1 rounded"
-                      :class="
-                        i <= passwordStrength
-                          ? strengthColors[passwordStrength - 1]
-                          : 'bg-gray-200 dark:bg-gray-700'
-                      "
-                    />
+                    <div v-for="i in 4" :key="i" class="h-1 flex-1 rounded" :class="i <= passwordStrength
+                        ? strengthColors[passwordStrength - 1]
+                        : 'bg-gray-200 dark:bg-gray-700'
+                      " />
                   </div>
-                  <p
-                    class="text-xs"
-                    :class="
-                      strengthTextColors[passwordStrength - 1] ||
-                      'text-gray-500'
-                    "
-                  >
+                  <p class="text-xs" :class="strengthTextColors[passwordStrength - 1] ||
+                    'text-gray-500'
+                    ">
                     {{ passwordStrengthText }}
                   </p>
                 </div>
@@ -702,14 +467,8 @@
 
               <!-- PIN (available for all auth methods as quick access) -->
               <UFormField :label="$t('settings.users.pin')">
-                <UInput
-                  v-model="userForm.pin"
-                  type="password"
-                  maxlength="6"
-                  :placeholder="$t('settings.users.pinPlaceholder')"
-                  icon="i-heroicons-hashtag"
-                  class="w-full"
-                />
+                <UInput v-model="userForm.pin" type="password" maxlength="6"
+                  :placeholder="$t('settings.users.pinPlaceholder')" icon="i-heroicons-hashtag" class="w-full" />
                 <template #hint>
                   {{ $t("settings.users.pinHint") }}
                 </template>
@@ -717,20 +476,12 @@
 
               <!-- Role -->
               <UFormField :label="$t('settings.users.role')" required>
-                <USelectMenu
-                  v-model="userForm.role"
-                  :items="roleOptions"
-                  value-key="value"
-                />
+                <USelectMenu v-model="userForm.role" :items="roleOptions" value-key="value" />
               </UFormField>
 
               <!-- Access Expiry -->
               <UFormField :label="$t('settings.users.accessExpiry')">
-                <UInput
-                  v-model="userForm.expiresAt"
-                  type="date"
-                  icon="i-heroicons-calendar"
-                />
+                <UInput v-model="userForm.expiresAt" type="date" icon="i-heroicons-calendar" />
                 <template #hint>
                   {{ $t("settings.users.accessExpiryHint") }}
                 </template>
@@ -738,14 +489,10 @@
 
               <!-- Status -->
               <UFormField :label="$t('settings.users.status')">
-                <USwitch
-                  v-model="userForm.isActive"
-                  :label="
-                    userForm.isActive
-                      ? $t('common.active')
-                      : $t('common.inactive')
-                  "
-                />
+                <USwitch v-model="userForm.isActive" :label="userForm.isActive
+                    ? $t('common.active')
+                    : $t('common.inactive')
+                  " />
               </UFormField>
             </div>
 
@@ -774,21 +521,14 @@
               </h3>
             </template>
 
-            <div
-              v-if="selectedUser"
-              class="space-y-6 max-h-[60vh] overflow-y-auto px-1"
-            >
+            <div v-if="selectedUser" class="space-y-6 max-h-[60vh] overflow-y-auto px-1">
               <div v-for="group in PERMISSION_GROUPS" :key="group.id">
                 <h4 class="font-medium text-gray-900 dark:text-white mb-3">
                   {{ $t(group.label) }}
                 </h4>
                 <div class="grid grid-cols-2 gap-3">
-                  <UCheckbox
-                    v-for="perm in group.permissions"
-                    :key="perm.key"
-                    v-model="permissionsForm[perm.key]"
-                    :label="$t(perm.label)"
-                  />
+                  <UCheckbox v-for="perm in group.permissions" :key="perm.key" v-model="permissionsForm[perm.key]"
+                    :label="$t(perm.label)" />
                 </div>
               </div>
             </div>
@@ -798,11 +538,7 @@
                 <UButton variant="ghost" @click="showPermissionsModal = false">
                   {{ $t("common.cancel") }}
                 </UButton>
-                <UButton
-                  :loading="saving"
-                  color="primary"
-                  @click="savePermissions"
-                >
+                <UButton :loading="saving" color="primary" @click="savePermissions">
                   {{ $t("common.save") }}
                 </UButton>
               </div>
@@ -817,10 +553,7 @@
           <UCard>
             <template #header>
               <div class="flex items-center gap-3">
-                <UIcon
-                  name="i-heroicons-no-symbol"
-                  class="w-6 h-6 text-orange-500"
-                />
+                <UIcon name="i-heroicons-no-symbol" class="w-6 h-6 text-orange-500" />
                 <span class="font-semibold text-gray-900 dark:text-white">
                   {{ $t("settings.users.revokeAccess") }}
                 </span>
@@ -837,11 +570,8 @@
               </p>
 
               <UFormField :label="$t('settings.users.revokeReason')">
-                <UTextarea
-                  v-model="revokeReason"
-                  :placeholder="$t('settings.users.revokeReasonPlaceholder')"
-                  :rows="3"
-                />
+                <UTextarea v-model="revokeReason" :placeholder="$t('settings.users.revokeReasonPlaceholder')"
+                  :rows="3" />
               </UFormField>
             </div>
 
@@ -850,11 +580,7 @@
                 <UButton variant="ghost" @click="showRevokeModal = false">
                   {{ $t("common.cancel") }}
                 </UButton>
-                <UButton
-                  :loading="revoking"
-                  color="orange"
-                  @click="revokeAccessConfirmed"
-                >
+                <UButton :loading="revoking" color="orange" @click="revokeAccessConfirmed">
                   {{ $t("settings.users.revoke") }}
                 </UButton>
               </div>
@@ -869,10 +595,7 @@
           <UCard>
             <template #header>
               <div class="flex items-center gap-3">
-                <UIcon
-                  name="i-heroicons-exclamation-triangle"
-                  class="w-6 h-6 text-red-500"
-                />
+                <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-500" />
                 <span class="font-semibold text-gray-900 dark:text-white">
                   {{ $t("settings.users.confirmDelete") }}
                 </span>
@@ -890,11 +613,7 @@
                 <UButton variant="ghost" @click="showDeleteModal = false">
                   {{ $t("common.cancel") }}
                 </UButton>
-                <UButton
-                  :loading="deleting"
-                  color="red"
-                  @click="deleteUserConfirmed"
-                >
+                <UButton :loading="deleting" color="red" @click="deleteUserConfirmed">
                   {{ $t("common.delete") }}
                 </UButton>
               </div>
@@ -909,10 +628,7 @@
           <UCard class="max-h-[90vh] overflow-y-auto">
             <template #header>
               <div class="flex items-center gap-3">
-                <UIcon
-                  name="i-heroicons-link"
-                  class="w-6 h-6 text-primary-500"
-                />
+                <UIcon name="i-heroicons-link" class="w-6 h-6 text-primary-500" />
                 <span class="font-semibold text-gray-900 dark:text-white">
                   {{ $t("settings.users.inviteLink") || "Invite Link" }}
                 </span>
@@ -921,11 +637,7 @@
 
             <div class="text-center py-4">
               <div v-if="inviteUser" class="mb-4">
-                <UAvatar
-                  :alt="inviteUser.name"
-                  size="lg"
-                  class="mx-auto mb-2"
-                />
+                <UAvatar :alt="inviteUser.name" size="lg" class="mx-auto mb-2" />
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ inviteUser.name }}
                 </p>
@@ -939,14 +651,8 @@
 
               <!-- QR Code Display -->
               <div v-if="inviteQrCode" class="mb-4">
-                <div
-                  class="bg-white p-4 rounded-lg inline-block shadow-sm border"
-                >
-                  <img
-                    :src="inviteQrCode"
-                    alt="QR Code"
-                    class="w-48 h-48 mx-auto"
-                  />
+                <div class="bg-white p-4 rounded-lg inline-block shadow-sm border">
+                  <img :src="inviteQrCode" alt="QR Code" class="w-48 h-48 mx-auto" />
                 </div>
                 <p class="text-xs text-gray-500 mt-2">
                   {{
@@ -956,9 +662,7 @@
                 </p>
               </div>
 
-              <div
-                class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4 max-h-24 overflow-y-auto"
-              >
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4 max-h-24 overflow-y-auto">
                 <p class="text-xs text-gray-500 font-mono break-all select-all">
                   {{ inviteLink }}
                 </p>
@@ -966,10 +670,7 @@
 
               <div class="flex gap-2 justify-center">
                 <UButton color="primary" @click="copyInviteLink">
-                  <UIcon
-                    name="i-heroicons-clipboard-document"
-                    class="w-4 h-4 mr-2"
-                  />
+                  <UIcon name="i-heroicons-clipboard-document" class="w-4 h-4 mr-2" />
                   {{ $t("common.copy") || "Copy" }}
                 </UButton>
                 <UButton variant="outline" @click="shareInviteLink">
@@ -1010,22 +711,14 @@
           <br />
           <span class="font-bold text-gray-900 dark:text-white">{{
             userToRestore?.name
-          }}</span>
+            }}</span>
         </p>
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton
-              color="gray"
-              variant="ghost"
-              @click="showRestoreDeletedModal = false"
-            >
+            <UButton color="gray" variant="ghost" @click="showRestoreDeletedModal = false">
               {{ $t("common.cancel") }}
             </UButton>
-            <UButton
-              color="green"
-              :loading="restoring"
-              @click="restoreDeletedUserConfirmed"
-            >
+            <UButton color="green" :loading="restoring" @click="restoreDeletedUserConfirmed">
               {{ $t("common.restore") }}
             </UButton>
           </div>
@@ -1041,8 +734,11 @@ import { DEFAULT_PERMISSIONS } from "~/types";
 import { PERMISSION_GROUPS } from "~/config/permissions";
 
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
+});
+
+useHead({
+  title: "Users",
 });
 
 const { t } = useI18n();

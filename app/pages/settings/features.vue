@@ -7,8 +7,11 @@ import {
 } from "~/composables/use-shop";
 
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
+});
+
+useHead({
+  title: "Features",
 });
 
 const { t, locale } = useI18n();
@@ -35,6 +38,8 @@ const features = ref<EnabledFeatures>({
   delivery: false,
   loyalty: false,
   contracts: false,
+  deviceSync: false,
+  employees: false
 });
 
 const isSaving = ref(false);
@@ -260,16 +265,10 @@ function toggleFeature(key: string) {
 <template>
   <div class="p-4 lg:p-6 space-y-6 max-w-4xl mx-auto">
     <!-- Header -->
-    <div
-      class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
-    >
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
       <div>
-        <h1
-          class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
-        >
-          <Icon
-            name="streamline-ultimate:coding-apps-website-detect-virus-monitor-search"
-          />
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Icon name="streamline-ultimate:coding-apps-website-detect-virus-monitor-search" />
           {{ t("settings.features.title") || "Shop Features" }}
         </h1>
         <p class="text-gray-500 dark:text-gray-400">
@@ -280,28 +279,13 @@ function toggleFeature(key: string) {
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <UButton
-          variant="soft"
-          color="violet"
-          icon="i-heroicons-building-office-2"
-          @click="enableEnterprise"
-        >
+        <UButton variant="soft" color="violet" icon="i-heroicons-building-office-2" @click="enableEnterprise">
           {{ t("settings.features.enterprise") || "Enterprise" }}
         </UButton>
-        <UButton
-          variant="soft"
-          color="neutral"
-          icon="i-heroicons-arrow-path"
-          @click="resetToDefaults"
-        >
+        <UButton variant="soft" color="neutral" icon="i-heroicons-arrow-path" @click="resetToDefaults">
           {{ t("common.reset") || "Reset to Defaults" }}
         </UButton>
-        <UButton
-          color="primary"
-          icon="i-heroicons-check"
-          :loading="isSaving"
-          @click="saveFeatures"
-        >
+        <UButton color="primary" icon="i-heroicons-check" :loading="isSaving" @click="saveFeatures">
           {{ t("common.save") || "Save" }}
         </UButton>
       </div>
@@ -310,13 +294,8 @@ function toggleFeature(key: string) {
     <!-- Shop Type Info -->
     <UCard>
       <div class="flex items-center gap-4">
-        <div
-          class="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
-        >
-          <UIcon
-            name="i-heroicons-building-storefront"
-            class="w-6 h-6 text-primary-600 dark:text-primary-400"
-          />
+        <div class="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+          <UIcon name="i-heroicons-building-storefront" class="w-6 h-6 text-primary-600 dark:text-primary-400" />
         </div>
         <div>
           <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -343,68 +322,45 @@ function toggleFeature(key: string) {
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div
-          v-for="feature in group.features"
-          :key="feature.key"
-          class="flex items-center justify-between p-4 rounded-xl border transition-colors"
-          :class="[
+        <div v-for="feature in group.features" :key="feature.key"
+          class="flex items-center justify-between p-4 rounded-xl border transition-colors" :class="[
             (features as any)[feature.key]
               ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
               : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700',
             feature.locked ? 'opacity-80' : 'cursor-pointer hover:border-primary-300 dark:hover:border-primary-700'
-          ]"
-          @click="!feature.locked && toggleFeature(feature.key)"
-        >
+          ]" @click="!feature.locked && toggleFeature(feature.key)">
           <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
-              :class="[
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" :class="[
+              (features as any)[feature.key]
+                ? 'bg-primary-100 dark:bg-primary-900/50'
+                : 'bg-gray-100 dark:bg-gray-700'
+            ]">
+              <UIcon :name="feature.icon" class="w-5 h-5 transition-colors" :class="[
                 (features as any)[feature.key]
-                  ? 'bg-primary-100 dark:bg-primary-900/50'
-                  : 'bg-gray-100 dark:bg-gray-700'
-              ]"
-            >
-              <UIcon
-                :name="feature.icon"
-                class="w-5 h-5 transition-colors"
-                :class="[
-                  (features as any)[feature.key]
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-500 dark:text-gray-400'
-                ]"
-              />
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              ]" />
             </div>
             <div>
               <p class="font-medium text-gray-900 dark:text-white">
                 {{ isLaoLocale ? feature.labelLao : feature.label }}
               </p>
-              <p
-                v-if="feature.locked"
-                class="text-xs text-gray-500 dark:text-gray-400"
-              >
+              <p v-if="feature.locked" class="text-xs text-gray-500 dark:text-gray-400">
                 {{ t("settings.features.alwaysOn") || "Always enabled" }}
               </p>
             </div>
           </div>
-          <USwitch
-            :model-value="(features as any)[feature.key]"
-            :disabled="feature.locked"
-            @update:model-value="toggleFeature(feature.key)"
-            @click.stop
-          />
+          <USwitch :model-value="(features as any)[feature.key]" :disabled="feature.locked"
+            @update:model-value="toggleFeature(feature.key)" @click.stop />
         </div>
       </div>
     </div>
 
     <!-- Help Text -->
-    <div
-      class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
-    >
+    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
       <div class="flex gap-3">
-        <UIcon
-          name="i-heroicons-information-circle"
-          class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
-        />
+        <UIcon name="i-heroicons-information-circle"
+          class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
         <div>
           <p class="text-sm text-blue-800 dark:text-blue-200">
             {{

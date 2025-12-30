@@ -305,8 +305,11 @@
 import type { LightningProvider } from '~/types';
 
 definePageMeta({
-  layout: 'default',
   middleware: ['auth'],
+});
+
+useHead({
+  title: "Lightning Settings",
 });
 
 const { t } = useI18n();

@@ -35,6 +35,7 @@ export interface EnabledFeatures {
   loyalty: boolean;
   contracts: boolean;
   employees: boolean;
+  deviceSync: boolean;
 }
 
 /**
@@ -59,6 +60,7 @@ export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
     loyalty: false,
     contracts: false,
     employees: false,
+    deviceSync: false,
   };
 
   // Customize based on shop type
@@ -88,6 +90,7 @@ export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
         delivery: true,
         loyalty: true,
         contracts: true,
+        deviceSync: false,
       };
     default:
       return base;

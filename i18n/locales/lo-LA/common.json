@@ -38,6 +38,8 @@
     "export": "ສົ່ງອອກ {type}",
     "exported": "ສົ່ງອອກແລ້ວ",
     "import": "ນຳເຂົ້າ {type}",
+    "backup": "ສຳຮອງ ({type})",
+    "restore": "ກູ້ຄືນ ({type})",
     "date": "ວັນທີ",
     "createdBy": "ສ້າງໂດຍ",
     "all": "ທັງໝົດ",
@@ -68,6 +70,9 @@
     "metadata": "ຂໍ້ມູນເພີ່ມເຕີມ",
     "created": "ສ້າງເມື່ອ",
     "updated": "ອັບເດດເມື່ອ",
+    "updatedBy": "ອັບເດດໂດຍ",
+    "by": "ໂດຍ",
+    "lastUpdated": "ອັບເດດຫຼ້າສຸດ",
     "print": "ພິມ",
     "share": "ແບ່ງປັນ",
     "permissionDenied": "ບໍ່ມີສິດ",
@@ -89,6 +94,8 @@
     "address": "ທີ່ຢູ່",
     "confirm_delete": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບລາຍການນີ້?",
     "current": "ປັດຈຸບັນ",
+    "yes": "ແມ່ນ",
+    "no": "ບໍ່",
     "qty": "ຈຳນວນ",
     "quantity": "ປະລິມານ",
     "price": "ລາຄາ",
@@ -113,7 +120,9 @@
     "lastSync": "ຊິງຄ໌ຫຼ້າສຸດ",
     "notSyncedYet": "ຍັງບໍ່ທັນຊິງຄ໌",
     "syncNow": "ຊິງຄ໌ດຽວນີ້",
+    "refresh": "ຣີເຟຣຊ",
     "saveSettings": "ບັນທຶກການຕັ້ງຄ່າ",
+    "overview": "ພາບລວມ",
     "help": {
       "title": "ຊ່ວຍເຫຼືອ & ຄູ່ມື",
       "searchPlaceholder": "ຄົ້ນຫາ...",
@@ -234,6 +243,7 @@
     "privateChannelHint": "ຊ່ອງທາງສ່ວນຕົວຖືກເຂົ້າລະຫັດ ແລະ ເຫັນໄດ້ສະເພາະສະມາຊິກທີ່ຖືກເຊີນເທົ່ານັ້ນ",
     "shopChannelHint": "ຊ່ອງທາງສາຂາເປັນສ່ວນຕົວສຳລັບສະມາຊິກທີມໃນສາຂາເທົ່ານັ້ນ",
     "noShopChannels": "ບໍ່ມີຊ່ອງທາງສາຂາ",
-    "noCompanyChannels": "ບໍ່ມີຊ່ອງທາງບໍລິສັດ"
+    "noCompanyChannels": "ບໍ່ມີຊ່ອງທາງບໍລິສັດ",
+    "days": "ວັນ"
   }
 }

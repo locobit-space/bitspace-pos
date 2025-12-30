@@ -60,8 +60,13 @@
     "addVariant": "Add Variant",
     "priceDiff": "Price Diff",
     "finalPrice": "Final Price",
-    "settings": "Product Settings",
-    "manageMetadata": "Manage categories and units",
+    "settings": {
+      "title": "Product Settings",
+      "manageCategories": "Manage Categories",
+      "manageUnits": "Manage Units",
+      "manageCategoriesDesc": "Add, edit or delete product categories",
+      "manageUnitsDesc": "Manage product measurement units"
+    },
     "selectUnit": "Select Unit",
     "tabs": {
       "details": "Details",
@@ -155,12 +160,27 @@
     "activityStatusChange": "Status Changed",
     "activityRestore": "Restored",
     "productTypes": {
-      "good": "Physical Good",
-      "service": "Service",
-      "digital": "Digital Product",
-      "subscription": "Subscription",
-      "bundle": "Bundle"
+      "good": "📦 Physical Good",
+      "service": "🛠️ Service",
+      "digital": "💾 Digital Product",
+      "subscription": "🔄 Subscription",
+      "bundle": "🎁 Bundle"
     },
+    "barcodeTypes": {
+      "ean13": "EAN-13",
+      "upca": "UPC-A",
+      "code128": "Code 128",
+      "qr": "QR Code",
+      "custom": "Custom"
+    },
+    "storageTypes": {
+      "ambient": "🏠 Ambient (Room Temperature)",
+      "refrigerated": "❄️ Refrigerated (2-8°C)",
+      "frozen": "🧊 Frozen (-18°C or below)",
+      "controlled": "🌡️ Controlled Temperature"
+    },
+    "noStockTitle": "No Inventory Tracking",
+    "createNewHint": "Fill in the required fields to create a new product",
     "lookup": {
       "title": "Discover Products",
       "subtitle": "Find products from public databases",
@@ -204,6 +224,12 @@
     "specialInstructions": "Special Instructions",
     "notesPlaceholder": "E.g., Less ice, no sugar, extra spicy...",
     "addToCart": "Add to Cart",
-    "sizeRequired": "Please select a size"
+    "sizeRequired": "Please select a size",
+    "presets": {
+      "sizes": "📏 S / M / L",
+      "drinks": "🥤 Regular / Large",
+      "coffee": "☕ Hot / Iced / Frappe",
+      "portions": "🍽️ Single / Double"
+    }
   }
 }

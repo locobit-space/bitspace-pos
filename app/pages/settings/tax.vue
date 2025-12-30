@@ -232,8 +232,11 @@
 import { useTax, type TaxRate } from '~/composables/use-tax';
 
 definePageMeta({
-  layout: "default",
   middleware: ["auth", "permission"],
+});
+
+useHead({
+  title: "Tax",
 });
 
 const { t } = useI18n();

@@ -5,7 +5,7 @@
  * Used by both the settings page and the receipt generation composable.
  */
 
-import { ref, computed, watch } from "vue";
+import { computed } from "vue";
 
 // ============================================
 // Types
@@ -131,8 +131,10 @@ const defaultSettings: SavedReceiptSettings = {
 // ============================================
 
 // Global state (singleton pattern)
-const settings = ref<SavedReceiptSettings>({ ...defaultSettings });
-const isLoaded = ref(false);
+const settings = useState<SavedReceiptSettings>("receipt-settings", () => ({
+  ...defaultSettings,
+}));
+const isLoaded = useState<boolean>("receipt-settings-loaded", () => false);
 
 export function useReceiptSettings() {
   /**

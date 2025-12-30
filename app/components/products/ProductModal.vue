@@ -87,20 +87,20 @@ const productSchema = z.object({
 });
 
 // Options
-const productTypeOptions = [
-  { value: "good", label: "📦 Physical Good" },
-  { value: "service", label: "🛠️ Service" },
-  { value: "digital", label: "💾 Digital Product" },
-  { value: "subscription", label: "🔄 Subscription" },
-  { value: "bundle", label: "🎁 Bundle" },
-];
+const productTypeOptions = computed(() => [
+  { value: "good", label: t("products.productTypes.good") },
+  { value: "service", label: t("products.productTypes.service") },
+  { value: "digital", label: t("products.productTypes.digital") },
+  { value: "subscription", label: t("products.productTypes.subscription") },
+  { value: "bundle", label: t("products.productTypes.bundle") },
+]);
 
-const storageTypeOptions = [
-  { value: "ambient", label: "🏠 Ambient (Room Temperature)" },
-  { value: "refrigerated", label: "❄️ Refrigerated (2-8°C)" },
-  { value: "frozen", label: "🧊 Frozen (-18°C or below)" },
-  { value: "controlled", label: "🌡️ Controlled Temperature" },
-];
+const storageTypeOptions = computed(() => [
+  { value: "ambient", label: t("products.storageTypes.ambient") },
+  { value: "refrigerated", label: t("products.storageTypes.refrigerated") },
+  { value: "frozen", label: t("products.storageTypes.frozen") },
+  { value: "controlled", label: t("products.storageTypes.controlled") },
+]);
 
 const productEmojis = [
   "📦",
@@ -259,37 +259,21 @@ function handleCancel() {
 </script>
 
 <template>
-  <UModal
-    v-model:open="open"
-    title="Product"
-    description="Add a new product or edit an existing one"
-    fullscreen
-  >
+  <UModal v-model:open="open" title="Product" description="Add a new product or edit an existing one" fullscreen>
     <template #content>
       <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
         <!-- Header -->
-        <header
-          class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 shrink-0"
-        >
+        <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 shrink-0">
           <div class="flex items-center justify-between max-w-6xl mx-auto">
             <div class="flex items-center gap-4">
               <div
-                class="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-sm"
-              >
-                <img
-                  v-if="form.image && form.image.startsWith('http')"
-                  :src="form.image"
-                  alt="Preview"
-                  class="w-full h-full object-cover"
-                />
+                class="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-sm">
+                <img v-if="form.image && form.image.startsWith('http')" :src="form.image" alt="Preview"
+                  class="w-full h-full object-cover" />
                 <span v-else-if="form.image" class="text-3xl">{{
                   form.image
-                }}</span>
-                <UIcon
-                  v-else
-                  name="i-heroicons-cube"
-                  class="w-7 h-7 text-gray-400"
-                />
+                  }}</span>
+                <UIcon v-else name="i-heroicons-cube" class="w-7 h-7 text-gray-400" />
               </div>
               <div>
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white">
@@ -308,13 +292,7 @@ function handleCancel() {
                 </p>
               </div>
             </div>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-heroicons-x-mark"
-              size="lg"
-              @click="handleCancel"
-            />
+            <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" size="lg" @click="handleCancel" />
           </div>
         </header>
 
@@ -329,95 +307,58 @@ function handleCancel() {
                   <ProductsFormCardBasicInfo v-model="form" />
 
                   <!-- Classification Card -->
-                  <ProductsFormCardClassification
-                    v-model="form"
-                    :category-options="categoryOptions"
-                    :unit-options="unitOptions"
-                    :branch-options="branchOptions"
-                    :product-type-options="productTypeOptions"
-                    @product-type-change="onProductTypeChange"
-                    @add-category="$emit('add-category')"
-                    @add-unit="$emit('add-unit')"
-                  />
+                  <ProductsFormCardClassification v-model="form" :category-options="categoryOptions"
+                    :unit-options="unitOptions" :branch-options="branchOptions"
+                    :product-type-options="productTypeOptions" @product-type-change="onProductTypeChange"
+                    @add-category="$emit('add-category')" @add-unit="$emit('add-unit')" />
 
                   <!-- Inventory Card -->
-                  <ProductsFormCardInventory
-                    v-if="
-                      form.productType === 'good' ||
-                      form.productType === 'bundle'
-                    "
-                    v-model="form"
-                    :unit-symbol="getUnitSymbol(form.unitId)"
-                  />
+                  <ProductsFormCardInventory v-if="
+                    form.productType === 'good' ||
+                    form.productType === 'bundle'
+                  " v-model="form" :unit-symbol="getUnitSymbol(form.unitId)" />
 
                   <!-- Expiry Card -->
-                  <ProductsFormCardExpiry
-                    v-if="
-                      (form.productType === 'good' ||
-                        form.productType === 'bundle') &&
-                      form.trackStock
-                    "
-                    v-model="form"
-                    :storage-type-options="storageTypeOptions"
-                  />
+                  <ProductsFormCardExpiry v-if="
+                    (form.productType === 'good' ||
+                      form.productType === 'bundle') &&
+                    form.trackStock
+                  " v-model="form" :storage-type-options="storageTypeOptions" />
 
                   <!-- Size Variants Card -->
                   <div
-                    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden"
-                  >
-                    <div
-                      class="px-6 py-4 border-b border-gray-200 dark:border-gray-800"
-                    >
+                    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
                       <h3 class="font-semibold text-gray-900 dark:text-white">
-                        {{ t("products.sizeVariants") || "Size Variants" }}
+                        {{ t("products.sizeVariants") }}
                       </h3>
                       <p class="text-sm text-gray-500">
-                        {{
-                          t("products.sizeVariantsDesc") ||
-                          "Add sizes like S, M, L with different prices"
-                        }}
+                        {{ t("products.sizeVariantsDesc") }}
                       </p>
                     </div>
                     <div class="p-6">
-                      <ProductsProductVariantEditor
-                        v-model:has-variants="form.hasVariants"
-                        v-model:variants="form.variants"
-                      />
+                      <ProductsProductVariantEditor v-model:has-variants="form.hasVariants"
+                        v-model:variants="form.variants" />
                     </div>
                   </div>
 
                   <!-- No Stock Info -->
-                  <div
-                    v-if="
-                      form.productType === 'service' ||
-                      form.productType === 'digital' ||
-                      form.productType === 'subscription'
-                    "
-                    class="bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-6"
-                  >
+                  <div v-if="
+                    form.productType === 'service' ||
+                    form.productType === 'digital' ||
+                    form.productType === 'subscription'
+                  " class="bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-6">
                     <div class="flex items-start gap-4">
                       <div
-                        class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0"
-                      >
-                        <UIcon
-                          name="i-heroicons-information-circle"
-                          class="w-6 h-6 text-blue-600 dark:text-blue-400"
-                        />
+                        class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                        <UIcon name="i-heroicons-information-circle" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <h4
-                          class="font-medium text-blue-900 dark:text-blue-100 mb-1"
-                        >
-                          {{
-                            t("products.noStockTitle") ||
-                            "No Inventory Tracking"
-                          }}
+                        <h4 class="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                          {{ t("products.noStockTitle") }}
                         </h4>
                         <p class="text-sm text-blue-700 dark:text-blue-300">
-                          {{
-                            t("products.noStockTracking") ||
-                            "Stock tracking is not available for this product type."
-                          }}
+                          {{ t("products.noStockTracking") }}
                         </p>
                       </div>
                     </div>
@@ -427,10 +368,7 @@ function handleCancel() {
                 <!-- Right Column -->
                 <div class="space-y-6">
                   <!-- Image Card -->
-                  <ProductsFormCardImage
-                    v-model="form"
-                    :emojis="productEmojis"
-                  />
+                  <ProductsFormCardImage v-model="form" :emojis="productEmojis" />
 
                   <!-- Status Card -->
                   <ProductsFormCardStatus v-model="form" />
@@ -439,37 +377,22 @@ function handleCancel() {
 
               <!-- Footer -->
               <div
-                class="mt-8 flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm"
-              >
+                class="mt-8 flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div class="text-sm text-gray-500">
                   <span v-if="isEditing && product">
-                    {{ t("common.lastUpdated") || "Last updated" }}:
+                    {{ t("common.lastUpdated") }}:
                     <span v-if="product.updatedAt">
                       {{ $d(new Date(product.updatedAt), "long") }}
                     </span>
                   </span>
                   <span v-else>
-                    {{
-                      t("products.createNewHint") ||
-                      "Fill in the required fields to create a new product"
-                    }}
+                    {{ t("products.createNewHint") }}
                   </span>
                 </div>
                 <div class="flex items-center gap-3">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="lg"
-                    :label="t('common.cancel')"
-                    @click="handleCancel"
-                  />
-                  <UButton
-                    type="submit"
-                    color="primary"
-                    size="lg"
-                    :loading="loading"
-                    icon="i-heroicons-check"
-                  >
+                  <UButton color="neutral" variant="outline" size="lg" :label="t('common.cancel')"
+                    @click="handleCancel" />
+                  <UButton type="submit" color="primary" size="lg" :loading="loading" icon="i-heroicons-check">
                     {{ isEditing ? t("common.update") : t("common.create") }}
                   </UButton>
                 </div>

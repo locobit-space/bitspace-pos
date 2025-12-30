@@ -2,6 +2,12 @@
 // 👥 Employee List Page - Enterprise HR Management
 import type { Employee, EmployeeStatus, EmploymentType } from "~/types";
 
+useHead(
+  {
+    title: "Employee"
+  }
+)
+
 const { t } = useI18n();
 const employeesStore = useEmployeesStore();
 
@@ -194,21 +200,13 @@ function getSortIcon(field: string) {
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Header -->
     <div
-      class="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700"
-    >
+      class="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-        <div
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        >
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <!-- Title & Stats -->
           <div>
-            <h1
-              class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
-            >
-              <UIcon
-                name="i-heroicons-user-group"
-                class="w-7 h-7 text-primary-500"
-              />
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <UIcon name="i-heroicons-user-group" class="w-7 h-7 text-primary-500" />
               {{ t("employees.title") }}
             </h1>
             <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
@@ -217,28 +215,18 @@ function getSortIcon(field: string) {
                 {{ employeesStore.employeeStats.value.active }}
                 {{ t("employees.status.active") }}
               </span>
-              <span
-                >{{ employeesStore.employeeStats.value.total }}
-                {{ t("employees.total") }}</span
-              >
+              <span>{{ employeesStore.employeeStats.value.total }}
+                {{ t("employees.total") }}</span>
             </div>
           </div>
 
           <!-- Actions -->
           <div class="flex items-center gap-2">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-heroicons-document-arrow-down"
-              @click="employeesStore.exportToExcel"
-            >
+            <UButton color="neutral" variant="ghost" icon="i-heroicons-document-arrow-down"
+              @click="employeesStore.exportToExcel">
               {{ t("employees.actions.export") }}
             </UButton>
-            <UButton
-              color="primary"
-              icon="i-heroicons-plus"
-              @click="showCreateModal = true"
-            >
+            <UButton color="primary" icon="i-heroicons-plus" @click="showCreateModal = true">
               {{ t("employees.addEmployee") }}
             </UButton>
           </div>
@@ -246,15 +234,10 @@ function getSortIcon(field: string) {
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-          <div
-            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
-          >
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-2">
               <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                <UIcon
-                  name="i-heroicons-users"
-                  class="w-5 h-5 text-primary-500"
-                />
+                <UIcon name="i-heroicons-users" class="w-5 h-5 text-primary-500" />
               </div>
               <div>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -266,15 +249,10 @@ function getSortIcon(field: string) {
               </div>
             </div>
           </div>
-          <div
-            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
-          >
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-2">
               <div class="p-2 bg-success-100 dark:bg-success-900/30 rounded-lg">
-                <UIcon
-                  name="i-heroicons-check-circle"
-                  class="w-5 h-5 text-success-500"
-                />
+                <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-success-500" />
               </div>
               <div>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -286,15 +264,10 @@ function getSortIcon(field: string) {
               </div>
             </div>
           </div>
-          <div
-            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
-          >
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-2">
               <div class="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-lg">
-                <UIcon
-                  name="i-heroicons-calendar"
-                  class="w-5 h-5 text-warning-500"
-                />
+                <UIcon name="i-heroicons-calendar" class="w-5 h-5 text-warning-500" />
               </div>
               <div>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -306,15 +279,10 @@ function getSortIcon(field: string) {
               </div>
             </div>
           </div>
-          <div
-            class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
-          >
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-2">
               <div class="p-2 bg-info-100 dark:bg-info-900/30 rounded-lg">
-                <UIcon
-                  name="i-heroicons-sparkles"
-                  class="w-5 h-5 text-info-500"
-                />
+                <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-info-500" />
               </div>
               <div>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -331,48 +299,25 @@ function getSortIcon(field: string) {
         <!-- Filters Bar -->
         <div class="flex flex-col sm:flex-row gap-3 mt-4">
           <!-- Search -->
-          <UInput
-            v-model="employeesStore.searchQuery.value"
-            :placeholder="t('employees.searchPlaceholder')"
-            icon="i-heroicons-magnifying-glass"
-            class="flex-1"
-          />
+          <UInput v-model="employeesStore.searchQuery.value" :placeholder="t('employees.searchPlaceholder')"
+            icon="i-heroicons-magnifying-glass" class="flex-1" />
 
           <!-- Status Filter -->
-          <USelect
-            v-model="employeesStore.selectedStatus.value"
-            :items="statusOptions"
-            value-key="value"
-            label-key="label"
-            class="w-40"
-          />
+          <USelect v-model="employeesStore.selectedStatus.value" :items="statusOptions" value-key="value"
+            label-key="label" class="w-40" />
 
           <!-- Department Filter -->
-          <USelect
-            v-model="employeesStore.selectedDepartment.value"
-            :items="departmentOptions"
-            value-key="value"
-            label-key="label"
-            class="w-40"
-            :placeholder="t('employees.department')"
-          />
+          <USelect v-model="employeesStore.selectedDepartment.value" :items="departmentOptions" value-key="value"
+            label-key="label" class="w-40" :placeholder="t('employees.department')" />
 
           <!-- View Toggle -->
           <div class="flex items-center -space-x-px">
-            <UButton
-              :color="viewMode === 'grid' ? 'primary' : 'neutral'"
-              :variant="viewMode === 'grid' ? 'solid' : 'ghost'"
-              icon="i-heroicons-squares-2x2"
-              class="rounded-r-none focus:z-10"
-              @click="viewMode = 'grid'"
-            />
-            <UButton
-              :color="viewMode === 'table' ? 'primary' : 'neutral'"
-              :variant="viewMode === 'table' ? 'solid' : 'ghost'"
-              icon="i-heroicons-list-bullet"
-              class="rounded-l-none focus:z-10"
-              @click="viewMode = 'table'"
-            />
+            <UButton :color="viewMode === 'grid' ? 'primary' : 'neutral'"
+              :variant="viewMode === 'grid' ? 'solid' : 'ghost'" icon="i-heroicons-squares-2x2"
+              class="rounded-r-none focus:z-10" @click="viewMode = 'grid'" />
+            <UButton :color="viewMode === 'table' ? 'primary' : 'neutral'"
+              :variant="viewMode === 'table' ? 'solid' : 'ghost'" icon="i-heroicons-list-bullet"
+              class="rounded-l-none focus:z-10" @click="viewMode = 'table'" />
           </div>
         </div>
       </div>
@@ -381,28 +326,14 @@ function getSortIcon(field: string) {
     <!-- Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       <!-- Loading State -->
-      <div
-        v-if="employeesStore.isLoading.value"
-        class="flex items-center justify-center py-20"
-      >
-        <UIcon
-          name="i-heroicons-arrow-path"
-          class="w-8 h-8 text-primary-500 animate-spin"
-        />
+      <div v-if="employeesStore.isLoading.value" class="flex items-center justify-center py-20">
+        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 text-primary-500 animate-spin" />
       </div>
 
       <!-- Empty State -->
-      <div
-        v-else-if="employeesStore.filteredEmployees.value.length === 0"
-        class="text-center py-20"
-      >
-        <div
-          class="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center"
-        >
-          <UIcon
-            name="i-heroicons-user-group"
-            class="w-10 h-10 text-gray-400"
-          />
+      <div v-else-if="employeesStore.filteredEmployees.value.length === 0" class="text-center py-20">
+        <div class="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+          <UIcon name="i-heroicons-user-group" class="w-10 h-10 text-gray-400" />
         </div>
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {{ t("employees.noEmployees") }}
@@ -410,51 +341,28 @@ function getSortIcon(field: string) {
         <p class="text-gray-500 mb-4">
           {{ t("employees.noEmployeesDescription") }}
         </p>
-        <UButton
-          color="primary"
-          icon="i-heroicons-plus"
-          @click="showCreateModal = true"
-        >
+        <UButton color="primary" icon="i-heroicons-plus" @click="showCreateModal = true">
           {{ t("employees.addFirstEmployee") }}
         </UButton>
       </div>
 
       <!-- Grid View -->
-      <div
-        v-else-if="viewMode === 'grid'"
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-      >
-        <div
-          v-for="employee in employeesStore.filteredEmployees.value"
-          :key="employee.id"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow cursor-pointer group"
-        >
+      <div v-else-if="viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div v-for="employee in employeesStore.filteredEmployees.value" :key="employee.id"
+          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow cursor-pointer group">
           <!-- Avatar & Status & Actions -->
           <div class="flex items-start justify-between mb-3">
-            <div
-              class="flex items-center gap-3"
-              @click="viewEmployee(employee)"
-            >
-              <UAvatar
-                :src="employee.avatar"
-                :alt="`${employee.firstName} ${employee.lastName}`"
-                size="xl"
-                class="ring-2 ring-white dark:ring-gray-800"
-              />
+            <div class="flex items-center gap-3" @click="viewEmployee(employee)">
+              <UAvatar :src="employee.avatar" :alt="`${employee.firstName} ${employee.lastName}`" size="xl"
+                class="ring-2 ring-white dark:ring-gray-800" />
             </div>
             <div class="flex items-center gap-1">
               <UBadge :color="getStatusColor(employee.status)" size="sm">
                 {{ t(`employees.status.${employee.status}`) }}
               </UBadge>
               <UDropdownMenu :items="getActionItems(employee)">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-heroicons-ellipsis-vertical"
-                  size="xs"
-                  class="opacity-0 group-hover:opacity-100 transition-opacity"
-                  @click.stop
-                />
+                <UButton color="neutral" variant="ghost" icon="i-heroicons-ellipsis-vertical" size="xs"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity" @click.stop />
               </UDropdownMenu>
             </div>
           </div>
@@ -472,9 +380,7 @@ function getSortIcon(field: string) {
             </p>
 
             <!-- Quick Info -->
-            <div
-              class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700"
-            >
+            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
               <UBadge color="neutral" variant="subtle" size="xs">
                 {{ employmentTypeLabels[employee.employmentType] }}
               </UBadge>
@@ -495,17 +401,14 @@ function getSortIcon(field: string) {
       </div>
 
       <!-- Table View -->
-      <div
-        v-else
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-      >
+      <div v-else
+        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table class="w-full">
           <thead class="bg-gray-50 dark:bg-gray-900">
             <tr>
               <th
                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                @click="handleSort('firstName')"
-              >
+                @click="handleSort('firstName')">
                 <div class="flex items-center gap-1">
                   {{ t("employees.employee") }}
                   <UIcon :name="getSortIcon('firstName')" class="w-4 h-4" />
@@ -513,8 +416,7 @@ function getSortIcon(field: string) {
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                @click="handleSort('position')"
-              >
+                @click="handleSort('position')">
                 <div class="flex items-center gap-1">
                   {{ t("employees.position") }}
                   <UIcon :name="getSortIcon('position')" class="w-4 h-4" />
@@ -522,8 +424,7 @@ function getSortIcon(field: string) {
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                @click="handleSort('department')"
-              >
+                @click="handleSort('department')">
                 <div class="flex items-center gap-1">
                   {{ t("employees.department") }}
                   <UIcon :name="getSortIcon('department')" class="w-4 h-4" />
@@ -531,8 +432,7 @@ function getSortIcon(field: string) {
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                @click="handleSort('status')"
-              >
+                @click="handleSort('status')">
                 <div class="flex items-center gap-1">
                   {{ t("employees.status.label") }}
                   <UIcon :name="getSortIcon('status')" class="w-4 h-4" />
@@ -540,34 +440,23 @@ function getSortIcon(field: string) {
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                @click="handleSort('baseSalary')"
-              >
+                @click="handleSort('baseSalary')">
                 <div class="flex items-center gap-1">
                   {{ t("employees.salary") }}
                   <UIcon :name="getSortIcon('baseSalary')" class="w-4 h-4" />
                 </div>
               </th>
-              <th
-                class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {{ t("common.actions") }}
               </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-            <tr
-              v-for="employee in employeesStore.filteredEmployees.value"
-              :key="employee.id"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-              @click="viewEmployee(employee)"
-            >
+            <tr v-for="employee in employeesStore.filteredEmployees.value" :key="employee.id"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer" @click="viewEmployee(employee)">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
-                  <UAvatar
-                    :src="employee.avatar"
-                    :alt="`${employee.firstName} ${employee.lastName}`"
-                    size="sm"
-                  />
+                  <UAvatar :src="employee.avatar" :alt="`${employee.firstName} ${employee.lastName}`" size="sm" />
                   <div>
                     <p class="font-medium text-gray-900 dark:text-white">
                       {{ employee.firstName }} {{ employee.lastName }}
@@ -578,14 +467,10 @@ function getSortIcon(field: string) {
                   </div>
                 </div>
               </td>
-              <td
-                class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell"
-              >
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell">
                 {{ employee.position || "-" }}
               </td>
-              <td
-                class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hidden md:table-cell"
-              >
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hidden md:table-cell">
                 {{ employee.department || "-" }}
               </td>
               <td class="px-4 py-3">
@@ -593,23 +478,13 @@ function getSortIcon(field: string) {
                   {{ t(`employees.status.${employee.status}`) }}
                 </UBadge>
               </td>
-              <td
-                class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell"
-              >
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell">
                 {{ formatCurrency(employee.baseSalary, employee.currency) }}
-                <span class="text-xs text-gray-400"
-                  >/{{ t(`employees.salaryType.${employee.salaryType}`) }}</span
-                >
+                <span class="text-xs text-gray-400">/{{ t(`employees.salaryType.${employee.salaryType}`) }}</span>
               </td>
               <td class="px-4 py-3 text-right">
                 <UDropdownMenu :items="getActionItems(employee)">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-heroicons-ellipsis-vertical"
-                    size="sm"
-                    @click.stop
-                  />
+                  <UButton color="neutral" variant="ghost" icon="i-heroicons-ellipsis-vertical" size="sm" @click.stop />
                 </UDropdownMenu>
               </td>
             </tr>
@@ -619,80 +494,47 @@ function getSortIcon(field: string) {
     </div>
 
     <!-- Create Employee Modal -->
-    <UModal
-      v-model:open="showCreateModal"
-      :ui="{
-        content: 'max-w-2xl ',
-      }"
-    >
+    <UModal v-model:open="showCreateModal" :ui="{
+      content: 'max-w-2xl ',
+    }">
       <template #content>
-        <EmployeeForm
-          @close="showCreateModal = false"
-          @saved="showCreateModal = false"
-        />
+        <EmployeeForm @close="showCreateModal = false" @saved="showCreateModal = false" />
       </template>
     </UModal>
 
     <!-- Edit Employee Modal -->
-    <UModal
-      v-model:open="showEditModal"
-      :ui="{
-        content: 'max-w-2xl ',
-      }"
-      title="Edit Employee"
-      description="Edit employee details"
-    >
+    <UModal v-model:open="showEditModal" :ui="{
+      content: 'max-w-2xl ',
+    }" title="Edit Employee" description="Edit employee details">
       <template #content>
-        <EmployeeForm
-          v-if="employeeToEdit"
-          :employee="employeeToEdit"
-          @close="
-            showEditModal = false;
-            employeeToEdit = null;
-          "
-          @saved="
-            showEditModal = false;
-            employeeToEdit = null;
-          "
-        />
+        <EmployeeForm v-if="employeeToEdit" :employee="employeeToEdit" @close="
+          showEditModal = false;
+        employeeToEdit = null;
+        " @saved="
+          showEditModal = false;
+        employeeToEdit = null;
+        " />
       </template>
     </UModal>
 
     <!-- Employee Detail Modal -->
-    <UModal
-      v-model:open="showDetailModal"
-      fullscreen
-      title="Employee Details"
-      description="View employee details"
-    >
+    <UModal v-model:open="showDetailModal" fullscreen title="Employee Details" description="View employee details">
       <template #content>
-        <EmployeeDetail
-          v-if="selectedEmployee"
-          :employee="selectedEmployee"
-          @close="showDetailModal = false"
-          @edit="
-            employeeToEdit = selectedEmployee;
-            showEditModal = true;
-            showDetailModal = false;
-          "
-        />
+        <EmployeeDetail v-if="selectedEmployee" :employee="selectedEmployee" @close="showDetailModal = false" @edit="
+          employeeToEdit = selectedEmployee;
+        showEditModal = true;
+        showDetailModal = false;
+        " />
       </template>
     </UModal>
 
     <!-- Terminate Confirmation Modal -->
-    <UModal
-      v-model:open="showTerminateModal"
-      title="Terminate Employee"
-      description="Terminate employee"
-    >
+    <UModal v-model:open="showTerminateModal" title="Terminate Employee" description="Terminate employee">
       <template #content>
         <div class="p-6">
           <div class="flex items-center gap-4 mb-4">
             <div class="p-3 bg-warning-100 dark:bg-warning-900/30 rounded-full">
-              <UIcon
-                name="i-heroicons-exclamation-triangle"
-                class="w-6 h-6 text-warning-500"
-              />
+              <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-warning-500" />
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -708,11 +550,7 @@ function getSortIcon(field: string) {
             }}
           </p>
           <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              @click="showTerminateModal = false"
-            >
+            <UButton color="neutral" variant="ghost" @click="showTerminateModal = false">
               {{ t("employees.confirm.cancel") }}
             </UButton>
             <UButton color="warning" @click="handleTerminate">
@@ -724,11 +562,7 @@ function getSortIcon(field: string) {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal
-      v-model:open="showDeleteModal"
-      title="Delete Employee"
-      description="Delete employee"
-    >
+    <UModal v-model:open="showDeleteModal" title="Delete Employee" description="Delete employee">
       <template #content>
         <div class="p-6">
           <div class="flex items-center gap-4 mb-4">
@@ -749,11 +583,7 @@ function getSortIcon(field: string) {
             }}
           </p>
           <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              @click="showDeleteModal = false"
-            >
+            <UButton color="neutral" variant="ghost" @click="showDeleteModal = false">
               {{ t("employees.confirm.cancel") }}
             </UButton>
             <UButton color="error" @click="handleDelete">

@@ -250,8 +250,11 @@
 import QrcodeVue from "qrcode.vue";
 
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
+});
+
+useHead({
+  title: "Device Sync",
 });
 
 // Composables

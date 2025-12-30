@@ -6,9 +6,12 @@ import type { AddStockFormData } from "~/components/inventory/AddStockModal.vue"
 import type { StockLot } from "~/types";
 
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
 });
+
+useHead({
+  title: 'Inventory'
+})
 
 const { t } = useI18n();
 const toast = useToast();
@@ -508,15 +511,15 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
     onClick: () => void;
     color?: string;
   }[][] = [
-    // Always show view
-    [
-      {
-        label: t("common.view") || "View Details",
-        icon: "i-heroicons-eye",
-        onClick: () => navigateTo(`/inventory/po/${po.id}`),
-      },
-    ],
-  ];
+      // Always show view
+      [
+        {
+          label: t("common.view") || "View Details",
+          icon: "i-heroicons-eye",
+          onClick: () => navigateTo(`/inventory/po/${po.id}`),
+        },
+      ],
+    ];
 
   // Edit action for draft/pending
   if (canEditPO(po.status)) {
@@ -641,9 +644,8 @@ const exportInventory = async () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `inventory-export-${
-      new Date().toISOString().split("T")[0]
-    }.json`;
+    a.download = `inventory-export-${new Date().toISOString().split("T")[0]
+      }.json`;
     a.click();
     URL.revokeObjectURL(url);
 
@@ -708,7 +710,7 @@ const handleLotQuarantine = async (lot: StockLot) => {
   const confirmed = confirm(
     lot.status === "quarantine"
       ? t("inventory.confirmReleaseQuarantine") ||
-          "Release this lot from quarantine?"
+      "Release this lot from quarantine?"
       : t("inventory.confirmQuarantine") || "Quarantine this lot?"
   );
 
@@ -748,62 +750,41 @@ onMounted(async () => {
 <template>
   <div>
     <!-- Header -->
-    <CommonPageHeader
-      :title="t('inventory.title')"
-      :description="t('inventory.description')"
-    >
+    <CommonPageHeader :title="t('inventory.title')" :description="t('inventory.description')">
       <template #right>
         <div class="flex gap-2">
-          <UButton
-            color="gray"
-            variant="outline"
-            icon="i-heroicons-arrow-down-tray"
-            :label="t('common.export')"
-            @click="exportInventory"
-          />
-          <UButton
-            v-if="canEditInventory"
-            color="primary"
-            icon="i-heroicons-plus"
-            :label="t('inventory.addStock')"
-            @click="showAddStockModal = true"
-          />
+          <UButton color="gray" variant="outline" icon="i-heroicons-arrow-down-tray" :label="t('common.export')"
+            @click="exportInventory" />
+          <UButton v-if="canEditInventory" color="primary" icon="i-heroicons-plus" :label="t('inventory.addStock')"
+            @click="showAddStockModal = true" />
         </div>
       </template>
 
       <template #tabs>
-        <UTabs
-          v-model="activeTab"
-          variant="link"
-          :items="[
-            { label: t('inventory.inventory'), value: 'inventory' },
-            {
-              label: t('inventory.stockLots'),
-              value: 'lots',
-              icon: 'i-heroicons-archive-box',
-            },
-            {
-              label: t('inventory.expiryAlerts'),
-              value: 'expiry',
-              icon: 'i-heroicons-clock',
-            },
-            { label: t('inventory.movements'), value: 'movements' },
-            { label: t('inventory.suppliers'), value: 'suppliers' },
-            { label: t('inventory.purchaseOrders'), value: 'purchaseOrders' },
-          ]"
-        />
+        <UTabs v-model="activeTab" variant="link" :items="[
+          { label: t('inventory.inventory'), value: 'inventory' },
+          {
+            label: t('inventory.stockLots'),
+            value: 'lots',
+            icon: 'i-heroicons-archive-box',
+          },
+          {
+            label: t('inventory.expiryAlerts'),
+            value: 'expiry',
+            icon: 'i-heroicons-clock',
+          },
+          { label: t('inventory.movements'), value: 'movements' },
+          { label: t('inventory.suppliers'), value: 'suppliers' },
+          { label: t('inventory.purchaseOrders'), value: 'purchaseOrders' },
+        ]" />
       </template>
     </CommonPageHeader>
 
     <!-- Expiry Alert Banner (shown when there are critical alerts) -->
-    <div
-      v-if="expiryAlertCount > 0 && activeTab !== 'expiry'"
-      class="mx-4 p-4 bg-linear-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between"
-    >
+    <div v-if="expiryAlertCount > 0 && activeTab !== 'expiry'"
+      class="mx-4 p-4 bg-linear-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center"
-        >
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
           <span class="text-xl">⚠️</span>
         </div>
         <div>
@@ -822,49 +803,23 @@ onMounted(async () => {
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 mt-4 sm:grid-cols-2 lg:grid-cols-5 gap-4 px-4">
-      <CommonStatCard
-        icon="i-heroicons-cube"
-        icon-color="blue"
-        :label="t('inventory.totalProducts')"
-        :value="inventoryItems.length"
-      />
-      <CommonStatCard
-        icon="i-heroicons-currency-dollar"
-        icon-color="green"
-        :label="t('inventory.totalValue')"
-        :value="formatCurrency(totalInventoryValue)"
-      />
-      <CommonStatCard
-        icon="i-heroicons-exclamation-triangle"
-        icon-color="yellow"
-        :label="t('inventory.lowStockItems')"
-        :value="lowStockCount"
-      />
-      <CommonStatCard
-        icon="i-heroicons-clock"
-        icon-color="yellow"
-        :label="t('inventory.expiringStock')"
-        :value="stockLotSummary.expiringCount"
-      />
-      <CommonStatCard
-        icon="i-heroicons-truck"
-        icon-color="purple"
-        :label="t('inventory.activeSuppliers')"
-        :value="suppliers.filter((s) => s.status === 'active').length"
-      />
+      <CommonStatCard icon="i-heroicons-cube" icon-color="blue" :label="t('inventory.totalProducts')"
+        :value="inventoryItems.length" />
+      <CommonStatCard icon="i-heroicons-currency-dollar" icon-color="green" :label="t('inventory.totalValue')"
+        :value="formatCurrency(totalInventoryValue)" />
+      <CommonStatCard icon="i-heroicons-exclamation-triangle" icon-color="yellow" :label="t('inventory.lowStockItems')"
+        :value="lowStockCount" />
+      <CommonStatCard icon="i-heroicons-clock" icon-color="yellow" :label="t('inventory.expiringStock')"
+        :value="stockLotSummary.expiringCount" />
+      <CommonStatCard icon="i-heroicons-truck" icon-color="purple" :label="t('inventory.activeSuppliers')"
+        :value="suppliers.filter((s) => s.status === 'active').length" />
     </div>
 
     <!-- Inventory Tab -->
     <template v-if="activeTab === 'inventory'">
       <!-- Filters -->
-      <InventoryFilters
-        v-model:search="searchQuery"
-        v-model:branch="selectedBranch"
-        v-model:status="selectedStatus"
-        :branches="branches"
-        :status-options="statusOptions"
-        class="my-6"
-      />
+      <InventoryFilters v-model:search="searchQuery" v-model:branch="selectedBranch" v-model:status="selectedStatus"
+        :branches="branches" :status-options="statusOptions" class="my-6" />
 
       <!-- Inventory Table -->
       <div class="overflow-x-auto">
@@ -898,11 +853,8 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="item in filteredInventory"
-              :key="item.id"
-              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-            >
+            <tr v-for="item in filteredInventory" :key="item.id"
+              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
               <td class="py-3 px-4">
                 <div>
                   <p class="font-medium text-gray-900 dark:text-white">
@@ -912,23 +864,17 @@ onMounted(async () => {
                 </div>
               </td>
               <td class="py-3 px-4">
-                <code
-                  class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
-                  >{{ item.sku }}</code
-                >
+                <code class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{ item.sku }}</code>
               </td>
               <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ item.branchName }}
               </td>
               <td class="py-3 px-4 text-center">
-                <span
-                  class="text-lg font-bold"
-                  :class="{
-                    'text-red-500': item.status === 'out-of-stock',
-                    'text-yellow-500': item.status === 'low-stock',
-                    'text-green-500': item.status === 'in-stock',
-                  }"
-                >
+                <span class="text-lg font-bold" :class="{
+                  'text-red-500': item.status === 'out-of-stock',
+                  'text-yellow-500': item.status === 'low-stock',
+                  'text-green-500': item.status === 'in-stock',
+                }">
                   {{ item.currentStock }}
                 </span>
                 <span class="text-xs text-gray-500 ml-1">{{
@@ -939,32 +885,17 @@ onMounted(async () => {
                 {{ item.minStock }} / {{ item.maxStock }}
               </td>
               <td class="py-3 px-4">
-                <UBadge
-                  :color="getStatusColor(item.status)"
-                  :label="t(`inventory.${item.status.replace('-', '')}`)"
-                />
+                <UBadge :color="getStatusColor(item.status)" :label="t(`inventory.${item.status.replace('-', '')}`)" />
               </td>
               <td class="py-3 px-4 text-right font-medium">
                 {{ formatCurrency(item.value) }}
               </td>
               <td class="py-3 px-4">
                 <div class="flex justify-end gap-1">
-                  <UButton
-                    v-if="canAdjustStock"
-                    color="gray"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-heroicons-pencil-square"
-                    @click="openAdjustModal(item)"
-                  />
-                  <UButton
-                    v-if="canAdjustStock"
-                    color="gray"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-heroicons-arrows-right-left"
-                    @click="openTransferModal(item)"
-                  />
+                  <UButton v-if="canAdjustStock" color="gray" variant="ghost" size="sm" icon="i-heroicons-pencil-square"
+                    @click="openAdjustModal(item)" />
+                  <UButton v-if="canAdjustStock" color="gray" variant="ghost" size="sm"
+                    icon="i-heroicons-arrows-right-left" @click="openTransferModal(item)" />
                 </div>
               </td>
             </tr>
@@ -1003,33 +934,22 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="movement in stockMovements"
-              :key="movement.id"
-              class="border-b border-gray-100 dark:border-gray-800"
-            >
+            <tr v-for="movement in stockMovements" :key="movement.id"
+              class="border-b border-gray-100 dark:border-gray-800">
               <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ new Date(movement.createdAt).toLocaleDateString() }}
               </td>
               <td class="py-3 px-4 font-medium">{{ movement.productName }}</td>
               <td class="py-3 px-4">
-                <UBadge
-                  :color="
-                    movement.type === 'in'
-                      ? 'green'
-                      : movement.type === 'out'
-                      ? 'red'
-                      : 'blue'
-                  "
-                  :label="t(`inventory.${movement.type}`)"
-                />
+                <UBadge :color="movement.type === 'in'
+                  ? 'green'
+                  : movement.type === 'out'
+                    ? 'red'
+                    : 'blue'
+                  " :label="t(`inventory.${movement.type}`)" />
               </td>
-              <td
-                class="py-3 px-4 text-center font-bold"
-                :class="
-                  movement.type === 'in' ? 'text-green-500' : 'text-red-500'
-                "
-              >
+              <td class="py-3 px-4 text-center font-bold" :class="movement.type === 'in' ? 'text-green-500' : 'text-red-500'
+                ">
                 {{ movement.type === "in" ? "+" : "-" }}{{ movement.quantity }}
               </td>
               <td class="py-3 px-4 text-center text-sm">
@@ -1050,19 +970,10 @@ onMounted(async () => {
     <!-- Suppliers Tab -->
     <template v-if="activeTab === 'suppliers'">
       <div class="px-4 mb-4 flex my-6 gap-2">
-        <UButton
-          color="primary"
-          icon="i-heroicons-plus"
-          :label="t('inventory.addSupplier')"
-          @click="openSupplierModal()"
-        />
-        <UButton
-          color="gray"
-          variant="outline"
-          icon="i-heroicons-arrow-path"
-          :label="t('common.sync')"
-          @click="inventory.syncPendingData()"
-        />
+        <UButton color="primary" icon="i-heroicons-plus" :label="t('inventory.addSupplier')"
+          @click="openSupplierModal()" />
+        <UButton color="gray" variant="outline" icon="i-heroicons-arrow-path" :label="t('common.sync')"
+          @click="inventory.syncPendingData()" />
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
@@ -1075,46 +986,28 @@ onMounted(async () => {
               <p class="text-sm text-gray-500">{{ supplier.contactPerson }}</p>
             </div>
             <div class="flex items-center gap-2">
-              <UBadge
-                v-if="!supplier.synced"
-                color="yellow"
-                :label="t('inventory.pendingSync')"
-                size="xs"
-              />
-              <UBadge
-                :color="supplier.status === 'active' ? 'green' : 'gray'"
-                :label="t(`common.${supplier.status}`)"
-              />
+              <UBadge v-if="!supplier.synced" color="yellow" :label="t('inventory.pendingSync')" size="xs" />
+              <UBadge :color="supplier.status === 'active' ? 'green' : 'gray'"
+                :label="t(`common.${supplier.status}`)" />
             </div>
           </div>
 
           <div class="space-y-2 text-sm">
-            <div
-              v-if="supplier.email"
-              class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
-            >
+            <div v-if="supplier.email" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Icon name="i-heroicons-envelope" class="w-4 h-4" />
               {{ supplier.email }}
             </div>
-            <div
-              v-if="supplier.phone"
-              class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
-            >
+            <div v-if="supplier.phone" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Icon name="i-heroicons-phone" class="w-4 h-4" />
               {{ supplier.phone }}
             </div>
-            <div
-              v-if="supplier.address"
-              class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
-            >
+            <div v-if="supplier.address" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Icon name="i-heroicons-map-pin" class="w-4 h-4" />
               {{ supplier.address }}
             </div>
           </div>
 
-          <div
-            class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center"
-          >
+          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <span class="text-xs text-gray-500">
               {{ t("inventory.lastOrder") }}:
               {{
@@ -1124,27 +1017,12 @@ onMounted(async () => {
               }}
             </span>
             <div class="flex gap-1">
-              <UButton
-                color="gray"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-pencil"
-                @click="openSupplierModal(supplier)"
-              />
-              <UButton
-                color="red"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-trash"
-                @click="deleteSupplier(supplier.id)"
-              />
-              <UButton
-                color="primary"
-                variant="ghost"
-                size="xs"
-                icon="i-heroicons-shopping-cart"
-                @click="showPurchaseOrderModal = true"
-              />
+              <UButton color="gray" variant="ghost" size="xs" icon="i-heroicons-pencil"
+                @click="openSupplierModal(supplier)" />
+              <UButton color="red" variant="ghost" size="xs" icon="i-heroicons-trash"
+                @click="deleteSupplier(supplier.id)" />
+              <UButton color="primary" variant="ghost" size="xs" icon="i-heroicons-shopping-cart"
+                @click="showPurchaseOrderModal = true" />
             </div>
           </div>
         </UCard>
@@ -1152,10 +1030,7 @@ onMounted(async () => {
         <!-- Empty State -->
         <UCard v-if="suppliers.length === 0" class="col-span-full">
           <div class="text-center py-8">
-            <Icon
-              name="i-heroicons-user-group"
-              class="w-12 h-12 mx-auto text-gray-400 mb-4"
-            />
+            <Icon name="i-heroicons-user-group" class="w-12 h-12 mx-auto text-gray-400 mb-4" />
             <p class="text-gray-500">{{ t("inventory.noSuppliers") }}</p>
             <UButton color="primary" class="mt-4" @click="openSupplierModal()">
               {{ t("inventory.addFirstSupplier") }}
@@ -1168,12 +1043,8 @@ onMounted(async () => {
     <!-- Purchase Orders Tab -->
     <template v-if="activeTab === 'purchaseOrders'">
       <div class="px-4 my-4">
-        <UButton
-          color="primary"
-          icon="i-heroicons-plus"
-          :label="t('inventory.createPO')"
-          @click="showPurchaseOrderModal = true"
-        />
+        <UButton color="primary" icon="i-heroicons-plus" :label="t('inventory.createPO')"
+          @click="showPurchaseOrderModal = true" />
       </div>
 
       <div class="overflow-x-auto">
@@ -1207,16 +1078,12 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="po in purchaseOrders"
-              :key="po.id"
-              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-            >
+            <tr v-for="po in purchaseOrders" :key="po.id"
+              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
               <td class="py-3 px-4">
                 <code
                   class="text-sm bg-gray-100 uppercase dark:bg-gray-800 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
-                  @click="navigateTo(`/inventory/po/${po.id}`)"
-                >
+                  @click="navigateTo(`/inventory/po/${po.id}`)">
                   {{ po.id }}
                 </code>
               </td>
@@ -1229,26 +1096,20 @@ onMounted(async () => {
                 {{ formatCurrency(po.total) }}
               </td>
               <td class="py-3 px-4">
-                <UBadge
-                  :color="
-                    po.status === 'received'
-                      ? 'green'
-                      : po.status === 'cancelled'
-                      ? 'red'
-                      : po.status === 'partial'
+                <UBadge :color="po.status === 'received'
+                  ? 'green'
+                  : po.status === 'cancelled'
+                    ? 'red'
+                    : po.status === 'partial'
                       ? 'yellow'
                       : po.status === 'draft'
-                      ? 'gray'
-                      : 'blue'
-                  "
-                  :label="
-                    t(
-                      `inventory.po${
-                        po.status.charAt(0).toUpperCase() + po.status.slice(1)
-                      }`
-                    )
-                  "
-                />
+                        ? 'gray'
+                        : 'blue'
+                  " :label="t(
+                    `inventory.po${po.status.charAt(0).toUpperCase() + po.status.slice(1)
+                    }`
+                  )
+                    " />
               </td>
               <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ new Date(po.createdAt).toLocaleDateString() }}
@@ -1256,13 +1117,7 @@ onMounted(async () => {
               <td class="py-3 px-4">
                 <div class="flex justify-end">
                   <UDropdownMenu :items="getPOActions(po)">
-                    <UButton
-                      color="gray"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-heroicons-ellipsis-vertical"
-                      @click.stop
-                    />
+                    <UButton color="gray" variant="ghost" size="sm" icon="i-heroicons-ellipsis-vertical" @click.stop />
                   </UDropdownMenu>
                 </div>
               </td>
@@ -1272,10 +1127,7 @@ onMounted(async () => {
 
         <!-- Empty State -->
         <div v-if="purchaseOrders.length === 0" class="text-center py-12">
-          <Icon
-            name="i-heroicons-document-text"
-            class="w-12 h-12 mx-auto text-gray-400 mb-4"
-          />
+          <Icon name="i-heroicons-document-text" class="w-12 h-12 mx-auto text-gray-400 mb-4" />
           <p class="text-gray-500">{{ t("inventory.noPurchaseOrders") }}</p>
         </div>
       </div>
@@ -1291,99 +1143,55 @@ onMounted(async () => {
               {{ t("inventory.stockLots") }}
             </h3>
             <div class="flex items-center gap-2 text-sm text-gray-500">
-              <span
-                >{{ stockLotSummary.totalLots }} {{ t("common.lots") }}</span
-              >
+              <span>{{ stockLotSummary.totalLots }} {{ t("common.lots") }}</span>
               <span>•</span>
-              <span
-                >{{ stockLotSummary.totalQuantity }}
-                {{ t("common.units") }}</span
-              >
+              <span>{{ stockLotSummary.totalQuantity }}
+                {{ t("common.units") }}</span>
               <span>•</span>
               <span>{{ formatCurrency(stockLotSummary.totalValue) }}</span>
             </div>
           </div>
-          <UButton
-            v-if="canEditInventory"
-            color="primary"
-            icon="i-heroicons-plus"
-            @click="showReceiveStockModal = true"
-          >
+          <UButton v-if="canEditInventory" color="primary" icon="i-heroicons-plus"
+            @click="showReceiveStockModal = true">
             {{ t("inventory.receiveStock") }}
           </UButton>
         </div>
 
         <!-- Stock Lots List Component -->
-        <InventoryStockLotsList
-          :branch-id="selectedBranch !== 'all' ? selectedBranch : undefined"
-          @adjust="handleLotAdjust"
-          @move="handleLotMove"
-          @quarantine="handleLotQuarantine"
-          @view="handleLotView"
-        />
+        <InventoryStockLotsList :branch-id="selectedBranch !== 'all' ? selectedBranch : undefined"
+          @adjust="handleLotAdjust" @move="handleLotMove" @quarantine="handleLotQuarantine" @view="handleLotView" />
       </div>
     </template>
 
     <!-- Expiry Alerts Tab -->
     <template v-if="activeTab === 'expiry'">
       <div class="">
-        <InventoryStockExpiryAlerts
-          @view-lot="handleLotView"
-          @quarantine="handleLotQuarantine"
-        />
+        <InventoryStockExpiryAlerts @view-lot="handleLotView" @quarantine="handleLotQuarantine" />
       </div>
     </template>
 
     <!-- Stock Adjustment Modal -->
-    <InventoryStockAdjustmentModal
-      v-model:open="showAdjustModal"
-      :item="selectedItem"
-      :loading="adjusting"
-      @save="handleAdjustment"
-    />
+    <InventoryStockAdjustmentModal v-model:open="showAdjustModal" :item="selectedItem" :loading="adjusting"
+      @save="handleAdjustment" />
 
     <!-- Stock Transfer Modal -->
-    <InventoryStockTransferModal
-      v-model:open="showTransferModal"
-      :item="selectedItem"
-      :branches="branches"
-      :loading="adjusting"
-      @save="handleTransfer"
-    />
+    <InventoryStockTransferModal v-model:open="showTransferModal" :item="selectedItem" :branches="branches"
+      :loading="adjusting" @save="handleTransfer" />
 
     <!-- Add Stock Modal -->
-    <InventoryAddStockModal
-      v-model:open="showAddStockModal"
-      :branches="branches"
-      :inventory-items="inventoryItems"
-      :loading="adjusting"
-      @save="handleAddStock"
-    />
+    <InventoryAddStockModal v-model:open="showAddStockModal" :branches="branches" :inventory-items="inventoryItems"
+      :loading="adjusting" @save="handleAddStock" />
 
     <!-- Supplier Modal -->
-    <InventorySupplierModal
-      v-model:open="showSupplierModal"
-      :supplier="editingSupplier"
-      :loading="adjusting"
-      @save="handleSaveSupplier"
-    />
+    <InventorySupplierModal v-model:open="showSupplierModal" :supplier="editingSupplier" :loading="adjusting"
+      @save="handleSaveSupplier" />
 
     <!-- Purchase Order Modal -->
-    <InventoryPurchaseOrderModal
-      v-model:open="showPurchaseOrderModal"
-      :suppliers="suppliers"
-      :branches="branches"
-      :inventory-items="inventoryItems"
-      :editing-p-o="editingPO"
-      :loading="adjusting"
-      @save="handleSavePurchaseOrder"
-    />
+    <InventoryPurchaseOrderModal v-model:open="showPurchaseOrderModal" :suppliers="suppliers" :branches="branches"
+      :inventory-items="inventoryItems" :editing-p-o="editingPO" :loading="adjusting" @save="handleSavePurchaseOrder" />
 
     <!-- Receive Stock Modal (with Lot Tracking) -->
-    <InventoryReceiveStockModal
-      v-model:open="showReceiveStockModal"
-      :branch-id="selectedBranch !== 'all' ? selectedBranch : 'main'"
-      @success="handleReceiveStockSuccess"
-    />
+    <InventoryReceiveStockModal v-model:open="showReceiveStockModal"
+      :branch-id="selectedBranch !== 'all' ? selectedBranch : 'main'" @success="handleReceiveStockSuccess" />
   </div>
 </template>

@@ -3,28 +3,18 @@
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <UIcon
-          name="i-heroicons-arrow-path"
-          class="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4"
-        />
+        <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4" />
         <p class="text-gray-500">{{ $t("common.loading") }}</p>
       </div>
     </div>
 
     <!-- Error State -->
-    <div
-      v-else-if="error"
-      class="flex items-center justify-center min-h-screen p-4"
-    >
+    <div v-else-if="error" class="flex items-center justify-center min-h-screen p-4">
       <UCard class="max-w-md w-full">
         <div class="text-center py-6">
           <div
-            class="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center"
-          >
-            <UIcon
-              name="i-heroicons-exclamation-triangle"
-              class="w-10 h-10 text-red-500"
-            />
+            class="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <UIcon name="i-heroicons-exclamation-triangle" class="w-10 h-10 text-red-500" />
           </div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {{ $t("order.invalidLink") || "Invalid Link" }}
@@ -38,21 +28,13 @@
     </div>
 
     <!-- Order Submitted State with Tracking -->
-    <div
-      v-else-if="orderSubmitted"
-      class="flex items-center justify-center min-h-screen p-4"
-    >
+    <div v-else-if="orderSubmitted" class="flex items-center justify-center min-h-screen p-4">
       <UCard class="max-w-md w-full">
         <div class="text-center py-6">
-          <div
-            class="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
-            :class="getOrderStatusBgClass(currentOrderStatus)"
-          >
-            <UIcon
-              :name="getOrderStatusIcon(currentOrderStatus)"
-              class="w-12 h-12"
-              :class="getOrderStatusIconClass(currentOrderStatus)"
-            />
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
+            :class="getOrderStatusBgClass(currentOrderStatus)">
+            <UIcon :name="getOrderStatusIcon(currentOrderStatus)" class="w-12 h-12"
+              :class="getOrderStatusIconClass(currentOrderStatus)" />
           </div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {{ getOrderStatusTitle(currentOrderStatus) }}
@@ -66,9 +48,7 @@
             <p class="text-sm text-gray-500 mb-1">
               {{ $t("order.orderNumber") || "Order #" }}
             </p>
-            <p
-              class="text-2xl font-bold text-primary-600 dark:text-primary-400"
-            >
+            <p class="text-2xl font-bold text-primary-600 dark:text-primary-400">
               {{ submittedOrderId?.slice(-6).toUpperCase() }}
             </p>
           </div>
@@ -76,32 +56,20 @@
           <!-- Order Status Timeline -->
           <div class="mb-6">
             <div class="flex justify-between items-center px-4">
-              <div
-                v-for="(step, index) in orderStatusSteps"
-                :key="step.key"
-                class="flex flex-col items-center flex-1"
-              >
-                <div
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-300"
-                  :class="getStepClass(step.key, index)"
-                >
+              <div v-for="(step, index) in orderStatusSteps" :key="step.key" class="flex flex-col items-center flex-1">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-300"
+                  :class="getStepClass(step.key, index)">
                   {{ step.icon }}
                 </div>
                 <span class="text-xs mt-1 text-gray-500">{{ step.label }}</span>
-                <div
-                  v-if="index < orderStatusSteps.length - 1"
-                  class="absolute h-1 bg-gray-200 dark:bg-gray-700"
-                  style="width: 60px; top: 20px"
-                  :class="{ 'bg-primary-500': isStepCompleted(step.key) }"
-                />
+                <div v-if="index < orderStatusSteps.length - 1" class="absolute h-1 bg-gray-200 dark:bg-gray-700"
+                  style="width: 60px; top: 20px" :class="{ 'bg-primary-500': isStepCompleted(step.key) }" />
               </div>
             </div>
           </div>
 
           <!-- Table Info -->
-          <div
-            class="flex items-center justify-center gap-2 text-gray-500 mb-4"
-          >
+          <div class="flex items-center justify-center gap-2 text-gray-500 mb-4">
             <UIcon name="i-heroicons-map-pin" class="w-4 h-4" />
             <span>{{
               tableInfo?.tableName || `Table ${tableInfo?.tableNumber}`
@@ -114,14 +82,8 @@
               <UIcon name="i-heroicons-plus" class="w-5 h-5 mr-2" />
               {{ $t("order.orderMore") || "Order More" }}
             </UButton>
-            <UButton
-              v-if="orderHistory.length > 0"
-              color="neutral"
-              variant="soft"
-              size="lg"
-              block
-              @click="showOrderHistoryModal = true"
-            >
+            <UButton v-if="orderHistory.length > 0" color="neutral" variant="soft" size="lg" block
+              @click="showOrderHistoryModal = true">
               <UIcon name="i-heroicons-clock" class="w-5 h-5 mr-2" />
               {{ $t("order.viewHistory") || "View Order History" }}
             </UButton>
@@ -134,8 +96,7 @@
     <template v-else-if="tableInfo">
       <!-- Header -->
       <div
-        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm safe-area-top"
-      >
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm safe-area-top">
         <div class="container mx-auto px-4 py-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -151,23 +112,11 @@
             </div>
             <div class="flex items-center gap-2">
               <!-- Order History Button -->
-              <UButton
-                v-if="orderHistory.length > 0"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                icon="i-heroicons-clock"
-                @click="showOrderHistoryModal = true"
-              />
+              <UButton v-if="orderHistory.length > 0" color="neutral" variant="ghost" size="sm" icon="i-heroicons-clock"
+                @click="showOrderHistoryModal = true" />
               <!-- Cart Button -->
-              <UButton
-                v-if="cart.length > 0"
-                color="primary"
-                variant="solid"
-                size="sm"
-                class="min-h-[44px] min-w-[44px]"
-                @click="showCartModal = true"
-              >
+              <UButton v-if="cart.length > 0" color="primary" variant="solid" size="sm"
+                class="min-h-[44px] min-w-[44px]" @click="showCartModal = true">
                 🛒 {{ cartItemCount }}
               </UButton>
             </div>
@@ -176,22 +125,13 @@
       </div>
 
       <!-- Category Tabs - Horizontal Scroll -->
-      <div
-        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-[60px] z-10"
-      >
+      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-[60px] z-10">
         <div class="container mx-auto px-4">
-          <div
-            class="flex gap-2 overflow-x-auto py-3 scrollbar-hide -mx-4 px-4"
-          >
-            <UButton
-              v-for="category in menuCategories"
-              :key="category.id"
+          <div class="flex gap-2 overflow-x-auto py-3 scrollbar-hide -mx-4 px-4">
+            <UButton v-for="category in menuCategories" :key="category.id"
               :color="selectedCategory === category.id ? 'primary' : 'neutral'"
-              :variant="selectedCategory === category.id ? 'solid' : 'ghost'"
-              size="sm"
-              class="flex-shrink-0 min-h-[44px] min-w-[44px]"
-              @click="selectedCategory = category.id"
-            >
+              :variant="selectedCategory === category.id ? 'solid' : 'ghost'" size="sm"
+              class="flex-shrink-0 min-h-[44px] min-w-[44px]" @click="selectedCategory = category.id">
               {{ category.icon }} {{ category.name }}
             </UButton>
           </div>
@@ -201,53 +141,32 @@
       <!-- Menu Content -->
       <div class="container mx-auto px-4 py-4 pb-40">
         <!-- Products Grid - Mobile Optimized -->
-        <div
-          v-if="filteredMenuProducts.length > 0"
-          class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-        >
-          <div
-            v-for="product in filteredMenuProducts"
-            :key="product.id"
+        <div v-if="filteredMenuProducts.length > 0"
+          class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div v-for="product in filteredMenuProducts" :key="product.id"
             class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform touch-manipulation"
-            @click="addToCart(product)"
-          >
+            @click="addToCart(product)">
             <!-- Product Image -->
-            <div
-              class="aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden relative"
-            >
-              <img
-                v-if="product.image"
-                :src="product.image"
-                :alt="product.name"
-                class="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div
-                v-else
-                class="w-full h-full flex items-center justify-center text-4xl"
-              >
+            <div class="aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+              <img v-if="product.image" :src="product.image" :alt="product.name" class="w-full h-full object-cover"
+                loading="lazy" />
+              <div v-else class="w-full h-full flex items-center justify-center text-4xl">
                 🍽️
               </div>
 
               <!-- Quantity Badge -->
-              <div
-                v-if="getCartQuantity(product.id) > 0"
-                class="absolute top-2 right-2 bg-primary-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg text-sm"
-              >
+              <div v-if="getCartQuantity(product.id) > 0"
+                class="absolute top-2 right-2 bg-primary-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg text-sm">
                 {{ getCartQuantity(product.id) }}
               </div>
             </div>
 
             <!-- Product Info -->
             <div class="p-3">
-              <h3
-                class="font-semibold text-gray-900 dark:text-white text-sm line-clamp-1"
-              >
+              <h3 class="font-semibold text-gray-900 dark:text-white text-sm line-clamp-1">
                 {{ product.name }}
               </h3>
-              <p
-                class="font-bold text-primary-600 dark:text-primary-400 text-sm mt-1"
-              >
+              <p class="font-bold text-primary-600 dark:text-primary-400 text-sm mt-1">
                 {{ formatPrice(product.price) }}
               </p>
             </div>
@@ -256,10 +175,7 @@
 
         <!-- Empty State -->
         <div v-else class="text-center py-12">
-          <UIcon
-            name="i-heroicons-shopping-bag"
-            class="w-16 h-16 text-gray-300 mx-auto mb-4"
-          />
+          <UIcon name="i-heroicons-shopping-bag" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {{ $t("order.noProducts") || "No products available" }}
           </h2>
@@ -273,44 +189,25 @@
 
       <!-- Bottom Action Bar - Mobile Optimized -->
       <div
-        class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-20 safe-area-bottom"
-      >
+        class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-20 safe-area-bottom">
         <div class="container mx-auto p-3">
           <!-- Quick Actions Row -->
           <div class="flex gap-2 mb-3">
-            <UButton
-              color="amber"
-              variant="soft"
-              size="sm"
-              class="flex-1 min-h-[44px]"
-              :loading="isCallingWaiter"
-              @click="callWaiter"
-            >
+            <UButton color="amber" variant="soft" size="sm" class="flex-1 min-h-[44px]" :loading="isCallingWaiter"
+              @click="callWaiter">
               <UIcon name="i-heroicons-bell-alert" class="w-4 h-4 mr-1" />
               {{ $t("order.callWaiter") || "Call Waiter" }}
             </UButton>
-            <UButton
-              color="emerald"
-              variant="soft"
-              size="sm"
-              class="flex-1 min-h-[44px]"
-              :loading="isRequestingBill"
-              @click="requestBill"
-            >
+            <UButton color="emerald" variant="soft" size="sm" class="flex-1 min-h-[44px]" :loading="isRequestingBill"
+              @click="requestBill">
               <UIcon name="i-heroicons-receipt-percent" class="w-4 h-4 mr-1" />
               {{ $t("order.requestBill") || "Request Bill" }}
             </UButton>
           </div>
 
           <!-- View Cart Button -->
-          <UButton
-            v-if="cart.length > 0"
-            color="primary"
-            size="lg"
-            block
-            class="min-h-[52px]"
-            @click="showCartModal = true"
-          >
+          <UButton v-if="cart.length > 0" color="primary" size="lg" block class="min-h-[52px]"
+            @click="showCartModal = true">
             <div class="flex items-center justify-between w-full">
               <span class="flex items-center gap-2">
                 <span class="bg-white/20 rounded-full px-2 py-0.5 text-sm">{{
@@ -327,21 +224,13 @@
       <!-- Cart Modal - Bottom Sheet Style -->
       <UModal v-model:open="showCartModal">
         <template #content>
-          <UCard
-            class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl"
-          >
+          <UCard class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl">
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
                   🛒 {{ $t("order.yourCart") || "Your Cart" }}
                 </h3>
-                <UButton
-                  v-if="cart.length > 0"
-                  color="red"
-                  variant="ghost"
-                  size="xs"
-                  @click="clearCart"
-                >
+                <UButton v-if="cart.length > 0" color="red" variant="ghost" size="xs" @click="clearCart">
                   {{ $t("order.clearCart") || "Clear" }}
                 </UButton>
               </div>
@@ -350,10 +239,7 @@
             <div class="overflow-y-auto max-h-[50vh] -mx-4 px-4">
               <!-- Empty Cart -->
               <div v-if="cart.length === 0" class="text-center py-8">
-                <UIcon
-                  name="i-heroicons-shopping-cart"
-                  class="w-16 h-16 text-gray-300 mx-auto mb-4"
-                />
+                <UIcon name="i-heroicons-shopping-cart" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p class="text-gray-500">
                   {{ $t("order.cartEmpty") || "Your cart is empty" }}
                 </p>
@@ -361,39 +247,23 @@
 
               <!-- Cart Items -->
               <div v-else class="space-y-3">
-                <div
-                  v-for="(item, index) in cart"
-                  :key="item.product.id"
-                  class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                >
+                <div v-for="(item, index) in cart" :key="item.product.id"
+                  class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <!-- Product Image -->
-                  <div
-                    class="w-14 h-14 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0"
-                  >
-                    <img
-                      v-if="item.product.image"
-                      :src="item.product.image"
-                      :alt="item.product.name"
-                      class="w-full h-full object-cover"
-                    />
-                    <div
-                      v-else
-                      class="w-full h-full flex items-center justify-center text-xl"
-                    >
+                  <div class="w-14 h-14 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                    <img v-if="item.product.image" :src="item.product.image" :alt="item.product.name"
+                      class="w-full h-full object-cover" />
+                    <div v-else class="w-full h-full flex items-center justify-center text-xl">
                       🍽️
                     </div>
                   </div>
 
                   <!-- Product Info -->
                   <div class="flex-1 min-w-0">
-                    <h4
-                      class="font-medium text-gray-900 dark:text-white text-sm truncate"
-                    >
+                    <h4 class="font-medium text-gray-900 dark:text-white text-sm truncate">
                       {{ item.product.name }}
-                      <span
-                        v-if="item.selectedVariant"
-                        class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                      >
+                      <span v-if="item.selectedVariant"
+                        class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400">
                         {{ item.selectedVariant.shortName }}
                       </span>
                     </h4>
@@ -402,35 +272,19 @@
                     </p>
 
                     <!-- Notes Input -->
-                    <UInput
-                      v-model="item.notes"
-                      size="xs"
-                      :placeholder="$t('order.addNote') || 'Add note...'"
-                      class="mt-1"
-                    />
+                    <UInput v-model="item.notes" size="xs" :placeholder="$t('order.addNote') || 'Add note...'"
+                      class="mt-1" />
                   </div>
 
                   <!-- Quantity Controls -->
                   <div class="flex items-center gap-1">
-                    <UButton
-                      color="gray"
-                      variant="soft"
-                      size="xs"
-                      icon="i-heroicons-minus"
-                      class="min-h-[36px] min-w-[36px]"
-                      @click="decreaseQuantity(index)"
-                    />
+                    <UButton color="gray" variant="soft" size="xs" icon="i-heroicons-minus"
+                      class="min-h-[36px] min-w-[36px]" @click="decreaseQuantity(index)" />
                     <span class="w-6 text-center font-bold text-sm">{{
                       item.quantity
                     }}</span>
-                    <UButton
-                      color="primary"
-                      variant="soft"
-                      size="xs"
-                      icon="i-heroicons-plus"
-                      class="min-h-[36px] min-w-[36px]"
-                      @click="increaseQuantity(index)"
-                    />
+                    <UButton color="primary" variant="soft" size="xs" icon="i-heroicons-plus"
+                      class="min-h-[36px] min-w-[36px]" @click="increaseQuantity(index)" />
                   </div>
                 </div>
               </div>
@@ -447,18 +301,9 @@
                 </div>
 
                 <!-- Submit Order Button -->
-                <UButton
-                  color="primary"
-                  size="lg"
-                  block
-                  class="min-h-[52px]"
-                  :loading="isSubmitting"
-                  @click="submitOrder"
-                >
-                  <UIcon
-                    name="i-heroicons-paper-airplane"
-                    class="w-5 h-5 mr-2"
-                  />
+                <UButton color="primary" size="lg" block class="min-h-[52px]" :loading="isSubmitting"
+                  @click="submitOrder">
+                  <UIcon name="i-heroicons-paper-airplane" class="w-5 h-5 mr-2" />
                   {{ $t("order.placeOrder") || "Place Order" }}
                 </UButton>
               </div>
@@ -470,41 +315,28 @@
       <!-- Order History Modal -->
       <UModal v-model:open="showOrderHistoryModal">
         <template #content>
-          <UCard
-            class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl"
-          >
+          <UCard class="max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl">
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
                   📋 {{ $t("order.orderHistory") || "Order History" }}
                 </h3>
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-heroicons-x-mark"
-                  @click="showOrderHistoryModal = false"
-                />
+                <UButton color="neutral" variant="ghost" size="xs" icon="i-heroicons-x-mark"
+                  @click="showOrderHistoryModal = false" />
               </div>
             </template>
 
             <div class="overflow-y-auto max-h-[60vh] -mx-4 px-4">
               <div v-if="orderHistory.length === 0" class="text-center py-8">
-                <UIcon
-                  name="i-heroicons-document-text"
-                  class="w-16 h-16 text-gray-300 mx-auto mb-4"
-                />
+                <UIcon name="i-heroicons-document-text" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p class="text-gray-500">
                   {{ $t("order.noHistory") || "No order history yet" }}
                 </p>
               </div>
 
               <div v-else class="space-y-3">
-                <div
-                  v-for="historyOrder in orderHistory"
-                  :key="historyOrder.id"
-                  class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                >
+                <div v-for="historyOrder in orderHistory" :key="historyOrder.id"
+                  class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <!-- Order Header -->
                   <div class="flex items-center justify-between mb-2">
                     <div>
@@ -515,10 +347,7 @@
                         {{ formatOrderTime(historyOrder.date) }}
                       </span>
                     </div>
-                    <UBadge
-                      :color="getStatusColor(historyOrder.kitchenStatus)"
-                      size="xs"
-                    >
+                    <UBadge :color="getStatusColor(historyOrder.kitchenStatus)" size="xs">
                       {{ getStatusLabel(historyOrder.kitchenStatus) }}
                     </UBadge>
                   </div>
@@ -534,22 +363,12 @@
 
                   <!-- Order Total & Reorder -->
                   <div class="flex items-center justify-between">
-                    <span
-                      class="font-bold text-primary-600 dark:text-primary-400"
-                    >
+                    <span class="font-bold text-primary-600 dark:text-primary-400">
                       {{ formatPrice(historyOrder.total) }}
                     </span>
-                    <UButton
-                      color="primary"
-                      variant="soft"
-                      size="xs"
-                      class="min-h-[36px]"
-                      @click="reorderFromHistory(historyOrder)"
-                    >
-                      <UIcon
-                        name="i-heroicons-arrow-path"
-                        class="w-4 h-4 mr-1"
-                      />
+                    <UButton color="primary" variant="soft" size="xs" class="min-h-[36px]"
+                      @click="reorderFromHistory(historyOrder)">
+                      <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-1" />
                       {{ $t("order.reorder") || "Reorder" }}
                     </UButton>
                   </div>
@@ -564,12 +383,8 @@
       <!-- Request Bill Success Toast -->
 
       <!-- Product Variant Selection Modal -->
-      <ProductsProductVariantModal
-        v-model:open="showVariantModal"
-        :product="selectedProductForVariant"
-        @confirm="handleVariantConfirm"
-        @cancel="selectedProductForVariant = null"
-      />
+      <ProductsProductVariantModal v-model:open="showVariantModal" :product="selectedProductForVariant"
+        @confirm="handleVariantConfirm" @cancel="selectedProductForVariant = null" />
     </template>
   </div>
 </template>
@@ -586,6 +401,10 @@ import type {
 definePageMeta({
   layout: "blank",
   auth: false,
+});
+
+useHead({
+  title: "Customer Order",
 });
 
 const { t } = useI18n();
@@ -1115,7 +934,7 @@ const loadOrderHistory = () => {
             return (
               orderDate >= today &&
               o.tableNumber ===
-                (tableInfo.value?.tableName || tableInfo.value?.tableNumber)
+              (tableInfo.value?.tableName || tableInfo.value?.tableNumber)
             );
           })
           .sort(
@@ -1348,36 +1167,5 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-/* Safe area insets for mobile */
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0);
-}
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
-}
-/* Touch manipulation for better mobile UX */
-.touch-manipulation {
-  touch-action: manipulation;
-}
+/* Scoped styles removed - moved to global main.css */
 </style>

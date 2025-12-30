@@ -17,13 +17,13 @@ interface FormData {
 
 const form = defineModel<FormData>({ required: true });
 
-const barcodeTypeOptions = [
-  { value: "ean13", label: "EAN-13" },
-  { value: "upca", label: "UPC-A" },
-  { value: "code128", label: "Code 128" },
-  { value: "qr", label: "QR Code" },
-  { value: "custom", label: t("common.custom") || "Custom" },
-];
+const barcodeTypeOptions = computed(() => [
+  { value: "ean13", label: t("products.barcodeTypes.ean13") },
+  { value: "upca", label: t("products.barcodeTypes.upca") },
+  { value: "code128", label: t("products.barcodeTypes.code128") },
+  { value: "qr", label: t("products.barcodeTypes.qr") },
+  { value: "custom", label: t("products.barcodeTypes.custom") },
+]);
 
 // Generate barcode based on selected type
 function handleGenerateBarcode() {
@@ -46,20 +46,12 @@ function handleGenerateSku() {
 
 <template>
   <div
-    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden"
-  >
+    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
     <!-- Header -->
-    <div
-      class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50"
-    >
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
       <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
-        >
-          <UIcon
-            name="i-heroicons-information-circle"
-            class="w-5 h-5 text-blue-600 dark:text-blue-400"
-          />
+        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+          <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -79,25 +71,14 @@ function handleGenerateSku() {
     <div class="p-6 space-y-5">
       <!-- Name -->
       <UFormField :label="t('products.name')" name="name" required>
-        <UInput
-          v-model="form.name"
-          :placeholder="t('products.namePlaceholder')"
-          size="lg"
-          class="text-lg w-full"
-        />
+        <UInput v-model="form.name" :placeholder="t('products.namePlaceholder')" size="lg" class="text-lg w-full" />
       </UFormField>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Price -->
         <UFormField :label="t('products.price')" name="price" required>
-          <UInput
-            v-model="form.price"
-            type="number"
-            step="0.01"
-            :placeholder="t('products.pricePlaceholder')"
-            size="lg"
-            class="text-lg w-full"
-          >
+          <UInput v-model="form.price" type="number" step="0.01" :placeholder="t('products.pricePlaceholder')" size="lg"
+            class="text-lg w-full">
             <template #leading>
               <span class="text-gray-400 text-sm">₭</span>
             </template>
@@ -107,28 +88,13 @@ function handleGenerateSku() {
         <!-- SKU -->
         <UFormField :label="t('products.sku')" name="sku">
           <div class="flex gap-2">
-            <UInput
-              v-model="form.sku"
-              :placeholder="
-                t('products.skuPlaceholder') || 'Auto-generated if empty'
-              "
-              size="lg"
-              class="text-lg flex-1"
-            >
+            <UInput v-model="form.sku" :placeholder="t('products.skuPlaceholder') || 'Auto-generated if empty'
+              " size="lg" class="text-lg flex-1">
               <template #leading>
-                <UIcon
-                  name="i-heroicons-hashtag"
-                  class="w-4 h-4 text-gray-400"
-                />
+                <UIcon name="i-heroicons-hashtag" class="w-4 h-4 text-gray-400" />
               </template>
             </UInput>
-            <UButton
-              color="primary"
-              variant="soft"
-              size="lg"
-              icon="i-heroicons-sparkles"
-              @click="handleGenerateSku"
-            >
+            <UButton color="primary" variant="soft" size="lg" icon="i-heroicons-sparkles" @click="handleGenerateSku">
               {{ t("common.generate") || "Gen" }}
             </UButton>
           </div>
@@ -139,45 +105,23 @@ function handleGenerateSku() {
       <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div class="md:col-span-5">
           <UFormField :label="t('products.barcode')" name="barcode">
-            <UInput
-              v-model="form.barcode"
-              :placeholder="
-                t('products.barcodePlaceholder') || 'Scan or enter barcode'
-              "
-              size="lg"
-              class="w-full"
-            >
+            <UInput v-model="form.barcode" :placeholder="t('products.barcodePlaceholder') || 'Scan or enter barcode'
+              " size="lg" class="w-full">
               <template #leading>
-                <UIcon
-                  name="i-heroicons-qr-code"
-                  class="w-4 h-4 text-gray-400"
-                />
+                <UIcon name="i-heroicons-qr-code" class="w-4 h-4 text-gray-400" />
               </template>
             </UInput>
           </UFormField>
         </div>
         <div class="md:col-span-4">
           <UFormField :label="t('products.barcodeType')" name="barcodeType">
-            <USelect
-              v-model="form.barcodeType"
-              :items="barcodeTypeOptions"
-              :placeholder="t('common.select')"
-              size="lg"
-              value-key="value"
-              label-key="label"
-              class="w-full"
-            />
+            <USelect v-model="form.barcodeType" :items="barcodeTypeOptions" :placeholder="t('common.select')" size="lg"
+              value-key="value" label-key="label" class="w-full" />
           </UFormField>
         </div>
         <div class="md:col-span-3 flex items-end">
-          <UButton
-            color="primary"
-            variant="soft"
-            size="lg"
-            icon="i-heroicons-sparkles"
-            block
-            @click="handleGenerateBarcode"
-          >
+          <UButton color="primary" variant="soft" size="lg" icon="i-heroicons-sparkles" block
+            @click="handleGenerateBarcode">
             {{ t("products.generateBarcode") || "Generate" }}
           </UButton>
         </div>
@@ -185,12 +129,8 @@ function handleGenerateSku() {
 
       <!-- Description -->
       <UFormField :label="t('products.description')" name="description">
-        <UTextarea
-          v-model="form.description"
-          :placeholder="t('products.descriptionPlaceholder')"
-          :rows="3"
-          class="w-full"
-        />
+        <UTextarea v-model="form.description" :placeholder="t('products.descriptionPlaceholder')" :rows="3"
+          class="w-full" />
       </UFormField>
     </div>
   </div>

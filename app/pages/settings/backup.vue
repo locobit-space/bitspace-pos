@@ -1,9 +1,6 @@
 <template>
   <UContainer>
-    <CommonPageHeader
-      :title="$t('settings.backup.title')"
-      :description="$t('settings.backup.description')"
-    />
+    <CommonPageHeader :title="$t('settings.backup.title')" :description="$t('settings.backup.description')" />
 
     <!-- Backup Status -->
     <UCard class="mb-6">
@@ -36,10 +33,7 @@
         </div>
 
         <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <UIcon
-            name="i-heroicons-document-text"
-            class="text-3xl text-blue-600 mb-2"
-          />
+          <UIcon name="i-heroicons-document-text" class="text-3xl text-blue-600 mb-2" />
           <p class="text-sm text-muted">
             {{ $t("settings.backup.totalRecords") }}
           </p>
@@ -47,10 +41,7 @@
         </div>
 
         <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <UIcon
-            name="i-heroicons-server"
-            class="text-3xl text-green-600 mb-2"
-          />
+          <UIcon name="i-heroicons-server" class="text-3xl text-green-600 mb-2" />
           <p class="text-sm text-muted">{{ $t("settings.backup.dataSize") }}</p>
           <p class="font-semibold">{{ formatSize(stats.dataSize) }}</p>
         </div>
@@ -73,46 +64,21 @@
         </p>
 
         <div class="space-y-3 mb-4">
-          <UCheckbox
-            v-model="exportOptions.products"
-            :label="$t('settings.backup.includeProducts')"
-          />
-          <UCheckbox
-            v-model="exportOptions.orders"
-            :label="$t('settings.backup.includeOrders')"
-          />
-          <UCheckbox
-            v-model="exportOptions.customers"
-            :label="$t('settings.backup.includeCustomers')"
-          />
-          <UCheckbox
-            v-model="exportOptions.inventory"
-            :label="$t('settings.backup.includeInventory')"
-          />
-          <UCheckbox
-            v-model="exportOptions.settings"
-            :label="$t('settings.backup.includeSettings')"
-          />
+          <UCheckbox v-model="exportOptions.products" :label="$t('settings.backup.includeProducts')" />
+          <UCheckbox v-model="exportOptions.orders" :label="$t('settings.backup.includeOrders')" />
+          <UCheckbox v-model="exportOptions.customers" :label="$t('settings.backup.includeCustomers')" />
+          <UCheckbox v-model="exportOptions.inventory" :label="$t('settings.backup.includeInventory')" />
+          <UCheckbox v-model="exportOptions.settings" :label="$t('settings.backup.includeSettings')" />
         </div>
 
         <template #footer>
           <div class="w-full flex gap-4">
-            <UButton
-              icon="i-heroicons-arrow-down-tray"
-              :loading="exporting"
-              block
-              @click="exportData('json')"
-            >
+            <UButton icon="i-heroicons-arrow-down-tray" :loading="exporting" block @click="exportData('json')">
               {{ $t("common.export", { type: "JSON" }) }}
             </UButton>
 
-            <UButton
-              variant="outline"
-              icon="i-heroicons-table-cells"
-              :loading="exporting"
-              block
-              @click="exportData('csv')"
-            >
+            <UButton variant="outline" icon="i-heroicons-table-cells" :loading="exporting" block
+              @click="exportData('csv')">
               {{ $t("common.export", { type: "CSV" }) }}
             </UButton>
           </div>
@@ -134,38 +100,18 @@
 
         <div class="space-y-3 mb-4">
           <UFormField :label="$t('settings.backup.nostrRelay')">
-            <UInput
-              v-model="cloudOptions.relay"
-              placeholder="wss://relay.example.com"
-              icon="i-heroicons-signal"
-            />
+            <UInput v-model="cloudOptions.relay" placeholder="wss://relay.example.com" icon="i-heroicons-signal" />
           </UFormField>
 
-          <UCheckbox
-            v-model="cloudOptions.autoBackup"
-            :label="$t('settings.backup.autoBackup')"
-          />
+          <UCheckbox v-model="cloudOptions.autoBackup" :label="$t('settings.backup.autoBackup')" />
 
-          <UFormField
-            v-if="cloudOptions.autoBackup"
-            :label="$t('settings.backup.backupFrequency')"
-          >
-            <USelect
-              v-model="cloudOptions.frequency"
-              :items="frequencyOptions"
-              value-key="value"
-              label-key="label"
-            />
+          <UFormField v-if="cloudOptions.autoBackup" :label="$t('settings.backup.backupFrequency')">
+            <USelect v-model="cloudOptions.frequency" :items="frequencyOptions" value-key="value" label-key="label" />
           </UFormField>
         </div>
 
         <template #footer>
-          <UButton
-            color="primary"
-            icon="i-heroicons-cloud-arrow-up"
-            :loading="syncing"
-            @click="syncToCloud"
-          >
+          <UButton color="primary" icon="i-heroicons-cloud-arrow-up" :loading="syncing" @click="syncToCloud">
             {{ $t("settings.backup.syncNow") }}
           </UButton>
         </template>
@@ -181,30 +127,14 @@
         </h3>
       </template>
 
-      <UAlert
-        icon="i-heroicons-exclamation-triangle"
-        color="warning"
-        :title="$t('settings.backup.restoreWarning')"
-        :description="$t('settings.backup.restoreWarningDesc')"
-        class="mb-4"
-      />
+      <UAlert icon="i-heroicons-exclamation-triangle" color="warning" :title="$t('settings.backup.restoreWarning')"
+        :description="$t('settings.backup.restoreWarningDesc')" class="mb-4" />
 
-      <div
-        class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center"
-      >
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".json,.csv"
-          class="hidden"
-          @change="handleFileSelect"
-        />
+      <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+        <input ref="fileInput" type="file" accept=".json,.csv" class="hidden" @change="handleFileSelect" />
 
         <div v-if="!selectedFile">
-          <UIcon
-            name="i-heroicons-cloud-arrow-up"
-            class="text-4xl text-muted mb-2"
-          />
+          <UIcon name="i-heroicons-cloud-arrow-up" class="text-4xl text-muted mb-2" />
           <p class="text-muted mb-4">
             {{ $t("settings.backup.dragDropOrClick") }}
           </p>
@@ -215,30 +145,18 @@
 
         <div v-else class="space-y-4">
           <div class="flex items-center justify-center gap-3">
-            <UIcon
-              name="i-heroicons-document-text"
-              class="text-2xl text-primary"
-            />
+            <UIcon name="i-heroicons-document-text" class="text-2xl text-primary" />
             <div class="text-left">
               <p class="font-medium">{{ selectedFile.name }}</p>
               <p class="text-sm text-muted">
                 {{ formatSize(selectedFile.size) }}
               </p>
             </div>
-            <UButton
-              variant="ghost"
-              icon="i-heroicons-x-mark"
-              @click="selectedFile = null"
-            />
+            <UButton variant="ghost" icon="i-heroicons-x-mark" @click="selectedFile = null" />
           </div>
 
           <div class="flex justify-center gap-2">
-            <UButton
-              color="warning"
-              icon="i-heroicons-arrow-up-tray"
-              :loading="restoring"
-              @click="restoreData"
-            >
+            <UButton color="warning" icon="i-heroicons-arrow-up-tray" :loading="restoring" @click="restoreData">
               {{ $t("settings.backup.restoreNow") }}
             </UButton>
           </div>
@@ -253,14 +171,8 @@
           <h3 class="font-semibold">
             {{ $t("settings.backup.backupHistory") }}
           </h3>
-          <UButton
-            v-if="backupHistory.length > 0"
-            variant="ghost"
-            color="error"
-            size="xs"
-            icon="i-heroicons-trash"
-            @click="clearHistory"
-          >
+          <UButton v-if="backupHistory.length > 0" variant="ghost" color="error" size="xs" icon="i-heroicons-trash"
+            @click="clearHistory">
             {{ $t("settings.backup.clearHistory") }}
           </UButton>
         </div>
@@ -272,22 +184,13 @@
       </div>
 
       <div v-else class="divide-y">
-        <div
-          v-for="backup in backupHistory"
-          :key="backup.id"
-          class="py-3 flex items-center justify-between"
-        >
+        <div v-for="backup in backupHistory" :key="backup.id" class="py-3 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <UIcon
-              :name="
-                backup.type === 'cloud'
-                  ? 'i-heroicons-cloud'
-                  : 'i-heroicons-document'
-              "
-              :class="
-                backup.type === 'cloud' ? 'text-purple-600' : 'text-blue-600'
-              "
-            />
+            <UIcon :name="backup.type === 'cloud'
+                ? 'i-heroicons-cloud'
+                : 'i-heroicons-document'
+              " :class="backup.type === 'cloud' ? 'text-purple-600' : 'text-blue-600'
+                " />
             <div>
               <p class="font-medium">{{ backup.name }}</p>
               <p class="text-sm text-muted">
@@ -297,23 +200,15 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <UBadge
-              :color="backup.status === 'success' ? 'success' : 'error'"
-              variant="subtle"
-            >
+            <UBadge :color="backup.status === 'success' ? 'success' : 'error'" variant="subtle">
               {{
                 backup.status === "success"
                   ? $t("settings.backup.success")
                   : $t("settings.backup.failed")
               }}
             </UBadge>
-            <UButton
-              v-if="backup.type === 'local'"
-              variant="ghost"
-              icon="i-heroicons-arrow-down-tray"
-              size="xs"
-              @click="downloadBackup(backup)"
-            />
+            <UButton v-if="backup.type === 'local'" variant="ghost" icon="i-heroicons-arrow-down-tray" size="xs"
+              @click="downloadBackup(backup)" />
           </div>
         </div>
       </div>
@@ -331,20 +226,15 @@
         <div class="p-4 space-y-4">
           <p>{{ $t("settings.backup.confirmRestoreDesc") }}</p>
 
-          <UAlert
-            icon="i-heroicons-exclamation-triangle"
-            color="error"
+          <UAlert icon="i-heroicons-exclamation-triangle" color="error"
             :title="$t('settings.backup.dataWillBeReplaced')"
-            :description="$t('settings.backup.dataWillBeReplacedDesc')"
-          />
+            :description="$t('settings.backup.dataWillBeReplacedDesc')" />
 
           <div v-if="restorePreview">
             <p class="text-sm font-medium mb-2">
               {{ $t("settings.backup.dataToRestore") }}
             </p>
-            <div
-              class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-1 text-sm"
-            >
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-1 text-sm">
               <p v-if="restorePreview.products">
                 📦 {{ restorePreview.products }} {{ $t("products.title") }}
               </p>
@@ -361,10 +251,7 @@
           </div>
 
           <UFormField :label="$t('settings.backup.typeConfirm')">
-            <UInput
-              v-model="confirmText"
-              :placeholder="$t('settings.backup.typeRESTORE')"
-            />
+            <UInput v-model="confirmText" :placeholder="$t('settings.backup.typeRESTORE')" />
           </UFormField>
         </div>
       </template>
@@ -374,12 +261,7 @@
           <UButton variant="ghost" @click="showRestoreModal = false">
             {{ $t("common.cancel") }}
           </UButton>
-          <UButton
-            color="error"
-            :disabled="confirmText !== 'RESTORE'"
-            :loading="restoring"
-            @click="confirmRestore"
-          >
+          <UButton color="error" :disabled="confirmText !== 'RESTORE'" :loading="restoring" @click="confirmRestore">
             {{ $t("settings.backup.restoreNow") }}
           </UButton>
         </div>
@@ -393,6 +275,10 @@ definePageMeta({
   layout: "default",
   middleware: ["auth", "permission"],
 });
+
+useHead({
+  title: "Settings - Backup",
+})
 
 const { t } = useI18n();
 const toast = useToast();
@@ -509,9 +395,8 @@ async function exportData(format: "json" | "csv") {
 
     if (format === "json") {
       content = JSON.stringify(data, null, 2);
-      filename = `bitspace-backup-${
-        new Date().toISOString().split("T")[0]
-      }.json`;
+      filename = `bitspace-backup-${new Date().toISOString().split("T")[0]
+        }.json`;
       mimeType = "application/json";
     } else {
       // CSV export - flatten data
@@ -533,9 +418,8 @@ async function exportData(format: "json" | "csv") {
       }
 
       content = rows.join("\n");
-      filename = `bitspace-backup-${
-        new Date().toISOString().split("T")[0]
-      }.csv`;
+      filename = `bitspace-backup-${new Date().toISOString().split("T")[0]
+        }.csv`;
       mimeType = "text/csv";
     }
 

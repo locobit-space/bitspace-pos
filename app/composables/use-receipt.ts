@@ -65,7 +65,7 @@ const defaultSettings: ReceiptSettings = {
   merchantAddress: "",
   merchantPhone: "",
   logoEmoji: "⚡",
-  footerMessage: "Thank you for your purchase!",
+  footerMessage: "Khop Mok Kop Hor!",
   showPaymentProof: true,
   showQrCode: true,
   paperWidth: "80mm",
@@ -79,10 +79,10 @@ export const useReceipt = () => {
   const receiptSettings = useReceiptSettings();
 
   // State
-  const lastReceipt = ref<EReceipt | null>(null);
-  const isSending = ref(false);
-  const isPrinting = ref(false);
-  const error = ref<string | null>(null);
+  const lastReceipt = useState<EReceipt | null>("last-receipt", () => null);
+  const isSending = useState<boolean>("is-sending", () => false);
+  const isPrinting = useState<boolean>("is-printing", () => false);
+  const error = useState<string | null>("error", () => null);
 
   // Computed settings that merge saved settings with legacy format
   const settings = computed<ReceiptSettings>(() => {
@@ -93,7 +93,7 @@ export const useReceipt = () => {
       merchantPhone: saved.header.phone || defaultSettings.merchantPhone,
       merchantTaxId: saved.header.taxId,
       merchantEmail: saved.header.email,
-      logoEmoji: "🛒", // Default emoji fallback
+      logoEmoji: "⚡", // Default emoji fallback
       logoUrl: saved.logo || undefined,
       footerMessage:
         saved.footer.thankYouMessage || defaultSettings.footerMessage,
@@ -584,7 +584,8 @@ export const useReceipt = () => {
   
   <div class="footer">
     <div class="footer-message">${settings.value.footerMessage}</div>
-    <div>Powered by BNOS SPACE ⚡</div>
+    <div>BNOS.SPACE</div>
+    <div>Powered by Nostr & Bitcoin Lightning ⚡</div>
   </div>
 </body>
 </html>`;

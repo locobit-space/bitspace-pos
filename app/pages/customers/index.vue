@@ -4,9 +4,12 @@
 import type { LoyaltyMember, PaymentTerm } from "~/types";
 
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
 });
+
+useHead({
+  title: 'Customer'
+})
 
 const { t } = useI18n();
 const toast = useToast();
@@ -226,7 +229,7 @@ const saveCustomer = async () => {
         tier: customerForm.value.tier,
         defaultPaymentTermId:
           customerForm.value.defaultPaymentTermId &&
-          customerForm.value.defaultPaymentTermId !== "none"
+            customerForm.value.defaultPaymentTermId !== "none"
             ? customerForm.value.defaultPaymentTermId
             : undefined,
         creditLimit: customerForm.value.creditLimit || undefined,
@@ -250,7 +253,7 @@ const saveCustomer = async () => {
         tier: customerForm.value.tier,
         defaultPaymentTermId:
           customerForm.value.defaultPaymentTermId &&
-          customerForm.value.defaultPaymentTermId !== "none"
+            customerForm.value.defaultPaymentTermId !== "none"
             ? customerForm.value.defaultPaymentTermId
             : undefined,
         creditLimit: customerForm.value.creditLimit || undefined,
@@ -302,112 +305,55 @@ const stats = computed(() => customersStore.getCustomerStats());
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <CommonPageHeader
-      :title="t('customers.title')"
-      :description="t('customers.description')"
-    >
+    <CommonPageHeader :title="t('customers.title')" :description="t('customers.description')">
       <template #right>
-        <UButton
-          v-if="canEditCustomers"
-          icon="i-heroicons-plus"
-          color="primary"
-          :label="t('customers.addCustomer')"
-          @click="openCustomerModal()"
-        />
+        <UButton v-if="canEditCustomers" icon="i-heroicons-plus" color="primary" :label="t('customers.addCustomer')"
+          @click="openCustomerModal()" />
       </template>
 
       <template #tabs>
-        <UTabs
-          variant="link"
-          :items="[
-            { label: t('customers.all'), value: 'all' },
-            { label: t('loyalty.members'), value: 'members' },
-            { label: 'VIP', value: 'vip' },
-          ]"
-        />
+        <UTabs variant="link" :items="[
+          { label: t('customers.all'), value: 'all' },
+          { label: t('loyalty.members'), value: 'members' },
+          { label: 'VIP', value: 'vip' },
+        ]" />
       </template>
     </CommonPageHeader>
 
     <!-- Loading State -->
-    <div
-      v-if="customersStore.isLoading.value"
-      class="flex justify-center py-12"
-    >
-      <UIcon
-        name="i-heroicons-arrow-path"
-        class="w-8 h-8 animate-spin text-primary-500"
-      />
+    <div v-if="customersStore.isLoading.value" class="flex justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
     </div>
 
     <template v-else>
       <!-- Filters -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
-        <UInput
-          v-model="searchQuery"
-          icon="i-heroicons-magnifying-glass"
-          :placeholder="t('customers.searchPlaceholder')"
-        />
-        <USelect
-          v-model="selectedTier"
-          :items="tierOptions"
-          value-key="value"
-          label-key="label"
-          :placeholder="t('loyalty.tier')"
-        />
-        <USelect
-          v-model="selectedTag"
-          :items="tagOptions"
-          value-key="value"
-          label-key="label"
-          :placeholder="t('customers.filterByTag')"
-        />
-        <UButton
-          color="neutral"
-          variant="ghost"
-          icon="i-heroicons-arrow-down-tray"
-          :label="t('common.export')"
-          @click="customersStore.exportCustomers()"
-        />
+        <UInput v-model="searchQuery" icon="i-heroicons-magnifying-glass"
+          :placeholder="t('customers.searchPlaceholder')" />
+        <USelect v-model="selectedTier" :items="tierOptions" value-key="value" label-key="label"
+          :placeholder="t('loyalty.tier')" />
+        <USelect v-model="selectedTag" :items="tagOptions" value-key="value" label-key="label"
+          :placeholder="t('customers.filterByTag')" />
+        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-down-tray" :label="t('common.export')"
+          @click="customersStore.exportCustomers()" />
       </div>
 
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
-        <CommonStatCard
-          icon="i-heroicons-users"
-          icon-color="blue"
-          :label="t('customers.total')"
-          :value="stats.total"
-          :loading="customersStore.isLoading.value"
-        />
-        <CommonStatCard
-          icon="i-heroicons-star"
-          icon-color="yellow"
-          :label="t('loyalty.goldMembers') || 'Gold+ Members'"
-          :value="(stats.byTier.gold || 0) + (stats.byTier.platinum || 0)"
-          :loading="customersStore.isLoading.value"
-        />
-        <CommonStatCard
-          icon="i-heroicons-bolt"
-          icon-color="green"
-          :label="t('customers.activeThisMonth') || 'Active This Month'"
-          :value="stats.activeThisMonth"
-          :loading="customersStore.isLoading.value"
-        />
-        <CommonStatCard
-          icon="i-heroicons-gift"
-          icon-color="purple"
-          :label="t('loyalty.totalPoints')"
-          :value="stats.totalPoints.toLocaleString()"
-          :loading="customersStore.isLoading.value"
-        />
+        <CommonStatCard icon="i-heroicons-users" icon-color="blue" :label="t('customers.total')" :value="stats.total"
+          :loading="customersStore.isLoading.value" />
+        <CommonStatCard icon="i-heroicons-star" icon-color="yellow" :label="t('loyalty.goldMembers') || 'Gold+ Members'"
+          :value="(stats.byTier.gold || 0) + (stats.byTier.platinum || 0)" :loading="customersStore.isLoading.value" />
+        <CommonStatCard icon="i-heroicons-bolt" icon-color="green"
+          :label="t('customers.activeThisMonth') || 'Active This Month'" :value="stats.activeThisMonth"
+          :loading="customersStore.isLoading.value" />
+        <CommonStatCard icon="i-heroicons-gift" icon-color="purple" :label="t('loyalty.totalPoints')"
+          :value="stats.totalPoints.toLocaleString()" :loading="customersStore.isLoading.value" />
       </div>
 
       <!-- Empty State -->
       <div v-if="filteredCustomers.length === 0" class="text-center py-12 px-4">
-        <UIcon
-          name="i-heroicons-users"
-          class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4"
-        />
+        <UIcon name="i-heroicons-users" class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {{ t("customers.noCustomers") || "No customers found" }}
         </h3>
@@ -417,12 +363,8 @@ const stats = computed(() => customersStore.getCustomerStats());
             "Customers will appear here after they make purchases"
           }}
         </p>
-        <UButton
-          v-if="canEditCustomers"
-          icon="i-heroicons-plus"
-          :label="t('customers.addCustomer')"
-          @click="openCustomerModal()"
-        />
+        <UButton v-if="canEditCustomers" icon="i-heroicons-plus" :label="t('customers.addCustomer')"
+          @click="openCustomerModal()" />
       </div>
 
       <!-- Customers Table -->
@@ -430,59 +372,39 @@ const stats = computed(() => customersStore.getCustomerStats());
         <table class="w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-gray-800">
-              <th
-                class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("customers.name") }}
               </th>
-              <th
-                class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("customers.contact") }}
               </th>
-              <th
-                class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("loyalty.tier") }}
               </th>
-              <th
-                class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("loyalty.points") }}
               </th>
-              <th
-                class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("customers.totalSpent") }}
               </th>
-              <th
-                class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("customers.visits") }}
               </th>
-              <th
-                class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("customers.lastVisit") }}
               </th>
-              <th
-                class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white"
-              >
+              <th class="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">
                 {{ t("common.actions") }}
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="customer in paginatedCustomers"
-              :key="customer.id"
-              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-            >
+            <tr v-for="customer in paginatedCustomers" :key="customer.id"
+              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
               <td class="py-3 px-4">
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold"
-                  >
+                    class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
                     {{
                       (customer.name || customer.nostrPubkey || "?")
                         .charAt(0)
@@ -497,19 +419,12 @@ const stats = computed(() => customersStore.getCustomerStats());
                       }}
                     </p>
                     <div class="flex gap-1 mt-1">
-                      <UBadge
-                        v-for="tag in (customer.tags || []).slice(0, 2)"
-                        :key="tag"
-                        size="xs"
-                        :color="
-                          tag === 'vip'
-                            ? 'yellow'
-                            : tag === 'lightning'
+                      <UBadge v-for="tag in (customer.tags || []).slice(0, 2)" :key="tag" size="xs" :color="tag === 'vip'
+                          ? 'yellow'
+                          : tag === 'lightning'
                             ? 'orange'
                             : 'neutral'
-                        "
-                        variant="subtle"
-                      >
+                        " variant="subtle">
                         {{ tag }}
                       </UBadge>
                     </div>
@@ -518,40 +433,31 @@ const stats = computed(() => customersStore.getCustomerStats());
               </td>
               <td class="py-3 px-4">
                 <div class="text-sm">
-                  <p
-                    v-if="customer.email"
-                    class="text-gray-600 dark:text-gray-400"
-                  >
+                  <p v-if="customer.email" class="text-gray-600 dark:text-gray-400">
                     {{ customer.email }}
                   </p>
                   <p v-if="customer.phone" class="text-gray-500">
                     {{ customer.phone }}
                   </p>
-                  <p
-                    v-if="customer.lud16"
-                    class="text-orange-500 flex items-center gap-1"
-                  >
+                  <p v-if="customer.lud16" class="text-orange-500 flex items-center gap-1">
                     <UIcon name="i-heroicons-bolt" class="w-3 h-3" />
                     {{ customer.lud16 }}
                   </p>
                 </div>
               </td>
               <td class="py-3 px-4">
-                <UBadge
-                  v-if="customer.tier"
-                  :color="getTierColor(customer.tier)"
-                  :label="t(`loyalty.${customer.tier}`)"
-                />
+                <UBadge v-if="customer.tier" :color="getTierColor(customer.tier)"
+                  :label="t(`loyalty.${customer.tier}`)" />
               </td>
               <td class="py-3 px-4">
                 <span class="font-medium">{{
                   (customer.points || 0).toLocaleString()
-                }}</span>
+                  }}</span>
               </td>
               <td class="py-3 px-4">
                 <span class="font-medium">{{
                   formatCurrency(customer.totalSpent)
-                }}</span>
+                  }}</span>
               </td>
               <td class="py-3 px-4">{{ customer.visitCount || 0 }}</td>
               <td class="py-3 px-4">
@@ -565,29 +471,12 @@ const stats = computed(() => customersStore.getCustomerStats());
               </td>
               <td class="py-3 px-4">
                 <div class="flex justify-end gap-1">
-                  <UButton
-                    icon="i-heroicons-eye"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    @click="viewCustomer(customer)"
-                  />
-                  <UButton
-                    v-if="canEditCustomers"
-                    icon="i-heroicons-pencil"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    @click="openCustomerModal(customer)"
-                  />
-                  <UButton
-                    v-if="canEditCustomers"
-                    icon="i-heroicons-trash"
-                    color="red"
-                    variant="ghost"
-                    size="sm"
-                    @click="confirmDeleteCustomer(customer)"
-                  />
+                  <UButton icon="i-heroicons-eye" color="neutral" variant="ghost" size="sm"
+                    @click="viewCustomer(customer)" />
+                  <UButton v-if="canEditCustomers" icon="i-heroicons-pencil" color="neutral" variant="ghost" size="sm"
+                    @click="openCustomerModal(customer)" />
+                  <UButton v-if="canEditCustomers" icon="i-heroicons-trash" color="red" variant="ghost" size="sm"
+                    @click="confirmDeleteCustomer(customer)" />
                 </div>
               </td>
             </tr>
@@ -596,20 +485,13 @@ const stats = computed(() => customersStore.getCustomerStats());
       </div>
 
       <!-- Pagination -->
-      <div
-        v-if="filteredCustomers.length > 0"
-        class="flex justify-between items-center px-4"
-      >
+      <div v-if="filteredCustomers.length > 0" class="flex justify-between items-center px-4">
         <span class="text-sm text-gray-500 dark:text-gray-400">
           {{ t("common.showing") }} {{ paginatedCustomers.length }}
           {{ t("common.of") }} {{ filteredCustomers.length }}
           {{ t("common.entries") }}
         </span>
-        <UPagination
-          v-model="currentPage"
-          :page-count="itemsPerPage"
-          :total="filteredCustomers.length"
-        />
+        <UPagination v-model="currentPage" :page-count="itemsPerPage" :total="filteredCustomers.length" />
       </div>
     </template>
 
@@ -629,93 +511,47 @@ const stats = computed(() => customersStore.getCustomerStats());
 
           <form class="space-y-4" @submit.prevent="saveCustomer">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField
-                :label="t('customers.name')"
-                required
-                class="md:col-span-2"
-              >
-                <UInput
-                  v-model="customerForm.name"
-                  :placeholder="t('customers.namePlaceholder')"
-                />
+              <UFormField :label="t('customers.name')" required class="md:col-span-2">
+                <UInput v-model="customerForm.name" :placeholder="t('customers.namePlaceholder')" />
               </UFormField>
 
               <UFormField :label="t('customers.nostrPubkey')">
-                <UInput
-                  v-model="customerForm.nostrPubkey"
-                  placeholder="npub1... or hex pubkey"
-                />
+                <UInput v-model="customerForm.nostrPubkey" placeholder="npub1... or hex pubkey" />
               </UFormField>
 
               <UFormField :label="t('customers.lightningAddress')">
-                <UInput
-                  v-model="customerForm.lud16"
-                  placeholder="user@getalby.com"
-                />
+                <UInput v-model="customerForm.lud16" placeholder="user@getalby.com" />
               </UFormField>
 
               <UFormField :label="t('loyalty.tier')">
-                <USelect
-                  v-model="customerForm.tier"
-                  :items="formTierOptions"
-                  value-key="value"
-                  label-key="label"
-                />
+                <USelect v-model="customerForm.tier" :items="formTierOptions" value-key="value" label-key="label" />
               </UFormField>
 
               <UFormField :label="t('customers.email')">
-                <UInput
-                  v-model="customerForm.email"
-                  type="email"
-                  :placeholder="t('customers.emailPlaceholder')"
-                />
+                <UInput v-model="customerForm.email" type="email" :placeholder="t('customers.emailPlaceholder')" />
               </UFormField>
 
               <UFormField :label="t('customers.phone')">
-                <UInput
-                  v-model="customerForm.phone"
-                  :placeholder="t('customers.phonePlaceholder')"
-                />
+                <UInput v-model="customerForm.phone" :placeholder="t('customers.phonePlaceholder')" />
               </UFormField>
 
               <UFormField :label="t('customers.address')" class="md:col-span-2">
-                <UTextarea
-                  v-model="customerForm.address"
-                  :placeholder="t('customers.addressPlaceholder')"
-                  :rows="2"
-                />
+                <UTextarea v-model="customerForm.address" :placeholder="t('customers.addressPlaceholder')" :rows="2" />
               </UFormField>
 
               <!-- Credit & Payment Terms Section -->
-              <div
-                class="md:col-span-2 pt-2 border-t border-gray-200 dark:border-gray-800"
-              >
-                <p
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"
-                >
+              <div class="md:col-span-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   {{ t("customers.creditSettings") || "Credit Settings" }}
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <UFormField
-                    :label="t('settings.terms.title') || 'Payment Terms'"
-                  >
-                    <USelect
-                      v-model="customerForm.defaultPaymentTermId"
-                      :items="paymentTermOptions"
-                      value-key="value"
-                      label-key="label"
-                      :placeholder="t('common.select') || 'Select'"
-                    />
+                  <UFormField :label="t('settings.terms.title') || 'Payment Terms'">
+                    <USelect v-model="customerForm.defaultPaymentTermId" :items="paymentTermOptions" value-key="value"
+                      label-key="label" :placeholder="t('common.select') || 'Select'" />
                   </UFormField>
 
-                  <UFormField
-                    :label="t('customers.creditLimit') || 'Credit Limit'"
-                  >
-                    <UInput
-                      v-model.number="customerForm.creditLimit"
-                      type="number"
-                      :placeholder="'0'"
-                    >
+                  <UFormField :label="t('customers.creditLimit') || 'Credit Limit'">
+                    <UInput v-model.number="customerForm.creditLimit" type="number" :placeholder="'0'">
                       <template #trailing>
                         <span class="text-xs text-gray-400">LAK</span>
                       </template>
@@ -725,29 +561,15 @@ const stats = computed(() => customersStore.getCustomerStats());
               </div>
 
               <UFormField :label="t('customers.notes')" class="md:col-span-2">
-                <UTextarea
-                  v-model="customerForm.notes"
-                  :placeholder="t('customers.notesPlaceholder')"
-                  :rows="2"
-                />
+                <UTextarea v-model="customerForm.notes" :placeholder="t('customers.notesPlaceholder')" :rows="2" />
               </UFormField>
             </div>
 
             <div class="flex justify-end gap-3 pt-4">
-              <UButton
-                color="neutral"
-                variant="outline"
-                :label="t('common.cancel')"
-                @click="showCustomerModal = false"
-              />
-              <UButton
-                type="submit"
-                color="primary"
-                :loading="saving"
-                :label="
-                  selectedCustomer ? t('common.update') : t('common.create')
-                "
-              />
+              <UButton color="neutral" variant="outline" :label="t('common.cancel')"
+                @click="showCustomerModal = false" />
+              <UButton type="submit" color="primary" :loading="saving" :label="selectedCustomer ? t('common.update') : t('common.create')
+                " />
             </div>
           </form>
         </UCard>
@@ -761,8 +583,7 @@ const stats = computed(() => customersStore.getCustomerStats());
           <template #header>
             <div class="flex items-center gap-3">
               <div
-                class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl"
-              >
+                class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
                 {{
                   (viewingCustomer.name || viewingCustomer.nostrPubkey || "?")
                     .charAt(0)
@@ -776,10 +597,8 @@ const stats = computed(() => customersStore.getCustomerStats());
                     `${viewingCustomer.nostrPubkey?.slice(0, 12)}...`
                   }}
                 </h3>
-                <UBadge
-                  :color="getTierColor(viewingCustomer.tier)"
-                  :label="t(`loyalty.${viewingCustomer.tier || 'bronze'}`)"
-                />
+                <UBadge :color="getTierColor(viewingCustomer.tier)"
+                  :label="t(`loyalty.${viewingCustomer.tier || 'bronze'}`)" />
               </div>
             </div>
           </template>
@@ -826,9 +645,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                 {{ t("loyalty.stats") }}
               </h4>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
                   <p class="text-2xl font-bold text-primary-500">
                     {{ viewingCustomer.points?.toLocaleString() || 0 }}
                   </p>
@@ -836,9 +653,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                     {{ t("loyalty.points") }}
                   </p>
                 </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
                   <p class="text-2xl font-bold text-green-500">
                     {{ viewingCustomer.totalOrders || 0 }}
                   </p>
@@ -846,9 +661,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                     {{ t("customers.orders") }}
                   </p>
                 </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
                   <p class="text-2xl font-bold text-blue-500">
                     {{ viewingCustomer.visitCount || 0 }}
                   </p>
@@ -856,9 +669,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                     {{ t("customers.visits") }}
                   </p>
                 </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center">
                   <p class="text-lg font-bold text-purple-500">
                     {{ formatCurrency(viewingCustomer.totalSpent) }}
                   </p>
@@ -875,18 +686,12 @@ const stats = computed(() => customersStore.getCustomerStats());
                 {{ t("customers.tags") }}
               </h4>
               <div class="flex flex-wrap gap-2">
-                <UBadge
-                  v-for="tag in viewingCustomer.tags"
-                  :key="tag"
-                  :color="
-                    tag === 'vip'
-                      ? 'yellow'
-                      : tag === 'lightning'
+                <UBadge v-for="tag in viewingCustomer.tags" :key="tag" :color="tag === 'vip'
+                    ? 'yellow'
+                    : tag === 'lightning'
                       ? 'orange'
                       : 'neutral'
-                  "
-                  >{{ tag }}</UBadge
-                >
+                  ">{{ tag }}</UBadge>
               </div>
             </div>
 
@@ -903,19 +708,9 @@ const stats = computed(() => customersStore.getCustomerStats());
 
           <template #footer>
             <div class="flex justify-between">
-              <UButton
-                color="neutral"
-                variant="ghost"
-                :label="t('customers.viewOrders')"
-                icon="i-heroicons-shopping-bag"
-                :to="`/orders?customer=${viewingCustomer.id}`"
-              />
-              <UButton
-                color="neutral"
-                variant="outline"
-                :label="t('common.close')"
-                @click="showViewModal = false"
-              />
+              <UButton color="neutral" variant="ghost" :label="t('customers.viewOrders')"
+                icon="i-heroicons-shopping-bag" :to="`/orders?customer=${viewingCustomer.id}`" />
+              <UButton color="neutral" variant="outline" :label="t('common.close')" @click="showViewModal = false" />
             </div>
           </template>
         </UCard>
@@ -942,18 +737,8 @@ const stats = computed(() => customersStore.getCustomerStats());
           </p>
           <template #footer>
             <div class="flex justify-end gap-3">
-              <UButton
-                color="neutral"
-                variant="outline"
-                :label="t('common.cancel')"
-                @click="showDeleteModal = false"
-              />
-              <UButton
-                color="red"
-                :loading="deleting"
-                :label="t('common.delete')"
-                @click="deleteCustomer"
-              />
+              <UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="showDeleteModal = false" />
+              <UButton color="red" :loading="deleting" :label="t('common.delete')" @click="deleteCustomer" />
             </div>
           </template>
         </UCard>

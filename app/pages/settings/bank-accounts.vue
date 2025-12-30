@@ -3,9 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1
-          class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
-        >
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           🏦 {{ $t("settings.bankAccounts.title") }}
         </h1>
         <p class="text-gray-500 dark:text-gray-400 mt-1">
@@ -19,21 +17,14 @@
 
     <!-- Bank Accounts List -->
     <div v-if="bankAccounts.length > 0" class="space-y-4">
-      <UCard
-        v-for="account in bankAccounts"
-        :key="account.id"
-        :class="['transition-all', !account.isActive && 'opacity-60']"
-      >
+      <UCard v-for="account in bankAccounts" :key="account.id"
+        :class="['transition-all', !account.isActive && 'opacity-60']">
         <div class="flex items-start gap-4">
           <!-- Bank Icon -->
-          <div
-            class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl"
-            :class="
-              account.isActive
-                ? 'bg-primary-100 dark:bg-primary-900/30'
-                : 'bg-gray-100 dark:bg-gray-800'
-            "
-          >
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" :class="account.isActive
+            ? 'bg-primary-100 dark:bg-primary-900/30'
+            : 'bg-gray-100 dark:bg-gray-800'
+            ">
             {{ getBankIcon(account.id) }}
           </div>
 
@@ -43,20 +34,10 @@
               <h3 class="font-semibold text-gray-900 dark:text-white">
                 {{ account.bankName }}
               </h3>
-              <UBadge
-                v-if="account.isDefault"
-                color="primary"
-                variant="soft"
-                size="xs"
-              >
+              <UBadge v-if="account.isDefault" color="primary" variant="soft" size="xs">
                 {{ $t("common.default") }}
               </UBadge>
-              <UBadge
-                v-if="!account.isActive"
-                color="gray"
-                variant="soft"
-                size="xs"
-              >
+              <UBadge v-if="!account.isActive" color="gray" variant="soft" size="xs">
                 {{ $t("common.inactive") }}
               </UBadge>
             </div>
@@ -70,54 +51,24 @@
 
           <!-- QR Preview (if available) -->
           <div v-if="account.qrCode" class="hidden sm:block">
-            <img
-              :src="account.qrCode"
-              :alt="`${account.bankName} QR`"
-              class="w-16 h-16 rounded-lg border border-gray-200 dark:border-gray-700"
-            />
+            <img :src="account.qrCode" :alt="`${account.bankName} QR`"
+              class="w-16 h-16 rounded-lg border border-gray-200 dark:border-gray-700" />
           </div>
 
           <!-- Actions -->
           <div class="flex items-center gap-1">
-            <UButton
-              v-if="!account.isDefault && account.isActive"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              icon="i-heroicons-star"
-              :title="$t('settings.bankAccounts.setDefault')"
-              @click="setAsDefault(account.id)"
-            />
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              icon="i-heroicons-pencil"
-              :title="$t('common.edit')"
-              @click="openEditModal(account)"
-            />
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :icon="
-                account.isActive ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'
-              "
-              :title="
-                account.isActive
-                  ? $t('common.deactivate')
-                  : $t('common.activate')
-              "
-              @click="toggleAccountActive(account.id)"
-            />
-            <UButton
-              color="red"
-              variant="ghost"
-              size="sm"
-              icon="i-heroicons-trash"
-              :title="$t('common.delete')"
-              @click="confirmDelete(account)"
-            />
+            <UButton v-if="!account.isDefault && account.isActive" color="neutral" variant="ghost" size="sm"
+              icon="i-heroicons-star" :title="$t('settings.bankAccounts.setDefault')"
+              @click="setAsDefault(account.id)" />
+            <UButton color="neutral" variant="ghost" size="sm" icon="i-heroicons-pencil" :title="$t('common.edit')"
+              @click="openEditModal(account)" />
+            <UButton color="neutral" variant="ghost" size="sm" :icon="account.isActive ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'
+              " :title="account.isActive
+                ? $t('common.deactivate')
+                : $t('common.activate')
+                " @click="toggleAccountActive(account.id)" />
+            <UButton color="red" variant="ghost" size="sm" icon="i-heroicons-trash" :title="$t('common.delete')"
+              @click="confirmDelete(account)" />
           </div>
         </div>
       </UCard>
@@ -152,75 +103,38 @@
       <template #body>
         <div class="space-y-4 p-4">
           <UFormField :label="$t('settings.bankAccounts.bankName')" required>
-            <UInput
-              v-model="form.bankName"
-              :placeholder="$t('settings.bankAccounts.bankNamePlaceholder')"
-              class="w-full"
-            />
+            <UInput v-model="form.bankName" :placeholder="$t('settings.bankAccounts.bankNamePlaceholder')"
+              class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('settings.bankAccounts.bankCode')">
-            <UInput
-              v-model="form.bankCode"
-              :placeholder="$t('settings.bankAccounts.bankCodePlaceholder')"
-              class="w-full"
-            />
+            <UInput v-model="form.bankCode" :placeholder="$t('settings.bankAccounts.bankCodePlaceholder')"
+              class="w-full" />
           </UFormField>
 
-          <UFormField
-            :label="$t('settings.bankAccounts.accountNumber')"
-            required
-          >
-            <UInput
-              v-model="form.accountNumber"
-              :placeholder="
-                $t('settings.bankAccounts.accountNumberPlaceholder')
-              "
-              class="font-mono w-full"
-            />
+          <UFormField :label="$t('settings.bankAccounts.accountNumber')" required>
+            <UInput v-model="form.accountNumber" :placeholder="$t('settings.bankAccounts.accountNumberPlaceholder')
+              " class="font-mono w-full" />
           </UFormField>
 
           <UFormField :label="$t('settings.bankAccounts.accountName')" required>
-            <UInput
-              v-model="form.accountName"
-              :placeholder="$t('settings.bankAccounts.accountNamePlaceholder')"
-              class="w-full"
-            />
+            <UInput v-model="form.accountName" :placeholder="$t('settings.bankAccounts.accountNamePlaceholder')"
+              class="w-full" />
           </UFormField>
 
           <!-- QR Code Upload -->
           <UFormField :label="$t('settings.bankAccounts.qrCode')">
             <div class="space-y-3">
               <div v-if="form.qrCode" class="flex items-center gap-3">
-                <img
-                  :src="form.qrCode"
-                  alt="Bank QR"
-                  class="w-24 h-24 rounded-lg border border-gray-200 dark:border-gray-700"
-                />
-                <UButton
-                  color="red"
-                  variant="outline"
-                  size="sm"
-                  icon="i-heroicons-trash"
-                  @click="form.qrCode = ''"
-                >
+                <img :src="form.qrCode" alt="Bank QR"
+                  class="w-24 h-24 rounded-lg border border-gray-200 dark:border-gray-700" />
+                <UButton color="red" variant="outline" size="sm" icon="i-heroicons-trash" @click="form.qrCode = ''">
                   {{ $t("common.remove") }}
                 </UButton>
               </div>
               <div v-else>
-                <input
-                  ref="qrInput"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="handleQRUpload"
-                />
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  icon="i-heroicons-photo"
-                  @click="$refs.qrInput?.click()"
-                >
+                <input ref="qrInput" type="file" accept="image/*" class="hidden" @change="handleQRUpload" />
+                <UButton color="neutral" variant="outline" icon="i-heroicons-photo" @click="$refs.qrInput?.click()">
                   {{ $t("settings.bankAccounts.uploadQR") }}
                 </UButton>
                 <p class="text-xs text-gray-500 mt-1">
@@ -231,10 +145,7 @@
           </UFormField>
 
           <div class="flex items-center gap-4">
-            <UCheckbox
-              v-model="form.isDefault"
-              :label="$t('settings.bankAccounts.setAsDefault')"
-            />
+            <UCheckbox v-model="form.isDefault" :label="$t('settings.bankAccounts.setAsDefault')" />
             <UCheckbox v-model="form.isActive" :label="$t('common.active')" />
           </div>
         </div>
@@ -245,13 +156,7 @@
           <UButton color="neutral" variant="outline" block @click="closeModal">
             {{ $t("common.cancel") }}
           </UButton>
-          <UButton
-            color="primary"
-            :loading="saving"
-            :disabled="!isFormValid"
-            block
-            @click="saveAccount"
-          >
+          <UButton color="primary" :loading="saving" :disabled="!isFormValid" block @click="saveAccount">
             {{ editingAccount ? $t("common.save") : $t("common.add") }}
           </UButton>
         </div>
@@ -259,10 +164,7 @@
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal
-      v-model:open="showDeleteModal"
-      :title="$t('settings.bankAccounts.deleteConfirm')"
-    >
+    <UModal v-model:open="showDeleteModal" :title="$t('settings.bankAccounts.deleteConfirm')">
       <template #body>
         <div class="p-4">
           <p class="text-gray-600 dark:text-gray-400">
@@ -277,11 +179,7 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <UButton
-            color="neutral"
-            variant="outline"
-            @click="showDeleteModal = false"
-          >
+          <UButton color="neutral" variant="outline" @click="showDeleteModal = false">
             {{ $t("common.cancel") }}
           </UButton>
           <UButton color="red" @click="doDelete">
@@ -295,9 +193,8 @@
 
 <script setup lang="ts">
 import type { BankAccount } from "~/types";
-
-definePageMeta({
-  layout: "default",
+useHead({
+  title: "Bank Accounts",
 });
 
 const { t } = useI18n();
