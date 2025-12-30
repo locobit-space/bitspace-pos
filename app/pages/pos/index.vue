@@ -109,6 +109,8 @@ const discountValue = ref(0);
 const heldOrders = ref<
   Array<{
     id: string;
+    code?: string;
+    orderNumber?: number;
     items: typeof pos.cartItems.value;
     total: number;
     createdAt: string;
@@ -466,9 +468,11 @@ const sendToKitchen = async () => {
     const toast = useToast();
     toast.add({
       title: t("pos.orderSentToKitchen") || "Order Sent to Kitchen!",
-      description: `${t("pos.orderNumber") || "Order"}: ${
-        order.code || order.id
-      } - ${t("pos.payLater") || "Pay when ready to leave"}`,
+      description: `${
+        order.orderNumber ? "#" + order.orderNumber + " - " : ""
+      }${order.code || order.id} - ${
+        t("pos.payLater") || "Pay when ready to leave"
+      }`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -762,6 +766,13 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       eBillId: generatedReceipt.id,
       amount: order.total,
       satsAmount: order.totalSats,
+      orderNumber: order.orderNumber,
+      orderCode: order.code,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        total: item.total,
+      })),
     });
   } catch (e) {
     console.error("Payment error:", e);
@@ -857,14 +868,25 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
 
     pos.setPaymentState({
       status: "paid",
+      amount: order.total,
+      satsAmount: order.totalSats,
       eBillUrl: receipt.generateEBillUrl(generatedReceipt.id),
       eBillId: generatedReceipt.id,
+      orderNumber: order.orderNumber,
+      orderCode: order.code,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        total: item.total,
+      })),
     });
 
     const toast = useToast();
     toast.add({
-      title: t("payment.success") || "Payment Complete!",
-      description: `${t("pos.orderNumber") || "Order"}: ${order.id}`,
+      title: t("payment.success", "Payment Complete!"),
+      description: `${t("pos.orderNumber", "Order")}: #${order?.orderNumber}-${
+        order.code || order.id
+      }`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -2825,13 +2847,21 @@ onUnmounted(() => {
               class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700/30"
             >
               <div class="flex justify-between items-start mb-2">
-                <div>
-                  <p class="font-medium text-gray-900 dark:text-white">
-                    {{ order.id }}
-                  </p>
-                  <p class="text-xs text-gray-500">
-                    {{ new Date(order.createdAt).toLocaleTimeString() }}
-                  </p>
+                <div class="flex items-center gap-2">
+                  <span
+                    v-if="order.orderNumber"
+                    class="text-lg font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded"
+                  >
+                    #{{ order.orderNumber }}
+                  </span>
+                  <div>
+                    <p class="font-medium text-gray-900 dark:text-white">
+                      {{ order.code || order.id }}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                      {{ new Date(order.createdAt).toLocaleTimeString() }}
+                    </p>
+                  </div>
                 </div>
                 <p class="font-bold text-amber-600 dark:text-amber-400">
                   {{ currency.format(order.total, pos.selectedCurrency.value) }}
@@ -2898,21 +2928,29 @@ onUnmounted(() => {
               class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700/30"
             >
               <div class="flex justify-between items-start mb-2">
-                <div>
-                  <p
-                    class="font-medium text-gray-900 dark:text-white flex items-center gap-2"
+                <div class="flex items-center gap-2">
+                  <span
+                    v-if="order.orderNumber"
+                    class="text-lg font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded"
                   >
-                    {{ order?.code || order.id }}
-                    <span
-                      v-if="order.tableNumber"
-                      class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full"
+                    #{{ order.orderNumber }}
+                  </span>
+                  <div>
+                    <p
+                      class="font-medium text-gray-900 dark:text-white flex items-center gap-2"
                     >
-                      🪑 {{ order.tableNumber }}
-                    </span>
-                  </p>
-                  <p class="text-xs text-gray-500">
-                    {{ new Date(order.date).toLocaleTimeString() }}
-                  </p>
+                      {{ order?.code || order.id }}
+                      <span
+                        v-if="order.tableNumber"
+                        class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full"
+                      >
+                        🪑 {{ order.tableNumber }}
+                      </span>
+                    </p>
+                    <p class="text-xs text-gray-500">
+                      {{ new Date(order.date).toLocaleTimeString() }}
+                    </p>
+                  </div>
                 </div>
                 <div class="text-right">
                   <p class="font-bold text-red-600 dark:text-red-400 text-lg">

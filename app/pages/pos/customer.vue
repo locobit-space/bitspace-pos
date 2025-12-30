@@ -13,6 +13,10 @@ definePageMeta({
   middleware: ["auth"],
 });
 
+useHead({
+  title: "POS Customer Display",
+});
+
 const _t = useI18n();
 const pos = usePOS();
 const currency = useCurrency();
@@ -753,16 +757,46 @@ const { settings } = useReceipt();
       <!-- ============================================ -->
       <div
         v-else-if="displayState === 'success'"
-        class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900"
+        class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden"
       >
-        <div class="text-center w-full max-w-4xl mx-auto px-8">
+        <!-- Animated Background Circles -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
           <div
-            class="flex flex-col lg:flex-row items-center justify-center gap-16"
+            class="absolute -top-20 -left-20 w-96 h-96 bg-green-200/30 dark:bg-green-800/10 rounded-full blur-3xl animate-pulse"
+          />
+          <div
+            class="absolute -bottom-20 -right-20 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl animate-pulse animation-delay-1000"
+          />
+        </div>
+
+        <!-- Confetti Animation -->
+        <div class="confetti-container">
+          <div v-for="i in 12" :key="i" :class="`confetti confetti-${i}`" />
+        </div>
+
+        <div class="text-center w-full max-w-5xl mx-auto px-8 relative z-10">
+          <div
+            class="flex flex-col lg:flex-row items-center justify-center gap-12"
           >
             <!-- Left: Success Message -->
             <div class="text-center flex-1">
+              <!-- Prominent Order Number Badge -->
+              <div
+                v-if="pos.paymentState.value.orderNumber"
+                class="mb-6 animate-bounce-in"
+              >
+                <div
+                  class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl shadow-lg shadow-amber-500/30"
+                >
+                  <span class="text-5xl font-black"
+                    >#{{ pos.paymentState.value.orderNumber }}</span
+                  >
+                </div>
+                <p class="text-gray-500 mt-3 text-lg">Your Order Number</p>
+              </div>
+
               <!-- Animated checkmark -->
-              <div class="success-checkmark mb-8 mx-auto">
+              <div class="success-checkmark mb-6 mx-auto">
                 <div class="check-icon">
                   <span class="icon-line line-tip" />
                   <span class="icon-line line-long" />
@@ -771,23 +805,23 @@ const { settings } = useReceipt();
                 </div>
               </div>
               <h2
-                class="text-6xl font-light text-green-600 dark:text-green-400 mb-4 tracking-tight"
+                class="text-5xl font-light text-green-600 dark:text-green-400 mb-3 tracking-tight"
               >
                 Thank You!
               </h2>
-              <p class="text-2xl text-gray-500 font-light mb-8">
+              <p class="text-xl text-gray-500 font-light mb-6">
                 Payment successful
               </p>
 
               <!-- Amount Display -->
               <div
                 v-if="pos.paymentState.value.amount"
-                class="p-6 bg-white/70 dark:bg-gray-800/50 rounded-2xl backdrop-blur-sm inline-block"
+                class="p-5 bg-white/80 dark:bg-gray-800/60 rounded-2xl backdrop-blur-sm inline-block shadow-lg"
               >
                 <p class="text-sm text-gray-400 uppercase tracking-wide mb-1">
                   Amount Paid
                 </p>
-                <p class="text-4xl font-bold text-gray-900 dark:text-white">
+                <p class="text-3xl font-bold text-gray-900 dark:text-white">
                   {{
                     currency.format(
                       pos.paymentState.value.amount,
@@ -805,12 +839,61 @@ const { settings } = useReceipt();
                   }}
                 </p>
               </div>
+
+              <!-- Order Items Preview (Optional) -->
+              <div
+                v-if="
+                  pos.paymentState.value.items &&
+                  pos.paymentState.value.items.length > 0
+                "
+                class="mt-6 text-left max-w-xs mx-auto"
+              >
+                <div
+                  class="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 backdrop-blur-sm"
+                >
+                  <p
+                    class="text-xs text-gray-400 uppercase tracking-wide mb-2 text-center"
+                  >
+                    Order Summary
+                  </p>
+                  <div class="space-y-2 max-h-32 overflow-auto">
+                    <div
+                      v-for="(item, idx) in pos.paymentState.value.items.slice(
+                        0,
+                        4
+                      )"
+                      :key="idx"
+                      class="flex justify-between text-sm"
+                    >
+                      <span class="text-gray-600 dark:text-gray-300 truncate"
+                        >{{ item.quantity }}× {{ item.name }}</span
+                      >
+                      <span
+                        class="text-gray-900 dark:text-white font-medium ml-2"
+                        >{{
+                          currency.format(
+                            item.total,
+                            pos.selectedCurrency.value
+                          )
+                        }}</span
+                      >
+                    </div>
+                    <p
+                      v-if="pos.paymentState.value.items.length > 4"
+                      class="text-xs text-gray-400 text-center"
+                    >
+                      +{{ pos.paymentState.value.items.length - 4 }} more
+                      items...
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Right: E-Bill QR Code -->
             <div
               v-if="pos.paymentState.value.eBillUrl"
-              class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-2xl shadow-gray-200/50 dark:shadow-none"
+              class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-2xl shadow-gray-200/50 dark:shadow-none animate-slide-up"
             >
               <div class="text-center mb-6">
                 <p class="text-xl font-semibold text-gray-900 dark:text-white">
@@ -842,7 +925,7 @@ const { settings } = useReceipt();
           </div>
 
           <!-- Footer message -->
-          <p class="text-xl text-gray-400 mt-12">Have a great day! ☀️</p>
+          <p class="text-xl text-gray-400 mt-10">Have a great day! ☀️</p>
         </div>
       </div>
     </main>
@@ -1076,6 +1159,140 @@ const { settings } = useReceipt();
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+/* Bounce-in Animation */
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Slide-up Animation */
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+
+@keyframes slide-up {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Animation Delay */
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+/* Confetti Animation */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-fall 3s ease-in-out forwards;
+}
+
+.confetti-1 {
+  left: 10%;
+  background: #f59e0b;
+  animation-delay: 0s;
+}
+.confetti-2 {
+  left: 20%;
+  background: #10b981;
+  animation-delay: 0.1s;
+}
+.confetti-3 {
+  left: 30%;
+  background: #3b82f6;
+  animation-delay: 0.2s;
+}
+.confetti-4 {
+  left: 40%;
+  background: #ef4444;
+  animation-delay: 0.15s;
+}
+.confetti-5 {
+  left: 50%;
+  background: #8b5cf6;
+  animation-delay: 0.25s;
+}
+.confetti-6 {
+  left: 60%;
+  background: #ec4899;
+  animation-delay: 0.1s;
+}
+.confetti-7 {
+  left: 70%;
+  background: #f59e0b;
+  animation-delay: 0.3s;
+}
+.confetti-8 {
+  left: 80%;
+  background: #10b981;
+  animation-delay: 0.05s;
+}
+.confetti-9 {
+  left: 90%;
+  background: #3b82f6;
+  animation-delay: 0.2s;
+}
+.confetti-10 {
+  left: 15%;
+  background: #ef4444;
+  animation-delay: 0.35s;
+}
+.confetti-11 {
+  left: 55%;
+  background: #8b5cf6;
+  animation-delay: 0.4s;
+}
+.confetti-12 {
+  left: 85%;
+  background: #ec4899;
+  animation-delay: 0.15s;
+}
+
+@keyframes confetti-fall {
+  0% {
+    top: -10%;
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+    transform: rotate(720deg) scale(0.5);
   }
 }
 </style>

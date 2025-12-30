@@ -750,7 +750,7 @@ const insertEmoji = (emoji: string) => {
         <UInput
           :placeholder="t('chat.searchContacts', 'Search team members...')"
           icon="i-heroicons-magnifying-glass"
-          class="mb-4"
+          class="mb-4 w-full"
         />
 
         <div class="space-y-2 max-h-80 overflow-y-auto">
@@ -814,6 +814,7 @@ const insertEmoji = (emoji: string) => {
             v-model="newChannelName"
             placeholder="e.g. general, support"
             icon="i-heroicons-hashtag"
+            class="w-full"
           />
         </UFormField>
 
@@ -821,6 +822,7 @@ const insertEmoji = (emoji: string) => {
           <UTextarea
             v-model="newChannelAbout"
             placeholder="What is this channel about?"
+            class="w-full"
           />
         </UFormField>
 

@@ -21,6 +21,7 @@ export interface ReceiptHeaderSettings {
 }
 
 export interface ReceiptContentSettings {
+  showOrderSequence: boolean;
   showOrderNumber: boolean;
   showDateTime: boolean;
   showCashier: boolean;
@@ -93,6 +94,7 @@ const defaultSettings: SavedReceiptSettings = {
     customText: "",
   },
   content: {
+    showOrderSequence: true,
     showOrderNumber: true,
     showDateTime: true,
     showCashier: true,

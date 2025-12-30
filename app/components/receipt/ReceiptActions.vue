@@ -205,10 +205,13 @@ const paymentMethodDisplay = computed(() => {
 
     <!-- Order Summary -->
     <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-6">
+      <div class="font-bold font-mono text-2xl">
+        <b>#{{ order?.orderNumber }}</b>
+      </div>
       <div class="flex justify-between items-center mb-2">
-        <span class="text-gray-500 dark:text-gray-400 text-sm">{{
-          t("orders.orderId")
-        }}</span>
+        <span class="text-gray-500 dark:text-gray-400 text-sm">
+          {{ t("orders.orderId") }}
+        </span>
         <span class="font-mono text-sm text-gray-900 dark:text-white">
           {{ order?.code || order.id }}
         </span>

@@ -338,10 +338,32 @@ export const useReceipt = () => {
     .merchant-info { font-size: 10px; color: #333; }
     
     .order-info {
-      padding: 8px 0;
+      padding: 10px 0;
       border-bottom: 1px dashed #000;
-      font-size: 10px;
+      text-align: center;
     }
+    
+    .order-number {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      padding: 4px 12px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    
+    .order-details {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #333;
+      margin-top: 6px;
+      text-align: left;
+    }
+    
+    .order-details-left { text-align: left; }
+    .order-details-right { text-align: right; }
     
     .items { padding: 8px 0; }
     .item { margin-bottom: 8px; }
@@ -436,10 +458,24 @@ export const useReceipt = () => {
   </div>
   
   <div class="order-info">
-    <div>#: <strong>${receipt.orderNumber || "-"}</strong></div>
-    <div>Order: <strong>${receipt.orderCode || receipt.orderId}</strong></div>
-    <div>Date: ${new Date(receipt.createdAt).toLocaleString()}</div>
-    <div>Receipt: ${receipt.id}</div>
+    ${
+      receiptSettings.settings.value.content.showOrderSequence &&
+      receipt.orderNumber
+        ? `<div class="order-number">#${receipt.orderNumber}</div>`
+        : ""
+    }
+    <div class="order-details">
+      <div class="order-details-left">
+        <div><strong>${receipt.orderCode || receipt.orderId}</strong></div>
+        <div style="font-size: 9px; color: #666;">Receipt: ${receipt.id}</div>
+      </div>
+      <div class="order-details-right">
+        <div>${new Date(receipt.createdAt).toLocaleDateString()}</div>
+        <div style="font-size: 9px;">${new Date(
+          receipt.createdAt
+        ).toLocaleTimeString()}</div>
+      </div>
+    </div>
   </div>
   
   <div class="items">

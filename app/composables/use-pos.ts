@@ -60,6 +60,10 @@ const paymentState = ref<{
   // E-Bill for customer (after payment success)
   eBillUrl?: string;
   eBillId?: string;
+  // Order info for success display
+  orderNumber?: number;
+  orderCode?: string;
+  items?: Array<{ name: string; quantity: number; total: number }>;
 }>({ status: "idle" });
 
 // ============================================
