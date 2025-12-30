@@ -18,6 +18,7 @@ const messagesContainer = ref<HTMLElement | null>(null);
 
 // Reactions & Threading state
 const showReactionPicker = ref<string | null>(null); // Message ID for which picker is shown
+const customEmojiInput = ref<string>(""); // Custom emoji input
 const replyingTo = ref<any | null>(null); // Message being replied to
 const searchQuery = ref("");
 const searchResults = ref<any[]>([]);
@@ -133,8 +134,8 @@ const sendMessage = async () => {
   }
 };
 
-// Reactions
-const reactionEmojis = ["👍", "❤️", "😂", "🎉", "👏", "🔥"];
+// Reactions (includes Bitcoin/Lightning for crypto payments)
+const reactionEmojis = ["👍", "❤️", "😂", "🎉", "👏", "🔥", "⚡", "₿", "💰", "✅", "❌"];
 
 const toggleReaction = async (messageId: string, emoji: string) => {
   if (!chat.activeConversationId.value) return;
@@ -151,6 +152,17 @@ const toggleReaction = async (messageId: string, emoji: string) => {
   }
 
   showReactionPicker.value = null; // Close picker
+  customEmojiInput.value = ""; // Clear custom input
+};
+
+// Add custom emoji reaction
+const addCustomReaction = async (messageId: string) => {
+  const emoji = customEmojiInput.value.trim();
+  if (!emoji || !chat.activeConversationId.value) return;
+
+  await chat.addReaction(messageId, emoji, chat.activeConversationId.value);
+  showReactionPicker.value = null;
+  customEmojiInput.value = "";
 };
 
 // Reply to message
@@ -762,20 +774,40 @@ const typingText = computed(() => {
                     <!-- Reaction Picker (Emoji Selector) -->
                     <div
                       v-if="showReactionPicker === message.id"
-                      class="absolute bottom-full mb-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 flex gap-1 z-20"
+                      class="absolute bottom-full mb-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20"
                       :class="{
                         'right-0': isMyMessage(message.senderPubkey),
                         'left-0': !isMyMessage(message.senderPubkey),
                       }"
                     >
-                      <button
-                        v-for="emoji in reactionEmojis"
-                        :key="emoji"
-                        class="min-w-8 min-h-8 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-lg transition-colors active:scale-95"
-                        @click="toggleReaction(message.id, emoji)"
-                      >
-                        {{ emoji }}
-                      </button>
+                      <!-- Quick reactions -->
+                      <div class="flex gap-1 mb-2">
+                        <button
+                          v-for="emoji in reactionEmojis"
+                          :key="emoji"
+                          class="min-w-8 min-h-8 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-lg transition-colors active:scale-95"
+                          @click="toggleReaction(message.id, emoji)"
+                        >
+                          {{ emoji }}
+                        </button>
+                      </div>
+                      <!-- Custom emoji input -->
+                      <div class="flex gap-1 border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <input
+                          v-model="customEmojiInput"
+                          type="text"
+                          placeholder="Type emoji..."
+                          maxlength="10"
+                          class="flex-1 px-2 py-1 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          @keydown.enter="addCustomReaction(message.id)"
+                        />
+                        <button
+                          @click="addCustomReaction(message.id)"
+                          class="px-2 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
                     </div>
                   </div>
 
