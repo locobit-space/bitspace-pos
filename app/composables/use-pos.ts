@@ -105,7 +105,8 @@ const initBroadcastChannel = () => {
       deliveryAddress.value = "";
       customerPhone.value = "";
       scheduledTime.value = "";
-      paymentState.value = { status: "idle" };
+      // DON'T clear payment state - it should persist to show receipt QR
+      // Payment state will auto-clear after 15s timeout on customer display
     } else if (type === "payment-update") {
       paymentState.value = payload;
     } else if (type === "request-sync") {

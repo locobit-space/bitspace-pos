@@ -7,6 +7,10 @@ definePageMeta({
   layout: "blank",
 });
 
+useHead({
+  title: "Digital Receipt - bnos.space",
+});
+
 const route = useRoute();
 const receipt = useReceipt();
 const receiptGenerator = useReceiptGenerator();

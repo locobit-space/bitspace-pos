@@ -36,16 +36,32 @@ const displayState = computed<DisplayState>(() => {
 });
 
 // Success animation auto-clear (15s to allow e-bill QR scanning)
+let autoClearTimeout: ReturnType<typeof setTimeout> | null = null;
+
 watch(
   () => pos.paymentState.value.status,
   (status) => {
+    // Clear any existing timeout to prevent multiple timeouts from stacking
+    if (autoClearTimeout) {
+      clearTimeout(autoClearTimeout);
+      autoClearTimeout = null;
+    }
+
     if (status === "paid") {
-      setTimeout(() => {
+      autoClearTimeout = setTimeout(() => {
         pos.setPaymentState({ status: "idle" });
+        autoClearTimeout = null;
       }, 15000); // 15 seconds for customer to scan e-bill
     }
   }
 );
+
+// Cleanup on unmount
+onUnmounted(() => {
+  if (autoClearTimeout) {
+    clearTimeout(autoClearTimeout);
+  }
+});
 
 // Current time
 const currentTime = ref(new Date());
@@ -209,7 +225,7 @@ const { settings } = useReceipt();
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-hidden relative">
+    <main class="flex-1 overflow-auto relative">
       <!-- ============================================ -->
       <!-- IDLE STATE -->
       <!-- ============================================ -->
@@ -380,7 +396,7 @@ const { settings } = useReceipt();
 
         <!-- Summary Panel -->
         <div
-          class="w-96 bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col justify-end p-8 border-l border-gray-200 dark:border-gray-800"
+          class="w-96 bg-linear-to-b from-gray-100 to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col justify-end p-8 border-l border-gray-200 dark:border-gray-800"
         >
           <div class="space-y-4">
             <div class="flex justify-between text-lg text-gray-500">
@@ -429,7 +445,7 @@ const { settings } = useReceipt();
       <!-- ============================================ -->
       <div
         v-else-if="displayState === 'payment'"
-        class="h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900"
+        class="h-full flex items-center justify-center bg-linear-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900"
       >
         <!-- ==================== -->
         <!-- LIGHTNING PAYMENT -->
@@ -568,7 +584,7 @@ const { settings } = useReceipt();
               </div>
               <div
                 v-else
-                class="w-72 h-72 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-blue-300 dark:border-blue-700"
+                class="w-72 h-72 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-blue-300 dark:border-blue-700"
               >
                 <span class="text-6xl mb-4">🏦</span>
                 <span class="text-blue-600 dark:text-blue-400 font-medium"
@@ -654,7 +670,7 @@ const { settings } = useReceipt();
         >
           <div class="mb-8">
             <div
-              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center"
+              class="w-40 h-40 mx-auto rounded-full bg-linear-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center"
             >
               <span class="text-8xl">💵</span>
             </div>
@@ -694,7 +710,7 @@ const { settings } = useReceipt();
         >
           <div class="mb-8">
             <div
-              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center"
+              class="w-40 h-40 mx-auto rounded-full bg-linear-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center"
             >
               <span class="text-8xl">📱</span>
             </div>
@@ -737,7 +753,7 @@ const { settings } = useReceipt();
         <div v-else class="text-center">
           <div class="mb-8">
             <div
-              class="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center"
+              class="w-40 h-40 mx-auto rounded-full bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center"
             >
               <span class="text-8xl animate-pulse">💳</span>
             </div>
@@ -767,7 +783,7 @@ const { settings } = useReceipt();
       <!-- ============================================ -->
       <div
         v-else-if="displayState === 'success'"
-        class="h-full flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden"
+        class="h-full flex items-center justify-center bg-linear-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden"
       >
         <!-- Animated Background Circles -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -793,10 +809,10 @@ const { settings } = useReceipt();
               <!-- Prominent Order Number Badge -->
               <div
                 v-if="pos.paymentState.value.orderNumber"
-                class="mb-6 animate-bounce-in"
+                class="mb-2 animate-bounce-in"
               >
                 <div
-                  class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl shadow-lg shadow-amber-500/30"
+                  class="inline-flex items-center gap-3 px-8 py-2 bg-linear-to-r from-amber-400 to-orange-500 text-white rounded-2xl shadow-lg shadow-amber-500/30"
                 >
                   <span class="text-5xl font-black"
                     >#{{ pos.paymentState.value.orderNumber }}</span
@@ -805,21 +821,29 @@ const { settings } = useReceipt();
                 <p class="text-gray-500 mt-3 text-lg">Your Order Number</p>
               </div>
 
-              <!-- Animated checkmark -->
-              <div class="success-checkmark mb-6 mx-auto">
-                <div class="check-icon">
-                  <span class="icon-line line-tip" />
-                  <span class="icon-line line-long" />
-                  <div class="icon-circle" />
-                  <div class="icon-fix" />
+              <!-- Animated checkmark with linear fill -->
+              <div class="success-icon-wrapper mb-4 mx-auto">
+                <!-- Pulsing background circle -->
+                <div class="absolute inset-0 bg-linear-to-br from-green-400 to-emerald-600 rounded-full opacity-20 animate-ping" />
+
+                <!-- Main circle with linear -->
+                <div class="relative w-32 h-32 bg-linear-to-br from-green-400 via-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl shadow-green-500/50 animate-scale-in">
+                  <!-- Inner glow circle -->
+                  <div class="absolute inset-2 bg-linear-to-br from-green-300 to-emerald-500 rounded-full opacity-60 blur-sm" />
+
+                  <!-- Checkmark icon -->
+                  <Icon
+                    name="heroicons:check-20-solid"
+                    class="relative text-white text-7xl animate-check-pop drop-shadow-lg"
+                  />
                 </div>
               </div>
               <h2
-                class="text-5xl font-light text-green-600 dark:text-green-400 mb-3 tracking-tight"
+                class="text-2xl font-light text-green-600 dark:text-green-400 mb-3 tracking-tight"
               >
                 Thank You!
               </h2>
-              <p class="text-xl text-gray-500 font-light mb-6">
+              <p class="text-xl text-gray-500 font-light mb-2">
                 Payment successful
               </p>
 
@@ -828,9 +852,9 @@ const { settings } = useReceipt();
                 v-if="pos.paymentState.value.amount"
                 class="p-5 bg-white/80 dark:bg-gray-800/60 rounded-2xl backdrop-blur-sm inline-block shadow-lg"
               >
-                <p class="text-sm text-gray-400 uppercase tracking-wide mb-1">
+                <!-- <p class="text-sm text-gray-400 uppercase tracking-wide mb-1">
                   Amount Paid
-                </p>
+                </p> -->
                 <p class="text-3xl font-bold text-gray-900 dark:text-white">
                   {{
                     currency.format(
@@ -1013,180 +1037,54 @@ const { settings } = useReceipt();
   }
 }
 
-/* Success Checkmark Animation */
-.success-checkmark {
+/* Modern Success Icon Animations */
+.success-icon-wrapper {
+  position: relative;
   width: 140px;
   height: 140px;
   margin: 0 auto;
 }
 
-.check-icon {
-  width: 140px;
-  height: 140px;
-  position: relative;
-  border-radius: 50%;
-  box-sizing: content-box;
-  border: 5px solid #22c55e;
-}
-
-.check-icon::before {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: -3px;
-  width: 30px;
-  height: 100px;
-  border-radius: 40% 0 0 40%;
-  transform-origin: 100% 50%;
-  transform: rotate(-45deg);
-  background-color: #f0fdf4;
-}
-
-.dark .check-icon::before {
-  background-color: #030712;
-}
-
-.check-icon::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50px;
-  width: 60px;
-  height: 120px;
-  border-radius: 0 60% 60% 0;
-  transform-origin: 0 50%;
-  transform: rotate(-45deg);
-  background-color: #f0fdf4;
-}
-
-.dark .check-icon::after {
-  background-color: #030712;
-}
-
-.icon-line {
-  height: 8px;
-  background-color: #22c55e;
-  display: block;
-  border-radius: 4px;
-  position: absolute;
-  z-index: 10;
-}
-
-.line-tip {
-  width: 40px;
-  left: 22px;
-  top: 76px;
-  transform: rotate(45deg);
-  animation: icon-line-tip 0.75s;
-}
-
-.line-long {
-  width: 70px;
-  right: 12px;
-  top: 62px;
-  transform: rotate(-45deg);
-  animation: icon-line-long 0.75s;
-}
-
-.icon-circle {
-  width: 140px;
-  height: 140px;
-  position: absolute;
-  border-radius: 50%;
-  box-sizing: content-box;
-  top: -8px;
-  left: -8px;
-  border: 5px solid rgba(34, 197, 94, 0.3);
-  animation: circle 0.75s;
-}
-
-.icon-fix {
-  background-color: #f0fdf4;
-  width: 10px;
-  height: 105px;
-  position: absolute;
-  left: 34px;
-  top: 12px;
-  z-index: 1;
-  transform: rotate(-45deg);
-}
-
-.dark .icon-fix {
-  background-color: #030712;
-}
-
-@keyframes icon-line-tip {
+/* Scale-in animation for the main circle */
+@keyframes scale-in {
   0% {
-    width: 0;
-    left: 1px;
-    top: 19px;
-  }
-
-  54% {
-    width: 0;
-    left: 1px;
-    top: 19px;
-  }
-
-  70% {
-    width: 50px;
-    left: 4px;
-    top: 82px;
-  }
-
-  84% {
-    width: 25px;
-    left: 18px;
-    top: 71px;
-  }
-
-  100% {
-    width: 40px;
-    left: 22px;
-    top: 76px;
-  }
-}
-
-@keyframes icon-line-long {
-  0% {
-    width: 0;
-    right: 56px;
-    top: 74px;
-  }
-
-  65% {
-    width: 0;
-    right: 56px;
-    top: 74px;
-  }
-
-  84% {
-    width: 75px;
-    right: 2px;
-    top: 60px;
-  }
-
-  100% {
-    width: 70px;
-    right: 12px;
-    top: 62px;
-  }
-}
-
-@keyframes circle {
-  0% {
-    transform: scale(0.8);
+    transform: scale(0);
     opacity: 0;
   }
-
   50% {
-    transform: scale(1.05);
+    transform: scale(1.1);
   }
-
   100% {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Check pop animation */
+@keyframes check-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-check-pop {
+  animation: check-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
 }
 
 /* Bounce-in Animation */
