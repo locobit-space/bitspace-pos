@@ -117,12 +117,9 @@ const paymentMethodOptions = [
   },
 ];
 
-const currencyOptions = [
-  { value: "LAK", label: "🇱🇦 LAK" },
-  { value: "USD", label: "🇺🇸 USD" },
-  { value: "THB", label: "🇹🇭 THB" },
-  { value: "SATS", label: "⚡ SATS" },
-];
+// Import centralized currency options
+import { CURRENCY_OPTIONS } from "~/composables/use-currency";
+const currencyOptions = CURRENCY_OPTIONS;
 
 const genderOptions = [
   { value: "male", label: t("employees.gender.male") },

@@ -47,6 +47,7 @@ const ordersStore = useOrders();
 const tablesStore = useTables();
 const lightning = useLightning();
 const currency = useCurrency();
+import { POS_CURRENCY_OPTIONS } from "~/composables/use-currency";
 const offline = useOffline();
 const sound = useSound();
 const receipt = useReceipt();
@@ -1451,7 +1452,7 @@ onUnmounted(() => {
             <!-- Currency Selector -->
             <USelect
               v-model="pos.selectedCurrency.value"
-              :items="['LAK', 'THB', 'USD', 'SATS']"
+              :items="POS_CURRENCY_OPTIONS"
               size="sm"
               class="w-24"
             />
@@ -3292,7 +3293,7 @@ onUnmounted(() => {
               >
               <USelect
                 v-model="pos.selectedCurrency.value"
-                :items="['SATS', 'LAK', 'THB', 'USD']"
+                :items="POS_CURRENCY_OPTIONS"
               />
             </div>
 

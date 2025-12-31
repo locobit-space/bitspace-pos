@@ -58,14 +58,9 @@ const applyTemplates = ref(true);
 // Company code (generated on mount)
 const generatedCompanyCode = ref("");
 
-// Currency options
-const currencyOptions = [
-  { value: "LAK", label: "🇱🇦 LAK - Lao Kip" },
-  { value: "USD", label: "🇺🇸 USD - US Dollar" },
-  { value: "THB", label: "🇹🇭 THB - Thai Baht" },
-  { value: "BTC", label: "₿ BTC - Bitcoin" },
-  { value: "SATS", label: "⚡ SATS - Satoshis" },
-];
+// Currency options (imported from centralized constant)
+import { CURRENCY_OPTIONS } from "~/composables/use-currency";
+const currencyOptions = CURRENCY_OPTIONS;
 
 // Language options
 const languageOptions = [

@@ -18,13 +18,24 @@
               <!-- Profile Header -->
               <div class="flex items-center space-x-6">
                 <div class="relative">
-                  <img :src="userProfile.avatar || '/default-avatar.png'" :alt="userProfile.name"
-                    class="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700" />
-                  <UButton icon="i-heroicons-camera" size="sm" color="primary" variant="solid"
-                    class="absolute bottom-0 right-0 rounded-full" @click="openAvatarModal" />
+                  <img
+                    :src="userProfile.avatar || '/default-avatar.png'"
+                    :alt="userProfile.name"
+                    class="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
+                  />
+                  <UButton
+                    icon="i-heroicons-camera"
+                    size="sm"
+                    color="primary"
+                    variant="solid"
+                    class="absolute bottom-0 right-0 rounded-full"
+                    @click="openAvatarModal"
+                  />
                 </div>
                 <div>
-                  <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h3
+                    class="text-xl font-semibold text-gray-900 dark:text-white"
+                  >
                     {{ userProfile.name }}
                   </h3>
                   <p class="text-gray-600 dark:text-gray-400">
@@ -38,63 +49,115 @@
               </div>
 
               <!-- Profile Form -->
-              <UForm :schema="profileSchema" :state="profileForm" @submit="updateProfile">
+              <UForm
+                :schema="profileSchema"
+                :state="profileForm"
+                @submit="updateProfile"
+              >
                 <!-- Nostr Identity Section -->
-                <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <h4 class="text-sm font-medium text-purple-800 dark:text-purple-200 mb-3">
+                <div
+                  class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg"
+                >
+                  <h4
+                    class="text-sm font-medium text-purple-800 dark:text-purple-200 mb-3"
+                  >
                     {{ $t("account.nostr_identity") || "Nostr Identity" }}
-                    <span class="text-xs font-normal text-purple-600 dark:text-purple-300 ml-2">(kind:0)</span>
+                    <span
+                      class="text-xs font-normal text-purple-600 dark:text-purple-300 ml-2"
+                      >(kind:0)</span
+                    >
                   </h4>
                   <div class="space-y-3">
                     <!-- Public Key (npub) -->
                     <div class="flex items-center gap-2">
-                      <span class="text-xs text-gray-500 dark:text-gray-400 w-12">npub:</span>
-                      <code class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1 truncate">
+                      <span
+                        class="text-xs text-gray-500 dark:text-gray-400 w-12"
+                        >npub:</span
+                      >
+                      <code
+                        class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1 truncate"
+                      >
                         {{ userProfile.npub || "Not available" }}
                       </code>
-                      <UButton v-if="userProfile.npub" icon="i-heroicons-clipboard-document" size="xs" variant="ghost"
-                        @click="copyToClipboard(userProfile.npub)" />
+                      <UButton
+                        v-if="userProfile.npub"
+                        icon="i-heroicons-clipboard-document"
+                        size="xs"
+                        variant="ghost"
+                        @click="copyToClipboard(userProfile.npub)"
+                      />
                     </div>
 
                     <!-- Private Key (nsec) - Backup Section -->
-                    <div class="border-t border-purple-200 dark:border-purple-700 pt-3 mt-3">
+                    <div
+                      class="border-t border-purple-200 dark:border-purple-700 pt-3 mt-3"
+                    >
                       <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium text-red-600 dark:text-red-400">
+                        <span
+                          class="text-xs font-medium text-red-600 dark:text-red-400"
+                        >
                           🔐
                           {{ $t("account.backup_key") || "Backup Private Key" }}
                         </span>
                       </div>
                       <div v-if="userNsec" class="space-y-2">
                         <div v-if="!showNsec" class="flex items-center gap-2">
-                          <span class="text-xs text-gray-500 dark:text-gray-400 w-12">nsec:</span>
-                          <code class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1">
+                          <span
+                            class="text-xs text-gray-500 dark:text-gray-400 w-12"
+                            >nsec:</span
+                          >
+                          <code
+                            class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1"
+                          >
                             ••••••••••••••••••••••••••••••••••••••••••••
                           </code>
-                          <UButton icon="i-heroicons-eye" size="xs" variant="outline" color="red"
-                            @click="showNsecConfirmModal = true">
+                          <UButton
+                            icon="i-heroicons-eye"
+                            size="xs"
+                            variant="outline"
+                            color="red"
+                            @click="showNsecConfirmModal = true"
+                          >
                             {{ $t("account.reveal") || "Reveal" }}
                           </UButton>
                         </div>
                         <div v-else class="space-y-2">
                           <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 dark:text-gray-400 w-12">nsec:</span>
+                            <span
+                              class="text-xs text-gray-500 dark:text-gray-400 w-12"
+                              >nsec:</span
+                            >
                             <code
-                              class="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 px-2 py-1 rounded flex-1 break-all border border-red-200 dark:border-red-800">
+                              class="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 px-2 py-1 rounded flex-1 break-all border border-red-200 dark:border-red-800"
+                            >
                               {{ userNsec }}
                             </code>
                           </div>
                           <div class="flex gap-2">
-                            <UButton icon="i-heroicons-clipboard-document" size="xs" variant="outline" color="red"
-                              @click="copyNsec">
+                            <UButton
+                              icon="i-heroicons-clipboard-document"
+                              size="xs"
+                              variant="outline"
+                              color="red"
+                              @click="copyNsec"
+                            >
                               {{ $t("common.copy") || "Copy" }}
                             </UButton>
-                            <UButton icon="i-heroicons-eye-slash" size="xs" variant="ghost" @click="hideNsec">
+                            <UButton
+                              icon="i-heroicons-eye-slash"
+                              size="xs"
+                              variant="ghost"
+                              @click="hideNsec"
+                            >
                               {{ $t("account.hide") || "Hide" }}
                             </UButton>
                           </div>
                         </div>
                       </div>
-                      <p v-else class="text-xs text-gray-500 dark:text-gray-400 italic">
+                      <p
+                        v-else
+                        class="text-xs text-gray-500 dark:text-gray-400 italic"
+                      >
                         {{
                           $t("account.no_nsec_available") ||
                           "No private key available (using NIP-07 extension)"
@@ -113,56 +176,120 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <UFormField name="name" :label="$t('account.name') || 'Name'">
-                    <UInput v-model="profileForm.name" placeholder="Your name" class="w-full" icon="i-heroicons-user" />
+                    <UInput
+                      v-model="profileForm.name"
+                      placeholder="Your name"
+                      class="w-full"
+                      icon="i-heroicons-user"
+                    />
                   </UFormField>
 
-                  <UFormField name="displayName" :label="$t('account.display_name') || 'Display Name'">
-                    <UInput v-model="profileForm.displayName" placeholder="Display name" icon="i-heroicons-user"
-                      class="w-full" />
+                  <UFormField
+                    name="displayName"
+                    :label="$t('account.display_name') || 'Display Name'"
+                  >
+                    <UInput
+                      v-model="profileForm.displayName"
+                      placeholder="Display name"
+                      icon="i-heroicons-user"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="nip05" :label="$t('account.nip05') || 'NIP-05 (Nostr Address)'">
-                    <UInput v-model="profileForm.nip05" placeholder="you@example.com" icon="i-heroicons-envelope"
-                      class="w-full" />
+                  <UFormField
+                    name="nip05"
+                    :label="$t('account.nip05') || 'NIP-05 (Nostr Address)'"
+                  >
+                    <UInput
+                      v-model="profileForm.nip05"
+                      placeholder="you@example.com"
+                      icon="i-heroicons-envelope"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="lud16" :label="$t('account.lightning_address') || 'Lightning Address'
-                    ">
-                    <UInput v-model="profileForm.lud16" placeholder="you@getalby.com" icon="emojione-v1:lightning-mood"
-                      class="w-full" />
+                  <UFormField
+                    name="lud16"
+                    :label="
+                      $t('account.lightning_address') || 'Lightning Address'
+                    "
+                  >
+                    <UInput
+                      v-model="profileForm.lud16"
+                      placeholder="you@getalby.com"
+                      icon="emojione-v1:lightning-mood"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="website" :label="$t('account.website') || 'Website'">
-                    <UInput v-model="profileForm.website" placeholder="https://yoursite.com" icon="iconoir:www"
-                      class="w-full" />
+                  <UFormField
+                    name="website"
+                    :label="$t('account.website') || 'Website'"
+                  >
+                    <UInput
+                      v-model="profileForm.website"
+                      placeholder="https://yoursite.com"
+                      icon="iconoir:www"
+                      class="w-full"
+                    />
                   </UFormField>
 
-                  <UFormField name="picture" :label="$t('account.picture_url') || 'Profile Picture URL'">
-                    <UInput v-model="profileForm.picture" placeholder="https://..." icon="i-heroicons-photo"
-                      class="w-full" />
+                  <UFormField
+                    name="picture"
+                    :label="$t('account.picture_url') || 'Profile Picture URL'"
+                  >
+                    <UInput
+                      v-model="profileForm.picture"
+                      placeholder="https://..."
+                      icon="i-heroicons-photo"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
 
                 <div class="mt-6">
-                  <UFormField name="about" :label="$t('account.about') || 'About'">
-                    <UTextarea v-model="profileForm.about" :rows="4" placeholder="Tell us about yourself..."
-                      icon="i-heroicons-chat-bubble-left" class="w-full" />
+                  <UFormField
+                    name="about"
+                    :label="$t('account.about') || 'About'"
+                  >
+                    <UTextarea
+                      v-model="profileForm.about"
+                      :rows="4"
+                      placeholder="Tell us about yourself..."
+                      icon="i-heroicons-chat-bubble-left"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
 
                 <div class="mt-6">
-                  <UFormField name="banner" :label="$t('account.banner_url') || 'Banner Image URL'">
-                    <UInput v-model="profileForm.banner" placeholder="https://..." icon="i-heroicons-photo"
-                      class="w-full" />
+                  <UFormField
+                    name="banner"
+                    :label="$t('account.banner_url') || 'Banner Image URL'"
+                  >
+                    <UInput
+                      v-model="profileForm.banner"
+                      placeholder="https://..."
+                      icon="i-heroicons-photo"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
 
                 <div class="flex justify-between items-center mt-6">
-                  <UButton variant="outline" :loading="isLoadingProfile" @click="loadNostrProfile">
+                  <UButton
+                    variant="outline"
+                    :loading="isLoadingProfile"
+                    @click="loadNostrProfile"
+                  >
                     <UIcon name="i-heroicons-arrow-down-tray" class="mr-2" />
                     {{ $t("account.load_from_nostr") || "Load from Nostr" }}
                   </UButton>
-                  <UButton type="submit" color="primary" :loading="isUpdatingProfile">
+                  <UButton
+                    type="submit"
+                    color="primary"
+                    :loading="isUpdatingProfile"
+                  >
                     <UIcon name="i-heroicons-arrow-up-tray" class="mr-2" />
                     {{ $t("account.publish_to_nostr") || "Publish to Nostr" }}
                   </UButton>
@@ -176,29 +303,61 @@
             <div class="space-y-8">
               <!-- Change Password -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.change_password") }}
                 </h3>
-                <UForm :schema="passwordSchema" :state="passwordForm" @submit="changePassword">
+                <UForm
+                  :schema="passwordSchema"
+                  :state="passwordForm"
+                  @submit="changePassword"
+                >
                   <div class="space-y-4">
-                    <UFormField name="currentPassword" :label="$t('account.current_password')">
-                      <UInput v-model="passwordForm.currentPassword" type="password" icon="i-heroicons-lock-closed"
-                        class="w-full" />
+                    <UFormField
+                      name="currentPassword"
+                      :label="$t('account.current_password')"
+                    >
+                      <UInput
+                        v-model="passwordForm.currentPassword"
+                        type="password"
+                        icon="i-heroicons-lock-closed"
+                        class="w-full"
+                      />
                     </UFormField>
 
-                    <UFormField name="newPassword" :label="$t('account.new_password')">
-                      <UInput v-model="passwordForm.newPassword" type="password" icon="i-heroicons-lock-closed"
-                        class="w-full" />
+                    <UFormField
+                      name="newPassword"
+                      :label="$t('account.new_password')"
+                    >
+                      <UInput
+                        v-model="passwordForm.newPassword"
+                        type="password"
+                        icon="i-heroicons-lock-closed"
+                        class="w-full"
+                      />
                     </UFormField>
 
-                    <UFormField name="confirmPassword" :label="$t('account.confirm_password')">
-                      <UInput v-model="passwordForm.confirmPassword" type="password" icon="i-heroicons-lock-closed"
-                        class="w-full" />
+                    <UFormField
+                      name="confirmPassword"
+                      :label="$t('account.confirm_password')"
+                    >
+                      <UInput
+                        v-model="passwordForm.confirmPassword"
+                        type="password"
+                        icon="i-heroicons-lock-closed"
+                        class="w-full"
+                      />
                     </UFormField>
                   </div>
 
                   <div class="flex justify-end mt-6">
-                    <UButton type="submit" color="primary" :loading="isChangingPassword" icon="i-heroicons-lock-closed">
+                    <UButton
+                      type="submit"
+                      color="primary"
+                      :loading="isChangingPassword"
+                      icon="i-heroicons-lock-closed"
+                    >
                       {{ $t("account.update_password") }}
                     </UButton>
                   </div>
@@ -209,36 +368,55 @@
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
                 <div class="flex items-center justify-between mb-4">
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3
+                      class="text-lg font-semibold text-gray-900 dark:text-white"
+                    >
                       {{ $t("account.two_factor_auth") }}
                     </h3>
                     <p class="text-gray-600 dark:text-gray-400">
                       {{ $t("account.two_factor_description") }}
                     </p>
                   </div>
-                  <USwitch v-model="securitySettings.twoFactorEnabled" @update:model-value="toggleTwoFactor" />
+                  <USwitch
+                    v-model="securitySettings.twoFactorEnabled"
+                    @update:model-value="toggleTwoFactor"
+                  />
                 </div>
 
-                <div v-if="securitySettings.twoFactorEnabled" class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                <div
+                  v-if="securitySettings.twoFactorEnabled"
+                  class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg"
+                >
                   <div class="flex items-center">
-                    <Icon name="heroicons:shield-check" class="text-green-600 dark:text-green-400 text-xl mr-3" />
+                    <Icon
+                      name="heroicons:shield-check"
+                      class="text-green-600 dark:text-green-400 text-xl mr-3"
+                    />
                     <span class="text-green-800 dark:text-green-300">{{
                       $t("account.two_factor_enabled")
-                      }}</span>
+                    }}</span>
                   </div>
                 </div>
               </div>
 
               <!-- Active Sessions -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.active_sessions") }}
                 </h3>
                 <div class="space-y-4">
-                  <div v-for="session in activeSessions" :key="session.id"
-                    class="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div
+                    v-for="session in activeSessions"
+                    :key="session.id"
+                    class="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                  >
                     <div class="flex items-center space-x-4">
-                      <Icon :name="getDeviceIcon(session.device)" class="text-gray-600 dark:text-gray-400 text-xl" />
+                      <Icon
+                        :name="getDeviceIcon(session.device)"
+                        class="text-gray-600 dark:text-gray-400 text-xl"
+                      />
                       <div>
                         <p class="font-medium text-gray-900 dark:text-white">
                           {{ session.device }}
@@ -248,13 +426,20 @@
                           {{ formatDate(session.lastActive) }}
                         </p>
                       </div>
-                      <span v-if="session.current"
-                        class="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs px-2 py-1 rounded-full">
+                      <span
+                        v-if="session.current"
+                        class="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs px-2 py-1 rounded-full"
+                      >
                         {{ $t("account.current_session") }}
                       </span>
                     </div>
-                    <UButton v-if="!session.current" color="red" variant="ghost" size="sm"
-                      @click="terminateSession(session.id)">
+                    <UButton
+                      v-if="!session.current"
+                      color="red"
+                      variant="ghost"
+                      size="sm"
+                      @click="terminateSession(session.id)"
+                    >
                       {{ $t("account.terminate") }}
                     </UButton>
                   </div>
@@ -268,35 +453,64 @@
             <div class="space-y-8">
               <!-- Language & Region -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.language_region") }}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <UFormField :label="$t('account.language')">
-                    <USelect v-model="preferences.language" :items="languageOptions" label-key="label" value-key="value"
-                      icon="ion:language-outline" class="w-full" @update:model-value="changeLanguage" />
+                    <USelect
+                      v-model="preferences.language"
+                      :items="languageOptions"
+                      label-key="label"
+                      value-key="value"
+                      icon="ion:language-outline"
+                      class="w-full"
+                      @update:model-value="changeLanguage"
+                    />
                   </UFormField>
 
                   <UFormField :label="$t('account.timezone')">
-                    <USelect v-model="preferences.timezone" :items="timezoneOptions" label-key="label" value-key="value"
-                      icon="ion:time-outline" class="w-full" />
+                    <USelect
+                      v-model="preferences.timezone"
+                      :items="timezoneOptions"
+                      label-key="label"
+                      value-key="value"
+                      icon="ion:time-outline"
+                      class="w-full"
+                    />
                   </UFormField>
 
                   <UFormField :label="$t('account.date_format')">
-                    <USelect v-model="preferences.dateFormat" :items="dateFormatOptions" label-key="label"
-                      value-key="value" icon="ion:calendar-outline" class="w-full" />
+                    <USelect
+                      v-model="preferences.dateFormat"
+                      :items="dateFormatOptions"
+                      label-key="label"
+                      value-key="value"
+                      icon="ion:calendar-outline"
+                      class="w-full"
+                    />
                   </UFormField>
 
                   <UFormField :label="$t('account.currency')">
-                    <USelect v-model="preferences.currency" :items="currencyOptions" label-key="label" value-key="value"
-                      class="w-full" icon="material-symbols:currency-bitcoin" />
+                    <USelect
+                      v-model="preferences.currency"
+                      :items="currencyOptions"
+                      label-key="label"
+                      value-key="value"
+                      class="w-full"
+                      icon="material-symbols:currency-bitcoin"
+                    />
                   </UFormField>
                 </div>
               </div>
 
               <!-- Display Settings -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.display_settings") }}
                 </h3>
                 <div class="space-y-4">
@@ -309,7 +523,10 @@
                         {{ $t("account.dark_mode_description") }}
                       </p>
                     </div>
-                    <USwitch v-model="preferences.darkMode" @update:model-value="toggleDarkMode" />
+                    <USwitch
+                      v-model="preferences.darkMode"
+                      @update:model-value="toggleDarkMode"
+                    />
                   </div>
 
                   <div class="flex items-center justify-between">
@@ -327,8 +544,14 @@
               </div>
 
               <!-- Save Preferences -->
-              <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
-                <UButton color="primary" :loading="isSavingPreferences" @click="savePreferences">
+              <div
+                class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700"
+              >
+                <UButton
+                  color="primary"
+                  :loading="isSavingPreferences"
+                  @click="savePreferences"
+                >
                   {{ $t("common.save_changes") }}
                 </UButton>
               </div>
@@ -340,7 +563,9 @@
             <div class="space-y-8">
               <!-- Email Notifications -->
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.email_notifications") }}
                 </h3>
                 <div class="space-y-4">
@@ -384,7 +609,9 @@
 
               <!-- Push Notifications -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.push_notifications") }}
                 </h3>
                 <div class="space-y-4">
@@ -416,23 +643,37 @@
 
               <!-- Notification Schedule -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
+                >
                   {{ $t("account.notification_schedule") }}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <UFormField :label="$t('account.quiet_hours_start')">
-                    <UInput v-model="notifications.quietHours.start" type="time" />
+                    <UInput
+                      v-model="notifications.quietHours.start"
+                      type="time"
+                    />
                   </UFormField>
 
                   <UFormField :label="$t('account.quiet_hours_end')">
-                    <UInput v-model="notifications.quietHours.end" type="time" />
+                    <UInput
+                      v-model="notifications.quietHours.end"
+                      type="time"
+                    />
                   </UFormField>
                 </div>
               </div>
 
               <!-- Save Notifications -->
-              <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
-                <UButton color="primary" :loading="isSavingNotifications" @click="saveNotifications">
+              <div
+                class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700"
+              >
+                <UButton
+                  color="primary"
+                  :loading="isSavingNotifications"
+                  @click="saveNotifications"
+                >
                   {{ $t("common.save_changes") }}
                 </UButton>
               </div>
@@ -454,14 +695,28 @@
 
           <div class="space-y-4">
             <div class="flex justify-center">
-              <img :src="previewAvatar || userProfile.avatar || '/default-avatar.png'
-                " alt="Avatar preview"
-                class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700" />
+              <img
+                :src="
+                  previewAvatar || userProfile.avatar || '/default-avatar.png'
+                "
+                alt="Avatar preview"
+                class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
+              />
             </div>
 
             <div class="flex justify-center">
-              <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="handleAvatarUpload" />
-              <UButton color="primary" variant="outline" @click="$refs.avatarInput.click()">
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="handleAvatarUpload"
+              />
+              <UButton
+                color="primary"
+                variant="outline"
+                @click="$refs.avatarInput.click()"
+              >
                 {{ $t("account.choose_file") }}
               </UButton>
             </div>
@@ -469,10 +724,18 @@
 
           <template #footer>
             <div class="flex justify-end space-x-3">
-              <UButton color="gray" variant="ghost" @click="isAvatarModalOpen = false">
+              <UButton
+                color="gray"
+                variant="ghost"
+                @click="isAvatarModalOpen = false"
+              >
                 {{ $t("common.cancel") }}
               </UButton>
-              <UButton color="primary" :loading="isUploadingAvatar" @click="uploadAvatar">
+              <UButton
+                color="primary"
+                :loading="isUploadingAvatar"
+                @click="uploadAvatar"
+              >
                 {{ $t("common.save") }}
               </UButton>
             </div>
@@ -494,14 +757,20 @@
           </template>
 
           <div class="space-y-4">
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p class="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
+            <div
+              class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+            >
+              <p
+                class="text-sm text-red-700 dark:text-red-300 font-medium mb-2"
+              >
                 {{
                   $t("account.nsec_confirm_warning") ||
                   "Your private key (nsec) gives FULL ACCESS to your account!"
                 }}
               </p>
-              <ul class="text-xs text-red-600 dark:text-red-400 space-y-1 list-disc list-inside">
+              <ul
+                class="text-xs text-red-600 dark:text-red-400 space-y-1 list-disc list-inside"
+              >
                 <li>
                   {{
                     $t("account.nsec_warning_1") ||
@@ -530,22 +799,36 @@
             </div>
 
             <div>
-              <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block"
+              >
                 {{
                   $t("account.nsec_confirm_type") ||
                   "Type 'I UNDERSTAND' to reveal your key:"
                 }}
               </label>
-              <UInput v-model="nsecConfirmText" placeholder="I UNDERSTAND" class="font-mono" />
+              <UInput
+                v-model="nsecConfirmText"
+                placeholder="I UNDERSTAND"
+                class="font-mono"
+              />
             </div>
           </div>
 
           <template #footer>
             <div class="flex justify-end gap-3">
-              <UButton color="gray" variant="ghost" @click="closeNsecConfirmModal">
+              <UButton
+                color="gray"
+                variant="ghost"
+                @click="closeNsecConfirmModal"
+              >
                 {{ $t("common.cancel") || "Cancel" }}
               </UButton>
-              <UButton color="red" :disabled="nsecConfirmText !== 'I UNDERSTAND'" @click="confirmRevealNsec">
+              <UButton
+                color="red"
+                :disabled="nsecConfirmText !== 'I UNDERSTAND'"
+                @click="confirmRevealNsec"
+              >
                 {{ $t("account.reveal_key") || "Reveal Key" }}
               </UButton>
             </div>
@@ -763,11 +1046,9 @@ const dateFormatOptions = ref([
   { label: "YYYY-MM-DD", value: "YYYY-MM-DD" },
 ]);
 
-const currencyOptions = ref([
-  { label: "LAK (₭)", value: "LAK" },
-  { label: "USD ($)", value: "USD" },
-  { label: "THB (฿)", value: "THB" },
-]);
+// Import centralized currency options
+import { CURRENCY_OPTIONS } from "~/composables/use-currency";
+const currencyOptions = ref(CURRENCY_OPTIONS);
 
 // Get user's nsec from storage
 const userNsec = computed(() => {
@@ -949,7 +1230,7 @@ const updateProfile = async () => {
       const userKeys = userInfo?.userKeys
         ? userInfo.userKeys
         : user
-          ? {
+        ? {
             pub: user.publicKey,
             sec: user.privateKey,
             npub: user.npub,
@@ -957,7 +1238,7 @@ const updateProfile = async () => {
             publicKey: user.publicKey,
             privateKey: user.privateKey,
           }
-          : undefined;
+        : undefined;
 
       const updatedUserInfo: UserInfo = {
         pubkey,
@@ -1147,11 +1428,11 @@ onMounted(async () => {
         userInfo?.userKeys ||
         (user
           ? {
-            npub: user.npub,
-            nsec: user.nsec,
-            publicKey: user.publicKey,
-            privateKey: user.privateKey,
-          }
+              npub: user.npub,
+              nsec: user.nsec,
+              publicKey: user.publicKey,
+              privateKey: user.privateKey,
+            }
           : undefined),
     };
 
