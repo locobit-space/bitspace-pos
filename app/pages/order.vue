@@ -49,7 +49,7 @@
               {{ $t("order.orderNumber") || "Order #" }}
             </p>
             <p class="text-2xl font-bold text-primary-600 dark:text-primary-400">
-              {{ submittedOrderId?.slice(-6).toUpperCase() }}
+              {{ submittedOrderId }}
             </p>
           </div>
 
@@ -341,7 +341,7 @@
                   <div class="flex items-center justify-between mb-2">
                     <div>
                       <span class="font-bold text-sm">
-                        #{{ historyOrder.id.slice(-6).toUpperCase() }}
+                        #{{ historyOrder.code || historyOrder.id }}
                       </span>
                       <span class="text-xs text-gray-500 ml-2">
                         {{ formatOrderTime(historyOrder.date) }}
@@ -397,6 +397,7 @@ import type {
   Category,
   Order,
 } from "~/types";
+import { EntityId } from "~/utils/id";
 
 definePageMeta({
   layout: "blank",
@@ -973,12 +974,12 @@ const submitOrder = async () => {
   isSubmitting.value = true;
 
   try {
-    // Create order object with beautiful ID format (timestamp + random for uniqueness)
-    const ts = Date.now().toString(36).slice(-4).toUpperCase(); // Last 4 chars of timestamp in base36
-    const rnd = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random chars
-    const orderId = `ORD-${ts}${rnd}`;
+    // Generate order ID and code using EntityId utility
+    const { id: orderId, code: orderCode } = EntityId.order();
+
     const order: Order = {
       id: orderId,
+      code: orderCode,
       customer: "Customer",
       branch: "main",
       date: new Date().toISOString(),
@@ -1032,8 +1033,8 @@ const submitOrder = async () => {
     // Save to local history
     saveOrderToHistory(order);
 
-    // Update state
-    submittedOrderId.value = order.id;
+    // Update state (use code for customer display, id for tracking)
+    submittedOrderId.value = order.code || order.id;
     currentOrderStatus.value = "new";
     orderSubmitted.value = true;
     showCartModal.value = false;
