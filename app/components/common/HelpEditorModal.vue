@@ -18,8 +18,8 @@ const toast = useToast();
 const route = useRoute();
 
 // Form state
-const isSubmitting = ref(false);
-const showPreview = ref(false);
+const isSubmitting = useState("is-submitting", () => false)
+const showPreview = useState("show-preview", () => false)
 
 const form = reactive({
   pageId: props.article?.pageId || route.path.split("/")[1] || "dashboard",
@@ -110,7 +110,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <UModal :model-value="true" @update:model-value="emit('close')">
+  <UModal v-model:open="nostrHelp.isEditorOpen.value" @update:model-value="emit('close')">
     <template #content>
       <div class="p-6">
         <!-- Header -->
@@ -131,7 +131,7 @@ async function handleSubmit() {
         </div>
 
         <!-- Form -->
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+        <form class="space-y-4 overflow-y-auto max-h-[70vh]" @submit.prevent="handleSubmit">
           <!-- Page and Locale Row -->
           <div class="grid grid-cols-2 gap-4">
             <UFormField :label="t('help.editor.page') || 'Page'">
@@ -158,6 +158,7 @@ async function handleSubmit() {
             <UInput
               v-model="form.title"
               :placeholder="t('help.editor.titlePlaceholder') || 'e.g. How to use the POS'"
+              class="w-full"
             />
           </UFormField>
 
@@ -169,6 +170,7 @@ async function handleSubmit() {
             <UInput
               v-model="form.description"
               :placeholder="t('help.editor.descriptionPlaceholder') || 'Brief description of this help section'"
+              class="w-full"
             />
           </UFormField>
 
@@ -198,7 +200,7 @@ async function handleSubmit() {
               v-model="form.content"
               :placeholder="t('help.editor.contentPlaceholder') || 'Write detailed help content here. Supports **markdown** formatting.'"
               :rows="8"
-              class="font-mono"
+              class="font-mono w-full"
             />
 
             <!-- Preview -->

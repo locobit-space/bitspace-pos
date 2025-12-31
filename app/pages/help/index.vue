@@ -8,7 +8,7 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const nostrHelp = useNostrHelp();
 const toast = useToast();
 
@@ -369,7 +369,7 @@ onMounted(() => {
       <!-- Contribute Banner -->
       <div
         v-if="canWrite && filteredArticles.length > 0"
-        class="mt-8 bg-gradient-to-r from-primary-500 to-purple-500 rounded-xl p-6 text-center text-white"
+        class="mt-8 bg-linear-to-r from-primary-500 to-purple-500 rounded-xl p-6 text-center text-white"
       >
         <h3 class="text-xl font-bold mb-2">
           {{ t("help.contributeTitle") || "Help the Community!" }}
@@ -401,9 +401,9 @@ onMounted(() => {
       </div>
     </div>
 
+
     <!-- Help Editor Modal -->
     <CommonHelpEditorModal
-      v-if="nostrHelp.isEditorOpen.value"
       :article="nostrHelp.editingArticle.value"
       @close="nostrHelp.closeEditor()"
       @saved="nostrHelp.closeEditor()"

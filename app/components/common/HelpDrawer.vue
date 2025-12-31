@@ -149,16 +149,6 @@ function handleWriteNew() {
           <div v-else-if="currentHelp" class="space-y-6">
             <!-- Header with Edit Button -->
             <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <h3
-                  class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
-                >
-                  {{ currentHelp.title }}
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                  {{ currentHelp.description }}
-                </p>
-              </div>
               <UButton
                 v-if="canEdit"
                 color="gray"

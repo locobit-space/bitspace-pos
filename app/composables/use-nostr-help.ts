@@ -4,7 +4,6 @@
 // Supports markdown content, multi-language, and offline caching
 // ============================================
 
-import type { Event } from "nostr-tools";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // ============================================
@@ -45,17 +44,23 @@ interface CachedArticle extends NostrHelpArticle {
 export function useNostrHelp() {
   const nostrData = useNostrData();
   const route = useRoute();
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const staticHelp = useHelp(); // Fallback to static i18n content
 
   // State
-  const articles = ref<NostrHelpArticle[]>([]);
-  const isLoading = ref(false);
-  const isSyncing = ref(false);
-  const error = ref<string | null>(null);
-  const lastSyncAt = ref<string | null>(null);
-  const isEditorOpen = ref(false);
-  const editingArticle = ref<NostrHelpArticle | null>(null);
+  const articles = useState<NostrHelpArticle[]>(
+    "nostr_help_articles",
+    () => []
+  );
+  const isLoading = useState("help-loading", () => false);
+  const isSyncing = useState<boolean>("help-syncing", () => false);
+  const error = useState<string | null>("help-error", () => null);
+  const lastSyncAt = useState<string | null>("help-last-sync", () => null);
+  const isEditorOpen = useState<boolean>("help-editor-open", () => false);
+  const editingArticle = useState<NostrHelpArticle | null>(
+    "help-editing-article",
+    () => null
+  );
 
   // Cache key prefix
   const CACHE_KEY = "nostr_help_articles";
@@ -100,7 +105,10 @@ export function useNostrHelp() {
    * Create or update a help article on Nostr
    */
   async function publishHelpArticle(
-    article: Omit<NostrHelpArticle, "id" | "createdAt" | "updatedAt" | "version">
+    article: Omit<
+      NostrHelpArticle,
+      "id" | "createdAt" | "updatedAt" | "version"
+    >
   ): Promise<NostrHelpArticle | null> {
     isLoading.value = true;
     error.value = null;
@@ -112,7 +120,9 @@ export function useNostrHelp() {
       );
 
       const fullArticle: NostrHelpArticle = {
-        id: existing?.id || `help_${article.pageId}_${article.locale}_${Date.now()}`,
+        id:
+          existing?.id ||
+          `help_${article.pageId}_${article.locale}_${Date.now()}`,
         ...article,
         version: (existing?.version || 0) + 1,
         createdAt: existing?.createdAt || now,
