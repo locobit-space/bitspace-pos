@@ -42,6 +42,11 @@ const navItems = computed(() => [
     icon: "i-heroicons-sparkles",
   },
   {
+    label: t("settings.chat.title"),
+    to: "/settings/chat",
+    icon: "i-heroicons-chat-bubble-left-right",
+  },
+  {
     label: t("settings.features.title") || "Features & Modules",
     to: "/settings/features",
     icon: "i-heroicons-squares-plus",

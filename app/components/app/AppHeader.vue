@@ -15,7 +15,7 @@
       <!-- Logo -->
       <NuxtLinkLocale to="/" class="flex items-center gap-2">
         <div
-          class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow"
+          class="w-8 h-8 rounded-lg bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow"
         >
           <span class="text-white font-bold text-sm">⚡</span>
         </div>
@@ -32,6 +32,7 @@
 
       <!-- Chat Button -->
       <button
+        v-if="chatSettings.enabled"
         class="relative p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         :title="$t('chat.title') || 'Team Chat'"
         @click="chatStore.toggleChat()"
@@ -55,7 +56,7 @@
       </button>
 
       <!-- Chat Center Slideover -->
-      <ChatCenter />
+      <ChatCenter v-if="chatSettings.enabled" />
 
       <!-- Help & Support Button -->
       <UDropdownMenu
@@ -98,7 +99,7 @@
           </div>
           <div
             v-else
-            class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-primary-300 dark:ring-gray-800"
+            class="w-8 h-8 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-primary-300 dark:ring-gray-800"
           >
             <Icon name="i-heroicons-user" size="16" class="text-white" />
           </div>
@@ -106,9 +107,9 @@
 
         <template #content>
           <div class="overflow-y-auto max-h-[calc(100vh-10rem)]">
-            <!-- User Info with gradient accent -->
+            <!-- User Info with linear accent -->
             <div
-              class="relative px-3 py-3 mb-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary-100 dark:border-primary-800/30"
+              class="relative px-3 py-3 mb-4 rounded-xl bg-linear-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary-100 dark:border-primary-800/30"
             >
               <div class="flex items-center gap-3">
                 <div
@@ -123,7 +124,7 @@
                 </div>
                 <div
                   v-else
-                  class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-md"
+                  class="w-10 h-10 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-md"
                 >
                   <Icon name="i-heroicons-user" size="20" class="text-white" />
                 </div>
@@ -178,7 +179,7 @@
               >
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 dark:from-indigo-500 dark:to-purple-600 flex items-center justify-center shadow-sm"
+                    class="w-8 h-8 rounded-lg bg-linear-to-br from-amber-400 to-orange-500 dark:from-indigo-500 dark:to-purple-600 flex items-center justify-center shadow-sm"
                   >
                     <Icon
                       :name="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"
@@ -201,7 +202,7 @@
               >
                 <div class="flex items-center gap-3 mb-3">
                   <div
-                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-sm"
+                    class="w-8 h-8 rounded-lg bg-linear-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-sm"
                   >
                     <Icon
                       name="i-heroicons-swatch"
@@ -249,7 +250,7 @@
 
             <!-- Divider -->
             <div
-              class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-3"
+              class="h-px bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-3"
             />
 
             <!-- Menu Items -->
@@ -310,7 +311,7 @@
 
             <!-- Divider -->
             <div
-              class="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent my-3"
+              class="h-px bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent my-3"
             />
 
             <!-- Sign Out -->
@@ -345,12 +346,12 @@ defineEmits(["toggle-sidebar"]);
 const colorMode = useColorMode();
 const usersComposable = useUsers();
 const nostrStorage = useNostrStorage();
-const router = useRouter();
 const appConfig = useAppConfig();
 const { t } = useI18n();
 const help = useHelp();
 const feedback = useFeedback();
 const chatStore = useChat();
+const { settings: chatSettings } = useChatSettings();
 
 // Help & Support
 const showSupportModal = ref(false);

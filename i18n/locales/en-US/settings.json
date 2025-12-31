@@ -18,7 +18,10 @@
       "alwaysOn": "Always enabled",
       "helpText": "Disabled features will be hidden from the navigation menu. You can enable them anytime.",
       "resetSuccess": "Reset to defaults",
-      "savedDesc": "Feature settings updated"
+      "savedDesc": "Feature settings updated",
+      "enterprise": "Enterprise",
+      "enterpriseEnabled": "Enterprise Mode",
+      "enterpriseEnabledDesc": "All production-ready features enabled"
     },
     "sectionBusiness": "Business",
     "sectionSystem": "System",
@@ -858,6 +861,17 @@
       "quickActions": "Quick Actions",
       "receiptTemplates": "Receipt Templates",
       "saved": "Customization settings saved"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Configure chat and messaging preferences",
+      "general": "General Settings",
+      "enableChat": "Enable Chat",
+      "enableChatDescription": "Turn on chat functionality to send and receive messages with your team",
+      "disabledNotice": "Chat is currently disabled",
+      "disabledNoticeDescription": "Enable chat to access messaging features and communicate with your team members",
+      "enabled": "Chat has been enabled",
+      "disabled": "Chat has been disabled"
     },
     "notifications": {
       "title": "Notifications",

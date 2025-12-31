@@ -97,6 +97,10 @@ export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
   }
 }
 
+export interface ChatSettings {
+  enabled: boolean;
+}
+
 export interface ShopConfig {
   name: string;
   address?: string;
@@ -115,6 +119,8 @@ export interface ShopConfig {
   shopType: ShopType;
   // Feature flags
   enabledFeatures: EnabledFeatures;
+  // Chat settings
+  chatSettings?: ChatSettings;
   // Marketplace fields
   marketplaceDescription?: string;
   socialLinks?: {
@@ -128,11 +134,11 @@ export interface ShopConfig {
 }
 
 // Singleton state
-const shopConfig = ref<ShopConfig | null>(null);
-const currentBranch = ref<Branch | null>(null);
-const isLoading = ref(false);
-const isConfigured = ref(false);
-const error = ref<string | null>(null);
+const shopConfig = useState<ShopConfig | null>("shop-config", () => null);
+const currentBranch = useState<Branch | null>("current-branch", () => null);
+const isLoading = useState("is-loading", () => false);
+const isConfigured = useState("is-configured", () => false);
+const error = useState<string | null>("error", () => null);
 
 export function useShop() {
   const nostrData = useNostrData();
@@ -290,6 +296,8 @@ export function useShop() {
           config.enabledFeatures ??
           shopConfig.value?.enabledFeatures ??
           getDefaultFeatures(shopType),
+        chatSettings: config.chatSettings ??
+          shopConfig.value?.chatSettings ?? { enabled: false },
         marketplaceDescription:
           config.marketplaceDescription ??
           shopConfig.value?.marketplaceDescription,

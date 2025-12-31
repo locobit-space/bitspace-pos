@@ -178,32 +178,6 @@ function handleWriteNew() {
               v-html="currentHelp.content"
             />
 
-            <!-- Sections -->
-            <div v-if="currentHelp.sections?.length" class="space-y-4">
-              <div
-                v-for="section in currentHelp.sections"
-                :key="section.id"
-                class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div class="flex items-start gap-3">
-                  <div
-                    v-if="section.icon"
-                    class="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0"
-                  >
-                    <Icon :name="section.icon" class="text-primary-500" />
-                  </div>
-                  <div>
-                    <h4 class="font-medium text-gray-900 dark:text-white mb-1">
-                      {{ section.title }}
-                    </h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                      {{ section.content }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- Nostr Meta Info -->
             <div
               v-if="
