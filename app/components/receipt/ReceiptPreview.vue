@@ -123,9 +123,19 @@ const close = () => {
               <span v-if="currentReceipt.orderNumber" class="text-lg font-bold">
                 #{{ currentReceipt.orderNumber }}
               </span>
-              <span>Order: {{ currentReceipt.orderId }}</span>
             </div>
-            <div>{{ new Date(currentReceipt.createdAt).toLocaleString() }}</div>
+            <div class="flex items-center gap-2 justify-between">
+              <span>{{ t("receipt.order", "Order") }}: </span>
+              <span class="font-bold font-sm font-mono">
+                {{ currentReceipt?.orderCode || currentReceipt.orderId }}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 justify-between">
+              <span>{{ t("receipt.date", "Date") }}:</span>
+              <span class="font-bold font-sm font-mono">
+                {{ new Date(currentReceipt.createdAt).toLocaleString() }}
+              </span>
+            </div>
           </div>
 
           <!-- Items -->
@@ -243,7 +253,7 @@ const close = () => {
               size="lg"
               icon="i-heroicons-printer"
               :loading="receipt.isPrinting.value"
-              class="flex-1"
+              block
               @click="handlePrint"
             >
               {{ t("receipt.print") || "Print Receipt" }}
@@ -254,30 +264,41 @@ const close = () => {
               variant="outline"
               size="lg"
               icon="i-heroicons-qr-code"
-              class="flex-1"
+              block
               @click="showEBill"
             >
-              {{ t("receipt.eBill") || "E-Bill" }}
+              {{ t("receipt.eBill", "E-Bill") }}
             </UButton>
           </div>
 
           <!-- Secondary Actions -->
           <div class="grid grid-cols-2 gap-3">
-            <UButton
-              color="neutral"
-              variant="soft"
-              size="md"
-              @click="handleThermalPrint"
-            >
-              <span class="flex items-center gap-2">
-                <span>🖨️</span>
-                <span>POS Printer</span>
-              </span>
-            </UButton>
+            <div>
+              <UButton
+                color="neutral"
+                variant="soft"
+                size="md"
+                icon="i-heroicons-printer"
+                block
+                @click="handleThermalPrint"
+              >
+                <span class="flex items-center gap-2">
+                  <span>POS Printer</span>
+                </span>
+              </UButton>
+            </div>
 
-            <UButton color="neutral" variant="ghost" size="md" @click="close">
-              {{ t("receipt.noReceipt") || "No Receipt" }}
-            </UButton>
+            <div>
+              <UButton
+                color="neutral"
+                variant="ghost"
+                size="md"
+                block
+                @click="close"
+              >
+                {{ t("receipt.noReceipt", "No Receipt") }}
+              </UButton>
+            </div>
           </div>
         </div>
 

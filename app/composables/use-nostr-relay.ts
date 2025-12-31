@@ -67,9 +67,10 @@ const _DEFAULT_PROD: RelayConfig[] = [
   },
 ];
 
-// Default relays - Production relays
-const DEFAULT_RELAYS: RelayConfig[] =
-  process.env.MODE === "development" ? _DEFAULT_DEV : _DEFAULT_PROD;
+// Default relays - Use dev relays in development, prod relays in production
+const DEFAULT_RELAYS: RelayConfig[] = import.meta.dev
+  ? _DEFAULT_DEV
+  : _DEFAULT_PROD;
 
 // ============================================
 // 🔄 SHARED STATE (singleton pattern)

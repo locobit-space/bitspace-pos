@@ -102,6 +102,15 @@
             "platform_tag": "แพลตฟอร์ม",
             "platform_tag_hint": "ขับเคลื่อนโดย bnos.space"
         },
+        "currency": "สกุลเงิน",
+        "language": "ภาษา",
+        "timezone": "เขตเวลา",
+        "taxRate": "อัตราภาษี (%)",
+        "taxRatePlaceholder": "0",
+        "enableTips": "เปิดใช้งานทิป",
+        "enableTipsDescription": "อนุญาตให้ลูกค้าเพิ่มทิปในคำสั่งซื้อ",
+        "receiptFooter": "ท้ายใบเสร็จ",
+        "receiptFooterPlaceholder": "ขอบคุณที่ใช้บริการ!",
         "tax": {
             "title": "ภาษี",
             "subtitle": "อัตราภาษี"

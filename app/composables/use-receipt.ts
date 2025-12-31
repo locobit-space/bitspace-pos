@@ -67,7 +67,7 @@ const defaultSettings: ReceiptSettings = {
   logoEmoji: "⚡",
   footerMessage: "Khop Mok Kop Hor!",
   showPaymentProof: true,
-  showQrCode: true,
+  showQrCode: false,
   paperWidth: "80mm",
 };
 
@@ -300,7 +300,10 @@ export const useReceipt = () => {
       const startTime = performance.now();
       qrCodeDataUrl = await generateQRCodeDataUrl(eBillUrl, 120);
       const duration = performance.now() - startTime;
-      console.log(`[Receipt] QR generated in ${duration.toFixed(2)}ms:`, qrCodeDataUrl ? "✓" : "✗ (empty)");
+      console.log(
+        `[Receipt] QR generated in ${duration.toFixed(2)}ms:`,
+        qrCodeDataUrl ? "✓" : "✗ (empty)"
+      );
     } else {
       console.log("[Receipt] QR code disabled in settings");
     }
@@ -646,7 +649,7 @@ export const useReceipt = () => {
 
     try {
       console.log("[Receipt] Starting print...");
-      
+
       // Pre-generate QR code before opening dialog
       let qrCodeDataUrl = "";
       if (settings.value.showQrCode) {
@@ -658,10 +661,10 @@ export const useReceipt = () => {
 
       // Generate HTML with QR already included
       const html = await generateHtmlReceipt(receipt);
-      
+
       // Small delay to ensure QR is ready
       await new Promise((r) => setTimeout(r, 100));
-      
+
       console.log("[Receipt] Opening print window...");
       const printWindow = window.open("", "_blank", "width=400,height=600");
 
@@ -680,7 +683,9 @@ export const useReceipt = () => {
               return;
             }
 
-            console.log(`[Receipt] Waiting for ${images.length} image(s) to load...`);
+            console.log(
+              `[Receipt] Waiting for ${images.length} image(s) to load...`
+            );
             let loaded = 0;
             const checkAllLoaded = () => {
               loaded++;
@@ -696,7 +701,10 @@ export const useReceipt = () => {
               } else {
                 img.onload = checkAllLoaded;
                 img.onerror = () => {
-                  console.warn("[Receipt] Image failed to load:", img.src?.slice(0, 50));
+                  console.warn(
+                    "[Receipt] Image failed to load:",
+                    img.src?.slice(0, 50)
+                  );
                   checkAllLoaded(); // Don't block on error
                 };
               }
@@ -714,13 +722,13 @@ export const useReceipt = () => {
         printWindow.onload = async () => {
           console.log("[Receipt] Print window loaded");
           await waitForImages();
-          
+
           // Ensure browser has rendered everything
           await new Promise((r) => setTimeout(r, 200));
-          
+
           console.log("[Receipt] Printing...");
           printWindow.print();
-          
+
           // Keep window open for a moment, then close
           setTimeout(() => {
             printWindow.close();

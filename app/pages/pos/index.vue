@@ -1669,9 +1669,17 @@ onUnmounted(() => {
 
             <!-- Product Image/Emoji -->
             <div
-              class="text-4xl mb-3 group-hover:scale-110 transition-transform"
+              class="w-14 h-14 mb-3 group-hover:scale-110 transition-transform flex items-center justify-center"
             >
-              {{ product.image || "📦" }}
+              <img
+                v-if="product.image && product.image.startsWith('http')"
+                :src="product.image"
+                :alt="product.name"
+                class="w-full h-full object-cover rounded-lg"
+                loading="lazy"
+                @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+              />
+              <span v-else class="text-4xl">{{ product.image || "📦" }}</span>
             </div>
 
             <!-- Product Info -->
@@ -1942,9 +1950,18 @@ onUnmounted(() => {
             <div class="flex gap-3">
               <!-- Product Image -->
               <div
-                class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0"
+                class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden"
               >
-                {{ item.product.image || "📦" }}
+                <img
+                  v-if="
+                    item.product.image && item.product.image.startsWith('http')
+                  "
+                  :src="item.product.image"
+                  :alt="item.product.name"
+                  class="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <span v-else>{{ item.product.image || "📦" }}</span>
               </div>
 
               <!-- Product Details -->
@@ -2403,9 +2420,19 @@ onUnmounted(() => {
                 <div class="flex items-center gap-3">
                   <!-- Product Icon -->
                   <div
-                    class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0"
+                    class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden"
                   >
-                    {{ item.product.image || "📦" }}
+                    <img
+                      v-if="
+                        item.product.image &&
+                        item.product.image.startsWith('http')
+                      "
+                      :src="item.product.image"
+                      :alt="item.product.name"
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <span v-else>{{ item.product.image || "📦" }}</span>
                   </div>
 
                   <!-- Product Info -->
@@ -3265,7 +3292,7 @@ onUnmounted(() => {
               >
               <USelect
                 v-model="pos.selectedCurrency.value"
-                :items="['LAK', 'THB', 'USD', 'SATS']"
+                :items="['SATS', 'LAK', 'THB', 'USD']"
               />
             </div>
 
