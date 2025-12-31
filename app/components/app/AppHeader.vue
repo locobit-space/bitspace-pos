@@ -4,8 +4,9 @@
   >
     <!-- Left: Hamburger (mobile) + Logo -->
     <div class="flex items-center gap-1">
-      <!-- Hamburger Menu (Mobile Only) -->
+      <!-- Hamburger Menu (Mobile Only) - Hidden during setup -->
       <button
+        v-if="showHeaderFeatures"
         class="lg:hidden p-2 -ml-2 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="$emit('toggle-sidebar')"
       >
@@ -27,12 +28,12 @@
 
     <!-- Right: Notifications + Profile -->
     <div class="flex items-center gap-1">
-      <!-- Notification Center -->
-      <NotificationCenter />
+      <!-- Notification Center (hidden during setup) -->
+      <NotificationCenter v-if="showHeaderFeatures" />
 
-      <!-- Chat Button -->
+      <!-- Chat Button (hidden during setup) -->
       <button
-        v-if="chatSettings.enabled"
+        v-if="chatSettings.enabled && showHeaderFeatures"
         class="relative p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         :title="$t('chat.title') || 'Team Chat'"
         @click="chatStore.toggleChat()"
@@ -55,11 +56,12 @@
         </span>
       </button>
 
-      <!-- Chat Center Slideover -->
-      <ChatCenter v-if="chatSettings.enabled" />
+      <!-- Chat Center Slideover (hidden during setup) -->
+      <ChatCenter v-if="chatSettings.enabled && showHeaderFeatures" />
 
-      <!-- Help & Support Button -->
+      <!-- Help & Support Button (hidden during setup) -->
       <UDropdownMenu
+        v-if="showHeaderFeatures"
         :items="helpMenuItems"
         :ui="{
           content: 'w-56',
@@ -352,6 +354,10 @@ const help = useHelp();
 const feedback = useFeedback();
 const chatStore = useChat();
 const { settings: chatSettings } = useChatSettings();
+const shop = useShop();
+
+// Check if header features should be shown (after setup complete)
+const showHeaderFeatures = computed(() => shop.isSetupComplete.value);
 
 // Help & Support
 const showSupportModal = ref(false);

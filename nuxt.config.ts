@@ -230,6 +230,7 @@ export default defineNuxtConfig({
           "lo-LA/employees.json",
           "lo-LA/legal.json",
           "lo-LA/help.json",
+          "lo-LA/onboarding.json",
         ],
       },
       {
@@ -272,6 +273,7 @@ export default defineNuxtConfig({
           "en-US/employees.json",
           "en-US/legal.json",
           "en-US/help.json",
+          "en-US/onboarding.json",
         ],
       },
       {

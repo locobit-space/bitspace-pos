@@ -578,10 +578,8 @@ async function initSystemNotifications() {
   // Announcement tags to listen for
   const ANNOUNCEMENT_TAGS = [
     "bnos.space-announcement",
-    "bitspace-announcement",
-    "bnospace-announcement",
-    "bnos-space-announcement",
-    "test-announcement",
+    // for dev
+    // "test-announcement",
   ];
 
   // Relays to query

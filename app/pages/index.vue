@@ -34,6 +34,18 @@ const productsStore = useProducts();
 const shop = useShop();
 const company = useCompany();
 
+// Tell layout whether to show navigation
+const shouldShowNavigation = computed(() => {
+  // Only show navigation when:
+  // 1. NOT showing welcome screen
+  // 2. NOT showing setup wizard
+  // 3. Setup is actually complete
+  return !showWelcome.value && !showSetup.value && shop.isSetupComplete.value;
+});
+
+// Provide to layout
+provide("shouldShowNavigation", shouldShowNavigation);
+
 // ============================================
 // State
 // ============================================
@@ -42,6 +54,7 @@ const isInitialLoad = ref(true);
 const isRefreshing = ref(false);
 const showWelcome = ref(false); // Show choice screen
 const showSetup = ref(false); // Show owner setup wizard
+const showOnboardingChecklist = ref(false); // Show post-setup checklist
 
 // Current time for greeting
 const currentTime = ref(new Date());
@@ -253,6 +266,12 @@ const recentOrders = computed(() => {
 const handleSetupComplete = () => {
   showSetup.value = false;
   showWelcome.value = false;
+  // Show onboarding checklist after setup
+  showOnboardingChecklist.value = true;
+};
+
+const handleChecklistDismiss = () => {
+  showOnboardingChecklist.value = false;
 };
 
 const handleWelcomeJoin = () => {
@@ -305,6 +324,14 @@ onMounted(async () => {
   } else {
     await Promise.all([ordersStore.init(), productsStore.init()]);
     isInitialLoad.value = false;
+  }
+
+  // Check if we should show onboarding checklist
+  const checklistDismissed = localStorage.getItem(
+    "bitspace_onboarding_checklist_dismissed"
+  );
+  if (shop.isSetupComplete.value && !checklistDismissed) {
+    showOnboardingChecklist.value = true;
   }
 });
 </script>
@@ -388,6 +415,11 @@ onMounted(async () => {
 
     <!-- Dashboard Content -->
     <template v-else>
+      <!-- Onboarding Checklist (shown after setup) -->
+      <div v-if="showOnboardingChecklist" class="mb-6">
+        <DashboardOnboardingChecklist @dismiss="handleChecklistDismiss" />
+      </div>
+
       <div class="grid grid-cols-12 gap-3">
         <!-- KPI Cards -->
         <div class="col-span-12">

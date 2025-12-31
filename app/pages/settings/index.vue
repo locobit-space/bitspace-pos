@@ -54,14 +54,14 @@
             variant="solid"
             @click="navigateTo('/settings/account')"
           >
-            {{ $t("account.viewProfile") || "View profile" }}
+            {{ $t("common.view",  "View profile") }}
           </UButton>
           <UButton
             color="neutral"
             variant="outline"
             @click="navigateTo('/settings/account#edit')"
           >
-            {{ $t("account.editProfile") || "Edit profile" }}
+            {{ $t("common.edit","Edit profile") }}
           </UButton>
         </div>
       </div>

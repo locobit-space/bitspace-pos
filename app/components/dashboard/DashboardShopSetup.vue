@@ -720,16 +720,6 @@ onMounted(() => {
           </UButton>
         </div>
       </div>
-
-      <!-- Skip for now -->
-      <p class="text-center mt-4">
-        <button
-          class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
-          @click="emit('complete')"
-        >
-          {{ t("shop.setup.skipForNow") }}
-        </button>
-      </p>
     </div>
   </div>
 </template>

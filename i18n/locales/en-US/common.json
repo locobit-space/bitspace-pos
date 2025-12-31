@@ -1,5 +1,7 @@
 {
   "common": {
+    "valid": "Valid",
+    "copy": "Copy",
     "more": "More",
     "data": "Data",
     "enabled": "Enabled",
