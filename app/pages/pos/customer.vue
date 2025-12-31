@@ -925,11 +925,28 @@ const { settings } = useReceipt();
                 />
               </div>
 
-              <p class="mt-5 text-sm text-gray-400 text-center">
-                Receipt ID:
-                <span class="font-mono text-amber-600 dark:text-amber-400">{{
-                  pos.paymentState.value.eBillId
-                }}</span>
+              <!-- Receipt Code (REC-XXXX-XXXX) - More prominent -->
+              <div
+                v-if="pos.paymentState.value.receiptCode"
+                class="mt-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center"
+              >
+                <p class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
+                  RECEIPT CODE
+                </p>
+                <p class="text-xl font-bold text-amber-700 dark:text-amber-300 font-mono">
+                  {{ pos.paymentState.value.receiptCode }}
+                </p>
+              </div>
+
+              <!-- Receipt ID (UUID) - Secondary info -->
+              <p
+                v-if="pos.paymentState.value.eBillId"
+                class="mt-3 text-xs text-gray-400 text-center"
+              >
+                ID:
+                <span class="font-mono">{{
+                  pos.paymentState.value.eBillId.slice(0, 8)
+                }}...</span>
               </p>
             </div>
           </div>

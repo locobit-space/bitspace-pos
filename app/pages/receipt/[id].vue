@@ -9,6 +9,7 @@ definePageMeta({
 
 const route = useRoute();
 const receipt = useReceipt();
+const receiptGenerator = useReceiptGenerator();
 const currency = useCurrency();
 
 // State
@@ -25,6 +26,7 @@ onMounted(async () => {
   await currency.init("LAK");
 
   const receiptId = route.params.id as string;
+  const receiptCode = route.query.code as string;
 
   if (!receiptId) {
     error.value = "Receipt ID not provided";
@@ -32,14 +34,40 @@ onMounted(async () => {
     return;
   }
 
-  // Try to retrieve from storage
+  // Try localStorage first (fast)
   const storedReceipt = receipt.retrieveEBill(receiptId);
 
   if (storedReceipt) {
     eBill.value = storedReceipt;
+  } else if (receiptCode) {
+    // Fetch from Nostr using verification code
+    const fetchedReceipt = await receiptGenerator.fetchReceiptByCode(receiptCode);
+
+    if (fetchedReceipt) {
+      // Verify receipt ID matches
+      if (fetchedReceipt.id !== receiptId) {
+        error.value = "Receipt ID mismatch";
+        loading.value = false;
+        return;
+      }
+      eBill.value = fetchedReceipt;
+    } else {
+      error.value = "Receipt not found or expired";
+    }
   } else {
-    // In production, fetch from server/Nostr
-    error.value = "Receipt not found or expired";
+    error.value = "Receipt code required for verification";
+  }
+
+  // Verify code matches (security check)
+  if (eBill.value && receiptCode && eBill.value.code !== receiptCode) {
+    error.value = "Invalid receipt code";
+    eBill.value = null;
+  }
+
+  // Check expiration
+  if (eBill.value?.expiresAt && new Date(eBill.value.expiresAt) < new Date()) {
+    error.value = "Receipt expired (90 days retention)";
+    eBill.value = null;
   }
 
   loading.value = false;

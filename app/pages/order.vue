@@ -414,6 +414,7 @@ const toast = useToast();
 const tablesStore = useTables();
 const productsStore = useProductsStore();
 const ordersStore = useOrders();
+const receiptGenerator = useReceiptGenerator();
 const { format: formatPrice } = useCurrency();
 
 const isLoading = ref(true);
@@ -1032,6 +1033,17 @@ const submitOrder = async () => {
 
     // Save to local history
     saveOrderToHistory(order);
+
+    // Generate public receipt (creates Nostr event + QR code)
+    try {
+      await receiptGenerator.createReceiptFromOrder(order, {
+        method: "cash",
+        paidAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.warn("[Order] Failed to generate receipt:", e);
+      // Continue anyway - order is still saved
+    }
 
     // Update state (use code for customer display, id for tracking)
     submittedOrderId.value = order.code || order.id;

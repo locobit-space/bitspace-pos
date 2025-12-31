@@ -18,6 +18,7 @@ export interface ReceiptItem {
 
 export interface EReceipt {
   id: string;
+  code?: string; // REC-XXXX-XXXX (for verification)
   orderId: string;
   orderNumber?: number; // Daily sequential number
   orderCode?: string;
@@ -34,6 +35,7 @@ export interface EReceipt {
   paymentMethod?: PaymentMethod | string;
   paymentProof?: PaymentProof;
   createdAt: string;
+  expiresAt?: string; // Receipt expiration (e.g., 90 days)
   validUntil?: string;
   timestamp?: number;
   // Metadata for verification

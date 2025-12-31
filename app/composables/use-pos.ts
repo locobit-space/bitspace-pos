@@ -60,6 +60,7 @@ const paymentState = ref<{
   // E-Bill for customer (after payment success)
   eBillUrl?: string;
   eBillId?: string;
+  receiptCode?: string; // REC-XXXX-XXXX verification code
   // Order info for success display
   orderNumber?: number;
   orderCode?: string;
@@ -163,7 +164,7 @@ const broadcastCartClear = () => {
 const broadcastPaymentState = () => {
   if (!broadcastChannel || isReceivingBroadcast) return;
 
-  // Serialize payment state to plain object
+  // Serialize payment state to plain object (ensure all data is clonable)
   const serializedState = {
     status: paymentState.value.status,
     method: paymentState.value.method || undefined,
@@ -181,6 +182,14 @@ const broadcastPaymentState = () => {
     // E-Bill (for customer display after payment)
     eBillUrl: paymentState.value.eBillUrl || undefined,
     eBillId: paymentState.value.eBillId || undefined,
+    receiptCode: paymentState.value.receiptCode || undefined,
+    // Order info (for success display)
+    orderNumber: paymentState.value.orderNumber || undefined,
+    orderCode: paymentState.value.orderCode || undefined,
+    // Serialize items array to ensure it's clonable (remove any circular refs)
+    items: paymentState.value.items
+      ? JSON.parse(JSON.stringify(paymentState.value.items))
+      : undefined,
   };
 
   broadcastChannel.postMessage({

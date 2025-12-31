@@ -25,18 +25,41 @@ const { t } = useI18n();
 const currentReceipt = ref<EReceipt | null>(null);
 const showEBillQr = ref(false);
 const eBillUrl = ref("");
+const qrCodeImage = ref("");
+const receiptCode = ref("");
 
 // Generate receipt when opened
 watch(
   () => props.open,
   (isOpen) => {
     if (isOpen && props.order) {
-      currentReceipt.value = receipt.generateReceipt(
-        props.order,
-        props.paymentProof
-      );
-      eBillUrl.value = receipt.generateEBillUrl(currentReceipt.value.id);
-      receipt.storeEBill(currentReceipt.value);
+      // Check if order already has public receipt data
+      const orderWithReceipt = props.order as Order & {
+        receiptUrl?: string;
+        receiptQR?: string;
+        receiptCode?: string;
+      };
+
+      if (orderWithReceipt.receiptUrl && orderWithReceipt.receiptQR) {
+        // ✅ Use new public receipt data (from createReceiptFromOrder)
+        eBillUrl.value = orderWithReceipt.receiptUrl;
+        qrCodeImage.value = orderWithReceipt.receiptQR;
+        receiptCode.value = orderWithReceipt.receiptCode || "";
+
+        // Still generate receipt object for preview display
+        currentReceipt.value = receipt.generateReceipt(
+          props.order,
+          props.paymentProof
+        );
+      } else {
+        // ❌ Fallback: Generate legacy receipt (for older orders)
+        currentReceipt.value = receipt.generateReceipt(
+          props.order,
+          props.paymentProof
+        );
+        eBillUrl.value = receipt.generateEBillUrl(currentReceipt.value.id);
+        receipt.storeEBill(currentReceipt.value);
+      }
     }
   },
   { immediate: true }
@@ -216,17 +239,39 @@ const close = () => {
             <h3
               class="text-lg font-semibold mb-4 text-gray-900 dark:text-white"
             >
-              📱 E-Bill QR Code
+              📱 Digital Receipt
             </h3>
+
+            <!-- Use pre-generated QR code if available, otherwise generate -->
             <div class="bg-white p-4 rounded-xl inline-block mb-4">
-              <!-- Native QR Code - No external API for privacy -->
+              <img
+                v-if="qrCodeImage"
+                :src="qrCodeImage"
+                alt="Receipt QR Code"
+                class="w-48 h-48 mx-auto"
+              />
               <QRCodeVue3
+                v-else
                 :value="eBillUrl"
                 :size="192"
                 level="M"
                 render-as="svg"
               />
             </div>
+
+            <!-- Receipt Code (if available) -->
+            <div
+              v-if="receiptCode"
+              class="mb-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3"
+            >
+              <p class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
+                RECEIPT CODE
+              </p>
+              <p class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono">
+                {{ receiptCode }}
+              </p>
+            </div>
+
             <p class="text-sm text-gray-500 mb-3">
               Customer can scan to view receipt on their phone
             </p>

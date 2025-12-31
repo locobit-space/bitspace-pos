@@ -23,15 +23,40 @@ const { t } = useI18n();
 const showPreview = ref(false);
 const showQRModal = ref(false);
 const eBillUrl = ref("");
+const qrCodeImage = ref("");
+const receiptCode = ref("");
 const isPrinting = ref(false);
 const isSending = ref(false);
 const countdown = ref(10);
 const customerEmail = ref("");
 const showEmailInput = ref(false);
 
-// Generate receipt from order
+// Check if order has new public receipt data
+const orderWithReceipt = computed(() => {
+  return props.order as Order & {
+    receiptUrl?: string;
+    receiptQR?: string;
+    receiptCode?: string;
+  };
+});
+
+// Generate receipt from order (for preview display)
 const currentReceipt = computed(() => {
   return receipt.generateReceipt(props.order, props.order.paymentProof);
+});
+
+// Initialize receipt data on mount
+onMounted(() => {
+  if (orderWithReceipt.value.receiptUrl && orderWithReceipt.value.receiptQR) {
+    // ✅ Use new public receipt data
+    eBillUrl.value = orderWithReceipt.value.receiptUrl;
+    qrCodeImage.value = orderWithReceipt.value.receiptQR;
+    receiptCode.value = orderWithReceipt.value.receiptCode || "";
+  } else {
+    // ❌ Fallback: Generate legacy receipt URL
+    receipt.storeEBill(currentReceipt.value);
+    eBillUrl.value = receipt.generateEBillUrl(currentReceipt.value.id);
+  }
 });
 
 // Auto-close countdown
@@ -90,12 +115,12 @@ const handlePrint = async () => {
 const handleEBill = () => {
   stopCountdown();
 
-  // Store receipt for e-bill access
-  receipt.storeEBill(currentReceipt.value);
+  // If no public receipt URL, generate legacy
+  if (!eBillUrl.value) {
+    receipt.storeEBill(currentReceipt.value);
+    eBillUrl.value = receipt.generateEBillUrl(currentReceipt.value.id);
+  }
 
-  const url = receipt.generateEBillUrl(currentReceipt.value.id);
-  eBillUrl.value = url;
-  // QR is now generated natively via component, no external API needed
   showQRModal.value = true;
 };
 
@@ -376,15 +401,34 @@ const paymentMethodDisplay = computed(() => {
             {{ t("receipt.scanDescription") }}
           </p>
 
-          <!-- QR Code - Native generation for privacy -->
+          <!-- QR Code - Use pre-generated if available -->
           <div class="bg-white p-4 rounded-xl inline-block shadow-lg mb-4">
+            <img
+              v-if="qrCodeImage"
+              :src="qrCodeImage"
+              alt="Receipt QR Code"
+              class="w-48 h-48 mx-auto"
+            />
             <QRCodeVue3
-              v-if="eBillUrl"
+              v-else-if="eBillUrl"
               :value="eBillUrl"
               :size="192"
               level="M"
               render-as="svg"
             />
+          </div>
+
+          <!-- Receipt Code (if available) -->
+          <div
+            v-if="receiptCode"
+            class="mb-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3"
+          >
+            <p class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
+              RECEIPT CODE
+            </p>
+            <p class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono">
+              {{ receiptCode }}
+            </p>
           </div>
 
           <!-- URL Display -->

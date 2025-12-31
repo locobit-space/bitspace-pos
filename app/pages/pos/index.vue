@@ -51,6 +51,7 @@ import { POS_CURRENCY_OPTIONS } from "~/composables/use-currency";
 const offline = useOffline();
 const sound = useSound();
 const receipt = useReceipt();
+const receiptGenerator = useReceiptGenerator();
 const customersStore = useCustomers();
 const { t } = useI18n();
 
@@ -738,10 +739,65 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
     completedOrder.value = order;
     completedPaymentMethod.value = method;
 
-    // Generate e-bill for customer display
+    // Generate e-bill for customer display (legacy)
     const generatedReceipt = receipt.generateReceipt(order, order.paymentProof);
     receipt.storeEBill(generatedReceipt);
     const eBillUrl = receipt.generateEBillUrl(generatedReceipt.id);
+
+    // 🆕 Generate public receipt with QR code (Nostr + digital)
+    try {
+      const { receipt: publicReceipt, url, qrCode } = await receiptGenerator.createReceiptFromOrder(
+        order,
+        {
+          method,
+          proof: order.paymentProof,
+          paidAt: new Date().toISOString(),
+        }
+      );
+
+      // Store receipt data for display
+      if (completedOrder.value) {
+        Object.assign(completedOrder.value, {
+          receiptQR: qrCode,
+          receiptUrl: url,
+          receiptCode: publicReceipt.code,
+        });
+      }
+
+      // Update customer display with new receipt URL
+      pos.setPaymentState({
+        status: "paid",
+        eBillUrl: url, // Use new public receipt URL
+        eBillId: publicReceipt.id,
+        receiptCode: publicReceipt.code, // REC-XXXX-XXXX
+        amount: order.total,
+        satsAmount: order.totalSats,
+        orderNumber: order.orderNumber,
+        orderCode: order.code,
+        items: order.items.map((item) => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          total: item.total,
+        })),
+      });
+    } catch (e) {
+      console.warn("[POS] Failed to generate public receipt:", e);
+      // Fallback to legacy receipt
+      pos.setPaymentState({
+        status: "paid",
+        eBillUrl: eBillUrl,
+        eBillId: generatedReceipt.id,
+        amount: order.total,
+        satsAmount: order.totalSats,
+        orderNumber: order.orderNumber,
+        orderCode: order.code,
+        items: order.items.map((item) => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          total: item.total,
+        })),
+      });
+    }
 
     pos.clearCart();
 
@@ -759,22 +815,6 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 
     // Show receipt options
     showReceiptModal.value = true;
-
-    // Notify customer display that payment is complete with e-bill
-    pos.setPaymentState({
-      status: "paid",
-      eBillUrl: eBillUrl,
-      eBillId: generatedReceipt.id,
-      amount: order.total,
-      satsAmount: order.totalSats,
-      orderNumber: order.orderNumber,
-      orderCode: order.code,
-      items: order.items.map((item) => ({
-        name: item.product.name,
-        quantity: item.quantity,
-        total: item.total,
-      })),
-    });
   } catch (e) {
     console.error("Payment error:", e);
     sound.playError();
@@ -855,32 +895,77 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     };
     completedPaymentMethod.value = method;
 
-    // Generate receipt
+    // Generate receipt (legacy)
     const generatedReceipt = receipt.generateReceipt(
       completedOrder.value,
       completedOrder.value.paymentProof
     );
     receipt.storeEBill(generatedReceipt);
 
-    // Clear and close
-    selectedPendingOrder.value = null;
-    showPaymentModal.value = false;
-    showReceiptModal.value = true;
+    // 🆕 Generate public receipt with QR code
+    try {
+      const { receipt: publicReceipt, url, qrCode } = await receiptGenerator.createReceiptFromOrder(
+        completedOrder.value,
+        {
+          method,
+          proof: completedOrder.value.paymentProof,
+          paidAt: new Date().toISOString(),
+        }
+      );
 
-    pos.setPaymentState({
-      status: "paid",
-      amount: order.total,
-      satsAmount: order.totalSats,
-      eBillUrl: receipt.generateEBillUrl(generatedReceipt.id),
-      eBillId: generatedReceipt.id,
-      orderNumber: order.orderNumber,
-      orderCode: order.code,
-      items: order.items.map((item) => ({
-        name: item.product.name,
-        quantity: item.quantity,
-        total: item.total,
-      })),
-    });
+      // Store receipt data
+      if (completedOrder.value) {
+        Object.assign(completedOrder.value, {
+          receiptQR: qrCode,
+          receiptUrl: url,
+          receiptCode: publicReceipt.code,
+        });
+      }
+
+      // Clear and close
+      selectedPendingOrder.value = null;
+      showPaymentModal.value = false;
+      showReceiptModal.value = true;
+
+      // Update customer display with new public receipt
+      pos.setPaymentState({
+        status: "paid",
+        amount: order.total,
+        satsAmount: order.totalSats,
+        eBillUrl: url, // Use new public receipt URL
+        eBillId: publicReceipt.id,
+        receiptCode: publicReceipt.code, // REC-XXXX-XXXX
+        orderNumber: order.orderNumber,
+        orderCode: order.code,
+        items: order.items.map((item) => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          total: item.total,
+        })),
+      });
+    } catch (e) {
+      console.warn("[POS] Failed to generate public receipt for pending order:", e);
+
+      // Fallback to legacy receipt
+      selectedPendingOrder.value = null;
+      showPaymentModal.value = false;
+      showReceiptModal.value = true;
+
+      pos.setPaymentState({
+        status: "paid",
+        amount: order.total,
+        satsAmount: order.totalSats,
+        eBillUrl: receipt.generateEBillUrl(generatedReceipt.id),
+        eBillId: generatedReceipt.id,
+        orderNumber: order.orderNumber,
+        orderCode: order.code,
+        items: order.items.map((item) => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          total: item.total,
+        })),
+      });
+    }
 
     const toast = useToast();
     toast.add({
