@@ -2285,25 +2285,13 @@ onUnmounted(() => {
             >
               💵 {{ t("payment.methods.cash") }}
             </UButton>
-            <UButton
-              block
-              size="md"
-              color="neutral"
-              variant="soft"
-              :disabled="pos.cartItems.value.length === 0"
-              @click="proceedToPayment('qr_static')"
-            >
-              📱 {{ t("payment.methods.staticQR") }}
-            </UButton>
-          </div>
-
           <!-- Send to Kitchen (Pay Later) Button -->
           <UButton
             block
             size="md"
             color="emerald"
             variant="soft"
-            :disabled="pos.cartItems.value.length === 0"
+            :disabled="!pos.cartItems.value.length"
             :loading="isProcessing"
             @click="sendToKitchen"
           >
@@ -2323,6 +2311,9 @@ onUnmounted(() => {
               >
             </span>
           </UButton>
+          </div>
+
+          
         </div>
       </div>
     </div>

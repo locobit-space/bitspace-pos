@@ -294,5 +294,21 @@
     "noShopChannels": "ບໍ່ມີຊ່ອງທາງສາຂາ",
     "noCompanyChannels": "ບໍ່ມີຊ່ອງທາງບໍລິສັດ",
     "days": "ວັນ"
+  },
+  "announcements": {
+    "title": "ປະກາດ",
+    "description": "ການອັບເດດລະບົບ ແລະ ປະກາດຕ່າງໆ",
+    "all": "ທັງໝົດ",
+    "security": "ຄວາມປອດໄພ",
+    "maintenance": "ບຳລຸງຮັກສາ",
+    "update": "ອັບເດດ",
+    "feature": "ຄຸນສົມບັດໃໝ່",
+    "bugfix": "ແກ້ໄຂບັນຫາ",
+    "general": "ປະກາດ",
+    "noAnnouncements": "ບໍ່ມີປະກາດ",
+    "checkBackLater": "ກວດເບິ່ງອີກຄັ້ງໃນພາຍຫຼັງສຳລັບການອັບເດດ",
+    "search": "ຄົ້ນຫາປະກາດ...",
+    "markAllRead": "ໝາຍທັງໝົດວ່າອ່ານແລ້ວ",
+    "verifiedOnNostr": "ຢືນຢັນຢູ່ເທິງ Nostr"
   }
 }

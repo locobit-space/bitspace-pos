@@ -28,7 +28,7 @@
 
     <!-- Right: Notifications + Profile -->
     <div class="flex items-center gap-1">
-      <!-- Notification Center (hidden during setup) -->
+      <!-- Notification Center (includes announcements tab) -->
       <NotificationCenter v-if="showHeaderFeatures" />
 
       <!-- Chat Button (hidden during setup) -->

@@ -302,5 +302,21 @@
     "shopChannelHint": "Shop channels are private to your shop team members",
     "noShopChannels": "No shop channels",
     "noCompanyChannels": "No company channels"
+  },
+  "announcements": {
+    "title": "Announcements",
+    "description": "System updates and announcements",
+    "all": "All",
+    "security": "Security",
+    "maintenance": "Maintenance",
+    "update": "Updates",
+    "feature": "Features",
+    "bugfix": "Bug Fixes",
+    "general": "Announcement",
+    "noAnnouncements": "No announcements",
+    "checkBackLater": "Check back later for updates",
+    "search": "Search announcements...",
+    "markAllRead": "Mark all read",
+    "verifiedOnNostr": "Verified on Nostr"
   }
 }

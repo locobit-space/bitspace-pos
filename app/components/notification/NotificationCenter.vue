@@ -15,10 +15,11 @@ const isOpen = computed({
 
 // Filters
 const searchQuery = ref("");
-const activeTab = ref<"all" | "unread" | "system">("all");
+const activeTab = ref<"all" | "unread" | "system" | "announcements">("all");
 const priorityFilter = ref<"all" | "critical" | "high" | "medium" | "low">(
   "all"
 );
+const announcementCategoryFilter = ref<"all" | "security" | "maintenance" | "update" | "feature" | "bugfix">("all");
 const showSettings = ref(false);
 
 // Notification preferences (stored in localStorage)
@@ -68,6 +69,20 @@ const filteredNotifications = computed(() => {
     list = list.filter(
       (n) => n.type === "system_update" || n.type === "system"
     );
+  } else if (activeTab.value === "announcements") {
+    // Only show announcement-type notifications
+    list = list.filter(
+      (n) => n.type === "system_update" || n.type === "system" || n.type === "alert"
+    );
+
+    // Filter by announcement category if selected
+    if (announcementCategoryFilter.value !== "all") {
+      const filterValue = announcementCategoryFilter.value;
+      list = list.filter((n) => {
+        const category = (n.data?.category as string) || "";
+        return category.includes(filterValue);
+      });
+    }
   }
 
   // Filter by priority
@@ -150,6 +165,18 @@ const unreadCount = computed(() => {
 const systemUnreadCount = computed(() => {
   return notificationsStore.notifications.value.filter(
     (n) => !n.read && n.type === "system_update"
+  ).length;
+});
+
+const announcementCount = computed(() => {
+  return notificationsStore.notifications.value.filter(
+    (n) => n.type === "system_update" || n.type === "system" || n.type === "alert"
+  ).length;
+});
+
+const announcementUnreadCount = computed(() => {
+  return notificationsStore.notifications.value.filter(
+    (n) => !n.read && (n.type === "system_update" || n.type === "system" || n.type === "alert")
   ).length;
 });
 
@@ -279,11 +306,18 @@ const tabs = computed(() => [
     dot: "red",
   },
   {
-    key: "system" as const,
-    label: t("notifications.system", "System"),
-    count: systemUnreadCount.value,
+    key: "announcements" as const,
+    label: t("announcements.title", "Announcements"),
+    count: announcementUnreadCount.value,
     dot: "indigo",
+    icon: "i-heroicons-megaphone",
   },
+  // {
+  //   key: "system" as const,
+  //   label: t("notifications.system", "System"),
+  //   count: systemUnreadCount.value,
+  //   dot: "blue",
+  // },
 ]);
 
 // Priority filter options
@@ -302,6 +336,65 @@ const priorityOptions = [
   },
   { value: "low", label: t("notifications.low", "Low"), color: "gray" },
 ];
+
+// Announcement category filter options
+const announcementCategories = computed(() => {
+  const categoryCounts = {
+    security: 0,
+    maintenance: 0,
+    update: 0,
+    feature: 0,
+    bugfix: 0,
+  };
+
+  notificationsStore.notifications.value.forEach((n) => {
+    const category = (n.data?.category as string) || "";
+    if (category.includes("security")) categoryCounts.security++;
+    else if (category.includes("maintenance")) categoryCounts.maintenance++;
+    else if (category.includes("update")) categoryCounts.update++;
+    else if (category.includes("feature")) categoryCounts.feature++;
+    else if (category.includes("bugfix")) categoryCounts.bugfix++;
+  });
+
+  return [
+    {
+      value: "all",
+      label: t("announcements.all", "All"),
+      icon: "i-heroicons-megaphone",
+      count: announcementCount.value,
+    },
+    {
+      value: "security",
+      label: t("announcements.security", "Security"),
+      icon: "i-heroicons-shield-check",
+      count: categoryCounts.security,
+    },
+    {
+      value: "maintenance",
+      label: t("announcements.maintenance", "Maintenance"),
+      icon: "i-heroicons-wrench-screwdriver",
+      count: categoryCounts.maintenance,
+    },
+    {
+      value: "update",
+      label: t("announcements.update", "Updates"),
+      icon: "i-heroicons-arrow-up-circle",
+      count: categoryCounts.update,
+    },
+    {
+      value: "feature",
+      label: t("announcements.feature", "Features"),
+      icon: "i-heroicons-sparkles",
+      count: categoryCounts.feature,
+    },
+    {
+      value: "bugfix",
+      label: t("announcements.bugfix", "Bug Fixes"),
+      icon: "i-heroicons-bug-ant",
+      count: categoryCounts.bugfix,
+    },
+  ];
+});
 </script>
 
 <template>
@@ -320,11 +413,21 @@ const priorityOptions = [
         <!-- Unread Badge -->
         <span
           v-if="totalUnread > 0"
-          class="absolute top-0 right-0 -mt-1 -mr-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-900 transition-transform"
-          :class="{ 'scale-110': hasNewNotification }"
+          class="absolute top-0 right-0 -mt-1 -mr-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white rounded-full ring-2 ring-white dark:ring-gray-900 transition-transform"
+          :class="[
+            { 'scale-110': hasNewNotification },
+            announcementUnreadCount > 0 ? 'bg-indigo-500' : 'bg-red-500'
+          ]"
         >
           {{ totalUnread > 99 ? "99+" : totalUnread }}
         </span>
+
+        <!-- Announcement Indicator Dot -->
+        <span
+          v-if="announcementUnreadCount > 0"
+          class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-purple-500 rounded-full ring-2 ring-white dark:ring-gray-900 animate-pulse"
+          :title="t('announcements.title', 'Announcements')"
+        />
       </UButton>
     </div>
 
@@ -444,9 +547,42 @@ const priorityOptions = [
               </button>
             </div>
 
+            <!-- Announcement Category Filter (only shown on announcements tab) -->
+            <div
+              v-if="activeTab === 'announcements'"
+              class="mt-3 flex flex-wrap gap-2"
+            >
+              <button
+                v-for="category in announcementCategories"
+                :key="category.value"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                :class="
+                  announcementCategoryFilter === category.value
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-800'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                "
+                @click="announcementCategoryFilter = category.value as typeof announcementCategoryFilter"
+              >
+                <UIcon :name="category.icon" class="w-3.5 h-3.5" />
+                <span>{{ category.label }}</span>
+                <span
+                  v-if="category.count > 0"
+                  class="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="
+                    announcementCategoryFilter === category.value
+                      ? 'bg-indigo-200 text-indigo-800 dark:bg-indigo-800 dark:text-indigo-200'
+                      : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                  "
+                >
+                  {{ category.count }}
+                </span>
+              </button>
+            </div>
+
             <!-- Priority Filter + Search -->
             <div class="mt-3 flex gap-2">
               <USelect
+                v-if="activeTab !== 'announcements'"
                 v-model="priorityFilter"
                 :items="priorityOptions"
                 label-key="label"
@@ -458,7 +594,11 @@ const priorityOptions = [
               <UInput
                 v-model="searchQuery"
                 icon="i-heroicons-magnifying-glass"
-                :placeholder="t('common.search', 'Search...')"
+                :placeholder="
+                  activeTab === 'announcements'
+                    ? t('announcements.search', 'Search announcements...')
+                    : t('common.search', 'Search...')
+                "
                 size="sm"
                 class="flex-1"
               >

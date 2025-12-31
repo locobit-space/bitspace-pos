@@ -577,10 +577,67 @@ async function initSystemNotifications() {
 
   // Announcement tags to listen for
   const ANNOUNCEMENT_TAGS = [
-    "bnos.space-announcement",
+    "bnos.space-announcement",     // General announcements
+    "bnos.space-update",           // Version updates
+    "bnos.space-feature",          // New features
+    "bnos.space-maintenance",      // Scheduled maintenance
+    "bnos.space-security",         // Security alerts
+    "bnos.space-bugfix",           // Important bug fixes
     // for dev
     // "test-announcement",
   ];
+
+  // Map announcement tags to notification properties
+  const getAnnouncementConfig = (tags: string[]) => {
+    // Check tag priority (security > maintenance > update > feature > bugfix > general)
+    if (tags.some(t => t === "bnos.space-security")) {
+      return {
+        type: "alert" as const,
+        priority: "high" as NotificationPriority,
+        icon: "🔒",
+        defaultTitle: "Security Alert"
+      };
+    }
+    if (tags.some(t => t === "bnos.space-maintenance")) {
+      return {
+        type: "system" as const,
+        priority: "medium" as NotificationPriority,
+        icon: "🔧",
+        defaultTitle: "Maintenance Notice"
+      };
+    }
+    if (tags.some(t => t === "bnos.space-update")) {
+      return {
+        type: "system_update" as const,
+        priority: "medium" as NotificationPriority,
+        icon: "🚀",
+        defaultTitle: "System Update"
+      };
+    }
+    if (tags.some(t => t === "bnos.space-feature")) {
+      return {
+        type: "system_update" as const,
+        priority: "low" as NotificationPriority,
+        icon: "✨",
+        defaultTitle: "New Feature"
+      };
+    }
+    if (tags.some(t => t === "bnos.space-bugfix")) {
+      return {
+        type: "system" as const,
+        priority: "low" as NotificationPriority,
+        icon: "🐛",
+        defaultTitle: "Bug Fix"
+      };
+    }
+    // Default for bnos.space-announcement or unknown
+    return {
+      type: "system_update" as const,
+      priority: "medium" as NotificationPriority,
+      icon: "📢",
+      defaultTitle: "System Announcement"
+    };
+  };
 
   // Relays to query
   const RELAYS = [
@@ -603,25 +660,35 @@ async function initSystemNotifications() {
     );
 
     if (!existing) {
+      // Extract tags from the event
+      const eventTags = event.tags
+        ?.filter((tag: string[]) => tag[0] === "t")
+        .map((tag: string[]) => tag[1]) || [];
+
+      // Get announcement configuration based on tags
+      const config = getAnnouncementConfig(eventTags);
+
       // Parse title from content (first line or use default)
       const contentLines = event.content.split("\n");
       const title = contentLines[0]?.startsWith("#")
         ? contentLines[0].replace(/^#+\s*/, "")
-        : "📢 System Announcement";
+        : `${config.icon} ${config.defaultTitle}`;
       const message = contentLines[0]?.startsWith("#")
         ? contentLines.slice(1).join("\n").trim()
         : event.content;
 
-      // Create notification
+      // Create notification with dynamic type and priority
       notificationsStore.addNotification({
-        type: "system_update",
+        type: config.type,
         title,
         message: message || event.content,
-        priority: "medium",
+        priority: config.priority,
         data: {
           nostrEventId: event.id,
           pubkey: event.pubkey,
           timestamp: event.created_at,
+          tags: eventTags,
+          category: eventTags.find((t: string) => t.startsWith("bnos.space-")) || "announcement",
         },
       });
     }
