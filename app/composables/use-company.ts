@@ -26,18 +26,20 @@ export function useCompany() {
   // ============================================
 
   /**
-   * Generate a secure company code in format: XXXX-XXXX-XXXX
+   * Generate a secure company code in format: XXXXX-XXXXX-XXXXX
    * Uses alphanumeric characters (no confusing ones like 0/O, 1/I/L)
+   * Provides ~77 bits of entropy for strong security
    */
   function generateCompanyCode(): string {
-    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // Exclude confusing chars
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // 30 chars, no confusing 0/O/1/I/L
     const segments = 3;
-    const segmentLength = 4;
+    const segmentLength = 5;
 
     const generateSegment = () => {
       let segment = "";
+      const randomBytes = crypto.getRandomValues(new Uint8Array(segmentLength));
       for (let i = 0; i < segmentLength; i++) {
-        segment += chars.charAt(Math.floor(Math.random() * chars.length));
+        segment += chars.charAt(randomBytes[i]! % chars.length);
       }
       return segment;
     };
@@ -46,15 +48,19 @@ export function useCompany() {
       .fill(0)
       .map(() => generateSegment())
       .join("-");
-    return code; // e.g., "A7K3-BX9P-M4NH"
+    return code; // e.g., "A7K3X-BX9PM-M4NHY"
   }
 
   /**
-   * Validate company code format
+   * Validate company code format (supports both old and new formats)
    */
   function isValidCompanyCode(code: string): boolean {
-    const pattern = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
-    return pattern.test(code.toUpperCase());
+    // New format: XXXXX-XXXXX-XXXXX (15 chars + 2 dashes = 17 total)
+    const newPattern = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
+    // Old format: XXXX-XXXX-XXXX (12 chars + 2 dashes = 14 total) - for backward compatibility
+    const oldPattern = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+    const upperCode = code.toUpperCase();
+    return newPattern.test(upperCode) || oldPattern.test(upperCode);
   }
 
   /**

@@ -46,6 +46,46 @@ const companyCodeError = ref<string | null>(null);
 const company = useCompany();
 const nostrData = useNostrData();
 
+// Computed
+const isValidCompanyCode = computed(() =>
+  company.isValidCompanyCode(companyCodeInput.value)
+);
+
+// Format company code input with dashes
+function formatCompanyCodeInput(event: Event) {
+  const input = event.target as HTMLInputElement;
+  let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  // Support both old (4-4-4) and new (5-5-5) formats
+  const rawLength = value.length;
+
+  if (rawLength <= 12) {
+    // Old format: XXXX-XXXX-XXXX (4-4-4)
+    if (value.length > 4) {
+      value = value.slice(0, 4) + "-" + value.slice(4);
+    }
+    if (value.length > 9) {
+      value = value.slice(0, 9) + "-" + value.slice(9);
+    }
+    if (value.length > 14) {
+      value = value.slice(0, 14);
+    }
+  } else {
+    // New format: XXXXX-XXXXX-XXXXX (5-5-5)
+    if (value.length > 5) {
+      value = value.slice(0, 5) + "-" + value.slice(5);
+    }
+    if (value.length > 11) {
+      value = value.slice(0, 11) + "-" + value.slice(11);
+    }
+    if (value.length > 17) {
+      value = value.slice(0, 17);
+    }
+  }
+
+  companyCodeInput.value = value;
+}
+
 // Sign in with email (local staff first, then cloud fallback)
 const handleEmailSignIn = async () => {
   // Clear any previous errors
@@ -102,8 +142,11 @@ const handleGoogleSignIn = () => {
 };
 
 // Handle company code submit (for cross-device staff login)
+const settingsSync = useSettingsSync();
+
 const handleCompanyCodeSubmit = async () => {
-  if (companyCodeInput.value.length !== 6) return;
+  const codeValue = companyCodeInput.value.replace(/-/g, ""); // Remove dashes for validation
+  if (codeValue.length < 6) return;
 
   isLoadingCompanyCode.value = true;
   companyCodeError.value = null;
@@ -154,6 +197,19 @@ const handleCompanyCodeSubmit = async () => {
 
     // Reinitialize users composable to pick up new users
     await usersComposable.refreshFromNostr();
+
+    // 🔄 Fetch and apply owner's settings (Lightning, Receipt, Tax, Bank, Cloudinary)
+    try {
+      const syncSuccess = await settingsSync.fetchAndApplySettings(
+        companyCodeInput.value
+      );
+      if (syncSuccess) {
+        console.log("[Signin] Applied owner settings from cloud");
+      }
+    } catch (e) {
+      console.warn("[Signin] Failed to sync settings:", e);
+      // Non-blocking - continue even if settings sync fails
+    }
 
     companyCodeInput.value = ""; // Clear input
   } catch (e) {
@@ -410,12 +466,9 @@ onMounted(async () => {
     router.push("/");
   }
 
-  // Initialize users for staff login
-  try {
-    await usersComposable.initialize();
-  } finally {
-    isLoadingUsers.value = false;
-  }
+  // Load existing users from localStorage (safe - doesn't create default owner)
+  usersComposable.loadUsersOnly();
+  isLoadingUsers.value = false;
 
   // Check for Nostr extension after a short delay (extensions may load async)
   setTimeout(() => {
@@ -675,7 +728,7 @@ onMounted(async () => {
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   {{
                     t("auth.signin.companyCodeHint") ||
-                    "Get the 6-digit code from your manager"
+                    "Get the code from your manager (e.g. XXXXX-XXXXX-XXXXX)"
                   }}
                 </p>
 
@@ -683,19 +736,18 @@ onMounted(async () => {
                   <UInput
                     v-model="companyCodeInput"
                     type="text"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    maxlength="6"
+                    maxlength="17"
                     size="lg"
-                    class="text-center text-2xl tracking-[0.5em] font-mono"
-                    :placeholder="'000000'"
+                    class="text-center text-xl tracking-widest font-mono"
+                    :placeholder="'XXXXX-XXXXX-XXXXX'"
+                    @input="formatCompanyCodeInput"
                     @keyup.enter="handleCompanyCodeSubmit"
                   />
                 </div>
 
                 <UButton
                   :loading="isLoadingCompanyCode"
-                  :disabled="companyCodeInput.length !== 6"
+                  :disabled="!isValidCompanyCode"
                   color="primary"
                   class="mt-4"
                   @click="handleCompanyCodeSubmit"

@@ -48,6 +48,8 @@
 <script setup lang="ts">
 const appConfig = useAppConfig();
 const { initSystemNotifications } = useNotifications();
+const usersComposable = useUsers();
+
 // Sidebar state for mobile
 const sidebarOpen = ref(false);
 
@@ -61,13 +63,16 @@ watch(
 );
 
 // Load saved theme color on layout mount
-onMounted(() => {
+onMounted(async () => {
   const savedColor = localStorage.getItem("theme-color");
   if (savedColor) {
     appConfig.ui.colors.primary = savedColor;
   }
   // Initialize system notifications
   initSystemNotifications();
+
+  // Initialize users for authenticated pages only
+  await usersComposable.initialize();
 });
 </script>
 

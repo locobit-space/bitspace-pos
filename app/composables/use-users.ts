@@ -744,6 +744,21 @@ export function useUsers() {
   }
 
   /**
+   * Load users from localStorage only (safe for signin page)
+   * Does NOT create default owner or sync to Nostr
+   */
+  function loadUsersOnly(): void {
+    const stored = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (stored) {
+      try {
+        users.value = JSON.parse(stored);
+      } catch {
+        users.value = [];
+      }
+    }
+  }
+
+  /**
    * Save current user to storage and set auth cookie
    */
   function saveCurrentUser(user: StoreUser | null): void {
@@ -992,10 +1007,9 @@ export function useUsers() {
     return initPromise;
   }
 
-  // Auto-initialize
-  if (typeof window !== "undefined") {
-    initialize();
-  }
+  // NOTE: Auto-initialize removed to prevent creating default owner on signin page
+  // Pages that need users should call initialize() explicitly after successful auth
+  // The signin page should NOT initialize users - only authenticated pages should
 
   return {
     // State
@@ -1042,5 +1056,6 @@ export function useUsers() {
     initialize,
     syncNostrOwner,
     refreshFromNostr: loadUsers, // Force reload from Nostr (bypasses isInitialized)
+    loadUsersOnly, // Safe load for signin page (no default owner creation)
   };
 }

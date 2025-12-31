@@ -109,17 +109,18 @@
         <div v-if="selectedMode === 'join'" class="mt-6">
           <UCard>
             <div class="space-y-4">
-              <h4 class="font-semibold text-gray-900 dark:text-white">
+              <h4
+                class="font-semibold text-gray-900 dark:text-white text-center"
+              >
                 {{ t("shop.welcome.enterCode", "Enter Company Code") }}
               </h4>
 
-              <UInput
+              <CommonCompanyCodeInput
                 v-model="companyCodeInput"
-                :placeholder="'XXXX-XXXX-XXXX'"
                 size="xl"
-                class="text-center font-mono text-xl tracking-widest w-full"
-                icon="i-heroicons-key"
-                @input="formatCodeInput"
+                :show-status="true"
+                @valid="isValidCode = $event"
+                @submit="handleJoinCompany"
               />
 
               <p class="text-sm text-gray-500 text-center">
@@ -200,30 +201,7 @@ const selectedMode = ref<"join" | "create" | null>(null);
 const companyCodeInput = ref("");
 const isConnecting = ref(false);
 const errorMsg = ref("");
-
-// Computed
-const isValidCode = computed(() =>
-  company.isValidCompanyCode(companyCodeInput.value)
-);
-
-// Methods
-function formatCodeInput(event: Event) {
-  const input = event.target as HTMLInputElement;
-  let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-
-  // Add dashes automatically
-  if (value.length > 4) {
-    value = value.slice(0, 4) + "-" + value.slice(4);
-  }
-  if (value.length > 9) {
-    value = value.slice(0, 9) + "-" + value.slice(9);
-  }
-  if (value.length > 14) {
-    value = value.slice(0, 14);
-  }
-
-  companyCodeInput.value = value;
-}
+const isValidCode = ref(false);
 
 async function handleJoinCompany() {
   if (!isValidCode.value) return;

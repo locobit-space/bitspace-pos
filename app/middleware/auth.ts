@@ -22,12 +22,10 @@ export default defineNuxtRouteMiddleware((to, _from) => {
   }
 
   // Check authentication from all sources
-  const hasuraToken = useCookie("hasura-auth-token");
   const nostrPubkey = useCookie("nostr-pubkey");
   const staffUserId = useCookie("staff-user-id"); // Staff login cookie
 
-  const isAuthenticated =
-    !!hasuraToken.value || !!nostrPubkey.value || !!staffUserId.value;
+  const isAuthenticated = !!nostrPubkey.value || !!staffUserId.value;
 
   if (!isAuthenticated && to.meta.auth !== false) {
     // Redirect to sign in with return URL
