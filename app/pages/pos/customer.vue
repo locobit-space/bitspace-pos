@@ -182,8 +182,10 @@ const { settings } = useReceipt();
           </div>
         </div>
         <div>
-          <h1 class="text-xl font-semibold tracking-tight">
-            {{ settings?.merchantName || "bnos.space" }}
+          <h1
+            class="text-lg font-bold bg-linear-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent"
+          >
+            {{ settings?.merchantName || "BNOS.SPACE" }}
           </h1>
           <p class="text-sm text-gray-400 font-light">{{ formatDate }}</p>
         </div>
@@ -310,7 +312,15 @@ const { settings } = useReceipt();
                 <div
                   class="w-14 h-14 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-2xl"
                 >
-                  {{ item.product?.image || "📦" }}
+                  <img
+                    v-if="item.product?.image"
+                    :src="item.product?.image"
+                    :alt="item.product?.name"
+                    class="w-full h-full object-cover rounded-lg"
+                    loading="lazy"
+                    @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                  />
+                  <span v-else>{{ "📦" }}</span>
                 </div>
 
                 <!-- Info -->
