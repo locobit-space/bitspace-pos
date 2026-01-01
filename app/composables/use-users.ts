@@ -118,6 +118,25 @@ export function useUsers() {
         currentUser.value?.name
       );
 
+      // Also log to centralized team audit log
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity(
+          "user_create",
+          `Created employee: ${newUser.name} (${newUser.role})`,
+          {
+            resourceType: "user",
+            resourceId: newUser.id,
+            metadata: {
+              role: newUser.role,
+              authMethod,
+            },
+          }
+        );
+      } catch {
+        // Don't block user creation if logging fails
+      }
+
       return newUser;
     } catch (error) {
       console.error("Failed to create user:", error);
@@ -193,6 +212,20 @@ export function useUsers() {
       currentUser.value?.name
     );
 
+    // Also log to centralized team audit log
+    try {
+      const { logActivity } = useAuditLog();
+      await logActivity("user_update", `Updated employee: ${user.name}`, {
+        resourceType: "user",
+        resourceId: userId,
+        metadata: {
+          role: users.value[index]?.role,
+        },
+      });
+    } catch {
+      // Don't block user update if logging fails
+    }
+
     return true;
   }
 
@@ -228,6 +261,17 @@ export function useUsers() {
       `Deleted user (soft): ${user.name}`,
       currentUser.value?.name
     );
+
+    // Also log to centralized team audit log
+    try {
+      const { logActivity } = useAuditLog();
+      await logActivity("user_delete", `Deleted employee: ${user.name}`, {
+        resourceType: "user",
+        resourceId: userId,
+      });
+    } catch {
+      // Don't block user deletion if logging fails
+    }
 
     return true;
   }

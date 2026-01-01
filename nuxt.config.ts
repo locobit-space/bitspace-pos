@@ -87,7 +87,9 @@ export default defineNuxtConfig({
     workbox: {
       navigateFallback: "/",
       globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2,woff,ttf}"],
+      globIgnores: ["**/node_modules/**/*", "sw.js", "workbox-*.js"],
       cleanupOutdatedCaches: true,
+      navigateFallbackDenylist: [/^\/_payload\.json$/],
       runtimeCaching: [
         {
           // Cache QR code API responses

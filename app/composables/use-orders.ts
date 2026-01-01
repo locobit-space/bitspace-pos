@@ -314,6 +314,26 @@ export function useOrders() {
         });
     }
 
+    // Log order creation
+    try {
+      const { logActivity } = useAuditLog();
+      await logActivity(
+        "order_create",
+        `Created order #${order.orderNumber || order.id.slice(-8)}`,
+        {
+          resourceType: "order",
+          resourceId: order.id,
+          metadata: {
+            total: order.total,
+            itemCount: order.items.length,
+            currency: order.currency,
+          },
+        }
+      );
+    } catch {
+      // Don't block order creation if logging fails
+    }
+
     return order;
   }
 
@@ -390,7 +410,7 @@ export function useOrders() {
       // Don't block order completion if accounting fails
     }
 
-    return updateOrderStatus(orderId, "completed", {
+    const result = await updateOrderStatus(orderId, "completed", {
       paymentMethod,
       paymentProof: paymentProof
         ? {
@@ -405,6 +425,31 @@ export function useOrders() {
           }
         : undefined,
     });
+
+    // Log order completion
+    if (result) {
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity(
+          "payment_received",
+          `Completed order #${
+            order.orderNumber || orderId.slice(-8)
+          } via ${paymentMethod}`,
+          {
+            resourceType: "order",
+            resourceId: orderId,
+            metadata: {
+              total: order.total,
+              paymentMethod,
+            },
+          }
+        );
+      } catch {
+        // Silent fail
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -414,9 +459,31 @@ export function useOrders() {
     orderId: string,
     reason?: string
   ): Promise<Order | null> {
-    return updateOrderStatus(orderId, "failed", {
+    const result = await updateOrderStatus(orderId, "failed", {
       notes: reason ? `Voided: ${reason}` : "Order voided",
     });
+
+    // Log void action
+    if (result) {
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity(
+          "order_void",
+          `Voided order #${result.orderNumber || orderId.slice(-8)}${
+            reason ? `: ${reason}` : ""
+          }`,
+          {
+            resourceType: "order",
+            resourceId: orderId,
+            metadata: { reason },
+          }
+        );
+      } catch {
+        // Silent fail
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -426,9 +493,35 @@ export function useOrders() {
     orderId: string,
     reason?: string
   ): Promise<Order | null> {
-    return updateOrderStatus(orderId, "refunded", {
+    const order = orders.value.find((o) => o.id === orderId);
+    const result = await updateOrderStatus(orderId, "refunded", {
       notes: reason ? `Refunded: ${reason}` : "Order refunded",
     });
+
+    // Log refund action
+    if (result) {
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity(
+          "refund",
+          `Refunded order #${result.orderNumber || orderId.slice(-8)}${
+            reason ? `: ${reason}` : ""
+          }`,
+          {
+            resourceType: "order",
+            resourceId: orderId,
+            metadata: {
+              total: order?.total,
+              reason,
+            },
+          }
+        );
+      } catch {
+        // Silent fail
+      }
+    }
+
+    return result;
   }
 
   /**

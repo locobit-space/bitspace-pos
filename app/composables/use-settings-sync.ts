@@ -148,6 +148,24 @@ export function useSettingsSync() {
       if (event) {
         lastSyncAt.value = settings.syncedAt;
         console.log("[SettingsSync] Settings synced to Nostr");
+
+        // Log settings change to audit log
+        try {
+          const { logActivity } = useAuditLog();
+          await logActivity(
+            "settings_change",
+            "Synced shop settings to cloud",
+            {
+              resourceType: "settings",
+              metadata: {
+                settingsVersion: settings.version,
+              },
+            }
+          );
+        } catch {
+          // Don't block sync if logging fails
+        }
+
         return true;
       }
 

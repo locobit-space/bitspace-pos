@@ -764,6 +764,32 @@ export function useInventory() {
         }
       }
 
+      // Log to centralized audit log
+      try {
+        const { logActivity } = useAuditLog();
+        const productRecord = await db.products.get(productId);
+        const productName = productRecord?.name || productId.slice(-8);
+        await logActivity(
+          "inventory_adjust",
+          `${reason}: ${
+            adjustment > 0 ? "+" : ""
+          }${adjustment} units of "${productName}"`,
+          {
+            resourceType: "inventory",
+            resourceId: productId,
+            metadata: {
+              reason,
+              adjustment,
+              previousStock,
+              newStock,
+              branchId,
+            },
+          }
+        );
+      } catch {
+        // Don't block inventory operations if logging fails
+      }
+
       return true;
     } catch (e) {
       console.error("Failed to adjust stock:", e);

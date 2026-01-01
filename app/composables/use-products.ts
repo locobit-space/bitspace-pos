@@ -1144,6 +1144,51 @@ export function useProductsStore() {
         console.error("Failed to sync activity log to Nostr:", e);
       }
     }
+
+    // Also log to centralized team audit log
+    try {
+      const { logActivity } = useAuditLog();
+      const product = products.value.find((p) => p.id === options.productId);
+      const productName = product?.name || options.productId.slice(-8);
+
+      // Map product action to audit action
+      const auditActionMap: Record<
+        string,
+        | "product_create"
+        | "product_update"
+        | "product_delete"
+        | "inventory_adjust"
+      > = {
+        create: "product_create",
+        update: "product_update",
+        delete: "product_delete",
+        price_change: "product_update",
+        stock_adjust: "inventory_adjust",
+        status_change: "product_update",
+        restore: "product_update",
+      };
+
+      const auditAction = auditActionMap[options.action];
+      if (auditAction) {
+        await logActivity(
+          auditAction,
+          options.notes || `${options.action} product "${productName}"`,
+          {
+            resourceType: "product",
+            resourceId: options.productId,
+            metadata: {
+              action: options.action,
+              stockBefore: options.stockBefore,
+              stockAfter: options.stockAfter,
+              priceBefore: options.priceBefore,
+              priceAfter: options.priceAfter,
+            },
+          }
+        );
+      }
+    } catch {
+      // Don't block product operations if audit logging fails
+    }
   }
 
   /**
