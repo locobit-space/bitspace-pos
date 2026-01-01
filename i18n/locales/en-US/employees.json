@@ -1,0 +1,161 @@
+{
+  "employees": {
+    "title": "Employees",
+    "total": "Total",
+    "employee": "Employee",
+    "addEmployee": "Add Employee",
+    "editEmployee": "Edit Employee",
+    "addFirstEmployee": "Add First Employee",
+    "searchPlaceholder": "Search employees...",
+    "noEmployees": "No Employees Yet",
+    "noEmployeesDescription": "Start by adding your first team member",
+    "noPosition": "No position",
+    "createSuccess": "Employee added successfully",
+    "updateSuccess": "Employee updated successfully",
+    "deleteSuccess": "Employee terminated successfully",
+    "hardDeleteSuccess": "Employee permanently deleted",
+
+    "status": {
+      "label": "Status",
+      "all": "All Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "on-leave": "On Leave",
+      "onLeave": "On Leave",
+      "terminated": "Terminated"
+    },
+
+    "type": {
+      "fullTime": "Full-time",
+      "partTime": "Part-time",
+      "contract": "Contract",
+      "intern": "Intern",
+      "freelance": "Freelance"
+    },
+
+    "salaryType": {
+      "label": "Salary Type",
+      "hourly": "Hourly",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+
+    "paymentMethod": {
+      "cash": "Cash",
+      "bank": "Bank Transfer",
+      "lightning": "Lightning"
+    },
+
+    "gender": {
+      "label": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+
+    "tabs": {
+      "basic": "Basic Info",
+      "employment": "Employment",
+      "compensation": "Compensation",
+      "access": "Access"
+    },
+
+    "firstName": "First Name",
+    "firstNamePlaceholder": "Enter first name",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Enter last name",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Nickname or alias",
+    "email": "Email",
+    "phone": "Phone",
+    "dateOfBirth": "Date of Birth",
+    "nationalId": "National ID",
+    "nationalIdPlaceholder": "ID card number",
+    "address": "Address",
+
+    "emergencyContact": "Emergency Contact",
+    "contactName": "Name",
+    "contactPhone": "Phone",
+    "contactRelation": "Relation",
+
+    "department": "Department",
+    "departmentPlaceholder": "e.g. Sales, Kitchen",
+    "position": "Position",
+    "positionPlaceholder": "e.g. Manager, Cashier",
+    "employmentType": "Employment Type",
+    "hireDate": "Hire Date",
+    "notes": "Notes",
+    "notesPlaceholder": "Additional notes...",
+
+    "salary": "Salary",
+    "baseSalary": "Base Salary",
+    "currency": "Currency",
+    "overtimeRate": "Overtime Rate",
+    "paymentInfo": "Payment Information",
+    "preferredPayment": "Preferred Method",
+    "bankName": "Bank Name",
+    "bankAccount": "Account Number",
+    "lightningAddress": "Lightning Address",
+
+    "commission": "Commission",
+    "commissionRate": "Commission Rate",
+
+    "leaveBalances": "Leave Balances",
+    "annualLeave": "Annual Leave",
+    "sickLeave": "Sick Leave",
+    "personalLeave": "Personal Leave",
+
+    "posAccess": "POS Access",
+    "posAccessDescription": "Allow this employee to access the POS system",
+    "pin": "PIN Code",
+    "pinPlaceholder": "4-6 digit PIN",
+    "pinHint": "Used for clock in and POS access",
+
+    "employmentInfo": "Employment Information",
+    "contactInfo": "Contact Information",
+    "tenure": "Tenure",
+
+    "actions": {
+      "view": "View Details",
+      "edit": "Edit Employee",
+      "duplicate": "Duplicate",
+      "terminate": "Terminate",
+      "deletePermanently": "Delete Permanently",
+      "export": "Export to Excel"
+    },
+
+    "confirm": {
+      "terminateTitle": "Terminate Employee",
+      "terminateMessage": "Are you sure you want to terminate {name}? This will mark the employee as terminated but keep their records.",
+      "deleteTitle": "Delete Permanently",
+      "deleteMessage": "Are you sure you want to permanently delete {name}? This action cannot be undone.",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+
+    "stats": {
+      "totalEmployees": "Total Employees",
+      "activeEmployees": "Active",
+      "onLeaveEmployees": "On Leave",
+      "newThisMonth": "New This Month"
+    },
+
+    "sort": {
+      "name": "Name",
+      "position": "Position",
+      "department": "Department",
+      "status": "Status",
+      "salary": "Salary",
+      "hireDate": "Hire Date"
+    },
+
+    "export": {
+      "title": "Export Employees",
+      "fileName": "employees",
+      "success": "Employee list exported successfully"
+    },
+
+    "duplicateSuccess": "Employee duplicated successfully"
+  }
+}

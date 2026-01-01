@@ -1,0 +1,11 @@
+{
+  "tables": {
+    "title": "โต๊ะ",
+    "zones": "โซน",
+    "addZone": "เพิ่มโซน",
+    "addTable": "เพิ่มโต๊ะ",
+    "tableName": "ชื่อโต๊ะ",
+    "seats": "ที่นั่ง",
+    "status": "สถานะ"
+  }
+}

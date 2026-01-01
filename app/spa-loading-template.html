@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bnos.space</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .splash-container {
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+          135deg,
+          #111827 0%,
+          #1f2937 50%,
+          #111827 100%
+        );
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Animated background pattern */
+      .splash-container::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(
+          circle,
+          rgba(245, 158, 11, 0.1) 1px,
+          transparent 1px
+        );
+        background-size: 30px 30px;
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      .logo-container {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      /* Logo with lightning effect */
+      .logo {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 40px rgba(245, 158, 11, 0.4),
+          0 20px 40px rgba(0, 0, 0, 0.3);
+        animation: glow 2s ease-in-out infinite;
+      }
+
+      @keyframes glow {
+        0%,
+        100% {
+          box-shadow: 0 0 40px rgba(245, 158, 11, 0.4),
+            0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        50% {
+          box-shadow: 0 0 60px rgba(245, 158, 11, 0.6),
+            0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+      }
+
+      .logo svg {
+        width: 60px;
+        height: 60px;
+        fill: white;
+      }
+
+      .brand-name {
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 2px;
+      }
+
+      .brand-name span {
+        color: #f59e0b;
+      }
+
+      .tagline {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        text-align: center;
+        max-width: 280px;
+      }
+
+      /* Loading spinner */
+      .loader {
+        margin-top: 40px;
+        width: 48px;
+        height: 48px;
+        position: relative;
+      }
+
+      .loader::before,
+      .loader::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 3px solid transparent;
+      }
+
+      .loader::before {
+        border-top-color: #f59e0b;
+        animation: spin 1s linear infinite;
+      }
+
+      .loader::after {
+        border-bottom-color: rgba(245, 158, 11, 0.3);
+        animation: spin 0.5s linear infinite reverse;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-text {
+        margin-top: 16px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        animation: blink 1.5s ease-in-out infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* Bottom branding */
+      .footer {
+        position: absolute;
+        bottom: 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .footer-text {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      .footer-icons {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .footer-icons svg {
+        width: 20px;
+        height: 20px;
+        fill: rgba(255, 255, 255, 0.4);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="splash-container">
+      <div class="logo-container">
+        <!-- Lightning bolt logo -->
+        <div class="logo">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+
+        <h1 class="brand-name">
+          bnos.<span>space</span>
+          <small><i>Business OS</i></small>
+        </h1>
+        <p class="tagline">Lightning-Powered Point of Sale</p>
+        <!-- <small style="color: #f59e0b">JAN JAO</small> -->
+
+        <div class="loader"></div>
+        <p class="loading-text">Loading...</p>
+      </div>
+
+      <div class="footer">
+        <div class="footer-icons">
+          <!-- Nostr icon -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+            />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <!-- Bitcoin icon -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-1h-1v-2h1v-4H9v-2h2V7h2v1h1v2h-1v4h2v2h-2v1z"
+            />
+          </svg>
+        </div>
+        <p class="footer-text">Powered by Nostr & Bitcoin</p>
+      </div>
+    </div>
+  </body>
+</html>
