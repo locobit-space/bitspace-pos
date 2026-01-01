@@ -241,13 +241,6 @@ export function useCompany() {
     if (pubkey) {
       localStorage.setItem(STORAGE_KEYS.COMPANY_OWNER_PUBKEY, pubkey);
     }
-
-    console.log(
-      "[Company] Set company code:",
-      code,
-      "Hash:",
-      companyCodeHash.value?.slice(0, 8)
-    );
   }
 
   /**

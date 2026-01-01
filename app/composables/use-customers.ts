@@ -286,6 +286,25 @@ export function useCustomers() {
       syncPending.value++;
     }
 
+    // Log to centralized audit log
+    try {
+      const { logActivity } = useAuditLog();
+      await logActivity(
+        "customer_create",
+        `Created customer: ${customer.name || customer.id.slice(-8)}`,
+        {
+          resourceType: "customer",
+          resourceId: customer.id,
+          metadata: {
+            tier: customer.tier,
+            email: customer.email,
+          },
+        }
+      );
+    } catch {
+      // Don't block customer creation if logging fails
+    }
+
     return customer;
   }
 
@@ -314,6 +333,24 @@ export function useCustomers() {
 
     if (offline.isOnline.value) {
       await syncToNostr(updated);
+    }
+
+    // Log to centralized audit log
+    try {
+      const { logActivity } = useAuditLog();
+      await logActivity(
+        "customer_update",
+        `Updated customer: ${updated.name || updated.id.slice(-8)}`,
+        {
+          resourceType: "customer",
+          resourceId: updated.id,
+          metadata: {
+            tier: updated.tier,
+          },
+        }
+      );
+    } catch {
+      // Don't block customer update if logging fails
     }
 
     return updated;

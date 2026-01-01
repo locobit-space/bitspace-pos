@@ -83,9 +83,30 @@ export const useAuth = () => {
 
       const data = await response.json();
       await handleAuthResponse(data, "hasura");
+
+      // Log successful login
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity("login", `User logged in via email: ${email}`);
+      } catch {
+        // Don't block login if logging fails
+      }
+
       return true;
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Sign in failed";
+
+      // Log failed login attempt
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity(
+          "login_failed",
+          `Failed login attempt for email: ${email}`
+        );
+      } catch {
+        // Silent fail
+      }
+
       return false;
     } finally {
       isLoading.value = false;
@@ -374,9 +395,31 @@ export const useAuth = () => {
       // Save to localStorage
       saveAuthState();
 
+      // Log successful Nostr login
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity("login", `User logged in via Nostr extension`);
+      } catch {
+        // Don't block login if logging fails
+      }
+
       return true;
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Nostr sign in failed";
+
+      // Log failed login attempt
+      try {
+        const { logActivity } = useAuditLog();
+        await logActivity(
+          "login_failed",
+          `Failed Nostr login: ${
+            e instanceof Error ? e.message : "Unknown error"
+          }`
+        );
+      } catch {
+        // Silent fail
+      }
+
       return false;
     } finally {
       isLoading.value = false;
@@ -585,6 +628,14 @@ export const useAuth = () => {
    * Sign out - clears ALL application data for a clean slate
    */
   const signOut = async () => {
+    // Log logout before clearing data
+    try {
+      const { logActivity } = useAuditLog();
+      await logActivity("logout", `User logged out`);
+    } catch {
+      // Don't block logout if logging fails
+    }
+
     // Call Hasura signout if we have a token
     if (accessToken.value && user.value?.provider !== "nostr") {
       try {

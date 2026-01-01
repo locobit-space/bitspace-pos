@@ -384,7 +384,7 @@ onMounted(() => {
           </UFormField>
 
           <div class="grid grid-cols-2 gap-4">
-            <UFormField :label="t('settings.currency')">
+            <UFormField :label="t('settings.general.currency')">
               <USelect
                 v-model="shopForm.currency"
                 :items="currencyOptions"
@@ -394,7 +394,7 @@ onMounted(() => {
               />
             </UFormField>
 
-            <UFormField :label="t('settings.language')">
+            <UFormField :label="t('settings.general.language')">
               <USelect
                 v-model="shopForm.language"
                 :items="languageOptions"
@@ -660,11 +660,9 @@ onMounted(() => {
                 class="mt-2 pt-2 border-t border-primary-200 dark:border-primary-800"
               >
                 <p class="flex items-center gap-2">
-                  <span class="opacity-70"
-                    >{{
-                      t("auth.company.connectTitle") || "Company Code"
-                    }}:</span
-                  >
+                  <span class="opacity-70">
+                    {{ t("auth.company.connectTitle", "Company Code") }}:
+                  </span>
                   <span class="font-mono text-lg font-bold tracking-widest">{{
                     generatedCompanyCode
                   }}</span>
