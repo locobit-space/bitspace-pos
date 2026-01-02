@@ -64,9 +64,7 @@ const showDiscountModal = ref(false);
 const showCustomItemModal = ref(false);
 const showHeldOrdersModal = ref(false);
 const showSettingsModal = ref(false);
-const showNumpad = ref(false);
 const showProductOptionsModal = ref(false);
-const showItemNotesModal = ref(false);
 const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
 const showTableSwitcher = ref(false); // Table switcher modal
@@ -76,9 +74,12 @@ const showCustomerModal = ref(false); // Customer lookup modal
 const splitOrder = ref<Order | null>(null); // Order being split
 const splitCount = ref(2); // Number of people splitting
 const splitPaidCount = ref(0); // Number of portions already paid
-const numpadTarget = ref<{ index: number; currentQty: number } | null>(null);
-const numpadValue = ref("");
 const isProcessing = ref(false);
+
+// Numpad modal state
+const showNumpad = ref(false);
+const numpadTarget = ref<number | null>(null);
+const numpadInitialValue = ref(0);
 
 // Completed order for receipt
 const completedOrder = ref<Order | null>(null);
@@ -96,14 +97,15 @@ const selectedVariant = ref<ProductVariant | null>(null);
 const selectedModifiers = ref<ProductModifier[]>([]);
 const productQuantity = ref(1);
 
-// Item notes
+// Item notes modal state
+const showItemNotesModal = ref(false);
 const editingItemIndex = ref<number | null>(null);
-const itemNotesValue = ref("");
+const editingItemNotes = ref("");
+const editingItemName = ref("");
 
-// Custom item form
-const customItem = ref({ name: "", price: 0 });
+// Custom item modal state (removed - now handled in component)
 
-// Discount form
+// Discount tracking (for display in cart)
 const discountType = ref<"percentage" | "fixed">("percentage");
 const discountValue = ref(0);
 
@@ -132,16 +134,10 @@ const tables = ref<
 >([]);
 
 // Customer selection state
-const customerSearchQuery = ref("");
 const selectedCustomer = ref<(typeof customersStore.customers.value)[0] | null>(
   null
 );
-const filteredCustomers = computed(() => {
-  if (!customerSearchQuery.value.trim()) {
-    return customersStore.customers.value.slice(0, 8);
-  }
-  return customersStore.searchCustomers(customerSearchQuery.value).slice(0, 8);
-});
+
 const selectCustomer = (
   customer: (typeof customersStore.customers.value)[0]
 ) => {
@@ -153,7 +149,7 @@ const selectCustomer = (
     nostrPubkey: customer.nostrPubkey,
     phone: customer.phone,
   });
-  showCustomerModal.value = false;
+
   const toast = useToast();
   toast.add({
     title: "Customer Selected",
@@ -161,6 +157,7 @@ const selectCustomer = (
     color: "green",
   });
 };
+
 const clearCustomer = () => {
   selectedCustomer.value = null;
   pos.setCustomer(null);
@@ -350,44 +347,39 @@ const handleQuantityChange = (index: number, delta: number) => {
 };
 
 const openNumpad = (index: number, currentQty: number) => {
-  numpadTarget.value = { index, currentQty };
-  numpadValue.value = currentQty.toString();
+  numpadTarget.value = index;
+  numpadInitialValue.value = currentQty;
   showNumpad.value = true;
 };
 
-const handleNumpadInput = (value: string) => {
-  if (value === "C") {
-    numpadValue.value = "";
-  } else if (value === "DEL") {
-    numpadValue.value = numpadValue.value.slice(0, -1);
-  } else if (value === "OK") {
-    if (numpadTarget.value !== null) {
-      const qty = parseInt(numpadValue.value) || 0;
-      pos.updateQuantity(numpadTarget.value.index, qty);
-    }
-    showNumpad.value = false;
-    numpadTarget.value = null;
-  } else {
-    numpadValue.value += value;
+const handleNumpadConfirm = (qty: number) => {
+  if (numpadTarget.value !== null) {
+    pos.updateQuantity(numpadTarget.value, qty);
   }
+  numpadTarget.value = null;
+  numpadInitialValue.value = 0;
 };
 
 // ============================================
 // Item Notes
 // ============================================
 const openItemNotes = (index: number) => {
+  const item = pos.cartItems.value[index];
+  if (!item) return;
+
   editingItemIndex.value = index;
-  itemNotesValue.value = pos.cartItems.value[index]?.notes || "";
+  editingItemNotes.value = item.notes || "";
+  editingItemName.value = item.product.name;
   showItemNotesModal.value = true;
 };
 
-const saveItemNotes = () => {
+const saveItemNotes = (notes: string) => {
   if (editingItemIndex.value !== null) {
-    pos.updateItemNotes(editingItemIndex.value, itemNotesValue.value);
+    pos.updateItemNotes(editingItemIndex.value, notes);
   }
-  showItemNotesModal.value = false;
   editingItemIndex.value = null;
-  itemNotesValue.value = "";
+  editingItemNotes.value = "";
+  editingItemName.value = "";
 };
 
 // ============================================
@@ -609,12 +601,10 @@ const deleteHeldOrder = (orderId: string) => {
   heldOrders.value = heldOrders.value.filter((o) => o.id !== orderId);
 };
 
-const applyDiscount = () => {
-  if (discountValue.value > 0) {
-    pos.applyDiscount(discountType.value, discountValue.value);
-  }
-  showDiscountModal.value = false;
-  discountValue.value = 0;
+const applyDiscount = (type: "percentage" | "fixed", value: number) => {
+  discountType.value = type;
+  discountValue.value = value;
+  pos.applyDiscount(type, value);
 };
 
 // ============================================
@@ -634,27 +624,23 @@ const handleCouponRemove = () => {
   }
 };
 
-const addCustomItem = () => {
-  if (customItem.value.name && customItem.value.price > 0) {
-    const product: Product = {
-      id: `custom-${Date.now()}`,
-      name: customItem.value.name,
-      sku: "CUSTOM",
-      categoryId: "custom",
-      unitId: "piece",
-      price: customItem.value.price,
-      stock: 999,
-      minStock: 0,
-      branchId: "main",
-      status: "active",
-      image: "📦",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    pos.addToCart(product);
-    customItem.value = { name: "", price: 0 };
-    showCustomItemModal.value = false;
-  }
+const addCustomItem = (item: { name: string; price: number }) => {
+  const product: Product = {
+    id: `custom-${Date.now()}`,
+    name: item.name,
+    sku: "CUSTOM",
+    categoryId: "custom",
+    unitId: "piece",
+    price: item.price,
+    stock: 999,
+    minStock: 0,
+    branchId: "main",
+    status: "active",
+    image: "📦",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  pos.addToCart(product);
 };
 
 // ============================================
@@ -2302,6 +2288,30 @@ onUnmounted(() => {
               }}{{ currency.format(taxAmount, pos.selectedCurrency.value) }}
             </span>
           </div>
+          <!-- Manual Discount -->
+          <div
+            v-if="discountValue > 0 && !appliedCoupon"
+            class="flex justify-between text-green-600 dark:text-green-400"
+          >
+            <span class="flex items-center gap-1">
+              <span>🏷️</span>
+              Discount
+              <span class="text-xs opacity-75">
+                ({{ discountType === "percentage" ? `${discountValue}%` : "Fixed" }})
+              </span>
+            </span>
+            <span>
+              -{{
+                currency.format(
+                  discountType === "percentage"
+                    ? Math.round((pos.subtotal.value * discountValue) / (100 + discountValue))
+                    : discountValue,
+                  pos.selectedCurrency.value
+                )
+              }}
+            </span>
+          </div>
+          <!-- Coupon Discount -->
           <div
             v-if="appliedCoupon"
             class="flex justify-between text-green-600 dark:text-green-400"
@@ -2788,220 +2798,28 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Discount Modal -->
-    <UModal
+    <PosDiscountModal
       v-model:open="showDiscountModal"
-      title="Apply Discount"
-      description="Apply a discount to the order"
-    >
-      <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <span>🏷️</span> Apply Discount
-          </h3>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
-                >Discount Type</label
-              >
-              <div class="flex gap-2">
-                <UButton
-                  :color="discountType === 'percentage' ? 'primary' : 'neutral'"
-                  :variant="discountType === 'percentage' ? 'solid' : 'outline'"
-                  class="flex-1"
-                  @click="discountType = 'percentage'"
-                >
-                  % Percentage
-                </UButton>
-                <UButton
-                  :color="discountType === 'fixed' ? 'primary' : 'neutral'"
-                  :variant="discountType === 'fixed' ? 'solid' : 'outline'"
-                  class="flex-1"
-                  @click="discountType = 'fixed'"
-                >
-                  Fixed Amount
-                </UButton>
-              </div>
-            </div>
-
-            <div>
-              <label
-                class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
-              >
-                {{
-                  discountType === "percentage"
-                    ? "Discount %"
-                    : "Discount Amount"
-                }}
-              </label>
-              <UInput
-                v-model.number="discountValue"
-                type="number"
-                :placeholder="
-                  discountType === 'percentage' ? 'e.g., 10' : 'e.g., 5000'
-                "
-              />
-            </div>
-
-            <div class="flex gap-2 pt-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                class="flex-1"
-                @click="showDiscountModal = false"
-              >
-                Cancel
-              </UButton>
-              <UButton color="primary" class="flex-1" @click="applyDiscount">
-                Apply
-              </UButton>
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :current-type="discountType"
+      :current-value="discountValue"
+      @apply="applyDiscount"
+    />
 
     <!-- Custom Item Modal -->
-    <UModal
+    <PosCustomItemModal
       v-model:open="showCustomItemModal"
-      title="Add Custom Item"
-      description="Add a custom item to the cart"
-    >
-      <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <span>📦</span> Add Custom Item
-          </h3>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
-                >Item Name</label
-              >
-              <UInput
-                v-model="customItem.name"
-                placeholder="e.g., Special Order"
-                class="w-full"
-              />
-            </div>
-
-            <div>
-              <label
-                class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
-              >
-                Price ({{ pos.selectedCurrency.value }})
-              </label>
-              <UInput
-                v-model.number="customItem.price"
-                type="number"
-                placeholder="e.g., 50000"
-              />
-            </div>
-
-            <div class="flex gap-2 pt-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                blcok
-                @click="showCustomItemModal = false"
-              >
-                Cancel
-              </UButton>
-              <UButton
-                color="primary"
-                blcok
-                :disabled="!customItem.name || customItem.price <= 0"
-                @click="addCustomItem"
-              >
-                Add to Cart
-              </UButton>
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :currency="pos.selectedCurrency.value"
+      @add="addCustomItem"
+    />
 
     <!-- Held Orders Modal -->
-    <UModal
+    <PosHeldOrdersModal
       v-model:open="showHeldOrdersModal"
-      title="Held Orders"
-      description="Orders that are on hold"
-    >
-      <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <span>⏸️</span> Held Orders
-          </h3>
-
-          <div
-            v-if="heldOrders.length === 0"
-            class="text-center py-8 text-gray-400 dark:text-gray-500"
-          >
-            <span class="text-4xl block mb-2">📋</span>
-            No held orders
-          </div>
-
-          <div v-else class="space-y-3 max-h-96 overflow-auto">
-            <div
-              v-for="order in heldOrders"
-              :key="order.id"
-              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700/30"
-            >
-              <div class="flex justify-between items-start mb-2">
-                <div class="flex items-center gap-2">
-                  <span
-                    v-if="order.orderNumber"
-                    class="text-lg font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded"
-                  >
-                    #{{ order.orderNumber }}
-                  </span>
-                  <div>
-                    <p class="font-medium text-gray-900 dark:text-white">
-                      {{ order.code || order.id }}
-                    </p>
-                    <p class="text-xs text-gray-500">
-                      {{ new Date(order.createdAt).toLocaleTimeString() }}
-                    </p>
-                  </div>
-                </div>
-                <p class="font-bold text-amber-600 dark:text-amber-400">
-                  {{ currency.format(order.total, pos.selectedCurrency.value) }}
-                </p>
-              </div>
-
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                {{ order.items.length }} items
-              </p>
-
-              <div class="flex gap-2">
-                <UButton
-                  size="sm"
-                  color="primary"
-                  block
-                  @click="recallOrder(order.id)"
-                >
-                  Recall
-                </UButton>
-                <UButton
-                  size="sm"
-                  color="red"
-                  variant="ghost"
-                  @click="deleteHeldOrder(order.id)"
-                >
-                  <UIcon name="i-heroicons-trash" class="w-4 h-4" />
-                </UButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :orders="heldOrders"
+      :currency="pos.selectedCurrency.value"
+      @recall="recallOrder"
+      @delete="deleteHeldOrder"
+    />
 
     <!-- Pending Orders Modal (Bills waiting for payment) -->
     <UModal
@@ -3286,68 +3104,11 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Numpad Modal -->
-    <UModal
+    <PosNumpadModal
       v-model:open="showNumpad"
-      title="Enter Quantity"
-      description="Enter the quantity of the item"
-    >
-      <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Enter Quantity
-          </h3>
-
-          <div
-            class="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 mb-4 text-center"
-          >
-            <span class="text-3xl font-bold text-gray-900 dark:text-white">{{
-              numpadValue || "0"
-            }}</span>
-          </div>
-
-          <div class="grid grid-cols-3 gap-2">
-            <button
-              v-for="key in [
-                '1',
-                '2',
-                '3',
-                '4',
-                '5',
-                '6',
-                '7',
-                '8',
-                '9',
-                'C',
-                '0',
-                'DEL',
-              ]"
-              :key="key"
-              class="h-14 rounded-xl font-bold text-lg transition-colors"
-              :class="
-                key === 'C'
-                  ? 'bg-red-500/20 text-red-500 dark:text-red-400 hover:bg-red-500/30'
-                  : key === 'DEL'
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
-              "
-              @click="handleNumpadInput(key)"
-            >
-              {{ key }}
-            </button>
-          </div>
-
-          <UButton
-            block
-            size="lg"
-            color="primary"
-            class="mt-4"
-            @click="handleNumpadInput('OK')"
-          >
-            Confirm
-          </UButton>
-        </div>
-      </template>
-    </UModal>
+      :initial-value="numpadInitialValue"
+      @confirm="handleNumpadConfirm"
+    />
 
     <!-- Settings Modal -->
     <UModal
@@ -3804,356 +3565,31 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Item Notes Modal -->
-    <UModal
+    <PosItemNotesModal
       v-model:open="showItemNotesModal"
-      title="Item Notes"
-      description="Add special instructions for kitchen"
-    >
-      <template #content>
-        <div class="p-6 bg-white dark:bg-gray-900">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <span>📝</span> Item Notes
-          </h3>
+      :initial-notes="editingItemNotes"
+      :item-name="editingItemName"
+      @save="saveItemNotes"
+    />
 
-          <div class="space-y-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              Add special instructions for kitchen (e.g., "no onions", "extra
-              spicy", "allergies")
-            </p>
-
-            <UTextarea
-              v-model="itemNotesValue"
-              placeholder="Enter notes for this item..."
-              :rows="3"
-              autofocus
-              class="w-full"
-            />
-
-            <!-- Quick Notes -->
-            <div>
-              <p class="text-xs text-gray-500 mb-2">Quick notes:</p>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="quickNote in [
-                    'No ice',
-                    'Extra spicy',
-                    'Less sugar',
-                    'No onions',
-                    'Gluten free',
-                    'Vegan',
-                  ]"
-                  :key="quickNote"
-                  class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
-                  @click="
-                    itemNotesValue = itemNotesValue
-                      ? `${itemNotesValue}, ${quickNote}`
-                      : quickNote
-                  "
-                >
-                  {{ quickNote }}
-                </button>
-              </div>
-            </div>
-
-            <div class="flex gap-2 pt-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                block
-                @click="showItemNotesModal = false"
-              >
-                Cancel
-              </UButton>
-              <UButton color="primary" block @click="saveItemNotes">
-                Save Notes
-              </UButton>
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
-
-    <!-- ============================================ -->
     <!-- Table Switcher Modal -->
-    <!-- ============================================ -->
-    <UModal
+    <PosTableSwitcherModal
       v-model:open="showTableSwitcher"
-      title="Select Table"
-      description="Select a table to switch to"
-    >
-      <template #content>
-        <div class="p-6 max-h-[80vh] overflow-auto">
-          <div class="flex items-center gap-3 mb-6">
-            <div
-              class="w-10 h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl"
-            >
-              🍽️
-            </div>
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                Select Table
-              </h3>
-              <p class="text-sm text-gray-500">
-                {{ availableTables.length }} tables available
-              </p>
-            </div>
-          </div>
-
-          <!-- Current table badge -->
-          <div
-            v-if="currentTable"
-            class="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500/30"
-          >
-            <div
-              class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400"
-            >
-              <UIcon name="i-heroicons-check-circle" class="w-5 h-5" />
-              <span class="font-medium">Current: {{ currentTable.name }}</span>
-              <span class="text-sm opacity-75"
-                >({{ currentTable.seats }} seats)</span
-              >
-            </div>
-          </div>
-
-          <!-- Tables grid -->
-          <div
-            v-if="tables.length > 0"
-            class="grid grid-cols-3 sm:grid-cols-4 gap-3"
-          >
-            <button
-              v-for="table in tables"
-              :key="table.id"
-              :disabled="
-                table.status === 'occupied' &&
-                table.name !== pos.tableNumber.value
-              "
-              class="relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="[
-                table.name === pos.tableNumber.value
-                  ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-500/50'
-                  : table.status === 'available'
-                  ? 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 ring-1 ring-gray-200 dark:ring-gray-700 hover:ring-amber-500/50'
-                  : table.status === 'reserved'
-                  ? 'bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500/30'
-                  : 'bg-gray-100 dark:bg-gray-800/50 ring-1 ring-gray-200 dark:ring-gray-700',
-              ]"
-              @click="switchTable(table)"
-            >
-              <!-- Table icon based on status -->
-              <div class="text-2xl">
-                {{
-                  table.status === "reserved"
-                    ? "📋"
-                    : table.status === "occupied"
-                    ? "🍽️"
-                    : "🪑"
-                }}
-              </div>
-
-              <!-- Table name -->
-              <span
-                class="font-semibold text-sm"
-                :class="
-                  table.name === pos.tableNumber.value
-                    ? 'text-white'
-                    : 'text-gray-900 dark:text-white'
-                "
-              >
-                {{ table.name }}
-              </span>
-
-              <!-- Seats -->
-              <span
-                class="text-xs"
-                :class="
-                  table.name === pos.tableNumber.value
-                    ? 'text-white/75'
-                    : 'text-gray-500'
-                "
-              >
-                {{ table.seats }} seats
-              </span>
-
-              <!-- Status badge -->
-              <span
-                v-if="
-                  table.status !== 'available' &&
-                  table.name !== pos.tableNumber.value
-                "
-                class="absolute top-1 right-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-                :class="
-                  table.status === 'reserved'
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-gray-500 text-white'
-                "
-              >
-                {{ table.status === "reserved" ? "Reserved" : "In use" }}
-              </span>
-
-              <!-- Timer badge for occupied tables -->
-              <span
-                v-if="
-                  table.status === 'occupied' &&
-                  tablesStore.getTableOccupiedMinutes(table.id) > 0
-                "
-                class="absolute bottom-1 right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
-                :class="{
-                  'bg-green-500/90 text-white':
-                    tablesStore.getTimerColor(
-                      tablesStore.getTableOccupiedMinutes(table.id)
-                    ) === 'green',
-                  'bg-yellow-500/90 text-white':
-                    tablesStore.getTimerColor(
-                      tablesStore.getTableOccupiedMinutes(table.id)
-                    ) === 'yellow',
-                  'bg-red-500/90 text-white':
-                    tablesStore.getTimerColor(
-                      tablesStore.getTableOccupiedMinutes(table.id)
-                    ) === 'red',
-                }"
-                :key="currentTime.getTime()"
-              >
-                ⏱️
-                {{
-                  tablesStore.formatDuration(
-                    tablesStore.getTableOccupiedMinutes(table.id)
-                  )
-                }}
-              </span>
-
-              <!-- Current indicator -->
-              <span
-                v-if="table.name === pos.tableNumber.value"
-                class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg"
-              >
-                <UIcon name="i-heroicons-check" class="w-3 h-3" />
-              </span>
-            </button>
-          </div>
-
-          <!-- Empty state -->
-          <div v-else class="text-center py-8">
-            <div class="text-4xl mb-3">🪑</div>
-            <p class="text-gray-500 dark:text-gray-400 mb-2">
-              No tables configured
-            </p>
-            <p class="text-sm text-gray-400 dark:text-gray-500">
-              Go to Tables page to set up your floor plan
-            </p>
-            <UButton
-              color="primary"
-              variant="soft"
-              class="mt-4"
-              @click="navigateTo('/pos/tables')"
-            >
-              Set up Tables
-            </UButton>
-          </div>
-
-          <!-- Actions -->
-          <div
-            class="flex gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700"
-          >
-            <UButton
-              color="neutral"
-              variant="outline"
-              class="flex-1"
-              @click="showTableSwitcher = false"
-            >
-              Cancel
-            </UButton>
-            <UButton
-              color="primary"
-              variant="soft"
-              icon="i-heroicons-arrow-top-right-on-square"
-              @click="navigateTo('/pos/tables')"
-            >
-              Manage Tables
-            </UButton>
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :tables="tables"
+      :current-table-name="pos.tableNumber.value"
+      :tables-store="tablesStore"
+      :current-time="currentTime"
+      @switch="switchTable"
+      @manage="navigateTo('/pos/tables')"
+    />
 
     <!-- Customer Lookup Modal -->
-    <UModal
+    <PosCustomerModal
       v-model:open="showCustomerModal"
-      title="Customer Lookup"
-      description="Search for a customer"
-    >
-      <template #content>
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-              Customer Lookup
-            </h3>
-            <UButton
-              icon="i-heroicons-x-mark"
-              variant="ghost"
-              color="gray"
-              @click="showCustomerModal = false"
-            />
-          </div>
-          <UInput
-            v-model="customerSearchQuery"
-            icon="i-heroicons-magnifying-glass"
-            placeholder="Search customers..."
-            size="lg"
-            autofocus
-            class="mb-4 w-full"
-          />
-          <div class="max-h-64 overflow-y-auto space-y-2">
-            <div
-              v-for="customer in filteredCustomers"
-              :key="customer.id"
-              class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-              @click="selectCustomer(customer)"
-            >
-              <div
-                class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold"
-              >
-                {{ (customer.name || "C").slice(0, 2).toUpperCase() }}
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="font-medium text-gray-900 dark:text-white truncate">
-                  {{ customer.name || "Customer" }}
-                </p>
-                <p class="text-sm text-gray-500 truncate">
-                  {{ customer.phone || customer.email }}
-                </p>
-              </div>
-              <span
-                class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                >{{ customer.tier }}</span
-              >
-            </div>
-            <div
-              v-if="filteredCustomers.length === 0"
-              class="text-center py-8 text-gray-500"
-            >
-              No customers found
-            </div>
-          </div>
-          <div
-            class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex gap-3"
-          >
-            <UButton
-              variant="outline"
-              color="gray"
-              block
-              @click="showCustomerModal = false"
-            >
-              Cancel
-            </UButton>
-            <UButton color="primary" block icon="i-heroicons-plus">
-              New Customer
-            </UButton>
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :customers="customersStore.customers.value"
+      @select="selectCustomer"
+      @create-new="navigateTo('/customers/new')"
+    />
   </div>
 </template>
 
