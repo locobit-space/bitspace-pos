@@ -843,6 +843,7 @@
 import { z } from "zod";
 import { nip19 } from "nostr-tools";
 import type { UserInfo } from "~/types";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 const { t } = useI18n();
 const colorMode = useColorMode();
@@ -1188,7 +1189,7 @@ const updateProfile = async () => {
 
     // Create unsigned event
     const event = {
-      kind: 0,
+      kind: NOSTR_KINDS.PROFILE,
       created_at: Math.floor(Date.now() / 1000),
       tags: [],
       content: profileContent,

@@ -1,6 +1,7 @@
 import { nip19 } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 import type { NostrUser, UserInfo } from "~/types";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 export const useNostrUser = () => {
   const user = useState<NostrUser | null>("nostrUser", () => null);
@@ -109,9 +110,9 @@ export const useNostrUser = () => {
     isLoading.value = true;
 
     try {
-      // Query for user profile (kind 0)
+      // Query for user profile
       const events = await queryEvents({
-        kinds: [0],
+        kinds: [NOSTR_KINDS.PROFILE],
         authors: [pubkey],
         limit: 1,
       });
@@ -174,9 +175,9 @@ export const useNostrUser = () => {
       // Normalize all pubkeys
       const normalizedPubkeys = pubkeys.map((pk) => normalizeKey(pk));
 
-      // Query for user profiles (kind 0)
+      // Query for user profiles
       const events = await queryEvents({
-        kinds: [0],
+        kinds: [NOSTR_KINDS.PROFILE],
         authors: normalizedPubkeys,
       });
 
@@ -225,9 +226,9 @@ export const useNostrUser = () => {
    */
   const fetchFollowList = async (pubkey: string): Promise<string[]> => {
     try {
-      // Fetch kind 3 events (contact list) for the user
+      // Fetch contact list for the user
       const events = await queryEvents({
-        kinds: [3],
+        kinds: [NOSTR_KINDS.CONTACT_LIST],
         authors: [pubkey],
         limit: 1, // Get the most recent contact list
       });

@@ -3,6 +3,8 @@
 // Lightning + Nostr + Decentralised Commerce
 // ============================================
 
+import { NOSTR_KINDS } from "./nostr-kinds";
+
 // ============================================
 // 🏪 SHOP CONFIGURATION TYPES
 // Visibility, Type & Templates for Easy Setup
@@ -2084,7 +2086,7 @@ export type PermissionEventKind = 30510 | 30511; // 30510 = grant, 30511 = revok
 
 export interface PermissionGrant {
   id: string;
-  kind: 30510;
+  kind: typeof NOSTR_KINDS.PERMISSION_GRANT;
   storeId: string;
   storeName: string;
   granterPubkey: string; // Owner/Admin who granted
@@ -2101,7 +2103,7 @@ export interface PermissionGrant {
 
 export interface PermissionRevocation {
   id: string;
-  kind: 30511;
+  kind: typeof NOSTR_KINDS.PERMISSION_REVOKE;
   storeId: string;
   revokerPubkey: string; // Owner/Admin who revoked
   revokerNpub: string;

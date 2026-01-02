@@ -3,6 +3,7 @@
 
 import { ref, computed } from "vue";
 import type { NostrUserKeys } from "~/types";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Storage key - unified with use-users.ts
 const AUTH_STORAGE_KEY = "bitspace_current_user";
@@ -353,7 +354,7 @@ export const useAuth = () => {
 
       // Sign a NIP-98 style auth event
       const authEvent = {
-        kind: 27235, // NIP-98 HTTP Auth
+        kind: NOSTR_KINDS.HTTP_AUTH,
         created_at: timestamp,
         tags: [
           ["challenge", challenge],

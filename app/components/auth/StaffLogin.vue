@@ -211,6 +211,7 @@
 
 <script setup lang="ts">
 import type { StoreUser, AuthMethod } from "~/types";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Props & Emits
 const props = defineProps<{
@@ -432,7 +433,7 @@ async function handleNip07Login() {
 
     // Sign challenge with extension
     const signedEvent = await nostrExt.signEvent({
-      kind: 22242,
+      kind: NOSTR_KINDS.STAFF_AUTH,
       created_at: Math.floor(Date.now() / 1000),
       tags: [["challenge", challenge.challenge]],
       content: "Authenticate to bnos.space",

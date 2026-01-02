@@ -5,6 +5,7 @@
 
 import type { POSNotification, NotificationPriority } from "~/types";
 import { db } from "~/db/db";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Singleton state (shared across all composable instances)
 const notifications = ref<POSNotification[]>([]);
@@ -714,7 +715,7 @@ async function initSystemNotifications() {
 
   try {
     const filter = {
-      kinds: [1],
+      kinds: [NOSTR_KINDS.TEXT_NOTE],
       "#t": ANNOUNCEMENT_TAGS,
       limit: 10,
     };
@@ -745,7 +746,7 @@ async function initSystemNotifications() {
 
     // Set up real-time subscription for new announcements
     const realtimeFilter = {
-      kinds: [1],
+      kinds: [NOSTR_KINDS.TEXT_NOTE],
       "#t": ANNOUNCEMENT_TAGS,
       since: Math.floor(Date.now() / 1000), // Only new events from now
     };

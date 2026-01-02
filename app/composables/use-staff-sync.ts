@@ -6,9 +6,7 @@
 import { finalizeEvent } from "nostr-tools/pure";
 import { hexToBytes } from "@noble/hashes/utils";
 import type { StoreUser, UserPermissions } from "~/types";
-
-// Nostr Event Kind for Staff Sync Data
-const STAFF_SYNC_KIND = 30590;
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Singleton state
 const isSyncing = ref(false);
@@ -126,7 +124,7 @@ export function useStaffSync() {
 
       // Create Nostr event
       const unsignedEvent = {
-        kind: STAFF_SYNC_KIND,
+        kind: NOSTR_KINDS.STAFF_SYNC,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
           ["d", `staff_sync_${user.id}`], // Addressable event identifier
@@ -203,7 +201,7 @@ export function useStaffSync() {
 
       // Build filter for staff sync events
       const filter = {
-        kinds: [STAFF_SYNC_KIND],
+        kinds: [NOSTR_KINDS.STAFF_SYNC],
         authors: [pubkeyHex],
         "#t": ["staff_sync"],
         limit: 1,

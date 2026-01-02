@@ -5,6 +5,7 @@
 import type { Order, PaymentMethod, PaymentProof } from "~/types";
 import type { EReceipt } from "./use-receipt";
 import { EntityId } from "~/utils/id";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 export const useReceiptGenerator = () => {
   const nostrData = useNostrData();
@@ -93,7 +94,7 @@ export const useReceiptGenerator = () => {
     if (auth.userPubkey?.value) {
       try {
         const publicReceiptEvent = {
-          kind: 31111, // Replaceable event for receipts
+          kind: NOSTR_KINDS.RECEIPT,
           pubkey: auth.userPubkey.value,
           created_at: Math.floor(Date.now() / 1000),
           tags: [
@@ -158,7 +159,7 @@ export const useReceiptGenerator = () => {
 
     try {
       const filter = {
-        kinds: [31111],
+        kinds: [NOSTR_KINDS.RECEIPT],
         "#d": [code], // Find by receipt code
         limit: 1,
       };
