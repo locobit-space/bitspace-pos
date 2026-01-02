@@ -746,14 +746,15 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 
     // 🆕 Generate public receipt with QR code (Nostr + digital)
     try {
-      const { receipt: publicReceipt, url, qrCode } = await receiptGenerator.createReceiptFromOrder(
-        order,
-        {
-          method,
-          proof: order.paymentProof,
-          paidAt: new Date().toISOString(),
-        }
-      );
+      const {
+        receipt: publicReceipt,
+        url,
+        qrCode,
+      } = await receiptGenerator.createReceiptFromOrder(order, {
+        method,
+        proof: order.paymentProof,
+        paidAt: new Date().toISOString(),
+      });
 
       // Store receipt data for display
       if (completedOrder.value) {
@@ -904,14 +905,15 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
 
     // 🆕 Generate public receipt with QR code
     try {
-      const { receipt: publicReceipt, url, qrCode } = await receiptGenerator.createReceiptFromOrder(
-        completedOrder.value,
-        {
-          method,
-          proof: completedOrder.value.paymentProof,
-          paidAt: new Date().toISOString(),
-        }
-      );
+      const {
+        receipt: publicReceipt,
+        url,
+        qrCode,
+      } = await receiptGenerator.createReceiptFromOrder(completedOrder.value, {
+        method,
+        proof: completedOrder.value.paymentProof,
+        paidAt: new Date().toISOString(),
+      });
 
       // Store receipt data
       if (completedOrder.value) {
@@ -944,7 +946,10 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
         })),
       });
     } catch (e) {
-      console.warn("[POS] Failed to generate public receipt for pending order:", e);
+      console.warn(
+        "[POS] Failed to generate public receipt for pending order:",
+        e
+      );
 
       // Fallback to legacy receipt
       selectedPendingOrder.value = null;
@@ -2370,35 +2375,33 @@ onUnmounted(() => {
             >
               💵 {{ t("payment.methods.cash") }}
             </UButton>
-          <!-- Send to Kitchen (Pay Later) Button -->
-          <UButton
-            block
-            size="md"
-            color="emerald"
-            variant="soft"
-            :disabled="!pos.cartItems.value.length"
-            :loading="isProcessing"
-            @click="sendToKitchen"
-          >
-            <span class="flex items-center gap-2">
-              <span class="text-lg">🔥</span>
-              <span>{{
-                isEditingOrder
-                  ? "Update Order"
-                  : t("pos.sendToKitchen") || "Send to Kitchen"
-              }}</span>
-              <span class="text-xs opacity-75"
-                >({{
+            <!-- Send to Kitchen (Pay Later) Button -->
+            <UButton
+              block
+              size="md"
+              color="emerald"
+              variant="soft"
+              :disabled="!pos.cartItems.value.length"
+              :loading="isProcessing"
+              @click="sendToKitchen"
+            >
+              <span class="flex items-center gap-2">
+                <span class="text-lg">🔥</span>
+                <span>{{
                   isEditingOrder
-                    ? "Save Changes"
-                    : t("pos.payLater") || "Pay Later"
-                }})</span
-              >
-            </span>
-          </UButton>
+                    ? "Update Order"
+                    : t("pos.sendToKitchen") || "Send to Kitchen"
+                }}</span>
+                <span class="text-xs opacity-75"
+                  >({{
+                    isEditingOrder
+                      ? "Save Changes"
+                      : t("pos.payLater") || "Pay Later"
+                  }})</span
+                >
+              </span>
+            </UButton>
           </div>
-
-          
         </div>
       </div>
     </div>
@@ -3582,7 +3585,23 @@ onUnmounted(() => {
           <div v-if="selectedProduct" class="space-y-5">
             <!-- Product Header -->
             <div class="flex items-center gap-4">
-              <div class="text-4xl">{{ selectedProduct.image || "📦" }}</div>
+              <div
+                v-if="
+                  selectedProduct.image &&
+                  selectedProduct.image.startsWith('http')
+                "
+              >
+                <img
+                  :src="selectedProduct.image"
+                  :alt="selectedProduct.name"
+                  class="object-cover rounded-lg w-10 h-10"
+                  loading="lazy"
+                  @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                />
+              </div>
+              <div v-else class="text-4xl">
+                📦
+              </div>
               <div class="flex-1">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">
                   {{ selectedProduct.name }}

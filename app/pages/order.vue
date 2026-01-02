@@ -416,6 +416,7 @@ const productsStore = useProductsStore();
 const ordersStore = useOrders();
 const receiptGenerator = useReceiptGenerator();
 const { format: formatPrice } = useCurrency();
+const notificationsStore = useNotifications();
 
 const isLoading = ref(true);
 const error = ref<string | null>(null);
@@ -486,6 +487,30 @@ const broadcastOrderToAdmin = (order: Order) => {
     localStorage.setItem(PENDING_ORDERS_KEY, JSON.stringify(pendingOrders));
 
     // Method 3: IndexedDB is already shared across tabs via ordersStore.createOrder()
+
+    // Method 4: Add notification to POS Notification Center
+    const itemsSummary = order.items
+      .slice(0, 3)
+      .map((i) => `${i.quantity}x ${i.product.name}`)
+      .join(", ");
+    const moreItems = order.items.length > 3 ? ` +${order.items.length - 3} more` : "";
+    const tableName = order.tableNumber || "Unknown Table";
+
+    // Create detailed notification
+    notificationsStore.addNotification({
+      type: "order",
+      title: `New Order from ${tableName}`,
+      message: `Order #${order.code || order.id}: ${itemsSummary}${moreItems}. Total: ${formatPrice(order.total)}`,
+      priority: "high",
+      actionUrl: "/orders",
+      data: {
+        orderId: order.id,
+        orderCode: order.code,
+        tableNumber: order.tableNumber,
+        total: order.total,
+        itemCount: order.items.length,
+      },
+    });
   } catch (e) {
     console.error("Failed to broadcast order:", e);
   }
@@ -830,6 +855,20 @@ const callWaiter = async () => {
 
     await ordersStore.createOrder(serviceRequest);
 
+    // Notify POS staff
+    notificationsStore.addNotification({
+      type: "alert",
+      title: `🔔 Waiter Call from ${tableInfo.value?.tableName || tableInfo.value?.tableNumber}`,
+      message: "Customer needs assistance",
+      priority: "high",
+      actionUrl: "/tables",
+      data: {
+        tableNumber: tableInfo.value?.tableNumber,
+        tableName: tableInfo.value?.tableName,
+        serviceType: "waiter_call",
+      },
+    });
+
     toast.add({
       title: t("order.waiterCalled") || "Waiter Called!",
       description:
@@ -875,6 +914,20 @@ const requestBill = async () => {
     };
 
     await ordersStore.createOrder(billRequest);
+
+    // Notify POS staff
+    notificationsStore.addNotification({
+      type: "alert",
+      title: `💰 Bill Request from ${tableInfo.value?.tableName || tableInfo.value?.tableNumber}`,
+      message: "Customer wants to pay",
+      priority: "high",
+      actionUrl: "/tables",
+      data: {
+        tableNumber: tableInfo.value?.tableNumber,
+        tableName: tableInfo.value?.tableName,
+        serviceType: "bill_request",
+      },
+    });
 
     toast.add({
       title: t("order.billRequested") || "Bill Requested!",

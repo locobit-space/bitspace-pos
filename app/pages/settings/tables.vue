@@ -22,6 +22,7 @@ const showQRModal = ref(false);
 const showZoneModal = ref(false);
 const selectedTable = ref<(typeof tables.tables.value)[number] | null>(null);
 const selectedQRTable = ref<(typeof tables.tables.value)[number] | null>(null);
+const selectedQRCodeUrl = ref<string>("");
 const saving = ref(false);
 
 // Form state
@@ -145,8 +146,10 @@ const deleteTable = async (table: (typeof tables.tables.value)[number]) => {
 };
 
 // Show QR code
-const showQR = (table: (typeof tables.tables.value)[number]) => {
+const showQR = async (table: (typeof tables.tables.value)[number]) => {
   selectedQRTable.value = table;
+  // Generate QR code data URL
+  selectedQRCodeUrl.value = await tables.generateTableQR(table.id, 250);
   showQRModal.value = true;
 };
 
@@ -163,9 +166,9 @@ const copyQRUrl = async () => {
 };
 
 // Print QR code
-const printQR = () => {
+const printQR = async () => {
   if (!selectedQRTable.value) return;
-  const qrUrl = tables.generateTableQR(selectedQRTable.value.id, 400);
+  const qrUrl = await tables.generateTableQR(selectedQRTable.value.id, 400);
   const tableName = selectedQRTable.value.name || selectedQRTable.value.number;
 
   const printWindow = window.open("", "_blank");
@@ -485,7 +488,7 @@ const removeZone = async (zoneId: string) => {
 
           <div class="text-center">
             <div class="bg-white p-6 rounded-xl inline-block shadow-lg mb-4">
-              <img :src="tables.generateTableQR(selectedQRTable.id, 250)" :alt="`QR Code for ${selectedQRTable.number}`"
+              <img :src="selectedQRCodeUrl" :alt="`QR Code for ${selectedQRTable.number}`"
                 class="w-64 h-64" />
             </div>
 
