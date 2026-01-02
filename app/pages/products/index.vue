@@ -1251,6 +1251,8 @@ const handleLookupEdit = (
 const handleProductSave = async (data: {
   name: string;
   sku: string;
+  barcode: string;
+  barcodeType: "ean13" | "upca" | "code128" | "qr" | "custom" | undefined;
   description: string;
   categoryId: string;
   unitId: string;
@@ -1289,6 +1291,8 @@ const handleProductSave = async (data: {
     const productData = {
       name: data.name,
       sku,
+      barcode: data.barcode || undefined,
+      barcodeType: data.barcodeType || undefined,
       description: data.description || undefined,
       categoryId: data.categoryId || "all",
       unitId: data.unitId || "piece",

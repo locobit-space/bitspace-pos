@@ -517,6 +517,35 @@
         letter-spacing: 1px;
       }
 
+      /* Language Switcher */
+      .lang-switcher {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1001;
+        display: flex;
+        gap: 8px;
+      }
+
+      .lang-btn {
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.6);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .lang-btn:hover,
+      .lang-btn.active {
+        background: rgba(245, 158, 11, 0.15);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #f59e0b;
+      }
+
       /* Responsive */
       @media (max-width: 700px) {
         .brand-name {
@@ -568,6 +597,12 @@
     </style>
   </head>
   <body>
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+      <a href="../en/comming.html" class="lang-btn active">EN</a>
+      <a href="../lo/comming.html" class="lang-btn">ລາວ</a>
+    </div>
+
     <div class="landing-container">
       <!-- Stars -->
       <div class="stars" id="stars"></div>

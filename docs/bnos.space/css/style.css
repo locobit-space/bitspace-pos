@@ -1,0 +1,426 @@
+/* BNOS Website - Shared Styles */
+
+/* ============================================
+   RESET & BASE STYLES
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", "Noto Sans Lao", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  background: #0a0a12;
+  color: white;
+  line-height: 1.6;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 16px 24px;
+  background: rgba(10, 10, 18, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.nav-logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-logo-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: white;
+}
+
+.nav-logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 2px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: #f59e0b;
+}
+
+.nav-cta {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.nav-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+}
+
+/* ============================================
+   LANGUAGE SWITCHER
+   ============================================ */
+
+.lang-switcher {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1001;
+  display: flex;
+  gap: 8px;
+}
+
+.lang-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.lang-btn:hover,
+.lang-btn.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.btn-primary {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px rgba(245, 158, 11, 0.3);
+}
+
+.btn-secondary {
+  padding: 16px 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-30px) rotate(5deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logoGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3),
+      0 0 60px rgba(245, 158, 11, 0.3), 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.5),
+      0 0 80px rgba(245, 158, 11, 0.5), 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: rgba(245, 158, 11, 0.25);
+  }
+  50% {
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: var(--opacity);
+    transform: scale(1);
+  }
+}
+
+/* ============================================
+   BACKGROUND ELEMENTS
+   ============================================ */
+
+.stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0;
+  animation: twinkle var(--duration) ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+.grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      rgba(245, 158, 11, 0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  z-index: 1;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.2;
+  animation: float 10s ease-in-out infinite;
+  z-index: 0;
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  top: -200px;
+  right: -150px;
+}
+
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  bottom: -150px;
+  left: -100px;
+  animation-delay: -5s;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 18, 0.98),
+    rgba(10, 10, 18, 0.8),
+    transparent
+  );
+  z-index: 100;
+}
+
+.footer-icons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.footer-icons a {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.footer-icons a:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  transform: translateY(-3px);
+}
+
+.footer-icons svg {
+  width: 20px;
+  height: 20px;
+  fill: rgba(255, 255, 255, 0.5);
+  transition: fill 0.3s ease;
+}
+
+.footer-icons a:hover svg {
+  fill: #f59e0b;
+}
+
+.footer-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 1px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .nav-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .lang-switcher {
+    top: auto;
+    bottom: 80px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  .nav-logo-text {
+    font-size: 16px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+}

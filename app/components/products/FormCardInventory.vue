@@ -39,10 +39,10 @@ const form = defineModel<FormData>({ required: true });
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t("products.inventory") || "Inventory" }}
+            {{ t("inventory.inventory", "Inventory") }}
           </h3>
           <p class="text-xs text-gray-500">
-            {{ t("products.inventoryHint") || "Stock levels and tracking" }}
+            {{ t("products.inventoryHint", "Stock levels and tracking") }}
           </p>
         </div>
       </div>
@@ -58,10 +58,10 @@ const form = defineModel<FormData>({ required: true });
           <UIcon name="i-heroicons-archive-box" class="w-5 h-5 text-gray-500" />
           <div>
             <p class="text-sm font-medium text-gray-900 dark:text-white">
-              {{ t("products.trackStock") || "Track Stock" }}
+              {{ t("products.trackStock", "Track Stock") }}
             </p>
             <p class="text-xs text-gray-500">
-              {{ t("products.trackStockHint") || "Monitor inventory levels" }}
+              {{ t("products.trackStockHint", "Monitor inventory levels") }}
             </p>
           </div>
         </div>
@@ -72,7 +72,7 @@ const form = defineModel<FormData>({ required: true });
       <div v-if="form.trackStock" class="grid grid-cols-2 gap-4 pt-2">
         <!-- Current Stock -->
         <UFormField
-          :label="t('products.currentStock') || 'Current Stock'"
+          :label="t('products.currentStock', 'Current Stock')"
           name="stock"
         >
           <UInput
@@ -89,7 +89,7 @@ const form = defineModel<FormData>({ required: true });
 
         <!-- Min Stock -->
         <UFormField
-          :label="t('products.minStock') || 'Minimum Stock'"
+          :label="t('products.minStock', 'Minimum Stock')"
           name="minStock"
         >
           <UInput
@@ -105,8 +105,10 @@ const form = defineModel<FormData>({ required: true });
           <template #hint>
             <span class="text-xs text-gray-500">
               {{
-                t("products.minStockHint") ||
-                "Alert when stock falls below this level"
+                t(
+                  "products.minStockHint",
+                  "Alert when stock falls below this level"
+                )
               }}
             </span>
           </template>

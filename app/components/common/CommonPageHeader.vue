@@ -15,7 +15,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full mb-4">
     <div
       class="flex flex-col justify-between px-4 pt-4 gap-4 md:flex-row md:items-center"
     >
@@ -31,13 +31,13 @@ defineProps({
         </p>
       </div>
 
-      <div v-if="$slots.right" class="flex-shrink-0">
+      <div v-if="$slots.right" class="shrink-0">
         <div class="flex flex-wrap gap-2">
           <slot name="right" />
         </div>
       </div>
 
-      <div v-if="$slots.actions" class="flex-shrink-0">
+      <div v-if="$slots.actions" class="shrink-0">
         <div class="flex flex-wrap gap-2">
           <slot name="actions" />
         </div>

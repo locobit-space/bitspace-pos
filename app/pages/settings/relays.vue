@@ -83,6 +83,7 @@
             placeholder="wss://relay.example.com"
             icon="i-heroicons-link"
             :color="urlError ? 'error' : undefined"
+            class="w-full"
           />
           <p v-if="urlError" class="text-xs text-red-500 mt-1">
             {{ urlError }}

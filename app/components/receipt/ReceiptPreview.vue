@@ -196,6 +196,29 @@ const close = () => {
               </span>
             </div>
             <div
+              v-if="currentReceipt.discount && currentReceipt.discount > 0"
+              class="flex justify-between text-green-600 dark:text-green-400"
+            >
+              <span>Discount</span>
+              <span
+                >-{{
+                  currency.format(
+                    currentReceipt.discount,
+                    currentReceipt.currency
+                  )
+                }}</span
+              >
+            </div>
+            <div
+              v-if="currentReceipt.tax && currentReceipt.tax > 0"
+              class="flex justify-between text-gray-500"
+            >
+              <span>Tax</span>
+              <span>{{
+                currency.format(currentReceipt.tax, currentReceipt.currency)
+              }}</span>
+            </div>
+            <div
               v-if="currentReceipt.tip"
               class="flex justify-between text-gray-500"
             >
@@ -264,10 +287,14 @@ const close = () => {
               v-if="receiptCode"
               class="mb-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3"
             >
-              <p class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
+              <p
+                class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1"
+              >
                 RECEIPT CODE
               </p>
-              <p class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono">
+              <p
+                class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono"
+              >
                 {{ receiptCode }}
               </p>
             </div>

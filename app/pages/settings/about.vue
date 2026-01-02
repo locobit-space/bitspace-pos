@@ -1,14 +1,18 @@
 <template>
   <UContainer>
-    <CommonPageHeader :title="$t('settings.about.title')" :description="$t('settings.about.description')" />
+    <CommonPageHeader
+      :title="$t('settings.about.title')"
+      :description="$t('settings.about.description')"
+    />
 
     <!-- App Info Card -->
     <UCard class="mb-6">
       <div class="flex flex-col md:flex-row items-center gap-6">
         <!-- App Logo -->
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <div
-            class="w-24 h-24 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+            class="w-24 h-24 bg-linear-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg"
+          >
             <UIcon name="i-heroicons-bolt" class="text-4xl text-white" />
           </div>
         </div>
@@ -21,7 +25,9 @@
           <p class="text-muted mt-1">
             {{ $t("settings.about.tagline") }}
           </p>
-          <div class="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
+          <div
+            class="flex flex-wrap gap-2 mt-3 justify-center md:justify-start"
+          >
             <UBadge color="amber" variant="subtle" size="lg">
               <UIcon name="i-heroicons-tag" class="mr-1" />
               v{{ appVersion }}
@@ -82,10 +88,20 @@
       </template>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div v-for="feature in features" :key="feature.title"
-          class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" :class="feature.bgColor">
-            <UIcon :name="feature.icon" :class="feature.iconColor" class="text-xl" />
+        <div
+          v-for="feature in features"
+          :key="feature.title"
+          class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        >
+          <div
+            class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
+            :class="feature.bgColor"
+          >
+            <UIcon
+              :name="feature.icon"
+              :class="feature.iconColor"
+              class="text-xl"
+            />
           </div>
           <div>
             <p class="font-medium text-gray-900 dark:text-white">
@@ -107,7 +123,13 @@
       </template>
 
       <div class="flex flex-wrap gap-2">
-        <UBadge v-for="tech in techStack" :key="tech.name" :color="tech.color" variant="subtle" size="lg">
+        <UBadge
+          v-for="tech in techStack"
+          :key="tech.name"
+          :color="tech.color"
+          variant="subtle"
+          size="lg"
+        >
           {{ tech.name }}
         </UBadge>
       </div>
@@ -128,18 +150,34 @@
           {{ $t("settings.about.helpCenter") }}
         </UButton>
 
-        <UButton variant="soft" color="neutral" block href="lightning:bnos@blink.sv">
+        <UButton
+          variant="soft"
+          color="neutral"
+          block
+          href="lightning:bnos@blink.sv"
+        >
           <UIcon name="i-heroicons-heart" class="mr-2" />
           {{ $t("settings.about.supportProject") }}
         </UButton>
 
-        <UButton variant="soft" color="neutral" block href="https://github.com/locobit-space/bitspace-pos"
-          target="_blank">
+        <UButton
+          variant="soft"
+          color="neutral"
+          block
+          href="https://github.com/locobit-space/bitspace-pos"
+          target="_blank"
+        >
           <UIcon name="i-simple-icons-github" class="mr-2" />
           {{ $t("settings.about.github") }}
         </UButton>
 
-        <UButton variant="soft" color="neutral" block href="https://nostr.com" target="_blank">
+        <UButton
+          variant="soft"
+          color="neutral"
+          block
+          href="https://nostr.com"
+          target="_blank"
+        >
           <UIcon name="i-heroicons-signal" class="mr-2" />
           {{ $t("settings.about.nostrProtocol") }}
         </UButton>

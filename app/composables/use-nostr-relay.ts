@@ -10,6 +10,11 @@ import type { RelayConfig } from "~/types";
 
 const STORAGE_KEY = "bitspace_relays";
 
+const { public: { devRelayUrl = '' } } = useRuntimeConfig();
+
+const _devRelays = devRelayUrl ? JSON.parse(devRelayUrl) as string[] : [];
+
+// Default relay configurations
 const _DEFAULT_DEV: RelayConfig[] = [
   {
     url: "wss://relay.bnos.space",
@@ -19,7 +24,13 @@ const _DEFAULT_DEV: RelayConfig[] = [
     isPrimary: true,
   },
   // Uncomment for local development:
-  // { url: 'ws://localhost:8080', read: true, write: true, outbox: false, isPrimary: false },
+  ..._devRelays.map((url: string, i) => ({
+    url,
+    read: true,
+    write: true,
+    outbox: false,
+    isPrimary: i === 0,
+  })) || [],
 ];
 
 const _DEFAULT_PROD: RelayConfig[] = [

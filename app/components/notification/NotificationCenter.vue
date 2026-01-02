@@ -712,12 +712,12 @@ const announcementCategories = computed(() => {
                         <!-- Message (with markdown support for system updates) -->
                         <div
                           v-if="notification.type === 'system_update'"
-                          class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed prose prose-sm dark:prose-invert max-w-none line-clamp-3"
+                          class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed prose prose-sm dark:prose-invert max-w-none max-h-32 overflow-y-auto pr-2"
                           v-html="parseMarkdown(notification.message)"
                         />
                         <p
                           v-else
-                          class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2"
+                          class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-h-24 overflow-y-auto pr-2"
                         >
                           {{ notification.message }}
                         </p>

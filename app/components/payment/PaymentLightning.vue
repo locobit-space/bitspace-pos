@@ -2,7 +2,7 @@
 <!-- ⚡ Lightning Payment Component with QR Code -->
 <script setup lang="ts">
 import type { CurrencyCode } from "~/types";
-import QrcodeVue from 'qrcode.vue';
+import QrcodeVue from "qrcode.vue";
 
 const props = defineProps<{
   amount: number; // in sats
@@ -25,9 +25,9 @@ const pos = usePOS();
 const { t } = useI18n();
 
 // State
-const paymentStep = ref<"locked" | "generating" | "waiting" | "success" | "error">(
-  "generating"
-);
+const paymentStep = ref<
+  "locked" | "generating" | "waiting" | "success" | "error"
+>("generating");
 const errorMessage = ref("");
 const countdown = ref(600); // 10 minutes
 const showBolt12 = ref(false);
@@ -358,7 +358,9 @@ onUnmounted(() => {
   <div class="text-center">
     <!-- Header -->
     <div class="mb-6">
-      <h2 class="text-2xl font-bold flex items-center justify-center gap-2 text-gray-900 dark:text-white">
+      <h2
+        class="text-2xl font-bold flex items-center justify-center gap-2 text-gray-900 dark:text-white"
+      >
         <span class="text-3xl">⚡</span>
         {{ t("payment.lightning.title") }}
       </h2>
@@ -375,12 +377,30 @@ onUnmounted(() => {
       <div class="text-gray-500 dark:text-gray-400 text-sm mt-1">
         ≈ {{ currencyHelper.format(fiatAmount, currency) }}
       </div>
+      <div
+        v-if="pos.discountAmount.value > 0"
+        class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center"
+      >
+        <span class="text-sm text-green-600 dark:text-green-400"
+          >Discount Applied</span
+        >
+        <span class="text-sm font-medium text-green-600 dark:text-green-400"
+          >-{{
+            currencyHelper.format(pos.discountAmount.value, currency)
+          }}</span
+        >
+      </div>
       <!-- Show Lightning Address for LNURL provider -->
-      <div v-if="isLNURLProvider && lightningAddress" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+      <div
+        v-if="isLNURLProvider && lightningAddress"
+        class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700"
+      >
         <div class="text-xs text-gray-500 dark:text-gray-400">
           {{ t("payment.lightning.receivingTo") }}
         </div>
-        <div class="text-sm font-medium text-gray-900 dark:text-white flex items-center justify-center gap-2">
+        <div
+          class="text-sm font-medium text-gray-900 dark:text-white flex items-center justify-center gap-2"
+        >
           <span>⚡</span>
           <span>{{ lightningAddress }}</span>
         </div>
@@ -392,21 +412,40 @@ onUnmounted(() => {
 
     <!-- Locked State (need to unlock encryption) -->
     <div v-if="paymentStep === 'locked'" class="py-12 space-y-4">
-      <div class="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto">
-        <UIcon name="i-heroicons-lock-closed" class="w-10 h-10 text-amber-500" />
+      <div
+        class="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto"
+      >
+        <UIcon
+          name="i-heroicons-lock-closed"
+          class="w-10 h-10 text-amber-500"
+        />
       </div>
       <h3 class="text-xl font-bold text-gray-900 dark:text-white">
         {{ t("payment.lightning.unlockRequired") || "Unlock Required" }}
       </h3>
       <p class="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-        {{ t("payment.lightning.unlockDescription") || "Enter your master password to access encrypted API keys." }}
+        {{
+          t("payment.lightning.unlockDescription") ||
+          "Enter your master password to access encrypted API keys."
+        }}
       </p>
 
       <div class="max-w-xs mx-auto space-y-3">
-        <UInput v-model="unlockPassword" type="password" :placeholder="t('settings.security.enterPassword')"
-          class="w-full" @keyup.enter="handleUnlock" />
+        <UInput
+          v-model="unlockPassword"
+          type="password"
+          :placeholder="t('settings.security.enterPassword')"
+          class="w-full"
+          @keyup.enter="handleUnlock"
+        />
         <p v-if="unlockError" class="text-red-500 text-sm">{{ unlockError }}</p>
-        <UButton color="primary" block :loading="isUnlocking" icon="i-heroicons-lock-open" @click="handleUnlock">
+        <UButton
+          color="primary"
+          block
+          :loading="isUnlocking"
+          icon="i-heroicons-lock-open"
+          @click="handleUnlock"
+        >
           {{ t("settings.security.unlock") || "Unlock" }}
         </UButton>
       </div>
@@ -418,7 +457,9 @@ onUnmounted(() => {
 
     <!-- Generating State -->
     <div v-else-if="paymentStep === 'generating'" class="py-12">
-      <div class="animate-spin w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mx-auto" />
+      <div
+        class="animate-spin w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mx-auto"
+      />
       <p class="mt-4 text-gray-500 dark:text-gray-400">
         {{ t("payment.lightning.generating") }}
       </p>
@@ -428,21 +469,39 @@ onUnmounted(() => {
     <div v-else-if="paymentStep === 'waiting'" class="space-y-4">
       <!-- QR Type Toggle -->
       <div class="flex justify-center gap-2 mb-4">
-        <UButton :color="!showBolt12 ? 'primary' : 'neutral'" :variant="!showBolt12 ? 'solid' : 'outline'" size="sm"
-          @click="showBolt12 = false">
+        <UButton
+          :color="!showBolt12 ? 'primary' : 'neutral'"
+          :variant="!showBolt12 ? 'solid' : 'outline'"
+          size="sm"
+          @click="showBolt12 = false"
+        >
           BOLT11 (Standard)
         </UButton>
-        <UButton :color="showBolt12 ? 'primary' : 'neutral'" :variant="showBolt12 ? 'solid' : 'outline'" size="sm"
-          @click="showBolt12 = true">
+        <UButton
+          :color="showBolt12 ? 'primary' : 'neutral'"
+          :variant="showBolt12 ? 'solid' : 'outline'"
+          size="sm"
+          @click="showBolt12 = true"
+        >
           BOLT12 (Static)
         </UButton>
       </div>
 
       <!-- QR Code -->
       <div class="bg-white p-4 rounded-2xl inline-block shadow-lg">
-        <QrcodeVue v-if="lightning.invoiceQR.value" :value="lightning.invoiceQR.value" :size="250" level="M"
-          render-as="svg" background="#ffffff" foreground="#000000" />
-        <div v-else class="w-64 h-64 bg-gray-200 flex items-center justify-center">
+        <QrcodeVue
+          v-if="lightning.invoiceQR.value"
+          :value="lightning.invoiceQR.value"
+          :size="250"
+          level="M"
+          render-as="svg"
+          background="#ffffff"
+          foreground="#000000"
+        />
+        <div
+          v-else
+          class="w-64 h-64 bg-gray-200 flex items-center justify-center"
+        >
           <span class="text-gray-400">No QR</span>
         </div>
       </div>
@@ -457,7 +516,12 @@ onUnmounted(() => {
 
       <!-- Invoice Actions -->
       <div class="flex justify-center gap-3">
-        <UButton color="neutral" variant="outline" icon="i-heroicons-clipboard-document" @click="copyInvoice">
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-heroicons-clipboard-document"
+          @click="copyInvoice"
+        >
           {{ t("payment.lightning.copyInvoice") }}
         </UButton>
         <UButton color="primary" icon="i-heroicons-bolt" @click="openWallet">
@@ -467,30 +531,41 @@ onUnmounted(() => {
 
       <!-- Invoice String (truncated) -->
       <div
-        class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-mono text-gray-500 dark:text-gray-400 break-all max-h-20 overflow-hidden">
+        class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-mono text-gray-500 dark:text-gray-400 break-all max-h-20 overflow-hidden"
+      >
         {{ lightning.invoiceQR.value?.slice(0, 100) }}...
       </div>
 
       <!-- Payment Status Indicator -->
       <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
         <div class="flex items-center justify-center gap-3">
-          <div class="w-3 h-3 rounded-full animate-pulse" :class="{
-            'bg-amber-500': paymentStatusDisplay.color === 'amber',
-            'bg-blue-500': paymentStatusDisplay.color === 'blue',
-            'bg-green-500': paymentStatusDisplay.color === 'green',
-            'bg-red-500': paymentStatusDisplay.color === 'red',
-            'bg-gray-500': paymentStatusDisplay.color === 'gray',
-          }" />
-          <UIcon :name="paymentStatusDisplay.icon" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <div
+            class="w-3 h-3 rounded-full animate-pulse"
+            :class="{
+              'bg-amber-500': paymentStatusDisplay.color === 'amber',
+              'bg-blue-500': paymentStatusDisplay.color === 'blue',
+              'bg-green-500': paymentStatusDisplay.color === 'green',
+              'bg-red-500': paymentStatusDisplay.color === 'red',
+              'bg-gray-500': paymentStatusDisplay.color === 'gray',
+            }"
+          />
+          <UIcon
+            :name="paymentStatusDisplay.icon"
+            class="w-5 h-5 text-gray-600 dark:text-gray-400"
+          />
           <span class="font-medium text-gray-700 dark:text-gray-300">
             {{ paymentStatusDisplay.text }}
           </span>
         </div>
 
         <!-- Provider Info -->
-        <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+        <div
+          class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2"
+        >
           <span>{{ providerName }}</span>
-          <span v-if="hasAutoDetection" class="text-green-500">• {{ t("payment.lightning.autoDetection") }}</span>
+          <span v-if="hasAutoDetection" class="text-green-500"
+            >• {{ t("payment.lightning.autoDetection") }}</span
+          >
         </div>
       </div>
 
@@ -505,20 +580,34 @@ onUnmounted(() => {
       </div>
 
       <!-- Manual Confirmation for LNURL/WebLN (no automatic callback) -->
-      <div v-if="needsManualConfirm" class="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+      <div
+        v-if="needsManualConfirm"
+        class="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl"
+      >
         <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
           {{ t("payment.lightning.lnurlManualConfirmHint") }}
         </p>
-        <UButton color="green" size="lg" :loading="checkingPayment" icon="i-heroicons-check-circle" class="w-full" block
-          @click="confirmPaymentReceived">
+        <UButton
+          color="green"
+          size="lg"
+          :loading="checkingPayment"
+          icon="i-heroicons-check-circle"
+          class="w-full"
+          block
+          @click="confirmPaymentReceived"
+        >
           {{ t("payment.lightning.confirmReceived") }}
         </UButton>
       </div>
 
       <!-- Emergency Manual Approve (shows after 30 seconds for all providers) -->
-      <div v-if="showManualApprove && !needsManualConfirm"
-        class="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-        <div class="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
+      <div
+        v-if="showManualApprove && !needsManualConfirm"
+        class="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
+      >
+        <div
+          class="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2"
+        >
           <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
           <span class="font-semibold text-sm">{{
             t("payment.lightning.manualApproveTitle") || "Manual Override"
@@ -530,8 +619,15 @@ onUnmounted(() => {
             "If customer has paid but auto-detection failed (network issue, system error), you can manually approve:"
           }}
         </p>
-        <UButton color="red" variant="soft" size="lg" :loading="checkingPayment" icon="i-heroicons-shield-check"
-          class="w-full" @click="emergencyApprove">
+        <UButton
+          color="red"
+          variant="soft"
+          size="lg"
+          :loading="checkingPayment"
+          icon="i-heroicons-shield-check"
+          class="w-full"
+          @click="emergencyApprove"
+        >
           {{
             t("payment.lightning.manualApprove") ||
             "⚠️ Manually Approve Payment"
@@ -546,11 +642,14 @@ onUnmounted(() => {
       </div>
 
       <!-- Waiting for manual approve option -->
-      <div v-else-if="
-        !needsManualConfirm &&
-        manualApproveTimer > 0 &&
-        paymentStep === 'waiting'
-      " class="mt-4 text-center">
+      <div
+        v-else-if="
+          !needsManualConfirm &&
+          manualApproveTimer > 0 &&
+          paymentStep === 'waiting'
+        "
+        class="mt-4 text-center"
+      >
         <p class="text-xs text-gray-400">
           {{
             t("payment.lightning.manualApproveAvailableIn") ||
@@ -562,10 +661,14 @@ onUnmounted(() => {
     </div>
 
     <!-- Success State -->
-    <div v-else-if="paymentStep === 'success'" class="py-8 transition-all duration-500" :class="{
-      'opacity-0 scale-95': isFadingOut,
-      'opacity-100 scale-100': !isFadingOut,
-    }">
+    <div
+      v-else-if="paymentStep === 'success'"
+      class="py-8 transition-all duration-500"
+      :class="{
+        'opacity-0 scale-95': isFadingOut,
+        'opacity-100 scale-100': !isFadingOut,
+      }"
+    >
       <!-- Success Animation -->
       <div class="relative">
         <!-- Ripple Effect -->
@@ -578,9 +681,20 @@ onUnmounted(() => {
 
         <!-- Checkmark -->
         <div
-          class="relative w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 animate-bounce">
-          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+          class="relative w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 animate-bounce"
+        >
+          <svg
+            class="w-10 h-10 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="3"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
       </div>
@@ -594,7 +708,9 @@ onUnmounted(() => {
       </p>
 
       <!-- Amount Received -->
-      <div class="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+      <div
+        class="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl"
+      >
         <div class="text-2xl font-bold text-green-600 dark:text-green-400">
           ⚡ {{ currencyHelper.format(amount, "SATS") }}
         </div>
@@ -605,7 +721,9 @@ onUnmounted(() => {
 
       <!-- Auto-close countdown -->
       <div class="mt-6 flex items-center justify-center gap-2 text-gray-400">
-        <div class="w-8 h-8 rounded-full border-2 border-green-500 flex items-center justify-center">
+        <div
+          class="w-8 h-8 rounded-full border-2 border-green-500 flex items-center justify-center"
+        >
           <span class="text-sm font-bold text-green-500">{{
             successCountdown
           }}</span>
@@ -616,7 +734,9 @@ onUnmounted(() => {
 
     <!-- Error State (inline, for when modal is closed) -->
     <div v-else-if="paymentStep === 'error' && !showErrorModal" class="py-8">
-      <div class="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div
+        class="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+      >
         <span class="text-4xl">✕</span>
       </div>
       <h3 class="text-xl font-bold text-red-600 dark:text-red-400">
@@ -642,7 +762,9 @@ onUnmounted(() => {
     </div>
 
     <!-- Tips Section -->
-    <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-xl text-left text-sm">
+    <div
+      class="mt-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-xl text-left text-sm"
+    >
       <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">
         💡 {{ t("payment.lightning.tips") }}
       </h4>
@@ -658,8 +780,13 @@ onUnmounted(() => {
     <UModal v-model:open="showErrorModal">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 text-center">
-          <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <UIcon name="i-heroicons-exclamation-triangle" class="w-8 h-8 text-red-500" />
+          <div
+            class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <UIcon
+              name="i-heroicons-exclamation-triangle"
+              class="w-8 h-8 text-red-500"
+            />
           </div>
 
           <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -671,8 +798,10 @@ onUnmounted(() => {
           </p>
 
           <!-- Error Details for Lightning Not Configured -->
-          <div v-if="!lightning.settings.value?.isConfigured"
-            class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left">
+          <div
+            v-if="!lightning.settings.value?.isConfigured"
+            class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left"
+          >
             <h4 class="font-medium text-amber-700 dark:text-amber-400 mb-2">
               ⚡ {{ t("payment.lightning.configureRequired") }}
             </h4>
@@ -680,7 +809,12 @@ onUnmounted(() => {
               {{ t("payment.lightning.configureDescription") }}
             </p>
             <NuxtLink to="/settings/lightning">
-              <UButton color="amber" variant="soft" icon="i-heroicons-cog-6-tooth" size="sm">
+              <UButton
+                color="amber"
+                variant="soft"
+                icon="i-heroicons-cog-6-tooth"
+                size="sm"
+              >
                 {{ t("payment.lightning.goToSettings") }}
               </UButton>
             </NuxtLink>
@@ -690,7 +824,13 @@ onUnmounted(() => {
             <UButton color="primary" size="lg" block @click="handleTryAgain">
               {{ t("common.tryAgain") }}
             </UButton>
-            <UButton color="neutral" variant="outline" size="lg" block @click="handleCancel">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="lg"
+              block
+              @click="handleCancel"
+            >
               {{ t("payment.lightning.cancelPayment") }}
             </UButton>
           </div>

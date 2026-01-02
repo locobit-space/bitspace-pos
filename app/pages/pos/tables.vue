@@ -622,8 +622,8 @@
             <UInput
               v-model="zone.name"
               class="flex-1"
-              @change="updateZoneName(zone)"
               placeholder="Zone Name"
+              @change="updateZoneName(zone)"
             />
             <UButton
               variant="ghost"
@@ -697,11 +697,11 @@
       </template>
 
       <template #footer>
-        <div class="flex gap-2">
+        <div class="flex w-full gap-2">
           <UButton
             color="neutral"
             variant="outline"
-            class="flex-1"
+            block
             icon="i-heroicons-clipboard-document"
             @click="copyQRUrl"
           >
@@ -709,7 +709,7 @@
           </UButton>
           <UButton
             color="primary"
-            class="flex-1"
+            block
             icon="i-heroicons-printer"
             @click="printQR"
           >
@@ -730,7 +730,10 @@
 </template>
 
 <script setup lang="ts">
-// ... existing imports ...
+
+useHead({
+  title: "POS Tables",
+});
 
 const ordersStore = useOrders();
 

@@ -1016,16 +1016,26 @@ export function useTables() {
 
   /**
    * Generate QR code image URL for a table
-   * Uses a public QR code API
+   * Uses native qrcode package (no external API required)
    */
   const generateTableQR = async (
     tableId: string,
     size: number = 200
   ): Promise<string> => {
     const url = await getTableOrderingUrl(tableId);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-      url
-    )}`;
+
+    // Use native qrcode package instead of external API
+    const QRCode = await import('qrcode');
+    const qrDataUrl = await QRCode.toDataURL(url, {
+      width: size,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+    });
+
+    return qrDataUrl; // Returns data:image/png;base64,...
   };
 
   /**

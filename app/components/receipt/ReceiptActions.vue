@@ -282,7 +282,7 @@ const paymentMethodDisplay = computed(() => {
           @click="handleEBill"
         >
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">
-            📱
+            <Icon name="system-uicons:iphone-portrait" />
           </div>
           <div class="font-medium text-gray-900 dark:text-white text-sm">
             {{ t("receipt.eBill") }}
@@ -317,7 +317,7 @@ const paymentMethodDisplay = computed(() => {
           "
         >
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">
-            👁️
+            <Icon name="mynaui:eye" class="w-8 h-8 mx-auto" />
           </div>
           <div class="font-medium text-gray-900 dark:text-white text-sm">
             {{ t("receipt.preview") }}
@@ -371,7 +371,7 @@ const paymentMethodDisplay = computed(() => {
         block
         size="lg"
         color="primary"
-        class="bg-gradient-to-r from-amber-500 to-orange-500"
+        class="bg-linear-to-r from-amber-500 to-orange-500"
         @click="handleSkip"
       >
         {{
@@ -447,7 +447,7 @@ const paymentMethodDisplay = computed(() => {
             <UButton
               color="neutral"
               variant="outline"
-              class="flex-1"
+              block
               icon="i-heroicons-clipboard-document"
               @click="copyEBillLink"
             >
@@ -455,7 +455,7 @@ const paymentMethodDisplay = computed(() => {
             </UButton>
             <UButton
               color="primary"
-              class="flex-1"
+              block
               @click="showQRModal = false"
             >
               {{ t("common.done") }}

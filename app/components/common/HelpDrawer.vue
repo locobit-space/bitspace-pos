@@ -65,6 +65,16 @@ function handleWriteNew() {
               </h2>
             </div>
             <div class="flex items-center gap-2">
+              <UButton 
+              to="https://discord.gg/aNwEQQF3w8"
+                color="gray"
+                variant="ghost"
+                size="xs"
+                icon="skill-icons:discord"
+                target="_blank"
+              >
+                {{ t("help.joinDiscord", "Join Discord") }}
+              </UButton>
               <!-- Sync Status -->
               <UButton
                 v-if="nostrHelp.isSyncing.value"
