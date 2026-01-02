@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     public: {
       version: process.env.npm_package_version || "0.0.1",
       buildTime: new Date().toISOString(),
+      devRelayUrl: process.env.PUBLIC_DEV_RELAY_URL,
     },
   },
 

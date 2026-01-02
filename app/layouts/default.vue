@@ -61,20 +61,38 @@ const shop = useShop();
 // Sidebar state for mobile
 const sidebarOpen = ref(false);
 
-// Track if layout is initialized
-const isLayoutReady = ref(false);
-
 // Get navigation visibility from page (if provided)
 const pageNavigationControl = inject<Ref<boolean> | undefined>("shouldShowNavigation", undefined);
+
+// Fast setup check using localStorage (synchronous, no delay)
+const hasCompletedSetup = ref(false);
+
+// Initialize setup check immediately from localStorage
+if (import.meta.client) {
+  const companyCode = localStorage.getItem("bitspace_company_code");
+  const shopConfigStr = localStorage.getItem("shopConfig");
+
+  // Shop is setup if we have a company code OR a shop config with name
+  if (companyCode) {
+    hasCompletedSetup.value = true;
+  } else if (shopConfigStr) {
+    try {
+      const shopConfig = JSON.parse(shopConfigStr);
+      hasCompletedSetup.value = !!shopConfig?.name;
+    } catch {
+      hasCompletedSetup.value = false;
+    }
+  }
+}
 
 // Check if navigation should be shown
 const showNavigation = computed(() => {
   // If page provides explicit control, use that (more accurate)
   if (pageNavigationControl !== undefined) {
-    return isLayoutReady.value && pageNavigationControl.value;
+    return pageNavigationControl.value;
   }
-  // Otherwise fall back to shop setup check
-  return isLayoutReady.value && shop.isSetupComplete.value;
+  // Otherwise use fast localStorage check
+  return hasCompletedSetup.value;
 });
 
 // Close sidebar on route change
@@ -95,14 +113,10 @@ onMounted(async () => {
   // Initialize system notifications
   initSystemNotifications();
 
-  // Initialize users for authenticated pages only
-  await usersComposable.initialize();
-
-  // Initialize shop to ensure isSetupComplete has correct value
-  await shop.init();
-
-  // Mark layout as ready
-  isLayoutReady.value = true;
+  // Initialize users and shop in background (non-blocking)
+  // Navigation is already shown via localStorage check above
+  usersComposable.initialize();
+  shop.init();
 });
 </script>
 
