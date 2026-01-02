@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lo">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BNOS - Bitcoin Network Operating System | Lightning-Powered POS</title>
+    <title>BNOS - ລະບົບປະຕິບັດການທຸລະກິດ Bitcoin Nostr | ລະບົບຈຸດຂາຍ Lightning</title>
     <meta
       name="description"
-      content="BNOS is a Lightning-Powered Point of Sale System & Business OS built on Nostr Protocol. Decentralized, sovereign, and privacy-first for modern businesses."
+      content="BNOS ເປັນລະບົບຈຸດຂາຍທີ່ໃຊ້ພະລັງງານ Lightning ແລະ ລະບົບປະຕິບັດການທຸລະກິດທີ່ສ້າງຂຶ້ນດ້ວຍໂປຣໂຕຄອນ Nostr. ແບບກະຈາຍສ່ວນ, ເປັນເຈົ້າຂອງເອງ ແລະ ເອົາໃຈໃສ່ຄວາມເປັນສ່ວນຕົວ."
     />
     <meta
       name="keywords"
-      content="BNOS, POS, Bitcoin, Lightning, Nostr, Point of Sale, Business OS, Decentralized"
+      content="BNOS, POS, Bitcoin, Lightning, Nostr, ລະບົບຈຸດຂາຍ, ລະບົບປະຕິບັດການທຸລະກິດ, ກະຈາຍສ່ວນ"
     />
-    <meta property="og:title" content="BNOS - Business Operating System" />
+    <meta property="og:title" content="BNOS - ລະບົບປະຕິບັດການທຸລະກິດ Bitcoin Nostr" />
     <meta
       property="og:description"
-      content="Lightning-Powered Point of Sale built on Nostr Protocol. Decentralized, sovereign, and privacy-first."
+      content="ລະບົບຈຸດຂາຍທີ່ໃຊ້ພະລັງງານ Lightning ສ້າງຂຶ້ນດ້ວຍໂປຣໂຕຄອນ Nostr. ແບບກະຈາຍສ່ວນ, ເປັນເຈົ້າຂອງເອງ ແລະ ເອົາໃຈໃສ່ຄວາມເປັນສ່ວນຕົວ."
     />
     <meta property="og:type" content="website" />
     <link
@@ -26,7 +26,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -41,7 +41,7 @@
       }
 
       body {
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        font-family: "Noto Sans Lao", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
           Roboto, sans-serif;
         background: #0a0a12;
         color: white;
@@ -830,6 +830,12 @@
     </style>
   </head>
   <body>
+    <!-- Language Switcher -->
+    <div class="lang-switcher" style="position:fixed;top:20px;right:20px;z-index:1001;display:flex;gap:8px;">
+      <a href="../en/index.html" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);text-decoration:none;font-size:13px;font-weight:500;transition:all 0.3s;">EN</a>
+      <a href="../lo/index.html" style="padding:8px 16px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;color:#f59e0b;text-decoration:none;font-size:13px;font-weight:500;">ລາວ</a>
+    </div>
+
     <!-- Navigation -->
     <nav class="nav">
       <div class="nav-content">
@@ -842,13 +848,13 @@
           <span class="nav-logo-text">BNOS</span>
         </a>
         <ul class="nav-links">
-          <li><a href="#features">Features</a></li>
-          <li><a href="#how-it-works">How It Works</a></li>
-          <li><a href="#technology">Technology</a></li>
-          <li><a href="manual.html">Documentation</a></li>
+          <li><a href="#features">ຄຸນສົມບັດ</a></li>
+          <li><a href="#how-it-works">ວິທີການເຮັດວຽກ</a></li>
+          <li><a href="#technology">ເຕັກໂນໂລຊີ</a></li>
+          <li><a href="manual.html">ເອກະສານ</a></li>
         </ul>
         <a href="https://app.bnos.space" class="nav-cta post-launch"
-          >Get Started</a
+          >ເລີ່ມຕົ້ນໃຊ້ງານ</a
         >
       </div>
     </nav>
@@ -863,35 +869,35 @@
         <div class="pre-launch">
           <div class="hero-badge">
             <div class="hero-badge-dot"></div>
-            <span class="hero-badge-text">Coming Soon</span>
+            <span class="hero-badge-text">ກຳລັງມາເຖິງ</span>
           </div>
           <h1 class="hero-title">
-            The Future of<br />
-            <span>Business Operations</span>
+            ອະນາຄົດຂອງ<br />
+            <span>ການດຳເນີນທຸລະກິດ</span>
           </h1>
           <p class="hero-subtitle">
-            Lightning-powered Point of Sale built on Nostr Protocol.
-            Decentralized, sovereign, and privacy-first for modern businesses.
+            ລະບົບຈຸດຂາຍທີ່ໃຊ້ພະລັງງານ Lightning ສ້າງຂຶ້ນດ້ວຍໂປຣໂຕຄອນ Nostr.
+            ແບບກະຈາຍສ່ວນ, ເປັນເຈົ້າຂອງເອງ ແລະ ເອົາໃຈໃສ່ຄວາມເປັນສ່ວນຕົວສຳລັບທຸລະກິດທີ່ທັນສະໄໝ.
           </p>
           <!-- Countdown -->
           <div class="countdown-section">
-            <p class="countdown-label">Launching In</p>
+            <p class="countdown-label">ກຳລັງເປີດຕົວໃນອີກ</p>
             <div class="countdown" id="countdown">
               <div class="countdown-item">
                 <span class="countdown-value" id="days">--</span>
-                <span class="countdown-unit">Days</span>
+                <span class="countdown-unit">ມື້</span>
               </div>
               <div class="countdown-item">
                 <span class="countdown-value" id="hours">--</span>
-                <span class="countdown-unit">Hours</span>
+                <span class="countdown-unit">ຊົ່ວໂມງ</span>
               </div>
               <div class="countdown-item">
                 <span class="countdown-value" id="minutes">--</span>
-                <span class="countdown-unit">Mins</span>
+                <span class="countdown-unit">ນາທີ</span>
               </div>
               <div class="countdown-item">
                 <span class="countdown-value" id="seconds">--</span>
-                <span class="countdown-unit">Secs</span>
+                <span class="countdown-unit">ວິນາທີ</span>
               </div>
             </div>
             <div class="launch-date">
@@ -900,7 +906,7 @@
                   d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"
                 />
               </svg>
-              <span>January 1, 2026 • 09:09 AM</span>
+              <span>1 ມັງກອນ 2026 • 09:09 AM</span>
             </div>
           </div>
         </div>
@@ -909,15 +915,15 @@
         <div class="post-launch">
           <div class="hero-badge">
             <div class="hero-badge-dot"></div>
-            <span class="hero-badge-text">🚀 We Are Live!</span>
+            <span class="hero-badge-text">🚀 ເປີດຕົວແລ້ວ!</span>
           </div>
           <h1 class="hero-title">
-            The Future of<br />
-            <span>Business Operations</span>
+            ອະນາຄົດຂອງ<br />
+            <span>ການດຳເນີນທຸລະກິດ</span>
           </h1>
           <p class="hero-subtitle">
-            Lightning-powered Point of Sale built on Nostr Protocol.
-            Decentralized, sovereign, and privacy-first for modern businesses.
+            ລະບົບຂາຍທີ່ໃຊ້ຄວາມສາມາດ Lightning ສ້າງຂຶ້ນດ້ວຍໂປຣໂຕຄອນ Nostr.
+            ແບບກະຈາຍສູນ, ເປັນເຈົ້າຂອງຂໍ້ມູນເອງ ແລະ ມີຄວາມເປັນສ່ວນຕົວສຳລັບທຸລະກິດທີ່ທັນສະໄໝ.
           </p>
         </div>
         <div class="hero-buttons post-launch">
@@ -925,9 +931,9 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
-            Get Started
+            ເລີ່ມຕົ້ນໃຊ້ງານ
           </a>
-          <a href="manual.html" class="btn-secondary">Read Documentation</a>
+          <a href="manual.html" class="btn-secondary">ອ່ານເອກະສານ</a>
         </div>
       </div>
     </section>
@@ -936,60 +942,54 @@
     <section class="features" id="features">
       <div class="container">
         <div class="section-header">
-          <span class="section-tag">Features</span>
-          <h2 class="section-title">Everything You Need</h2>
+          <span class="section-tag">ຄຸນສົມບັດ</span>
+          <h2 class="section-title">ທຸກສິ່ງທີ່ເຈົ້າຕ້ອງການ</h2>
           <p class="section-subtitle">
-            A complete business operating system designed for the future of
-            commerce.
+            ລະບົບປະຕິບັດການທຸລະກິດທີ່ອອກແບບມາສຳລັບອະນາຄົດຂອງການຄ້າ.
           </p>
         </div>
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-icon">⚡</div>
-            <h3 class="feature-title">Lightning Payments</h3>
+            <h3 class="feature-title">ການຈ່າຍເງິນ Lightning</h3>
             <p class="feature-desc">
-              Accept Bitcoin payments instantly with Lightning Network.
-              Near-zero fees and instant settlement.
+             ຮັບຊຳລະດ້ວຍ Bitcoin ທັນທີດ້ວຍ Lightning Network. ຄ່າທຳນຽມເກືອບສູນ ແລະ ການຊຳລະທັນທີ.
             </p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">🔐</div>
-            <h3 class="feature-title">Non-Custodial</h3>
+            <h3 class="feature-title">ບໍ່ມີການຝາກຮັກສາ</h3>
             <p class="feature-desc">
-              Your keys, your coins. We never hold your funds. Complete
-              financial sovereignty.
+             ກະແຈຂອງທ່ານ, ຫຼຽນຂອງທ່ານ. ພວກເຮົາບໍ່ເຄີຍຖືເງິນຂອງທ່ານ. ອະທິປະໄຕທາງດ້ານການເງິນຢ່າງຄົບຖ້ວນ.
             </p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">🌐</div>
-            <h3 class="feature-title">Fully Decentralized</h3>
+            <h3 class="feature-title">ກະຈາຍສ່ວນແບບເຕັມຮູບແບບ</h3>
             <p class="feature-desc">
-              Built on Nostr Protocol. No central servers. Your data stays with
-              you.
+              ສ້າງຂຶ້ນໃນໂປໂຕຄອນ Nostr. ບໍ່ມີເຊີບເວີສູນກາງ. ຂໍ້ມູນຂອງທ່ານຈະຢູ່ກັບທ່ານ.
             </p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">📱</div>
-            <h3 class="feature-title">Offline First</h3>
+            <h3 class="feature-title">ໃຊ້ງານແບບອອບໄລນ໌</h3>
             <p class="feature-desc">
-              Works without internet connection. Sync when you're back online.
+              ເຮັດວຽກໄດ້ໂດຍບໍ່ມີການເຊື່ອມຕໍ່ອິນເຕີເນັດ. Sync when you're back online.
               Never miss a sale.
             </p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">📊</div>
-            <h3 class="feature-title">Real-time Analytics</h3>
+            <h3 class="feature-title">ການວິເຄາະແບບເວລາຈິງ</h3>
             <p class="feature-desc">
-              Comprehensive business insights. Track sales, inventory, and
-              customer behavior in real-time.
+             ຂໍ້ມູນເຊີງເລິກເຊີງທຸລະກິດ. ຕິດຕາມການຂາຍ, ສິນຄ້າຄົງຄັງ ແລະ ພຶດຕິກຳຂອງລູກຄ້າໄດ້ແບບສົດໆ.
             </p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">👥</div>
-            <h3 class="feature-title">Team Management</h3>
+            <h3 class="feature-title">ການຈັດການທີມງານ</h3>
             <p class="feature-desc">
-              Multi-user support with role-based permissions. Manage your team
-              effectively.
+              ການສະໜັບສະໜູນຜູ້ໃຊ້ຫຼາຍຄົນດ້ວຍສິດອະນຸຍາດຕາມບົດບາດ. ຈັດການທີມງານຂອງທ່ານຢ່າງມີປະສິດທິພາບ.
             </p>
           </div>
         </div>
@@ -1000,35 +1000,32 @@
     <section class="how-it-works" id="how-it-works">
       <div class="container">
         <div class="section-header">
-          <span class="section-tag">How It Works</span>
-          <h2 class="section-title">Get Started in Minutes</h2>
+          <span class="section-tag">ວິທີການເຮັດວຽກ</span>
+          <h2 class="section-title">ເລີ່ມຕົ້ນພາຍໃນນາທີດຽວ</h2>
           <p class="section-subtitle">
-            Simple setup process to get your business running on BNOS.
+            ຂະບວນການຕັ້ງຄ່າງ່າຍໆເພື່ອເລີ່ມທຸລະກິດຂອງເຈົ້າໃນ BNOS.
           </p>
         </div>
         <div class="steps">
           <div class="step">
             <div class="step-number">1</div>
-            <h3 class="step-title">Create Account</h3>
+            <h3 class="step-title">ສ້າງບັນຊີ</h3>
             <p class="step-desc">
-              Sign up with your Nostr keys or create new ones. No email or
-              personal info required.
+              ລົງທະບຽນດ້ວຍກະແຈ Nostr ຂອງເຈົ້າ ຫຼື ສ້າງໃໝ່. ບໍ່ຈຳເປັນຕ້ອງມີອີເມລ ຫຼື ຂໍ້ມູນສ່ວນຕົວ.
             </p>
           </div>
           <div class="step">
             <div class="step-number">2</div>
-            <h3 class="step-title">Setup Your Shop</h3>
+            <h3 class="step-title">ຕັ້ງຄ່າຮ້ານຂອງເຈົ້າ</h3>
             <p class="step-desc">
-              Configure your business profile, add products, and set up your
-              Lightning wallet.
+              ຕັ້ງຄ່າໂປຣໄຟລ໌ທຸລະກິດຂອງເຈົ້າ, ເພີ່ມຜະລິດຕະພັນ ແລະ ຕັ້ງຄ່າກະເປົາເງິນ Lightning.
             </p>
           </div>
           <div class="step">
             <div class="step-number">3</div>
-            <h3 class="step-title">Start Selling</h3>
+            <h3 class="step-title">ເລີ່ມຂາຍ</h3>
             <p class="step-desc">
-              Accept payments, manage inventory, and grow your business with
-              complete sovereignty.
+              ຮັບການຊຳລະເງິນ, ຈັດການສິນຄ້າຄົງຄັງ ແລະ ຂະຫຍາຍທຸລະກິດຂອງເຈົ້າຢ່າງເປັນອດສະຫຼະ.
             </p>
           </div>
         </div>
@@ -1039,10 +1036,10 @@
     <section class="tech-stack" id="technology">
       <div class="container">
         <div class="section-header">
-          <span class="section-tag">Technology</span>
-          <h2 class="section-title">Powered By</h2>
+          <span class="section-tag">ເຕັກໂນໂລຊີ</span>
+          <h2 class="section-title">ສ້າງຂຶ້ນດ້ວຍ</h2>
           <p class="section-subtitle">
-            Built on cutting-edge decentralized technologies.
+            ສ້າງຂຶ້ນດ້ວຍເຕັກໂນໂລຊີແບບກະຈາຍອຳນາດທີ່ທັນສະໄໝ.
           </p>
         </div>
         <div class="tech-grid">
@@ -1060,7 +1057,7 @@
           </div>
           <div class="tech-item">
             <div class="tech-icon">💾</div>
-            <span class="tech-name">Local-First</span>
+            <span class="tech-name">ພື້ນຖານທ້ອງຖິ່ນ</span>
           </div>
         </div>
       </div>
@@ -1070,16 +1067,15 @@
     <section class="cta" id="cta">
       <div class="cta-orb"></div>
       <div class="cta-content">
-        <h2 class="cta-title">Ready to Get Started?</h2>
+        <h2 class="cta-title">ພ້ອມທີ່ຈະເລີ່ມຕົ້ນແລ້ວບໍ?</h2>
         <p class="cta-subtitle">
-          Join the waitlist and be among the first to experience the future of
-          business operations.
+          ເຂົ້າຮ່ວມລາຍຊື່ລໍຖ້າ ແລະ ເປັນຄົນທຳອິດທີ່ໄດ້ສຳຜັດກັບອະນາຄົດຂອງການດຳເນີນທຸລະກິດ.
         </p>
         <a href="#" class="btn-primary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
-          Join Waitlist
+          ເຂົ້າຮ່ວມລາຍຊື່ລໍຖ້າ
         </a>
       </div>
     </section>
@@ -1097,41 +1093,41 @@
             <span class="footer-logo-text">BNOS</span>
           </div>
           <p class="footer-desc">
-            Lightning-powered Point of Sale built on Nostr Protocol.
-            Decentralized, sovereign, and privacy-first.
+            ລະບົບຂາຍທີ່ໃຊ້ຄວາມສາມາດ Lightning ສ້າງຂຶ້ນດ້ວຍໂປຣໂຕຄອນ Nostr.
+            ແບບກະຈາຍສູນ, ເປັນເຈົ້າຂອງຂໍ້ມູນເອງ ແລະ ມີຄວາມເປັນສ່ວນຕົວສຳລັບທຸລະກິດທີ່ທັນສະໄໝ.
           </p>
         </div>
         <div class="footer-column">
-          <h4>Product</h4>
+          <h4>ຜະລິດຕະພັນ</h4>
           <ul class="footer-links">
-            <li><a href="#features">Features</a></li>
-            <li><a href="#how-it-works">How It Works</a></li>
-            <li><a href="#technology">Technology</a></li>
+            <li><a href="#features">ຄຸນສົມບັດ</a></li>
+            <li><a href="#how-it-works">ວິທີການເຮັດວຽກ</a></li>
+            <li><a href="#technology">ເຕັກໂນໂລຊີ</a></li>
             <!-- <li><a href="#">Pricing</a></li> -->
           </ul>
         </div>
         <div class="footer-column">
-          <h4>Resources</h4>
+          <h4>ແຫຼ່ງຂໍ້ມູນ</h4>
           <ul class="footer-links">
-            <li><a href="docs.bnos.space">Documentation</a></li>
+            <li><a href="docs.bnos.space">ເອກະສານ</a></li>
             <!-- <li><a href="#">API Reference</a></li> -->
-            <li><a href="#">Support</a></li>
-            <li><a href="#">Blog</a></li>
+            <li><a href="#">ສະໜັບສະໜູນ</a></li>
+            <li><a href="#">ບລັອກ</a></li>
           </ul>
         </div>
         <div class="footer-column">
-          <h4>Company</h4>
+          <h4>ບໍລິສັດ</h4>
           <ul class="footer-links">
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Contact</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">ກ່ຽວກັບພວກເຮົາ</a></li>
+            <li><a href="#">ຕິດຕໍ່</a></li>
+            <li><a href="#">ນະໂຍບາຍຄວາມເປັນສ່ວນຕົວ</a></li>
+            <li><a href="#">ເງື່ອນໄຂການໃຊ້ບໍລິການ</a></li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
         <p class="footer-copyright">
-          © 2026 BNOS. All rights reserved. Powered by Nostr & Bitcoin Lightning
+          © 2026 BNOS. ສະຫງວນລິຂະສິດທັງໝົດ. Powered by Nostr & Bitcoin Lightning
           Network.
         </p>
         <div class="footer-social">
@@ -1177,7 +1173,7 @@
     </footer>
 
     <script>
-      // Launch date: January 1, 2026 09:09:00 AM (local time)
+      // Launch date: 1 ມັງກອນ 2026 09:09:00 AM (local time)
       const launchDate = new Date("2026-01-01T09:09:00").getTime();
 
       function checkLaunchStatus() {

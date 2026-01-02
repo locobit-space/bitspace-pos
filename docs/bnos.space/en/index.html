@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BNOS - Bitcoin Nostr Operating System | Lightning-Powered POS | Open Source Business OS</title>
+    <meta
+      name="description"
+      content="BNOS is a Lightning-Powered Point of Sale System & Business OS built on Nostr Protocol. Decentralized, sovereign, and privacy-first for modern businesses."
+    />
+    <meta
+      name="keywords"
+      content="BNOS, POS, Bitcoin, Lightning, Nostr, Point of Sale, Business OS, Decentralized | Bitcoin Nostr Operating System"
+    />
+    <meta property="og:title" content="BNOS - Bitcoin Nostr Operating System" />
+    <meta
+      property="og:description"
+      content="Lightning-Powered Point of Sale built on Nostr Protocol. Decentralized, sovereign, and privacy-first."
+    />
+    <meta property="og:type" content="website" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect fill='%23f59e0b' width='24' height='24' rx='4'/><path fill='white' d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        background: #0a0a12;
+        color: white;
+        line-height: 1.6;
+      }
+
+      /* Navigation */
+      .nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        padding: 16px 24px;
+        background: rgba(10, 10, 18, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .nav-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+      }
+
+      .nav-logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .nav-logo-icon svg {
+        width: 22px;
+        height: 22px;
+        fill: white;
+      }
+
+      .nav-logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 2px;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 32px;
+        list-style: none;
+      }
+
+      .nav-links a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: color 0.3s;
+      }
+
+      .nav-links a:hover {
+        color: #f59e0b;
+      }
+
+      .nav-cta {
+        padding: 10px 24px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+
+      .nav-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+      }
+
+      /* Hero Section */
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 120px 24px 80px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-bg {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          #0a0a12 0%,
+          #12121f 50%,
+          #0a0a12 100%
+        );
+      }
+
+      .hero-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.3;
+        animation: float 10s ease-in-out infinite;
+      }
+
+      .hero-orb-1 {
+        width: 600px;
+        height: 600px;
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        top: -200px;
+        right: -200px;
+      }
+
+      .hero-orb-2 {
+        width: 500px;
+        height: 500px;
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        bottom: -200px;
+        left: -200px;
+        animation-delay: -5s;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-30px) rotate(5deg);
+        }
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 10;
+        max-width: 1000px;
+        text-align: center;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 20px;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: 50px;
+        margin-bottom: 32px;
+      }
+
+      .hero-badge-dot {
+        width: 8px;
+        height: 8px;
+        background: #22c55e;
+        border-radius: 50%;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .hero-badge-text {
+        color: #fbbf24;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 1px;
+      }
+
+      .hero-title {
+        font-size: clamp(40px, 8vw, 72px);
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 24px;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          rgba(255, 255, 255, 0.7) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero-title span {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero-subtitle {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.6);
+        max-width: 600px;
+        margin: 0 auto 40px;
+        font-weight: 400;
+      }
+
+      .hero-buttons {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .btn-primary {
+        padding: 16px 32px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: none;
+        border-radius: 14px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 40px rgba(245, 158, 11, 0.3);
+      }
+
+      .btn-secondary {
+        padding: 16px 32px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+
+      /* Features Section */
+      .features {
+        padding: 100px 24px;
+        background: linear-gradient(180deg, #0a0a12 0%, #0d0d16 100%);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .section-header {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+
+      .section-tag {
+        display: inline-block;
+        padding: 8px 16px;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 50px;
+        color: #fbbf24;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-size: clamp(32px, 5vw, 48px);
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+
+      .section-subtitle {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 18px;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      .feature-card {
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.04) 0%,
+          rgba(255, 255, 255, 0.01) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 20px;
+        padding: 32px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .feature-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(245, 158, 11, 0.3);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.2),
+          rgba(234, 88, 12, 0.1)
+        );
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 24px;
+      }
+
+      .feature-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .feature-desc {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      /* How It Works */
+      .how-it-works {
+        padding: 100px 24px;
+        background: #0d0d16;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 32px;
+        margin-top: 60px;
+      }
+
+      .step {
+        text-align: center;
+        padding: 24px;
+      }
+
+      .step-number {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 auto 24px;
+      }
+
+      .step-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .step-desc {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      /* Tech Stack */
+      .tech-stack {
+        padding: 100px 24px;
+        background: linear-gradient(180deg, #0d0d16 0%, #0a0a12 100%);
+      }
+
+      .tech-grid {
+        display: flex;
+        justify-content: center;
+        gap: 48px;
+        flex-wrap: wrap;
+        margin-top: 48px;
+      }
+
+      .tech-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 24px 32px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        transition: all 0.3s;
+      }
+
+      .tech-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-4px);
+      }
+
+      .tech-icon {
+        font-size: 40px;
+      }
+
+      .tech-name {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      /* CTA Section */
+      .cta {
+        padding: 120px 24px;
+        background: linear-gradient(180deg, #0a0a12 0%, #12121f 100%);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .cta-orb {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        border-radius: 50%;
+        filter: blur(150px);
+        opacity: 0.15;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .cta-content {
+        position: relative;
+        z-index: 10;
+      }
+
+      .cta-title {
+        font-size: clamp(32px, 5vw, 48px);
+        font-weight: 700;
+        margin-bottom: 20px;
+      }
+
+      .cta-subtitle {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 18px;
+        max-width: 500px;
+        margin: 0 auto 40px;
+      }
+
+      /* Footer */
+      .footer {
+        padding: 60px 24px 30px;
+        background: #080810;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 48px;
+        margin-bottom: 48px;
+      }
+
+      .footer-brand {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .footer-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .footer-logo-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .footer-logo-icon svg {
+        width: 20px;
+        height: 20px;
+        fill: white;
+      }
+
+      .footer-logo-text {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 2px;
+      }
+
+      .footer-desc {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .footer-column h4 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .footer-links {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .footer-links a {
+        color: rgba(255, 255, 255, 0.4);
+        text-decoration: none;
+        font-size: 14px;
+        transition: color 0.3s;
+      }
+
+      .footer-links a:hover {
+        color: #f59e0b;
+      }
+
+      .footer-bottom {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-top: 30px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .footer-copyright {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 13px;
+      }
+
+      .footer-social {
+        display: flex;
+        gap: 12px;
+      }
+
+      .footer-social a {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        transition: all 0.3s;
+      }
+
+      .footer-social a:hover {
+        background: rgba(245, 158, 11, 0.15);
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+
+      .footer-social svg {
+        width: 18px;
+        height: 18px;
+        fill: rgba(255, 255, 255, 0.5);
+        transition: fill 0.3s;
+      }
+
+      .footer-social a:hover svg {
+        fill: #f59e0b;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .nav-links {
+          display: none;
+        }
+
+        .hero-buttons {
+          flex-direction: column;
+          width: 100%;
+          max-width: 300px;
+        }
+
+        .footer-bottom {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .countdown {
+          gap: 8px;
+        }
+
+        .countdown-item {
+          min-width: 60px;
+          padding: 14px 10px;
+        }
+
+        .countdown-value {
+          font-size: 28px;
+        }
+      }
+
+      /* Countdown Styles */
+      .countdown-section {
+        margin-top: 24px;
+      }
+
+      .countdown-label {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-bottom: 24px;
+        font-weight: 500;
+      }
+
+      .countdown {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .countdown-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 85px;
+        padding: 24px 20px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.06) 0%,
+          rgba(255, 255, 255, 0.02) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        backdrop-filter: blur(20px);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .countdown-item:hover {
+        background: linear-gradient(
+          180deg,
+          rgba(245, 158, 11, 0.15) 0%,
+          rgba(245, 158, 11, 0.05) 100%
+        );
+        border-color: rgba(245, 158, 11, 0.3);
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(245, 158, 11, 0.15);
+      }
+
+      .countdown-value {
+        font-size: 44px;
+        font-weight: 700;
+        color: white;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 2px 20px rgba(255, 255, 255, 0.1);
+      }
+
+      .countdown-unit {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-top: 10px;
+        font-weight: 500;
+      }
+
+      .launch-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 28px;
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.15) 0%,
+          rgba(234, 88, 12, 0.1) 100%
+        );
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-radius: 100px;
+        margin-top: 24px;
+        animation: pulse-border 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse-border {
+        0%,
+        100% {
+          border-color: rgba(245, 158, 11, 0.25);
+        }
+        50% {
+          border-color: rgba(245, 158, 11, 0.5);
+        }
+      }
+
+      .launch-date svg {
+        width: 18px;
+        height: 18px;
+        fill: #f59e0b;
+      }
+
+      .launch-date span {
+        color: #fbbf24;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 1px;
+      }
+
+      /* Pre-launch / Post-launch visibility */
+      .pre-launch {
+        display: none;
+      }
+
+      .post-launch {
+        display: none;
+      }
+
+      body.is-pre-launch .pre-launch {
+        display: block;
+      }
+
+      body.is-pre-launch .post-launch {
+        display: none !important;
+      }
+
+      body.is-post-launch .pre-launch {
+        display: none !important;
+      }
+
+      body.is-post-launch .post-launch {
+        display: block;
+      }
+
+      body.is-post-launch .hero-buttons.post-launch {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Language Switcher -->
+    <div class="lang-switcher" style="position:fixed;top:20px;right:20px;z-index:1001;display:flex;gap:8px;">
+      <a href="../en/index.html" style="padding:8px 16px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;color:#f59e0b;text-decoration:none;font-size:13px;font-weight:500;">EN</a>
+      <a href="../lo/index.html" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);text-decoration:none;font-size:13px;font-weight:500;transition:all 0.3s;">ລາວ</a>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+      <div class="nav-content">
+        <a href="#" class="nav-logo">
+          <div class="nav-logo-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </div>
+          <span class="nav-logo-text">BNOS</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#technology">Technology</a></li>
+          <li><a href="manual.html">Documentation</a></li>
+        </ul>
+        <a href="https://app.bnos.space" class="nav-cta post-launch"
+          >Get Started</a
+        >
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-orb hero-orb-1"></div>
+      <div class="hero-orb hero-orb-2"></div>
+      <div class="hero-content">
+        <!-- Pre-launch: Show countdown -->
+        <div class="pre-launch">
+          <div class="hero-badge">
+            <div class="hero-badge-dot"></div>
+            <span class="hero-badge-text">Coming Soon</span>
+          </div>
+          <h1 class="hero-title">
+            The Future of<br />
+            <span>Business Operations</span>
+          </h1>
+          <p class="hero-subtitle">
+            Lightning-powered Point of Sale built on Nostr Protocol.
+            Decentralized, sovereign, and privacy-first for modern businesses.
+          </p>
+          <!-- Countdown -->
+          <div class="countdown-section">
+            <p class="countdown-label">Launching In</p>
+            <div class="countdown" id="countdown">
+              <div class="countdown-item">
+                <span class="countdown-value" id="days">--</span>
+                <span class="countdown-unit">Days</span>
+              </div>
+              <div class="countdown-item">
+                <span class="countdown-value" id="hours">--</span>
+                <span class="countdown-unit">Hours</span>
+              </div>
+              <div class="countdown-item">
+                <span class="countdown-value" id="minutes">--</span>
+                <span class="countdown-unit">Mins</span>
+              </div>
+              <div class="countdown-item">
+                <span class="countdown-value" id="seconds">--</span>
+                <span class="countdown-unit">Secs</span>
+              </div>
+            </div>
+            <div class="launch-date">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"
+                />
+              </svg>
+              <span>January 1, 2026 • 09:09 AM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Post-launch: Show landing content -->
+        <div class="post-launch">
+          <div class="hero-badge">
+            <div class="hero-badge-dot"></div>
+            <span class="hero-badge-text">🚀 We Are Live!</span>
+          </div>
+          <h1 class="hero-title">
+            The Future of<br />
+            <span>Business Operations</span>
+          </h1>
+          <p class="hero-subtitle">
+            Lightning-powered Point of Sale built on Nostr Protocol.
+            Decentralized, sovereign, and privacy-first for modern businesses.
+          </p>
+        </div>
+        <div class="hero-buttons post-launch">
+          <a href="https://app.bnos.space" class="btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            Get Started
+          </a>
+          <a href="manual.html" class="btn-secondary">Read Documentation</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Features</span>
+          <h2 class="section-title">Everything You Need</h2>
+          <p class="section-subtitle">
+            A complete business operating system designed for the future of
+            commerce.
+          </p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3 class="feature-title">Lightning Payments</h3>
+            <p class="feature-desc">
+              Accept Bitcoin payments instantly with Lightning Network.
+              Near-zero fees and instant settlement.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <h3 class="feature-title">Non-Custodial</h3>
+            <p class="feature-desc">
+              Your keys, your coins. We never hold your funds. Complete
+              financial sovereignty.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <h3 class="feature-title">Fully Decentralized</h3>
+            <p class="feature-desc">
+              Built on Nostr Protocol. No central servers. Your data stays with
+              you.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📱</div>
+            <h3 class="feature-title">Offline First</h3>
+            <p class="feature-desc">
+              Works without internet connection. Sync when you're back online.
+              Never miss a sale.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3 class="feature-title">Real-time Analytics</h3>
+            <p class="feature-desc">
+              Comprehensive business insights. Track sales, inventory, and
+              customer behavior in real-time.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">👥</div>
+            <h3 class="feature-title">Team Management</h3>
+            <p class="feature-desc">
+              Multi-user support with role-based permissions. Manage your team
+              effectively.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">How It Works</span>
+          <h2 class="section-title">Get Started in Minutes</h2>
+          <p class="section-subtitle">
+            Simple setup process to get your business running on BNOS.
+          </p>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h3 class="step-title">Create Account</h3>
+            <p class="step-desc">
+              Sign up with your Nostr keys or create new ones. No email or
+              personal info required.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <h3 class="step-title">Setup Your Shop</h3>
+            <p class="step-desc">
+              Configure your business profile, add products, and set up your
+              Lightning wallet.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <h3 class="step-title">Start Selling</h3>
+            <p class="step-desc">
+              Accept payments, manage inventory, and grow your business with
+              complete sovereignty.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Technology Stack -->
+    <section class="tech-stack" id="technology">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Technology</span>
+          <h2 class="section-title">Powered By</h2>
+          <p class="section-subtitle">
+            Built on cutting-edge decentralized technologies.
+          </p>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-item">
+            <div class="tech-icon">₿</div>
+            <span class="tech-name">Bitcoin</span>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">⚡</div>
+            <span class="tech-name">Lightning Network</span>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">🟣</div>
+            <span class="tech-name">Nostr Protocol</span>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">💾</div>
+            <span class="tech-name">Local-First</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta" id="cta">
+      <div class="cta-orb"></div>
+      <div class="cta-content">
+        <h2 class="cta-title">Ready to Get Started?</h2>
+        <p class="cta-subtitle">
+          Join the waitlist and be among the first to experience the future of
+          business operations.
+        </p>
+        <a href="#" class="btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          Join Waitlist
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="footer-logo-icon">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+            </div>
+            <span class="footer-logo-text">BNOS</span>
+          </div>
+          <p class="footer-desc">
+            Lightning-powered Point of Sale built on Nostr Protocol.
+            Decentralized, sovereign, and privacy-first.
+          </p>
+        </div>
+        <div class="footer-column">
+          <h4>Product</h4>
+          <ul class="footer-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#technology">Technology</a></li>
+            <!-- <li><a href="#">Pricing</a></li> -->
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Resources</h4>
+          <ul class="footer-links">
+            <li><a href="docs.bnos.space">Documentation</a></li>
+            <!-- <li><a href="#">API Reference</a></li> -->
+            <li><a href="#">Support</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <ul class="footer-links">
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">
+          © 2026 BNOS. All rights reserved. Powered by Nostr & Bitcoin Lightning
+          Network.
+        </p>
+        <div class="footer-social">
+          <a
+            href="https://github.com/locobit-space"
+            target="_blank"
+            rel="noopener"
+            title="GitHub"
+          >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://nostr.com"
+            target="_blank"
+            rel="noopener"
+            title="Nostr"
+          >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+                fill="none"
+              />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </a>
+          <a href="#" target="_blank" rel="noopener" title="Bitcoin">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-1h-1v-2h1v-4H9v-2h2V7h2v1h1v2h-1v4h2v2h-2v1z"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Launch date: January 1, 2026 09:09:00 AM (local time)
+      const launchDate = new Date("2026-01-01T09:09:00").getTime();
+
+      function checkLaunchStatus() {
+        const now = new Date().getTime();
+        const distance = launchDate - now;
+
+        if (distance < 0) {
+          // Post-launch
+          document.body.classList.remove("is-pre-launch");
+          document.body.classList.add("is-post-launch");
+          return true;
+        } else {
+          // Pre-launch
+          document.body.classList.remove("is-post-launch");
+          document.body.classList.add("is-pre-launch");
+          return false;
+        }
+      }
+
+      function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = launchDate - now;
+
+        if (distance < 0) {
+          document.getElementById("days").textContent = "00";
+          document.getElementById("hours").textContent = "00";
+          document.getElementById("minutes").textContent = "00";
+          document.getElementById("seconds").textContent = "00";
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById("days").textContent = String(days).padStart(
+          2,
+          "0"
+        );
+        document.getElementById("hours").textContent = String(hours).padStart(
+          2,
+          "0"
+        );
+        document.getElementById("minutes").textContent = String(
+          minutes
+        ).padStart(2, "0");
+        document.getElementById("seconds").textContent = String(
+          seconds
+        ).padStart(2, "0");
+      }
+
+      // Initial check
+      checkLaunchStatus();
+      updateCountdown();
+
+      // Update every second
+      setInterval(() => {
+        checkLaunchStatus();
+        updateCountdown();
+      }, 1000);
+    </script>
+  </body>
+</html>

@@ -38,8 +38,8 @@ export default defineNuxtConfig({
       name: "BNOS - Business OS",
       short_name: "BNOS",
       description:
-        "Lightning-powered Point of Sale System, Business OS - Nostr BNOS",
-      theme_color: "#f59e0b",
+        "Lightning-powered Point of Sale System, Business OS - Nostr BNOS | Bitcoin Nostr Operating System",
+      theme_color: "#FFA240",
       background_color: "#111827",
       display: "standalone",
       orientation: "any",
@@ -66,17 +66,38 @@ export default defineNuxtConfig({
       screenshots: [
         {
           src: "/screenshots/mobile-splash.png",
-          sizes: "750x1334",
+          sizes: "500x520",
           type: "image/png",
           form_factor: "narrow",
           label: "BNOS - Mobile",
         },
         {
           src: "/screenshots/tablet-splash.png",
-          sizes: "1024x768",
+          sizes: "796x547",
           type: "image/png",
           form_factor: "wide",
           label: "BNOS - Tablet",
+        },
+        {
+          src: "/screenshots/dashboard.png",
+          sizes: "837x802",
+          type: "image/png",
+          form_factor: "wide",
+          label: "BNOS - Dashboard",
+        },
+        {
+          src: "/screenshots/dashboard-2-light.png",
+          sizes: "540x805",
+          type: "image/png",
+          form_factor: "wide",
+          label: "BNOS - Dashboard",
+        },
+        {
+          src: "/screenshots/settings.png",
+          sizes: "901x801",
+          type: "image/png",
+          form_factor: "wide",
+          label: "BNOS - Settings",
         },
       ],
       // iOS specific splash screen settings

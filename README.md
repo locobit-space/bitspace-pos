@@ -331,8 +331,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 📞 Support
 
-- 💬 Nostr: [Nostr](https://yakihonne.com/npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk)
+- 💬 Nostr: [Nostr bnos.space](https://yakihonne.com/profile/nprofile1qqsva2xw9u2vy5w9jxfv4728qc7ul6n7ct0ut4379na4gx946lnxs6c9p9vm6)
 - ⚡ Lightning: `bnos@blink.sv`
+- 📧 Discord: [Discord Server](https://discord.gg/aNwEQQF3w8)
 
 ---
 
