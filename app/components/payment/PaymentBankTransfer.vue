@@ -101,6 +101,19 @@ const copyToClipboard = (text: string) => {
       <div class="text-3xl font-bold text-gray-900 dark:text-white">
         {{ currencyHelper.format(amount, currency) }}
       </div>
+      <div
+        v-if="pos.discountAmount.value > 0"
+        class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center"
+      >
+        <span class="text-sm text-green-600 dark:text-green-400"
+          >Discount Applied</span
+        >
+        <span class="text-sm font-medium text-green-600 dark:text-green-400"
+          >-{{
+            currencyHelper.format(pos.discountAmount.value, currency)
+          }}</span
+        >
+      </div>
     </div>
 
     <!-- Step 1: Select Bank -->

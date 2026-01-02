@@ -292,6 +292,17 @@ const goBack = () => {
             currencyHelper.format(amount, currency)
           }}</span>
         </div>
+        <div
+          v-if="pos.discountAmount.value > 0"
+          class="flex justify-between items-center"
+        >
+          <span class="text-green-600 dark:text-green-400">Discount</span>
+          <span class="text-lg font-medium text-green-600 dark:text-green-400"
+            >-{{
+              currencyHelper.format(pos.discountAmount.value, currency)
+            }}</span
+          >
+        </div>
         <div class="flex justify-between items-center">
           <span class="text-gray-500 dark:text-gray-400">{{
             t("payment.cash.amountTendered")

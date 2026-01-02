@@ -28,6 +28,7 @@ import { EntityId, generateUUIDv7 } from "~/utils/id";
 const cartItems = ref<CartItem[]>([]);
 const selectedCurrency = ref<CurrencyCode>("LAK");
 const tipAmount = ref(0);
+const discountAmount = ref(0); // Track discount for receipts
 // taxRate is now managed by useTax composable
 const customerNote = ref("");
 const customerPubkey = ref<string | null>(null);
@@ -88,6 +89,7 @@ const initBroadcastChannel = () => {
     if (type === "cart-update") {
       cartItems.value = payload.cartItems || [];
       tipAmount.value = payload.tipAmount || 0;
+      discountAmount.value = payload.discountAmount || 0;
       selectedCurrency.value = payload.selectedCurrency || "LAK";
       customerNote.value = payload.customerNote || "";
       // Order type sync
@@ -99,6 +101,7 @@ const initBroadcastChannel = () => {
     } else if (type === "cart-clear") {
       cartItems.value = [];
       tipAmount.value = 0;
+      discountAmount.value = 0;
       customerNote.value = "";
       orderType.value = "dine_in";
       tableNumber.value = "";
@@ -145,6 +148,7 @@ const broadcastCartState = () => {
     payload: {
       cartItems: serializedItems,
       tipAmount: tipAmount.value,
+      discountAmount: discountAmount.value,
       selectedCurrency: selectedCurrency.value,
       customerNote: customerNote.value,
       // Order type info
@@ -423,6 +427,7 @@ export const usePOS = () => {
   const clearCart = () => {
     cartItems.value = [];
     tipAmount.value = 0;
+    discountAmount.value = 0; // Reset discount
     customerNote.value = "";
     customerPubkey.value = null;
     customerName.value = null;
@@ -571,6 +576,7 @@ export const usePOS = () => {
       paymentMethod,
       notes: customerNote.value || undefined,
       tip: tipAmount.value > 0 ? tipAmount.value : undefined,
+      discount: discountAmount.value > 0 ? discountAmount.value : undefined,
       kitchenStatus: "new",
       // Order type fields
       orderType: orderType.value,
@@ -693,16 +699,27 @@ export const usePOS = () => {
   // ============================================
 
   /**
-   * Apply discount
+   * Apply discount and track amount for receipts
    */
   const applyDiscount = (type: "percentage" | "fixed", value: number) => {
+    if (value === 0) {
+      // Reset discount
+      discountAmount.value = 0;
+      return;
+    }
+
     if (type === "percentage") {
+      // Calculate and store discount amount before modifying prices
+      const discount = Math.round(subtotal.value * (value / 100));
+      discountAmount.value = discount;
       // Apply percentage discount to each item
       cartItems.value.forEach((item) => {
         item.price = item.price * (1 - value / 100);
         item.total = item.quantity * item.price;
       });
     } else {
+      // Fixed discount - store the value directly
+      discountAmount.value = value;
       // Apply fixed discount proportionally
       const discountRatio = value / subtotal.value;
       cartItems.value.forEach((item) => {
@@ -710,6 +727,7 @@ export const usePOS = () => {
         item.total = item.quantity * item.price;
       });
     }
+    broadcastCartState();
   };
 
   /**
@@ -747,6 +765,7 @@ export const usePOS = () => {
     cartItems,
     selectedCurrency,
     tipAmount,
+    discountAmount, // Discount amount for receipts
     taxSettings: taxHelper.settings, // Tax settings from useTax
     customerNote,
     customerPubkey,

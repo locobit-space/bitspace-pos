@@ -406,6 +406,20 @@ const { settings } = useReceipt();
               }}</span>
             </div>
             <div
+              v-if="pos.discountAmount.value > 0"
+              class="flex justify-between text-lg text-green-600 dark:text-green-400"
+            >
+              <span>Discount</span>
+              <span class="font-medium"
+                >-{{
+                  currency.format(
+                    pos.discountAmount.value,
+                    pos.selectedCurrency.value
+                  )
+                }}</span
+              >
+            </div>
+            <div
               v-if="pos.tipAmount.value > 0"
               class="flex justify-between text-lg text-gray-500"
             >
@@ -824,12 +838,18 @@ const { settings } = useReceipt();
               <!-- Animated checkmark with linear fill -->
               <div class="success-icon-wrapper mb-4 mx-auto">
                 <!-- Pulsing background circle -->
-                <div class="absolute inset-0 bg-linear-to-br from-green-400 to-emerald-600 rounded-full opacity-20 animate-ping" />
+                <div
+                  class="absolute inset-0 bg-linear-to-br from-green-400 to-emerald-600 rounded-full opacity-20 animate-ping"
+                />
 
                 <!-- Main circle with linear -->
-                <div class="relative w-32 h-32 bg-linear-to-br from-green-400 via-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl shadow-green-500/50 animate-scale-in">
+                <div
+                  class="relative w-32 h-32 bg-linear-to-br from-green-400 via-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl shadow-green-500/50 animate-scale-in"
+                >
                   <!-- Inner glow circle -->
-                  <div class="absolute inset-2 bg-linear-to-br from-green-300 to-emerald-500 rounded-full opacity-60 blur-sm" />
+                  <div
+                    class="absolute inset-2 bg-linear-to-br from-green-300 to-emerald-500 rounded-full opacity-60 blur-sm"
+                  />
 
                   <!-- Checkmark icon -->
                   <Icon
@@ -954,10 +974,14 @@ const { settings } = useReceipt();
                 v-if="pos.paymentState.value.receiptCode"
                 class="mt-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center"
               >
-                <p class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
+                <p
+                  class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1"
+                >
                   RECEIPT CODE
                 </p>
-                <p class="text-xl font-bold text-amber-700 dark:text-amber-300 font-mono">
+                <p
+                  class="text-xl font-bold text-amber-700 dark:text-amber-300 font-mono"
+                >
                   {{ pos.paymentState.value.receiptCode }}
                 </p>
               </div>
@@ -968,9 +992,9 @@ const { settings } = useReceipt();
                 class="mt-3 text-xs text-gray-400 text-center"
               >
                 ID:
-                <span class="font-mono">{{
-                  pos.paymentState.value.eBillId.slice(0, 8)
-                }}...</span>
+                <span class="font-mono"
+                  >{{ pos.paymentState.value.eBillId.slice(0, 8) }}...</span
+                >
               </p>
             </div>
           </div>

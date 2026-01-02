@@ -45,7 +45,9 @@ onMounted(async () => {
     eBill.value = storedReceipt;
   } else if (receiptCode) {
     // Fetch from Nostr using verification code
-    const fetchedReceipt = await receiptGenerator.fetchReceiptByCode(receiptCode);
+    const fetchedReceipt = await receiptGenerator.fetchReceiptByCode(
+      receiptCode
+    );
 
     if (fetchedReceipt) {
       // Verify receipt ID matches
@@ -251,6 +253,13 @@ const shareReceipt = async () => {
           <div class="flex justify-between text-gray-500">
             <span>Subtotal</span>
             <span>{{ currency.format(eBill.subtotal, eBill.currency) }}</span>
+          </div>
+          <div
+            v-if="eBill.discount && eBill.discount > 0"
+            class="flex justify-between text-green-600 dark:text-green-400"
+          >
+            <span>Discount</span>
+            <span>-{{ currency.format(eBill.discount, eBill.currency) }}</span>
           </div>
           <div v-if="eBill.tax > 0" class="flex justify-between text-gray-500">
             <span>Tax</span>

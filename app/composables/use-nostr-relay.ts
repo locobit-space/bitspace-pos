@@ -16,13 +16,13 @@ const _devRelays = devRelayUrl ? JSON.parse(devRelayUrl) as string[] : [];
 
 // Default relay configurations
 const _DEFAULT_DEV: RelayConfig[] = [
-  // {
-  //   url: "wss://relay.bnos.space",
-  //   read: true,
-  //   write: true,
-  //   outbox: false,
-  //   isPrimary: true,
-  // },
+  {
+    url: "wss://relay.bnos.space",
+    read: true,
+    write: true,
+    outbox: false,
+    isPrimary: true,
+  },
   // Uncomment for local development:
   ..._devRelays.map((url: string, i) => ({
     url,
