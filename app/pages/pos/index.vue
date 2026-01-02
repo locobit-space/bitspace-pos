@@ -71,10 +71,18 @@ const showTableSwitcher = ref(false); // Table switcher modal
 const showPendingOrdersModal = ref(false); // Pending orders for payment
 const showSplitBillModal = ref(false); // Split bill modal
 const showCustomerModal = ref(false); // Customer lookup modal
+const showBarcodeScannerModal = ref(false); // Barcode scanner modal
+const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mode
 const splitOrder = ref<Order | null>(null); // Order being split
 const splitCount = ref(2); // Number of people splitting
 const splitPaidCount = ref(0); // Number of portions already paid
 const isProcessing = ref(false);
+
+// Open camera scanner directly
+const openCameraScanner = () => {
+  barcodeScannerMode.value = "camera";
+  showBarcodeScannerModal.value = true;
+};
 
 // Numpad modal state
 const showNumpad = ref(false);
@@ -307,6 +315,43 @@ const selectProduct = (product: Product) => {
   } else {
     // No options, add directly
     pos.addToCart(product);
+  }
+};
+
+// Handle barcode scan - find product and add to cart
+const handleBarcodeScan = (code: string) => {
+  // Search by SKU or barcode
+  const product = productsStore.products.value.find(
+    (p) =>
+      p.sku?.toLowerCase() === code.toLowerCase() ||
+      p.barcode?.toLowerCase() === code.toLowerCase()
+  );
+
+  if (product) {
+    selectProduct(product);
+    showBarcodeScannerModal.value = false;
+
+    // Success toast
+    const toast = useToast();
+    toast.add({
+      title: t("pos.scanner.productFound") || "Product Found",
+      description: product.name,
+      icon: "i-heroicons-check-circle",
+      color: "green",
+    });
+  } else {
+    // Not found - put code in search
+    productsStore.searchQuery.value = code;
+    showBarcodeScannerModal.value = false;
+
+    const toast = useToast();
+    toast.add({
+      title: t("pos.scanner.notFound") || "Product Not Found",
+      description:
+        t("pos.scanner.searchingFor", { code }) || `Searching for: ${code}`,
+      icon: "i-heroicons-magnifying-glass",
+      color: "amber",
+    });
   }
 };
 
@@ -1159,6 +1204,72 @@ watch([taxEnabled, taxRatePercent, taxInclusive], () => {
 });
 
 // ============================================
+// Auto-select product on exact barcode/SKU match
+// ============================================
+let searchDebounce: ReturnType<typeof setTimeout> | null = null;
+watch(
+  () => productsStore.searchQuery.value,
+  (newQuery) => {
+    if (searchDebounce) clearTimeout(searchDebounce);
+
+    if (!newQuery || newQuery.length < 3) return;
+
+    // Debounce to avoid selecting while user is still typing
+    searchDebounce = setTimeout(() => {
+      const query = newQuery.trim();
+
+      // Check for exact barcode or SKU match
+      const exactMatch = productsStore.products.value.find(
+        (p) =>
+          p.status === "active" &&
+          (p.barcode === query || p.sku === query)
+      );
+
+      if (exactMatch) {
+        // Auto-select the product
+        selectProduct(exactMatch);
+
+        // Clear search
+        productsStore.searchQuery.value = "";
+
+        // Success feedback
+        const toast = useToast();
+        toast.add({
+          title: t("pos.scanner.productFound") || "Product Found",
+          description: exactMatch.name,
+          color: "success",
+          icon: "i-heroicons-check-circle",
+        });
+
+        // Play beep sound
+        playBeep();
+      }
+    }, 300); // 300ms debounce
+  }
+);
+
+// Audio beep for barcode feedback
+function playBeep() {
+  try {
+    const audioContext = new AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = 1000;
+    oscillator.type = "sine";
+    gainNode.gain.value = 0.1;
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch {
+    // Audio not supported
+  }
+}
+
+// ============================================
 // Table Switching Functions
 // ============================================
 const loadTables = async () => {
@@ -1407,6 +1518,19 @@ onMounted(async () => {
       }
     };
   }
+
+  // ============================================
+  // Keyboard shortcuts
+  // ============================================
+  keyboardShortcutHandler = (e: KeyboardEvent) => {
+    // F2: Open barcode scanner
+    if (e.key === "F2") {
+      e.preventDefault();
+      showBarcodeScannerModal.value = true;
+    }
+  };
+
+  document.addEventListener("keydown", keyboardShortcutHandler);
 });
 
 // Order ready channel for kitchen notifications
@@ -1414,10 +1538,18 @@ let orderReadyChannel: BroadcastChannel | null = null;
 // Customer order channel for new order alerts
 let customerOrderChannel: BroadcastChannel | null = null;
 
+// Store keyboard handler reference for cleanup
+let keyboardShortcutHandler: ((e: KeyboardEvent) => void) | null = null;
+
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval);
   if (orderReadyChannel) orderReadyChannel.close();
   if (customerOrderChannel) customerOrderChannel.close();
+
+  // Clean up keyboard event listener
+  if (keyboardShortcutHandler) {
+    document.removeEventListener("keydown", keyboardShortcutHandler);
+  }
 });
 </script>
 
@@ -1428,7 +1560,7 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <!-- LEFT PANEL - Products -->
     <!-- ============================================ -->
-    <div class="flex-1 flex flex-col min-w-0">
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
       <!-- Header Bar -->
       <header
         class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800/50 px-2 sm:px-4 py-2 sm:py-3"
@@ -1620,15 +1752,29 @@ onUnmounted(() => {
 
         <!-- Search & Quick Actions -->
         <div class="mt-3 flex gap-3">
-          <!-- Search -->
+          <!-- Search with Barcode Scan -->
           <div class="relative flex-1 max-w-md">
             <UInput
               v-model="productsStore.searchQuery.value"
-              placeholder="Search products... (SKU or name)"
+              placeholder="Search by name, SKU, or barcode..."
               icon="i-heroicons-magnifying-glass"
               size="sm"
-              class="w-full"
-            />
+              class="flex-1 w-full"
+            >
+              <template #trailing>
+                <UTooltip :text="t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'">
+                  <UButton
+                    size="2xs"
+                    color="amber"
+                    variant="soft"
+                    icon="i-heroicons-qr-code"
+                    class="cursor-pointer"
+                    :padded="false"
+                    @click="openCameraScanner"
+                  />
+                </UTooltip>
+              </template>
+            </UInput>
           </div>
 
           <!-- Quick Action Buttons -->
@@ -2297,14 +2443,19 @@ onUnmounted(() => {
               <span>🏷️</span>
               Discount
               <span class="text-xs opacity-75">
-                ({{ discountType === "percentage" ? `${discountValue}%` : "Fixed" }})
+                ({{
+                  discountType === "percentage" ? `${discountValue}%` : "Fixed"
+                }})
               </span>
             </span>
             <span>
               -{{
                 currency.format(
                   discountType === "percentage"
-                    ? Math.round((pos.subtotal.value * discountValue) / (100 + discountValue))
+                    ? Math.round(
+                        (pos.subtotal.value * discountValue) /
+                          (100 + discountValue)
+                      )
                     : discountValue,
                   pos.selectedCurrency.value
                 )
@@ -3360,9 +3511,7 @@ onUnmounted(() => {
                   @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
                 />
               </div>
-              <div v-else class="text-4xl">
-                📦
-              </div>
+              <div v-else class="text-4xl">📦</div>
               <div class="flex-1">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">
                   {{ selectedProduct.name }}
@@ -3582,6 +3731,32 @@ onUnmounted(() => {
       @switch="switchTable"
       @manage="navigateTo('/pos/tables')"
     />
+
+    <!-- Barcode Scanner Modal -->
+    <UModal v-model:open="showBarcodeScannerModal">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t("pos.scanner.title") || "Scan Barcode" }}
+            </h3>
+            <UButton
+              icon="i-heroicons-x-mark"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              @click="showBarcodeScannerModal = false"
+            />
+          </div>
+          <PosBarcodeScanner
+            :auto-focus="true"
+            :show-history="true"
+            :initial-mode="barcodeScannerMode"
+            @scan="handleBarcodeScan"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <!-- Customer Lookup Modal -->
     <PosCustomerModal

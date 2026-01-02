@@ -118,13 +118,14 @@ export function useProductsStore() {
       result = result.filter((p) => p.categoryId === selectedCategory.value);
     }
 
-    // Search filter
+    // Search filter (includes barcode search)
     if (searchQuery.value.trim()) {
       const query = searchQuery.value.toLowerCase().trim();
       result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
           p.sku.toLowerCase().includes(query) ||
+          p.barcode?.toLowerCase().includes(query) ||
           p.description?.toLowerCase().includes(query)
       );
     }
@@ -1302,6 +1303,7 @@ export function useProductsStore() {
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.sku.toLowerCase().includes(q) ||
+        p.barcode?.toLowerCase().includes(q) ||
         p.description?.toLowerCase().includes(q)
     );
   }

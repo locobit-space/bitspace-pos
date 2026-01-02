@@ -187,6 +187,20 @@
     "splitComplete": "Split Bill Complete!",
     "portionPaid": "Portion Paid!",
     "payNextPortion": "Pay Next Portion",
-    "startSplitPayment": "Start Payment"
+    "startSplitPayment": "Start Payment",
+    "scanner": {
+      "title": "Scan Barcode",
+      "scanBarcode": "Scan Barcode",
+      "listening": "Listening",
+      "keyboard": "Keyboard",
+      "camera": "Camera",
+      "startCamera": "Start Camera",
+      "stopCamera": "Stop Camera",
+      "lastScanned": "Last Scanned",
+      "recentScans": "Recent Scans",
+      "productFound": "Product Found",
+      "notFound": "Product Not Found",
+      "searchingFor": "Searching for: {code}"
+    }
   }
 }

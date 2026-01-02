@@ -187,6 +187,20 @@
     "splitComplete": "ແບ່ງບິນສຳເລັດ!",
     "portionPaid": "ຈ່າຍສ່ວນແບ່ງແລ້ວ!",
     "payNextPortion": "ຈ່າຍສ່ວນຕໍ່ໄປ",
-    "startSplitPayment": "ເລີ່ມຈ່າຍ"
+    "startSplitPayment": "ເລີ່ມຈ່າຍ",
+    "scanner": {
+      "title": "ສະແກນບາໂຄ້ດ",
+      "scanBarcode": "ສະແກນບາໂຄ້ດ",
+      "listening": "ກຳລັງຟັງ",
+      "keyboard": "ແປ້ນພິມ",
+      "camera": "ກ້ອງ",
+      "startCamera": "ເປີດກ້ອງ",
+      "stopCamera": "ປິດກ້ອງ",
+      "lastScanned": "ສະແກນຫຼ້າສຸດ",
+      "recentScans": "ສະແກນລ່າສຸດ",
+      "productFound": "ພົບສິນຄ້າ",
+      "notFound": "ບໍ່ພົບສິນຄ້າ",
+      "searchingFor": "ຄົ້ນຫາ: {code}"
+    }
   }
 }

@@ -100,8 +100,8 @@ const isPublic = computed({
         </div>
         <USwitch
           v-model="isActive"
-          on-icon="i-heroicons-check"
-          off-icon="i-heroicons-x-mark"
+          :on-icon="'i-heroicons-check'"
+          :off-icon="'i-heroicons-x-mark'"
         />
       </div>
 
@@ -149,8 +149,8 @@ const isPublic = computed({
         </div>
         <USwitch
           v-model="isPublic"
-          on-icon="i-heroicons-eye"
-          off-icon="i-heroicons-eye-slash"
+          :on-icon="'i-heroicons-eye'"
+          :off-icon="'i-heroicons-eye-slash'"
         />
       </div>
     </div>
