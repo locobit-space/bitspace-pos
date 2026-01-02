@@ -4,16 +4,7 @@
     <AppHeader @toggle-sidebar="sidebarOpen = !sidebarOpen" />
 
     <div class="flex-1 flex overflow-hidden">
-      <!-- Sidebar Overlay (mobile/tablet) -->
-      <Transition name="fade">
-        <div
-          v-if="sidebarOpen"
-          class="fixed inset-0 z-40 lg:hidden bg-black/60 backdrop-blur-sm"
-          @click="sidebarOpen = false"
-        />
-      </Transition>
-
-      <!-- Sidebar - Hidden on mobile/tablet, always visible on desktop -->
+      <!-- Desktop Sidebar - Always visible on large screens -->
       <aside
         v-if="showNavigation"
         class="shrink-0 hidden lg:block border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
@@ -21,15 +12,19 @@
         <AppSideBar @navigate="sidebarOpen = false" />
       </aside>
 
-      <!-- Mobile Sidebar (Slide-out drawer) -->
-      <Transition name="slide">
-        <aside
-          v-if="sidebarOpen && showNavigation"
-          class="fixed left-0 top-14 bottom-0 z-50 lg:hidden bg-white dark:bg-gray-900 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.15)] dark:shadow-[4px_0_24px_-4px_rgba(0,0,0,0.5)]"
-        >
-          <AppSideBar @navigate="sidebarOpen = false" />
-        </aside>
-      </Transition>
+      <!-- Mobile/Tablet Drawer Sidebar -->
+      <UDrawer
+        v-model:open="sidebarOpen"
+        title="Menu"
+        description="Side Menu"
+        direction="left"
+      >
+        <template #content>
+          <div class="h-full">
+            <AppSideBar @navigate="sidebarOpen = false" />
+          </div>
+        </template>
+      </UDrawer>
 
       <!-- Main Content -->
       <main
@@ -62,7 +57,10 @@ const shop = useShop();
 const sidebarOpen = ref(false);
 
 // Get navigation visibility from page (if provided)
-const pageNavigationControl = inject<Ref<boolean> | undefined>("shouldShowNavigation", undefined);
+const pageNavigationControl = inject<Ref<boolean> | undefined>(
+  "shouldShowNavigation",
+  undefined
+);
 
 // Fast setup check using localStorage (synchronous, no delay)
 const hasCompletedSetup = ref(false);
@@ -119,27 +117,3 @@ onMounted(async () => {
   shop.init();
 });
 </script>
-
-<style scoped>
-/* Fade transition for overlay */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Slide transition for mobile sidebar */
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-enter-from,
-.slide-leave-to {
-  transform: translateX(-100%);
-}
-</style>

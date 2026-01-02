@@ -13,7 +13,7 @@
 
         <div class="flex items-center gap-4 mb-8">
           <div
-            class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center"
+            class="w-12 h-12 bg-linear-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center"
           >
             <UIcon
               name="i-heroicons-shield-check"
@@ -25,7 +25,7 @@
               {{ $t("legal.privacy.title") }}
             </h1>
             <p class="text-gray-600 dark:text-gray-400">
-              {{ $t("legal.privacy.lastUpdated") }}: {{ lastUpdated }}
+              {{ $t("legal.privacy.lastUpdated") }}: {{ $d(new Date(lastUpdated), 'long') }}
             </p>
           </div>
         </div>
@@ -139,9 +139,7 @@ definePageMeta({
 
 const { t } = useI18n();
 
-const lastUpdated = computed(() => {
-  return new Date("2024-12-28").toLocaleDateString();
-});
+const lastUpdated = new Date("2026-01-01T09:09:09")
 
 useHead({
   title: t("legal.privacy.title"),

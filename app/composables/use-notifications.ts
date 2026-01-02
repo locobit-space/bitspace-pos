@@ -137,11 +137,29 @@ export const useNotifications = () => {
         ? "red"
         : colorMap[notification.type];
 
+    // Truncate long messages for toast (max 120 characters)
+    const maxLength = 120;
+    let description = notification.message;
+    let actions = undefined;
+
+    if (notification.message.length > maxLength) {
+      description = notification.message.slice(0, maxLength) + "...";
+      // Add action to view full notification
+      actions = [{
+        label: "View More",
+        click: () => {
+          isNotificationCenterOpen.value = true;
+        }
+      }];
+    }
+
     toast.add({
       title: notification.title,
-      description: notification.message,
+      description,
       color,
       icon: iconMap[notification.type] || "i-heroicons-bell",
+      actions,
+      timeout: notification.message.length > maxLength ? 6000 : 4000, // Longer for truncated messages
     });
   }
 
