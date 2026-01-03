@@ -53,6 +53,7 @@ const sound = useSound();
 const receipt = useReceipt();
 const receiptGenerator = useReceiptGenerator();
 const customersStore = useCustomers();
+const tableSession = useTableSession();
 const { t } = useI18n();
 
 // ============================================
@@ -182,9 +183,10 @@ const pendingKitchenOrders = computed(
 );
 
 // List of pending orders for payment (cafe pay-later)
+// Filter out bill request placeholders (total = 0)
 const pendingOrdersList = computed(() =>
   ordersStore.orders.value
-    .filter((o) => o.status === "pending")
+    .filter((o) => o.status === "pending" && o.total > 0)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 );
 
@@ -691,11 +693,17 @@ const addCustomItem = (item: { name: string; price: number }) => {
 // ============================================
 // Payment Methods
 // ============================================
-const proceedToPayment = (method?: PaymentMethod) => {
+const proceedToPayment = async (method?: PaymentMethod) => {
   if (pos.cartItems.value.length === 0) return;
-  sound.playNotification();
+
+  try {
+    // Play notification sound (non-blocking)
+    sound.playNotification();
+  } catch (e) {
+    console.warn("[POS] Sound failed:", e);
+  }
+
   defaultPaymentMethod.value = method || null;
-  showPaymentModal.value = true;
 
   // Notify customer display that payment is pending
   pos.setPaymentState({
@@ -703,14 +711,50 @@ const proceedToPayment = (method?: PaymentMethod) => {
     amount: totalWithTax.value,
     satsAmount: totalSatsWithTax.value,
   });
+
+  // Force modal to fully reset by closing first, then reopening after nextTick
+  // This fixes reactivity issues where the modal gets stuck
+  showPaymentModal.value = false;
+  await nextTick();
+  showPaymentModal.value = true;
 };
 
 const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
   isProcessing.value = true;
 
   try {
-    const order = pos.createOrder(method);
-    order.status = "completed";
+    let order: Order;
+    const isUpdate = !!editingOrderId.value;
+
+    if (isUpdate && editingOrderId.value) {
+      // 🔄 UPDATE EXISTING ORDER
+      // We use createOrder to get the updated calculations/items from cart
+      const tempOrder = pos.createOrder(method);
+      const existing = ordersStore.getOrder(editingOrderId.value);
+
+      if (existing) {
+        // Merge temp details into existing order to preserve ID/Code/History
+        order = {
+          ...existing,
+          ...tempOrder,
+          id: existing.id,
+          code: existing.code,
+          orderNumber: existing.orderNumber,
+          createdAt: existing.createdAt || existing.date,
+          status: "completed",
+          paymentMethod: method,
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        // Fallback if not found locally
+        order = tempOrder;
+        order.status = "completed";
+      }
+    } else {
+      // 🆕 NEW ORDER
+      order = pos.createOrder(method);
+      order.status = "completed";
+    }
 
     // Add payment proof if available
     if (proof) {
@@ -726,8 +770,13 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       };
     }
 
-    // Save order to local DB and sync to Nostr
-    await ordersStore.createOrder(order);
+    // Save order (Update or Create)
+    if (isUpdate) {
+      await ordersStore.updateOrder(order.id, order);
+      editingOrderId.value = null; // Clear editing mode
+    } else {
+      await ordersStore.createOrder(order);
+    }
 
     // ✅ AUTO-ADJUST STOCK: Decrease stock for each item (only if product tracks stock)
     for (const item of order.items || []) {
@@ -777,15 +826,98 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 
     // 🆕 Generate public receipt with QR code (Nostr + digital)
     try {
-      const {
-        receipt: publicReceipt,
-        url,
-        qrCode,
-      } = await receiptGenerator.createReceiptFromOrder(order, {
-        method,
-        proof: order.paymentProof,
-        paidAt: new Date().toISOString(),
-      });
+      let publicReceipt, url, qrCode;
+
+      // BROADCAST UPDATE to other POS tabs (must serialize to avoid DataCloneError)
+      if (import.meta.client && customerOrderChannel) {
+        customerOrderChannel.postMessage({
+          type: "order-update",
+          order: JSON.parse(JSON.stringify(order)),
+        });
+      }
+
+      // Check if this is a session payment (consolidated bill)
+      const sessionInfoRaw = sessionStorage.getItem("active-session-info");
+      console.log("[POS DEBUG] active-session-info:", sessionInfoRaw);
+
+      const sessionInfo = sessionInfoRaw ? JSON.parse(sessionInfoRaw) : null;
+      console.log("[POS DEBUG] Parsed sessionInfo:", sessionInfo);
+
+      if (sessionInfo) {
+        console.log(
+          "[POS DEBUG] Processing session payment, sessionId:",
+          sessionInfo.sessionId
+        );
+        // This is a session payment - generate consolidated receipt
+        const sessionOrders: Order[] = [];
+
+        // Load all orders from session
+        for (const orderId of sessionInfo.orderIds) {
+          const sessionOrder = ordersStore.getOrder(orderId);
+          if (sessionOrder) {
+            sessionOrders.push(sessionOrder);
+          }
+        }
+
+        // Generate consolidated receipt
+        const consolidated = await receiptGenerator.createConsolidatedReceipt(
+          sessionOrders,
+          {
+            sessionId: sessionInfo.sessionId,
+            tableName: sessionInfo.tableName,
+            tableNumber: sessionInfo.tableNumber,
+          },
+          {
+            method,
+            proof: order.paymentProof,
+            paidAt: new Date().toISOString(),
+          }
+        );
+
+        publicReceipt = consolidated.receipt;
+        url = consolidated.url;
+        qrCode = consolidated.qrCode;
+
+        // Mark all session orders as completed
+        for (const sessionOrder of sessionOrders) {
+          sessionOrder.status = "completed";
+          sessionOrder.paymentMethod = method;
+          sessionOrder.paymentProof = order.paymentProof;
+          await ordersStore.updateOrder(sessionOrder.id, sessionOrder);
+        }
+
+        // Close the session
+        console.log(
+          "[POS DEBUG] Calling closeSession for:",
+          sessionInfo.sessionId
+        );
+        const closed = tableSession.closeSession(sessionInfo.sessionId);
+        console.log("[POS DEBUG] closeSession result:", closed);
+
+        // Broadcast session closed event so PendingBillRequests updates
+        if (import.meta.client) {
+          const channel = new BroadcastChannel("bitspace-pos-commands");
+          channel.postMessage({
+            type: "session-closed",
+            sessionId: sessionInfo.sessionId,
+          });
+          channel.close();
+        }
+
+        // Clear session info
+        sessionStorage.removeItem("active-session-info");
+      } else {
+        // Regular single order receipt
+        const generated = await receiptGenerator.createReceiptFromOrder(order, {
+          method,
+          proof: order.paymentProof,
+          paidAt: new Date().toISOString(),
+        });
+
+        publicReceipt = generated.receipt;
+        url = generated.url;
+        qrCode = generated.qrCode;
+      }
 
       // Store receipt data for display
       if (completedOrder.value) {
@@ -1387,6 +1519,60 @@ onMounted(async () => {
     }
   }
 
+  // Handle session payment from sessionStorage
+  if (import.meta.client) {
+    const sessionPaymentData = sessionStorage.getItem(
+      "pending-session-payment"
+    );
+    if (sessionPaymentData) {
+      try {
+        const { orders, sessionInfo } = JSON.parse(sessionPaymentData);
+
+        // Clear cart and load all items from all orders
+        pos.clearCart();
+
+        // Add all items from all orders to cart
+        for (const order of orders) {
+          for (const item of order.items) {
+            pos.addToCart(item.product, item.quantity);
+          }
+        }
+
+        // Set table info
+        if (sessionInfo.tableName || sessionInfo.tableNumber) {
+          pos.tableNumber.value =
+            sessionInfo.tableName || sessionInfo.tableNumber;
+          pos.setOrderType("dine_in");
+        }
+
+        // Store session info for consolidated receipt generation
+        sessionStorage.setItem(
+          "active-session-info",
+          JSON.stringify({
+            sessionId: sessionInfo.sessionId,
+            tableName: sessionInfo.tableName,
+            tableNumber: sessionInfo.tableNumber,
+            orderIds: orders.map((o: Order) => o.id),
+          })
+        );
+
+        // Clear the pending payment data
+        sessionStorage.removeItem("pending-session-payment");
+
+        // Wait for Vue to update, then open payment modal
+        await nextTick();
+        // Give a bit more time for cart rendering
+        setTimeout(() => {
+          if (pos.cartItems.value.length > 0) {
+            proceedToPayment();
+          }
+        }, 100);
+      } catch (e) {
+        console.error("Failed to load session payment:", e);
+      }
+    }
+  }
+
   // Handle editing existing order
   if (route.query.orderId) {
     const orderId = route.query.orderId as string;
@@ -1511,8 +1697,82 @@ onMounted(async () => {
           color: "blue",
         });
 
-        // Refresh orders to update pending count
-        ordersStore.init();
+        // FORCE ADD to local store immediately
+        const exists = ordersStore.orders.value.find((o) => o.id === order.id);
+        if (!exists) {
+          ordersStore.orders.value.unshift(order);
+          // Optional: re-sort if needed, but unshift is usually fine for "newest"
+        }
+      } else if (event.data?.type === "order-update" && event.data?.order) {
+        // Handle STATUS updates from other POS tabs (e.g. Paid)
+        const updatedOrder = event.data.order;
+        const index = ordersStore.orders.value.findIndex(
+          (o) => o.id === updatedOrder.id
+        );
+
+        if (index !== -1) {
+          // Update in place
+          ordersStore.orders.value[index] = updatedOrder;
+
+          // If status changed to completed, show small toast
+          if (updatedOrder.status === "completed") {
+            const toast = useToast();
+            toast.add({
+              title: "Order Updated",
+              description: `#${
+                updatedOrder.orderNumber || updatedOrder.id.slice(-6)
+              } paid`,
+              color: "green",
+              timeout: 3000,
+            });
+          }
+        }
+      }
+    };
+  }
+
+  // Listen for POS commands (e.g., process-session-payment from PendingBillRequests)
+  if (import.meta.client) {
+    posCommandsChannel = new BroadcastChannel("bitspace-pos-commands");
+    posCommandsChannel.onmessage = async (event) => {
+      if (event.data?.type === "process-session-payment") {
+        const { orders, sessionInfo } = event.data;
+
+        // Clear cart and load all items from all orders
+        pos.clearCart();
+
+        for (const order of orders) {
+          for (const item of order.items) {
+            pos.addToCart(item.product, item.quantity);
+          }
+        }
+
+        // Set table info
+        if (sessionInfo.tableName || sessionInfo.tableNumber) {
+          pos.tableNumber.value =
+            sessionInfo.tableName || sessionInfo.tableNumber;
+          pos.setOrderType("dine_in");
+        }
+
+        // Store session info for consolidated receipt generation
+        sessionStorage.setItem(
+          "active-session-info",
+          JSON.stringify({
+            sessionId: sessionInfo.sessionId,
+            tableName: sessionInfo.tableName,
+            tableNumber: sessionInfo.tableNumber,
+            orderIds: orders.map((o: Order) => o.id),
+          })
+        );
+
+        // Clear the sessionStorage payment data since we handled it via broadcast
+        sessionStorage.removeItem("pending-session-payment");
+
+        // Wait for Vue to update, then open payment modal
+        await nextTick();
+        if (pos.cartItems.value.length > 0) {
+          await proceedToPayment();
+        }
       }
     };
   }
@@ -1538,11 +1798,14 @@ let customerOrderChannel: BroadcastChannel | null = null;
 
 // Store keyboard handler reference for cleanup
 let keyboardShortcutHandler: ((e: KeyboardEvent) => void) | null = null;
+// POS commands channel for same-page communication
+let posCommandsChannel: BroadcastChannel | null = null;
 
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval);
   if (orderReadyChannel) orderReadyChannel.close();
   if (customerOrderChannel) customerOrderChannel.close();
+  if (posCommandsChannel) posCommandsChannel.close();
 
   // Clean up keyboard event listener
   if (keyboardShortcutHandler) {
@@ -1864,6 +2127,8 @@ onUnmounted(() => {
 
       <!-- Products Grid -->
       <div class="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-transparent">
+        <!-- Pending Bill Requests (Session Bills) -->
+        <PosPendingBillRequests />
         <div
           v-if="productsStore.filteredProducts.value.length === 0"
           class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"

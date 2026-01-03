@@ -237,8 +237,178 @@ export const useReceiptGenerator = () => {
     return null;
   };
 
+  /**
+   * Merge multiple orders from a table session into a single consolidated bill
+   * Used when customer requests bill for all orders at their table
+   */
+  const createConsolidatedReceipt = async (
+    orders: Order[],
+    sessionInfo: {
+      sessionId: string;
+      tableName: string;
+      tableNumber: string;
+    },
+    payment?: {
+      method: PaymentMethod;
+      proof?: PaymentProof;
+      paidAt: string;
+    }
+  ): Promise<{
+    receipt: EReceipt;
+    url: string;
+    qrCode: string;
+  }> => {
+    if (orders.length === 0) {
+      throw new Error("No orders to consolidate");
+    }
+
+    // 1. Generate consolidated receipt ID and code
+    const { id: receiptId, code: receiptCode } = EntityId.generic("REC");
+
+    // 2. Merge all items from all orders
+    const allItems: EReceipt["items"] = [];
+    let consolidatedSubtotal = 0;
+    let consolidatedDiscount = 0;
+    let consolidatedTax = 0;
+    let consolidatedTip = 0;
+    let consolidatedTotal = 0;
+
+    // Process each order
+    for (const order of orders) {
+      // Add items from this order
+      for (const item of order.items) {
+        allItems.push({
+          name: item.product.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          total: item.total,
+          variant: item.selectedVariant?.name,
+          modifiers: item.selectedModifiers?.map((m) => m.name),
+          notes: item.notes,
+        });
+      }
+
+      // Accumulate totals
+      consolidatedSubtotal += order.total - (order.tax || 0) - (order.tip || 0);
+      consolidatedDiscount += order.discount || 0;
+      consolidatedTax += order.tax || 0;
+      consolidatedTip += order.tip || 0;
+      consolidatedTotal += order.total;
+    }
+
+    // 3. Create consolidated receipt
+    const consolidatedReceipt: EReceipt = {
+      id: receiptId,
+      code: receiptCode,
+      orderId: sessionInfo.sessionId, // Use session ID as order reference
+      orderCode: `SESSION-${sessionInfo.tableNumber}`,
+      orderNumber: orders.length,
+      merchantName:
+        shop.shopConfig?.value?.shopName ||
+        receiptSettings.settings?.value?.header?.businessName ||
+        "bnos.space",
+      merchantAddress:
+        shop.shopConfig?.value?.address ||
+        receiptSettings.settings?.value?.header?.address ||
+        undefined,
+      merchantPubkey: getUserPubkey() || undefined,
+
+      items: allItems,
+
+      subtotal: consolidatedSubtotal,
+      discount: consolidatedDiscount,
+      tax: consolidatedTax,
+      tip: consolidatedTip,
+      total: consolidatedTotal,
+      totalSats: orders.reduce((sum, o) => sum + (o.totalSats || 0), 0),
+      currency: orders[0]?.currency || "LAK",
+
+      paymentMethod: payment?.method || "cash",
+      paymentProof: payment?.proof
+        ? {
+            ...payment.proof,
+            paymentHash: payment.proof.paymentHash?.slice(0, 16),
+          }
+        : undefined,
+
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(
+        Date.now() + 90 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+    };
+
+    // 4. Save locally
+    receiptComposable.storeEBill(consolidatedReceipt);
+
+    // 5. Publish to Nostr
+    const userPubkey = getUserPubkey();
+
+    if (userPubkey) {
+      try {
+        if (!relay.isInitialized?.value) {
+          await relay.init();
+        }
+
+        const tags = [
+          ["d", receiptCode],
+          ["t", "receipt"],
+          ["t", "public"],
+          ["t", "consolidated"],
+          ["session", sessionInfo.sessionId],
+          ["table", sessionInfo.tableNumber],
+          ["order_count", orders.length.toString()],
+          ["amount", consolidatedTotal.toString()],
+          ["currency", orders[0]?.currency || "LAK"],
+          [
+            "expiration",
+            Math.floor(Date.now() / 1000 + 90 * 24 * 60 * 60).toString(),
+          ],
+        ];
+
+        const content = JSON.stringify(consolidatedReceipt);
+
+        const signedEvent = await nostrData.createEvent(
+          NOSTR_KINDS.RECEIPT,
+          content,
+          tags
+        );
+
+        if (signedEvent) {
+          const published = await relay.publishEvent(signedEvent);
+          if (published) {
+            consolidatedReceipt.nostrEventId = signedEvent.id;
+          }
+        }
+      } catch (error) {
+        console.warn(
+          "[ReceiptGenerator] Failed to publish consolidated receipt:",
+          error
+        );
+      }
+    }
+
+    // 6. Generate URL and QR code
+    const baseUrl =
+      typeof window !== "undefined" ? window.location.origin : "";
+    const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
+
+    const QRCode = await import("qrcode");
+    const qrCode = await QRCode.toDataURL(receiptUrl, {
+      width: 300,
+      margin: 2,
+      errorCorrectionLevel: "M",
+    });
+
+    return {
+      receipt: consolidatedReceipt,
+      url: receiptUrl,
+      qrCode,
+    };
+  };
+
   return {
     createReceiptFromOrder,
+    createConsolidatedReceipt,
     fetchReceiptByCode,
     fetchReceiptById,
   };
