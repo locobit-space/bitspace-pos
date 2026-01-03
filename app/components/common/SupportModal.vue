@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import QRCodeVue from "qrcode.vue";
 import { nip19 } from "nostr-tools";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 const config = useRuntimeConfig();
 const { t } = useI18n();
@@ -71,7 +72,7 @@ async function fetchProfile() {
 
   try {
     const events = await relay.queryEvents({
-      kinds: [0], // Profile metadata
+      kinds: [NOSTR_KINDS.PROFILE],
       authors: [developerPubkey.value],
       limit: 1,
     });

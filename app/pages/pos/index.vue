@@ -53,6 +53,7 @@ const sound = useSound();
 const receipt = useReceipt();
 const receiptGenerator = useReceiptGenerator();
 const customersStore = useCustomers();
+const tableSession = useTableSession();
 const { t } = useI18n();
 
 // ============================================
@@ -182,14 +183,78 @@ const pendingKitchenOrders = computed(
 );
 
 // List of pending orders for payment (cafe pay-later)
+// Filter out bill request placeholders (total = 0)
 const pendingOrdersList = computed(() =>
   ordersStore.orders.value
-    .filter((o) => o.status === "pending")
+    .filter((o) => o.status === "pending" && o.total > 0)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 );
 
 // Selected pending order for payment
 const selectedPendingOrder = ref<Order | null>(null);
+
+// Merge orders feature
+const isMergeMode = ref(false);
+const ordersToMerge = ref<Order[]>([]);
+
+const toggleOrderForMerge = (order: Order) => {
+  const index = ordersToMerge.value.findIndex((o) => o.id === order.id);
+  if (index === -1) {
+    ordersToMerge.value.push(order);
+  } else {
+    ordersToMerge.value.splice(index, 1);
+  }
+};
+
+const isOrderSelectedForMerge = (orderId: string) => {
+  return ordersToMerge.value.some((o) => o.id === orderId);
+};
+
+const mergeSelectedOrders = async () => {
+  if (ordersToMerge.value.length < 2) {
+    toast.add({
+      title: "Select at least 2 orders",
+      description: "Please select multiple orders to merge",
+      icon: "i-heroicons-exclamation-triangle",
+      color: "yellow",
+    });
+    return;
+  }
+
+  // Clear cart and load all items from selected orders
+  pos.clearCart();
+
+  for (const order of ordersToMerge.value) {
+    for (const item of order.items) {
+      pos.addToCart(item.product, item.quantity);
+    }
+  }
+
+  // Get table info from first order
+  const firstOrder = ordersToMerge.value[0];
+  if (firstOrder?.tableNumber) {
+    pos.tableNumber.value = firstOrder.tableNumber;
+    pos.setOrderType("dine_in");
+  }
+
+  // Mark original orders as merged/canceled
+  for (const order of ordersToMerge.value) {
+    order.status = "canceled";
+    order.kitchenNotes = `Merged with other orders at ${new Date().toISOString()}`;
+    await ordersStore.updateOrder(order.id, order);
+  }
+
+  toast.add({
+    title: `Merged ${ordersToMerge.value.length} orders`,
+    description: "Items loaded into cart. Complete payment when ready.",
+    icon: "i-heroicons-check-circle",
+    color: "green",
+  });
+
+  // Reset merge mode
+  ordersToMerge.value = [];
+  isMergeMode.value = false;
+};
 
 // Editing existing order state
 const editingOrderId = ref<string | null>(null);
@@ -691,11 +756,17 @@ const addCustomItem = (item: { name: string; price: number }) => {
 // ============================================
 // Payment Methods
 // ============================================
-const proceedToPayment = (method?: PaymentMethod) => {
+const proceedToPayment = async (method?: PaymentMethod) => {
   if (pos.cartItems.value.length === 0) return;
-  sound.playNotification();
+
+  try {
+    // Play notification sound (non-blocking)
+    sound.playNotification();
+  } catch (e) {
+    console.warn("[POS] Sound failed:", e);
+  }
+
   defaultPaymentMethod.value = method || null;
-  showPaymentModal.value = true;
 
   // Notify customer display that payment is pending
   pos.setPaymentState({
@@ -703,14 +774,50 @@ const proceedToPayment = (method?: PaymentMethod) => {
     amount: totalWithTax.value,
     satsAmount: totalSatsWithTax.value,
   });
+
+  // Force modal to fully reset by closing first, then reopening after nextTick
+  // This fixes reactivity issues where the modal gets stuck
+  showPaymentModal.value = false;
+  await nextTick();
+  showPaymentModal.value = true;
 };
 
 const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
   isProcessing.value = true;
 
   try {
-    const order = pos.createOrder(method);
-    order.status = "completed";
+    let order: Order;
+    const isUpdate = !!editingOrderId.value;
+
+    if (isUpdate && editingOrderId.value) {
+      // 🔄 UPDATE EXISTING ORDER
+      // We use createOrder to get the updated calculations/items from cart
+      const tempOrder = pos.createOrder(method);
+      const existing = ordersStore.getOrder(editingOrderId.value);
+
+      if (existing) {
+        // Merge temp details into existing order to preserve ID/Code/History
+        order = {
+          ...existing,
+          ...tempOrder,
+          id: existing.id,
+          code: existing.code,
+          orderNumber: existing.orderNumber,
+          createdAt: existing.createdAt || existing.date,
+          status: "completed",
+          paymentMethod: method,
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        // Fallback if not found locally
+        order = tempOrder;
+        order.status = "completed";
+      }
+    } else {
+      // 🆕 NEW ORDER
+      order = pos.createOrder(method);
+      order.status = "completed";
+    }
 
     // Add payment proof if available
     if (proof) {
@@ -726,16 +833,26 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       };
     }
 
-    // Save order to local DB and sync to Nostr
-    await ordersStore.createOrder(order);
+    // Check if this is a session payment (consolidated bill)
+    // If so, we don't create a new order - we'll update the existing session orders later
+    const sessionInfoRaw = sessionStorage.getItem("active-session-info");
+    const isSessionPayment = !!sessionInfoRaw;
 
-    // ✅ AUTO-ADJUST STOCK: Decrease stock for each item (only if product tracks stock)
-    for (const item of order.items || []) {
-      // Only deduct stock if product exists and trackStock is not explicitly false
-      // Products with trackStock=undefined or true will have stock deducted
-      // Services/digital products with trackStock=false will be skipped
-      if (item.productId && item.product?.trackStock !== false) {
-        await productsStore.decreaseStock(item.productId, item.quantity);
+    // Save order (Update or Create) - but skip for session payments
+    if (!isSessionPayment) {
+      if (isUpdate) {
+        await ordersStore.updateOrder(order.id, order);
+        editingOrderId.value = null; // Clear editing mode
+      } else {
+        await ordersStore.createOrder(order);
+      }
+
+      // ✅ AUTO-ADJUST STOCK: Decrease stock for each item (only for non-session orders)
+      // Session orders already had stock deducted when originally placed
+      for (const item of order.items || []) {
+        if (item.productId && item.product?.trackStock !== false) {
+          await productsStore.decreaseStock(item.productId, item.quantity);
+        }
       }
     }
 
@@ -777,15 +894,98 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 
     // 🆕 Generate public receipt with QR code (Nostr + digital)
     try {
-      const {
-        receipt: publicReceipt,
-        url,
-        qrCode,
-      } = await receiptGenerator.createReceiptFromOrder(order, {
-        method,
-        proof: order.paymentProof,
-        paidAt: new Date().toISOString(),
-      });
+      let publicReceipt, url, qrCode;
+
+      // BROADCAST UPDATE to other POS tabs (must serialize to avoid DataCloneError)
+      if (import.meta.client && customerOrderChannel) {
+        customerOrderChannel.postMessage({
+          type: "order-update",
+          order: JSON.parse(JSON.stringify(order)),
+        });
+      }
+
+      // Check if this is a session payment (consolidated bill)
+      const sessionInfoRaw = sessionStorage.getItem("active-session-info");
+      console.log("[POS DEBUG] active-session-info:", sessionInfoRaw);
+
+      const sessionInfo = sessionInfoRaw ? JSON.parse(sessionInfoRaw) : null;
+      console.log("[POS DEBUG] Parsed sessionInfo:", sessionInfo);
+
+      if (sessionInfo) {
+        console.log(
+          "[POS DEBUG] Processing session payment, sessionId:",
+          sessionInfo.sessionId
+        );
+        // This is a session payment - generate consolidated receipt
+        const sessionOrders: Order[] = [];
+
+        // Load all orders from session
+        for (const orderId of sessionInfo.orderIds) {
+          const sessionOrder = ordersStore.getOrder(orderId);
+          if (sessionOrder) {
+            sessionOrders.push(sessionOrder);
+          }
+        }
+
+        // Generate consolidated receipt
+        const consolidated = await receiptGenerator.createConsolidatedReceipt(
+          sessionOrders,
+          {
+            sessionId: sessionInfo.sessionId,
+            tableName: sessionInfo.tableName,
+            tableNumber: sessionInfo.tableNumber,
+          },
+          {
+            method,
+            proof: order.paymentProof,
+            paidAt: new Date().toISOString(),
+          }
+        );
+
+        publicReceipt = consolidated.receipt;
+        url = consolidated.url;
+        qrCode = consolidated.qrCode;
+
+        // Mark all session orders as completed
+        for (const sessionOrder of sessionOrders) {
+          sessionOrder.status = "completed";
+          sessionOrder.paymentMethod = method;
+          sessionOrder.paymentProof = order.paymentProof;
+          await ordersStore.updateOrder(sessionOrder.id, sessionOrder);
+        }
+
+        // Close the session
+        console.log(
+          "[POS DEBUG] Calling closeSession for:",
+          sessionInfo.sessionId
+        );
+        const closed = tableSession.closeSession(sessionInfo.sessionId);
+        console.log("[POS DEBUG] closeSession result:", closed);
+
+        // Broadcast session closed event so PendingBillRequests updates
+        if (import.meta.client) {
+          const channel = new BroadcastChannel("bitspace-pos-commands");
+          channel.postMessage({
+            type: "session-closed",
+            sessionId: sessionInfo.sessionId,
+          });
+          channel.close();
+        }
+
+        // Clear session info
+        sessionStorage.removeItem("active-session-info");
+      } else {
+        // Regular single order receipt
+        const generated = await receiptGenerator.createReceiptFromOrder(order, {
+          method,
+          proof: order.paymentProof,
+          paidAt: new Date().toISOString(),
+        });
+
+        publicReceipt = generated.receipt;
+        url = generated.url;
+        qrCode = generated.qrCode;
+      }
 
       // Store receipt data for display
       if (completedOrder.value) {
@@ -1220,9 +1420,7 @@ watch(
 
       // Check for exact barcode or SKU match
       const exactMatch = productsStore.products.value.find(
-        (p) =>
-          p.status === "active" &&
-          (p.barcode === query || p.sku === query)
+        (p) => p.status === "active" && (p.barcode === query || p.sku === query)
       );
 
       if (exactMatch) {
@@ -1389,6 +1587,60 @@ onMounted(async () => {
     }
   }
 
+  // Handle session payment from sessionStorage
+  if (import.meta.client) {
+    const sessionPaymentData = sessionStorage.getItem(
+      "pending-session-payment"
+    );
+    if (sessionPaymentData) {
+      try {
+        const { orders, sessionInfo } = JSON.parse(sessionPaymentData);
+
+        // Clear cart and load all items from all orders
+        pos.clearCart();
+
+        // Add all items from all orders to cart
+        for (const order of orders) {
+          for (const item of order.items) {
+            pos.addToCart(item.product, item.quantity);
+          }
+        }
+
+        // Set table info
+        if (sessionInfo.tableName || sessionInfo.tableNumber) {
+          pos.tableNumber.value =
+            sessionInfo.tableName || sessionInfo.tableNumber;
+          pos.setOrderType("dine_in");
+        }
+
+        // Store session info for consolidated receipt generation
+        sessionStorage.setItem(
+          "active-session-info",
+          JSON.stringify({
+            sessionId: sessionInfo.sessionId,
+            tableName: sessionInfo.tableName,
+            tableNumber: sessionInfo.tableNumber,
+            orderIds: orders.map((o: Order) => o.id),
+          })
+        );
+
+        // Clear the pending payment data
+        sessionStorage.removeItem("pending-session-payment");
+
+        // Wait for Vue to update, then open payment modal
+        await nextTick();
+        // Give a bit more time for cart rendering
+        setTimeout(() => {
+          if (pos.cartItems.value.length > 0) {
+            proceedToPayment();
+          }
+        }, 100);
+      } catch (e) {
+        console.error("Failed to load session payment:", e);
+      }
+    }
+  }
+
   // Handle editing existing order
   if (route.query.orderId) {
     const orderId = route.query.orderId as string;
@@ -1513,11 +1765,91 @@ onMounted(async () => {
           color: "blue",
         });
 
-        // Refresh orders to update pending count
-        ordersStore.init();
+        // FORCE ADD to local store immediately
+        const exists = ordersStore.orders.value.find((o) => o.id === order.id);
+        if (!exists) {
+          ordersStore.orders.value.unshift(order);
+          // Optional: re-sort if needed, but unshift is usually fine for "newest"
+        }
+      } else if (event.data?.type === "order-update" && event.data?.order) {
+        // Handle STATUS updates from other POS tabs (e.g. Paid)
+        const updatedOrder = event.data.order;
+        const index = ordersStore.orders.value.findIndex(
+          (o) => o.id === updatedOrder.id
+        );
+
+        if (index !== -1) {
+          // Update in place
+          ordersStore.orders.value[index] = updatedOrder;
+
+          // If status changed to completed, show small toast
+          if (updatedOrder.status === "completed") {
+            const toast = useToast();
+            toast.add({
+              title: "Order Updated",
+              description: `#${
+                updatedOrder.orderNumber || updatedOrder.id.slice(-6)
+              } paid`,
+              color: "green",
+              timeout: 3000,
+            });
+          }
+        }
       }
     };
   }
+
+  // Listen for POS commands (e.g., process-session-payment from PendingBillRequests)
+  if (import.meta.client) {
+    posCommandsChannel = new BroadcastChannel("bitspace-pos-commands");
+    posCommandsChannel.onmessage = async (event) => {
+      if (event.data?.type === "process-session-payment") {
+        const { orders, sessionInfo } = event.data;
+
+        // Clear cart and load all items from all orders
+        pos.clearCart();
+
+        for (const order of orders) {
+          for (const item of order.items) {
+            pos.addToCart(item.product, item.quantity);
+          }
+        }
+
+        // Set table info
+        if (sessionInfo.tableName || sessionInfo.tableNumber) {
+          pos.tableNumber.value =
+            sessionInfo.tableName || sessionInfo.tableNumber;
+          pos.setOrderType("dine_in");
+        }
+
+        // Store session info for consolidated receipt generation
+        sessionStorage.setItem(
+          "active-session-info",
+          JSON.stringify({
+            sessionId: sessionInfo.sessionId,
+            tableName: sessionInfo.tableName,
+            tableNumber: sessionInfo.tableNumber,
+            orderIds: orders.map((o: Order) => o.id),
+          })
+        );
+
+        // Clear the sessionStorage payment data since we handled it via broadcast
+        sessionStorage.removeItem("pending-session-payment");
+
+        // Wait for Vue to update, then open payment modal
+        await nextTick();
+        if (pos.cartItems.value.length > 0) {
+          await proceedToPayment();
+        }
+      }
+    };
+  }
+
+  // ============================================
+  // 🔔 POS Alerts are now handled centrally in default.vue layout
+  // via initPosAlerts() using kind 30050 (parameterized replaceable)
+  // ============================================
+  // Old subscription code removed to prevent duplicates
 
   // ============================================
   // Keyboard shortcuts
@@ -1540,11 +1872,14 @@ let customerOrderChannel: BroadcastChannel | null = null;
 
 // Store keyboard handler reference for cleanup
 let keyboardShortcutHandler: ((e: KeyboardEvent) => void) | null = null;
+// POS commands channel for same-page communication
+let posCommandsChannel: BroadcastChannel | null = null;
 
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval);
   if (orderReadyChannel) orderReadyChannel.close();
   if (customerOrderChannel) customerOrderChannel.close();
+  if (posCommandsChannel) posCommandsChannel.close();
 
   // Clean up keyboard event listener
   if (keyboardShortcutHandler) {
@@ -1568,7 +1903,7 @@ onUnmounted(() => {
         <div class="flex items-center justify-between">
           <!-- Logo & Status -->
           <div class="flex items-center gap-2 sm:gap-4">
-            <NuxtLink to="/" class="flex items-center gap-2">
+            <NuxtLinkLocale to="/" class="flex items-center gap-2">
               <div>
                 <div
                   class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-600 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-amber-500/20"
@@ -1586,7 +1921,7 @@ onUnmounted(() => {
                   Lightning Powered
                 </p>
               </div>
-            </NuxtLink>
+            </NuxtLinkLocale>
 
             <!-- Connection Status -->
             <div
@@ -1667,38 +2002,38 @@ onUnmounted(() => {
 
             <!-- Dashboard Link -->
             <UTooltip text="Go to Dashboard">
-              <NuxtLink to="/">
+              <NuxtLinkLocale to="/">
                 <UButton
                   icon="i-heroicons-squares-2x2"
                   color="neutral"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Shift Management Link -->
             <UTooltip text="Shift Management">
-              <NuxtLink to="/pos/shift">
+              <NuxtLinkLocale to="/pos/shift">
                 <UButton
                   icon="i-heroicons-banknotes"
                   color="neutral"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Table Management Link -->
             <UTooltip text="Tables">
-              <NuxtLink to="/pos/tables">
+              <NuxtLinkLocale to="/pos/tables">
                 <UButton
                   icon="i-heroicons-table-cells"
                   color="neutral"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Kitchen Display Link (with pending orders badge) -->
@@ -1709,7 +2044,7 @@ onUnmounted(() => {
                   : 'Kitchen Display'
               "
             >
-              <NuxtLink to="/kitchen" class="relative">
+              <NuxtLinkLocale to="/kitchen" class="relative">
                 <UButton
                   icon="i-heroicons-fire"
                   :color="pendingKitchenOrders > 0 ? 'amber' : 'neutral'"
@@ -1722,7 +2057,7 @@ onUnmounted(() => {
                 >
                   {{ pendingKitchenOrders > 9 ? "9+" : pendingKitchenOrders }}
                 </span>
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Settings Button -->
@@ -1738,14 +2073,14 @@ onUnmounted(() => {
 
             <!-- Lightning Settings Link -->
             <UTooltip text="Lightning Settings">
-              <NuxtLink to="/settings/lightning">
+              <NuxtLinkLocale to="/settings/lightning">
                 <UButton
                   icon="i-heroicons-bolt"
                   :color="lightning.isConnected.value ? 'primary' : 'yellow'"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
           </div>
         </div>
@@ -1762,7 +2097,11 @@ onUnmounted(() => {
               class="flex-1 w-full"
             >
               <template #trailing>
-                <UTooltip :text="t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'">
+                <UTooltip
+                  :text="
+                    t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'
+                  "
+                >
                   <UButton
                     size="2xs"
                     color="amber"
@@ -1862,6 +2201,8 @@ onUnmounted(() => {
 
       <!-- Products Grid -->
       <div class="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-transparent">
+        <!-- Pending Bill Requests (Session Bills) -->
+        <PosPendingBillRequests />
         <div
           v-if="productsStore.filteredProducts.value.length === 0"
           class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
@@ -2980,14 +3321,54 @@ onUnmounted(() => {
     >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <span>💳</span> {{ t("pos.pendingBills") || "Pending Bills" }}
-            <span class="text-sm font-normal text-gray-500"
-              >({{ t("pos.awaitingPayment") || "Awaiting Payment" }})</span
+          <div class="flex items-center justify-between mb-4">
+            <h3
+              class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"
             >
-          </h3>
+              <span>💳</span> {{ t("pos.pendingBills") || "Pending Bills" }}
+              <span class="text-sm font-normal text-gray-500"
+                >({{ t("pos.awaitingPayment") || "Awaiting Payment" }})</span
+              >
+            </h3>
+
+            <!-- Merge Toggle Buttons -->
+            <div v-if="pendingOrdersList.length > 1" class="flex gap-2">
+              <UButton
+                v-if="!isMergeMode"
+                size="xs"
+                color="violet"
+                variant="soft"
+                @click="isMergeMode = true"
+              >
+                <UIcon name="i-heroicons-squares-plus" class="w-4 h-4" />
+                {{ t("pos.mergeOrders") || "Merge" }}
+              </UButton>
+              <template v-else>
+                <UButton
+                  size="xs"
+                  color="gray"
+                  variant="ghost"
+                  @click="
+                    isMergeMode = false;
+                    ordersToMerge = [];
+                  "
+                >
+                  {{ t("common.cancel") || "Cancel" }}
+                </UButton>
+                <UButton
+                  size="xs"
+                  color="violet"
+                  :disabled="ordersToMerge.length < 2"
+                  @click="mergeSelectedOrders"
+                >
+                  <UIcon name="i-heroicons-check" class="w-4 h-4" />
+                  {{ t("pos.mergeSelected") || "Merge" }} ({{
+                    ordersToMerge.length
+                  }})
+                </UButton>
+              </template>
+            </div>
+          </div>
 
           <div
             v-if="pendingOrdersList.length === 0"
@@ -3001,10 +3382,26 @@ onUnmounted(() => {
             <div
               v-for="order in pendingOrdersList"
               :key="order.id"
-              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700/30"
+              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border-2 transition-all cursor-pointer"
+              :class="[
+                isMergeMode && isOrderSelectedForMerge(order.id)
+                  ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
+                  : 'border-gray-200 dark:border-gray-700/30',
+                isMergeMode ? 'hover:border-violet-300' : '',
+              ]"
+              @click="isMergeMode ? toggleOrderForMerge(order) : null"
             >
               <div class="flex justify-between items-start mb-2">
                 <div class="flex items-center gap-2">
+                  <!-- Merge checkbox -->
+                  <UCheckbox
+                    v-if="isMergeMode"
+                    :model-value="isOrderSelectedForMerge(order.id)"
+                    @click.stop
+                    @update:model-value="toggleOrderForMerge(order)"
+                    color="violet"
+                    class="mr-1"
+                  />
                   <span
                     v-if="order.orderNumber"
                     class="text-lg font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded"

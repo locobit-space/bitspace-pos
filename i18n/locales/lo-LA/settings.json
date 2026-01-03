@@ -133,7 +133,8 @@
       "sync_failed": "ຊິງຄ໌ການຕັ້ງຄ່າບໍ່ສຳເລັດ",
       "what_syncs": "ສິ່ງທີ່ຈະຖືກຊິງຄ໌:",
       "encrypted": "ເຂົ້າລະຫັດແລ້ວ",
-      "encrypted_desc": "ການຕັ້ງຄ່າທັງໝົດຖືກເຂົ້າລະຫັດດ້ວຍລະຫັດບໍລິສັດກ່ອນຊິງຄ໌."
+      "encrypted_desc": "ການຕັ້ງຄ່າທັງໝົດຖືກເຂົ້າລະຫັດດ້ວຍລະຫັດບໍລິສັດກ່ອນຊິງຄ໌.",
+      "tap_to_copy": "ແຕະເພື່ອຄັດລອກ"
     },
     "security": {
       "title": "ຄວາມປອດໄພ",
@@ -990,6 +991,17 @@
       "sovereignBusiness": "ທຸລະກິດທີ່ເປັນອິດສະຫຼະ, ກະຈາຍສູນ.",
       "openSource": "ໂຄງການນີ້ເປັນ open source ແລະ ສ້າງຂຶ້ນບົນ protocol ເປີດ.",
       "license": "ອະນຸຍາດພາຍໃຕ້ MIT License"
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "subtitle": "ການເບິ່ງເຫັນຮ້ານ ແລະ ການຄົ້ນຫາ",
+      "goPublic": "ເປັນສາທາລະນະ!",
+      "goPublicDesc": "ເຮັດໃຫ້ຮ້ານຂອງທ່ານຄົ້ນຫາໄດ້. ລູກຄ້າສາມາດຊອກຫາທ່ານ ແລະ ຊຳລະດ້ວຍ Lightning.",
+      "publishNow": "ເຜີຍແຜ່ໄປ Marketplace",
+      "published": "ເຜີຍແຜ່ແລ້ວ!",
+      "publishedDesc": "ຮ້ານຂອງທ່ານສາມາດຄົ້ນຫາໄດ້ແລ້ວ",
+      "unpublished": "ໂໝດສ່ວນຕົວ",
+      "unpublishedDesc": "ຮ້ານຂອງທ່ານເປັນສ່ວນຕົວແລ້ວ"
     }
   }
 }

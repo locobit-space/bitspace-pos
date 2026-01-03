@@ -14,6 +14,7 @@ import {
 } from "~/db/db";
 import type { StoreUser } from "~/types";
 import CryptoJS from "crypto-js";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // ============================================
 // Types
@@ -471,7 +472,7 @@ export function useChat() {
       const privateKey = hexToBytes(privateKeyHex);
 
       const eventTemplate = {
-        kind: 4, // NIP-04 encrypted DM
+        kind: NOSTR_KINDS.ENCRYPTED_DM,
         content: encryptedContent,
         created_at: Math.floor(Date.now() / 1000),
         tags: [["p", recipientPubkey]],
@@ -710,7 +711,7 @@ export function useChat() {
       };
 
       const eventTemplate = {
-        kind: 40, // NIP-28 Channel Creation
+        kind: NOSTR_KINDS.CHANNEL_CREATE,
         content: JSON.stringify(content),
         created_at: Math.floor(Date.now() / 1000),
         tags: [],
@@ -883,7 +884,7 @@ export function useChat() {
       }
 
       const eventTemplate = {
-        kind: 9, // NIP-29 Group Chat Message (better compatibility)
+        kind: NOSTR_KINDS.GROUP_CHAT_MESSAGE,
         content: finalContent,
         created_at: Math.floor(Date.now() / 1000),
         tags,
@@ -1027,9 +1028,8 @@ export function useChat() {
         }
       }
 
-      // Create ephemeral typing event (kind 1040)
       const eventTemplate = {
-        kind: 1040, // Typing indicator kind (ephemeral)
+        kind: NOSTR_KINDS.TYPING_INDICATOR,
         content: JSON.stringify({ typing: true, conversation: conversationId }),
         created_at: Math.floor(Date.now() / 1000),
         tags,
@@ -1127,7 +1127,7 @@ export function useChat() {
       ];
 
       const eventTemplate = {
-        kind: 7, // Reaction
+        kind: NOSTR_KINDS.REACTION,
         content: emoji,
         created_at: Math.floor(Date.now() / 1000),
         tags,
@@ -1295,7 +1295,7 @@ export function useChat() {
 
     // Filter 1: DMs to me
     const dmFilter = {
-      kinds: [4],
+      kinds: [NOSTR_KINDS.ENCRYPTED_DM],
       "#p": [currentPubkey],
       since: Math.floor(Date.now() / 1000) - 86400,
     };
@@ -1305,7 +1305,7 @@ export function useChat() {
 
     // Reactions on my messages (DMs and channels)
     const dmReactionsFilter = {
-      kinds: [7], // Reactions
+      kinds: [NOSTR_KINDS.REACTION],
       "#p": [currentPubkey], // Reactions on messages I sent or to me
       since: Math.floor(Date.now() / 1000) - 86400,
     };
@@ -1315,7 +1315,7 @@ export function useChat() {
     if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
       // Primary filter: by company code tag (for relays that support #c)
       const teamChannelFilter = {
-        kinds: [9, 40, 42], // NIP-29 (kind 9) + NIP-28 (40, 42) for compatibility
+        kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE, NOSTR_KINDS.CHANNEL_CREATE, NOSTR_KINDS.CHANNEL_MESSAGE],
         "#c": [company.companyCodeHash.value], // Filter by company code
         since: Math.floor(Date.now() / 1000) - 86400,
       };
@@ -1323,7 +1323,7 @@ export function useChat() {
 
       // Typing indicators for team channels
       const typingFilter = {
-        kinds: [1040], // Typing indicator (ephemeral)
+        kinds: [NOSTR_KINDS.TYPING_INDICATOR],
         "#c": [company.companyCodeHash.value],
         since: Math.floor(Date.now() / 1000),
       };
@@ -1331,23 +1331,23 @@ export function useChat() {
 
       // Reactions for team messages
       const reactionsFilter = {
-        kinds: [7], // Reactions (NIP-25)
+        kinds: [NOSTR_KINDS.REACTION],
         "#c": [company.companyCodeHash.value],
         since: Math.floor(Date.now() / 1000) - 86400,
       };
       filters.push(reactionsFilter);
 
-      // Fallback filter: subscribe to all kind 9 messages (for relays that don't support #c)
+      // Fallback filter: subscribe to all group messages (for relays that don't support #c)
       // This catches all group messages and we filter by company code in handleIncomingMessage
       const fallbackChannelFilter = {
-        kinds: [9],
+        kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
         since: Math.floor(Date.now() / 1000) - 86400,
       };
       filters.push(fallbackChannelFilter);
     } else {
       // Solo mode: subscribe to all public channels
       const channelFilter = {
-        kinds: [9, 40, 42],
+        kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE, NOSTR_KINDS.CHANNEL_CREATE, NOSTR_KINDS.CHANNEL_MESSAGE],
         since: Math.floor(Date.now() / 1000) - 86400,
       };
       filters.push(channelFilter);
@@ -1379,8 +1379,8 @@ export function useChat() {
     }
 
     try {
-      // HANDLE GROUP CHAT MESSAGE (Kind 9 - NIP-29)
-      if (event.kind === 9) {
+      // HANDLE GROUP CHAT MESSAGE (NIP-29)
+      if (event.kind === NOSTR_KINDS.GROUP_CHAT_MESSAGE) {
         // Skip if it's my own message
         if (event.pubkey === currentUser.pubkeyHex) {
           return;
@@ -1509,8 +1509,8 @@ export function useChat() {
         return;
       }
 
-      // HANDLE DIRECT MESSAGE (Kind 4 - NIP-04)
-      if (event.kind === 4) {
+      // HANDLE DIRECT MESSAGE (NIP-04)
+      if (event.kind === NOSTR_KINDS.ENCRYPTED_DM) {
         // Skip if it's my own message
         if (event.pubkey === currentUser.pubkeyHex) {
           return;
@@ -1651,8 +1651,8 @@ export function useChat() {
         return;
       }
 
-      // HANDLE CHANNEL CREATION (Kind 40)
-      else if (event.kind === 40) {
+      // HANDLE CHANNEL CREATION (NIP-28)
+      else if (event.kind === NOSTR_KINDS.CHANNEL_CREATE) {
         const content = JSON.parse(event.content);
         const conversationId = event.id;
 
@@ -1686,8 +1686,8 @@ export function useChat() {
           await saveConversationToLocal(existing);
         }
       }
-      // HANDLE CHANNEL MESSAGE (Kind 42)
-      else if (event.kind === 42) {
+      // HANDLE CHANNEL MESSAGE (NIP-28)
+      else if (event.kind === NOSTR_KINDS.CHANNEL_MESSAGE) {
         const rootTag =
           event.tags.find((t) => t[0] === "e" && t[3] === "root") ||
           event.tags.find((t) => t[0] === "e");
@@ -1699,7 +1699,7 @@ export function useChat() {
         let conv = conversations.value.find((c) => c.id === channelId);
 
         if (!conv) {
-          // Placeholder creation if we missed Kind 40
+          // Placeholder creation if we missed channel creation event
           conv = {
             id: channelId,
             type: "channel",
@@ -1788,8 +1788,8 @@ export function useChat() {
         }
       }
 
-      // HANDLE TYPING INDICATOR (Kind 1040 - Ephemeral)
-      else if (event.kind === 1040) {
+      // HANDLE TYPING INDICATOR (Ephemeral)
+      else if (event.kind === NOSTR_KINDS.TYPING_INDICATOR) {
         // Skip own typing indicators
         if (event.pubkey === currentUser.pubkeyHex) return;
 
@@ -1829,8 +1829,8 @@ export function useChat() {
         return;
       }
 
-      // HANDLE REACTION (Kind 7 - NIP-25)
-      else if (event.kind === 7) {
+      // HANDLE REACTION (NIP-25)
+      else if (event.kind === NOSTR_KINDS.REACTION) {
         try {
           const emoji = event.content;
           const messageId = event.tags.find((t) => t[0] === "e")?.[1];
@@ -2082,9 +2082,9 @@ export function useChat() {
 
     const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
 
-    // Subscribe to team channel updates (kind 30900)
+    // Subscribe to team channel updates
     const conversationFilter = {
-      kinds: [30900], // CHAT_CHANNEL from nostr-kinds
+      kinds: [NOSTR_KINDS.CHAT_CHANNEL],
       "#c": [company.companyCodeHash.value],
       since: Math.floor(Date.now() / 1000),
     };

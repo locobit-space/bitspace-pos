@@ -53,36 +53,42 @@ function handleWriteNew() {
     <template #content>
       <div class="flex flex-col h-full">
         <!-- Header -->
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div class="flex items-center justify-between mb-4">
+        <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-3 sm:mb-4">
             <div class="flex items-center gap-2">
               <Icon
                 name="i-heroicons-question-mark-circle"
-                class="text-xl text-primary-500"
+                class="text-lg sm:text-xl text-primary-500"
               />
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2
+                class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white"
+              >
                 {{ t("help.title") || "Help" }}
               </h2>
             </div>
-            <div class="flex items-center gap-2">
-              <UButton 
-              to="https://discord.gg/aNwEQQF3w8"
+            <div class="flex items-center gap-1 sm:gap-2">
+              <UButton
+                to="https://discord.gg/aNwEQQF3w8"
                 color="gray"
                 variant="ghost"
-                size="xs"
+                size="sm"
                 icon="skill-icons:discord"
                 target="_blank"
+                class="min-h-[40px] min-w-[40px]"
               >
-                {{ t("help.joinDiscord", "Join Discord") }}
+                <span class="hidden sm:inline">{{
+                  t("help.joinDiscord", "Join Discord")
+                }}</span>
               </UButton>
               <!-- Sync Status -->
               <UButton
                 v-if="nostrHelp.isSyncing.value"
                 color="gray"
                 variant="ghost"
-                size="xs"
+                size="sm"
                 loading
                 disabled
+                class="hidden sm:flex"
               >
                 {{ t("help.syncing") || "Syncing..." }}
               </UButton>
@@ -90,6 +96,7 @@ function handleWriteNew() {
                 color="gray"
                 variant="ghost"
                 icon="i-heroicons-x-mark"
+                class="min-h-[40px] min-w-[40px]"
                 @click="help.closeHelp()"
               />
             </div>
@@ -101,6 +108,7 @@ function handleWriteNew() {
             :placeholder="t('help.searchPlaceholder') || 'Search help...'"
             icon="i-heroicons-magnifying-glass"
             class="w-full"
+            size="lg"
           />
         </div>
 
@@ -220,21 +228,21 @@ function handleWriteNew() {
 
         <!-- Footer Actions -->
         <div
-          class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+          class="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
         >
           <!-- Browse All Community Docs -->
-          <NuxtLink to="/help" @click="help.closeHelp()">
+          <NuxtLinkLocale to="/help" @click="help.closeHelp()">
             <UButton
               color="primary"
               variant="soft"
               icon="i-heroicons-book-open"
-              size="sm"
+              size="lg"
               block
-              class="mb-3"
+              class="mb-3 min-h-[44px]"
             >
               {{ t("help.browseCommunityDocs") || "Browse All Community Docs" }}
             </UButton>
-          </NuxtLink>
+          </NuxtLinkLocale>
 
           <p class="text-xs text-gray-500 mb-3 text-center">
             {{ t("help.needMoreHelp") || "Need more help?" }}
@@ -244,8 +252,9 @@ function handleWriteNew() {
               color="gray"
               variant="soft"
               icon="i-heroicons-bug-ant"
-              size="sm"
+              size="lg"
               block
+              class="min-h-[44px]"
               @click="
                 feedback.openFeedback('bug');
                 help.closeHelp();
@@ -257,8 +266,9 @@ function handleWriteNew() {
               color="primary"
               variant="soft"
               icon="i-heroicons-light-bulb"
-              size="sm"
+              size="lg"
               block
+              class="min-h-[44px]"
               @click="
                 feedback.openFeedback('feature');
                 help.closeHelp();

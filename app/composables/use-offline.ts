@@ -3,12 +3,13 @@
 
 import { ref, computed, watch } from 'vue';
 import { db, type NostrEvent } from '~/db/db';
-import type { 
-  OfflineTransaction, 
-  PaymentProof, 
-  Order, 
-  SyncQueue 
+import type {
+  OfflineTransaction,
+  PaymentProof,
+  Order,
+  SyncQueue
 } from '~/types';
+import { NOSTR_KINDS } from '~/types/nostr-kinds';
 
 export const useOffline = () => {
   // State
@@ -73,7 +74,7 @@ export const useOffline = () => {
     await db.pendingSync.add({
       event: {
         id: transaction.id,
-        kind: 9735, // Zap receipt kind
+        kind: NOSTR_KINDS.ZAP_RECEIPT,
         pubkey: '',
         created_at: Math.floor(Date.now() / 1000),
         tags: [

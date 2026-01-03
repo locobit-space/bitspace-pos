@@ -12,6 +12,7 @@ import type {
   AuthSession,
   AuthChallenge,
 } from "~/types";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Singleton state
 const authSession = ref<AuthSession | null>(null);
@@ -180,7 +181,7 @@ export function useStaffAuth() {
 
       // Create auth event
       const unsignedEvent = {
-        kind: 22242,
+        kind: NOSTR_KINDS.STAFF_AUTH,
         created_at: Math.floor(Date.now() / 1000),
         tags: [["challenge", challenge.challenge]],
         content: "Authenticate to bnos.space",

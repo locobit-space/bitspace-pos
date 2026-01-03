@@ -19,10 +19,53 @@
  */
 export const NOSTR_KINDS = {
   // ─────────────────────────────────────────
+  // 🌐 STANDARD NOSTR KINDS (0-999)
+  // ─────────────────────────────────────────
+  /** User profile metadata (NIP-01) */
+  PROFILE: 0,
+  /** Text note / Short-form content (NIP-01) */
+  TEXT_NOTE: 1,
+  /** Contact list / Follow list (NIP-02) */
+  CONTACT_LIST: 3,
+  /** Encrypted direct message (NIP-04) */
+  ENCRYPTED_DM: 4,
+  /** Reaction to an event (NIP-25) */
+  REACTION: 7,
+
+  // ─────────────────────────────────────────
+  // 📡 EPHEMERAL EVENTS (1000-9999)
+  // ─────────────────────────────────────────
+  /** Typing indicator (ephemeral) */
+  TYPING_INDICATOR: 1040,
+
+  // ─────────────────────────────────────────
+  // 🔔 REAL-TIME ALERTS (30050-30059)
+  // Parameterized replaceable for better relay propagation
+  // ─────────────────────────────────────────
+  /** POS real-time alert (new order, bill request, waiter call) - cross-device */
+  POS_ALERT: 1050,
+
+  // ─────────────────────────────────────────
+  // 💳 PAYMENT & ZAP (9700-9799)
+  // ─────────────────────────────────────────
+  /** Zap receipt (NIP-57) */
+  ZAP_RECEIPT: 9735,
+
+  // ─────────────────────────────────────────
+  // 🔐 AUTHENTICATION (22000-22999)
+  // ─────────────────────────────────────────
+  /** Staff authentication challenge/response */
+  STAFF_AUTH: 22242,
+  /** HTTP authentication (NIP-98) */
+  HTTP_AUTH: 27235,
+
+  // ─────────────────────────────────────────
   // 📋 STORE CONFIGURATION (30078-30099)
   // ─────────────────────────────────────────
-  /** Store settings, config, preferences */
+  /** Store settings, config, preferences (private/encrypted) */
   STORE_SETTINGS: 30078,
+  /** Public store profile for marketplace discovery */
+  STORE_PROFILE: 30079,
   /** Table/room layout and status */
   TABLE: 30080,
 
@@ -101,6 +144,8 @@ export const NOSTR_KINDS = {
   PERMISSION_GRANT: 30510,
   /** Permission revoke event */
   PERMISSION_REVOKE: 30511,
+  /** Staff sync data (cross-device synchronization) */
+  STAFF_SYNC: 30590,
 
   // ─────────────────────────────────────────
   // 🏢 BRANCH MANAGEMENT (30600-30699)
@@ -139,12 +184,43 @@ export const NOSTR_KINDS = {
   HELP_ARTICLE: 30850,
 
   // ─────────────────────────────────────────
+  // 📧 REPLACEABLE RECEIPTS (31000-31999)
+  // ─────────────────────────────────────────
+  /** Replaceable receipt event */
+  RECEIPT: 31111,
+
+  // ─────────────────────────────────────────
   // 💬 TEAM CHAT & MESSAGING (30900-30949)
   // ─────────────────────────────────────────
   /** Team chat channel metadata (replaceable) - Legacy NIP-28 */
   CHAT_CHANNEL: 30900,
   /** Chat message (regular event) - Legacy NIP-28 */
   CHAT_MESSAGE: 1234,
+
+  // ─────────────────────────────────────────
+  // � MARKETPLACE INTEGRATION (30950-30959)
+  // Decentralized store discovery & inter-store commerce
+  // ─────────────────────────────────────────
+  /** Store listing for marketplace discovery (search, filters) */
+  MARKETPLACE_LISTING: 30950,
+  /** Product listing for cross-store discovery & catalog sync */
+  MARKETPLACE_PRODUCT: 30951,
+  /** Cross-store order routing (multi-vendor orders) */
+  MARKETPLACE_ORDER: 30952,
+  /** Store-to-store connection/partnership (follow, partner, supplier) */
+  STORE_CONNECTION: 30953,
+  /** Public store profile for discovery (enhanced profile with hours, services) */
+  PUBLIC_STORE_PROFILE: 30954,
+  /** Customer review/rating for a store */
+  MARKETPLACE_REVIEW: 30955,
+
+  // ─────────────────────────────────────────
+  // �📣 CHANNEL CHAT - NIP-28 (Legacy)
+  // ─────────────────────────────────────────
+  /** Channel creation event (NIP-28) */
+  CHANNEL_CREATE: 40,
+  /** Channel message (NIP-28) */
+  CHANNEL_MESSAGE: 42,
 
   // ─────────────────────────────────────────
   // 👥 GROUP CHAT - NIP-29 (Modern)
@@ -159,8 +235,6 @@ export const NOSTR_KINDS = {
   GROUP_CHAT_MESSAGE: 9,
   /** Delete message from group - NIP-29 */
   GROUP_DELETE_MESSAGE: 5,
-  /** Reaction to group message - NIP-29 */
-  GROUP_REACTION: 7,
 } as const;
 
 /**

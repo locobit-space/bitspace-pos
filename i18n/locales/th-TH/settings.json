@@ -145,6 +145,17 @@
         "integrations": {
             "title": "การเชื่อมต่อ",
             "subtitle": "Cloudinary, API keys"
+        },
+        "marketplace": {
+            "title": "Marketplace",
+            "subtitle": "การมองเห็นร้านและการค้นหา",
+            "goPublic": "เป็นสาธารณะ!",
+            "goPublicDesc": "ทำให้ร้านของคุณค้นหาได้ ลูกค้าสามารถค้นหาคุณและชำระเงินด้วย Lightning",
+            "publishNow": "เผยแพร่ไป Marketplace",
+            "published": "เผยแพร่แล้ว!",
+            "publishedDesc": "ร้านของคุณสามารถค้นหาได้แล้ว",
+            "unpublished": "โหมดส่วนตัว",
+            "unpublishedDesc": "ร้านของคุณเป็นส่วนตัวแล้ว"
         }
     }
 }

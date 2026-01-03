@@ -2,7 +2,7 @@
 // 🧾 Receipt & E-Bill System
 // Supports: Thermal/POS printers (ESC/POS), Browser print, E-Bill via QR
 
-import { ref, computed } from "vue";
+import {  computed } from "vue";
 import type { Order, PaymentProof, CurrencyCode, PaymentMethod } from "~/types"; // Re-add CartItem if needed but ReceiptItem is local
 import QRCode from "qrcode";
 

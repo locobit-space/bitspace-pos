@@ -15,6 +15,7 @@ const route = useRoute();
 const receipt = useReceipt();
 const receiptGenerator = useReceiptGenerator();
 const currency = useCurrency();
+const relay = useNostrRelay();
 
 // State
 const eBill = ref<EReceipt | null>(null);
@@ -26,6 +27,9 @@ const canShare = ref(false);
 onMounted(async () => {
   // Check if Web Share API is supported
   canShare.value = typeof navigator !== "undefined" && !!navigator.share;
+
+  // Initialize Nostr relay (required for fetching receipts)
+  await relay.init();
 
   await currency.init("LAK");
 
@@ -118,7 +122,7 @@ const shareReceipt = async () => {
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900"
+    class="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900"
   >
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center min-h-screen">
@@ -156,7 +160,7 @@ const shareReceipt = async () => {
       >
         <!-- Header -->
         <div
-          class="bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-center text-white"
+          class="bg-linear-to-br from-amber-500 to-orange-500 p-6 text-center text-white"
         >
           <div class="text-5xl mb-3">
             {{ receipt.settings.value.logoEmoji || "☕" }}
@@ -173,7 +177,7 @@ const shareReceipt = async () => {
             RECEIPT
           </p>
           <p class="font-mono text-sm text-amber-700 dark:text-amber-300">
-            {{ eBill.id }}
+            {{ eBill.code || eBill.id }}
           </p>
         </div>
 
@@ -182,7 +186,7 @@ const shareReceipt = async () => {
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">Order</span>
             <span class="font-semibold text-gray-900 dark:text-white">{{
-              eBill.orderId
+              eBill.orderCode || eBill.orderNumber || eBill.orderId
             }}</span>
           </div>
           <div class="flex justify-between text-sm mt-2">
@@ -334,7 +338,7 @@ const shareReceipt = async () => {
           variant="soft"
           size="lg"
           icon="i-heroicons-arrow-down-tray"
-          class="flex-1"
+          block
           @click="downloadReceipt"
         >
           Save / Print
@@ -345,7 +349,7 @@ const shareReceipt = async () => {
           variant="soft"
           size="lg"
           icon="i-heroicons-share"
-          class="flex-1"
+          block
           @click="shareReceipt"
         >
           Share
@@ -356,7 +360,13 @@ const shareReceipt = async () => {
       <div class="mt-8 text-center print:hidden">
         <p class="text-xs text-gray-400">
           Digital receipt by
-          <a href="/" class="text-amber-500 hover:underline">bnos.space</a>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-amber-500 hover:underline"
+            >bnos.space</a
+          >
         </p>
       </div>
     </div>

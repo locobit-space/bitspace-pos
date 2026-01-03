@@ -3,6 +3,7 @@
 // Syncs Lightning, Receipt, Tax settings to Nostr with company code encryption
 
 import { ref, computed } from "vue";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Setting types for sync
 import type { LightningProvider } from "~/types";
@@ -88,7 +89,6 @@ interface SyncedSettings {
 }
 
 // Nostr event kind for synced settings (using replaceable event)
-const SETTINGS_SYNC_KIND = 30078;
 const SETTINGS_IDENTIFIER = "bnos-settings-v1";
 
 // Singleton state
@@ -134,7 +134,7 @@ export function useSettingsSync() {
 
       // Publish to Nostr
       const event = await nostrData.publishReplaceableEvent(
-        SETTINGS_SYNC_KIND,
+        NOSTR_KINDS.STORE_SETTINGS,
         { ct: encrypted, v: 4 }, // v4 = company code encrypted
         SETTINGS_IDENTIFIER,
         [
@@ -295,7 +295,7 @@ export function useSettingsSync() {
 
       // Query Nostr for settings with company code hash
       const filter = {
-        kinds: [SETTINGS_SYNC_KIND],
+        kinds: [NOSTR_KINDS.STORE_SETTINGS],
         "#c": [codeHash],
         "#type": ["settings-sync"],
         limit: 1,

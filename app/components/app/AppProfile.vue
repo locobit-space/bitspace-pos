@@ -75,7 +75,7 @@
         </div>
         <!-- Add Account Button -->
         <div class="py-2 border-b border-gray-200 dark:border-gray-700">
-          <NuxtLink
+          <NuxtLinkLocale
             to="/auth/signin"
             class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
@@ -83,7 +83,7 @@
             <span class="text-sm">{{
               $t("account.addAccount") || "Add Account"
             }}</span>
-          </NuxtLink>
+          </NuxtLinkLocale>
         </div>
 
         <!-- Quick Settings -->
@@ -155,21 +155,21 @@
 
         <!-- Navigation Links -->
         <div class="py-2">
-          <NuxtLink
+          <NuxtLinkLocale
             to="/settings/account"
             class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
             <span class="text-sm">{{ $t("settings.account") }}</span>
-          </NuxtLink>
+          </NuxtLinkLocale>
 
-          <NuxtLink
+          <NuxtLinkLocale
             to="/settings/general"
             class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5" />
             <span class="text-sm">{{ $t("settings.general.title") }}</span>
-          </NuxtLink>
+          </NuxtLinkLocale>
         </div>
 
         <!-- Sign Out -->

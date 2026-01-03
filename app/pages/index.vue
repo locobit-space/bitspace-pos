@@ -387,11 +387,11 @@ onMounted(async () => {
           ]"
         />
 
-        <NuxtLink to="/pos">
+        <NuxtLinkLocale to="/pos">
           <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
             {{ t("pos.terminal") }}
           </UButton>
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
     </div>
 

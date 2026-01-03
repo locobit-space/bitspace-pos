@@ -217,6 +217,7 @@
 <script setup lang="ts">
 import QRCodeVue from "qrcode.vue";
 import { nip19 } from "nostr-tools";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Developer's npub
 const DEVELOPER_NPUB =
@@ -280,7 +281,7 @@ async function fetchProfile() {
 
   try {
     const events = await relay.queryEvents({
-      kinds: [0], // Profile metadata
+      kinds: [NOSTR_KINDS.PROFILE],
       authors: [pubkeyHex.value],
       limit: 1,
     });

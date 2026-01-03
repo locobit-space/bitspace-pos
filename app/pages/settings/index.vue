@@ -54,14 +54,14 @@
             variant="solid"
             @click="navigateTo('/settings/account')"
           >
-            {{ $t("common.view",  "View profile") }}
+            {{ $t("common.view", "View profile") }}
           </UButton>
           <UButton
             color="neutral"
             variant="outline"
             @click="navigateTo('/settings/account#edit')"
           >
-            {{ $t("common.edit","Edit profile") }}
+            {{ $t("common.edit", "Edit profile") }}
           </UButton>
         </div>
       </div>
@@ -70,7 +70,7 @@
     <!-- Settings Grid - Single column on mobile, 2 on tablet+ -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
       <!-- Your Keys -->
-      <NuxtLink
+      <NuxtLinkLocale
         to="/settings/security"
         class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-red-300 dark:hover:border-red-700 hover:shadow-md transition-all"
       >
@@ -98,10 +98,10 @@
             class="w-5 h-5 text-gray-400 flex-shrink-0"
           />
         </div>
-      </NuxtLink>
+      </NuxtLinkLocale>
 
       <!-- Relays Settings -->
-      <NuxtLink
+      <NuxtLinkLocale
         to="/settings/relays"
         class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all"
       >
@@ -127,10 +127,10 @@
             class="w-5 h-5 text-gray-400 flex-shrink-0"
           />
         </div>
-      </NuxtLink>
+      </NuxtLinkLocale>
 
       <!-- Wallets (Lightning) -->
-      <NuxtLink
+      <NuxtLinkLocale
         to="/settings/lightning"
         class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all"
       >
@@ -153,10 +153,10 @@
             class="w-5 h-5 text-gray-400 flex-shrink-0"
           />
         </div>
-      </NuxtLink>
+      </NuxtLinkLocale>
 
       <!-- Crypto Payments -->
-      <NuxtLink
+      <NuxtLinkLocale
         to="/settings/crypto"
         class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all"
       >
@@ -179,10 +179,10 @@
             class="w-5 h-5 text-gray-400 flex-shrink-0"
           />
         </div>
-      </NuxtLink>
+      </NuxtLinkLocale>
 
       <!-- Customization -->
-      <NuxtLink
+      <NuxtLinkLocale
         to="/settings/customization"
         class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-md transition-all"
       >
@@ -205,7 +205,7 @@
             class="w-5 h-5 text-gray-400 flex-shrink-0"
           />
         </div>
-      </NuxtLink>
+      </NuxtLinkLocale>
     </div>
 
     <!-- Business Settings Section -->
@@ -215,7 +215,7 @@
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- General Store Settings -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/general"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md transition-all"
         >
@@ -241,10 +241,39 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
+
+        <!-- Marketplace -->
+        <NuxtLinkLocale
+          to="/settings/marketplace"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all"
+        >
+          <div class="p-4 flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-globe-alt"
+                class="w-6 h-6 text-blue-600"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.marketplace.title", "Marketplace") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ $t("settings.marketplace.subtitle", "Store visibility") }}
+              </p>
+            </div>
+            <UIcon
+              name="i-heroicons-chevron-right"
+              class="w-5 h-5 text-gray-400 flex-shrink-0"
+            />
+          </div>
+        </NuxtLinkLocale>
 
         <!-- Tax -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/tax"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:shadow-md transition-all"
         >
@@ -270,10 +299,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- Receipt -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/receipt"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all"
         >
@@ -299,10 +328,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- Bank Accounts -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/bank-accounts"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md transition-all"
         >
@@ -328,10 +357,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- Users & Permissions -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/users"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all"
         >
@@ -354,10 +383,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- Tables -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/tables"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all"
         >
@@ -383,7 +412,7 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
     </div>
 
@@ -394,7 +423,7 @@
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- Backup -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/backup"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-cyan-300 dark:hover:border-cyan-700 hover:shadow-md transition-all"
         >
@@ -420,10 +449,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- Audit Log -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/audit-log"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-md transition-all"
         >
@@ -449,10 +478,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- Features -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/features"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all"
         >
@@ -478,10 +507,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- Integrations -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/integrations"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
         >
@@ -509,10 +538,10 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <!-- About -->
-        <NuxtLink
+        <NuxtLinkLocale
           to="/settings/about"
           class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all"
         >
@@ -538,7 +567,7 @@
               class="w-5 h-5 text-gray-400 flex-shrink-0"
             />
           </div>
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
     </div>
   </div>

@@ -15,6 +15,7 @@ export default defineNuxtRouteMiddleware((to, _from) => {
     "/auth/reset-password",
     "/auth/verify-email",
     "/auth/join", // Staff invite join page
+    "/order", // Customer order page (public)
   ];
 
   if (publicPaths.some((path) => to.path.startsWith(path))) {

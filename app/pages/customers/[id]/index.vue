@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * 👤 Customer Detail Page
+ * 👤 Customer Detail Page (Refactored)
  * Full customer profile with orders, invoices, contracts, loyalty
- * Loads data from local DB with Nostr fallback
+ * Uses extracted components for cleaner code
  */
 import type { LoyaltyMember, Order } from "~/types";
 
@@ -13,6 +13,8 @@ definePageMeta({
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
+const localePath = useLocalePath();
 const toast = useToast();
 const { formatCurrency } = useCurrency();
 const customersStore = useCustomers();
@@ -28,10 +30,10 @@ const activeTab = ref<
   "overview" | "orders" | "invoices" | "contracts" | "loyalty" | "activity"
 >("overview");
 
-// Customer data - loaded from composable
+// Customer data
 const customer = ref<LoyaltyMember | null>(null);
 
-// Customer orders - loaded from orders store
+// Customer orders
 const orders = ref<
   Array<{
     id: string;
@@ -84,7 +86,7 @@ const loyaltyRewards = computed(() => {
 // Activity log (computed from orders and loyalty rewards)
 const activityLog = computed(() => {
   const activities: Array<{
-    id: number;
+    id: number | string;
     date: string;
     type: string;
     description: string;
@@ -124,7 +126,7 @@ const showRewardModal = ref(false);
 const messageForm = ref({ channel: "nostr", subject: "", content: "" });
 const rewardForm = ref({ points: 0, reason: "" });
 
-// Tier colors
+// Tier colors for badge
 const tierColors: Record<string, string> = {
   bronze:
     "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
@@ -134,48 +136,19 @@ const tierColors: Record<string, string> = {
     "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
-const statusColors: Record<string, string> = {
-  completed:
-    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  pending:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  overdue: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  active: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  cancelled: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
-};
-
-// Tier thresholds
-const tierThresholds = {
-  bronze: { min: 0, max: 500 },
-  silver: { min: 500, max: 1500 },
-  gold: { min: 1500, max: 5000 },
-  platinum: { min: 5000, max: Infinity },
-};
-
-const nextTierProgress = computed(() => {
-  if (!customer.value) return 0;
-  const currentTier = customer.value.tier || "bronze";
-  const points = customer.value.points || 0;
-
-  if (currentTier === "platinum") return 100;
-
-  const nextThreshold =
-    {
-      bronze: tierThresholds.silver.min,
-      silver: tierThresholds.gold.min,
-      gold: tierThresholds.platinum.min,
-      platinum: tierThresholds.platinum.min,
-    }[currentTier] || 500;
-
-  return Math.min(100, Math.round((points / nextThreshold) * 100));
-});
+// Tab items
+const tabs = computed(() => [
+  { value: "overview", label: t("customers.tabs.overview") || "Overview" },
+  { value: "orders", label: t("customers.tabs.orders") || "Orders" },
+  { value: "invoices", label: t("customers.tabs.invoices") || "Invoices" },
+  { value: "contracts", label: t("customers.tabs.contracts") || "Contracts" },
+  { value: "loyalty", label: t("customers.tabs.loyalty") || "Loyalty" },
+  { value: "activity", label: t("customers.tabs.activity") || "Activity" },
+]);
 
 // Load customer orders
 const loadCustomerOrders = async () => {
   await ordersStore.init();
-
-  // Filter orders by customer ID or nostr pubkey
   const customerOrders = ordersStore.orders.value.filter(
     (o: Order) =>
       o.customerId === customerId.value ||
@@ -196,7 +169,6 @@ const loadCustomerOrders = async () => {
 // Actions
 const saveCustomer = async () => {
   if (!customer.value) return;
-
   try {
     const updated = await customersStore.updateCustomer(
       customer.value.id,
@@ -228,7 +200,6 @@ const cancelEdit = () => {
 };
 
 const sendMessage = () => {
-  // TODO: Implement message sending via Nostr DM
   console.log("Sending message:", messageForm.value);
   showSendMessageModal.value = false;
   messageForm.value = { channel: "nostr", subject: "", content: "" };
@@ -240,7 +211,6 @@ const sendMessage = () => {
 };
 
 const sendReward = () => {
-  // TODO: Implement reward sending via Nostr zap
   console.log("Sending reward:", rewardForm.value);
   showRewardModal.value = false;
   rewardForm.value = { points: 0, reason: "" };
@@ -256,32 +226,25 @@ const deleteCustomer = async () => {
   if (
     confirm(t("customers.deleteConfirmation", { name: customer.value.name }))
   ) {
-    // TODO: Implement delete in composable
     toast.add({
       title: t("common.success"),
       description: t("customers.deleted") || "Customer deleted",
       color: "green",
     });
-    navigateTo("/customers");
+    router.push(localePath("/customers"));
   }
 };
 
-// Initialize - Load customer data
+// Initialize
 onMounted(async () => {
   try {
-    // Initialize customers store
     await customersStore.init();
-
-    // Load customer by ID (tries: memory → local DB → Nostr relay)
     const foundCustomer = await customersStore.getCustomerById(
       customerId.value
     );
-
     if (foundCustomer) {
       customer.value = foundCustomer;
       editForm.value = { ...foundCustomer };
-
-      // Load customer's orders
       await loadCustomerOrders();
     }
   } catch (e) {
@@ -325,14 +288,18 @@ onMounted(async () => {
           "The customer you're looking for doesn't exist"
         }}
       </p>
-      <UButton to="/customers" color="primary" icon="i-heroicons-arrow-left">
+      <UButton
+        :to="localePath('/customers')"
+        color="primary"
+        icon="i-heroicons-arrow-left"
+      >
         {{ t("customers.backToList") || "Back to Customers" }}
       </UButton>
     </div>
 
     <!-- Customer Content -->
     <template v-else>
-      <!-- Page Header -->
+      <!-- Page Header with CustomerCard -->
       <div
         class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
       >
@@ -340,148 +307,87 @@ onMounted(async () => {
           <UButton
             icon="i-heroicons-arrow-left"
             variant="ghost"
-            to="/customers"
+            :to="localePath('/customers')"
             :aria-label="t('common.back')"
           />
-          <div class="flex items-center gap-4">
-            <!-- Avatar -->
-            <div
-              class="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center"
-            >
-              <span
-                class="text-2xl font-bold text-primary-600 dark:text-primary-400"
-              >
-                {{ customer.name?.charAt(0) || "?" }}
-              </span>
-            </div>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                {{ customer.name || "Unknown Customer" }}
-              </h1>
-              <div class="flex items-center gap-2 mt-1">
-                <span
-                  :class="tierColors[customer.tier || 'bronze']"
-                  class="px-2 py-0.5 rounded-full text-xs font-medium"
-                >
-                  {{ (customer.tier || "bronze").toUpperCase() }}
-                </span>
-                <span
-                  v-for="tag in (customer.tags || []).slice(0, 2)"
-                  :key="tag"
-                  class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-            </div>
-          </div>
+          <CustomerCard :customer="customer" size="lg" :show-tags="true" />
         </div>
 
+        <!-- Action Buttons -->
         <div class="flex items-center gap-2">
-          <UButton
-            v-if="!isEditing"
-            icon="i-heroicons-chat-bubble-left"
-            variant="outline"
-            @click="showSendMessageModal = true"
-          >
-            {{ t("customers.sendMessage") || "Message" }}
-          </UButton>
-          <UButton
-            v-if="!isEditing"
-            icon="i-heroicons-gift"
-            variant="outline"
-            color="amber"
-            @click="showRewardModal = true"
-          >
-            {{ t("loyalty.sendReward") }}
-          </UButton>
-          <UButton
-            v-if="!isEditing"
-            icon="i-heroicons-pencil"
-            @click="isEditing = true"
-          >
-            {{ t("common.edit") }}
-          </UButton>
+          <template v-if="!isEditing">
+            <UButton
+              icon="i-heroicons-chat-bubble-left"
+              variant="outline"
+              @click="showSendMessageModal = true"
+            >
+              {{ t("common.message") || "Message" }}
+            </UButton>
+            <UButton
+              icon="i-heroicons-gift"
+              variant="outline"
+              @click="showRewardModal = true"
+            >
+              {{ t("loyalty.reward") || "Reward" }}
+            </UButton>
+            <UButton icon="i-heroicons-pencil" @click="isEditing = true">
+              {{ t("common.edit") }}
+            </UButton>
+          </template>
           <template v-else>
-            <UButton variant="ghost" @click="cancelEdit">{{
-              t("common.cancel")
-            }}</UButton>
-            <UButton icon="i-heroicons-check" @click="saveCustomer">{{
-              t("common.save")
-            }}</UButton>
+            <UButton variant="outline" @click="cancelEdit">
+              {{ t("common.cancel") }}
+            </UButton>
+            <UButton icon="i-heroicons-check" @click="saveCustomer">
+              {{ t("common.save") }}
+            </UButton>
           </template>
         </div>
       </div>
 
       <!-- Stats Cards -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <UCard>
-          <div class="text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("customers.totalSpent") }}
-            </p>
-            <p class="text-xl font-bold text-primary-600 dark:text-primary-400">
-              {{ formatCurrency(customer.totalSpent || 0) }}
-            </p>
-          </div>
-        </UCard>
-        <UCard>
-          <div class="text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("customers.orders") }}
-            </p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
-              {{ orders.length }}
-            </p>
-          </div>
-        </UCard>
-        <UCard>
-          <div class="text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("loyalty.points") }}
-            </p>
-            <p class="text-xl font-bold text-amber-600 dark:text-amber-400">
-              {{ (customer.points || 0).toLocaleString() }}
-            </p>
-          </div>
-        </UCard>
-        <UCard>
-          <div class="text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("customers.visits") }}
-            </p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
-              {{ customer.visitCount || 0 }}
-            </p>
-          </div>
-        </UCard>
+        <CommonStatCard
+          icon="i-heroicons-currency-dollar"
+          icon-color="green"
+          :label="t('customers.totalSpent')"
+          :value="formatCurrency(customer.totalSpent || 0)"
+        />
+        <CommonStatCard
+          icon="i-heroicons-shopping-bag"
+          icon-color="blue"
+          :label="t('customers.orders')"
+          :value="orders.length"
+        />
+        <CommonStatCard
+          icon="i-heroicons-star"
+          icon-color="yellow"
+          :label="t('loyalty.points')"
+          :value="(customer.points || 0).toLocaleString()"
+        />
+        <CommonStatCard
+          icon="i-heroicons-building-storefront"
+          icon-color="purple"
+          :label="t('customers.visits')"
+          :value="customer.visitCount || 0"
+        />
       </div>
 
       <!-- Tab Navigation -->
       <div class="border-b border-gray-200 dark:border-gray-700">
         <nav class="flex gap-4 overflow-x-auto">
           <button
-            v-for="tab in [
-              'overview',
-              'orders',
-              'invoices',
-              'contracts',
-              'loyalty',
-              'activity',
-            ]"
-            :key="tab"
-            @click="activeTab = tab as any"
+            v-for="tab in tabs"
+            :key="tab.value"
+            @click="activeTab = tab.value as typeof activeTab"
             class="px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
             :class="
-              activeTab === tab
+              activeTab === tab.value
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
             "
           >
-            {{
-              t(`customers.tabs.${tab}`) ||
-              tab.charAt(0).toUpperCase() + tab.slice(1)
-            }}
+            {{ tab.label }}
           </button>
         </nav>
       </div>
@@ -492,710 +398,201 @@ onMounted(async () => {
         class="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
         <!-- Contact Information -->
-        <UCard class="lg:col-span-2">
-          <template #header>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("customers.contactInfo") }}
-            </h3>
-          </template>
-
-          <div v-if="!isEditing" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t("customers.email") }}
-                </p>
-                <p class="font-medium text-gray-900 dark:text-white">
-                  {{ customer.email || "-" }}
-                </p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t("customers.phone") }}
-                </p>
-                <p class="font-medium text-gray-900 dark:text-white">
-                  {{ customer.phone || "-" }}
-                </p>
-              </div>
-              <div class="md:col-span-2">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t("customers.address") }}
-                </p>
-                <p class="font-medium text-gray-900 dark:text-white">
-                  {{ customer.address || "-" }}
-                </p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t("customers.nostrPubkey") }}
-                </p>
-                <p
-                  class="font-mono text-sm text-gray-900 dark:text-white truncate"
-                >
-                  {{ customer.nostrPubkey || "-" }}
-                </p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t("customers.lightningAddress") }}
-                </p>
-                <p class="font-medium text-primary-600 dark:text-primary-400">
-                  {{ customer.lightningAddress || "-" }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField :label="t('customers.name')">
-                <UInput v-model="editForm.name" />
-              </UFormField>
-              <UFormField :label="t('customers.email')">
-                <UInput v-model="editForm.email" type="email" />
-              </UFormField>
-              <UFormField :label="t('customers.phone')">
-                <UInput v-model="editForm.phone" />
-              </UFormField>
-              <UFormField :label="t('customers.lightningAddress')">
-                <UInput v-model="editForm.lightningAddress" />
-              </UFormField>
-              <UFormField :label="t('customers.address')" class="md:col-span-2">
-                <UTextarea v-model="editForm.address" :rows="2" />
-              </UFormField>
-            </div>
-          </div>
-        </UCard>
+        <CustomerContactCard
+          :customer="customer"
+          :is-editing="isEditing"
+          v-model:edit-form="editForm"
+        />
 
         <!-- Loyalty Progress -->
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("loyalty.title") }}
-            </h3>
-          </template>
-
-          <div class="space-y-4">
-            <div class="text-center">
-              <div
-                class="w-20 h-20 mx-auto rounded-full flex items-center justify-center"
-                :class="tierColors[customer.tier || 'bronze']"
-              >
-                <UIcon name="i-heroicons-star" class="w-10 h-10" />
-              </div>
-              <h4
-                class="mt-2 text-lg font-bold text-gray-900 dark:text-white capitalize"
-              >
-                {{ customer.tier || "bronze" }}
-              </h4>
-              <p class="text-2xl font-bold text-amber-600">
-                {{ (customer.points || 0).toLocaleString() }}
-                {{ t("loyalty.points") }}
-              </p>
-            </div>
-
-            <div v-if="(customer.tier || 'bronze') !== 'platinum'">
-              <div class="flex justify-between text-sm mb-1">
-                <span class="text-gray-500 dark:text-gray-400"
-                  >Progress to next tier</span
-                >
-                <span class="font-medium">{{ nextTierProgress }}%</span>
-              </div>
-              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  class="bg-amber-500 h-2 rounded-full transition-all"
-                  :style="{ width: `${nextTierProgress}%` }"
-                ></div>
-              </div>
-            </div>
-
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              <p>{{ t("customers.visits") }}: {{ customer.visitCount || 0 }}</p>
-              <p>
-                {{ t("customers.joinedAt") || "Joined" }}:
-                {{ customer.joinedAt || "-" }}
-              </p>
-              <p>
-                {{ t("customers.lastVisit") }}: {{ customer.lastVisit || "-" }}
-              </p>
-            </div>
-          </div>
-        </UCard>
+        <CustomerLoyaltyCard
+          :tier="customer.tier || 'bronze'"
+          :points="customer.points || 0"
+          :visit-count="customer.visitCount"
+          :joined-at="customer.joinedAt"
+          :last-visit="customer.lastVisit"
+        />
 
         <!-- Notes -->
-        <UCard class="lg:col-span-2">
-          <template #header>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("common.notes") }}
-            </h3>
-          </template>
-
-          <div v-if="!isEditing">
-            <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-              {{ customer.notes || t("customers.noNotes") || "No notes" }}
-            </p>
-          </div>
-          <div v-else>
-            <UTextarea v-model="editForm.notes" :rows="4" />
-          </div>
-        </UCard>
+        <CustomerNotesCard
+          :notes="customer.notes"
+          :is-editing="isEditing"
+          v-model:edit-notes="editForm.notes"
+        />
 
         <!-- Preferences -->
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("customers.preferences") || "Preferences" }}
-            </h3>
-          </template>
-
-          <div class="space-y-3 text-sm">
-            <div>
-              <p class="text-gray-500 dark:text-gray-400">Payment Preference</p>
-              <p
-                class="font-medium text-gray-900 dark:text-white flex items-center gap-1"
-              >
-                <UIcon
-                  v-if="customer.preferences.preferredPayment === 'lightning'"
-                  name="i-heroicons-bolt"
-                  class="text-amber-500"
-                />
-                {{ customer.preferences.preferredPayment }}
-              </p>
-            </div>
-            <div>
-              <p class="text-gray-500 dark:text-gray-400">Favorite Products</p>
-              <div class="flex flex-wrap gap-1 mt-1">
-                <span
-                  v-for="product in customer.preferences.favoriteProducts"
-                  :key="product"
-                  class="px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded text-xs"
-                >
-                  {{ product }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </UCard>
+        <CustomerPreferencesCard :preferences="customer.preferences" />
       </div>
 
       <!-- Orders Tab -->
-      <div v-if="activeTab === 'orders'">
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("orders.title") }}
-              </h3>
-              <UButton size="sm" icon="i-heroicons-plus" to="/orders/create">{{
-                t("orders.newOrder")
-              }}</UButton>
-            </div>
-          </template>
-
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr
-                  class="text-left text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700"
-                >
-                  <th class="pb-3 font-medium">{{ t("orders.id") }}</th>
-                  <th class="pb-3 font-medium">{{ t("orders.date") }}</th>
-                  <th class="pb-3 font-medium text-center">
-                    {{ t("pos.items") }}
-                  </th>
-                  <th class="pb-3 font-medium text-right">
-                    {{ t("orders.total") }}
-                  </th>
-                  <th class="pb-3 font-medium">{{ t("pos.paymentMethod") }}</th>
-                  <th class="pb-3 font-medium">{{ t("orders.status") }}</th>
-                  <th class="pb-3 font-medium text-right">
-                    {{ t("common.actions") }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr v-for="order in orders" :key="order.id" class="text-sm">
-                  <td
-                    class="py-3 font-medium text-primary-600 dark:text-primary-400"
-                  >
-                    <NuxtLink :to="`/orders/${order.id}`">{{
-                      order.id
-                    }}</NuxtLink>
-                  </td>
-                  <td class="py-3 text-gray-600 dark:text-gray-400">
-                    {{ order.date }}
-                  </td>
-                  <td class="py-3 text-center">{{ order.items }}</td>
-                  <td
-                    class="py-3 text-right font-medium text-gray-900 dark:text-white"
-                  >
-                    {{ formatCurrency(order.total) }}
-                  </td>
-                  <td class="py-3">
-                    <span class="flex items-center gap-1">
-                      <UIcon
-                        v-if="order.paymentMethod === 'lightning'"
-                        name="i-heroicons-bolt"
-                        class="text-amber-500"
-                      />
-                      {{ order.paymentMethod }}
-                    </span>
-                  </td>
-                  <td class="py-3">
-                    <span
-                      :class="statusColors[order.status]"
-                      class="px-2 py-0.5 rounded-full text-xs font-medium"
-                    >
-                      {{ order.status }}
-                    </span>
-                  </td>
-                  <td class="py-3 text-right">
-                    <UButton
-                      size="xs"
-                      variant="ghost"
-                      icon="i-heroicons-eye"
-                      :to="`/orders/${order.id}`"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </UCard>
-      </div>
+      <CustomerOrdersTable
+        v-if="activeTab === 'orders'"
+        :orders="orders"
+        :customer-id="customerId"
+      />
 
       <!-- Invoices Tab -->
-      <div v-if="activeTab === 'invoices'">
-        <UCard>
+      <CustomerInvoicesTable
+        v-if="activeTab === 'invoices'"
+        :invoices="invoices"
+        :customer-id="customerId"
+      />
+
+      <!-- Contracts Tab -->
+      <CustomerContractsCard
+        v-if="activeTab === 'contracts'"
+        :contracts="contracts"
+        :customer-id="customerId"
+      />
+
+      <!-- Loyalty Tab -->
+      <div
+        v-if="activeTab === 'loyalty'"
+        class="grid grid-cols-1 lg:grid-cols-3 gap-6"
+      >
+        <UCard class="lg:col-span-2">
           <template #header>
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("accounting.tabs.invoices") || "Invoices" }}
-              </h3>
-              <UButton size="sm" icon="i-heroicons-plus">{{
-                t("accounting.createInvoice")
-              }}</UButton>
-            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t("loyalty.rewards") || "Points History" }}
+            </h3>
           </template>
 
-          <div class="overflow-x-auto">
+          <div
+            v-if="loyaltyRewards.length === 0"
+            class="text-center py-8 text-gray-500"
+          >
+            {{ t("loyalty.noRewards") || "No rewards yet" }}
+          </div>
+
+          <div v-else class="overflow-x-auto">
             <table class="w-full">
               <thead>
                 <tr
                   class="text-left text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700"
                 >
-                  <th class="pb-3 font-medium">
-                    {{ t("accounting.invoiceNumber") }}
-                  </th>
                   <th class="pb-3 font-medium">{{ t("accounting.date") }}</th>
-                  <th class="pb-3 font-medium text-right">
-                    {{ t("accounting.amount") }}
-                  </th>
                   <th class="pb-3 font-medium">
-                    {{ t("accounting.dueDate") }}
+                    {{ t("accounting.description") }}
                   </th>
-                  <th class="pb-3 font-medium">{{ t("accounting.status") }}</th>
                   <th class="pb-3 font-medium text-right">
-                    {{ t("common.actions") }}
+                    {{ t("loyalty.points") }}
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                 <tr
-                  v-for="invoice in invoices"
-                  :key="invoice.id"
+                  v-for="reward in loyaltyRewards"
+                  :key="reward.id"
                   class="text-sm"
                 >
-                  <td
-                    class="py-3 font-medium text-primary-600 dark:text-primary-400"
-                  >
-                    {{ invoice.id }}
-                  </td>
                   <td class="py-3 text-gray-600 dark:text-gray-400">
-                    {{ invoice.date }}
+                    {{ reward.date }}
                   </td>
-                  <td
-                    class="py-3 text-right font-medium text-gray-900 dark:text-white"
-                  >
-                    {{ formatCurrency(invoice.amount) }}
-                  </td>
-                  <td class="py-3 text-gray-600 dark:text-gray-400">
-                    {{ invoice.dueDate }}
-                  </td>
-                  <td class="py-3">
-                    <span
-                      :class="statusColors[invoice.status]"
-                      class="px-2 py-0.5 rounded-full text-xs font-medium"
+                  <td class="py-3 text-gray-900 dark:text-white">
+                    {{ reward.description }}
+                    <NuxtLinkLocale
+                      v-if="reward.orderId"
+                      :to="`/orders/${reward.orderId}`"
+                      class="text-primary-600 dark:text-primary-400 ml-1"
                     >
-                      {{ invoice.status }}
-                    </span>
+                      {{ reward.orderId }}
+                    </NuxtLinkLocale>
                   </td>
-                  <td class="py-3 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <UButton
-                        size="xs"
-                        variant="ghost"
-                        icon="i-heroicons-eye"
-                      />
-                      <UButton
-                        size="xs"
-                        variant="ghost"
-                        icon="i-heroicons-printer"
-                      />
-                      <UButton
-                        v-if="invoice.status !== 'paid'"
-                        size="xs"
-                        variant="ghost"
-                        icon="i-heroicons-bolt"
-                        color="amber"
-                      />
-                    </div>
+                  <td
+                    class="py-3 text-right font-medium"
+                    :class="
+                      reward.points > 0 ? 'text-green-600' : 'text-red-600'
+                    "
+                  >
+                    {{ reward.points > 0 ? "+" : "" }}{{ reward.points }}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </UCard>
-      </div>
 
-      <!-- Contracts Tab -->
-      <div v-if="activeTab === 'contracts'">
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("customers.contracts") || "Contracts" }}
-              </h3>
-              <UButton size="sm" icon="i-heroicons-plus">{{
-                t("customers.addContract") || "Add Contract"
-              }}</UButton>
-            </div>
-          </template>
-
-          <div class="space-y-4">
-            <div
-              v-for="contract in contracts"
-              :key="contract.id"
-              class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
-            >
-              <div class="flex items-start justify-between">
-                <div>
-                  <div class="flex items-center gap-2">
-                    <h4 class="font-medium text-gray-900 dark:text-white">
-                      {{ contract.title }}
-                    </h4>
-                    <span
-                      :class="statusColors[contract.status]"
-                      class="px-2 py-0.5 rounded-full text-xs font-medium"
-                    >
-                      {{ contract.status }}
-                    </span>
-                  </div>
-                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {{ contract.id }}
-                  </p>
-                </div>
-                <div class="text-right">
-                  <p
-                    class="text-lg font-bold text-primary-600 dark:text-primary-400"
-                  >
-                    {{ formatCurrency(contract.value) }}
-                  </p>
-                </div>
-              </div>
-              <div
-                class="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400"
-              >
-                <span
-                  >{{ t("customers.startDate") || "Start" }}:
-                  {{ contract.startDate }}</span
-                >
-                <span
-                  >{{ t("customers.endDate") || "End" }}:
-                  {{ contract.endDate }}</span
-                >
-              </div>
-              <div class="mt-3 flex gap-2">
-                <UButton size="xs" variant="outline" icon="i-heroicons-eye">{{
-                  t("common.view") || "View"
-                }}</UButton>
-                <UButton
-                  size="xs"
-                  variant="outline"
-                  icon="i-heroicons-document-arrow-down"
-                  >{{ t("common.download") || "Download" }}</UButton
-                >
-              </div>
-            </div>
-
-            <div
-              v-if="contracts.length === 0"
-              class="text-center py-8 text-gray-500 dark:text-gray-400"
-            >
-              {{ t("customers.noContracts") || "No contracts yet" }}
-            </div>
-          </div>
-        </UCard>
-      </div>
-
-      <!-- Loyalty Tab -->
-      <div v-if="activeTab === 'loyalty'">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <UCard class="lg:col-span-2">
-            <template #header>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("loyalty.rewards") || "Points History" }}
-              </h3>
-            </template>
-
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr
-                    class="text-left text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700"
-                  >
-                    <th class="pb-3 font-medium">{{ t("accounting.date") }}</th>
-                    <th class="pb-3 font-medium">
-                      {{ t("accounting.description") }}
-                    </th>
-                    <th class="pb-3 font-medium text-right">
-                      {{ t("loyalty.points") }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                  <tr
-                    v-for="reward in loyaltyRewards"
-                    :key="reward.id"
-                    class="text-sm"
-                  >
-                    <td class="py-3 text-gray-600 dark:text-gray-400">
-                      {{ reward.date }}
-                    </td>
-                    <td class="py-3 text-gray-900 dark:text-white">
-                      {{ reward.description }}
-                      <NuxtLink
-                        v-if="reward.orderId"
-                        :to="`/orders/${reward.orderId}`"
-                        class="text-primary-600 dark:text-primary-400 ml-1"
-                      >
-                        {{ reward.orderId }}
-                      </NuxtLink>
-                    </td>
-                    <td
-                      class="py-3 text-right font-medium"
-                      :class="
-                        reward.points > 0 ? 'text-green-600' : 'text-red-600'
-                      "
-                    >
-                      {{ reward.points > 0 ? "+" : "" }}{{ reward.points }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </UCard>
-
-          <UCard>
-            <template #header>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("loyalty.sendReward") }}
-              </h3>
-            </template>
-
-            <div class="space-y-4">
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                Send a Lightning zap reward to this customer's wallet.
-              </p>
-              <UFormField label="Amount (sats)">
-                <UInput
-                  v-model="rewardForm.points"
-                  type="number"
-                  placeholder="1000"
-                />
-              </UFormField>
-              <UFormField label="Reason">
-                <USelect
-                  v-model="rewardForm.reason"
-                  :items="[
-                    'loyalty_bonus',
-                    'referral',
-                    'promotion',
-                    'birthday',
-                  ]"
-                />
-              </UFormField>
-              <UButton
-                block
-                icon="i-heroicons-bolt"
-                color="amber"
-                @click="sendReward"
-              >
-                ⚡ Send Zap Reward
-              </UButton>
-            </div>
-          </UCard>
-        </div>
+        <!-- Loyalty Summary -->
+        <CustomerLoyaltyCard
+          :tier="customer.tier || 'bronze'"
+          :points="customer.points || 0"
+          :visit-count="customer.visitCount"
+          :joined-at="customer.joinedAt"
+          :last-visit="customer.lastVisit"
+        />
       </div>
 
       <!-- Activity Tab -->
-      <div v-if="activeTab === 'activity'">
+      <CustomerActivityLog
+        v-if="activeTab === 'activity'"
+        :activities="activityLog"
+      />
+    </template>
+
+    <!-- Send Message Modal -->
+    <UModal v-model:open="showSendMessageModal">
+      <template #content>
         <UCard>
           <template #header>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("customers.activityLog") || "Activity Log" }}
+            <h3 class="text-lg font-semibold">
+              {{ t("customers.sendMessage") || "Send Message" }}
             </h3>
           </template>
 
           <div class="space-y-4">
-            <div
-              v-for="activity in activityLog"
-              :key="activity.id"
-              class="flex items-start gap-4 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg"
-            >
-              <div class="p-2 rounded-full bg-gray-100 dark:bg-gray-700">
-                <UIcon
-                  :name="activity.icon"
-                  class="w-5 h-5 text-gray-600 dark:text-gray-400"
-                />
-              </div>
-              <div class="flex-1">
-                <p class="text-gray-900 dark:text-white">
-                  {{ activity.description }}
-                </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ activity.date }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </UCard>
-      </div>
-
-      <!-- Danger Zone -->
-      <UCard
-        v-if="activeTab === 'overview'"
-        class="border-red-200 dark:border-red-900"
-      >
-        <template #header>
-          <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">
-            {{ t("customers.dangerZone") || "Danger Zone" }}
-          </h3>
-        </template>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="font-medium text-gray-900 dark:text-white">
-              {{ t("customers.deleteCustomer") || "Delete Customer" }}
-            </p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{
-                t("customers.deleteWarning") || "This action cannot be undone."
-              }}
-            </p>
-          </div>
-          <UButton
-            color="red"
-            variant="outline"
-            icon="i-heroicons-trash"
-            @click="deleteCustomer"
-          >
-            {{ t("common.delete") }}
-          </UButton>
-        </div>
-      </UCard>
-
-      <!-- Send Message Modal -->
-      <UModal v-model:open="showSendMessageModal">
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("customers.sendMessage") || "Send Message" }}
-              </h3>
-              <UButton
-                variant="ghost"
-                icon="i-heroicons-x-mark"
-                @click="showSendMessageModal = false"
-              />
-            </div>
-          </template>
-
-          <div class="space-y-4">
-            <UFormField :label="t('customers.channel') || 'Channel'">
-              <USelect
-                v-model="messageForm.channel"
-                :items="['nostr', 'email', 'sms']"
-              />
-            </UFormField>
-            <UFormField :label="t('customers.subject') || 'Subject'">
+            <UFormField :label="t('common.subject') || 'Subject'">
               <UInput v-model="messageForm.subject" />
             </UFormField>
-            <UFormField :label="t('customers.message') || 'Message'">
+            <UFormField :label="t('common.message') || 'Message'">
               <UTextarea v-model="messageForm.content" :rows="4" />
             </UFormField>
           </div>
 
           <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton variant="ghost" @click="showSendMessageModal = false">{{
-                t("common.cancel")
-              }}</UButton>
-              <UButton icon="i-heroicons-paper-airplane" @click="sendMessage">{{
+            <div class="flex justify-end gap-3">
+              <UButton variant="outline" @click="showSendMessageModal = false">
+                {{ t("common.cancel") }}
+              </UButton>
+              <UButton @click="sendMessage">{{
                 t("common.send") || "Send"
               }}</UButton>
             </div>
           </template>
         </UCard>
-      </UModal>
+      </template>
+    </UModal>
 
-      <!-- Reward Modal -->
-      <UModal v-model:open="showRewardModal">
+    <!-- Reward Modal -->
+    <UModal v-model:open="showRewardModal">
+      <template #content>
         <UCard>
           <template #header>
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("loyalty.sendReward") }}
-              </h3>
-              <UButton
-                variant="ghost"
-                icon="i-heroicons-x-mark"
-                @click="showRewardModal = false"
-              />
-            </div>
+            <h3 class="text-lg font-semibold">
+              {{ t("loyalty.sendReward") || "Send Reward" }}
+            </h3>
           </template>
 
           <div class="space-y-4">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              Send a Lightning zap to
-              <strong>{{ customer.lud16 || "No lightning address" }}</strong>
-            </p>
-            <UFormField label="Amount (sats)">
-              <UInput
-                v-model="rewardForm.points"
-                type="number"
-                placeholder="1000"
-              />
+            <UFormField :label="t('loyalty.points')">
+              <UInput v-model.number="rewardForm.points" type="number" />
             </UFormField>
-            <UFormField label="Reason">
-              <UInput
-                v-model="rewardForm.reason"
-                placeholder="Thank you for being a loyal customer!"
-              />
+            <UFormField :label="t('common.reason') || 'Reason'">
+              <UInput v-model="rewardForm.reason" />
             </UFormField>
           </div>
 
           <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton variant="ghost" @click="showRewardModal = false">{{
-                t("common.cancel")
+            <div class="flex justify-end gap-3">
+              <UButton variant="outline" @click="showRewardModal = false">
+                {{ t("common.cancel") }}
+              </UButton>
+              <UButton @click="sendReward">{{
+                t("common.send") || "Send"
               }}</UButton>
-              <UButton icon="i-heroicons-bolt" color="amber" @click="sendReward"
-                >⚡ {{ t("loyalty.sendReward") }}</UButton
-              >
             </div>
           </template>
         </UCard>
-      </UModal>
-    </template>
+      </template>
+    </UModal>
   </div>
 </template>

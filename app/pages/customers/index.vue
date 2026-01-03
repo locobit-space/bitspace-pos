@@ -14,6 +14,8 @@ useHead({
 const { t } = useI18n();
 const toast = useToast();
 const nostrData = useNostrData();
+const localePath = useLocalePath();
+const router = useRouter();
 
 // Permissions
 const { canViewCustomers, canEditCustomers } = usePermissions();
@@ -77,6 +79,7 @@ onMounted(async () => {
 const searchQuery = ref("");
 const selectedTier = ref("all");
 const selectedTag = ref("all");
+const selectedTab = ref("all"); // Controls top tabs: all, members, vip
 
 const tierOptions = [
   { value: "all", label: t("common.all") || "All" },
@@ -97,6 +100,7 @@ const tagOptions = [
 
 const filteredCustomers = computed(() => {
   return customersStore.customers.value.filter((customer) => {
+    // Search filter
     const matchesSearch =
       (customer.name?.toLowerCase() || "").includes(
         searchQuery.value.toLowerCase()
@@ -108,11 +112,27 @@ const filteredCustomers = computed(() => {
         searchQuery.value.toLowerCase()
       ) ||
       customer.phone?.includes(searchQuery.value);
+
+    // Tier filter
     const matchesTier =
       selectedTier.value === "all" || customer.tier === selectedTier.value;
+
+    // Tag filter
     const matchesTag =
       selectedTag.value === "all" || customer.tags?.includes(selectedTag.value);
-    return matchesSearch && matchesTier && matchesTag;
+
+    // Tab filter (members = has points, vip = has vip tag)
+    let matchesTab = true;
+    if (selectedTab.value === "members") {
+      matchesTab = (customer.points || 0) > 0 || customer.tier !== "bronze";
+    } else if (selectedTab.value === "vip") {
+      matchesTab =
+        customer.tags?.includes("vip") ||
+        customer.tier === "platinum" ||
+        customer.tier === "gold";
+    }
+
+    return matchesSearch && matchesTier && matchesTag && matchesTab;
   });
 });
 
@@ -300,6 +320,54 @@ const paginatedCustomers = computed(() => {
 
 // Stats
 const stats = computed(() => customersStore.getCustomerStats());
+
+// Import functionality
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const importing = ref(false);
+
+const triggerFileUpload = () => {
+  fileInputRef.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  importing.value = true;
+  try {
+    const content = await file.text();
+    const result = await customersStore.importCustomers(content);
+
+    if (result.success > 0) {
+      toast.add({
+        title: t("common.success"),
+        description:
+          t("customers.importSuccess", { count: result.success }) ||
+          `Imported ${result.success} customers`,
+        color: "success",
+      });
+    }
+
+    if (result.errors.length > 0) {
+      toast.add({
+        title: t("common.warning") || "Warning",
+        description: result.errors.slice(0, 3).join(", "),
+        color: "warning",
+      });
+    }
+  } catch (error) {
+    toast.add({
+      title: t("common.error"),
+      description: String(error),
+      color: "error",
+    });
+  } finally {
+    importing.value = false;
+    // Reset file input
+    if (target) target.value = "";
+  }
+};
 </script>
 
 <template>
@@ -321,6 +389,7 @@ const stats = computed(() => customersStore.getCustomerStats());
 
       <template #tabs>
         <UTabs
+          v-model="selectedTab"
           variant="link"
           :items="[
             { label: t('customers.all'), value: 'all' },
@@ -364,13 +433,45 @@ const stats = computed(() => customersStore.getCustomerStats());
           label-key="label"
           :placeholder="t('customers.filterByTag')"
         />
-        <UButton
-          color="neutral"
-          variant="ghost"
-          icon="i-heroicons-arrow-down-tray"
-          :label="t('common.export')"
-          @click="customersStore.exportCustomers()"
-        />
+        <div class="flex gap-2">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-arrow-down-tray"
+            :label="t('common.export')"
+            @click="customersStore.exportCustomers()"
+          />
+          <UDropdownMenu
+            :items="[
+              [
+                {
+                  label: t('customers.downloadTemplate') || 'Download Template',
+                  icon: 'i-heroicons-document-arrow-down',
+                  onSelect: () => customersStore.downloadImportTemplate(),
+                },
+                {
+                  label: t('customers.importFromCSV') || 'Import from CSV',
+                  icon: 'i-heroicons-arrow-up-tray',
+                  onSelect: () => triggerFileUpload(),
+                },
+              ],
+            ]"
+          >
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-heroicons-arrow-up-tray"
+              :label="t('common.import')"
+            />
+          </UDropdownMenu>
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            class="hidden"
+            @change="handleFileUpload"
+          />
+        </div>
       </div>
 
       <!-- Stats Cards -->
@@ -473,12 +574,13 @@ const stats = computed(() => customersStore.getCustomerStats());
             <tr
               v-for="customer in paginatedCustomers"
               :key="customer.id"
-              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+              @click="router.push(localePath(`/customers/${customer.id}`))"
             >
               <td class="py-3 px-4">
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold"
+                    class="w-10 h-10 bg-linear-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold"
                   >
                     {{
                       (customer.name || customer.nostrPubkey || "?")
@@ -487,12 +589,16 @@ const stats = computed(() => customersStore.getCustomerStats());
                     }}
                   </div>
                   <div>
-                    <p class="font-medium text-gray-900 dark:text-white">
+                    <NuxtLinkLocale
+                      :to="`/customers/${customer.id}`"
+                      class="font-medium text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400"
+                      @click.stop
+                    >
                       {{
                         customer.name ||
                         `${customer.nostrPubkey?.slice(0, 8)}...`
                       }}
-                    </p>
+                    </NuxtLinkLocale>
                     <div class="flex gap-1 mt-1">
                       <UBadge
                         v-for="tag in (customer.tags || []).slice(0, 2)"
@@ -560,14 +666,14 @@ const stats = computed(() => customersStore.getCustomerStats());
                   }}
                 </span>
               </td>
-              <td class="py-3 px-4">
+              <td class="py-3 px-4" @click.stop>
                 <div class="flex justify-end gap-1">
                   <UButton
                     icon="i-heroicons-eye"
                     color="neutral"
                     variant="ghost"
                     size="sm"
-                    @click="viewCustomer(customer)"
+                    :to="localePath(`/customers/${customer.id}`)"
                   />
                   <UButton
                     v-if="canEditCustomers"
@@ -629,11 +735,12 @@ const stats = computed(() => customersStore.getCustomerStats());
               <UFormField
                 :label="t('customers.name')"
                 required
-                class="md:col-span-2"
+                class="md:col-span-2 w-full"
               >
                 <UInput
                   v-model="customerForm.name"
                   :placeholder="t('customers.namePlaceholder')"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -641,6 +748,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                 <UInput
                   v-model="customerForm.nostrPubkey"
                   placeholder="npub1... or hex pubkey"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -648,6 +756,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                 <UInput
                   v-model="customerForm.lud16"
                   placeholder="user@getalby.com"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -657,6 +766,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                   :items="formTierOptions"
                   value-key="value"
                   label-key="label"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -665,6 +775,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                   v-model="customerForm.email"
                   type="email"
                   :placeholder="t('customers.emailPlaceholder')"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -672,6 +783,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                 <UInput
                   v-model="customerForm.phone"
                   :placeholder="t('customers.phonePlaceholder')"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -680,6 +792,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                   v-model="customerForm.address"
                   :placeholder="t('customers.addressPlaceholder')"
                   :rows="2"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -701,7 +814,8 @@ const stats = computed(() => customersStore.getCustomerStats());
                       :items="paymentTermOptions"
                       value-key="value"
                       label-key="label"
-                      :placeholder="t('common.select') || 'Select'"
+                      :placeholder="t('common.select', 'Select')"
+                      class="w-full"
                     />
                   </UFormField>
 
@@ -712,6 +826,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                       v-model.number="customerForm.creditLimit"
                       type="number"
                       :placeholder="'0'"
+                      class="w-full"
                     >
                       <template #trailing>
                         <span class="text-xs text-gray-400">LAK</span>
@@ -726,6 +841,7 @@ const stats = computed(() => customersStore.getCustomerStats());
                   v-model="customerForm.notes"
                   :placeholder="t('customers.notesPlaceholder')"
                   :rows="2"
+                  class="w-full"
                 />
               </UFormField>
             </div>
@@ -752,172 +868,10 @@ const stats = computed(() => customersStore.getCustomerStats());
     </UModal>
 
     <!-- View Customer Modal -->
-    <UModal v-model:open="showViewModal">
-      <template #content>
-        <UCard v-if="viewingCustomer">
-          <template #header>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl"
-              >
-                {{
-                  (viewingCustomer.name || viewingCustomer.nostrPubkey || "?")
-                    .charAt(0)
-                    .toUpperCase()
-                }}
-              </div>
-              <div>
-                <h3 class="text-lg font-medium">
-                  {{
-                    viewingCustomer.name ||
-                    `${viewingCustomer.nostrPubkey?.slice(0, 12)}...`
-                  }}
-                </h3>
-                <UBadge
-                  :color="getTierColor(viewingCustomer.tier)"
-                  :label="t(`loyalty.${viewingCustomer.tier || 'bronze'}`)"
-                />
-              </div>
-            </div>
-          </template>
-
-          <div class="space-y-6">
-            <!-- Contact Info -->
-            <div>
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("customers.contactInfo") }}
-              </h4>
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div v-if="viewingCustomer.email">
-                  <p class="text-gray-500 dark:text-gray-400">
-                    {{ t("customers.email") }}
-                  </p>
-                  <p class="font-medium">{{ viewingCustomer.email }}</p>
-                </div>
-                <div v-if="viewingCustomer.phone">
-                  <p class="text-gray-500 dark:text-gray-400">
-                    {{ t("customers.phone") }}
-                  </p>
-                  <p class="font-medium">{{ viewingCustomer.phone }}</p>
-                </div>
-                <div v-if="viewingCustomer.lud16" class="col-span-2">
-                  <p class="text-gray-500 dark:text-gray-400">
-                    {{ t("customers.lightningAddress") }}
-                  </p>
-                  <p class="font-medium text-orange-500">
-                    ⚡ {{ viewingCustomer.lud16 }}
-                  </p>
-                </div>
-                <div class="col-span-2">
-                  <p class="text-gray-500 dark:text-gray-400">Nostr Pubkey</p>
-                  <p class="font-mono text-xs break-all">
-                    {{ viewingCustomer.nostrPubkey }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Loyalty Stats -->
-            <div>
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("loyalty.stats") }}
-              </h4>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-2xl font-bold text-primary-500">
-                    {{ viewingCustomer.points?.toLocaleString() || 0 }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("loyalty.points") }}
-                  </p>
-                </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-2xl font-bold text-green-500">
-                    {{ viewingCustomer.totalOrders || 0 }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("customers.orders") }}
-                  </p>
-                </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-2xl font-bold text-blue-500">
-                    {{ viewingCustomer.visitCount || 0 }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("customers.visits") }}
-                  </p>
-                </div>
-                <div
-                  class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-center"
-                >
-                  <p class="text-lg font-bold text-purple-500">
-                    {{ formatCurrency(viewingCustomer.totalSpent) }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t("customers.totalSpent") }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tags -->
-            <div v-if="viewingCustomer.tags?.length">
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("customers.tags") }}
-              </h4>
-              <div class="flex flex-wrap gap-2">
-                <UBadge
-                  v-for="tag in viewingCustomer.tags"
-                  :key="tag"
-                  :color="
-                    tag === 'vip'
-                      ? 'yellow'
-                      : tag === 'lightning'
-                      ? 'orange'
-                      : 'neutral'
-                  "
-                  >{{ tag }}</UBadge
-                >
-              </div>
-            </div>
-
-            <!-- Notes -->
-            <div v-if="viewingCustomer.notes">
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
-                {{ t("customers.notes") }}
-              </h4>
-              <p class="text-gray-600 dark:text-gray-400 text-sm">
-                {{ viewingCustomer.notes }}
-              </p>
-            </div>
-          </div>
-
-          <template #footer>
-            <div class="flex justify-between">
-              <UButton
-                color="neutral"
-                variant="ghost"
-                :label="t('customers.viewOrders')"
-                icon="i-heroicons-shopping-bag"
-                :to="`/orders?customer=${viewingCustomer.id}`"
-              />
-              <UButton
-                color="neutral"
-                variant="outline"
-                :label="t('common.close')"
-                @click="showViewModal = false"
-              />
-            </div>
-          </template>
-        </UCard>
-      </template>
-    </UModal>
+    <CustomerViewModal
+      v-model:open="showViewModal"
+      :customer="viewingCustomer"
+    />
 
     <!-- Delete Confirmation Modal -->
     <UModal v-model:open="showDeleteModal">

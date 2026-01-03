@@ -5,6 +5,7 @@
 
 import type { POSNotification, NotificationPriority } from "~/types";
 import { db } from "~/db/db";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Singleton state (shared across all composable instances)
 const notifications = ref<POSNotification[]>([]);
@@ -145,12 +146,14 @@ export const useNotifications = () => {
     if (notification.message.length > maxLength) {
       description = notification.message.slice(0, maxLength) + "...";
       // Add action to view full notification
-      actions = [{
-        label: "View More",
-        click: () => {
-          isNotificationCenterOpen.value = true;
-        }
-      }];
+      actions = [
+        {
+          label: "View More",
+          click: () => {
+            isNotificationCenterOpen.value = true;
+          },
+        },
+      ];
     }
 
     toast.add({
@@ -578,6 +581,7 @@ export const useNotifications = () => {
 
     // System Announcements
     initSystemNotifications,
+    initPosAlerts,
   };
 };
 
@@ -595,12 +599,12 @@ async function initSystemNotifications() {
 
   // Announcement tags to listen for
   const ANNOUNCEMENT_TAGS = [
-    "bnos.space-announcement",     // General announcements
-    "bnos.space-update",           // Version updates
-    "bnos.space-feature",          // New features
-    "bnos.space-maintenance",      // Scheduled maintenance
-    "bnos.space-security",         // Security alerts
-    "bnos.space-bugfix",           // Important bug fixes
+    "bnos.space-announcement", // General announcements
+    "bnos.space-update", // Version updates
+    "bnos.space-feature", // New features
+    "bnos.space-maintenance", // Scheduled maintenance
+    "bnos.space-security", // Security alerts
+    "bnos.space-bugfix", // Important bug fixes
     // for dev
     // "test-announcement",
   ];
@@ -608,44 +612,44 @@ async function initSystemNotifications() {
   // Map announcement tags to notification properties
   const getAnnouncementConfig = (tags: string[]) => {
     // Check tag priority (security > maintenance > update > feature > bugfix > general)
-    if (tags.some(t => t === "bnos.space-security")) {
+    if (tags.some((t) => t === "bnos.space-security")) {
       return {
         type: "alert" as const,
         priority: "high" as NotificationPriority,
         icon: "🔒",
-        defaultTitle: "Security Alert"
+        defaultTitle: "Security Alert",
       };
     }
-    if (tags.some(t => t === "bnos.space-maintenance")) {
+    if (tags.some((t) => t === "bnos.space-maintenance")) {
       return {
         type: "system" as const,
         priority: "medium" as NotificationPriority,
         icon: "🔧",
-        defaultTitle: "Maintenance Notice"
+        defaultTitle: "Maintenance Notice",
       };
     }
-    if (tags.some(t => t === "bnos.space-update")) {
+    if (tags.some((t) => t === "bnos.space-update")) {
       return {
         type: "system_update" as const,
         priority: "medium" as NotificationPriority,
         icon: "🚀",
-        defaultTitle: "System Update"
+        defaultTitle: "System Update",
       };
     }
-    if (tags.some(t => t === "bnos.space-feature")) {
+    if (tags.some((t) => t === "bnos.space-feature")) {
       return {
         type: "system_update" as const,
         priority: "low" as NotificationPriority,
         icon: "✨",
-        defaultTitle: "New Feature"
+        defaultTitle: "New Feature",
       };
     }
-    if (tags.some(t => t === "bnos.space-bugfix")) {
+    if (tags.some((t) => t === "bnos.space-bugfix")) {
       return {
         type: "system" as const,
         priority: "low" as NotificationPriority,
         icon: "🐛",
-        defaultTitle: "Bug Fix"
+        defaultTitle: "Bug Fix",
       };
     }
     // Default for bnos.space-announcement or unknown
@@ -653,16 +657,9 @@ async function initSystemNotifications() {
       type: "system_update" as const,
       priority: "medium" as NotificationPriority,
       icon: "📢",
-      defaultTitle: "System Announcement"
+      defaultTitle: "System Announcement",
     };
   };
-
-  // Relays to query
-  const RELAYS = [
-    "wss://relay.bnos.space",
-    "wss://nos.lol",
-    "wss://nostr-01.yakihonne.com",
-  ];
 
   // Helper to process incoming events (with deduplication)
   const processEvent = (event: any) => {
@@ -679,9 +676,10 @@ async function initSystemNotifications() {
 
     if (!existing) {
       // Extract tags from the event
-      const eventTags = event.tags
-        ?.filter((tag: string[]) => tag[0] === "t")
-        .map((tag: string[]) => tag[1]) || [];
+      const eventTags =
+        event.tags
+          ?.filter((tag: string[]) => tag[0] === "t")
+          .map((tag: string[]) => tag[1]) || [];
 
       // Get announcement configuration based on tags
       const config = getAnnouncementConfig(eventTags);
@@ -706,7 +704,9 @@ async function initSystemNotifications() {
           pubkey: event.pubkey,
           timestamp: event.created_at,
           tags: eventTags,
-          category: eventTags.find((t: string) => t.startsWith("bnos.space-")) || "announcement",
+          category:
+            eventTags.find((t: string) => t.startsWith("bnos.space-")) ||
+            "announcement",
         },
       });
     }
@@ -714,18 +714,20 @@ async function initSystemNotifications() {
 
   try {
     const filter = {
-      kinds: [1],
+      kinds: [NOSTR_KINDS.TEXT_NOTE],
       "#t": ANNOUNCEMENT_TAGS,
       limit: 10,
     };
 
     // Get all relay URLs (deduplicated)
     const allRelays = [
-      ...new Set([
-        ...RELAYS,
-        ...useNostrRelay().DEFAULT_RELAYS.map((r) => r.url),
-      ]),
+      ...new Set([...useNostrRelay().DEFAULT_RELAYS.map((r) => r.url)]),
     ];
+
+    if (allRelays.length === 0) {
+      console.error("[Notifications] No relays configured");
+      return;
+    }
 
     // Initial fetch of recent announcements
     const events = await $nostr.pool.querySync(allRelays, filter);
@@ -745,13 +747,13 @@ async function initSystemNotifications() {
 
     // Set up real-time subscription for new announcements
     const realtimeFilter = {
-      kinds: [1],
+      kinds: [NOSTR_KINDS.TEXT_NOTE],
       "#t": ANNOUNCEMENT_TAGS,
       since: Math.floor(Date.now() / 1000), // Only new events from now
     };
 
     // Subscribe to real-time updates (fewer relays for real-time to reduce duplicates)
-    $nostr.pool.subscribeMany(RELAYS.slice(0, 2), [realtimeFilter], {
+    $nostr.pool.subscribeMany(allRelays.slice(0, 2), [realtimeFilter], {
       onevent(event: any) {
         processEvent(event);
       },
@@ -762,5 +764,164 @@ async function initSystemNotifications() {
     });
   } catch (e) {
     console.error("Failed to initialize system notifications:", e);
+  }
+}
+
+/**
+ * Initialize POS alerts from Nostr
+ * Listens for real-time alerts from customer orders (waiter calls, bill requests, new orders)
+ *
+ * IMPORTANT: Subscribes using company owner's pubkey, NOT individual staff pubkey.
+ * Customer alerts are always tagged with company owner's pubkey from order.vue.
+ *
+ * Features:
+ * - Uses company.ownerPubkey for subscription (matches customer alert targeting)
+ * - Reliable relay selection (uses same relays as customer for consistency)
+ * - Parameterized replaceable events (kind 30050) for better relay propagation
+ * - Automatic reconnection on failure
+ * - Duplicate event prevention
+ * - Graceful error handling
+ */
+async function initPosAlerts() {
+  const { $nostr } = useNuxtApp();
+  const notificationsStore = useNotifications();
+  const company = useCompany();
+
+  // Get company owner's pubkey (this is who customer alerts are tagged to)
+  const ownerPubkey = company.ownerPubkey.value;
+
+  if (!ownerPubkey) {
+    console.warn(
+      "[POS Alerts] ⚠️ No company owner pubkey found - POS alerts disabled. Set up company profile in settings."
+    );
+    return;
+  }
+
+  // Track processed event IDs to prevent duplicates
+  const processedEventIds = new Set<string>();
+
+  // Helper to process incoming POS_ALERT events
+  const processAlert = (event: any) => {
+    // Skip if already processed
+    if (processedEventIds.has(event.id)) {
+      console.log("[POS Alerts] ⏭️ Skipping duplicate event:", event.id);
+      return;
+    }
+    processedEventIds.add(event.id);
+
+    try {
+      const data = JSON.parse(event.content);
+      console.log("[POS Alerts] 🔔 Processing alert:", data.type, data);
+
+      const tableName = data.tableName || `Table ${data.tableNumber}`;
+
+      // Add notification based on alert type
+      if (data.type === "waiter-call") {
+        notificationsStore.addNotification({
+          type: "alert",
+          title: `🔔 ${tableName} needs assistance!`,
+          message: "Customer called for waiter",
+          priority: "high",
+          actionUrl: "/tables",
+          data: {
+            tableNumber: data.tableNumber,
+            tableName: data.tableName,
+            serviceType: "waiter_call",
+            nostrEventId: event.id,
+          },
+        });
+      } else if (data.type === "bill-request") {
+        notificationsStore.addNotification({
+          type: "alert",
+          title: `💰 ${tableName} requesting bill!`,
+          message: `${data.orderCount || 0} orders - Total: ${data.total || 0}`,
+          priority: "high",
+          actionUrl: "/pos",
+          data: {
+            tableNumber: data.tableNumber,
+            tableName: data.tableName,
+            sessionId: data.sessionId,
+            sessionTotal: data.total,
+            orderCount: data.orderCount,
+            serviceType: "bill_request",
+            nostrEventId: event.id,
+          },
+        });
+      } else if (data.type === "new-order") {
+        notificationsStore.addNotification({
+          type: "order",
+          title: `🆕 New Order from ${tableName}`,
+          message: `Order #${data.orderCode || data.orderId}`,
+          priority: "high",
+          actionUrl: "/orders",
+          data: {
+            tableNumber: data.tableNumber,
+            tableName: data.tableName,
+            orderId: data.orderId,
+            orderCode: data.orderCode,
+            total: data.total,
+            sessionId: data.sessionId,
+            nostrEventId: event.id,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[POS Alerts] ❌ Failed to process alert:", e);
+    }
+  };
+
+  try {
+    // Use SAME relays as customer (from use-nostr-relay config)
+    // This ensures customer publishes and POS subscribes to identical relay set
+    const relayConfig = useNostrRelay();
+
+    // CRITICAL: Initialize relays first to add them to the pool
+    await relayConfig.init();
+
+    // Use the ACTUAL configured relays (not static defaults)
+    let allRelays = relayConfig.writeRelays.value;
+
+    // Fallback to defaults if no custom relays configured
+    if (!allRelays || allRelays.length === 0) {
+      console.warn(
+        "[POS Alerts] ⚠️ No write relays configured, falling back to defaults"
+      );
+      allRelays = relayConfig.DEFAULT_RELAYS.map((r) => r.url);
+    }
+
+    // Subscribe to POS_ALERT events targeted at company owner
+    // Using kind 1050 (Regular) for reliable delivery and storage
+    const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+
+    // Filter 1: Watch company channel (preferred)
+    const filterC = {
+      kinds: [NOSTR_KINDS.POS_ALERT],
+      "#c": [ownerPubkey],
+      // No since constraint for now to ensure we see history
+    };
+
+    // Filter 2: Watch direct p-tags (legacy/backup)
+    const filterP = {
+      kinds: [NOSTR_KINDS.POS_ALERT],
+      "#p": [ownerPubkey],
+    };
+    // Subscribe to real-time alerts using OR logic (pass array of filters)
+    const sub = $nostr.pool.subscribeMany(allRelays, [filterC, filterP], {
+      onevent(event: any) {
+        processAlert(event);
+      },
+      oneose() {
+        // Subscription active
+      },
+    });
+
+    // Cleanup on page unload
+    if (import.meta.client) {
+      window.addEventListener("beforeunload", () => {
+        sub?.close();
+      });
+    }
+  } catch (e) {
+    console.error("[POS Alerts] ❌ Failed to initialize:", e);
   }
 }

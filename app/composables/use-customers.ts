@@ -616,6 +616,144 @@ export function useCustomers() {
     );
   }
 
+  /**
+   * Download import template as CSV
+   */
+  function downloadImportTemplate(): void {
+    const headers = [
+      "name",
+      "email",
+      "phone",
+      "address",
+      "notes",
+      "tier",
+      "tags",
+    ];
+    const exampleRow = [
+      "John Doe",
+      "john@example.com",
+      "+856 20 1234 5678",
+      "123 Main St, Vientiane",
+      "VIP customer",
+      "bronze",
+      "vip,regular",
+    ];
+
+    const csvContent = [headers.join(","), exampleRow.join(",")].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "customer_import_template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Import customers from CSV content
+   */
+  async function importCustomers(
+    csvContent: string
+  ): Promise<{ success: number; errors: string[] }> {
+    const lines = csvContent.trim().split("\n");
+    if (lines.length < 2) {
+      return { success: 0, errors: ["File is empty or has no data rows"] };
+    }
+
+    const headers = lines[0]!.split(",").map((h) => h.trim().toLowerCase());
+    const errors: string[] = [];
+    let success = 0;
+
+    // Validate required headers
+    const requiredHeaders = ["name"];
+    const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h));
+    if (missingHeaders.length > 0) {
+      return {
+        success: 0,
+        errors: [`Missing required columns: ${missingHeaders.join(", ")}`],
+      };
+    }
+
+    // Parse and import each row
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i]!.trim();
+      if (!line) continue;
+
+      try {
+        // Handle CSV parsing with quoted values
+        const values = parseCSVLine(line);
+
+        const rowData: Record<string, string> = {};
+        headers.forEach((header, idx) => {
+          rowData[header] = values[idx]?.trim() || "";
+        });
+
+        // Skip rows without name
+        if (!rowData.name) {
+          errors.push(`Row ${i + 1}: Name is required`);
+          continue;
+        }
+
+        // Parse tags (comma-separated within the field)
+        const tags = rowData.tags
+          ? rowData.tags.split(";").map((t) => t.trim())
+          : [];
+
+        // Validate tier
+        const validTiers = ["bronze", "silver", "gold", "platinum"];
+        const tier = validTiers.includes(rowData.tier?.toLowerCase() || "")
+          ? (rowData.tier?.toLowerCase() as
+              | "bronze"
+              | "silver"
+              | "gold"
+              | "platinum")
+          : "bronze";
+
+        await createCustomer({
+          name: rowData.name,
+          email: rowData.email || undefined,
+          phone: rowData.phone || undefined,
+          address: rowData.address || undefined,
+          notes: rowData.notes || undefined,
+          tier,
+          tags,
+        });
+
+        success++;
+      } catch (e) {
+        errors.push(`Row ${i + 1}: ${String(e)}`);
+      }
+    }
+
+    return { success, errors };
+  }
+
+  /**
+   * Parse a single CSV line handling quoted values
+   */
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === "," && !inQuotes) {
+        result.push(current);
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    result.push(current);
+
+    return result;
+  }
+
   return {
     // State
     customers,
@@ -663,7 +801,9 @@ export function useCustomers() {
     // Sync
     loadFromNostr,
 
-    // Export
+    // Export/Import
     exportCustomers,
+    importCustomers,
+    downloadImportTemplate,
   };
 }
