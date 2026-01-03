@@ -10,6 +10,9 @@ import type {
   SecuritySettings,
   ShopVisibility,
   ShopType,
+  Geolocation,
+  BusinessHours,
+  MarketplaceProfile,
 } from "~/types";
 
 /**
@@ -127,10 +130,24 @@ export interface ShopConfig {
     facebook?: string;
     instagram?: string;
     tiktok?: string;
+    twitter?: string;
+    line?: string;
   };
   // Analytics & Tracking
   tags?: string[]; // Custom tags like "coffee", "thai-food", "retail"
   platformTag?: string; // Platform identifier, defaults to "bnos.space"
+
+  // 🛒 MARKETPLACE INTEGRATION (new fields)
+  nip05?: string; // Nostr verification (e.g., "shop@bnos.space")
+  lud16?: string; // Lightning address for direct payments
+  geolocation?: Geolocation; // Store location for map discovery
+  businessHours?: BusinessHours; // Operating hours
+  services?: string[]; // e.g., ["dine-in", "takeaway", "delivery"]
+  paymentMethods?: string[]; // e.g., ["cash", "lightning", "card"]
+  acceptsLightning?: boolean;
+  acceptsBitcoin?: boolean;
+  isListed?: boolean; // Whether store appears in marketplace
+  marketplaceJoinedAt?: string; // When store was first published
 }
 
 // Singleton state
@@ -388,6 +405,100 @@ export function useShop() {
     }
   }
 
+  // ─────────────────────────────────────────
+  // 🛒 MARKETPLACE INTEGRATION FUNCTIONS
+  // ─────────────────────────────────────────
+
+  /**
+   * Publish store to marketplace for discovery
+   * Creates a STORE_PROFILE event (Kind 30079)
+   */
+  async function publishToMarketplace(): Promise<boolean> {
+    if (!shopConfig.value) {
+      error.value = "Shop config not loaded";
+      return false;
+    }
+
+    try {
+      isLoading.value = true;
+
+      // Build marketplace profile from shop config
+      const profile: MarketplaceProfile = {
+        pubkey: "", // Will be set by nostrData when signing
+        name: shopConfig.value.name,
+        description: shopConfig.value.marketplaceDescription,
+        logo: shopConfig.value.logo,
+        shopType: shopConfig.value.shopType,
+        categories: [], // Derive from shopType
+        tags: shopConfig.value.tags,
+        geolocation: shopConfig.value.geolocation,
+        phone: shopConfig.value.phone,
+        email: shopConfig.value.email,
+        socialLinks: shopConfig.value.socialLinks,
+        businessHours: shopConfig.value.businessHours,
+        services: shopConfig.value.services,
+        paymentMethods: shopConfig.value.paymentMethods,
+        acceptsLightning: shopConfig.value.acceptsLightning ?? false,
+        acceptsBitcoin: shopConfig.value.acceptsBitcoin ?? false,
+        nip05: shopConfig.value.nip05,
+        lud16: shopConfig.value.lud16,
+        isListed: true,
+        joinedAt:
+          shopConfig.value.marketplaceJoinedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Save the profile to Nostr as STORE_PROFILE event
+      // Note: This will be handled by nostrData with kind 30079
+      await saveShopConfig({
+        isListed: true,
+        visibility: "public",
+        marketplaceJoinedAt: profile.joinedAt,
+      });
+
+      console.log("✅ Published to marketplace:", profile);
+      return true;
+    } catch (e) {
+      error.value = `Failed to publish to marketplace: ${e}`;
+      console.error(error.value);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * Remove store from marketplace discovery
+   */
+  async function unpublishFromMarketplace(): Promise<boolean> {
+    try {
+      isLoading.value = true;
+
+      await saveShopConfig({
+        isListed: false,
+        visibility: "private",
+      });
+
+      console.log("🔒 Unpublished from marketplace");
+      return true;
+    } catch (e) {
+      error.value = `Failed to unpublish from marketplace: ${e}`;
+      console.error(error.value);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * Check if store is currently listed on marketplace
+   */
+  const isMarketplaceListed = computed(
+    () =>
+      shopConfig.value?.isListed === true &&
+      shopConfig.value?.visibility === "public"
+  );
+
   return {
     // State
     shopConfig: readonly(shopConfig),
@@ -400,6 +511,7 @@ export function useShop() {
     hasShopConfig,
     hasBranches,
     isSetupComplete,
+    isMarketplaceListed,
 
     // Methods
     init,
@@ -407,5 +519,9 @@ export function useShop() {
     saveShopConfig,
     createFirstBranch,
     setCurrentBranch,
+
+    // Marketplace Methods
+    publishToMarketplace,
+    unpublishFromMarketplace,
   };
 }

@@ -1002,6 +1002,17 @@
       "sovereignBusiness": "Sovereign Business. Decentralized Future.",
       "openSource": "This project is open source and built on open protocols.",
       "license": "Licensed under MIT License"
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "subtitle": "Store visibility & discovery",
+      "goPublic": "Go Public!",
+      "goPublicDesc": "Make your store discoverable. Customers can find you and pay with Lightning.",
+      "publishNow": "Publish to Marketplace",
+      "published": "Published!",
+      "publishedDesc": "Your store is now discoverable",
+      "unpublished": "Private Mode",
+      "unpublishedDesc": "Your store is now private"
     }
   }
 }

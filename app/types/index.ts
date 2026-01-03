@@ -78,6 +78,229 @@ export interface ShopTypeConfig {
 }
 
 // ============================================
+// 🛒 MARKETPLACE INTEGRATION TYPES
+// Decentralized Store Discovery & Inter-Store Commerce
+// ============================================
+
+/**
+ * Geolocation for store discovery
+ */
+export interface Geolocation {
+  lat: number;
+  lng: number;
+  geohash?: string; // For proximity search (NIP-52)
+  address?: string;
+  city?: string;
+  country?: string;
+}
+
+/**
+ * Business operating hours
+ */
+export interface BusinessHours {
+  monday?: { open: string; close: string };
+  tuesday?: { open: string; close: string };
+  wednesday?: { open: string; close: string };
+  thursday?: { open: string; close: string };
+  friday?: { open: string; close: string };
+  saturday?: { open: string; close: string };
+  sunday?: { open: string; close: string };
+  timezone: string;
+  holidays?: string[]; // ISO dates when closed
+}
+
+/**
+ * Public marketplace profile for store discovery
+ * Published as Kind 30079 (STORE_PROFILE)
+ */
+export interface MarketplaceProfile {
+  // Identity
+  pubkey: string; // Store owner's pubkey
+  nip05?: string; // Nostr verification (e.g., "shop@bnos.space")
+  lud16?: string; // Lightning address for payments
+
+  // Basic Info
+  name: string;
+  description?: string;
+  logo?: string;
+  coverImage?: string;
+
+  // Classification
+  shopType: ShopType;
+  categories?: string[]; // Business categories for search
+  tags?: string[]; // Keywords for discovery
+
+  // Location
+  geolocation?: Geolocation;
+
+  // Contact
+  phone?: string;
+  email?: string;
+  website?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+    twitter?: string;
+    line?: string;
+  };
+
+  // Operations
+  businessHours?: BusinessHours;
+  services?: string[]; // e.g., "dine-in", "takeaway", "delivery"
+  paymentMethods?: string[]; // e.g., "cash", "lightning", "card"
+  acceptsLightning: boolean;
+  acceptsBitcoin: boolean;
+
+  // Marketplace Settings
+  isListed: boolean; // Visible in marketplace
+  joinedAt: string; // When store was first published
+  updatedAt: string;
+
+  // Stats (optional, updated periodically)
+  totalOrders?: number;
+  averageRating?: number;
+  reviewCount?: number;
+}
+
+/**
+ * Store-to-store connection/partnership
+ * Published as Kind 30951 (STORE_CONNECTION)
+ */
+export interface StoreConnection {
+  id: string;
+  fromPubkey: string; // Initiating store
+  toPubkey: string; // Target store
+  type: "follow" | "partner" | "supplier" | "customer";
+  status: "pending" | "accepted" | "rejected" | "blocked";
+  note?: string;
+  createdAt: string;
+  acceptedAt?: string;
+}
+
+/**
+ * Customer review for a store
+ * Published as Kind 30955 (MARKETPLACE_REVIEW)
+ */
+export interface MarketplaceReview {
+  id: string;
+  storePubkey: string; // Store being reviewed
+  customerPubkey: string; // Reviewer's pubkey
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment?: string;
+  orderId?: string; // Optional link to order
+  photos?: string[]; // Review photos
+  helpful: number; // Helpful votes count
+  verified: boolean; // Verified purchase
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/**
+ * Product listing for cross-store discovery
+ * Published as Kind 30951 (MARKETPLACE_PRODUCT)
+ */
+export interface MarketplaceProduct {
+  id: string;
+  storePubkey: string; // Store offering the product
+  storeName: string;
+
+  // Product info
+  name: string;
+  description?: string;
+  image?: string;
+  images?: string[];
+  category: string;
+  tags?: string[];
+
+  // Pricing
+  price: number;
+  currency: string;
+  compareAtPrice?: number; // Original price for sales
+
+  // Availability
+  inStock: boolean;
+  quantity?: number;
+
+  // Delivery options
+  services?: string[]; // dine-in, takeaway, delivery
+  deliveryRadius?: number; // km for delivery
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Cross-store order for multi-vendor marketplace
+ * Published as Kind 30952 (MARKETPLACE_ORDER)
+ */
+export interface MarketplaceOrder {
+  id: string;
+  customerPubkey: string;
+
+  // Multi-vendor items
+  items: {
+    storePubkey: string;
+    productId: string;
+    quantity: number;
+    price: number;
+    subtotal: number;
+  }[];
+
+  // Totals
+  subtotal: number;
+  deliveryFee?: number;
+  tax?: number;
+  total: number;
+  currency: string;
+
+  // Payment
+  paymentMethod: "lightning" | "bitcoin" | "cash";
+  paymentStatus: "pending" | "paid" | "refunded";
+
+  // Delivery
+  deliveryType: "pickup" | "delivery" | "dine-in";
+  deliveryAddress?: string;
+
+  // Status per store
+  storeStatuses: {
+    storePubkey: string;
+    status:
+      | "pending"
+      | "accepted"
+      | "preparing"
+      | "ready"
+      | "completed"
+      | "cancelled";
+    updatedAt: string;
+  }[];
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Search filters for marketplace discovery
+ */
+export interface MarketplaceSearchFilters {
+  query?: string;
+  shopType?: ShopType;
+  categories?: string[];
+  tags?: string[];
+  services?: string[]; // dine-in, takeaway, delivery
+  acceptsLightning?: boolean;
+  acceptsBitcoin?: boolean;
+  geohash?: string; // For proximity search (NIP-52)
+  maxDistance?: number; // km
+  minRating?: number;
+  sortBy?: "distance" | "rating" | "newest" | "name";
+  limit?: number;
+  offset?: number;
+}
+
+// ============================================
 // 💳 MEMBERSHIP & SUBSCRIPTION TYPES
 // For Gym, Clubs, and Subscription-Based Businesses
 // ============================================

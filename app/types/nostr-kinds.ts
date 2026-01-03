@@ -55,8 +55,10 @@ export const NOSTR_KINDS = {
   // ─────────────────────────────────────────
   // 📋 STORE CONFIGURATION (30078-30099)
   // ─────────────────────────────────────────
-  /** Store settings, config, preferences */
+  /** Store settings, config, preferences (private/encrypted) */
   STORE_SETTINGS: 30078,
+  /** Public store profile for marketplace discovery */
+  STORE_PROFILE: 30079,
   /** Table/room layout and status */
   TABLE: 30080,
 
@@ -189,7 +191,24 @@ export const NOSTR_KINDS = {
   CHAT_MESSAGE: 1234,
 
   // ─────────────────────────────────────────
-  // 📣 CHANNEL CHAT - NIP-28 (Legacy)
+  // � MARKETPLACE INTEGRATION (30950-30959)
+  // Decentralized store discovery & inter-store commerce
+  // ─────────────────────────────────────────
+  /** Store listing for marketplace discovery (search, filters) */
+  MARKETPLACE_LISTING: 30950,
+  /** Product listing for cross-store discovery & catalog sync */
+  MARKETPLACE_PRODUCT: 30951,
+  /** Cross-store order routing (multi-vendor orders) */
+  MARKETPLACE_ORDER: 30952,
+  /** Store-to-store connection/partnership (follow, partner, supplier) */
+  STORE_CONNECTION: 30953,
+  /** Public store profile for discovery (enhanced profile with hours, services) */
+  PUBLIC_STORE_PROFILE: 30954,
+  /** Customer review/rating for a store */
+  MARKETPLACE_REVIEW: 30955,
+
+  // ─────────────────────────────────────────
+  // �📣 CHANNEL CHAT - NIP-28 (Legacy)
   // ─────────────────────────────────────────
   /** Channel creation event (NIP-28) */
   CHANNEL_CREATE: 40,

@@ -990,6 +990,17 @@
       "sovereignBusiness": "ທຸລະກິດທີ່ເປັນອິດສະຫຼະ, ກະຈາຍສູນ.",
       "openSource": "ໂຄງການນີ້ເປັນ open source ແລະ ສ້າງຂຶ້ນບົນ protocol ເປີດ.",
       "license": "ອະນຸຍາດພາຍໃຕ້ MIT License"
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "subtitle": "ການເບິ່ງເຫັນຮ້ານ ແລະ ການຄົ້ນຫາ",
+      "goPublic": "ເປັນສາທາລະນະ!",
+      "goPublicDesc": "ເຮັດໃຫ້ຮ້ານຂອງທ່ານຄົ້ນຫາໄດ້. ລູກຄ້າສາມາດຊອກຫາທ່ານ ແລະ ຊຳລະດ້ວຍ Lightning.",
+      "publishNow": "ເຜີຍແຜ່ໄປ Marketplace",
+      "published": "ເຜີຍແຜ່ແລ້ວ!",
+      "publishedDesc": "ຮ້ານຂອງທ່ານສາມາດຄົ້ນຫາໄດ້ແລ້ວ",
+      "unpublished": "ໂໝດສ່ວນຕົວ",
+      "unpublishedDesc": "ຮ້ານຂອງທ່ານເປັນສ່ວນຕົວແລ້ວ"
     }
   }
 }

@@ -1,33 +1,23 @@
 <template>
   <div class="p-3 sm:p-4 space-y-5 max-w-4xl mx-auto pb-24">
     <!-- Profile Header Card (YakiHonne-inspired) -->
-    <div
-      class="bg-linear-to-br from-primary-200 to-primary-600 rounded-2xl p-6 relative overflow-hidden"
-    >
+    <div class="bg-linear-to-br from-primary-200 to-primary-600 rounded-2xl p-6 relative overflow-hidden">
       <!-- Background Pattern -->
-      <div
-        class="absolute inset-0 opacity-20"
-        style="
+      <div class="absolute inset-0 opacity-20" style="
           background-image: radial-gradient(
             circle,
             rgba(255, 255, 255, 0.3) 1px,
             transparent 1px
           );
           background-size: 20px 20px;
-        "
-      />
+        " />
 
       <div class="relative flex items-center gap-6">
         <!-- Avatar -->
         <div class="relative">
-          <img
-            :src="userProfile.avatar || '/default-avatar.png'"
-            :alt="userProfile.name"
-            class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-primary-500 object-cover"
-          />
-          <div
-            class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-gray-900"
-          />
+          <img :src="userProfile.avatar || '/default-avatar.png'" :alt="userProfile.name"
+            class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-primary-500 object-cover" />
+          <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-gray-900" />
         </div>
 
         <!-- User Info -->
@@ -38,10 +28,7 @@
           <p class="text-gray-400 text-sm font-mono">
             {{ userProfile.npub || "@anonymous" }}
           </p>
-          <p
-            v-if="userProfile.nip05"
-            class="text-primary-400 text-sm flex items-center gap-1 mt-1"
-          >
+          <p v-if="userProfile.nip05" class="text-primary-400 text-sm flex items-center gap-1 mt-1">
             <UIcon name="i-heroicons-check-badge-solid" />
             {{ userProfile.nip05 }}
           </p>
@@ -49,19 +36,11 @@
 
         <!-- Action Buttons - Stack on mobile -->
         <div class="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
-          <UButton
-            color="primary"
-            variant="solid"
-            @click="navigateTo('/settings/account')"
-          >
-            {{ $t("common.view",  "View profile") }}
+          <UButton color="primary" variant="solid" @click="navigateTo('/settings/account')">
+            {{ $t("common.view", "View profile") }}
           </UButton>
-          <UButton
-            color="neutral"
-            variant="outline"
-            @click="navigateTo('/settings/account#edit')"
-          >
-            {{ $t("common.edit","Edit profile") }}
+          <UButton color="neutral" variant="outline" @click="navigateTo('/settings/account#edit')">
+            {{ $t("common.edit", "Edit profile") }}
           </UButton>
         </div>
       </div>
@@ -70,20 +49,13 @@
     <!-- Settings Grid - Single column on mobile, 2 on tablet+ -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
       <!-- Your Keys -->
-      <NuxtLink
-        to="/settings/security"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-red-300 dark:hover:border-red-700 hover:shadow-md transition-all"
-      >
+      <NuxtLink to="/settings/security"
+        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-red-300 dark:hover:border-red-700 hover:shadow-md transition-all">
         <div
-          class="p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-h-[64px] active:bg-gray-50 dark:active:bg-gray-800/50"
-        >
+          class="p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-h-[64px] active:bg-gray-50 dark:active:bg-gray-800/50">
           <div
-            class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0"
-          >
-            <UIcon
-              name="i-heroicons-key"
-              class="w-5 h-5 sm:w-6 sm:h-6 text-red-600"
-            />
+            class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+            <UIcon name="i-heroicons-key" class="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -93,26 +65,16 @@
               {{ $t("settings.security.subtitle") }}
             </p>
           </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
+          <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
         </div>
       </NuxtLink>
 
       <!-- Relays Settings -->
-      <NuxtLink
-        to="/settings/relays"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all"
-      >
+      <NuxtLink to="/settings/relays"
+        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all">
         <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center"
-          >
-            <UIcon
-              name="i-heroicons-server-stack"
-              class="w-6 h-6 text-violet-600"
-            />
+          <div class="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+            <UIcon name="i-heroicons-server-stack" class="w-6 h-6 text-violet-600" />
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -122,22 +84,15 @@
               {{ $t("settings.relays.subtitle") }}
             </p>
           </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
+          <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
         </div>
       </NuxtLink>
 
       <!-- Wallets (Lightning) -->
-      <NuxtLink
-        to="/settings/lightning"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all"
-      >
+      <NuxtLink to="/settings/lightning"
+        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all">
         <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
-          >
+          <div class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
             <span class="text-xl">⚡</span>
           </div>
           <div class="flex-1 min-w-0">
@@ -148,22 +103,15 @@
               {{ $t("settings.lightning.subtitle") }}
             </p>
           </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
+          <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
         </div>
       </NuxtLink>
 
       <!-- Crypto Payments -->
-      <NuxtLink
-        to="/settings/crypto"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all"
-      >
+      <NuxtLink to="/settings/crypto"
+        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all">
         <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center"
-          >
+          <div class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
             <span class="text-xl">₿</span>
           </div>
           <div class="flex-1 min-w-0">
@@ -174,22 +122,15 @@
               {{ $t("settings.crypto.subtitle", "Bitcoin & USDT") }}
             </p>
           </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
+          <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
         </div>
       </NuxtLink>
 
       <!-- Customization -->
-      <NuxtLink
-        to="/settings/customization"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-md transition-all"
-      >
+      <NuxtLink to="/settings/customization"
+        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-md transition-all">
         <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center"
-          >
+          <div class="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
             <UIcon name="i-heroicons-sparkles" class="w-6 h-6 text-teal-600" />
           </div>
           <div class="flex-1 min-w-0">
@@ -200,10 +141,7 @@
               {{ $t("settings.customization.subtitle") }}
             </p>
           </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
+          <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
         </div>
       </NuxtLink>
     </div>
@@ -215,18 +153,11 @@
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- General Store Settings -->
-        <NuxtLink
-          to="/settings/general"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/general"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-building-storefront"
-                class="w-6 h-6 text-gray-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <UIcon name="i-heroicons-building-storefront" class="w-6 h-6 text-gray-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -236,26 +167,35 @@
                 {{ $t("settings.general.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
+          </div>
+        </NuxtLink>
+
+        <!-- Marketplace -->
+        <NuxtLink to="/settings/marketplace"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all">
+          <div class="p-4 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-globe-alt" class="w-6 h-6 text-blue-600" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ $t("settings.marketplace.title", "Marketplace") }}
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ $t("settings.marketplace.subtitle", "Store visibility") }}
+              </p>
+            </div>
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Tax -->
-        <NuxtLink
-          to="/settings/tax"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/tax"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-receipt-percent"
-                class="w-6 h-6 text-green-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-receipt-percent" class="w-6 h-6 text-green-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -265,26 +205,16 @@
                 {{ $t("settings.tax.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Receipt -->
-        <NuxtLink
-          to="/settings/receipt"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/receipt"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-document-text"
-                class="w-6 h-6 text-indigo-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-document-text" class="w-6 h-6 text-indigo-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -294,26 +224,16 @@
                 {{ $t("settings.receipt.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Bank Accounts -->
-        <NuxtLink
-          to="/settings/bank-accounts"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/bank-accounts"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-building-library"
-                class="w-6 h-6 text-emerald-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-building-library" class="w-6 h-6 text-emerald-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -323,22 +243,15 @@
                 {{ $t("settings.bankAccounts.description") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Users & Permissions -->
-        <NuxtLink
-          to="/settings/users"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/users"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
-            >
+            <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <UIcon name="i-heroicons-users" class="w-6 h-6 text-blue-600" />
             </div>
             <div class="flex-1 min-w-0">
@@ -349,26 +262,16 @@
                 {{ $t("settings.users.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Tables -->
-        <NuxtLink
-          to="/settings/tables"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/tables"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-qr-code"
-                class="w-6 h-6 text-purple-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-qr-code" class="w-6 h-6 text-purple-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -378,10 +281,7 @@
                 {{ $t("tables.description") || "QR code ordering" }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
       </div>
@@ -394,18 +294,11 @@
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- Backup -->
-        <NuxtLink
-          to="/settings/backup"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-cyan-300 dark:hover:border-cyan-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/backup"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-cyan-300 dark:hover:border-cyan-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-cloud-arrow-up"
-                class="w-6 h-6 text-cyan-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-cloud-arrow-up" class="w-6 h-6 text-cyan-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -415,26 +308,16 @@
                 {{ $t("settings.backup.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Audit Log -->
-        <NuxtLink
-          to="/settings/audit-log"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/audit-log"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-shield-check"
-                class="w-6 h-6 text-rose-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-shield-check" class="w-6 h-6 text-rose-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -444,26 +327,16 @@
                 {{ $t("settings.auditLog.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Features -->
-        <NuxtLink
-          to="/settings/features"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/features"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-squares-plus"
-                class="w-6 h-6 text-orange-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-squares-plus" class="w-6 h-6 text-orange-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -473,26 +346,16 @@
                 {{ $t("settings.features.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- Integrations -->
-        <NuxtLink
-          to="/settings/integrations"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/integrations"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-puzzle-piece"
-                class="w-6 h-6 text-sky-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-puzzle-piece" class="w-6 h-6 text-sky-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -504,26 +367,16 @@
                 }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
 
         <!-- About -->
-        <NuxtLink
-          to="/settings/about"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all"
-        >
+        <NuxtLink to="/settings/about"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all">
           <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-information-circle"
-                class="w-6 h-6 text-amber-600"
-              />
+            <div class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <UIcon name="i-heroicons-information-circle" class="w-6 h-6 text-amber-600" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -533,10 +386,7 @@
                 {{ $t("settings.about.subtitle") }}
               </p>
             </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400 flex-shrink-0" />
           </div>
         </NuxtLink>
       </div>

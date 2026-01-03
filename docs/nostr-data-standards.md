@@ -38,17 +38,18 @@ This document defines the **global data standard** for all Nostr event kinds use
 
 Nostr uses numeric `kind` values to categorize events. We follow the official NIP (Nostr Implementation Possibilities) specifications plus custom ranges:
 
-| Range | Purpose | Examples |
-|-------|---------|----------|
-| **0-999** | Standard Nostr kinds (NIPs) | Profile (0), DMs (4), Reactions (7) |
-| **1000-9999** | Ephemeral events | Typing indicators (1040) |
-| **9700-9799** | Payments & Zaps | Zap receipts (9735) |
-| **20000-29999** | Regular events | Authentication events |
-| **30000-39999** | Parameterized replaceable events | Our custom business data |
+| Range           | Purpose                          | Examples                            |
+| --------------- | -------------------------------- | ----------------------------------- |
+| **0-999**       | Standard Nostr kinds (NIPs)      | Profile (0), DMs (4), Reactions (7) |
+| **1000-9999**   | Ephemeral events                 | Typing indicators (1040)            |
+| **9700-9799**   | Payments & Zaps                  | Zap receipts (9735)                 |
+| **20000-29999** | Regular events                   | Authentication events               |
+| **30000-39999** | Parameterized replaceable events | Our custom business data            |
 
 ### Custom Business Data (30000-39999)
 
 We use **parameterized replaceable events** for all business entities. This means:
+
 - Each entity has a unique identifier (`d` tag)
 - Newer versions replace older ones automatically
 - Efficient storage and retrieval
@@ -57,7 +58,7 @@ We use **parameterized replaceable events** for all business entities. This mean
 Our custom range allocation:
 
 ```
-30078-30099: Store Configuration
+30078-30099: Store Configuration (30079 = STORE_PROFILE for marketplace)
 30100-30199: Catalog Data (Products, Categories, Units)
 30200-30299: Transactions (Orders, Payments, Refunds, Invoices)
 30300-30399: Customers & Loyalty
@@ -68,6 +69,7 @@ Our custom range allocation:
 30800-30899: Accounting
 30850-30899: Help & Documentation
 30900-30949: Team Chat & Messaging
+30950-30959: Marketplace Integration (NEW)
 31000-31999: Replaceable Receipts
 39000-39999: Group Chat (NIP-29)
 ```
@@ -81,7 +83,7 @@ Our custom range allocation:
 All event kinds are centrally defined in:
 
 ```typescript
-/app/types/nostr-kinds.ts
+/app/epsty / nostr - kinds.ts;
 ```
 
 ### Usage
@@ -108,11 +110,12 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Profile & Identity
 
-| Kind | Constant | NIP | Description |
-|------|----------|-----|-------------|
-| 0 | `PROFILE` | NIP-01 | User profile metadata (name, avatar, bio) |
+| Kind | Constant  | NIP    | Description                               |
+| ---- | --------- | ------ | ----------------------------------------- |
+| 0    | `PROFILE` | NIP-01 | User profile metadata (name, avatar, bio) |
 
 **Example:**
+
 ```json
 {
   "kind": 0,
@@ -123,14 +126,15 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Messaging
 
-| Kind | Constant | NIP | Description |
-|------|----------|-----|-------------|
-| 4 | `ENCRYPTED_DM` | NIP-04 | Encrypted direct messages (1-to-1 chat) |
-| 40 | `CHANNEL_CREATE` | NIP-28 | Channel creation (legacy public chat) |
-| 42 | `CHANNEL_MESSAGE` | NIP-28 | Channel message (legacy public chat) |
-| 9 | `GROUP_CHAT_MESSAGE` | NIP-29 | Group chat message (modern) |
+| Kind | Constant             | NIP    | Description                             |
+| ---- | -------------------- | ------ | --------------------------------------- |
+| 4    | `ENCRYPTED_DM`       | NIP-04 | Encrypted direct messages (1-to-1 chat) |
+| 40   | `CHANNEL_CREATE`     | NIP-28 | Channel creation (legacy public chat)   |
+| 42   | `CHANNEL_MESSAGE`    | NIP-28 | Channel message (legacy public chat)    |
+| 9    | `GROUP_CHAT_MESSAGE` | NIP-29 | Group chat message (modern)             |
 
 **Direct Message Example:**
+
 ```json
 {
   "kind": 4,
@@ -140,6 +144,7 @@ These are official Nostr protocol kinds that we use for standard features:
 ```
 
 **Group Chat Example:**
+
 ```json
 {
   "kind": 9,
@@ -153,11 +158,12 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Reactions & Interactions
 
-| Kind | Constant | NIP | Description |
-|------|----------|-----|-------------|
-| 7 | `REACTION` | NIP-25 | Reaction to a message/event (emoji) |
+| Kind | Constant   | NIP    | Description                         |
+| ---- | ---------- | ------ | ----------------------------------- |
+| 7    | `REACTION` | NIP-25 | Reaction to a message/event (emoji) |
 
 **Example:**
+
 ```json
 {
   "kind": 7,
@@ -171,11 +177,12 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Ephemeral Events
 
-| Kind | Constant | NIP | Description |
-|------|----------|-----|-------------|
+| Kind | Constant           | NIP    | Description                            |
+| ---- | ------------------ | ------ | -------------------------------------- |
 | 1040 | `TYPING_INDICATOR` | Custom | Typing indicator for real-time chat UX |
 
 **Example:**
+
 ```json
 {
   "kind": 1040,
@@ -186,11 +193,12 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Payments
 
-| Kind | Constant | NIP | Description |
-|------|----------|-----|-------------|
+| Kind | Constant      | NIP    | Description                     |
+| ---- | ------------- | ------ | ------------------------------- |
 | 9735 | `ZAP_RECEIPT` | NIP-57 | Lightning payment receipt (zap) |
 
 **Example:**
+
 ```json
 {
   "kind": 9735,
@@ -205,12 +213,13 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Authentication
 
-| Kind | Constant | NIP | Description |
-|------|----------|-----|-------------|
+| Kind  | Constant     | NIP    | Description                             |
+| ----- | ------------ | ------ | --------------------------------------- |
 | 22242 | `STAFF_AUTH` | Custom | Staff authentication challenge/response |
-| 27235 | `HTTP_AUTH` | NIP-98 | HTTP authentication event |
+| 27235 | `HTTP_AUTH`  | NIP-98 | HTTP authentication event               |
 
 **Staff Auth Example:**
+
 ```json
 {
   "kind": 22242,
@@ -225,12 +234,14 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Store Configuration (30078-30099)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
-| 30078 | `STORE_SETTINGS` | Store settings, config, preferences |
-| 30080 | `TABLE` | Table/room layout and status |
+| Kind  | Constant         | Description                                    |
+| ----- | ---------------- | ---------------------------------------------- |
+| 30078 | `STORE_SETTINGS` | Store settings, config, preferences (private)  |
+| 30079 | `STORE_PROFILE`  | Public store profile for marketplace discovery |
+| 30080 | `TABLE`          | Table/room layout and status                   |
 
 **Store Settings Example:**
+
 ```json
 {
   "kind": 30078,
@@ -244,17 +255,18 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Catalog Data (30100-30199)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
-| 30100 | `PRODUCT` | Individual product listing |
-| 30101 | `CATEGORY` | Product category/group |
-| 30102 | `UNIT` | Unit of measurement (pc, kg, etc.) |
-| 30103 | `MODIFIER_GROUP` | Product modifier groups (size, toppings) |
-| 30104 | `INGREDIENT` | Ingredient for recipes |
-| 30105 | `RECIPE` | Recipe (ingredients + instructions) |
-| 30106 | `RECIPE_CATEGORY` | Recipe category |
+| Kind  | Constant          | Description                              |
+| ----- | ----------------- | ---------------------------------------- |
+| 30100 | `PRODUCT`         | Individual product listing               |
+| 30101 | `CATEGORY`        | Product category/group                   |
+| 30102 | `UNIT`            | Unit of measurement (pc, kg, etc.)       |
+| 30103 | `MODIFIER_GROUP`  | Product modifier groups (size, toppings) |
+| 30104 | `INGREDIENT`      | Ingredient for recipes                   |
+| 30105 | `RECIPE`          | Recipe (ingredients + instructions)      |
+| 30106 | `RECIPE_CATEGORY` | Recipe category                          |
 
 **Product Example:**
+
 ```json
 {
   "kind": 30100,
@@ -271,16 +283,17 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Transactions (30200-30299)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
-| 30200 | `ORDER` | Order record |
-| 30201 | `PAYMENT` | Payment proof/receipt |
-| 30202 | `REFUND` | Refund record |
-| 30203 | `INVOICE` | Invoice for customers |
-| 30204 | `INVOICE_PAYMENT` | Invoice payment record |
-| 30205 | `CONTRACT` | Contract/rental agreement |
+| Kind  | Constant          | Description               |
+| ----- | ----------------- | ------------------------- |
+| 30200 | `ORDER`           | Order record              |
+| 30201 | `PAYMENT`         | Payment proof/receipt     |
+| 30202 | `REFUND`          | Refund record             |
+| 30203 | `INVOICE`         | Invoice for customers     |
+| 30204 | `INVOICE_PAYMENT` | Invoice payment record    |
+| 30205 | `CONTRACT`        | Contract/rental agreement |
 
 **Order Example:**
+
 ```json
 {
   "kind": 30200,
@@ -298,16 +311,17 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Customers & Loyalty (30300-30399)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
-| 30300 | `CUSTOMER` | Customer profile |
-| 30301 | `LOYALTY_POINTS` | Loyalty points transaction |
-| 30302 | `LOYALTY_REWARD` | Reward claim/redemption |
-| 30310 | `COUPON` | Coupon/discount code |
-| 30311 | `MEMBERSHIP` | Membership tier/plan |
-| 30312 | `MEMBERSHIP_SUBSCRIPTION` | Membership subscription |
+| Kind  | Constant                  | Description                |
+| ----- | ------------------------- | -------------------------- |
+| 30300 | `CUSTOMER`                | Customer profile           |
+| 30301 | `LOYALTY_POINTS`          | Loyalty points transaction |
+| 30302 | `LOYALTY_REWARD`          | Reward claim/redemption    |
+| 30310 | `COUPON`                  | Coupon/discount code       |
+| 30311 | `MEMBERSHIP`              | Membership tier/plan       |
+| 30312 | `MEMBERSHIP_SUBSCRIPTION` | Membership subscription    |
 
 **Customer Example:**
+
 ```json
 {
   "kind": 30300,
@@ -322,24 +336,25 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Inventory Management (30400-30499)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
+| Kind  | Constant           | Description             |
+| ----- | ------------------ | ----------------------- |
 | 30400 | `STOCK_ADJUSTMENT` | Stock adjustment record |
-| 30401 | `INVENTORY_COUNT` | Inventory count session |
-| 30402 | `CYCLE_COUNT` | Cycle count record |
+| 30401 | `INVENTORY_COUNT`  | Inventory count session |
+| 30402 | `CYCLE_COUNT`      | Cycle count record      |
 
 ### Staff & Access Control (30500-30599)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
-| 30500 | `STAFF_MEMBER` | Staff member profile |
-| 30501 | `POS_SESSION` | POS session log |
-| 30502 | `AUDIT_LOG` | Audit trail entry |
-| 30503 | `COMPANY_INDEX` | Company code → owner pubkey mapping |
-| 30510 | `PERMISSION_GRANT` | Permission grant event |
-| 30511 | `PERMISSION_REVOKE` | Permission revoke event |
+| Kind  | Constant            | Description                         |
+| ----- | ------------------- | ----------------------------------- |
+| 30500 | `STAFF_MEMBER`      | Staff member profile                |
+| 30501 | `POS_SESSION`       | POS session log                     |
+| 30502 | `AUDIT_LOG`         | Audit trail entry                   |
+| 30503 | `COMPANY_INDEX`     | Company code → owner pubkey mapping |
+| 30510 | `PERMISSION_GRANT`  | Permission grant event              |
+| 30511 | `PERMISSION_REVOKE` | Permission revoke event             |
 
 **Staff Member Example:**
+
 ```json
 {
   "kind": 30500,
@@ -355,48 +370,79 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Branch Management (30600-30699)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
+| Kind  | Constant | Description             |
+| ----- | -------- | ----------------------- |
 | 30600 | `BRANCH` | Branch/location details |
 
 ### Supply Chain (30700-30799)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
-| 30700 | `SUPPLIER` | Supplier profile |
-| 30701 | `BRANCH_STOCK` | Branch-specific stock levels |
-| 30702 | `PURCHASE_ORDER` | Purchase order |
-| 30703 | `STOCK_TRANSFER` | Inter-branch stock transfer |
+| Kind  | Constant         | Description                  |
+| ----- | ---------------- | ---------------------------- |
+| 30700 | `SUPPLIER`       | Supplier profile             |
+| 30701 | `BRANCH_STOCK`   | Branch-specific stock levels |
+| 30702 | `PURCHASE_ORDER` | Purchase order               |
+| 30703 | `STOCK_TRANSFER` | Inter-branch stock transfer  |
 
 ### Accounting (30800-30899)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
-| 30800 | `ACCOUNT` | Chart of accounts entry |
-| 30801 | `JOURNAL_ENTRY` | Journal entry (double-entry) |
-| 30802 | `EXPENSE` | Expense record |
-| 30803 | `FINANCIAL_REPORT` | Financial report snapshot |
+| Kind  | Constant           | Description                  |
+| ----- | ------------------ | ---------------------------- |
+| 30800 | `ACCOUNT`          | Chart of accounts entry      |
+| 30801 | `JOURNAL_ENTRY`    | Journal entry (double-entry) |
+| 30802 | `EXPENSE`          | Expense record               |
+| 30803 | `FINANCIAL_REPORT` | Financial report snapshot    |
 
 ### Help & Documentation (30850-30899)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
+| Kind  | Constant       | Description                       |
+| ----- | -------------- | --------------------------------- |
 | 30850 | `HELP_ARTICLE` | Dynamic help article (wiki-style) |
 
 ### Team Chat & Messaging (30900-30949)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
+| Kind  | Constant       | Description                              |
+| ----- | -------------- | ---------------------------------------- |
 | 30900 | `CHAT_CHANNEL` | Team chat channel metadata (replaceable) |
-| 1234 | `CHAT_MESSAGE` | Legacy chat message |
+| 1234  | `CHAT_MESSAGE` | Legacy chat message                      |
+
+### Marketplace Integration (30950-30959)
+
+| Kind  | Constant               | Description                                  |
+| ----- | ---------------------- | -------------------------------------------- |
+| 30950 | `MARKETPLACE_LISTING`  | Store listing for marketplace discovery      |
+| 30951 | `MARKETPLACE_PRODUCT`  | Product listing for cross-store catalog sync |
+| 30952 | `MARKETPLACE_ORDER`    | Cross-store order routing (multi-vendor)     |
+| 30953 | `STORE_CONNECTION`     | Store-to-store connection/partnership        |
+| 30954 | `PUBLIC_STORE_PROFILE` | Enhanced public store profile for discovery  |
+| 30955 | `MARKETPLACE_REVIEW`   | Customer review/rating for a store           |
+
+**Store Profile Example (Kind 30079):**
+
+```json
+{
+  "kind": 30079,
+  "content": "{\"name\":\"ร้านกาแฟ ABC\",\"shopType\":\"cafe\",\"acceptsLightning\":true}",
+  "tags": [
+    ["d", "store_profile"],
+    ["nip05", "shop@bnos.space"],
+    ["lud16", "shop@getalby.com"],
+    ["g", "u4pruy"],
+    ["t", "cafe"],
+    ["t", "bitcoin-accepted"]
+  ]
+}
+```
+
+> See [Marketplace Integration Guide](./marketplace-integration.md) for complete documentation.
 
 ### Replaceable Receipts (31000-31999)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
+| Kind  | Constant  | Description                             |
+| ----- | --------- | --------------------------------------- |
 | 31111 | `RECEIPT` | Replaceable receipt event for customers |
 
 **Receipt Example:**
+
 ```json
 {
   "kind": 31111,
@@ -412,11 +458,11 @@ These are official Nostr protocol kinds that we use for standard features:
 
 ### Group Chat - NIP-29 (39000-39999)
 
-| Kind | Constant | Description |
-|------|----------|-------------|
+| Kind  | Constant         | Description                             |
+| ----- | ---------------- | --------------------------------------- |
 | 39000 | `GROUP_METADATA` | Group metadata (name, avatar, settings) |
-| 39001 | `GROUP_ADMINS` | Group admins list |
-| 39002 | `GROUP_MEMBERS` | Group members list |
+| 39001 | `GROUP_ADMINS`   | Group admins list                       |
+| 39002 | `GROUP_MEMBERS`  | Group members list                      |
 
 ---
 
@@ -428,13 +474,13 @@ All Nostr events follow this structure:
 
 ```typescript
 interface NostrEvent {
-  id: string;           // SHA-256 hash (auto-generated)
-  pubkey: string;       // Author's public key (hex)
-  created_at: number;   // Unix timestamp (seconds)
-  kind: number;         // Event kind (use NOSTR_KINDS)
-  tags: string[][];     // Array of tag arrays
-  content: string;      // JSON string or plain text
-  sig: string;          // Signature (auto-generated)
+  id: string; // SHA-256 hash (auto-generated)
+  pubkey: string; // Author's public key (hex)
+  created_at: number; // Unix timestamp (seconds)
+  kind: number; // Event kind (use NOSTR_KINDS)
+  tags: string[][]; // Array of tag arrays
+  content: string; // JSON string or plain text
+  sig: string; // Signature (auto-generated)
 }
 ```
 
@@ -492,7 +538,7 @@ import { getKindName, isReplaceableKind } from "~/types/nostr-kinds";
 
 if (isReplaceableKind(event.kind)) {
   // Ensure 'd' tag exists
-  const dTag = event.tags.find(t => t[0] === "d");
+  const dTag = event.tags.find((t) => t[0] === "d");
   if (!dTag) {
     throw new Error("Replaceable event must have a 'd' tag");
   }
@@ -548,6 +594,7 @@ const event = {
 If you have hardcoded kind numbers in your code:
 
 **Before:**
+
 ```typescript
 const event = {
   kind: 4, // NIP-04 encrypted DM
@@ -560,6 +607,7 @@ if (event.kind === 9) {
 ```
 
 **After:**
+
 ```typescript
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
@@ -644,7 +692,7 @@ Returns the constant name for a kind number:
 import { getKindName } from "~/types/nostr-kinds";
 
 getKindName(30100); // Returns "PRODUCT"
-getKindName(4);     // Returns "ENCRYPTED_DM"
+getKindName(4); // Returns "ENCRYPTED_DM"
 ```
 
 ### isReplaceableKind(kind: number)
@@ -655,7 +703,7 @@ Check if a kind is in the replaceable range (30000-39999):
 import { isReplaceableKind } from "~/types/nostr-kinds";
 
 isReplaceableKind(30100); // true
-isReplaceableKind(4);     // false
+isReplaceableKind(4); // false
 ```
 
 ---

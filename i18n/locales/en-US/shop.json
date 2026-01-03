@@ -29,6 +29,10 @@
         "title": "Settings & Templates",
         "subtitle": "Customize preferences and import starter products"
       },
+      "step5": {
+        "title": "Marketplace Profile",
+        "subtitle": "Make your store discoverable"
+      },
       "success": "Setup Complete!",
       "successDescription": "Your shop has been configured successfully",
       "summary": "Summary",
@@ -44,6 +48,22 @@
       "applyTemplatesDesc": "Import {categories} categories and {products} sample products",
       "noTemplateProducts": "No preset products, add your own",
       "companyCodeHint": "Share this code with your staff to connect their devices"
+    },
+    "marketplace": {
+      "lud16": "Lightning Address",
+      "lud16Hint": "Receive Lightning payments directly",
+      "nip05": "Nostr Verification",
+      "nip05Hint": "Verify your store identity",
+      "description": "Description",
+      "descriptionPlaceholder": "Tell customers what makes your store special...",
+      "services": "Services Offered",
+      "payments": "Payment Methods",
+      "lightning": "Lightning Network",
+      "lightningDesc": "Fast, cheap Bitcoin payments",
+      "bitcoin": "Bitcoin On-chain",
+      "bitcoinDesc": "Traditional Bitcoin payments",
+      "ready": "Ready for Marketplace!",
+      "readyDesc": "Your store will be publicly discoverable. Customers can find you and pay with Lightning."
     },
     "welcome": {
       "title": "Welcome to BNOS",

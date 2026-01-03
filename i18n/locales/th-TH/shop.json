@@ -29,6 +29,10 @@
         "title": "การตั้งค่าและเทมเพลต",
         "subtitle": "ปรับแต่งความชอบและนำเข้าสินค้าเริ่มต้น"
       },
+      "step5": {
+        "title": "โปรไฟล์ Marketplace",
+        "subtitle": "ทำให้ร้านของคุณค้นหาได้"
+      },
       "success": "ตั้งค่าเสร็จสมบูรณ์!",
       "successDescription": "ร้านของคุณได้ถูกกำหนดค่าเรียบร้อยแล้ว",
       "summary": "สรุป",
@@ -44,6 +48,22 @@
       "applyTemplatesDesc": "นำเข้า {categories} หมวดหมู่ และ {products} สินค้าตัวอย่าง",
       "noTemplateProducts": "ไม่มีสินค้าที่กำหนดไว้ เพิ่มเอง",
       "companyCodeHint": "แบ่งปันรหัสนี้กับพนักงานเพื่อเชื่อมต่ออุปกรณ์ของพวกเขา"
+    },
+    "marketplace": {
+      "lud16": "ที่อยู่ Lightning",
+      "lud16Hint": "รับชำระเงิน Lightning โดยตรง",
+      "nip05": "ยืนยัน Nostr",
+      "nip05Hint": "ยืนยันตัวตนร้านของคุณ",
+      "description": "คำอธิบาย",
+      "descriptionPlaceholder": "บอกลูกค้าว่าร้านของคุณพิเศษอย่างไร...",
+      "services": "บริการที่ให้",
+      "payments": "วิธีการชำระเงิน",
+      "lightning": "Lightning Network",
+      "lightningDesc": "ชำระเงิน Bitcoin เร็วและถูก",
+      "bitcoin": "Bitcoin On-chain",
+      "bitcoinDesc": "ชำระเงิน Bitcoin แบบดั้งเดิม",
+      "ready": "พร้อมสำหรับ Marketplace!",
+      "readyDesc": "ร้านของคุณจะค้นหาได้สาธารณะ ลูกค้าสามารถค้นหาคุณและชำระเงินด้วย Lightning"
     },
     "welcome": {
       "title": "ยินดีต้อนรับสู่ BNOS",
