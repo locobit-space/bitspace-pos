@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 const appConfig = useAppConfig();
-const { initSystemNotifications } = useNotifications();
+const { initSystemNotifications, initPosAlerts } = useNotifications();
 const usersComposable = useUsers();
 const shop = useShop();
 const setupCheck = useSetupCheck();
@@ -88,8 +88,17 @@ onMounted(async () => {
   if (savedColor) {
     appConfig.ui.colors.primary = savedColor;
   }
+
+  // Load company code from localStorage first (required for POS alerts)
+  const company = useCompany();
+  company.loadCompanyCode();
+
   // Initialize system notifications
   initSystemNotifications();
+
+  // Initialize POS alerts (waiter calls, bill requests, new orders via Nostr)
+  // This must run AFTER company code is loaded to get ownerPubkey
+  initPosAlerts();
 
   // Initialize users and shop in background (non-blocking)
   // Navigation is already shown via localStorage check above

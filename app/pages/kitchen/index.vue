@@ -260,7 +260,6 @@ const handleNewOrder = (order: Order) => {
   }
 };
 
-// Check for pending customer orders from localStorage
 const checkPendingOrders = () => {
   const PENDING_ORDERS_KEY = "bitspace_pending_orders";
   try {
@@ -285,6 +284,85 @@ const checkPendingOrders = () => {
   } catch (e) {
     // Ignore errors
   }
+};
+
+// ============================================
+// Batch Actions
+// ============================================
+const isSelectionMode = ref(false);
+const selectedOrderIds = ref<Set<string>>(new Set());
+
+const toggleSelectionMode = () => {
+  isSelectionMode.value = !isSelectionMode.value;
+  if (!isSelectionMode.value) {
+    selectedOrderIds.value = new Set();
+  }
+};
+
+const toggleOrderSelection = (orderId: string) => {
+  if (!isSelectionMode.value) return;
+
+  const newSet = new Set(selectedOrderIds.value);
+  if (newSet.has(orderId)) {
+    newSet.delete(orderId);
+  } else {
+    newSet.add(orderId);
+  }
+  selectedOrderIds.value = newSet;
+};
+
+const selectAll = () => {
+  // Check if all CURRENTLY VISIBLE orders are selected
+  const visibleOrders = kitchenOrders.value;
+  if (visibleOrders.length === 0) return;
+
+  const newSet = new Set(selectedOrderIds.value);
+  const allVisibleSelected = visibleOrders.every((o) => newSet.has(o.id));
+
+  if (allVisibleSelected) {
+    // Deselect visible ones
+    visibleOrders.forEach((o) => newSet.delete(o.id));
+  } else {
+    // Select all visible
+    visibleOrders.forEach((o) => newSet.add(o.id));
+  }
+
+  selectedOrderIds.value = newSet;
+
+  // Ensure we are in selection mode
+  if (!isSelectionMode.value && newSet.size > 0) {
+    isSelectionMode.value = true;
+  }
+};
+
+const batchUpdateStatus = async (status: "preparing" | "ready" | "served") => {
+  if (selectedOrderIds.value.size === 0) return;
+
+  const count = selectedOrderIds.value.size;
+  const ids = Array.from(selectedOrderIds.value);
+
+  // Optimistic update / processing
+  isSelectionMode.value = false; // Exit selection mode
+  selectedOrderIds.value = new Set();
+
+  toast.add({
+    title: t("common.processing") || "Processing...",
+    description: `Updating ${count} orders to ${status}...`,
+    color: "blue",
+    icon: "i-heroicons-arrow-path",
+  });
+
+  // Process sequentially to ensure stability
+  for (const id of ids) {
+    await updateKitchenStatus(id, status);
+  }
+
+  toast.add({
+    title: t("common.success") || "Success",
+    description: `Updated ${count} orders to ${status}`,
+    color: "green",
+    icon: "i-heroicons-check-circle",
+  });
 };
 
 onMounted(async () => {
@@ -436,6 +514,42 @@ onUnmounted(() => {
             </div>
           </div>
 
+          <!-- Batch Selection Controls -->
+          <div class="flex items-center gap-2">
+            <UButton
+              v-if="kitchenOrders.length > 0"
+              size="sm"
+              color="gray"
+              variant="soft"
+              @click="selectAll"
+            >
+              {{
+                kitchenOrders.length > 0 &&
+                kitchenOrders.every((o) => selectedOrderIds.has(o.id))
+                  ? t("common.deselectAll", "Deselect All")
+                  : t("common.selectAll", "Select All")
+              }}
+            </UButton>
+
+            <UButton
+              :icon="
+                isSelectionMode
+                  ? 'i-heroicons-x-mark'
+                  : 'i-heroicons-check-circle'
+              "
+              :color="isSelectionMode ? 'gray' : 'primary'"
+              :variant="isSelectionMode ? 'ghost' : 'soft'"
+              size="sm"
+              @click="toggleSelectionMode"
+            >
+              {{
+                isSelectionMode
+                  ? t("common.cancel", "Cancel")
+                  : t("common.select", "Select")
+              }}
+            </UButton>
+          </div>
+
           <div class="h-8 w-px bg-gray-300 dark:bg-gray-700" />
 
           <!-- Settings -->
@@ -498,19 +612,50 @@ onUnmounted(() => {
           v-for="order in kitchenOrders"
           :key="order.id"
           class="rounded-2xl border-2 overflow-hidden transition-all hover:shadow-lg"
-          :class="getStatusBgColor(order.kitchenStatus)"
+          :class="[
+            getStatusBgColor(order.kitchenStatus),
+            isSelectionMode && selectedOrderIds.has(order.id)
+              ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-gray-900 translate-y-[-2px]'
+              : '',
+          ]"
+          @click="toggleOrderSelection(order.id)"
         >
+          <!-- Selection Overlay (Clickable Area) -->
+          <div
+            v-if="isSelectionMode"
+            class="absolute inset-0 z-10 cursor-pointer"
+          />
+
           <!-- Order Header -->
           <div class="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
             <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <span
-                  class="w-3 h-3 rounded-full"
-                  :class="getStatusColor(order.kitchenStatus)"
-                />
-                <span class="font-bold text-lg text-gray-900 dark:text-white">
-                  #{{ order.id.slice(-4).toUpperCase() }}
-                </span>
+              <div class="flex items-center gap-3">
+                <!-- Checkbox for Selection Mode -->
+                <div
+                  v-if="isSelectionMode"
+                  class="flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors"
+                  :class="
+                    selectedOrderIds.has(order.id)
+                      ? 'bg-primary-500 border-primary-500 text-white'
+                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                  "
+                >
+                  <UIcon
+                    v-if="selectedOrderIds.has(order.id)"
+                    name="i-heroicons-check"
+                    class="w-3.5 h-3.5"
+                  />
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span
+                    class="w-3 h-3 rounded-full"
+                    :class="getStatusColor(order.kitchenStatus)"
+                  />
+                  <span class="font-bold text-lg text-gray-900 dark:text-white">
+                    #{{ order.id.slice(-4).toUpperCase() }}
+                  </span>
+                </div>
               </div>
               <span
                 class="text-sm font-bold tabular-nums"
@@ -520,7 +665,7 @@ onUnmounted(() => {
               </span>
             </div>
 
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between text-sm pl-8">
               <span class="text-gray-500">{{ formatTime(order.date) }}</span>
               <UBadge
                 :color="
@@ -538,11 +683,23 @@ onUnmounted(() => {
             </div>
 
             <!-- Customer/Table Info -->
-            <div
-              v-if="order.customer"
-              class="mt-2 text-sm text-gray-600 dark:text-gray-400"
-            >
-              <span>👤 {{ order.customer }}</span>
+            <div class="mt-2 text-sm space-y-1">
+              <div
+                v-if="order.tableNumber || order.tableName"
+                class="font-bold text-gray-900 dark:text-white flex items-center gap-1"
+              >
+                <span class="text-lg">🪑</span>
+                <span>{{
+                  order.tableName || `Table ${order.tableNumber}`
+                }}</span>
+              </div>
+
+              <div
+                v-if="order.customer"
+                class="text-gray-600 dark:text-gray-400"
+              >
+                <span>👤 {{ order.customer }}</span>
+              </div>
             </div>
           </div>
 
@@ -663,6 +820,46 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Batch Action Bar -->
+    <div
+      v-if="isSelectionMode && selectedOrderIds.size > 0"
+      class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 shadow-lg z-20 flex items-center justify-between gap-4"
+    >
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-lg">{{ selectedOrderIds.size }}</span>
+        <span class="text-gray-500">{{
+          t("common.selected") || "selected"
+        }}</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <UButton
+          color="amber"
+          variant="soft"
+          icon="i-heroicons-fire"
+          @click="batchUpdateStatus('preparing')"
+        >
+          {{ t("kitchen.start") || "Start" }}
+        </UButton>
+        <UButton
+          color="green"
+          variant="soft"
+          icon="i-heroicons-check"
+          @click="batchUpdateStatus('ready')"
+        >
+          {{ t("kitchen.ready") || "Ready" }}
+        </UButton>
+        <UButton
+          color="gray"
+          variant="soft"
+          icon="i-heroicons-check-circle"
+          @click="batchUpdateStatus('served')"
+        >
+          {{ t("kitchen.served") || "Served" }}
+        </UButton>
       </div>
     </div>
 

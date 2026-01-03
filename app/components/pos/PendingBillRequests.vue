@@ -108,7 +108,7 @@ const handleProcessPayment = async (orders: any[], sessionInfo: any) => {
 
 // Refresh on mount and interval
 let commandsChannel: BroadcastChannel | null = null;
-const sound = useSound();
+const notificationsStore = useNotifications();
 
 onMounted(() => {
   loadPendingBills();
@@ -124,23 +124,47 @@ onMounted(() => {
         // Session paid - refresh immediately
         loadPendingBills();
       } else if (event.data?.type === "bill-requested") {
-        // 🔔 New bill request - play sound, show toast, refresh
-        sound.playNotification();
-
+        // 🔔 New bill request - add notification (auto plays sound + shows toast)
         const tableName =
           event.data.tableName || `Table ${event.data.tableNumber}`;
-        toast.add({
+
+        notificationsStore.addNotification({
+          type: "alert",
           title: `💰 ${tableName} requesting bill!`,
-          description: `${event.data.orderCount || 0} orders - ${formatPrice(
+          message: `${event.data.orderCount || 0} orders - Total: ${formatPrice(
             event.data.sessionTotal || 0
           )}`,
-          icon: "i-heroicons-bell-alert",
-          color: "emerald",
-          timeout: 10000,
+          priority: "high",
+          actionUrl: "/pos",
+          data: {
+            tableNumber: event.data.tableNumber,
+            tableName: event.data.tableName,
+            sessionId: event.data.sessionId,
+            sessionTotal: event.data.sessionTotal,
+            orderCount: event.data.orderCount,
+            serviceType: "bill_request",
+          },
         });
 
         // Refresh to show new pending bill
         loadPendingBills();
+      } else if (event.data?.type === "waiter-call") {
+        // 🔔 Waiter call - add notification (auto plays sound + shows toast)
+        const tableName =
+          event.data.tableName || `Table ${event.data.tableNumber}`;
+
+        notificationsStore.addNotification({
+          type: "alert",
+          title: `🔔 ${tableName} needs assistance!`,
+          message: "Customer called for waiter",
+          priority: "high",
+          actionUrl: "/tables",
+          data: {
+            tableNumber: event.data.tableNumber,
+            tableName: event.data.tableName,
+            serviceType: "waiter_call",
+          },
+        });
       }
     };
   }

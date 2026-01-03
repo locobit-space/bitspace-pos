@@ -324,6 +324,14 @@
               <Icon name="i-heroicons-arrow-right-on-rectangle" size="18" />
               {{ $t("common.signOut") }}
             </button>
+
+            <!-- version and build time -->
+            <div
+              class="flex items-center pt-2 gap-1.5 font-sans text-gray-500 dark:text-gray-400 flex-col text-center text-xs"
+            >
+              <p>Version: v{{ version }}</p>
+              <p>Build Time: {{ buildTime }}</p>
+            </div>
           </div>
         </template>
       </UPopover>
@@ -344,6 +352,10 @@
 
 <script setup lang="ts">
 defineEmits(["toggle-sidebar"]);
+
+const {
+  public: { version, buildTime },
+} = useRuntimeConfig();
 
 const colorMode = useColorMode();
 const usersComposable = useUsers();

@@ -193,6 +193,69 @@ const pendingOrdersList = computed(() =>
 // Selected pending order for payment
 const selectedPendingOrder = ref<Order | null>(null);
 
+// Merge orders feature
+const isMergeMode = ref(false);
+const ordersToMerge = ref<Order[]>([]);
+
+const toggleOrderForMerge = (order: Order) => {
+  const index = ordersToMerge.value.findIndex((o) => o.id === order.id);
+  if (index === -1) {
+    ordersToMerge.value.push(order);
+  } else {
+    ordersToMerge.value.splice(index, 1);
+  }
+};
+
+const isOrderSelectedForMerge = (orderId: string) => {
+  return ordersToMerge.value.some((o) => o.id === orderId);
+};
+
+const mergeSelectedOrders = async () => {
+  if (ordersToMerge.value.length < 2) {
+    toast.add({
+      title: "Select at least 2 orders",
+      description: "Please select multiple orders to merge",
+      icon: "i-heroicons-exclamation-triangle",
+      color: "yellow",
+    });
+    return;
+  }
+
+  // Clear cart and load all items from selected orders
+  pos.clearCart();
+
+  for (const order of ordersToMerge.value) {
+    for (const item of order.items) {
+      pos.addToCart(item.product, item.quantity);
+    }
+  }
+
+  // Get table info from first order
+  const firstOrder = ordersToMerge.value[0];
+  if (firstOrder?.tableNumber) {
+    pos.tableNumber.value = firstOrder.tableNumber;
+    pos.setOrderType("dine_in");
+  }
+
+  // Mark original orders as merged/canceled
+  for (const order of ordersToMerge.value) {
+    order.status = "canceled";
+    order.kitchenNotes = `Merged with other orders at ${new Date().toISOString()}`;
+    await ordersStore.updateOrder(order.id, order);
+  }
+
+  toast.add({
+    title: `Merged ${ordersToMerge.value.length} orders`,
+    description: "Items loaded into cart. Complete payment when ready.",
+    icon: "i-heroicons-check-circle",
+    color: "green",
+  });
+
+  // Reset merge mode
+  ordersToMerge.value = [];
+  isMergeMode.value = false;
+};
+
 // Editing existing order state
 const editingOrderId = ref<string | null>(null);
 const isEditingOrder = computed(() => !!editingOrderId.value);
@@ -770,21 +833,26 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       };
     }
 
-    // Save order (Update or Create)
-    if (isUpdate) {
-      await ordersStore.updateOrder(order.id, order);
-      editingOrderId.value = null; // Clear editing mode
-    } else {
-      await ordersStore.createOrder(order);
-    }
+    // Check if this is a session payment (consolidated bill)
+    // If so, we don't create a new order - we'll update the existing session orders later
+    const sessionInfoRaw = sessionStorage.getItem("active-session-info");
+    const isSessionPayment = !!sessionInfoRaw;
 
-    // ✅ AUTO-ADJUST STOCK: Decrease stock for each item (only if product tracks stock)
-    for (const item of order.items || []) {
-      // Only deduct stock if product exists and trackStock is not explicitly false
-      // Products with trackStock=undefined or true will have stock deducted
-      // Services/digital products with trackStock=false will be skipped
-      if (item.productId && item.product?.trackStock !== false) {
-        await productsStore.decreaseStock(item.productId, item.quantity);
+    // Save order (Update or Create) - but skip for session payments
+    if (!isSessionPayment) {
+      if (isUpdate) {
+        await ordersStore.updateOrder(order.id, order);
+        editingOrderId.value = null; // Clear editing mode
+      } else {
+        await ordersStore.createOrder(order);
+      }
+
+      // ✅ AUTO-ADJUST STOCK: Decrease stock for each item (only for non-session orders)
+      // Session orders already had stock deducted when originally placed
+      for (const item of order.items || []) {
+        if (item.productId && item.product?.trackStock !== false) {
+          await productsStore.decreaseStock(item.productId, item.quantity);
+        }
       }
     }
 
@@ -1776,6 +1844,12 @@ onMounted(async () => {
       }
     };
   }
+
+  // ============================================
+  // 🔔 POS Alerts are now handled centrally in default.vue layout
+  // via initPosAlerts() using kind 30050 (parameterized replaceable)
+  // ============================================
+  // Old subscription code removed to prevent duplicates
 
   // ============================================
   // Keyboard shortcuts
@@ -3247,14 +3321,54 @@ onUnmounted(() => {
     >
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <span>💳</span> {{ t("pos.pendingBills") || "Pending Bills" }}
-            <span class="text-sm font-normal text-gray-500"
-              >({{ t("pos.awaitingPayment") || "Awaiting Payment" }})</span
+          <div class="flex items-center justify-between mb-4">
+            <h3
+              class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"
             >
-          </h3>
+              <span>💳</span> {{ t("pos.pendingBills") || "Pending Bills" }}
+              <span class="text-sm font-normal text-gray-500"
+                >({{ t("pos.awaitingPayment") || "Awaiting Payment" }})</span
+              >
+            </h3>
+
+            <!-- Merge Toggle Buttons -->
+            <div v-if="pendingOrdersList.length > 1" class="flex gap-2">
+              <UButton
+                v-if="!isMergeMode"
+                size="xs"
+                color="violet"
+                variant="soft"
+                @click="isMergeMode = true"
+              >
+                <UIcon name="i-heroicons-squares-plus" class="w-4 h-4" />
+                {{ t("pos.mergeOrders") || "Merge" }}
+              </UButton>
+              <template v-else>
+                <UButton
+                  size="xs"
+                  color="gray"
+                  variant="ghost"
+                  @click="
+                    isMergeMode = false;
+                    ordersToMerge = [];
+                  "
+                >
+                  {{ t("common.cancel") || "Cancel" }}
+                </UButton>
+                <UButton
+                  size="xs"
+                  color="violet"
+                  :disabled="ordersToMerge.length < 2"
+                  @click="mergeSelectedOrders"
+                >
+                  <UIcon name="i-heroicons-check" class="w-4 h-4" />
+                  {{ t("pos.mergeSelected") || "Merge" }} ({{
+                    ordersToMerge.length
+                  }})
+                </UButton>
+              </template>
+            </div>
+          </div>
 
           <div
             v-if="pendingOrdersList.length === 0"
@@ -3268,10 +3382,26 @@ onUnmounted(() => {
             <div
               v-for="order in pendingOrdersList"
               :key="order.id"
-              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700/30"
+              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border-2 transition-all cursor-pointer"
+              :class="[
+                isMergeMode && isOrderSelectedForMerge(order.id)
+                  ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
+                  : 'border-gray-200 dark:border-gray-700/30',
+                isMergeMode ? 'hover:border-violet-300' : '',
+              ]"
+              @click="isMergeMode ? toggleOrderForMerge(order) : null"
             >
               <div class="flex justify-between items-start mb-2">
                 <div class="flex items-center gap-2">
+                  <!-- Merge checkbox -->
+                  <UCheckbox
+                    v-if="isMergeMode"
+                    :model-value="isOrderSelectedForMerge(order.id)"
+                    @click.stop
+                    @update:model-value="toggleOrderForMerge(order)"
+                    color="violet"
+                    class="mr-1"
+                  />
                   <span
                     v-if="order.orderNumber"
                     class="text-lg font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded"

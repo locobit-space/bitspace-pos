@@ -847,6 +847,89 @@ if (import.meta.client) {
   orderChannel = new BroadcastChannel("bitspace-orders");
 }
 
+// 🔔 Publish POS_ALERT for cross-device real-time notifications via Nostr
+const nostrRelay = useNostrRelay();
+
+/**
+ * Publish POS alert to Nostr relays with retry logic
+ *
+ * Features:
+ * - Anonymous customer signing (no nsec required)
+ * - Automatic retry on failure (up to 2 retries)
+ * - Multiple premium relays for reliability
+ * - Non-blocking (won't prevent order if Nostr fails)
+ */
+const publishPosAlert = async (
+  type: "new-order" | "bill-request" | "waiter-call",
+  data: {
+    tableNumber?: string;
+    tableName?: string;
+    total?: number;
+    orderCount?: number;
+    sessionId?: string;
+    orderId?: string;
+    orderCode?: string;
+  },
+  retryCount = 0
+) => {
+  if (!ownerPubkey.value) {
+    console.warn("[Order] ⚠️ No ownerPubkey - cannot publish POS_ALERT");
+    return false;
+  }
+
+  try {
+    // Create POS alert event (kind 30050 - parameterized replaceable)
+    // Using 30050 for reliable relay storage and cross-device propagation
+    const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+
+    const content = JSON.stringify({
+      type,
+      ...data,
+      timestamp: Date.now(),
+    });
+
+    // Create unsigned event with anonymous ephemeral key
+    const { generateSecretKey, finalizeEvent } = await import("nostr-tools");
+    const sk = generateSecretKey(); // Anonymous customer key (no nsec needed)
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const event = finalizeEvent(
+      {
+        kind: NOSTR_KINDS.POS_ALERT, // POS_ALERT (1050 - Regular)
+        created_at: timestamp,
+        tags: [
+          ["p", ownerPubkey.value], // Target the shop owner
+          // Add company tag for shop-wide broadcast (any staff with this tag can see it)
+          ["c", ownerPubkey.value],
+          ["t", type], // Event type tag
+        ],
+        content,
+      },
+      sk
+    );
+
+    // Publish to relays
+    await nostrRelay.publishEvent(event);
+    return true;
+  } catch (e) {
+    console.error(`[Order] ❌ Failed to publish ${type} alert:`, e);
+
+    // Retry up to 2 times with exponential backoff
+    if (retryCount < 2) {
+      const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s
+      console.log(`[Order] 🔄 Retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return publishPosAlert(type, data, retryCount + 1);
+    }
+
+    // Non-blocking - order still works even if Nostr fails
+    console.warn(
+      `[Order] ⚠️ All retries exhausted for ${type} alert. Falling back to BroadcastChannel only.`
+    );
+    return false;
+  }
+};
+
 // Broadcast new order to other tabs (admin/kitchen tabs)
 const broadcastOrderToAdmin = (order: Order) => {
   if (!import.meta.client) return;
@@ -1264,12 +1347,30 @@ const callWaiter = async () => {
       },
     });
 
+    // Show toast to customer
     toast.add({
       title: t("order.waiterCalled") || "Waiter Called!",
       description:
         t("order.waiterCalledDesc") || "Staff will be with you shortly",
       icon: "i-heroicons-bell-alert",
       color: "amber",
+    });
+
+    // 🔔 Broadcast to POS for real-time notification (instant)
+    if (import.meta.client) {
+      const channel = new BroadcastChannel("bitspace-pos-commands");
+      channel.postMessage({
+        type: "waiter-call",
+        tableNumber: tableInfo.value?.tableNumber,
+        tableName: tableInfo.value?.tableName,
+      });
+      channel.close();
+    }
+
+    // 🔔 Publish to Nostr for cross-device notifications
+    publishPosAlert("waiter-call", {
+      tableNumber: tableInfo.value?.tableNumber,
+      tableName: tableInfo.value?.tableName,
     });
   } catch (e) {
     console.error("Failed to call waiter:", e);
@@ -1295,38 +1396,14 @@ const requestBill = async () => {
       );
     }
 
-    // Create a bill request order
-    const billRequest = {
-      id: `BIL-${Date.now().toString(36).slice(-4).toUpperCase()}${Math.random()
-        .toString(36)
-        .substring(2, 6)
-        .toUpperCase()}`,
-      customer: "Customer",
-      branch: "main",
-      date: new Date().toISOString(),
-      total: 0,
-      totalSats: 0,
-      currency: "LAK" as const,
-      status: "pending" as const,
-      orderType: "dine_in" as const,
-      tableNumber:
-        tableInfo.value?.tableName || tableInfo.value?.tableNumber || "",
-      items: [],
-      kitchenStatus: "new" as const,
-      kitchenNotes: `💰 BILL REQUEST - Customer wants to pay (Session: ${
-        currentSession.value?.sessionId || "N/A"
-      })`,
-    };
-
-    await ordersStore.createOrder(billRequest);
-
-    // Notify POS staff with session info
+    // Get session info for notifications
     const sessionInfo = currentSession.value
       ? `${sessionOrderCount.value} orders, Total: ${formatPrice(
           sessionTotal.value
         )}`
       : "No active session";
 
+    // Notify staff via notification store (persistent)
     notificationsStore.addNotification({
       type: "alert",
       title: `💰 Bill Request from ${
@@ -1334,7 +1411,7 @@ const requestBill = async () => {
       }`,
       message: `Customer wants to pay. ${sessionInfo}`,
       priority: "high",
-      actionUrl: "/tables",
+      actionUrl: "/pos",
       data: {
         tableNumber: tableInfo.value?.tableNumber,
         tableName: tableInfo.value?.tableName,
@@ -1345,6 +1422,7 @@ const requestBill = async () => {
       },
     });
 
+    // Show toast to customer
     toast.add({
       title: t("order.billRequested") || "Bill Requested!",
       description:
@@ -1353,7 +1431,7 @@ const requestBill = async () => {
       color: "emerald",
     });
 
-    // 🔔 Broadcast to POS for real-time notification
+    // 🔔 Broadcast to POS for real-time notification (instant)
     if (import.meta.client) {
       const channel = new BroadcastChannel("bitspace-pos-commands");
       channel.postMessage({
@@ -1366,6 +1444,15 @@ const requestBill = async () => {
       });
       channel.close();
     }
+
+    // 🔔 Publish to Nostr for cross-device notifications
+    publishPosAlert("bill-request", {
+      tableNumber: tableInfo.value?.tableNumber,
+      tableName: tableInfo.value?.tableName,
+      total: sessionTotal.value,
+      orderCount: sessionOrderCount.value,
+      sessionId: currentSession.value?.sessionId,
+    });
   } catch (e) {
     console.error("Failed to request bill:", e);
     toast.add({
@@ -1545,6 +1632,16 @@ const submitOrder = async () => {
 
     // Broadcast to admin tabs (localStorage/BroadcastChannel)
     broadcastOrderToAdmin(order);
+
+    // 🔔 Publish to Nostr for cross-device notifications
+    publishPosAlert("new-order", {
+      tableNumber: tableInfo.value?.tableNumber,
+      tableName: tableInfo.value?.tableName,
+      total: order.total,
+      orderId: order.id,
+      orderCode: order.code,
+      sessionId: currentSession.value?.sessionId,
+    });
 
     // Save to local history
     saveOrderToHistory(order);
