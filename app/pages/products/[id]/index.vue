@@ -1,25 +1,44 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-4">
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-4"
+    >
       <div class="flex items-center gap-4">
-        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-left" @click="navigateTo('/products')" />
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-arrow-left"
+          @click="navigateTo('/products')"
+        />
         <div v-if="product" class="flex items-center gap-4">
           <div
-            class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-700">
-            <img v-if="product.image && product.image.startsWith('http')" :src="product.image" :alt="product.name"
-              class="w-full h-full object-cover" />
+            class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-700"
+          >
+            <img
+              v-if="product.image && product.image.startsWith('http')"
+              :src="product.image"
+              :alt="product.name"
+              class="w-full h-full object-cover"
+            />
             <span v-else-if="product.image" class="text-3xl">{{
               product.image
             }}</span>
-            <UIcon v-else name="i-heroicons-cube" class="w-8 h-8 text-gray-400" />
+            <UIcon
+              v-else
+              name="i-heroicons-cube"
+              class="w-8 h-8 text-gray-400"
+            />
           </div>
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ product.name }}
             </h1>
             <div class="flex items-center gap-2 mt-1">
-              <UBadge :color="product.status === 'active' ? 'green' : 'gray'" :label="$t(`common.${product.status}`)" />
+              <UBadge
+                :color="product.status === 'active' ? 'green' : 'gray'"
+                :label="$t(`common.${product.status}`)"
+              />
               <span class="text-sm text-gray-500">
                 {{ product.sku }}
               </span>
@@ -38,10 +57,22 @@
         </div>
       </div>
       <div v-if="product" class="flex items-center gap-2">
-        <UButton v-if="canEditProducts" color="primary" variant="soft" icon="i-heroicons-pencil"
-          :label="$t('common.edit')" @click="openProductModal" />
-        <UButton v-if="canDeleteProducts" color="red" variant="soft" icon="i-heroicons-trash"
-          :label="$t('common.delete')" @click="confirmDelete" />
+        <UButton
+          v-if="canEditProducts"
+          color="primary"
+          variant="soft"
+          icon="i-heroicons-pencil"
+          :label="$t('common.edit')"
+          @click="openProductModal"
+        />
+        <UButton
+          v-if="canDeleteProducts"
+          color="red"
+          variant="soft"
+          icon="i-heroicons-trash"
+          :label="$t('common.delete')"
+          @click="confirmDelete"
+        />
       </div>
     </div>
 
@@ -53,20 +84,38 @@
           <div v-if="item.value === 'overview'" class="pt-6 space-y-6">
             <!-- Product Info Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <CommonStatCard :label="$t('products.price')" :value="formatCurrency(product.price)"
-                icon="i-heroicons-currency-dollar" icon-color="green" />
-              <CommonStatCard :label="$t('products.stock')" :value="String(product.stock)" icon="i-heroicons-cube"
-                :icon-color="product.stock <= product.minStock ? 'red' : 'blue'" />
-              <CommonStatCard :label="$t('products.minStock')" :value="String(product.minStock)"
-                icon="i-heroicons-exclamation-triangle" icon-color="yellow" />
-              <CommonStatCard :label="$t('products.category')" :value="getCategoryName(product.categoryId)"
-                icon="i-heroicons-folder" icon-color="purple" />
+              <CommonStatCard
+                :label="$t('products.price')"
+                :value="formatCurrency(product.price)"
+                icon="i-heroicons-currency-dollar"
+                icon-color="green"
+              />
+              <CommonStatCard
+                :label="$t('products.stock')"
+                :value="String(product.stock)"
+                icon="i-heroicons-cube"
+                :icon-color="product.stock <= product.minStock ? 'red' : 'blue'"
+              />
+              <CommonStatCard
+                :label="$t('products.minStock')"
+                :value="String(product.minStock)"
+                icon="i-heroicons-exclamation-triangle"
+                icon-color="yellow"
+              />
+              <CommonStatCard
+                :label="$t('products.category')"
+                :value="getCategoryName(product.categoryId)"
+                icon="i-heroicons-folder"
+                icon-color="purple"
+              />
             </div>
 
             <!-- Details Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <!-- Basic Info -->
-              <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+              <div
+                class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6"
+              >
                 <h3 class="font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("products.basicInfo") }}
                 </h3>
@@ -74,7 +123,9 @@
                   <div class="flex justify-between">
                     <dt class="text-gray-500">{{ $t("products.sku") }}</dt>
                     <dd class="font-medium text-gray-900 dark:text-white">
-                      <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm">
+                      <code
+                        class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm"
+                      >
                         {{ product.sku }}
                       </code>
                     </dd>
@@ -82,10 +133,15 @@
                   <div v-if="product.barcode" class="flex justify-between">
                     <dt class="text-gray-500">{{ $t("products.barcode") }}</dt>
                     <dd class="font-medium text-gray-900 dark:text-white">
-                      <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm">
+                      <code
+                        class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm"
+                      >
                         {{ product.barcode }}
                       </code>
-                      <span v-if="product.barcodeType" class="text-xs text-gray-500 ml-1">
+                      <span
+                        v-if="product.barcodeType"
+                        class="text-xs text-gray-500 ml-1"
+                      >
                         ({{ product.barcodeType.toUpperCase() }})
                       </span>
                     </dd>
@@ -94,8 +150,15 @@
                     <dt class="text-gray-500">
                       {{ $t("products.productType") }}
                     </dt>
-                    <dd class="font-medium text-gray-900 dark:text-white capitalize">
-                      {{ $t("products.productTypes." + (product.productType || "good")) }}
+                    <dd
+                      class="font-medium text-gray-900 dark:text-white capitalize"
+                    >
+                      {{
+                        $t(
+                          "products.productTypes." +
+                            (product.productType || "good")
+                        )
+                      }}
                     </dd>
                   </div>
                   <div v-if="product.brand" class="flex justify-between">
@@ -124,7 +187,9 @@
               </div>
 
               <!-- Inventory Settings -->
-              <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+              <div
+                class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6"
+              >
                 <h3 class="font-semibold text-gray-900 dark:text-white mb-4">
                   {{ $t("products.inventorySettings") }}
                 </h3>
@@ -134,10 +199,14 @@
                       {{ $t("products.trackStock") }}
                     </dt>
                     <dd>
-                      <UBadge :color="product.trackStock !== false ? 'green' : 'gray'" :label="product.trackStock !== false
-                        ? $t('common.yes')
-                        : $t('common.no')
-                        " />
+                      <UBadge
+                        :color="product.trackStock !== false ? 'green' : 'gray'"
+                        :label="
+                          product.trackStock !== false
+                            ? $t('common.yes')
+                            : $t('common.no')
+                        "
+                      />
                     </dd>
                   </div>
                   <div class="flex justify-between">
@@ -145,8 +214,12 @@
                       {{ $t("products.trackLots") }}
                     </dt>
                     <dd>
-                      <UBadge :color="product.trackLots ? 'green' : 'gray'" :label="product.trackLots ? $t('common.yes') : $t('common.no')
-                        " />
+                      <UBadge
+                        :color="product.trackLots ? 'green' : 'gray'"
+                        :label="
+                          product.trackLots ? $t('common.yes') : $t('common.no')
+                        "
+                      />
                     </dd>
                   </div>
                   <div class="flex justify-between">
@@ -154,11 +227,18 @@
                       {{ $t("products.hasExpiry") }}
                     </dt>
                     <dd>
-                      <UBadge :color="product.hasExpiry ? 'yellow' : 'gray'" :label="product.hasExpiry ? $t('common.yes') : $t('common.no')
-                        " />
+                      <UBadge
+                        :color="product.hasExpiry ? 'yellow' : 'gray'"
+                        :label="
+                          product.hasExpiry ? $t('common.yes') : $t('common.no')
+                        "
+                      />
                     </dd>
                   </div>
-                  <div v-if="product.hasExpiry && product.defaultShelfLifeDays" class="flex justify-between">
+                  <div
+                    v-if="product.hasExpiry && product.defaultShelfLifeDays"
+                    class="flex justify-between"
+                  >
                     <dt class="text-gray-500">
                       {{ $t("products.shelfLife") }}
                     </dt>
@@ -170,7 +250,9 @@
                     <dt class="text-gray-500">
                       {{ $t("products.storageType") }}
                     </dt>
-                    <dd class="font-medium text-gray-900 dark:text-white capitalize">
+                    <dd
+                      class="font-medium text-gray-900 dark:text-white capitalize"
+                    >
                       {{ $t("products.storageTypes." + product.storageType) }}
                     </dd>
                   </div>
@@ -179,25 +261,43 @@
             </div>
 
             <!-- Tags -->
-            <div v-if="product.tags && product.tags.length > 0"
-              class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+            <div
+              v-if="product.tags && product.tags.length > 0"
+              class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6"
+            >
               <h3 class="font-semibold text-gray-900 dark:text-white mb-4">
                 {{ $t("products.tags") }}
               </h3>
               <div class="flex flex-wrap gap-2">
-                <UBadge v-for="tag in product.tags" :key="tag" color="blue" variant="subtle" :label="tag" />
+                <UBadge
+                  v-for="tag in product.tags"
+                  :key="tag"
+                  color="blue"
+                  variant="subtle"
+                  :label="tag"
+                />
               </div>
             </div>
 
             <!-- Timestamps -->
-            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 text-sm text-gray-500">
+            <div
+              class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 text-sm text-gray-500"
+            >
               <div class="flex flex-wrap gap-x-6 gap-y-2">
-                <span>{{ $t("common.created") }}:
-                  {{ $d(new Date(product.createdAt), 'long') }}</span>
-                <span v-if="product.createdBy">{{ $t("common.createdBy") }}: {{ product.createdBy }}</span>
-                <span>{{ $t("common.updated") }}:
-                  {{ $d(new Date(product.updatedAt), 'long') }}</span>
-                <span v-if="product.updatedBy">{{ $t("common.updatedBy") }}: {{ product.updatedBy }}</span>
+                <span
+                  >{{ $t("common.created") }}:
+                  {{ $d(new Date(product.createdAt), "long") }}</span
+                >
+                <span v-if="product.createdBy"
+                  >{{ $t("common.createdBy") }}: {{ product.createdBy }}</span
+                >
+                <span
+                  >{{ $t("common.updated") }}:
+                  {{ $d(new Date(product.updatedAt), "long") }}</span
+                >
+                <span v-if="product.updatedBy"
+                  >{{ $t("common.updatedBy") }}: {{ product.updatedBy }}</span
+                >
               </div>
             </div>
           </div>
@@ -206,21 +306,40 @@
           <div v-if="item.value === 'inventory'" class="pt-6 space-y-6">
             <!-- Stock Summary -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <CommonStatCard :label="$t('products.currentStock')" :value="String(product.stock)"
-                icon="i-heroicons-cube" :icon-color="product.stock <= product.minStock ? 'red' : 'green'
-                  " />
-              <CommonStatCard :label="$t('products.minStock')" :value="String(product.minStock)"
-                icon="i-heroicons-exclamation-triangle" icon-color="yellow" />
-              <CommonStatCard :label="$t('inventory.stockValue')" :value="formatCurrency(
-                product.stock * (product.costPrice || product.price)
-              )
-                " icon="i-heroicons-banknotes" icon-color="blue" />
+              <CommonStatCard
+                :label="$t('products.currentStock')"
+                :value="String(product.stock)"
+                icon="i-heroicons-cube"
+                :icon-color="
+                  product.stock <= product.minStock ? 'red' : 'green'
+                "
+              />
+              <CommonStatCard
+                :label="$t('products.minStock')"
+                :value="String(product.minStock)"
+                icon="i-heroicons-exclamation-triangle"
+                icon-color="yellow"
+              />
+              <CommonStatCard
+                :label="$t('inventory.stockValue')"
+                :value="
+                  formatCurrency(
+                    product.stock * (product.costPrice || product.price)
+                  )
+                "
+                icon="i-heroicons-banknotes"
+                icon-color="blue"
+              />
             </div>
 
             <!-- Stock Lots (if tracking lots) -->
-            <div v-if="product.trackLots"
-              class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-              <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+            <div
+              v-if="product.trackLots"
+              class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+            >
+              <div
+                class="px-6 py-4 border-b border-gray-200 dark:border-gray-800"
+              >
                 <h3 class="font-semibold text-gray-900 dark:text-white">
                   {{ $t("inventory.stockLots") }}
                 </h3>
@@ -229,31 +348,48 @@
                 <table class="w-full">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-800/50">
-                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
                         {{ $t("inventory.lotNumber") }}
                       </th>
-                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
                         {{ $t("inventory.quantity") }}
                       </th>
-                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
                         {{ $t("inventory.expiryDate") }}
                       </th>
-                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
                         {{ $t("inventory.receivedDate") }}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="lot in stockLots" :key="lot.id" class="border-b border-gray-100 dark:border-gray-800">
+                    <tr
+                      v-for="lot in stockLots"
+                      :key="lot.id"
+                      class="border-b border-gray-100 dark:border-gray-800"
+                    >
                       <td class="py-3 px-4">
-                        <code class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                        <code
+                          class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+                        >
                           {{ lot.lotNumber }}
                         </code>
                       </td>
                       <td class="py-3 px-4 font-medium">{{ lot.quantity }}</td>
                       <td class="py-3 px-4">
-                        <span :class="isExpiringSoon(lot.expiryDate) ? 'text-red-500' : ''
-                          ">
+                        <span
+                          :class="
+                            isExpiringSoon(lot.expiryDate) ? 'text-red-500' : ''
+                          "
+                        >
                           {{
                             lot.expiryDate ? formatDate(lot.expiryDate) : "-"
                           }}
@@ -267,17 +403,30 @@
                 </table>
               </div>
               <div v-else class="p-8 text-center text-gray-500">
-                <UIcon name="i-heroicons-cube" class="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <UIcon
+                  name="i-heroicons-cube"
+                  class="w-12 h-12 mx-auto mb-2 text-gray-300"
+                />
                 <p>{{ $t("inventory.noLots") }}</p>
               </div>
             </div>
 
             <!-- Quick Actions -->
             <div v-if="canEditProducts" class="flex gap-3">
-              <UButton color="primary" variant="soft" icon="i-heroicons-plus" :label="$t('inventory.addStock')"
-                @click="openStockAdjustment('add')" />
-              <UButton color="yellow" variant="soft" icon="i-heroicons-minus" :label="$t('inventory.removeStock')"
-                @click="openStockAdjustment('remove')" />
+              <UButton
+                color="primary"
+                variant="soft"
+                icon="i-heroicons-plus"
+                :label="$t('inventory.addStock')"
+                @click="openStockAdjustment('add')"
+              />
+              <UButton
+                color="yellow"
+                variant="soft"
+                icon="i-heroicons-minus"
+                :label="$t('inventory.removeStock')"
+                @click="openStockAdjustment('remove')"
+              />
             </div>
           </div>
 
@@ -285,10 +434,21 @@
           <div v-if="item.value === 'history'" class="pt-6 space-y-6">
             <!-- Filters -->
             <div class="flex flex-wrap gap-3">
-              <USelect v-model="historyFilter" :items="historyFilterOptions" label-key="label" value-key="value"
-                class="w-48" />
-              <UButton color="neutral" variant="soft" icon="i-heroicons-arrow-path" :label="$t('common.refresh')"
-                :loading="loadingHistory" @click="loadActivityHistory" />
+              <USelect
+                v-model="historyFilter"
+                :items="historyFilterOptions"
+                label-key="label"
+                value-key="value"
+                class="w-48"
+              />
+              <UButton
+                color="neutral"
+                variant="soft"
+                icon="i-heroicons-arrow-path"
+                :label="$t('common.refresh')"
+                :loading="loadingHistory"
+                @click="loadActivityHistory"
+              />
             </div>
 
             <!-- Activity Timeline -->
@@ -303,15 +463,23 @@
             </div>
 
             <div v-else-if="activityLogs.length > 0" class="space-y-4">
-              <div v-for="log in filteredActivityLogs" :key="log.id"
-                class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+              <div
+                v-for="log in filteredActivityLogs"
+                :key="log.id"
+                class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4"
+              >
                 <div class="flex items-start gap-4">
                   <!-- Action Icon -->
-                  <div :class="[
-                    'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
-                    getActivityColor(log.action),
-                  ]">
-                    <UIcon :name="getActivityIcon(log.action)" class="w-5 h-5" />
+                  <div
+                    :class="[
+                      'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
+                      getActivityColor(log.action),
+                    ]"
+                  >
+                    <UIcon
+                      :name="getActivityIcon(log.action)"
+                      class="w-5 h-5"
+                    />
                   </div>
 
                   <!-- Content -->
@@ -328,18 +496,29 @@
                     <!-- User info -->
                     <p class="text-sm text-gray-500 mt-1">
                       {{ $t("common.by") }} {{ log.userName || log.userId }}
-                      <span v-if="log.userRole" class="text-xs">({{ log.userRole }})</span>
+                      <span v-if="log.userRole" class="text-xs"
+                        >({{ log.userRole }})</span
+                      >
                     </p>
 
                     <!-- Changes -->
-                    <div v-if="log.changes && log.changes.length > 0" class="mt-3 space-y-2">
-                      <div v-for="(change, idx) in log.changes" :key="idx"
-                        class="text-sm bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                    <div
+                      v-if="log.changes && log.changes.length > 0"
+                      class="mt-3 space-y-2"
+                    >
+                      <div
+                        v-for="(change, idx) in log.changes"
+                        :key="idx"
+                        class="text-sm bg-gray-50 dark:bg-gray-800 rounded-lg p-2"
+                      >
                         <span class="text-gray-500">{{ change.field }}:</span>
                         <span class="text-red-500 line-through mx-2">{{
                           formatChangeValue(change.oldValue)
                         }}</span>
-                        <UIcon name="i-heroicons-arrow-right" class="w-3 h-3 inline text-gray-400" />
+                        <UIcon
+                          name="i-heroicons-arrow-right"
+                          class="w-3 h-3 inline text-gray-400"
+                        />
                         <span class="text-green-500 ml-2">{{
                           formatChangeValue(change.newValue)
                         }}</span>
@@ -347,44 +526,71 @@
                     </div>
 
                     <!-- Stock change -->
-                    <div v-if="
-                      log.action === 'stock_adjust' &&
-                      log.stockBefore !== undefined
-                    " class="mt-2 text-sm">
-                      <span class="text-gray-500">{{ $t("products.stock") }}:</span>
+                    <div
+                      v-if="
+                        log.action === 'stock_adjust' &&
+                        log.stockBefore !== undefined
+                      "
+                      class="mt-2 text-sm"
+                    >
+                      <span class="text-gray-500"
+                        >{{ $t("products.stock") }}:</span
+                      >
                       <span class="text-red-500 mx-2">{{
                         log.stockBefore
                       }}</span>
-                      <UIcon name="i-heroicons-arrow-right" class="w-3 h-3 inline text-gray-400" />
+                      <UIcon
+                        name="i-heroicons-arrow-right"
+                        class="w-3 h-3 inline text-gray-400"
+                      />
                       <span class="text-green-500 ml-2">{{
                         log.stockAfter
                       }}</span>
-                      <span v-if="log.stockReason" class="text-gray-500 ml-2">({{ log.stockReason }})</span>
+                      <span v-if="log.stockReason" class="text-gray-500 ml-2"
+                        >({{ log.stockReason }})</span
+                      >
                     </div>
 
                     <!-- Price change -->
-                    <div v-if="
-                      log.action === 'price_change' &&
-                      log.priceBefore !== undefined
-                    " class="mt-2 text-sm">
-                      <span class="text-gray-500">{{ $t("products.price") }}:</span>
+                    <div
+                      v-if="
+                        log.action === 'price_change' &&
+                        log.priceBefore !== undefined
+                      "
+                      class="mt-2 text-sm"
+                    >
+                      <span class="text-gray-500"
+                        >{{ $t("products.price") }}:</span
+                      >
                       <span class="text-red-500 mx-2">{{
                         formatCurrency(log.priceBefore)
                       }}</span>
-                      <UIcon name="i-heroicons-arrow-right" class="w-3 h-3 inline text-gray-400" />
+                      <UIcon
+                        name="i-heroicons-arrow-right"
+                        class="w-3 h-3 inline text-gray-400"
+                      />
                       <span class="text-green-500 ml-2">{{
                         formatCurrency(log.priceAfter!)
                       }}</span>
                     </div>
 
                     <!-- Notes -->
-                    <p v-if="log.notes" class="text-sm text-gray-500 mt-2 italic">
+                    <p
+                      v-if="log.notes"
+                      class="text-sm text-gray-500 mt-2 italic"
+                    >
                       {{ log.notes }}
                     </p>
 
                     <!-- Nostr sync status -->
-                    <div v-if="log.nostrEventId" class="mt-2 flex items-center gap-1 text-xs text-gray-400">
-                      <UIcon name="i-heroicons-cloud-arrow-up" class="w-3 h-3" />
+                    <div
+                      v-if="log.nostrEventId"
+                      class="mt-2 flex items-center gap-1 text-xs text-gray-400"
+                    >
+                      <UIcon
+                        name="i-heroicons-cloud-arrow-up"
+                        class="w-3 h-3"
+                      />
                       <span>{{ $t("common.synced") }}</span>
                     </div>
                   </div>
@@ -393,14 +599,24 @@
 
               <!-- Load More -->
               <div v-if="hasMoreLogs" class="text-center">
-                <UButton color="neutral" variant="ghost" :label="$t('common.loadMore')" :loading="loadingMore"
-                  @click="loadMoreLogs" />
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  :label="$t('common.loadMore')"
+                  :loading="loadingMore"
+                  @click="loadMoreLogs"
+                />
               </div>
             </div>
 
             <div v-else class="text-center py-12">
-              <UIcon name="i-heroicons-clock" class="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <UIcon
+                name="i-heroicons-clock"
+                class="w-16 h-16 mx-auto mb-4 text-gray-300"
+              />
+              <h3
+                class="text-lg font-medium text-gray-900 dark:text-white mb-2"
+              >
                 {{ $t("products.noActivityLogs") }}
               </h3>
               <p class="text-gray-500">
@@ -411,11 +627,20 @@
 
           <!-- Recipes Tab (if linked to recipes) -->
           <div v-if="item.value === 'recipes'" class="pt-6 space-y-6">
-            <div v-if="linkedRecipes.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <NuxtLink v-for="recipe in linkedRecipes" :key="recipe.id" :to="`/recipes/${recipe.id}`"
-                class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 hover:border-primary-500 transition-colors">
+            <div
+              v-if="linkedRecipes.length > 0"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              <NuxtLinkLocale
+                v-for="recipe in linkedRecipes"
+                :key="recipe.id"
+                :to="`/recipes/${recipe.id}`"
+                class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 hover:border-primary-500 transition-colors"
+              >
                 <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                  <div
+                    class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center"
+                  >
                     <span class="text-2xl">{{ recipe.icon || "🍽️" }}</span>
                   </div>
                   <div>
@@ -425,11 +650,16 @@
                     <p class="text-sm text-gray-500">{{ recipe.category }}</p>
                   </div>
                 </div>
-              </NuxtLink>
+              </NuxtLinkLocale>
             </div>
             <div v-else class="text-center py-12">
-              <UIcon name="i-heroicons-beaker" class="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <UIcon
+                name="i-heroicons-beaker"
+                class="w-16 h-16 mx-auto mb-4 text-gray-300"
+              />
+              <h3
+                class="text-lg font-medium text-gray-900 dark:text-white mb-2"
+              >
                 {{ $t("products.noLinkedRecipes") }}
               </h3>
               <p class="text-gray-500">
@@ -443,33 +673,56 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
+      <UIcon
+        name="i-heroicons-arrow-path"
+        class="w-8 h-8 animate-spin text-primary-500"
+      />
     </div>
 
     <!-- Not Found -->
     <div v-else-if="!product" class="text-center py-20">
-      <UIcon name="i-heroicons-exclamation-triangle" class="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+      <UIcon
+        name="i-heroicons-exclamation-triangle"
+        class="w-16 h-16 mx-auto mb-4 text-yellow-500"
+      />
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
         {{ $t("products.notFound") }}
       </h2>
       <p class="text-gray-500 mb-4">
         {{ $t("products.notFoundHint") }}
       </p>
-      <UButton color="primary" :label="$t('products.backToList')" @click="navigateTo('/products')" />
+      <UButton
+        color="primary"
+        :label="$t('products.backToList')"
+        @click="navigateTo('/products')"
+      />
     </div>
 
     <!-- Product Modal -->
-    <ProductsProductModal v-if="product" v-model:open="showProductModal" :product="product" :categories="categories"
-      :units="units" :branches="branches" :loading="saving" @save="handleSaveProduct"
-      @cancel="showProductModal = false" />
+    <ProductsProductModal
+      v-if="product"
+      v-model:open="showProductModal"
+      :product="product"
+      :categories="categories"
+      :units="units"
+      :branches="branches"
+      :loading="saving"
+      @save="handleSaveProduct"
+      @cancel="showProductModal = false"
+    />
 
     <!-- Delete Confirmation -->
     <UModal v-model:open="showDeleteModal">
       <template #content>
         <div class="p-6">
           <div class="flex items-center gap-4 mb-4">
-            <div class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-600" />
+            <div
+              class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-exclamation-triangle"
+                class="w-6 h-6 text-red-600"
+              />
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -481,8 +734,18 @@
             </div>
           </div>
           <div class="flex justify-end gap-3">
-            <UButton color="neutral" variant="outline" :label="$t('common.cancel')" @click="showDeleteModal = false" />
-            <UButton color="red" :label="$t('common.delete')" :loading="deleting" @click="handleDelete" />
+            <UButton
+              color="neutral"
+              variant="outline"
+              :label="$t('common.cancel')"
+              @click="showDeleteModal = false"
+            />
+            <UButton
+              color="red"
+              :label="$t('common.delete')"
+              :loading="deleting"
+              @click="handleDelete"
+            />
           </div>
         </div>
       </template>
@@ -501,21 +764,44 @@
           </h3>
           <div class="space-y-4">
             <UFormField :label="$t('inventory.quantity')">
-              <UInputNumber v-model="stockAdjustmentQty" type="number" :min="0"
-                :placeholder="$t('inventory.enterQuantity')" />
+              <UInputNumber
+                v-model="stockAdjustmentQty"
+                type="number"
+                :min="0"
+                :placeholder="$t('inventory.enterQuantity')"
+              />
             </UFormField>
             <UFormField :label="$t('inventory.reason')">
-              <USelect v-model="stockAdjustmentReason" :items="stockReasonOptions" label-key="label" value-key="value"
-                class="w-full" />
+              <USelect
+                v-model="stockAdjustmentReason"
+                :items="stockReasonOptions"
+                label-key="label"
+                value-key="value"
+                class="w-full"
+              />
             </UFormField>
             <UFormField :label="$t('common.notes')">
-              <UTextarea v-model="stockAdjustmentNotes" :placeholder="$t('common.optional')" :rows="2" class="w-full" />
+              <UTextarea
+                v-model="stockAdjustmentNotes"
+                :placeholder="$t('common.optional')"
+                :rows="2"
+                class="w-full"
+              />
             </UFormField>
           </div>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton color="neutral" variant="outline" :label="$t('common.cancel')" @click="showStockModal = false" />
-            <UButton :color="stockAdjustmentType === 'add' ? 'primary' : 'yellow'" :label="$t('common.confirm')"
-              :loading="adjustingStock" @click="handleStockAdjustment" />
+            <UButton
+              color="neutral"
+              variant="outline"
+              :label="$t('common.cancel')"
+              @click="showStockModal = false"
+            />
+            <UButton
+              :color="stockAdjustmentType === 'add' ? 'primary' : 'yellow'"
+              :label="$t('common.confirm')"
+              :loading="adjustingStock"
+              @click="handleStockAdjustment"
+            />
           </div>
         </div>
       </template>
@@ -601,41 +887,51 @@ const canDeleteProducts = computed(
 // Tabs
 const tabs = computed(() => [
   {
-    label: t("common.overview", 'Overview'),
+    label: t("common.overview", "Overview"),
     value: "overview",
     icon: "i-heroicons-information-circle",
   },
   {
-    label: t("inventory.inventory", 'Inventory'),
+    label: t("inventory.inventory", "Inventory"),
     value: "inventory",
     icon: "i-heroicons-cube",
   },
-  { label: t("products.history", 'History'), value: "history", icon: "i-heroicons-clock" },
   {
-    label: t("products.recipes", 'Recipes'),
+    label: t("products.history", "History"),
+    value: "history",
+    icon: "i-heroicons-clock",
+  },
+  {
+    label: t("products.recipes", "Recipes"),
     value: "recipes",
     icon: "i-heroicons-beaker",
   },
 ]);
 
 const historyFilterOptions = [
-  { label: t("common.all", 'All'), value: "all" },
-  { label: t("products.activityCreate", 'Create'), value: "create" },
-  { label: t("products.activityUpdate", 'Update'), value: "update" },
-  { label: t("products.activityPriceChange", 'Price Change'), value: "price_change" },
-  { label: t("products.activityStockAdjust", 'Stock Adjust'), value: "stock_adjust" },
-  { label: t("products.activityDelete", 'Delete'), value: "delete" },
+  { label: t("common.all", "All"), value: "all" },
+  { label: t("products.activityCreate", "Create"), value: "create" },
+  { label: t("products.activityUpdate", "Update"), value: "update" },
+  {
+    label: t("products.activityPriceChange", "Price Change"),
+    value: "price_change",
+  },
+  {
+    label: t("products.activityStockAdjust", "Stock Adjust"),
+    value: "stock_adjust",
+  },
+  { label: t("products.activityDelete", "Delete"), value: "delete" },
 ];
 
 const stockReasonOptions = [
-  { label: t("inventory.reasonReceived", 'Received'), value: "received" },
-  { label: t("inventory.reasonReturned", 'Returned'), value: "returned" },
-  { label: t("inventory.reasonDamaged", 'Damaged'), value: "damaged" },
-  { label: t("inventory.reasonExpired", 'Expired'), value: "expired" },
-  { label: t("inventory.reasonLost", 'Lost'), value: "lost" },
-  { label: t("inventory.reasonAdjustment", 'Adjustment'), value: "adjustment" },
-  { label: t("inventory.reasonTransfer", 'Transfer'), value: "transfer" },
-  { label: t("common.other", 'Other'), value: "other" },
+  { label: t("inventory.reasonReceived", "Received"), value: "received" },
+  { label: t("inventory.reasonReturned", "Returned"), value: "returned" },
+  { label: t("inventory.reasonDamaged", "Damaged"), value: "damaged" },
+  { label: t("inventory.reasonExpired", "Expired"), value: "expired" },
+  { label: t("inventory.reasonLost", "Lost"), value: "lost" },
+  { label: t("inventory.reasonAdjustment", "Adjustment"), value: "adjustment" },
+  { label: t("inventory.reasonTransfer", "Transfer"), value: "transfer" },
+  { label: t("common.other", "Other"), value: "other" },
 ];
 
 // Computed

@@ -157,7 +157,10 @@ const confirmAccountCreation = async () => {
   const nostrCookie = useCookie("nostr-pubkey", { maxAge: 60 * 60 * 24 * 30 }); // 30 days
   nostrCookie.value = pubkeyHex;
 
-  console.log("[Signup] Auto-logged in with new Nostr account:", pubkeyHex.slice(0, 8) + "...");
+  console.log(
+    "[Signup] Auto-logged in with new Nostr account:",
+    pubkeyHex.slice(0, 8) + "..."
+  );
 
   showKeysModal.value = false;
   router.push("/");
@@ -181,35 +184,42 @@ onMounted(() => {
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center">
+    class="min-h-screen bg-gradient-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center"
+  >
     <!-- Background Pattern -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <!-- Top right glow -->
       <div
-        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl" />
+        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl"
+      />
       <!-- Bottom left glow -->
       <div
-        class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl" />
+        class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl"
+      />
       <!-- Center subtle glow -->
       <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl" />
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl"
+      />
     </div>
 
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
       <!-- Back to Home -->
       <div class="mb-6">
-        <NuxtLink to="/"
-          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+        <NuxtLinkLocale
+          to="/"
+          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           {{ t("common.back") }}
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
 
       <!-- Logo & Header -->
       <div class="text-center mb-8">
         <div class="flex justify-center mb-4">
           <div
-            class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+            class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20"
+          >
             <span class="text-3xl">⚡</span>
           </div>
         </div>
@@ -223,18 +233,23 @@ onMounted(() => {
 
       <!-- Sign Up Card -->
       <div
-        class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+      >
         <div class="p-6">
           <!-- Error Message -->
-          <div v-if="auth.error.value"
-            class="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+          <div
+            v-if="auth.error.value"
+            class="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+          >
             {{ auth.error.value }}
           </div>
 
           <!-- Primary: Create Nostr Account -->
           <div class="mb-6">
             <div class="text-center mb-4">
-              <div class="w-14 h-14 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div
+                class="w-14 h-14 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+              >
                 <span class="text-2xl">⚡</span>
               </div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -245,7 +260,13 @@ onMounted(() => {
               </p>
             </div>
 
-            <UButton block size="lg" color="primary" :loading="isCreatingNostr" @click="handleCreateNostrAccount">
+            <UButton
+              block
+              size="lg"
+              color="primary"
+              :loading="isCreatingNostr"
+              @click="handleCreateNostrAccount"
+            >
               <template #leading>
                 <span class="text-lg">🔑</span>
               </template>
@@ -258,78 +279,154 @@ onMounted(() => {
           </div>
 
           <!-- Or connect with extension -->
-          <USeparator :label="t('auth.signup.connectExisting') || 'or connect existing'" class="my-4" />
+          <USeparator
+            :label="t('auth.signup.connectExisting') || 'or connect existing'"
+            class="my-4"
+          />
 
           <!-- Secondary: Connect with Extension/Import -->
           <div class="space-y-3 mb-6">
-            <UButton block size="lg" color="neutral" variant="outline" @click="handleNostrSignUp">
+            <UButton
+              block
+              size="lg"
+              color="neutral"
+              variant="outline"
+              @click="handleNostrSignUp"
+            >
               <template #leading>
                 <span class="text-lg">🔌</span>
               </template>
               Connect with Nostr Extension
             </UButton>
 
-            <UButton block size="lg" color="neutral" variant="outline" icon="material-icon-theme:google" class="hidden"
-              @click="handleGoogleSignUp">
+            <UButton
+              block
+              size="lg"
+              color="neutral"
+              variant="outline"
+              icon="material-icon-theme:google"
+              class="hidden"
+              @click="handleGoogleSignUp"
+            >
               Continue with Google
             </UButton>
           </div>
 
           <div class="relative hidden mb-6">
             <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-200 dark:border-gray-800" />
+              <div
+                class="w-full border-t border-gray-200 dark:border-gray-800"
+              />
             </div>
             <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white dark:bg-gray-900 text-gray-500">or create with email</span>
+              <span class="px-2 bg-white dark:bg-gray-900 text-gray-500"
+                >or create with email</span
+              >
             </div>
           </div>
 
           <!-- Email Sign Up Form -->
           <form class="space-y-4 hidden" @submit.prevent="handleSignUp">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
-              <UInput v-model="formData.displayName" type="text" placeholder="John Doe" size="lg" class="w-full" />
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Display Name</label
+              >
+              <UInput
+                v-model="formData.displayName"
+                type="text"
+                placeholder="John Doe"
+                size="lg"
+                class="w-full"
+              />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-              <UInput v-model="formData.email" type="email" placeholder="you@example.com" size="lg" required
-                class="w-full" />
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Email</label
+              >
+              <UInput
+                v-model="formData.email"
+                type="email"
+                placeholder="you@example.com"
+                size="lg"
+                required
+                class="w-full"
+              />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-              <UInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
-                placeholder="Create a strong password" size="lg" required class="w-full">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Password</label
+              >
+              <UInput
+                v-model="formData.password"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="Create a strong password"
+                size="lg"
+                required
+                class="w-full"
+              >
                 <template #trailing>
-                  <UButton color="neutral" variant="ghost" size="xs" :icon="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'
-                    " @click="showPassword = !showPassword" />
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    :icon="
+                      showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'
+                    "
+                    @click="showPassword = !showPassword"
+                  />
                 </template>
               </UInput>
 
               <!-- Password Strength Indicator -->
               <div v-if="formData.password" class="mt-2">
                 <div class="flex gap-1 mb-1">
-                  <div v-for="i in 5" :key="i" class="h-1 flex-1 rounded-full transition-colors" :class="i <= passwordStrength
-                      ? passwordStrengthColor
-                      : 'bg-gray-700'
-                    " />
+                  <div
+                    v-for="i in 5"
+                    :key="i"
+                    class="h-1 flex-1 rounded-full transition-colors"
+                    :class="
+                      i <= passwordStrength
+                        ? passwordStrengthColor
+                        : 'bg-gray-700'
+                    "
+                  />
                 </div>
-                <p class="text-xs" :class="passwordStrength >= 3 ? 'text-green-400' : 'text-gray-500'
-                  ">
+                <p
+                  class="text-xs"
+                  :class="
+                    passwordStrength >= 3 ? 'text-green-400' : 'text-gray-500'
+                  "
+                >
                   {{ passwordStrengthLabel }}
                 </p>
               </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
-              <UInput v-model="formData.confirmPassword" type="password" placeholder="Confirm your password" size="lg"
-                required class="w-full" />
-              <p v-if="
-                formData.confirmPassword &&
-                formData.password !== formData.confirmPassword
-              " class="mt-1 text-xs text-red-400">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Confirm Password</label
+              >
+              <UInput
+                v-model="formData.confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                size="lg"
+                required
+                class="w-full"
+              />
+              <p
+                v-if="
+                  formData.confirmPassword &&
+                  formData.password !== formData.confirmPassword
+                "
+                class="mt-1 text-xs text-red-400"
+              >
                 Passwords do not match
               </p>
             </div>
@@ -338,24 +435,43 @@ onMounted(() => {
               <UCheckbox v-model="agreeTerms" class="mt-0.5" />
               <span class="text-sm text-gray-600 dark:text-gray-400">
                 I agree to the
-                <NuxtLink to="/legal/terms" class="text-amber-500 hover:text-amber-400">Terms of Service</NuxtLink>
+                <NuxtLink
+                  to="/legal/terms"
+                  class="text-amber-500 hover:text-amber-400"
+                  >Terms of Service</NuxtLink
+                >
                 and
-                <NuxtLink to="/legal/privacy" class="text-amber-500 hover:text-amber-400">Privacy Policy</NuxtLink>
+                <NuxtLink
+                  to="/legal/privacy"
+                  class="text-amber-500 hover:text-amber-400"
+                  >Privacy Policy</NuxtLink
+                >
               </span>
             </label>
 
-            <UButton type="submit" block size="lg" color="primary" :loading="auth.isLoading.value"
-              :disabled="!isFormValid">
+            <UButton
+              type="submit"
+              block
+              size="lg"
+              color="primary"
+              :loading="auth.isLoading.value"
+              :disabled="!isFormValid"
+            >
               Create Account
             </UButton>
           </form>
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-800 text-center">
+        <div
+          class="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-800 text-center"
+        >
           <p class="text-sm text-gray-600 dark:text-gray-400">
             Already have an account?
-            <NuxtLink to="/auth/signin" class="text-amber-500 hover:text-amber-400 font-medium">
+            <NuxtLink
+              to="/auth/signin"
+              class="text-amber-500 hover:text-amber-400 font-medium"
+            >
               Sign in
             </NuxtLink>
           </p>
@@ -387,7 +503,9 @@ onMounted(() => {
         <UCard>
           <template #header>
             <div class="text-center">
-              <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div
+                class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+              >
                 <span class="text-3xl">🎉</span>
               </div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">
@@ -402,8 +520,12 @@ onMounted(() => {
 
           <div class="space-y-4">
             <!-- Warning -->
-            <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-              <p class="text-sm text-amber-600 dark:text-amber-400 flex items-start gap-2">
+            <div
+              class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg"
+            >
+              <p
+                class="text-sm text-amber-600 dark:text-amber-400 flex items-start gap-2"
+              >
                 <span class="text-lg">⚠️</span>
                 <span>
                   <strong class="block">Save these keys now!</strong>
@@ -415,31 +537,54 @@ onMounted(() => {
 
             <!-- Public Key (npub) -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Public Key (npub) - Share this
               </label>
               <div class="flex gap-2">
-                <UInput :model-value="newAccountKeys?.npub" readonly class="flex-1 font-mono text-xs" />
-                <UButton :icon="keysCopied.npub
-                    ? 'i-heroicons-check'
-                    : 'i-heroicons-clipboard'
-                  " :color="keysCopied.npub ? 'success' : 'neutral'" variant="outline"
-                  @click="copyToClipboard(newAccountKeys?.npub || '', 'npub')" />
+                <UInput
+                  :model-value="newAccountKeys?.npub"
+                  readonly
+                  class="flex-1 font-mono text-xs"
+                />
+                <UButton
+                  :icon="
+                    keysCopied.npub
+                      ? 'i-heroicons-check'
+                      : 'i-heroicons-clipboard'
+                  "
+                  :color="keysCopied.npub ? 'success' : 'neutral'"
+                  variant="outline"
+                  @click="copyToClipboard(newAccountKeys?.npub || '', 'npub')"
+                />
               </div>
             </div>
 
             <!-- Private Key (nsec) -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Private Key (nsec) - Keep this secret!
               </label>
               <div class="flex gap-2">
-                <UInput :model-value="newAccountKeys?.nsec" readonly type="password" class="flex-1 font-mono text-xs" />
-                <UButton :icon="keysCopied.nsec
-                    ? 'i-heroicons-check'
-                    : 'i-heroicons-clipboard'
-                  " :color="keysCopied.nsec ? 'success' : 'neutral'" variant="outline"
-                  @click="copyToClipboard(newAccountKeys?.nsec || '', 'nsec')" />
+                <UInput
+                  :model-value="newAccountKeys?.nsec"
+                  readonly
+                  type="password"
+                  class="flex-1 font-mono text-xs"
+                />
+                <UButton
+                  :icon="
+                    keysCopied.nsec
+                      ? 'i-heroicons-check'
+                      : 'i-heroicons-clipboard'
+                  "
+                  :color="keysCopied.nsec ? 'success' : 'neutral'"
+                  variant="outline"
+                  @click="copyToClipboard(newAccountKeys?.nsec || '', 'nsec')"
+                />
               </div>
               <p class="text-xs text-red-400 mt-1">
                 🔐 Never share your nsec with anyone!
@@ -449,7 +594,12 @@ onMounted(() => {
 
           <template #footer>
             <div class="space-y-3">
-              <UButton block color="primary" size="lg" @click="confirmAccountCreation">
+              <UButton
+                block
+                color="primary"
+                size="lg"
+                @click="confirmAccountCreation"
+              >
                 I've Saved My Keys - Continue
               </UButton>
               <p class="text-xs text-gray-500 text-center">

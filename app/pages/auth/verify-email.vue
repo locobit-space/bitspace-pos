@@ -2,7 +2,7 @@
 <!-- ✉️ Email Verification Page -->
 <script setup lang="ts">
 definePageMeta({
-  layout: 'blank',
+  layout: "blank",
 });
 
 const router = useRouter();
@@ -12,13 +12,13 @@ const isResending = ref(false);
 
 const resendEmail = async () => {
   if (resendCooldown.value > 0) return;
-  
+
   isResending.value = true;
-  
+
   try {
     // Call resend verification email API
     // await auth.resendVerificationEmail();
-    
+
     // Start cooldown
     resendCooldown.value = 60;
     const interval = setInterval(() => {
@@ -36,22 +36,30 @@ const resendEmail = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 dark:bg-gray-950 flex flex-col justify-center">
+  <div
+    class="min-h-screen bg-gray-100 dark:bg-gray-950 flex flex-col justify-center"
+  >
     <div class="sm:mx-auto sm:w-full sm:max-w-md px-4">
       <!-- Illustration -->
       <div class="text-center mb-8">
-        <div class="w-24 h-24 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div
+          class="w-24 h-24 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
+        >
           <span class="text-5xl">✉️</span>
         </div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Check your email</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Check your email
+        </h1>
         <p class="text-gray-600 dark:text-gray-400">
-          We've sent a verification link to your email address.
-          Please click the link to verify your account.
+          We've sent a verification link to your email address. Please click the
+          link to verify your account.
         </p>
       </div>
 
       <!-- Card -->
-      <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+      <div
+        class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6"
+      >
         <div class="space-y-4">
           <!-- Instructions -->
           <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
@@ -70,7 +78,11 @@ const resendEmail = async () => {
               :disabled="resendCooldown > 0"
               @click="resendEmail"
             >
-              {{ resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email' }}
+              {{
+                resendCooldown > 0
+                  ? `Resend in ${resendCooldown}s`
+                  : "Resend verification email"
+              }}
             </UButton>
           </div>
         </div>
@@ -78,9 +90,12 @@ const resendEmail = async () => {
 
       <!-- Back to Sign In -->
       <div class="mt-6 text-center">
-        <NuxtLink to="/auth/signin" class="text-amber-500 hover:text-amber-400 text-sm">
+        <NuxtLinkLocale
+          to="/auth/signin"
+          class="text-amber-500 hover:text-amber-400 text-sm"
+        >
           ← Back to Sign In
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
     </div>
   </div>

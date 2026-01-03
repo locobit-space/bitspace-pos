@@ -134,7 +134,11 @@ const handleBitcoinPaid = (data: { txid: string; address: string }) => {
   emit("paid", "bitcoin", data);
 };
 
-const handleUSDTPaid = (data: { txHash: string; network: string; address: string }) => {
+const handleUSDTPaid = (data: {
+  txHash: string;
+  network: string;
+  address: string;
+}) => {
   emit("paid", "usdt", data);
 };
 
@@ -237,7 +241,7 @@ onMounted(async () => {
         <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
           {{ t("payment.lightning.configureDescription") }}
         </p>
-        <NuxtLink to="/settings/lightning">
+        <NuxtLinkLocale to="/settings/lightning">
           <UButton
             color="amber"
             variant="soft"
@@ -246,7 +250,7 @@ onMounted(async () => {
           >
             {{ t("payment.lightning.goToSettings") }}
           </UButton>
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
 
       <!-- Cancel -->

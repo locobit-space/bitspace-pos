@@ -231,7 +231,7 @@ function handleWriteNew() {
           class="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
         >
           <!-- Browse All Community Docs -->
-          <NuxtLink to="/help" @click="help.closeHelp()">
+          <NuxtLinkLocale to="/help" @click="help.closeHelp()">
             <UButton
               color="primary"
               variant="soft"
@@ -242,7 +242,7 @@ function handleWriteNew() {
             >
               {{ t("help.browseCommunityDocs") || "Browse All Community Docs" }}
             </UButton>
-          </NuxtLink>
+          </NuxtLinkLocale>
 
           <p class="text-xs text-gray-500 mb-3 text-center">
             {{ t("help.needMoreHelp") || "Need more help?" }}

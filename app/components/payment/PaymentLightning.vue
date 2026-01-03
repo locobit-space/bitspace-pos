@@ -808,7 +808,7 @@ onUnmounted(() => {
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
               {{ t("payment.lightning.configureDescription") }}
             </p>
-            <NuxtLink to="/settings/lightning">
+            <NuxtLinkLocale to="/settings/lightning">
               <UButton
                 color="amber"
                 variant="soft"
@@ -817,7 +817,7 @@ onUnmounted(() => {
               >
                 {{ t("payment.lightning.goToSettings") }}
               </UButton>
-            </NuxtLink>
+            </NuxtLinkLocale>
           </div>
 
           <div class="flex justify-center gap-3">

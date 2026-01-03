@@ -140,11 +140,11 @@ const copyToClipboard = (text: string) => {
         <p class="text-gray-500 dark:text-gray-400 mb-4">
           {{ t("payment.bankTransfer.noAccountsDesc") }}
         </p>
-        <NuxtLink to="/settings/bank-accounts">
+        <NuxtLinkLocale to="/settings/bank-accounts">
           <UButton color="primary" icon="i-heroicons-cog-6-tooth">
             {{ t("payment.bankTransfer.setupAccounts") }}
           </UButton>
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
 
       <!-- Bank Selection (when accounts exist) -->

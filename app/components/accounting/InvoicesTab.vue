@@ -18,21 +18,23 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'add': [];
-  'pay-lightning': [id: string];
+  add: [];
+  "pay-lightning": [id: string];
 }>();
 
 const { t } = useI18n();
 const { formatCurrency } = useCurrency();
 
-function getStatusColor(status: string): 'success' | 'warning' | 'error' | 'info' {
-  const colors: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
-    paid: 'success',
-    pending: 'warning',
-    overdue: 'error',
-    draft: 'info',
+function getStatusColor(
+  status: string
+): "success" | "warning" | "error" | "info" {
+  const colors: Record<string, "success" | "warning" | "error" | "info"> = {
+    paid: "success",
+    pending: "warning",
+    overdue: "error",
+    draft: "info",
   };
-  return colors[status] || 'info';
+  return colors[status] || "info";
 }
 
 function formatDate(date: string): string {
@@ -40,26 +42,28 @@ function formatDate(date: string): string {
 }
 
 function isOverdue(invoice: Invoice): boolean {
-  if (invoice.status === 'paid') return false;
+  if (invoice.status === "paid") return false;
   return new Date(invoice.dueDate) < new Date();
 }
 
 function getDaysUntilDue(invoice: Invoice): number {
   const now = new Date();
   const due = new Date(invoice.dueDate);
-  const diff = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const diff = Math.ceil(
+    (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
   return diff;
 }
 
 // Summary stats
-const totalOutstanding = computed(() => 
+const totalOutstanding = computed(() =>
   props.invoices
-    .filter(inv => inv.status !== 'paid')
+    .filter((inv) => inv.status !== "paid")
     .reduce((sum, inv) => sum + inv.amount, 0)
 );
 
-const overdueCount = computed(() => 
-  props.invoices.filter(inv => isOverdue(inv)).length
+const overdueCount = computed(
+  () => props.invoices.filter((inv) => isOverdue(inv)).length
 );
 </script>
 
@@ -67,25 +71,41 @@ const overdueCount = computed(() =>
   <div class="space-y-6">
     <!-- Quick Stats -->
     <div class="grid grid-cols-2 gap-4" v-if="invoices.length > 0">
-      <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+      <div
+        class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
+      >
         <div class="flex items-center gap-3">
           <div class="p-2 bg-amber-100 dark:bg-amber-800 rounded-lg">
-            <UIcon name="i-heroicons-clock" class="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <UIcon
+              name="i-heroicons-clock"
+              class="w-5 h-5 text-amber-600 dark:text-amber-400"
+            />
           </div>
           <div>
-            <p class="text-sm text-amber-700 dark:text-amber-300">Outstanding</p>
-            <p class="font-bold text-lg text-amber-800 dark:text-amber-200">{{ formatCurrency(totalOutstanding) }}</p>
+            <p class="text-sm text-amber-700 dark:text-amber-300">
+              Outstanding
+            </p>
+            <p class="font-bold text-lg text-amber-800 dark:text-amber-200">
+              {{ formatCurrency(totalOutstanding) }}
+            </p>
           </div>
         </div>
       </div>
-      <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+      <div
+        class="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"
+      >
         <div class="flex items-center gap-3">
           <div class="p-2 bg-red-100 dark:bg-red-800 rounded-lg">
-            <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-red-600 dark:text-red-400" />
+            <UIcon
+              name="i-heroicons-exclamation-triangle"
+              class="w-5 h-5 text-red-600 dark:text-red-400"
+            />
           </div>
           <div>
             <p class="text-sm text-red-700 dark:text-red-300">Overdue</p>
-            <p class="font-bold text-lg text-red-800 dark:text-red-200">{{ overdueCount }} invoices</p>
+            <p class="font-bold text-lg text-red-800 dark:text-red-200">
+              {{ overdueCount }} invoices
+            </p>
           </div>
         </div>
       </div>
@@ -96,18 +116,27 @@ const overdueCount = computed(() =>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <UIcon name="i-heroicons-document-text" class="w-5 h-5 text-green-600 dark:text-green-400" />
+              <UIcon
+                name="i-heroicons-document-text"
+                class="w-5 h-5 text-green-600 dark:text-green-400"
+              />
             </div>
-            <h3 class="text-lg font-semibold">{{ t('accounting.tabs.invoices') }}</h3>
+            <h3 class="text-lg font-semibold">
+              {{ t("accounting.tabs.invoices") }}
+            </h3>
           </div>
           <div class="flex gap-2">
-            <NuxtLink to="/invoicing">
-              <UButton variant="outline" icon="i-heroicons-arrow-top-right-on-square" size="sm">
-                {{ t('common.viewAll') }}
+            <NuxtLinkLocale to="/invoicing">
+              <UButton
+                variant="outline"
+                icon="i-heroicons-arrow-top-right-on-square"
+                size="sm"
+              >
+                {{ t("common.viewAll") }}
               </UButton>
-            </NuxtLink>
+            </NuxtLinkLocale>
             <UButton icon="i-heroicons-plus" size="sm" @click="emit('add')">
-              {{ t('accounting.createInvoice') }}
+              {{ t("accounting.createInvoice") }}
             </UButton>
           </div>
         </div>
@@ -115,13 +144,17 @@ const overdueCount = computed(() =>
 
       <!-- Empty State -->
       <div v-if="invoices.length === 0" class="text-center py-12">
-        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+        <div
+          class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center"
+        >
           <UIcon name="i-heroicons-document-text" class="w-8 h-8 text-muted" />
         </div>
-        <h4 class="font-medium mb-1">{{ t('accounting.noInvoices') }}</h4>
-        <p class="text-sm text-muted mb-4">Create your first invoice to start tracking payments</p>
+        <h4 class="font-medium mb-1">{{ t("accounting.noInvoices") }}</h4>
+        <p class="text-sm text-muted mb-4">
+          Create your first invoice to start tracking payments
+        </p>
         <UButton icon="i-heroicons-plus" @click="emit('add')">
-          {{ t('accounting.createFirstInvoice') }}
+          {{ t("accounting.createFirstInvoice") }}
         </UButton>
       </div>
 
@@ -136,34 +169,45 @@ const overdueCount = computed(() =>
           }"
         >
           <div class="flex items-center gap-4">
-            <div 
+            <div
               class="p-2 rounded-lg"
-              :class="isOverdue(invoice) 
-                ? 'bg-red-100 dark:bg-red-800/50' 
-                : 'bg-gray-100 dark:bg-gray-800'"
+              :class="
+                isOverdue(invoice)
+                  ? 'bg-red-100 dark:bg-red-800/50'
+                  : 'bg-gray-100 dark:bg-gray-800'
+              "
             >
-              <UIcon 
-                name="i-heroicons-document-text" 
-                class="w-5 h-5" 
-                :class="isOverdue(invoice) ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'"
+              <UIcon
+                name="i-heroicons-document-text"
+                class="w-5 h-5"
+                :class="
+                  isOverdue(invoice)
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-600 dark:text-gray-400'
+                "
               />
             </div>
             <div>
               <div class="flex items-center gap-2">
                 <p class="font-medium">{{ invoice.id }}</p>
-                <UBadge 
-                  v-if="isOverdue(invoice)" 
-                  color="error" 
-                  variant="subtle" 
+                <UBadge
+                  v-if="isOverdue(invoice)"
+                  color="error"
+                  variant="subtle"
                   size="xs"
                 >
-                  <UIcon name="i-heroicons-exclamation-circle" class="w-3 h-3 mr-1" />
+                  <UIcon
+                    name="i-heroicons-exclamation-circle"
+                    class="w-3 h-3 mr-1"
+                  />
                   {{ Math.abs(getDaysUntilDue(invoice)) }}d overdue
                 </UBadge>
-                <UBadge 
-                  v-else-if="invoice.status !== 'paid' && getDaysUntilDue(invoice) <= 3"
-                  color="warning" 
-                  variant="subtle" 
+                <UBadge
+                  v-else-if="
+                    invoice.status !== 'paid' && getDaysUntilDue(invoice) <= 3
+                  "
+                  color="warning"
+                  variant="subtle"
                   size="xs"
                 >
                   Due in {{ getDaysUntilDue(invoice) }}d
@@ -175,11 +219,20 @@ const overdueCount = computed(() =>
 
           <div class="flex items-center gap-4">
             <div class="text-right">
-              <p class="font-mono font-bold" :class="isOverdue(invoice) ? 'text-red-600 dark:text-red-400' : ''">
+              <p
+                class="font-mono font-bold"
+                :class="
+                  isOverdue(invoice) ? 'text-red-600 dark:text-red-400' : ''
+                "
+              >
                 {{ formatCurrency(invoice.amount) }}
               </p>
               <p class="text-xs text-muted">
-                {{ invoice.paidDate ? formatDate(invoice.paidDate) : formatDate(invoice.dueDate) }}
+                {{
+                  invoice.paidDate
+                    ? formatDate(invoice.paidDate)
+                    : formatDate(invoice.dueDate)
+                }}
               </p>
             </div>
             <UBadge :color="getStatusColor(invoice.status)" variant="subtle">

@@ -3,13 +3,13 @@
     <UContainer class="py-12">
       <!-- Header -->
       <div class="max-w-3xl mx-auto">
-        <NuxtLink
+        <NuxtLinkLocale
           to="/"
           class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary mb-8"
         >
           <UIcon name="i-heroicons-arrow-left" />
           {{ $t("common.back") }}
-        </NuxtLink>
+        </NuxtLinkLocale>
 
         <div class="flex items-center gap-4 mb-8">
           <div
@@ -25,7 +25,8 @@
               {{ $t("legal.terms.title") }}
             </h1>
             <p v-if="lastUpdated" class="text-gray-600 dark:text-gray-400">
-              {{ $t("legal.terms.lastUpdated") }}: {{ $d(new Date(lastUpdated), 'long') }}
+              {{ $t("legal.terms.lastUpdated") }}:
+              {{ $d(new Date(lastUpdated), "long") }}
             </p>
           </div>
         </div>

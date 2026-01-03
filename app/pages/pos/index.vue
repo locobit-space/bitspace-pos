@@ -1220,9 +1220,7 @@ watch(
 
       // Check for exact barcode or SKU match
       const exactMatch = productsStore.products.value.find(
-        (p) =>
-          p.status === "active" &&
-          (p.barcode === query || p.sku === query)
+        (p) => p.status === "active" && (p.barcode === query || p.sku === query)
       );
 
       if (exactMatch) {
@@ -1568,7 +1566,7 @@ onUnmounted(() => {
         <div class="flex items-center justify-between">
           <!-- Logo & Status -->
           <div class="flex items-center gap-2 sm:gap-4">
-            <NuxtLink to="/" class="flex items-center gap-2">
+            <NuxtLinkLocale to="/" class="flex items-center gap-2">
               <div>
                 <div
                   class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-600 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-amber-500/20"
@@ -1586,7 +1584,7 @@ onUnmounted(() => {
                   Lightning Powered
                 </p>
               </div>
-            </NuxtLink>
+            </NuxtLinkLocale>
 
             <!-- Connection Status -->
             <div
@@ -1667,38 +1665,38 @@ onUnmounted(() => {
 
             <!-- Dashboard Link -->
             <UTooltip text="Go to Dashboard">
-              <NuxtLink to="/">
+              <NuxtLinkLocale to="/">
                 <UButton
                   icon="i-heroicons-squares-2x2"
                   color="neutral"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Shift Management Link -->
             <UTooltip text="Shift Management">
-              <NuxtLink to="/pos/shift">
+              <NuxtLinkLocale to="/pos/shift">
                 <UButton
                   icon="i-heroicons-banknotes"
                   color="neutral"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Table Management Link -->
             <UTooltip text="Tables">
-              <NuxtLink to="/pos/tables">
+              <NuxtLinkLocale to="/pos/tables">
                 <UButton
                   icon="i-heroicons-table-cells"
                   color="neutral"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Kitchen Display Link (with pending orders badge) -->
@@ -1709,7 +1707,7 @@ onUnmounted(() => {
                   : 'Kitchen Display'
               "
             >
-              <NuxtLink to="/kitchen" class="relative">
+              <NuxtLinkLocale to="/kitchen" class="relative">
                 <UButton
                   icon="i-heroicons-fire"
                   :color="pendingKitchenOrders > 0 ? 'amber' : 'neutral'"
@@ -1722,7 +1720,7 @@ onUnmounted(() => {
                 >
                   {{ pendingKitchenOrders > 9 ? "9+" : pendingKitchenOrders }}
                 </span>
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Settings Button -->
@@ -1738,14 +1736,14 @@ onUnmounted(() => {
 
             <!-- Lightning Settings Link -->
             <UTooltip text="Lightning Settings">
-              <NuxtLink to="/settings/lightning">
+              <NuxtLinkLocale to="/settings/lightning">
                 <UButton
                   icon="i-heroicons-bolt"
                   :color="lightning.isConnected.value ? 'primary' : 'yellow'"
                   variant="ghost"
                   size="sm"
                 />
-              </NuxtLink>
+              </NuxtLinkLocale>
             </UTooltip>
           </div>
         </div>
@@ -1762,7 +1760,11 @@ onUnmounted(() => {
               class="flex-1 w-full"
             >
               <template #trailing>
-                <UTooltip :text="t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'">
+                <UTooltip
+                  :text="
+                    t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'
+                  "
+                >
                   <UButton
                     size="2xs"
                     color="amber"

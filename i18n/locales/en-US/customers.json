@@ -45,6 +45,11 @@
     "noNotes": "No notes",
     "sendMessage": "Send Message",
     "preferences": "Preferences",
+    "creditSettings": "Credit Settings",
+    "creditLimit": "Credit Limit",
+    "downloadTemplate": "Download Template",
+    "importFromCSV": "Import from CSV",
+    "importSuccess": "Successfully imported {count} customers",
     "tabs": {
       "overview": "Overview",
       "orders": "Orders",

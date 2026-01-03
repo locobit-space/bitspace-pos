@@ -38,7 +38,9 @@ const kitchenOrders = computed(() => {
       // - pending (customer QR orders waiting for payment)
       // - processing (payment in progress)
       // - completed (paid) but still in kitchen
-      (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
+      (o.status === "completed" ||
+        o.status === "processing" ||
+        o.status === "pending") &&
       // IMPORTANT: Exclude orders that have been served or picked up
       o.kitchenStatus !== "served"
   );
@@ -62,7 +64,9 @@ const newOrdersCount = computed(
   () =>
     ordersStore.orders.value.filter(
       (o) =>
-        (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
+        (o.status === "completed" ||
+          o.status === "processing" ||
+          o.status === "pending") &&
         o.kitchenStatus === "new"
     ).length
 );
@@ -71,7 +75,9 @@ const preparingOrdersCount = computed(
   () =>
     ordersStore.orders.value.filter(
       (o) =>
-        (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
+        (o.status === "completed" ||
+          o.status === "processing" ||
+          o.status === "pending") &&
         o.kitchenStatus === "preparing"
     ).length
 );
@@ -80,7 +86,9 @@ const readyOrdersCount = computed(
   () =>
     ordersStore.orders.value.filter(
       (o) =>
-        (o.status === "completed" || o.status === "processing" || o.status === "pending") &&
+        (o.status === "completed" ||
+          o.status === "processing" ||
+          o.status === "pending") &&
         o.kitchenStatus === "ready"
     ).length
 );
@@ -154,14 +162,16 @@ const updateKitchenStatus = async (
     // Broadcast to POS when order is ready
     if (kitchenStatus === "ready") {
       try {
-        const readyChannel = new BroadcastChannel('bitspace-kitchen-ready');
+        const readyChannel = new BroadcastChannel("bitspace-kitchen-ready");
         readyChannel.postMessage({
-          type: 'order-ready',
-          order: JSON.parse(JSON.stringify({ ...order, kitchenStatus: 'ready' }))
+          type: "order-ready",
+          order: JSON.parse(
+            JSON.stringify({ ...order, kitchenStatus: "ready" })
+          ),
         });
         readyChannel.close();
       } catch (e) {
-        console.warn('BroadcastChannel not available:', e);
+        console.warn("BroadcastChannel not available:", e);
       }
     }
 
@@ -199,14 +209,14 @@ const playBellSound = () => {
   const audio = new Audio(
     "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGUxE0qGv+LrwHQvDTZ5oPXt1YdVJRY7l9bw5aFjQSgsZ7XV5beKfmhYR1BebZabrqKFXD85Pktbe"
   );
-  audio.play().catch(() => { });
+  audio.play().catch(() => {});
 };
 
 const playClickSound = () => {
   const audio = new Audio(
     "data:audio/wav;base64,UklGRl9vT19teleHRlbXQAAABXQVZFZm10IBAAAAABAAEAQB8AAEA..."
   );
-  audio.play().catch(() => { });
+  audio.play().catch(() => {});
 };
 
 const _playNewOrderSound = () => {
@@ -231,7 +241,7 @@ let orderChannel: BroadcastChannel | null = null;
 
 // Handle new order from BroadcastChannel (instant)
 const handleNewOrder = (order: Order) => {
-  const exists = ordersStore.orders.value.find(o => o.id === order.id);
+  const exists = ordersStore.orders.value.find((o) => o.id === order.id);
   if (!exists) {
     ordersStore.orders.value.unshift(order);
     if (soundEnabled.value) playBellSound();
@@ -239,9 +249,13 @@ const handleNewOrder = (order: Order) => {
     // Show toast notification
     toast.add({
       title: t("kitchen.newOrder") || "🔔 New Order!",
-      description: `#${order.id.slice(-6).toUpperCase()} - ${order.tableNumber ? 'Table ' + order.tableNumber : t("orders.walkInCustomer") || 'Walk-in'}`,
+      description: `#${order.id.slice(-6).toUpperCase()} - ${
+        order.tableNumber
+          ? "Table " + order.tableNumber
+          : t("orders.walkInCustomer") || "Walk-in"
+      }`,
       color: "blue",
-      icon: "i-heroicons-bell-alert"
+      icon: "i-heroicons-bell-alert",
     });
   }
 };
@@ -257,7 +271,7 @@ const checkPendingOrders = () => {
     let importedCount = 0;
 
     for (const order of pendingOrders) {
-      const exists = ordersStore.orders.value.find(o => o.id === order.id);
+      const exists = ordersStore.orders.value.find((o) => o.id === order.id);
       if (!exists) {
         ordersStore.orders.value.unshift(order);
         importedCount++;
@@ -285,10 +299,10 @@ onMounted(async () => {
   }, 1000);
 
   // BroadcastChannel for INSTANT order notifications (same origin)
-  orderChannel = new BroadcastChannel('bitspace-orders');
+  orderChannel = new BroadcastChannel("bitspace-orders");
 
   orderChannel.onmessage = (event) => {
-    if (event.data?.type === 'new-order' && event.data?.order) {
+    if (event.data?.type === "new-order" && event.data?.order) {
       handleNewOrder(event.data.order);
     }
   };
@@ -300,8 +314,8 @@ onMounted(async () => {
   }, 30000);
 
   // Listen for storage events from customer order pages
-  window.addEventListener('storage', (event) => {
-    if (event.key === 'bitspace_pending_orders') {
+  window.addEventListener("storage", (event) => {
+    if (event.key === "bitspace_pending_orders") {
       checkPendingOrders();
     }
   });
@@ -315,16 +329,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
+  <div
+    class="h-screen flex flex-col bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden"
+  >
     <!-- Header Bar -->
     <header
-      class="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex-shrink-0">
+      class="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex-shrink-0"
+    >
       <div class="flex items-center justify-between">
         <!-- Logo & Title -->
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-3">
             <div
-              class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-lg">
+              class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-lg"
+            >
               <NuxtLinkLocale to="/">👨‍🍳</NuxtLinkLocale>
             </div>
             <div>
@@ -337,41 +355,61 @@ onUnmounted(() => {
 
           <!-- Status Counts -->
           <div class="hidden md:flex items-center gap-3 ml-6">
-            <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all" :class="filterStatus === 'all'
-                ? 'bg-gray-200 dark:bg-gray-800'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-              " @click="filterStatus = 'all'">
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all"
+              :class="
+                filterStatus === 'all'
+                  ? 'bg-gray-200 dark:bg-gray-800'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              "
+              @click="filterStatus = 'all'"
+            >
               <span class="text-sm font-medium">{{ t("common.all") }}</span>
               <UBadge color="gray" variant="soft" size="xs">
                 {{ kitchenOrders.length }}
               </UBadge>
             </button>
-            <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all" :class="filterStatus === 'new'
-                ? 'bg-blue-100 dark:bg-blue-900/30'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-              " @click="filterStatus = 'new'">
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all"
+              :class="
+                filterStatus === 'new'
+                  ? 'bg-blue-100 dark:bg-blue-900/30'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              "
+              @click="filterStatus = 'new'"
+            >
               <span class="w-2 h-2 rounded-full bg-blue-500" />
               <span class="text-sm font-medium">{{ t("kitchen.new") }}</span>
               <UBadge color="blue" variant="soft" size="xs">
                 {{ newOrdersCount }}
               </UBadge>
             </button>
-            <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all" :class="filterStatus === 'preparing'
-                ? 'bg-amber-100 dark:bg-amber-900/30'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-              " @click="filterStatus = 'preparing'">
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all"
+              :class="
+                filterStatus === 'preparing'
+                  ? 'bg-amber-100 dark:bg-amber-900/30'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              "
+              @click="filterStatus = 'preparing'"
+            >
               <span class="w-2 h-2 rounded-full bg-amber-500" />
               <span class="text-sm font-medium">{{
                 t("kitchen.preparing")
-                }}</span>
+              }}</span>
               <UBadge color="amber" variant="soft" size="xs">
                 {{ preparingOrdersCount }}
               </UBadge>
             </button>
-            <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all" :class="filterStatus === 'ready'
-                ? 'bg-green-100 dark:bg-green-900/30'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-              " @click="filterStatus = 'ready'">
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all"
+              :class="
+                filterStatus === 'ready'
+                  ? 'bg-green-100 dark:bg-green-900/30'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              "
+              @click="filterStatus = 'ready'"
+            >
               <span class="w-2 h-2 rounded-full bg-green-500" />
               <span class="text-sm font-medium">{{ t("kitchen.ready") }}</span>
               <UBadge color="green" variant="soft" size="xs">
@@ -385,7 +423,9 @@ onUnmounted(() => {
         <div class="flex items-center gap-4">
           <!-- Current Time -->
           <div class="text-right">
-            <div class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+            <div
+              class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums"
+            >
               {{
                 currentTime.toLocaleTimeString("en-US", {
                   hour: "2-digit",
@@ -400,22 +440,37 @@ onUnmounted(() => {
 
           <!-- Settings -->
           <UTooltip :text="soundEnabled ? 'Sound On' : 'Sound Off'">
-            <UButton :icon="soundEnabled
-                ? 'i-heroicons-speaker-wave'
-                : 'i-heroicons-speaker-x-mark'
-              " :color="soundEnabled ? 'primary' : 'neutral'" variant="ghost" @click="soundEnabled = !soundEnabled" />
+            <UButton
+              :icon="
+                soundEnabled
+                  ? 'i-heroicons-speaker-wave'
+                  : 'i-heroicons-speaker-x-mark'
+              "
+              :color="soundEnabled ? 'primary' : 'neutral'"
+              variant="ghost"
+              @click="soundEnabled = !soundEnabled"
+            />
           </UTooltip>
 
           <UTooltip text="Refresh">
-            <UButton icon="i-heroicons-arrow-path" color="neutral" variant="ghost"
-              :loading="ordersStore.isLoading.value" @click="ordersStore.init()" />
+            <UButton
+              icon="i-heroicons-arrow-path"
+              color="neutral"
+              variant="ghost"
+              :loading="ordersStore.isLoading.value"
+              @click="ordersStore.init()"
+            />
           </UTooltip>
 
-          <NuxtLink to="/pos">
-            <UButton icon="i-heroicons-arrow-left" color="neutral" variant="ghost">
+          <NuxtLinkLocale to="/pos">
+            <UButton
+              icon="i-heroicons-arrow-left"
+              color="neutral"
+              variant="ghost"
+            >
               POS
             </UButton>
-          </NuxtLink>
+          </NuxtLinkLocale>
         </div>
       </div>
     </header>
@@ -423,8 +478,10 @@ onUnmounted(() => {
     <!-- Orders Grid -->
     <div class="flex-1 overflow-auto p-4">
       <!-- Empty State -->
-      <div v-if="kitchenOrders.length === 0"
-        class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
+      <div
+        v-if="kitchenOrders.length === 0"
+        class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
+      >
         <div class="text-8xl mb-4">👨‍🍳</div>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           {{ t("kitchen.noOrders") }}
@@ -433,38 +490,58 @@ onUnmounted(() => {
       </div>
 
       <!-- Orders Grid -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-        <div v-for="order in kitchenOrders" :key="order.id"
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"
+      >
+        <div
+          v-for="order in kitchenOrders"
+          :key="order.id"
           class="rounded-2xl border-2 overflow-hidden transition-all hover:shadow-lg"
-          :class="getStatusBgColor(order.kitchenStatus)">
+          :class="getStatusBgColor(order.kitchenStatus)"
+        >
           <!-- Order Header -->
           <div class="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full" :class="getStatusColor(order.kitchenStatus)" />
+                <span
+                  class="w-3 h-3 rounded-full"
+                  :class="getStatusColor(order.kitchenStatus)"
+                />
                 <span class="font-bold text-lg text-gray-900 dark:text-white">
                   #{{ order.id.slice(-4).toUpperCase() }}
                 </span>
               </div>
-              <span class="text-sm font-bold tabular-nums" :class="getAgeColor(order.date)">
+              <span
+                class="text-sm font-bold tabular-nums"
+                :class="getAgeColor(order.date)"
+              >
                 {{ getOrderAge(order.date) }}
               </span>
             </div>
 
             <div class="flex items-center justify-between text-sm">
               <span class="text-gray-500">{{ formatTime(order.date) }}</span>
-              <UBadge :color="order.kitchenStatus === 'new'
-                  ? 'blue'
-                  : order.kitchenStatus === 'preparing'
+              <UBadge
+                :color="
+                  order.kitchenStatus === 'new'
+                    ? 'blue'
+                    : order.kitchenStatus === 'preparing'
                     ? 'amber'
                     : 'green'
-                " variant="soft" size="sm">
+                "
+                variant="soft"
+                size="sm"
+              >
                 {{ t(`kitchen.${order.kitchenStatus || "new"}`) }}
               </UBadge>
             </div>
 
             <!-- Customer/Table Info -->
-            <div v-if="order.customer" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <div
+              v-if="order.customer"
+              class="mt-2 text-sm text-gray-600 dark:text-gray-400"
+            >
               <span>👤 {{ order.customer }}</span>
             </div>
           </div>
@@ -472,31 +549,50 @@ onUnmounted(() => {
           <!-- Order Items -->
           <div class="p-4 max-h-64 overflow-auto">
             <div class="space-y-3">
-              <div v-for="(item, idx) in order.items" :key="idx" class="flex items-start gap-3">
+              <div
+                v-for="(item, idx) in order.items"
+                :key="idx"
+                class="flex items-start gap-3"
+              >
                 <span
-                  class="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-lg font-bold text-gray-900 dark:text-white">
+                  class="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-lg font-bold text-gray-900 dark:text-white"
+                >
                   {{ item.quantity }}
                 </span>
                 <div class="flex-1 min-w-0">
-                  <p class="font-medium text-gray-900 dark:text-white leading-tight">
+                  <p
+                    class="font-medium text-gray-900 dark:text-white leading-tight"
+                  >
                     {{ item.product?.name || "Unknown Item" }}
                   </p>
                   <!-- Variant -->
-                  <p v-if="item.selectedVariant" class="text-sm text-amber-600 dark:text-amber-400">
+                  <p
+                    v-if="item.selectedVariant"
+                    class="text-sm text-amber-600 dark:text-amber-400"
+                  >
                     {{ item.selectedVariant.name }}
                   </p>
                   <!-- Modifiers -->
-                  <div v-if="
-                    item.selectedModifiers &&
-                    item.selectedModifiers.length > 0
-                  " class="flex flex-wrap gap-1 mt-1">
-                    <span v-for="mod in item.selectedModifiers" :key="mod.id"
-                      class="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                  <div
+                    v-if="
+                      item.selectedModifiers &&
+                      item.selectedModifiers.length > 0
+                    "
+                    class="flex flex-wrap gap-1 mt-1"
+                  >
+                    <span
+                      v-for="mod in item.selectedModifiers"
+                      :key="mod.id"
+                      class="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                    >
                       {{ mod.name }}
                     </span>
                   </div>
                   <!-- Notes -->
-                  <p v-if="item.notes" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
+                  <p
+                    v-if="item.notes"
+                    class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium"
+                  >
                     ⚠️ {{ item.notes }}
                   </p>
                 </div>
@@ -504,7 +600,10 @@ onUnmounted(() => {
             </div>
 
             <!-- Kitchen Notes -->
-            <div v-if="order.kitchenNotes" class="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+            <div
+              v-if="order.kitchenNotes"
+              class="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg"
+            >
               <p class="text-sm text-yellow-800 dark:text-yellow-200">
                 📝 {{ order.kitchenNotes }}
               </p>
@@ -512,23 +611,43 @@ onUnmounted(() => {
           </div>
 
           <!-- Action Buttons -->
-          <div class="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50">
+          <div
+            class="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50"
+          >
             <div class="flex gap-2">
               <!-- Recall Button (for ready orders) -->
-              <UButton v-if="order.kitchenStatus === 'ready'" color="amber" variant="soft" size="sm" class="flex-1"
-                @click="recallOrder(order.id)">
-                <UIcon name="i-heroicons-arrow-uturn-left" class="w-4 h-4 mr-1" />
+              <UButton
+                v-if="order.kitchenStatus === 'ready'"
+                color="amber"
+                variant="soft"
+                size="sm"
+                class="flex-1"
+                @click="recallOrder(order.id)"
+              >
+                <UIcon
+                  name="i-heroicons-arrow-uturn-left"
+                  class="w-4 h-4 mr-1"
+                />
                 {{ t("kitchen.recall") }}
               </UButton>
 
               <!-- Bump Button -->
-              <UButton :color="order.kitchenStatus === 'ready'
-                  ? 'green'
-                  : order.kitchenStatus === 'preparing'
+              <UButton
+                :color="
+                  order.kitchenStatus === 'ready'
+                    ? 'green'
+                    : order.kitchenStatus === 'preparing'
                     ? 'amber'
                     : 'blue'
-                " size="sm" class="flex-1" block @click="bumpOrder(order.id, order.kitchenStatus)">
-                <template v-if="order.kitchenStatus === 'new' || !order.kitchenStatus">
+                "
+                size="sm"
+                class="flex-1"
+                block
+                @click="bumpOrder(order.id, order.kitchenStatus)"
+              >
+                <template
+                  v-if="order.kitchenStatus === 'new' || !order.kitchenStatus"
+                >
                   <UIcon name="i-heroicons-fire" class="w-4 h-4 mr-1" />
                   {{ t("kitchen.start") }}
                 </template>
@@ -549,7 +668,8 @@ onUnmounted(() => {
 
     <!-- Footer Stats -->
     <footer
-      class="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 px-4 py-2 flex-shrink-0">
+      class="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 px-4 py-2 flex-shrink-0"
+    >
       <div class="flex items-center justify-between text-sm">
         <div class="flex items-center gap-6">
           <div class="flex items-center gap-2">
@@ -560,12 +680,15 @@ onUnmounted(() => {
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-amber-500" />
-            <span class="text-gray-600 dark:text-gray-400">{{ t("kitchen.preparing") }}: {{ preparingOrdersCount
-              }}</span>
+            <span class="text-gray-600 dark:text-gray-400"
+              >{{ t("kitchen.preparing") }}: {{ preparingOrdersCount }}</span
+            >
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-green-500" />
-            <span class="text-gray-600 dark:text-gray-400">{{ t("kitchen.ready") }}: {{ readyOrdersCount }}</span>
+            <span class="text-gray-600 dark:text-gray-400"
+              >{{ t("kitchen.ready") }}: {{ readyOrdersCount }}</span
+            >
           </div>
         </div>
         <div class="text-gray-500">

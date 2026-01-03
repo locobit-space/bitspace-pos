@@ -45,12 +45,17 @@
     "noNotes": "ບໍ່ມີໝາຍເຫດ",
     "sendMessage": "ສົ່ງຂໍ້ຄວາມ",
     "preferences": "ການຕັ້ງຄ່າ",
+    "creditSettings": "ຕັ້ງຄ່າສິນເຊື່ອ",
+    "creditLimit": "ວົງເງິນສິນເຊື່ອ",
+    "downloadTemplate": "ດາວໂຫລດແມ່ແບບ",
+    "importFromCSV": "ນຳເຂົ້າຈາກ CSV",
+    "importSuccess": "ນຳເຂົ້າ {count} ລູກຄ້າສຳເລັດ",
     "tabs": {
       "overview": "ພາບລວມ",
       "orders": "ອໍເດີ້",
       "invoices": "ໃບແຈ້ງໜີ້",
       "contracts": "ສັນຍາ",
-      "loyalty": "ຄວາມສັດຊື່",
+      "loyalty": "ຄະແນນ",
       "activity": "ກິດຈະກຳ",
       "communication": "ການຕິດຕໍ່"
     },

@@ -521,13 +521,13 @@ onMounted(async () => {
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
       <!-- Back to Home -->
       <div class="mb-6">
-        <NuxtLink
+        <NuxtLinkLocale
           to="/"
           class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           {{ t("common.back") }}
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
 
       <!-- Logo & Header -->
@@ -680,12 +680,12 @@ onMounted(async () => {
                     t("auth.signin.rememberMe")
                   }}</span>
                 </label>
-                <NuxtLink
+                <NuxtLinkLocale
                   to="/auth/forgot-password"
                   class="text-sm text-amber-500 hover:text-amber-400"
                 >
                   {{ t("auth.signin.forgotPassword") }}
-                </NuxtLink>
+                </NuxtLinkLocale>
               </div>
 
               <UButton
@@ -1325,13 +1325,13 @@ onMounted(async () => {
             <span class="text-gray-600 dark:text-gray-400">
               {{ t("auth.signin.noAccount") }}
             </span>
-            <NuxtLink
+            <NuxtLinkLocale
               to="/auth/signup"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium rounded-full transition-all duration-200 hover:scale-105"
             >
               <UIcon name="i-heroicons-user-plus" class="w-4 h-4" />
               {{ t("auth.signin.createAccount") }}
-            </NuxtLink>
+            </NuxtLinkLocale>
           </div>
         </div>
       </div>
