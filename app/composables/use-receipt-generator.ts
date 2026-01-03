@@ -9,10 +9,38 @@ import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 export const useReceiptGenerator = () => {
   const nostrData = useNostrData();
+  const relay = useNostrRelay();
   const auth = useAuth();
   const shop = useShop();
   const receiptComposable = useReceipt();
   const receiptSettings = useReceiptSettings();
+  const nostrStorage = useNostrStorage();
+
+  /**
+   * Get user's Nostr pubkey from auth or localStorage
+   */
+  const getUserPubkey = (): string | undefined => {
+    // First check auth.user (for Hasura users with linked Nostr)
+    if (auth.user.value?.nostrPubkey) {
+      return auth.user.value.nostrPubkey;
+    }
+
+    // Then check localStorage (for users with nsec stored)
+    if (import.meta.client) {
+      const { userInfo } = nostrStorage.loadCurrentUser();
+      if (userInfo?.pubkey) {
+        return userInfo.pubkey;
+      }
+
+      // Also check nostr-pubkey cookie
+      const nostrCookie = useCookie("nostr-pubkey");
+      if (nostrCookie.value) {
+        return nostrCookie.value;
+      }
+    }
+
+    return undefined;
+  };
 
   /**
    * Generate public receipt from order
@@ -49,7 +77,7 @@ export const useReceiptGenerator = () => {
         shop.shopConfig?.value?.address ||
         receiptSettings.settings?.value?.header?.address ||
         undefined,
-      merchantPubkey: auth.userPubkey?.value || undefined,
+      merchantPubkey: getUserPubkey() || undefined,
 
       // Items (no sensitive data)
       items: order.items.map((item) => ({
@@ -91,31 +119,43 @@ export const useReceiptGenerator = () => {
     receiptComposable.storeEBill(publicReceipt);
 
     // 4. Publish public receipt to Nostr (NOT encrypted)
-    if (auth.userPubkey?.value) {
-      try {
-        const publicReceiptEvent = {
-          kind: NOSTR_KINDS.RECEIPT,
-          pubkey: auth.userPubkey.value,
-          created_at: Math.floor(Date.now() / 1000),
-          tags: [
-            ["d", receiptCode], // Unique identifier
-            ["t", "receipt"],
-            ["t", "public"],
-            ["order", order.code || order.id],
-            ["amount", order.total.toString()],
-            ["currency", order.currency],
-            [
-              "expiration",
-              Math.floor(Date.now() / 1000 + 90 * 24 * 60 * 60).toString(),
-            ],
-          ],
-          content: JSON.stringify(publicReceipt), // Plain JSON, NOT encrypted
-        };
+    const userPubkey = getUserPubkey();
 
-        const signedEvent = await nostrData.signEvent(publicReceiptEvent);
+    if (userPubkey) {
+      try {
+        // Ensure relay is initialized
+        if (!relay.isInitialized?.value) {
+          await relay.init();
+        }
+
+        const tags = [
+          ["d", receiptCode], // Unique identifier
+          ["t", "receipt"],
+          ["t", "public"],
+          ["order", order.code || order.id],
+          ["amount", order.total.toString()],
+          ["currency", order.currency],
+          [
+            "expiration",
+            Math.floor(Date.now() / 1000 + 90 * 24 * 60 * 60).toString(),
+          ],
+        ];
+
+        const content = JSON.stringify(publicReceipt); // Plain JSON, NOT encrypted
+
+        // Create and sign the event
+        const signedEvent = await nostrData.createEvent(
+          NOSTR_KINDS.RECEIPT,
+          content,
+          tags
+        );
+
         if (signedEvent) {
-          await nostrData.publishEvent(signedEvent);
-          publicReceipt.nostrEventId = signedEvent.id;
+          // Publish to relays
+          const published = await relay.publishEvent(signedEvent);
+          if (published) {
+            publicReceipt.nostrEventId = signedEvent.id;
+          }
         }
       } catch (error) {
         console.warn(
@@ -152,21 +192,19 @@ export const useReceiptGenerator = () => {
   const fetchReceiptByCode = async (
     code: string
   ): Promise<EReceipt | null> => {
-    if (!nostrData.pool?.value) {
-      console.warn("[ReceiptGenerator] Nostr pool not initialized");
+    if (!relay.isInitialized?.value) {
       return null;
     }
 
     try {
-      const filter = {
+      // Query events using relay
+      const events = await relay.queryEvents({
         kinds: [NOSTR_KINDS.RECEIPT],
         "#d": [code], // Find by receipt code
         limit: 1,
-      };
+      });
 
-      const events = await nostrData.fetchEvents(filter);
-
-      if (events.length > 0) {
+      if (events.length > 0 && events[0]) {
         const receipt = JSON.parse(events[0].content) as EReceipt;
         receipt.nostrEventId = events[0].id;
 
