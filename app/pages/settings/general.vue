@@ -610,34 +610,45 @@
                 </p>
 
                 <div v-if="companyCodeData.code" class="space-y-4">
-                  <!-- Code Display -->
+                  <!-- Code Display - Tap to copy -->
                   <div
-                    class="bg-gray-100 dark:bg-gray-800 rounded-xl p-6 text-center"
+                    class="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 sm:p-6 text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-98"
+                    @click="copyCompanyCode"
                   >
                     <p
-                      class="font-mono text-3xl font-bold tracking-widest text-primary-600 dark:text-primary-400 select-all"
+                      class="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-primary-600 dark:text-primary-400 select-all"
                     >
                       {{ companyCodeData.code }}
                     </p>
-                    <div class="flex justify-center gap-2 mt-4">
-                      <UButton
-                        icon="i-heroicons-clipboard-document"
-                        variant="outline"
-                        size="sm"
-                        @click="copyCompanyCode"
-                      >
-                        {{ $t("common.copy") }}
-                      </UButton>
-                      <UButton
-                        icon="i-heroicons-arrow-path"
-                        variant="outline"
-                        size="sm"
-                        color="amber"
-                        @click="regenerateCompanyCode"
-                      >
-                        {{ $t("settings.sync.regenerate") || "Regenerate" }}
-                      </UButton>
-                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      <UIcon
+                        name="i-heroicons-clipboard-document"
+                        class="w-3 h-3 inline-block mr-1"
+                      />
+                      {{ $t("settings.sync.tap_to_copy") || "Tap to copy" }}
+                    </p>
+                  </div>
+                  <!-- Action Buttons - Stack on mobile -->
+                  <div class="flex flex-col sm:flex-row justify-center gap-2">
+                    <UButton
+                      icon="i-heroicons-clipboard-document"
+                      variant="soft"
+                      size="lg"
+                      class="min-h-[44px]"
+                      @click="copyCompanyCode"
+                    >
+                      {{ $t("common.copy") }}
+                    </UButton>
+                    <UButton
+                      icon="i-heroicons-arrow-path"
+                      variant="outline"
+                      size="lg"
+                      color="amber"
+                      class="min-h-[44px]"
+                      @click="regenerateCompanyCode"
+                    >
+                      {{ $t("settings.sync.regenerate") || "Regenerate" }}
+                    </UButton>
                   </div>
                 </div>
 
