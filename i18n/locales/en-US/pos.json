@@ -201,6 +201,12 @@
       "productFound": "Product Found",
       "notFound": "Product Not Found",
       "searchingFor": "Searching for: {code}"
-    }
+    },
+    "selectTable": "Select Table",
+    "tableNumberOptional": "Table # (optional)",
+    "autoServeOnPayment": "Auto-Close Kitchen",
+    "autoServeOnPaymentDesc": "Mark orders as \"served\" when payment is completed",
+    "mergeOrders": "Merge",
+    "mergeSelected": "Merge"
   }
 }

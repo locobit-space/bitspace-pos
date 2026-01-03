@@ -201,6 +201,12 @@
       "productFound": "ພົບສິນຄ້າ",
       "notFound": "ບໍ່ພົບສິນຄ້າ",
       "searchingFor": "ຄົ້ນຫາ: {code}"
-    }
+    },
+    "selectTable": "ເລືອກໂຕະ",
+    "tableNumberOptional": "ເລກໂຕະ (ທາງເລືອກ)",
+    "autoServeOnPayment": "ປິດຄົວອັດຕະໂນມັດ",
+    "autoServeOnPaymentDesc": "ໝາຍອໍເດີ້ເປັນ \"ສົ່ງແລ້ວ\" ເມື່ອຈ່າຍເງິນສຳເລັດ",
+    "mergeOrders": "ລວມ",
+    "mergeSelected": "ລວມ"
   }
 }

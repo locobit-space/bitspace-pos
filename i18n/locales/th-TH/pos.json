@@ -187,6 +187,12 @@
     "splitComplete": "แบ่งบิลเรียบร้อย!",
     "portionPaid": "จ่ายส่วนแล้ว!",
     "payNextPortion": "จ่ายส่วนถัดไป",
-    "startSplitPayment": "เริ่มชำระเงิน"
+    "startSplitPayment": "เริ่มชำระเงิน",
+    "selectTable": "เลือกโต๊ะ",
+    "tableNumberOptional": "หมายเลขโต๊ะ (ไม่บังคับ)",
+    "autoServeOnPayment": "ปิดครัวอัตโนมัติ",
+    "autoServeOnPaymentDesc": "ทำเครื่องหมายคำสั่งซื้อเป็น \"เสิร์ฟแล้ว\" เมื่อชำระเงินเสร็จ",
+    "mergeOrders": "รวม",
+    "mergeSelected": "รวม"
   }
 }

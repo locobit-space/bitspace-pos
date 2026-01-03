@@ -70,6 +70,7 @@ const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
 const showTableSwitcher = ref(false); // Table switcher modal
 const showPendingOrdersModal = ref(false); // Pending orders for payment
+const autoServeOnPayment = ref(localStorage.getItem('pos_auto_serve_on_payment') !== 'false'); // Auto-mark orders as served when paid (default: true)
 const showSplitBillModal = ref(false); // Split bill modal
 const showCustomerModal = ref(false); // Customer lookup modal
 const showBarcodeScannerModal = ref(false); // Barcode scanner modal
@@ -211,6 +212,7 @@ const isOrderSelectedForMerge = (orderId: string) => {
 };
 
 const mergeSelectedOrders = async () => {
+  const toast = useToast();
   if (ordersToMerge.value.length < 2) {
     toast.add({
       title: "Select at least 2 orders",
@@ -572,11 +574,9 @@ const sendToKitchen = async () => {
     const toast = useToast();
     toast.add({
       title: t("pos.orderSentToKitchen") || "Order Sent to Kitchen!",
-      description: `${
-        order.orderNumber ? "#" + order.orderNumber + " - " : ""
-      }${order.code || order.id} - ${
-        t("pos.payLater") || "Pay when ready to leave"
-      }`,
+      description: `${order.orderNumber ? "#" + order.orderNumber + " - " : ""
+        }${order.code || order.id} - ${t("pos.payLater") || "Pay when ready to leave"
+        }`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -685,9 +685,8 @@ const loadOrderForEditing = (order: Order) => {
   const toast = useToast();
   toast.add({
     title: t("pos.editingOrder") || "Editing Order",
-    description: `${
-      t("pos.addMoreItems") || "Add items and click Update Order"
-    } - #${order.code || order.id}`,
+    description: `${t("pos.addMoreItems") || "Add items and click Update Order"
+      } - #${order.code || order.id}`,
     color: "blue",
   });
 };
@@ -881,6 +880,15 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
         true
       );
       await offline.storeOfflinePayment(order, paymentProof);
+    }
+
+    // Auto-serve kitchen status if enabled (mark as served when paid)
+    if (autoServeOnPayment.value && order.kitchenStatus && order.kitchenStatus !== 'served') {
+      await ordersStore.updateOrderStatus(order.id, order.status, {
+        kitchenStatus: 'served',
+        servedAt: new Date().toISOString(),
+      });
+      order.kitchenStatus = 'served';
     }
 
     // Store completed order for receipt modal
@@ -1206,9 +1214,8 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     const toast = useToast();
     toast.add({
       title: t("payment.success", "Payment Complete!"),
-      description: `${t("pos.orderNumber", "Order")}: #${order?.orderNumber}-${
-        order.code || order.id
-      }`,
+      description: `${t("pos.orderNumber", "Order")}: #${order?.orderNumber}-${order.code || order.id
+        }`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -1290,12 +1297,11 @@ const paySplitPortion = async (method: PaymentMethod, proof: unknown) => {
       const toast = useToast();
       toast.add({
         title: t("pos.portionPaid") || "Portion Paid!",
-        description: `${splitRemainingSplits.value} ${
-          t("pos.moreToGo") || "more to go"
-        } (${currency.format(
-          splitRemainingAmount.value,
-          splitOrder.value.currency || "LAK"
-        )} ${t("pos.remaining") || "remaining"})`,
+        description: `${splitRemainingSplits.value} ${t("pos.moreToGo") || "more to go"
+          } (${currency.format(
+            splitRemainingAmount.value,
+            splitOrder.value.currency || "LAK"
+          )} ${t("pos.remaining") || "remaining"})`,
         icon: "i-heroicons-check",
         color: "blue",
       });
@@ -1715,9 +1721,8 @@ onMounted(async () => {
         const toast = useToast();
         toast.add({
           title: "🔔 Order Ready!",
-          description: `${order.id}${
-            order.tableNumber ? ` - Table ${order.tableNumber}` : ""
-          }`,
+          description: `${order.id}${order.tableNumber ? ` - Table ${order.tableNumber}` : ""
+            }`,
           icon: "i-heroicons-bell-alert",
           color: "green",
         });
@@ -1756,11 +1761,10 @@ onMounted(async () => {
         const toast = useToast();
         toast.add({
           title: t("pos.newCustomerOrder") || "🔔 New Customer Order!",
-          description: `#${order.id.slice(-6).toUpperCase()} - ${
-            order.tableNumber
-              ? t("orders.table") + " " + order.tableNumber
-              : t("orders.walkInCustomer") || "Walk-in"
-          }`,
+          description: `#${order.id.slice(-6).toUpperCase()} - ${order.tableNumber
+            ? t("orders.table") + " " + order.tableNumber
+            : t("orders.walkInCustomer") || "Walk-in"
+            }`,
           icon: "i-heroicons-bell-alert",
           color: "blue",
         });
@@ -1787,9 +1791,8 @@ onMounted(async () => {
             const toast = useToast();
             toast.add({
               title: "Order Updated",
-              description: `#${
-                updatedOrder.orderNumber || updatedOrder.id.slice(-6)
-              } paid`,
+              description: `#${updatedOrder.orderNumber || updatedOrder.id.slice(-6)
+                } paid`,
               color: "green",
               timeout: 3000,
             });
@@ -1890,31 +1893,27 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="h-screen flex flex-col lg:flex-row bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden"
-  >
+    class="h-screen flex flex-col lg:flex-row bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
     <!-- ============================================ -->
     <!-- LEFT PANEL - Products -->
     <!-- ============================================ -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
       <!-- Header Bar -->
       <header
-        class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800/50 px-2 sm:px-4 py-2 sm:py-3"
-      >
+        class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800/50 px-2 sm:px-4 py-2 sm:py-3">
         <div class="flex items-center justify-between">
           <!-- Logo & Status -->
           <div class="flex items-center gap-2 sm:gap-4">
             <NuxtLinkLocale to="/" class="flex items-center gap-2">
               <div>
                 <div
-                  class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-600 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-amber-500/20"
-                >
+                  class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-600 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-amber-500/20">
                   ⚡
                 </div>
               </div>
               <div class="hidden sm:block">
                 <h1
-                  class="text-lg font-bold bg-linear-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent"
-                >
+                  class="text-lg font-bold bg-linear-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent">
                   bnos.space
                 </h1>
                 <p class="text-xs text-gray-500 dark:text-gray-500">
@@ -1924,48 +1923,27 @@ onUnmounted(() => {
             </NuxtLinkLocale>
 
             <!-- Connection Status -->
-            <div
-              class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
-              :class="
-                offline.isOnline.value
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20'
-                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20'
-              "
-            >
+            <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium" :class="offline.isOnline.value
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20'
+              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20'
+              ">
               <span class="relative flex h-2 w-2">
-                <span
-                  class="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
-                  :class="
-                    offline.isOnline.value ? 'bg-emerald-400' : 'bg-amber-400'
-                  "
-                />
-                <span
-                  class="relative inline-flex rounded-full h-2 w-2"
-                  :class="
-                    offline.isOnline.value ? 'bg-emerald-500' : 'bg-amber-500'
-                  "
-                />
+                <span class="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" :class="offline.isOnline.value ? 'bg-emerald-400' : 'bg-amber-400'
+                  " />
+                <span class="relative inline-flex rounded-full h-2 w-2" :class="offline.isOnline.value ? 'bg-emerald-500' : 'bg-amber-500'
+                  " />
               </span>
               {{ offline.isOnline.value ? "Online" : "Offline" }}
             </div>
 
             <!-- Mobile status indicator -->
-            <span
-              class="sm:hidden flex h-2.5 w-2.5 rounded-full"
-              :class="
-                offline.isOnline.value ? 'bg-emerald-500' : 'bg-amber-500'
-              "
-            />
+            <span class="sm:hidden flex h-2.5 w-2.5 rounded-full" :class="offline.isOnline.value ? 'bg-emerald-500' : 'bg-amber-500'
+              " />
 
             <!-- Pending Sync -->
-            <div
-              v-if="offline.pendingCount.value > 0"
-              class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20"
-            >
-              <UIcon
-                name="i-heroicons-arrow-path"
-                class="w-3 h-3 animate-spin"
-              />
+            <div v-if="offline.pendingCount.value > 0"
+              class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20">
+              <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
               {{ offline.pendingCount.value }} pending
             </div>
           </div>
@@ -1983,78 +1961,47 @@ onUnmounted(() => {
             <div class="h-8 w-px bg-gray-300 dark:bg-gray-800" />
 
             <!-- BTC Price -->
-            <div
-              class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-200/50 dark:bg-gray-800/50"
-            >
+            <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-200/50 dark:bg-gray-800/50">
               <span class="text-amber-500">₿</span>
               <span class="text-sm font-medium">{{
                 currency.btcPriceFormatted.value
-              }}</span>
+                }}</span>
             </div>
 
             <!-- Currency Selector -->
-            <USelect
-              v-model="pos.selectedCurrency.value"
-              :items="POS_CURRENCY_OPTIONS"
-              size="sm"
-              class="w-24"
-            />
+            <USelect v-model="pos.selectedCurrency.value" :items="POS_CURRENCY_OPTIONS" size="sm" class="w-24" />
 
             <!-- Dashboard Link -->
             <UTooltip text="Go to Dashboard">
               <NuxtLinkLocale to="/">
-                <UButton
-                  icon="i-heroicons-squares-2x2"
-                  color="neutral"
-                  variant="ghost"
-                  size="sm"
-                />
+                <UButton icon="i-heroicons-squares-2x2" color="neutral" variant="ghost" size="sm" />
               </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Shift Management Link -->
             <UTooltip text="Shift Management">
               <NuxtLinkLocale to="/pos/shift">
-                <UButton
-                  icon="i-heroicons-banknotes"
-                  color="neutral"
-                  variant="ghost"
-                  size="sm"
-                />
+                <UButton icon="i-heroicons-banknotes" color="neutral" variant="ghost" size="sm" />
               </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Table Management Link -->
             <UTooltip text="Tables">
               <NuxtLinkLocale to="/pos/tables">
-                <UButton
-                  icon="i-heroicons-table-cells"
-                  color="neutral"
-                  variant="ghost"
-                  size="sm"
-                />
+                <UButton icon="i-heroicons-table-cells" color="neutral" variant="ghost" size="sm" />
               </NuxtLinkLocale>
             </UTooltip>
 
             <!-- Kitchen Display Link (with pending orders badge) -->
-            <UTooltip
-              :text="
-                pendingKitchenOrders > 0
-                  ? `Kitchen (${pendingKitchenOrders} new)`
-                  : 'Kitchen Display'
-              "
-            >
+            <UTooltip :text="pendingKitchenOrders > 0
+              ? `Kitchen (${pendingKitchenOrders} new)`
+              : 'Kitchen Display'
+              ">
               <NuxtLinkLocale to="/kitchen" class="relative">
-                <UButton
-                  icon="i-heroicons-fire"
-                  :color="pendingKitchenOrders > 0 ? 'amber' : 'neutral'"
-                  variant="ghost"
-                  size="sm"
-                />
-                <span
-                  v-if="pendingKitchenOrders > 0"
-                  class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse"
-                >
+                <UButton icon="i-heroicons-fire" :color="pendingKitchenOrders > 0 ? 'amber' : 'neutral'" variant="ghost"
+                  size="sm" />
+                <span v-if="pendingKitchenOrders > 0"
+                  class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
                   {{ pendingKitchenOrders > 9 ? "9+" : pendingKitchenOrders }}
                 </span>
               </NuxtLinkLocale>
@@ -2062,24 +2009,15 @@ onUnmounted(() => {
 
             <!-- Settings Button -->
             <UTooltip text="Quick Settings">
-              <UButton
-                icon="i-heroicons-cog-6-tooth"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                @click="showSettingsModal = true"
-              />
+              <UButton icon="i-heroicons-cog-6-tooth" color="neutral" variant="ghost" size="sm"
+                @click="showSettingsModal = true" />
             </UTooltip>
 
             <!-- Lightning Settings Link -->
             <UTooltip text="Lightning Settings">
               <NuxtLinkLocale to="/settings/lightning">
-                <UButton
-                  icon="i-heroicons-bolt"
-                  :color="lightning.isConnected.value ? 'primary' : 'yellow'"
-                  variant="ghost"
-                  size="sm"
-                />
+                <UButton icon="i-heroicons-bolt" :color="lightning.isConnected.value ? 'primary' : 'yellow'"
+                  variant="ghost" size="sm" />
               </NuxtLinkLocale>
             </UTooltip>
           </div>
@@ -2089,28 +2027,13 @@ onUnmounted(() => {
         <div class="mt-3 flex gap-3">
           <!-- Search with Barcode Scan -->
           <div class="relative flex-1 max-w-md">
-            <UInput
-              v-model="productsStore.searchQuery.value"
-              placeholder="Search by name, SKU, or barcode..."
-              icon="i-heroicons-magnifying-glass"
-              size="sm"
-              class="flex-1 w-full"
-            >
+            <UInput v-model="productsStore.searchQuery.value" placeholder="Search by name, SKU, or barcode..."
+              icon="i-heroicons-magnifying-glass" size="sm" class="flex-1 w-full">
               <template #trailing>
-                <UTooltip
-                  :text="
-                    t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'
-                  "
-                >
-                  <UButton
-                    size="2xs"
-                    color="amber"
-                    variant="soft"
-                    icon="i-heroicons-qr-code"
-                    class="cursor-pointer"
-                    :padded="false"
-                    @click="openCameraScanner"
-                  />
+                <UTooltip :text="t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'
+                  ">
+                  <UButton size="2xs" color="amber" variant="soft" icon="i-heroicons-qr-code" class="cursor-pointer"
+                    :padded="false" @click="openCameraScanner" />
                 </UTooltip>
               </template>
             </UInput>
@@ -2118,81 +2041,47 @@ onUnmounted(() => {
 
           <!-- Quick Action Buttons -->
           <div class="flex gap-2">
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="soft"
-              @click="showCustomItemModal = true"
-            >
+            <UButton size="sm" color="neutral" variant="soft" @click="showCustomItemModal = true">
               <UIcon name="i-heroicons-plus" class="w-4 h-4" />
               <span class="hidden sm:inline">Custom</span>
             </UButton>
 
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="soft"
-              :disabled="pos.cartItems.value.length === 0"
-              @click="holdOrder"
-            >
+            <UButton size="sm" color="neutral" variant="soft" :disabled="pos.cartItems.value.length === 0"
+              @click="holdOrder">
               <UIcon name="i-heroicons-pause" class="w-4 h-4" />
               <span class="hidden sm:inline">Hold</span>
             </UButton>
 
-            <UButton
-              v-if="heldOrders.length > 0"
-              size="sm"
-              color="amber"
-              variant="soft"
-              @click="showHeldOrdersModal = true"
-            >
+            <UButton v-if="heldOrders.length > 0" size="sm" color="amber" variant="soft"
+              @click="showHeldOrdersModal = true">
               <UIcon name="i-heroicons-clock" class="w-4 h-4" />
               <span>{{ heldOrders.length }}</span>
             </UButton>
 
             <!-- Pending Bills (Pay Later orders) Button -->
-            <UButton
-              v-if="pendingOrdersList.length > 0"
-              size="sm"
-              color="red"
-              variant="soft"
-              @click="showPendingOrdersModal = true"
-            >
+            <UButton v-if="pendingOrdersList.length > 0" size="sm" color="red" variant="soft"
+              @click="showPendingOrdersModal = true">
               <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
-              <span
-                >{{ pendingOrdersList.length }}
-                {{ t("pos.pendingBills") || "Bills" }}</span
-              >
+              <span>{{ pendingOrdersList.length }}
+                {{ t("pos.pendingBills") || "Bills" }}</span>
             </UButton>
 
             <!-- Customer Monitor -->
             <UTooltip text="Customer Monitor">
-              <UButton
-                size="sm"
-                color="neutral"
-                variant="soft"
-                to="/pos/customer"
-                icon="material-symbols-light:screenshot-monitor-outline"
-                target="_blank"
-                rel="noopener noreferrer"
-              />
+              <UButton size="sm" color="neutral" variant="soft" to="/pos/customer"
+                icon="material-symbols-light:screenshot-monitor-outline" target="_blank" rel="noopener noreferrer" />
             </UTooltip>
           </div>
         </div>
 
         <!-- Categories -->
         <div class="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          <button
-            v-for="cat in productsStore.categories.value"
-            :key="cat.id"
+          <button v-for="cat in productsStore.categories.value" :key="cat.id"
             class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200"
-            :class="
-              productsStore.selectedCategory.value === cat.id
-                ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white dark:text-black shadow-lg shadow-amber-500/25'
-                : 'bg-gray-200/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-            "
-            @click="productsStore.selectedCategory.value = cat.id"
-          >
+            :class="productsStore.selectedCategory.value === cat.id
+              ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white dark:text-black shadow-lg shadow-amber-500/25'
+              : 'bg-gray-200/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+              " @click="productsStore.selectedCategory.value = cat.id">
             <span>{{ categoryIcons[cat.id] || "📁" }}</span>
             <span>{{ cat.name }}</span>
           </button>
@@ -2203,54 +2092,34 @@ onUnmounted(() => {
       <div class="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-transparent">
         <!-- Pending Bill Requests (Session Bills) -->
         <PosPendingBillRequests />
-        <div
-          v-if="productsStore.filteredProducts.value.length === 0"
-          class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
-        >
+        <div v-if="productsStore.filteredProducts.value.length === 0"
+          class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
           <span class="text-6xl mb-4">🔍</span>
           <p class="text-lg">No products found</p>
           <p class="text-sm mt-2">Try a different search or category</p>
         </div>
 
-        <div
-          v-else
-          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
-        >
-          <button
-            v-for="product in productsStore.filteredProducts.value"
-            :key="product.id"
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <button v-for="product in productsStore.filteredProducts.value" :key="product.id"
             class="group relative bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700/50 hover:border-amber-500/50 dark:hover:border-amber-500/30 rounded-2xl p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-amber-500/5"
-            @click="selectProduct(product)"
-          >
+            @click="selectProduct(product)">
             <!-- Favorite Badge -->
-            <button
-              v-if="productsStore.isFavorite(product.id)"
-              class="absolute top-2 right-2 text-amber-400"
-              @click.stop="productsStore.toggleFavorite(product.id)"
-            >
+            <button v-if="productsStore.isFavorite(product.id)" class="absolute top-2 right-2 text-amber-400"
+              @click.stop="productsStore.toggleFavorite(product.id)">
               ⭐
             </button>
 
             <!-- Product Image/Emoji -->
-            <div
-              class="w-14 h-14 mb-3 group-hover:scale-110 transition-transform flex items-center justify-center"
-            >
-              <img
-                v-if="product.image && product.image.startsWith('http')"
-                :src="product.image"
-                :alt="product.name"
-                class="w-full h-full object-cover rounded-lg"
-                loading="lazy"
-                @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
-              />
+            <div class="w-14 h-14 mb-3 group-hover:scale-110 transition-transform flex items-center justify-center">
+              <img v-if="product.image && product.image.startsWith('http')" :src="product.image" :alt="product.name"
+                class="w-full h-full object-cover rounded-lg" loading="lazy"
+                @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'" />
               <span v-else class="text-4xl">{{ product.image || "📦" }}</span>
             </div>
 
             <!-- Product Info -->
             <div class="space-y-1">
-              <h3
-                class="font-medium text-gray-900 dark:text-white text-sm leading-tight line-clamp-2"
-              >
+              <h3 class="font-medium text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
                 {{ product.name }}
               </h3>
               <p class="text-xs text-gray-400 dark:text-gray-500">
@@ -2260,13 +2129,11 @@ onUnmounted(() => {
 
             <!-- Price -->
             <div class="mt-3 space-y-0.5">
-              <div
-                class="text-amber-600 dark:text-amber-400 font-bold text-base"
-              >
+              <div class="text-amber-600 dark:text-amber-400 font-bold text-base">
                 {{
                   currency.format(
                     product.prices?.[pos.selectedCurrency.value] ||
-                      product.price,
+                    product.price,
                     pos.selectedCurrency.value
                   )
                 }}
@@ -2277,10 +2144,8 @@ onUnmounted(() => {
             </div>
 
             <!-- Stock indicator -->
-            <div
-              v-if="product.stock <= product.minStock"
-              class="absolute bottom-2 right-2 px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-400"
-            >
+            <div v-if="product.stock <= product.minStock"
+              class="absolute bottom-2 right-2 px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-400">
               Low
             </div>
           </button>
@@ -2291,17 +2156,15 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <!-- MOBILE CART TOGGLE (visible on small screens) -->
     <!-- ============================================ -->
-    <button
-      v-if="pos.cartItems.value.length > 0"
+    <button v-if="pos.cartItems.value.length > 0"
       class="lg:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-5 py-3.5 bg-linear-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white rounded-2xl shadow-[0_8px_30px_rgba(251,146,60,0.5)] dark:shadow-[0_8px_30px_rgba(251,146,60,0.35)] ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-all duration-200 hover:shadow-[0_12px_40px_rgba(251,146,60,0.6)] dark:hover:shadow-[0_12px_40px_rgba(251,146,60,0.45)]"
-      @click="showMobileCart = true"
-    >
+      @click="showMobileCart = true">
       <span class="text-xl drop-shadow-sm">🛒</span>
       <span class="font-bold text-white/90">{{ pos.itemCount.value }}</span>
       <span class="w-px h-4 bg-white/30" />
       <span class="font-semibold">{{
         currency.format(pos.total.value, pos.selectedCurrency.value)
-      }}</span>
+        }}</span>
     </button>
 
     <!-- ============================================ -->
@@ -2309,17 +2172,12 @@ onUnmounted(() => {
     <!-- ============================================ -->
     <!-- Desktop Cart Panel -->
     <div
-      class="hidden lg:flex w-[380px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800/50 flex-col"
-    >
+      class="hidden lg:flex w-[380px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800/50 flex-col">
       <!-- Cart Header -->
-      <div
-        class="p-4 border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
-      >
+      <div class="p-4 border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl"
-            >
+            <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl">
               🛒
             </div>
             <div>
@@ -2332,29 +2190,18 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <UButton
-            v-if="pos.cartItems.value.length > 0"
-            icon="i-heroicons-trash"
-            color="red"
-            variant="ghost"
-            size="xs"
-            @click="pos.clearCart"
-          />
+          <UButton v-if="pos.cartItems.value.length > 0" icon="i-heroicons-trash" color="red" variant="ghost" size="xs"
+            @click="pos.clearCart" />
         </div>
 
         <!-- Order Type Selector -->
         <div class="mt-3 flex gap-1.5">
-          <button
-            v-for="type in orderTypes"
-            :key="type.value"
+          <button v-for="type in orderTypes" :key="type.value"
             class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
-            :class="
-              pos.orderType.value === type.value
-                ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            "
-            @click="pos.setOrderType(type.value)"
-          >
+            :class="pos.orderType.value === type.value
+              ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              " @click="pos.setOrderType(type.value)">
             <span class="text-lg">{{ type.icon }}</span>
             <span>{{ type.label }}</span>
           </button>
@@ -2364,90 +2211,52 @@ onUnmounted(() => {
         <div v-if="pos.orderType.value === 'dine_in'" class="mt-2">
           <!-- Table Quick Selector (when tables exist) -->
           <div v-if="tables.length > 0" class="flex gap-2">
-            <button
-              class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all"
-              :class="
-                currentTable
-                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30 hover:ring-emerald-500/50'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-              "
-              @click="showTableSwitcher = true"
-            >
+            <button class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all" :class="currentTable
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30 hover:ring-emerald-500/50'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              " @click="showTableSwitcher = true">
               <UIcon name="i-heroicons-table-cells" class="w-4 h-4" />
               <span v-if="currentTable" class="font-medium">{{
                 currentTable.name
-              }}</span>
+                }}</span>
               <span v-else>Select Table</span>
-              <UIcon
-                name="i-heroicons-chevron-down"
-                class="w-4 h-4 ml-auto opacity-50"
-              />
+              <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 ml-auto opacity-50" />
             </button>
-            <button
-              v-if="pos.tableNumber.value"
-              title="Clear table"
+            <button v-if="pos.tableNumber.value" title="Clear table"
               class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-              @click="clearTableSelection"
-            >
+              @click="clearTableSelection">
               <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
             </button>
           </div>
           <!-- Fallback input (when no tables configured) -->
-          <UInput
-            v-else
-            v-model="pos.tableNumber.value"
-            placeholder="Table # (optional)"
-            size="xs"
-            icon="i-heroicons-table-cells"
-            class="w-full"
-          />
+          <UInput v-else v-model="pos.tableNumber.value" placeholder="Table # (optional)" size="xs"
+            icon="i-heroicons-table-cells" class="w-full" />
         </div>
 
         <!-- Delivery/Pickup Info -->
         <div v-if="pos.orderType.value === 'delivery'" class="mt-2 space-y-2">
-          <UInput
-            v-model="pos.customerPhone.value"
-            placeholder="Customer phone"
-            size="xs"
-            icon="i-heroicons-phone"
-            class="w-full"
-          />
-          <UInput
-            v-model="pos.deliveryAddress.value"
-            placeholder="Delivery address"
-            size="xs"
-            icon="i-heroicons-map-pin"
-            class="w-full"
-          />
+          <UInput v-model="pos.customerPhone.value" placeholder="Customer phone" size="xs" icon="i-heroicons-phone"
+            class="w-full" />
+          <UInput v-model="pos.deliveryAddress.value" placeholder="Delivery address" size="xs"
+            icon="i-heroicons-map-pin" class="w-full" />
         </div>
 
         <!-- Pickup Info -->
         <div v-if="pos.orderType.value === 'pickup'" class="mt-2">
-          <UInput
-            v-model="pos.customerPhone.value"
-            placeholder="Customer phone (pickup)"
-            size="xs"
-            icon="i-heroicons-phone"
-            class="w-full"
-          />
+          <UInput v-model="pos.customerPhone.value" placeholder="Customer phone (pickup)" size="xs"
+            icon="i-heroicons-phone" class="w-full" />
         </div>
 
         <!-- Customer Selection -->
         <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-          <div
-            v-if="selectedCustomer"
-            class="flex items-center justify-between"
-          >
+          <div v-if="selectedCustomer" class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <div
-                class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs font-bold"
-              >
+                class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
                 {{ (selectedCustomer.name || "C").slice(0, 2).toUpperCase() }}
               </div>
               <div class="text-sm">
-                <p
-                  class="font-medium text-gray-900 dark:text-white truncate max-w-[120px]"
-                >
+                <p class="font-medium text-gray-900 dark:text-white truncate max-w-[120px]">
                   {{ selectedCustomer.name || "Customer" }}
                 </p>
                 <p class="text-xs text-gray-500">
@@ -2456,30 +2265,12 @@ onUnmounted(() => {
               </div>
             </div>
             <div class="flex gap-1">
-              <UButton
-                icon="i-heroicons-pencil"
-                size="xs"
-                variant="ghost"
-                @click="showCustomerModal = true"
-              />
-              <UButton
-                icon="i-heroicons-x-mark"
-                size="xs"
-                variant="ghost"
-                color="red"
-                @click="clearCustomer"
-              />
+              <UButton icon="i-heroicons-pencil" size="xs" variant="ghost" @click="showCustomerModal = true" />
+              <UButton icon="i-heroicons-x-mark" size="xs" variant="ghost" color="red" @click="clearCustomer" />
             </div>
           </div>
-          <UButton
-            v-else
-            icon="i-heroicons-user-plus"
-            size="sm"
-            variant="soft"
-            color="primary"
-            class="w-full"
-            @click="showCustomerModal = true"
-          >
+          <UButton v-else icon="i-heroicons-user-plus" size="sm" variant="soft" color="primary" class="w-full"
+            @click="showCustomerModal = true">
             Add Customer (F3)
           </UButton>
         </div>
@@ -2488,13 +2279,10 @@ onUnmounted(() => {
       <!-- Cart Items -->
       <div class="flex-1 overflow-auto p-3 bg-gray-50 dark:bg-gray-950/50">
         <!-- Empty State -->
-        <div
-          v-if="pos.cartItems.value.length === 0"
-          class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
-        >
+        <div v-if="pos.cartItems.value.length === 0"
+          class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
           <div
-            class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-4xl mb-4"
-          >
+            class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-4xl mb-4">
             🛒
           </div>
           <p class="text-base font-medium text-gray-500">Cart is empty</p>
@@ -2502,29 +2290,18 @@ onUnmounted(() => {
         </div>
 
         <!-- Cart Items List -->
-        <div
-          v-else
-          class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700/50"
-        >
-          <div
-            v-for="(item, index) in pos.cartItems.value"
-            :key="`${item.product.id}-${index}`"
-            class="p-3 hover:bg-gray-50/50 dark:hover:bg-gray-700/30"
-          >
+        <div v-else
+          class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+          <div v-for="(item, index) in pos.cartItems.value" :key="`${item.product.id}-${index}`"
+            class="p-3 hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
             <div class="flex gap-3">
               <!-- Product Image -->
               <div
-                class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden"
-              >
-                <img
-                  v-if="
-                    item.product.image && item.product.image.startsWith('http')
-                  "
-                  :src="item.product.image"
-                  :alt="item.product.name"
-                  class="w-full h-full object-cover"
-                  loading="lazy"
-                />
+                class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
+                <img v-if="
+                  item.product.image && item.product.image.startsWith('http')
+                " :src="item.product.image" :alt="item.product.name" class="w-full h-full object-cover"
+                  loading="lazy" />
                 <span v-else>{{ item.product.image || "📦" }}</span>
               </div>
 
@@ -2532,39 +2309,28 @@ onUnmounted(() => {
               <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-start gap-2">
                   <div class="flex-1 min-w-0">
-                    <h4
-                      class="font-semibold text-gray-900 dark:text-white text-sm leading-tight truncate"
-                    >
+                    <h4 class="font-semibold text-gray-900 dark:text-white text-sm leading-tight truncate">
                       {{ item.product.name }}
                     </h4>
                     <!-- Variant & Modifiers -->
-                    <div
-                      v-if="
-                        item.selectedVariant ||
-                        (item.selectedModifiers &&
-                          item.selectedModifiers.length > 0)
-                      "
-                      class="mt-0.5"
-                    >
-                      <span
-                        v-if="item.selectedVariant"
-                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium mr-1"
-                      >
+                    <div v-if="
+                      item.selectedVariant ||
+                      (item.selectedModifiers &&
+                        item.selectedModifiers.length > 0)
+                    " class="mt-0.5">
+                      <span v-if="item.selectedVariant"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium mr-1">
                         {{ item.selectedVariant.shortName }}
                       </span>
-                      <span
-                        v-for="mod in item.selectedModifiers"
-                        :key="mod.id"
-                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-1"
-                      >
+                      <span v-for="mod in item.selectedModifiers" :key="mod.id"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-1">
                         {{ mod.name }}
                       </span>
                     </div>
                   </div>
                   <button
                     class="text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0 transition-colors"
-                    @click="pos.removeFromCart(index)"
-                  >
+                    @click="pos.removeFromCart(index)">
                     <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
                   </button>
                 </div>
@@ -2575,55 +2341,41 @@ onUnmounted(() => {
                 </p>
 
                 <!-- Item Notes (if any) -->
-                <div
-                  v-if="item.notes"
-                  class="mt-1.5 px-2 py-1 rounded-lg bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs"
-                >
+                <div v-if="item.notes"
+                  class="mt-1.5 px-2 py-1 rounded-lg bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs">
                   📝 {{ item.notes }}
                 </div>
 
                 <!-- Quantity Controls & Total -->
                 <div class="flex items-center justify-between mt-2">
-                  <div
-                    class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5"
-                  >
+                  <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
                     <button
                       class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 transition-colors"
-                      @click="handleQuantityChange(index, -1)"
-                    >
+                      @click="handleQuantityChange(index, -1)">
                       −
                     </button>
                     <button
                       class="w-8 h-7 flex items-center justify-center text-sm font-bold text-gray-900 dark:text-white"
-                      @click="openNumpad(index, item.quantity)"
-                    >
+                      @click="openNumpad(index, item.quantity)">
                       {{ item.quantity }}
                     </button>
                     <button
                       class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 transition-colors"
-                      @click="handleQuantityChange(index, 1)"
-                    >
+                      @click="handleQuantityChange(index, 1)">
                       +
                     </button>
 
                     <!-- Add/Edit Note Button -->
-                    <button
-                      class="ml-1 w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors"
-                      :class="
-                        item.notes
-                          ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
-                          : 'bg-gray-100 dark:bg-gray-700/50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                      "
-                      :title="item.notes ? 'Edit note' : 'Add note'"
-                      @click="openItemNotes(index)"
-                    >
+                    <button class="ml-1 w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors"
+                      :class="item.notes
+                        ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+                        : 'bg-gray-100 dark:bg-gray-700/50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                        " :title="item.notes ? 'Edit note' : 'Add note'" @click="openItemNotes(index)">
                       📝
                     </button>
                   </div>
 
-                  <div
-                    class="text-amber-600 dark:text-amber-400 font-bold text-sm"
-                  >
+                  <div class="text-amber-600 dark:text-amber-400 font-bold text-sm">
                     {{
                       currency.format(item.total, pos.selectedCurrency.value)
                     }}
@@ -2636,41 +2388,27 @@ onUnmounted(() => {
       </div>
 
       <!-- Extras Toggle Bar (Coupon/Discount/Tip) -->
-      <div
-        v-if="pos.cartItems.value.length > 0"
-        class="border-t border-gray-200 dark:border-gray-800/50"
-      >
+      <div v-if="pos.cartItems.value.length > 0" class="border-t border-gray-200 dark:border-gray-800/50">
         <!-- Toggle Header -->
         <button
           class="w-full px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
-          @click="showExtras = !showExtras"
-        >
+          @click="showExtras = !showExtras">
           <div class="flex items-center gap-3">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >Extras</span
-            >
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Extras</span>
             <!-- Active indicators -->
             <div class="flex items-center gap-1.5">
-              <span
-                v-if="appliedCoupon"
-                class="px-1.5 py-0.5 text-[10px] font-semibold bg-green-500/20 text-green-600 dark:text-green-400 rounded"
-              >
+              <span v-if="appliedCoupon"
+                class="px-1.5 py-0.5 text-[10px] font-semibold bg-green-500/20 text-green-600 dark:text-green-400 rounded">
                 🎟️ {{ appliedCoupon.coupon.code }}
               </span>
-              <span
-                v-if="pos.tipAmount.value > 0"
-                class="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded"
-              >
+              <span v-if="pos.tipAmount.value > 0"
+                class="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded">
                 ⚡ Tip
               </span>
             </div>
           </div>
-          <UIcon
-            :name="
-              showExtras ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'
-            "
-            class="w-4 h-4 text-gray-400 transition-transform"
-          />
+          <UIcon :name="showExtras ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'
+            " class="w-4 h-4 text-gray-400 transition-transform" />
         </button>
 
         <!-- Collapsible Content -->
@@ -2681,25 +2419,19 @@ onUnmounted(() => {
               <!-- Coupon Button -->
               <button
                 class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                :class="
-                  appliedCoupon
-                    ? 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/30'
-                    : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                "
-                @click="appliedCoupon ? handleCouponRemove() : null"
-              >
+                :class="appliedCoupon
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/30'
+                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                  " @click="appliedCoupon ? handleCouponRemove() : null">
                 <span>🎟️</span>
-                <span v-if="appliedCoupon"
-                  >{{ appliedCoupon.coupon.code }} ✓</span
-                >
+                <span v-if="appliedCoupon">{{ appliedCoupon.coupon.code }} ✓</span>
                 <span v-else>Coupon</span>
               </button>
 
               <!-- Discount Button -->
               <button
                 class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-all"
-                @click="showDiscountModal = true"
-              >
+                @click="showDiscountModal = true">
                 <span>🏷️</span>
                 <span>Discount</span>
               </button>
@@ -2707,37 +2439,24 @@ onUnmounted(() => {
 
             <!-- Coupon Input (shows when no coupon applied) -->
             <div v-if="!appliedCoupon" class="-mt-1">
-              <PosCouponInput
-                :subtotal="pos.subtotal.value"
-                :currency="pos.selectedCurrency.value"
-                :applied-coupon="appliedCoupon"
-                @apply="handleCouponApply"
-                @remove="handleCouponRemove"
-              />
+              <PosCouponInput :subtotal="pos.subtotal.value" :currency="pos.selectedCurrency.value"
+                :applied-coupon="appliedCoupon" @apply="handleCouponApply" @remove="handleCouponRemove" />
             </div>
 
             <!-- Tip Options -->
             <div>
-              <p
-                class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1"
-              >
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
                 <span>⚡</span> Quick Tip
               </p>
               <div class="grid grid-cols-5 gap-1.5">
-                <button
-                  v-for="tip in tipOptions"
-                  :key="tip.value"
-                  class="py-2 rounded-lg text-xs font-medium transition-all"
-                  :class="
-                    pos.tipAmount.value ===
+                <button v-for="tip in tipOptions" :key="tip.value"
+                  class="py-2 rounded-lg text-xs font-medium transition-all" :class="pos.tipAmount.value ===
                     (tip.value === 0
                       ? 0
                       : Math.round((pos.subtotal.value * tip.value) / 100))
-                      ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 scale-105'
-                      : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                  "
-                  @click="pos.setTipPercentage(tip.value)"
-                >
+                    ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 scale-105'
+                    : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                    " @click="pos.setTipPercentage(tip.value)">
                   {{ tip.label }}
                 </button>
               </div>
@@ -2748,27 +2467,21 @@ onUnmounted(() => {
 
       <!-- Cart Summary -->
       <div
-        class="p-4 border-t border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
-      >
+        class="p-4 border-t border-gray-200 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <!-- Summary Lines -->
         <div class="space-y-1.5 text-sm mb-3">
           <div class="flex justify-between text-gray-500 dark:text-gray-400">
             <span>Subtotal</span>
             <span>{{
               currency.format(pos.subtotal.value, pos.selectedCurrency.value)
-            }}</span>
+              }}</span>
           </div>
           <!-- Tax Line -->
-          <div
-            v-if="taxEnabled && taxAmount > 0"
-            class="flex justify-between text-gray-500 dark:text-gray-400"
-          >
+          <div v-if="taxEnabled && taxAmount > 0" class="flex justify-between text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1">
               <span>🧾</span>
               <span>VAT {{ taxRatePercent }}%</span>
-              <span v-if="taxInclusive" class="text-xs opacity-60"
-                >(incl.)</span
-              >
+              <span v-if="taxInclusive" class="text-xs opacity-60">(incl.)</span>
             </span>
             <span :class="taxInclusive ? '' : ''">
               {{ taxInclusive ? "" : "+"
@@ -2776,10 +2489,8 @@ onUnmounted(() => {
             </span>
           </div>
           <!-- Manual Discount -->
-          <div
-            v-if="discountValue > 0 && !appliedCoupon"
-            class="flex justify-between text-green-600 dark:text-green-400"
-          >
+          <div v-if="discountValue > 0 && !appliedCoupon"
+            class="flex justify-between text-green-600 dark:text-green-400">
             <span class="flex items-center gap-1">
               <span>🏷️</span>
               Discount
@@ -2794,9 +2505,9 @@ onUnmounted(() => {
                 currency.format(
                   discountType === "percentage"
                     ? Math.round(
-                        (pos.subtotal.value * discountValue) /
-                          (100 + discountValue)
-                      )
+                      (pos.subtotal.value * discountValue) /
+                      (100 + discountValue)
+                    )
                     : discountValue,
                   pos.selectedCurrency.value
                 )
@@ -2804,39 +2515,27 @@ onUnmounted(() => {
             </span>
           </div>
           <!-- Coupon Discount -->
-          <div
-            v-if="appliedCoupon"
-            class="flex justify-between text-green-600 dark:text-green-400"
-          >
+          <div v-if="appliedCoupon" class="flex justify-between text-green-600 dark:text-green-400">
             <span class="flex items-center gap-1">
               <span>🎟️</span> {{ appliedCoupon.coupon.code }}
             </span>
-            <span
-              >-{{
-                currency.format(
-                  appliedCoupon.discountAmount,
-                  pos.selectedCurrency.value
-                )
-              }}</span
-            >
+            <span>-{{
+              currency.format(
+                appliedCoupon.discountAmount,
+                pos.selectedCurrency.value
+              )
+            }}</span>
           </div>
-          <div
-            v-if="pos.tipAmount.value > 0"
-            class="flex justify-between text-amber-600 dark:text-amber-400"
-          >
+          <div v-if="pos.tipAmount.value > 0" class="flex justify-between text-amber-600 dark:text-amber-400">
             <span class="flex items-center gap-1"> <span>⚡</span> Tip </span>
-            <span
-              >+{{
-                currency.format(pos.tipAmount.value, pos.selectedCurrency.value)
-              }}</span
-            >
+            <span>+{{
+              currency.format(pos.tipAmount.value, pos.selectedCurrency.value)
+            }}</span>
           </div>
         </div>
 
         <!-- Total -->
-        <div
-          class="flex items-end justify-between mb-4 pt-3 border-t border-gray-200 dark:border-gray-800/50"
-        >
+        <div class="flex items-end justify-between mb-4 pt-3 border-t border-gray-200 dark:border-gray-800/50">
           <div>
             <p class="text-xs text-gray-500 mb-1">Total</p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -2853,13 +2552,9 @@ onUnmounted(() => {
 
         <!-- Payment Buttons -->
         <div class="space-y-2">
-          <UButton
-            block
-            size="lg"
-            :disabled="pos.cartItems.value.length === 0"
+          <UButton block size="lg" :disabled="pos.cartItems.value.length === 0"
             class="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white dark:text-black font-semibold shadow-sm shadow-amber-500/25"
-            @click="proceedToPayment('lightning')"
-          >
+            @click="proceedToPayment('lightning')">
             <span class="flex items-center gap-2">
               <span class="text-lg">⚡</span>
               <span>Pay with Lightning</span>
@@ -2867,26 +2562,13 @@ onUnmounted(() => {
           </UButton>
 
           <div class="grid grid-cols-2 gap-2">
-            <UButton
-              block
-              size="md"
-              color="neutral"
-              variant="soft"
-              :disabled="pos.cartItems.value.length === 0"
-              @click="proceedToPayment('cash')"
-            >
+            <UButton block size="md" color="neutral" variant="soft" :disabled="pos.cartItems.value.length === 0"
+              @click="proceedToPayment('cash')">
               💵 {{ t("payment.methods.cash") }}
             </UButton>
             <!-- Send to Kitchen (Pay Later) Button -->
-            <UButton
-              block
-              size="md"
-              color="emerald"
-              variant="soft"
-              :disabled="!pos.cartItems.value.length"
-              :loading="isProcessing"
-              @click="sendToKitchen"
-            >
+            <UButton block size="md" color="emerald" variant="soft" :disabled="!pos.cartItems.value.length"
+              :loading="isProcessing" @click="sendToKitchen">
               <span class="flex items-center gap-2">
                 <span class="text-lg">🔥</span>
                 <span>{{
@@ -2894,13 +2576,11 @@ onUnmounted(() => {
                     ? "Update Order"
                     : t("pos.sendToKitchen") || "Send to Kitchen"
                 }}</span>
-                <span class="text-xs opacity-75"
-                  >({{
-                    isEditingOrder
-                      ? "Save Changes"
-                      : t("pos.payLater") || "Pay Later"
-                  }})</span
-                >
+                <span class="text-xs opacity-75">({{
+                  isEditingOrder
+                    ? "Save Changes"
+                    : t("pos.payLater") || "Pay Later"
+                }})</span>
               </span>
             </UButton>
           </div>
@@ -2914,45 +2594,35 @@ onUnmounted(() => {
     <Transition name="slide-up">
       <div v-if="showMobileCart" class="lg:hidden fixed inset-0 z-50">
         <!-- Backdrop with blur -->
-        <div
-          class="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-md"
-          @click="showMobileCart = false"
-        />
+        <div class="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-md" @click="showMobileCart = false" />
 
         <!-- Cart Panel - Glass effect -->
         <div
-          class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.4)]"
-        >
+          class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
           <!-- Drag Handle -->
           <div class="flex justify-center pt-3 pb-2">
-            <div
-              class="w-10 h-1 bg-gray-300/80 dark:bg-gray-600 rounded-full"
-            />
+            <div class="w-10 h-1 bg-gray-300/80 dark:bg-gray-600 rounded-full" />
           </div>
 
           <!-- Cart Header - Cleaner -->
           <div class="px-5 pb-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div
-                class="w-11 h-11 rounded-2xl bg-linear-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center"
-              >
+                class="w-11 h-11 rounded-2xl bg-linear-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
                 <span class="text-xl">🛒</span>
               </div>
               <div>
                 <h2 class="font-bold text-gray-900 dark:text-white">
                   Your Order
                 </h2>
-                <p
-                  class="text-xs text-amber-600 dark:text-amber-400 font-medium"
-                >
+                <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">
                   {{ pos.itemCount.value }} items
                 </p>
               </div>
             </div>
             <button
               class="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200/80 dark:hover:bg-gray-700 transition-colors"
-              @click="showMobileCart = false"
-            >
+              @click="showMobileCart = false">
               <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
             </button>
           </div>
@@ -2960,68 +2630,72 @@ onUnmounted(() => {
           <!-- Order Type Selector (Mobile) -->
           <div class="px-4 pb-4">
             <div class="flex gap-1.5">
-              <button
-                v-for="type in orderTypes"
-                :key="type.value"
+              <button v-for="type in orderTypes" :key="type.value"
                 class="flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-lg text-xs font-medium transition-all"
-                :class="
-                  pos.orderType.value === type.value
-                    ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                "
-                @click="pos.setOrderType(type.value)"
-              >
+                :class="pos.orderType.value === type.value
+                  ? 'bg-linear-to-br from-amber-500 to-orange-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  " @click="pos.setOrderType(type.value)">
                 <span class="text-lg">{{ type.icon }}</span>
                 <span>{{ type.label }}</span>
               </button>
             </div>
+
+            <!-- Table Selector (Mobile - for dine-in) -->
+            <div v-if="pos.orderType.value === 'dine_in'" class="mt-3">
+              <div v-if="tables.length > 0" class="flex gap-2">
+                <button
+                  class="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all touch-manipulation"
+                  :class="currentTable
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    " @click="showTableSwitcher = true">
+                  <UIcon name="i-heroicons-table-cells" class="w-5 h-5" />
+                  <span v-if="currentTable" class="font-medium">{{ currentTable.name }}</span>
+                  <span v-else>{{ $t('pos.selectTable', 'Select Table') }}</span>
+                  <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 ml-auto opacity-50" />
+                </button>
+                <button v-if="pos.tableNumber.value" title="Clear table"
+                  class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors touch-manipulation"
+                  @click="clearTableSelection">
+                  <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
+                </button>
+              </div>
+              <UInput v-else v-model="pos.tableNumber.value"
+                :placeholder="$t('pos.tableNumberOptional', 'Table # (optional)')" size="sm"
+                icon="i-heroicons-table-cells" class="w-full" />
+            </div>
           </div>
 
           <!-- Cart Items (Scrollable) -->
-          <div
-            class="flex-1 overflow-y-auto px-4 pb-3 bg-gray-50/50 dark:bg-gray-950/50"
-          >
-            <div
-              v-if="pos.cartItems.value.length === 0"
-              class="flex flex-col items-center justify-center py-16 text-gray-400"
-            >
+          <div class="flex-1 overflow-y-auto px-4 pb-3 bg-gray-50/50 dark:bg-gray-950/50">
+            <div v-if="pos.cartItems.value.length === 0"
+              class="flex flex-col items-center justify-center py-16 text-gray-400">
               <div
-                class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center mb-4"
-              >
+                class="w-20 h-20 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center mb-4">
                 <span class="text-4xl">🛒</span>
               </div>
               <p class="font-medium text-gray-500">Cart is empty</p>
               <p class="text-sm text-gray-400 mt-1">Tap products to add</p>
             </div>
             <div v-else class="space-y-2 pt-2">
-              <div
-                v-for="(item, index) in pos.cartItems.value"
-                :key="`mobile-${item.product.id}-${index}`"
-                class="bg-white dark:bg-gray-800 rounded-xl p-3"
-              >
+              <div v-for="(item, index) in pos.cartItems.value" :key="`mobile-${item.product.id}-${index}`"
+                class="bg-white dark:bg-gray-800 rounded-xl p-3">
                 <div class="flex items-center gap-3">
                   <!-- Product Icon -->
                   <div
-                    class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden"
-                  >
-                    <img
-                      v-if="
-                        item.product.image &&
-                        item.product.image.startsWith('http')
-                      "
-                      :src="item.product.image"
-                      :alt="item.product.name"
-                      class="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+                    class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
+                    <img v-if="
+                      item.product.image &&
+                      item.product.image.startsWith('http')
+                    " :src="item.product.image" :alt="item.product.name" class="w-full h-full object-cover"
+                      loading="lazy" />
                     <span v-else>{{ item.product.image || "📦" }}</span>
                   </div>
 
                   <!-- Product Info -->
                   <div class="flex-1 min-w-0">
-                    <p
-                      class="font-semibold text-sm text-gray-900 dark:text-white truncate"
-                    >
+                    <p class="font-semibold text-sm text-gray-900 dark:text-white truncate">
                       {{ item.product.name }}
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -3032,31 +2706,23 @@ onUnmounted(() => {
                   </div>
 
                   <!-- Quantity Controls -->
-                  <div
-                    class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5"
-                  >
+                  <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
                     <button
                       class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
-                      @click="handleQuantityChange(index, -1)"
-                    >
+                      @click="handleQuantityChange(index, -1)">
                       −
                     </button>
-                    <span
-                      class="w-7 text-center font-bold text-sm text-gray-900 dark:text-white"
-                      >{{ item.quantity }}</span
-                    >
+                    <span class="w-7 text-center font-bold text-sm text-gray-900 dark:text-white">{{ item.quantity
+                      }}</span>
                     <button
                       class="w-7 h-7 rounded-md hover:bg-white dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-bold transition-colors flex items-center justify-center text-lg"
-                      @click="handleQuantityChange(index, 1)"
-                    >
+                      @click="handleQuantityChange(index, 1)">
                       +
                     </button>
                   </div>
 
                   <!-- Total Price -->
-                  <p
-                    class="font-bold text-amber-600 dark:text-amber-400 text-sm min-w-[4rem] text-right tabular-nums"
-                  >
+                  <p class="font-bold text-amber-600 dark:text-amber-400 text-sm min-w-[4rem] text-right tabular-nums">
                     {{
                       currency.format(item.total, pos.selectedCurrency.value)
                     }}
@@ -3065,30 +2731,22 @@ onUnmounted(() => {
 
                 <!-- Item Notes & Actions Row -->
                 <div
-                  class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/50"
-                >
+                  class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/50">
                   <!-- Notes display or add button -->
-                  <button
-                    class="flex items-center gap-1.5 text-xs transition-colors"
-                    :class="
-                      item.notes
-                        ? 'text-yellow-600 dark:text-yellow-400'
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                    "
-                    @click="openItemNotes(index)"
-                  >
+                  <button class="flex items-center gap-1.5 text-xs transition-colors" :class="item.notes
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    " @click="openItemNotes(index)">
                     <span>📝</span>
                     <span v-if="item.notes" class="truncate max-w-[150px]">{{
                       item.notes
-                    }}</span>
+                      }}</span>
                     <span v-else>Add note</span>
                   </button>
 
                   <!-- Remove button -->
-                  <button
-                    class="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                    @click="pos.removeFromCart(index)"
-                  >
+                  <button class="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    @click="pos.removeFromCart(index)">
                     Remove
                   </button>
                 </div>
@@ -3098,79 +2756,53 @@ onUnmounted(() => {
 
           <!-- Cart Footer - Glass effect -->
           <div
-            class="px-5 py-4 bg-linear-to-t from-white via-white to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900/80 border-t border-gray-100 dark:border-gray-800"
-          >
+            class="px-5 py-4 bg-linear-to-t from-white via-white to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900/80 border-t border-gray-100 dark:border-gray-800">
             <!-- Summary -->
             <div class="flex justify-between items-end mb-4">
               <div>
-                <p
-                  class="text-xs text-gray-400 uppercase tracking-wide font-medium"
-                >
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">
                   Total
                 </p>
-                <p
-                  class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight"
-                >
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
                   {{ formattedTotalWithTax }}
                 </p>
               </div>
               <div class="text-right">
-                <div
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full"
-                >
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full">
                   <span class="text-amber-500">⚡</span>
-                  <span
-                    class="text-sm font-semibold text-amber-600 dark:text-amber-400"
-                    >{{ formattedTotalSatsWithTax }}</span
-                  >
+                  <span class="text-sm font-semibold text-amber-600 dark:text-amber-400">{{ formattedTotalSatsWithTax
+                    }}</span>
                 </div>
               </div>
             </div>
             <!-- Action Buttons -->
             <div class="grid grid-cols-5 gap-2.5">
-              <UButton
-                color="neutral"
-                variant="soft"
-                size="lg"
-                block
+              <UButton color="neutral" variant="soft" size="lg" block
                 class="col-span-1 !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-800 dark:hover:!bg-gray-700 !text-gray-600 dark:!text-gray-300 font-semibold"
                 @click="
                   pos.clearCart();
-                  showMobileCart = false;
-                "
-              >
+                showMobileCart = false;
+                ">
                 Clear
               </UButton>
-              <UButton
-                color="primary"
-                size="lg"
-                block
+              <UButton color="primary" size="lg" block
                 class="col-span-2 !bg-linear-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white font-semibold shadow-lg shadow-amber-500/25"
-                :disabled="pos.cartItems.value.length === 0"
-                @click="
+                :disabled="pos.cartItems.value.length === 0" @click="
                   showMobileCart = false;
-                  proceedToPayment();
-                "
-              >
+                proceedToPayment();
+                ">
                 <span class="flex items-center gap-2">
                   <span>Pay Now</span>
                   <span class="text-amber-200">→</span>
                 </span>
               </UButton>
               <!-- Pay Later -->
-              <UButton
-                color="emerald"
-                variant="soft"
-                size="lg"
-                block
+              <UButton color="emerald" variant="soft" size="lg" block
                 class="col-span-2 !text-emerald-700 dark:!text-emerald-300 font-semibold"
-                :disabled="pos.cartItems.value.length === 0"
-                :loading="isProcessing"
-                @click="
+                :disabled="pos.cartItems.value.length === 0" :loading="isProcessing" @click="
                   showMobileCart = false;
-                  sendToKitchen();
-                "
-              >
+                sendToKitchen();
+                ">
                 <span class="flex items-center gap-2">
                   <span class="text-lg">🔥</span>
                   <span>{{
@@ -3178,13 +2810,11 @@ onUnmounted(() => {
                       ? "Update Order"
                       : t("pos.sendToKitchen") || "Send to Kitchen"
                   }}</span>
-                  <span class="text-xs opacity-75"
-                    >({{
-                      isEditingOrder
-                        ? "Save"
-                        : t("pos.payLater") || "Pay Later"
-                    }})</span
-                  >
+                  <span class="text-xs opacity-75">({{
+                    isEditingOrder
+                      ? "Save"
+                      : t("pos.payLater") || "Pay Later"
+                  }})</span>
                 </span>
               </UButton>
             </div>
@@ -3198,169 +2828,106 @@ onUnmounted(() => {
     <!-- ============================================ -->
 
     <!-- Payment Modal -->
-    <UModal
-      v-model:open="showPaymentModal"
-      :dismissable="!isProcessing"
-      title="Payment"
-      description="Select a payment method"
-    >
+    <UModal v-model:open="showPaymentModal" :dismissable="!isProcessing" title="Payment"
+      description="Select a payment method">
       <template #content>
-        <div
-          class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto"
-        >
-          <PaymentSelector
-            v-if="showPaymentModal"
-            :amount="
-              splitOrder
-                ? splitAmountPerPerson
-                : selectedPendingOrder
-                ? selectedPendingOrder.total
-                : totalWithTax
-            "
-            :sats-amount="
-              splitOrder
+        <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto">
+          <PaymentSelector v-if="showPaymentModal" :amount="splitOrder
+            ? splitAmountPerPerson
+            : selectedPendingOrder
+              ? selectedPendingOrder.total
+              : totalWithTax
+            " :sats-amount="splitOrder
+              ? currency.toSats(
+                splitAmountPerPerson,
+                splitOrder.currency || 'LAK'
+              )
+              : selectedPendingOrder
                 ? currency.toSats(
-                    splitAmountPerPerson,
-                    splitOrder.currency || 'LAK'
-                  )
-                : selectedPendingOrder
-                ? currency.toSats(
-                    selectedPendingOrder.total,
-                    selectedPendingOrder.currency || 'LAK'
-                  )
+                  selectedPendingOrder.total,
+                  selectedPendingOrder.currency || 'LAK'
+                )
                 : totalSatsWithTax
-            "
-            :currency="
-              splitOrder
+              " :currency="splitOrder
                 ? splitOrder.currency || pos.selectedCurrency.value
                 : selectedPendingOrder
-                ? selectedPendingOrder.currency || pos.selectedCurrency.value
-                : pos.selectedCurrency.value
-            "
-            :order-id="
-              splitOrder
-                ? `${splitOrder.id}-${splitPaidCount + 1}`
-                : selectedPendingOrder
-                ? selectedPendingOrder.id
-                : 'ORD-' + Date.now().toString(36).toUpperCase()
-            "
-            :default-method="defaultPaymentMethod || undefined"
-            @paid="
-              (method, proof) =>
-                splitOrder
-                  ? paySplitPortion(method, proof)
+                  ? selectedPendingOrder.currency || pos.selectedCurrency.value
+                  : pos.selectedCurrency.value
+                " :order-id="splitOrder
+                  ? `${splitOrder.id}-${splitPaidCount + 1}`
                   : selectedPendingOrder
-                  ? payPendingOrder(method, proof)
-                  : handlePaymentComplete(method, proof)
-            "
-            @cancel="
-              splitOrder
-                ? () => {
-                    showPaymentModal = false;
-                    showSplitBillModal = true;
-                  }
-                : cancelPayment
-            "
-          />
+                    ? selectedPendingOrder.id
+                    : 'ORD-' + Date.now().toString(36).toUpperCase()
+                  " :default-method="defaultPaymentMethod || undefined" @paid="
+                    (method, proof) =>
+                      splitOrder
+                        ? paySplitPortion(method, proof)
+                        : selectedPendingOrder
+                          ? payPendingOrder(method, proof)
+                          : handlePaymentComplete(method, proof)
+                  " @cancel="
+                    splitOrder
+                      ? () => {
+                        showPaymentModal = false;
+                        showSplitBillModal = true;
+                      }
+                      : cancelPayment
+                    " />
         </div>
       </template>
     </UModal>
 
     <!-- Receipt Actions Modal -->
-    <UModal
-      v-model:open="showReceiptModal"
-      :dismissable="false"
-      title="Receipt Actions"
-      description="Choose an action for the receipt"
-    >
+    <UModal v-model:open="showReceiptModal" :dismissable="false" title="Receipt Actions"
+      description="Choose an action for the receipt">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg">
-          <ReceiptActions
-            v-if="showReceiptModal && completedOrder"
-            :order="completedOrder"
-            :payment-method="completedPaymentMethod"
-            @close="showReceiptModal = false"
-            @done="
+          <ReceiptActions v-if="showReceiptModal && completedOrder" :order="completedOrder"
+            :payment-method="completedPaymentMethod" @close="showReceiptModal = false" @done="
               showReceiptModal = false;
-              completedOrder = null;
-            "
-          />
+            completedOrder = null;
+            " />
         </div>
       </template>
     </UModal>
 
     <!-- Discount Modal -->
-    <PosDiscountModal
-      v-model:open="showDiscountModal"
-      :current-type="discountType"
-      :current-value="discountValue"
-      @apply="applyDiscount"
-    />
+    <PosDiscountModal v-model:open="showDiscountModal" :current-type="discountType" :current-value="discountValue"
+      @apply="applyDiscount" />
 
     <!-- Custom Item Modal -->
-    <PosCustomItemModal
-      v-model:open="showCustomItemModal"
-      :currency="pos.selectedCurrency.value"
-      @add="addCustomItem"
-    />
+    <PosCustomItemModal v-model:open="showCustomItemModal" :currency="pos.selectedCurrency.value"
+      @add="addCustomItem" />
 
     <!-- Held Orders Modal -->
-    <PosHeldOrdersModal
-      v-model:open="showHeldOrdersModal"
-      :orders="heldOrders"
-      :currency="pos.selectedCurrency.value"
-      @recall="recallOrder"
-      @delete="deleteHeldOrder"
-    />
+    <PosHeldOrdersModal v-model:open="showHeldOrdersModal" :orders="heldOrders" :currency="pos.selectedCurrency.value"
+      @recall="recallOrder" @delete="deleteHeldOrder" />
 
     <!-- Pending Orders Modal (Bills waiting for payment) -->
-    <UModal
-      v-model:open="showPendingOrdersModal"
-      title="Pending Orders"
-      description="Bills waiting for payment"
-    >
+    <UModal v-model:open="showPendingOrdersModal" title="Pending Orders" description="Bills waiting for payment">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <div class="flex items-center justify-between mb-4">
-            <h3
-              class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"
-            >
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <span>💳</span> {{ t("pos.pendingBills") || "Pending Bills" }}
-              <span class="text-sm font-normal text-gray-500"
-                >({{ t("pos.awaitingPayment") || "Awaiting Payment" }})</span
-              >
+              <span class="text-sm font-normal text-gray-500">({{ t("pos.awaitingPayment") || "Awaiting Payment"
+                }})</span>
             </h3>
 
             <!-- Merge Toggle Buttons -->
             <div v-if="pendingOrdersList.length > 1" class="flex gap-2">
-              <UButton
-                v-if="!isMergeMode"
-                size="xs"
-                color="violet"
-                variant="soft"
-                @click="isMergeMode = true"
-              >
+              <UButton v-if="!isMergeMode" size="xs" color="violet" variant="soft" @click="isMergeMode = true">
                 <UIcon name="i-heroicons-squares-plus" class="w-4 h-4" />
                 {{ t("pos.mergeOrders") || "Merge" }}
               </UButton>
               <template v-else>
-                <UButton
-                  size="xs"
-                  color="gray"
-                  variant="ghost"
-                  @click="
-                    isMergeMode = false;
-                    ordersToMerge = [];
-                  "
-                >
+                <UButton size="xs" color="gray" variant="ghost" @click="
+                  isMergeMode = false;
+                ordersToMerge = [];
+                ">
                   {{ t("common.cancel") || "Cancel" }}
                 </UButton>
-                <UButton
-                  size="xs"
-                  color="violet"
-                  :disabled="ordersToMerge.length < 2"
-                  @click="mergeSelectedOrders"
-                >
+                <UButton size="xs" color="violet" :disabled="ordersToMerge.length < 2" @click="mergeSelectedOrders">
                   <UIcon name="i-heroicons-check" class="w-4 h-4" />
                   {{ t("pos.mergeSelected") || "Merge" }} ({{
                     ordersToMerge.length
@@ -3370,53 +2937,33 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div
-            v-if="pendingOrdersList.length === 0"
-            class="text-center py-8 text-gray-400 dark:text-gray-500"
-          >
+          <div v-if="pendingOrdersList.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500">
             <span class="text-4xl block mb-2">✅</span>
             {{ t("pos.noPendingBills") || "No pending bills" }}
           </div>
 
           <div v-else class="space-y-3 max-h-96 overflow-auto">
-            <div
-              v-for="order in pendingOrdersList"
-              :key="order.id"
-              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border-2 transition-all cursor-pointer"
-              :class="[
+            <div v-for="order in pendingOrdersList" :key="order.id"
+              class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border-2 transition-all cursor-pointer" :class="[
                 isMergeMode && isOrderSelectedForMerge(order.id)
                   ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
                   : 'border-gray-200 dark:border-gray-700/30',
                 isMergeMode ? 'hover:border-violet-300' : '',
-              ]"
-              @click="isMergeMode ? toggleOrderForMerge(order) : null"
-            >
+              ]" @click="isMergeMode ? toggleOrderForMerge(order) : null">
               <div class="flex justify-between items-start mb-2">
                 <div class="flex items-center gap-2">
                   <!-- Merge checkbox -->
-                  <UCheckbox
-                    v-if="isMergeMode"
-                    :model-value="isOrderSelectedForMerge(order.id)"
-                    @click.stop
-                    @update:model-value="toggleOrderForMerge(order)"
-                    color="violet"
-                    class="mr-1"
-                  />
-                  <span
-                    v-if="order.orderNumber"
-                    class="text-lg font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded"
-                  >
+                  <UCheckbox v-if="isMergeMode" :model-value="isOrderSelectedForMerge(order.id)" @click.stop
+                    @update:model-value="toggleOrderForMerge(order)" color="violet" class="mr-1" />
+                  <span v-if="order.orderNumber"
+                    class="text-lg font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded">
                     #{{ order.orderNumber }}
                   </span>
                   <div>
-                    <p
-                      class="font-medium text-gray-900 dark:text-white flex items-center gap-2"
-                    >
+                    <p class="font-medium text-gray-900 dark:text-white flex items-center gap-2">
                       {{ order?.code || order.id }}
-                      <span
-                        v-if="order.tableNumber"
-                        class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full"
-                      >
+                      <span v-if="order.tableNumber"
+                        class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">
                         🪑 {{ order.tableNumber }}
                       </span>
                     </p>
@@ -3441,14 +2988,8 @@ onUnmounted(() => {
               </div>
 
               <!-- Order Items Preview -->
-              <div
-                class="text-sm text-gray-500 dark:text-gray-400 mb-3 space-y-1"
-              >
-                <div
-                  v-for="item in order.items.slice(0, 3)"
-                  :key="item.product.id"
-                  class="flex justify-between"
-                >
+              <div class="text-sm text-gray-500 dark:text-gray-400 mb-3 space-y-1">
+                <div v-for="item in order.items.slice(0, 3)" :key="item.product.id" class="flex justify-between">
                   <span>{{ item.quantity }}x {{ item.product.name }}</span>
                   <span>{{
                     currency.format(
@@ -3464,31 +3005,15 @@ onUnmounted(() => {
               </div>
 
               <div class="flex gap-2">
-                <UButton
-                  size="sm"
-                  color="emerald"
-                  variant="soft"
-                  @click="loadOrderForEditing(order)"
-                >
+                <UButton size="sm" color="emerald" variant="soft" @click="loadOrderForEditing(order)">
                   <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
                   {{ t("common.edit") || "Edit" }}
                 </UButton>
-                <UButton
-                  block
-                  size="sm"
-                  color="primary"
-                  @click="selectPendingOrderForPayment(order)"
-                >
+                <UButton block size="sm" color="primary" @click="selectPendingOrderForPayment(order)">
                   <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
                   {{ t("pos.collectPayment") || "Pay" }}
                 </UButton>
-                <UButton
-                  size="sm"
-                  color="amber"
-                  variant="soft"
-                  class="text-nowrap"
-                  @click="openSplitBill(order)"
-                >
+                <UButton size="sm" color="amber" variant="soft" class="text-nowrap" @click="openSplitBill(order)">
                   <UIcon name="i-heroicons-scissors" class="w-4 h-4" />
                   {{ t("pos.splitBill") || "Split" }}
                 </UButton>
@@ -3500,30 +3025,19 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Split Bill Modal -->
-    <UModal
-      v-model:open="showSplitBillModal"
-      title="Split Bill"
-      description="Split the bill into multiple orders"
-    >
+    <UModal v-model:open="showSplitBillModal" title="Split Bill" description="Split the bill into multiple orders">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 min-w-[400px]">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span>✂️</span> {{ t("pos.splitBill") || "Split Bill" }}
           </h3>
 
           <!-- Order Info -->
-          <div
-            v-if="splitOrder"
-            class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-4"
-          >
+          <div v-if="splitOrder" class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-4">
             <div class="flex justify-between items-center mb-2">
               <span class="text-sm text-gray-500">{{ splitOrder.id }}</span>
-              <span
-                v-if="splitOrder.tableNumber"
-                class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full"
-              >
+              <span v-if="splitOrder.tableNumber"
+                class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">
                 🪑 {{ splitOrder.tableNumber }}
               </span>
             </div>
@@ -3539,42 +3053,26 @@ onUnmounted(() => {
 
           <!-- Split Count Selector -->
           <div class="mb-4">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {{ t("pos.numberOfPeople") || "Number of People" }}
             </label>
             <div class="flex items-center gap-3">
-              <UButton
-                icon="i-heroicons-minus"
-                color="neutral"
-                variant="soft"
-                :disabled="splitCount <= 2 || splitPaidCount > 0"
-                @click="splitCount = Math.max(2, splitCount - 1)"
-              />
+              <UButton icon="i-heroicons-minus" color="neutral" variant="soft"
+                :disabled="splitCount <= 2 || splitPaidCount > 0" @click="splitCount = Math.max(2, splitCount - 1)" />
               <div class="flex-1 text-center">
-                <span
-                  class="text-3xl font-bold text-gray-900 dark:text-white"
-                  >{{ splitCount }}</span
-                >
+                <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ splitCount }}</span>
                 <span class="text-sm text-gray-500 ml-2">{{
                   t("pos.people") || "people"
-                }}</span>
+                  }}</span>
               </div>
-              <UButton
-                icon="i-heroicons-plus"
-                color="neutral"
-                variant="soft"
-                :disabled="splitCount >= 10 || splitPaidCount > 0"
-                @click="splitCount = Math.min(10, splitCount + 1)"
-              />
+              <UButton icon="i-heroicons-plus" color="neutral" variant="soft"
+                :disabled="splitCount >= 10 || splitPaidCount > 0" @click="splitCount = Math.min(10, splitCount + 1)" />
             </div>
           </div>
 
           <!-- Amount Per Person -->
           <div
-            class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-4 text-center"
-          >
+            class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-4 text-center">
             <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               {{ t("pos.amountPerPerson") || "Amount per person" }}
             </div>
@@ -3591,9 +3089,7 @@ onUnmounted(() => {
           <!-- Payment Progress -->
           <div v-if="splitPaidCount > 0" class="mb-4">
             <div class="flex items-center justify-between mb-2">
-              <span
-                class="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ t("pos.paymentProgress") || "Payment Progress" }}
               </span>
               <span class="text-sm text-gray-500">
@@ -3602,10 +3098,8 @@ onUnmounted(() => {
               </span>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div
-                class="bg-green-500 h-3 rounded-full transition-all duration-300"
-                :style="{ width: `${(splitPaidCount / splitCount) * 100}%` }"
-              />
+              <div class="bg-green-500 h-3 rounded-full transition-all duration-300"
+                :style="{ width: `${(splitPaidCount / splitCount) * 100}%` }" />
             </div>
             <div class="text-xs text-gray-500 mt-1 text-center">
               {{
@@ -3620,29 +3114,19 @@ onUnmounted(() => {
 
           <!-- Actions -->
           <div class="flex gap-3">
-            <UButton
-              block
-              color="neutral"
-              variant="soft"
-              @click="closeSplitBill"
-            >
+            <UButton block color="neutral" variant="soft" @click="closeSplitBill">
               {{ t("common.cancel") || "Cancel" }}
             </UButton>
-            <UButton
-              block
-              color="primary"
-              :loading="isProcessing"
-              @click="
-                () => {
-                  showSplitBillModal = false;
-                  showPaymentModal = true;
-                }
-              "
-            >
+            <UButton block color="primary" :loading="isProcessing" @click="
+              () => {
+                showSplitBillModal = false;
+                showPaymentModal = true;
+              }
+            ">
               {{
                 splitPaidCount > 0
                   ? t("pos.payNextPortion") ||
-                    `Pay Portion ${splitPaidCount + 1}`
+                  `Pay Portion ${splitPaidCount + 1}`
                   : t("pos.startSplitPayment") || "Start Payment"
               }}
             </UButton>
@@ -3652,23 +3136,13 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Numpad Modal -->
-    <PosNumpadModal
-      v-model:open="showNumpad"
-      :initial-value="numpadInitialValue"
-      @confirm="handleNumpadConfirm"
-    />
+    <PosNumpadModal v-model:open="showNumpad" :initial-value="numpadInitialValue" @confirm="handleNumpadConfirm" />
 
     <!-- Settings Modal -->
-    <UModal
-      v-model:open="showSettingsModal"
-      title="POS Settings"
-      description="Settings for the POS system"
-    >
+    <UModal v-model:open="showSettingsModal" title="POS Settings" description="Settings for the POS system">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 overflow-y-auto">
-          <h2
-            class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2"
-          >
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <Icon name="heroicons-solid:adjustments-vertical" />
             POS Settings
           </h2>
@@ -3676,20 +3150,13 @@ onUnmounted(() => {
           <div class="space-y-6">
             <!-- Currency Setting -->
             <div>
-              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
-                >Default Currency</label
-              >
-              <USelect
-                v-model="pos.selectedCurrency.value"
-                :items="POS_CURRENCY_OPTIONS"
-              />
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">Default Currency</label>
+              <USelect v-model="pos.selectedCurrency.value" :items="POS_CURRENCY_OPTIONS" />
             </div>
 
             <!-- Lightning Provider -->
             <div>
-              <label
-                class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
-              >
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
                 Lightning Provider
               </label>
               <USelect :items="['LNbits', 'Alby', 'NWC']" class="w-full" />
@@ -3700,9 +3167,7 @@ onUnmounted(() => {
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                   <span>🧾</span>
-                  <span class="font-medium text-gray-900 dark:text-white"
-                    >Tax / VAT</span
-                  >
+                  <span class="font-medium text-gray-900 dark:text-white">Tax / VAT</span>
                 </div>
                 <USwitch v-model="taxEnabled" />
               </div>
@@ -3711,36 +3176,20 @@ onUnmounted(() => {
                 <div v-if="taxEnabled" class="space-y-3 pt-2">
                   <!-- Tax Rate -->
                   <div>
-                    <label
-                      class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5"
-                      >Tax Rate (%)</label
-                    >
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tax Rate (%)</label>
                     <div class="flex gap-2">
-                      <button
-                        v-for="rate in [5, 7, 10, 15, 20]"
-                        :key="rate"
-                        class="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all"
-                        :class="
-                          taxRatePercent === rate
-                            ? 'bg-primary-500 text-white shadow-md'
-                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-                        "
-                        @click="taxRatePercent = rate"
-                      >
+                      <button v-for="rate in [5, 7, 10, 15, 20]" :key="rate"
+                        class="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all" :class="taxRatePercent === rate
+                          ? 'bg-primary-500 text-white shadow-md'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          " @click="taxRatePercent = rate">
                         {{ rate }}%
                       </button>
                     </div>
                     <!-- Custom rate input -->
                     <div class="mt-2">
-                      <UInput
-                        v-model.number="taxRatePercent"
-                        type="number"
-                        placeholder="Custom rate"
-                        size="sm"
-                        :min="0"
-                        :max="100"
-                        :step="0.5"
-                      >
+                      <UInput v-model.number="taxRatePercent" type="number" placeholder="Custom rate" size="sm" :min="0"
+                        :max="100" :step="0.5">
                         <template #trailing>
                           <span class="text-gray-400 text-xs">%</span>
                         </template>
@@ -3750,34 +3199,21 @@ onUnmounted(() => {
 
                   <!-- Tax Mode -->
                   <div>
-                    <label
-                      class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5"
-                      >Tax Mode</label
-                    >
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tax Mode</label>
                     <div class="grid grid-cols-2 gap-2">
-                      <button
-                        class="py-2 px-3 rounded-lg text-sm font-medium transition-all"
-                        :class="
-                          !taxInclusive
-                            ? 'bg-primary-500 text-white shadow-md'
-                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-                        "
-                        @click="taxInclusive = false"
-                      >
+                      <button class="py-2 px-3 rounded-lg text-sm font-medium transition-all" :class="!taxInclusive
+                        ? 'bg-primary-500 text-white shadow-md'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        " @click="taxInclusive = false">
                         <div class="flex flex-col items-center gap-0.5">
                           <span>➕</span>
                           <span>Add on top</span>
                         </div>
                       </button>
-                      <button
-                        class="py-2 px-3 rounded-lg text-sm font-medium transition-all"
-                        :class="
-                          taxInclusive
-                            ? 'bg-primary-500 text-white shadow-md'
-                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-                        "
-                        @click="taxInclusive = true"
-                      >
+                      <button class="py-2 px-3 rounded-lg text-sm font-medium transition-all" :class="taxInclusive
+                        ? 'bg-primary-500 text-white shadow-md'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        " @click="taxInclusive = true">
                         <div class="flex flex-col items-center gap-0.5">
                           <span>📦</span>
                           <span>Included</span>
@@ -3796,16 +3232,30 @@ onUnmounted(() => {
               </Transition>
             </div>
 
+            <!-- Kitchen Auto-Serve Setting -->
+            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">👨‍🍳</span>
+                  <div>
+                    <span class="font-medium text-gray-900 dark:text-white">
+                      {{ $t('pos.autoServeOnPayment', 'Auto-CloseKitchen') }}
+                      </span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {{ $t('pos.autoServeOnPaymentDesc', 'Mark orders as "served" when payment is completed') }}
+                    </p>
+                  </div>
+                </div>
+                <USwitch v-model="autoServeOnPayment"
+                  @update:model-value="(val) => localStorage.setItem('pos_auto_serve_on_payment', String(val))" />
+              </div>
+            </div>
+
             <!-- Session Info -->
             <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div class="flex items-center justify-between mb-3">
-                <span class="text-sm text-gray-500 dark:text-gray-400"
-                  >Session Status</span
-                >
-                <UBadge
-                  :color="pos.isSessionActive.value ? 'success' : 'error'"
-                  variant="soft"
-                >
+                <span class="text-sm text-gray-500 dark:text-gray-400">Session Status</span>
+                <UBadge :color="pos.isSessionActive.value ? 'success' : 'error'" variant="soft">
                   {{ pos.isSessionActive.value ? "Active" : "Inactive" }}
                 </UBadge>
               </div>
@@ -3826,7 +3276,7 @@ onUnmounted(() => {
                   <span class="text-gray-500">Orders</span>
                   <span class="text-gray-900 dark:text-white font-medium">{{
                     pos.currentSession.value.totalOrders
-                  }}</span>
+                    }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">Cash Sales</span>
@@ -3857,9 +3307,7 @@ onUnmounted(() => {
             <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div class="flex items-center gap-2 mb-2">
                 <span>📴</span>
-                <span class="font-medium text-gray-900 dark:text-white"
-                  >Offline Mode</span
-                >
+                <span class="font-medium text-gray-900 dark:text-white">Offline Mode</span>
               </div>
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 Payments are stored locally and synced when online.
@@ -3870,12 +3318,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Close Button -->
-            <UButton
-              block
-              color="neutral"
-              variant="outline"
-              @click="showSettingsModal = false"
-            >
+            <UButton block color="neutral" variant="outline" @click="showSettingsModal = false">
               Close
             </UButton>
           </div>
@@ -3884,29 +3327,18 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Product Options Modal (Variants & Modifiers) -->
-    <UModal
-      v-model:open="showProductOptionsModal"
-      title="Product Options"
-      description="Select options for the product"
-    >
+    <UModal v-model:open="showProductOptionsModal" title="Product Options" description="Select options for the product">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 max-h-[80vh] overflow-auto">
           <div v-if="selectedProduct" class="space-y-5">
             <!-- Product Header -->
             <div class="flex items-center gap-4">
-              <div
-                v-if="
-                  selectedProduct.image &&
-                  selectedProduct.image.startsWith('http')
-                "
-              >
-                <img
-                  :src="selectedProduct.image"
-                  :alt="selectedProduct.name"
-                  class="object-cover rounded-lg w-10 h-10"
-                  loading="lazy"
-                  @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
-                />
+              <div v-if="
+                selectedProduct.image &&
+                selectedProduct.image.startsWith('http')
+              ">
+                <img :src="selectedProduct.image" :alt="selectedProduct.name" class="object-cover rounded-lg w-10 h-10"
+                  loading="lazy" @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'" />
               </div>
               <div v-else class="text-4xl">📦</div>
               <div class="flex-1">
@@ -3920,49 +3352,34 @@ onUnmounted(() => {
             </div>
 
             <!-- Size/Variant Selection -->
-            <div
-              v-if="
-                selectedProduct.hasVariants &&
-                selectedProduct.variants &&
-                selectedProduct.variants.length > 0
-              "
-            >
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
+            <div v-if="
+              selectedProduct.hasVariants &&
+              selectedProduct.variants &&
+              selectedProduct.variants.length > 0
+            ">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 📏 Select Size
               </label>
               <div class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="variant in selectedProduct.variants"
-                  :key="variant.id"
-                  class="p-3 rounded-xl border-2 text-center transition-all"
-                  :class="
-                    selectedVariant?.id === variant.id
-                      ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  "
-                  @click="selectedVariant = variant"
-                >
+                <button v-for="variant in selectedProduct.variants" :key="variant.id"
+                  class="p-3 rounded-xl border-2 text-center transition-all" :class="selectedVariant?.id === variant.id
+                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    " @click="selectedVariant = variant">
                   <div class="text-lg font-bold">{{ variant.shortName }}</div>
                   <div class="text-xs text-gray-500">{{ variant.name }}</div>
-                  <div
-                    v-if="variant.priceModifier !== 0"
-                    class="text-xs mt-1"
-                    :class="
-                      variant.priceModifier > 0
-                        ? 'text-amber-600'
-                        : 'text-green-600'
-                    "
-                  >
+                  <div v-if="variant.priceModifier !== 0" class="text-xs mt-1" :class="variant.priceModifier > 0
+                    ? 'text-amber-600'
+                    : 'text-green-600'
+                    ">
                     {{ variant.priceModifier > 0 ? "+" : ""
                     }}{{
                       variant.priceModifierType === "percentage"
                         ? `${variant.priceModifier}%`
                         : currency.format(
-                            variant.priceModifier,
-                            pos.selectedCurrency.value
-                          )
+                          variant.priceModifier,
+                          pos.selectedCurrency.value
+                        )
                     }}
                   </div>
                 </button>
@@ -3970,69 +3387,40 @@ onUnmounted(() => {
             </div>
 
             <!-- Modifier Groups -->
-            <div
-              v-if="
-                selectedProduct.modifierGroups &&
-                selectedProduct.modifierGroups.length > 0
-              "
-            >
-              <div
-                v-for="group in selectedProduct.modifierGroups"
-                :key="group.id"
-                class="mb-4"
-              >
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
+            <div v-if="
+              selectedProduct.modifierGroups &&
+              selectedProduct.modifierGroups.length > 0
+            ">
+              <div v-for="group in selectedProduct.modifierGroups" :key="group.id" class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {{ group.name }}
                   <span v-if="group.required" class="text-red-500">*</span>
-                  <span
-                    v-if="group.type === 'multiple'"
-                    class="text-xs text-gray-500 ml-1"
-                  >
+                  <span v-if="group.type === 'multiple'" class="text-xs text-gray-500 ml-1">
                     (select {{ group.minSelect || 0 }}-{{
                       group.maxSelect || "any"
                     }})
                   </span>
                 </label>
                 <div class="space-y-2">
-                  <button
-                    v-for="mod in group.modifiers"
-                    :key="mod.id"
-                    class="w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all"
-                    :class="
-                      selectedModifiers.some((m) => m.id === mod.id)
-                        ? 'border-amber-500 bg-amber-500/10'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    "
-                    @click="toggleModifier(mod)"
-                  >
+                  <button v-for="mod in group.modifiers" :key="mod.id"
+                    class="w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all" :class="selectedModifiers.some((m) => m.id === mod.id)
+                      ? 'border-amber-500 bg-amber-500/10'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      " @click="toggleModifier(mod)">
                     <div class="flex items-center gap-3">
-                      <div
-                        class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                        :class="
-                          selectedModifiers.some((m) => m.id === mod.id)
-                            ? 'border-amber-500 bg-amber-500'
-                            : 'border-gray-300 dark:border-gray-600'
-                        "
-                      >
-                        <UIcon
-                          v-if="selectedModifiers.some((m) => m.id === mod.id)"
-                          name="i-heroicons-check"
-                          class="w-3 h-3 text-white"
-                        />
+                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center" :class="selectedModifiers.some((m) => m.id === mod.id)
+                        ? 'border-amber-500 bg-amber-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                        ">
+                        <UIcon v-if="selectedModifiers.some((m) => m.id === mod.id)" name="i-heroicons-check"
+                          class="w-3 h-3 text-white" />
                       </div>
                       <span class="text-gray-900 dark:text-white">{{
                         mod.name
-                      }}</span>
+                        }}</span>
                     </div>
-                    <span
-                      v-if="mod.price !== 0"
-                      class="text-sm"
-                      :class="
-                        mod.price > 0 ? 'text-amber-600' : 'text-green-600'
-                      "
-                    >
+                    <span v-if="mod.price !== 0" class="text-sm" :class="mod.price > 0 ? 'text-amber-600' : 'text-green-600'
+                      ">
                       {{ mod.price > 0 ? "+" : ""
                       }}{{
                         currency.format(mod.price, pos.selectedCurrency.value)
@@ -4045,27 +3433,21 @@ onUnmounted(() => {
 
             <!-- Quantity -->
             <div>
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Quantity
               </label>
               <div class="flex items-center gap-3">
                 <button
                   class="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xl font-bold"
-                  @click="productQuantity = Math.max(1, productQuantity - 1)"
-                >
+                  @click="productQuantity = Math.max(1, productQuantity - 1)">
                   −
                 </button>
-                <span
-                  class="w-16 text-center text-2xl font-bold text-gray-900 dark:text-white"
-                >
+                <span class="w-16 text-center text-2xl font-bold text-gray-900 dark:text-white">
                   {{ productQuantity }}
                 </span>
                 <button
                   class="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xl font-bold"
-                  @click="productQuantity++"
-                >
+                  @click="productQuantity++">
                   +
                 </button>
               </div>
@@ -4075,9 +3457,7 @@ onUnmounted(() => {
             <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
               <div class="flex items-center justify-between mb-4">
                 <span class="text-gray-500">Total</span>
-                <span
-                  class="text-2xl font-bold text-amber-600 dark:text-amber-400"
-                >
+                <span class="text-2xl font-bold text-amber-600 dark:text-amber-400">
                   {{
                     currency.format(
                       selectedProductPrice * productQuantity,
@@ -4087,20 +3467,11 @@ onUnmounted(() => {
                 </span>
               </div>
               <div class="flex gap-2">
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  blcok
-                  @click="showProductOptionsModal = false"
-                >
+                <UButton color="neutral" variant="outline" blcok @click="showProductOptionsModal = false">
                   Cancel
                 </UButton>
-                <UButton
-                  color="primary"
-                  class="bg-linear-to-r from-amber-500 to-orange-500"
-                  block
-                  @click="addProductWithOptions"
-                >
+                <UButton color="primary" class="bg-linear-to-r from-amber-500 to-orange-500" block
+                  @click="addProductWithOptions">
                   Add to Cart
                 </UButton>
               </div>
@@ -4111,23 +3482,13 @@ onUnmounted(() => {
     </UModal>
 
     <!-- Item Notes Modal -->
-    <PosItemNotesModal
-      v-model:open="showItemNotesModal"
-      :initial-notes="editingItemNotes"
-      :item-name="editingItemName"
-      @save="saveItemNotes"
-    />
+    <PosItemNotesModal v-model:open="showItemNotesModal" :initial-notes="editingItemNotes" :item-name="editingItemName"
+      @save="saveItemNotes" />
 
     <!-- Table Switcher Modal -->
-    <PosTableSwitcherModal
-      v-model:open="showTableSwitcher"
-      :tables="tables"
-      :current-table-name="pos.tableNumber.value"
-      :tables-store="tablesStore"
-      :current-time="currentTime"
-      @switch="switchTable"
-      @manage="navigateTo('/pos/tables')"
-    />
+    <PosTableSwitcherModal v-model:open="showTableSwitcher" :tables="tables" :current-table-name="pos.tableNumber.value"
+      :tables-store="tablesStore" :current-time="currentTime" @switch="switchTable"
+      @manage="navigateTo('/pos/tables')" />
 
     <!-- Barcode Scanner Modal -->
     <UModal v-model:open="showBarcodeScannerModal">
@@ -4137,31 +3498,18 @@ onUnmounted(() => {
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t("pos.scanner.title") || "Scan Barcode" }}
             </h3>
-            <UButton
-              icon="i-heroicons-x-mark"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              @click="showBarcodeScannerModal = false"
-            />
+            <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm"
+              @click="showBarcodeScannerModal = false" />
           </div>
-          <PosBarcodeScanner
-            :auto-focus="true"
-            :show-history="true"
-            :initial-mode="barcodeScannerMode"
-            @scan="handleBarcodeScan"
-          />
+          <PosBarcodeScanner :auto-focus="true" :show-history="true" :initial-mode="barcodeScannerMode"
+            @scan="handleBarcodeScan" />
         </div>
       </template>
     </UModal>
 
     <!-- Customer Lookup Modal -->
-    <PosCustomerModal
-      v-model:open="showCustomerModal"
-      :customers="customersStore.customers.value"
-      @select="selectCustomer"
-      @create-new="navigateTo('/customers/new')"
-    />
+    <PosCustomerModal v-model:open="showCustomerModal" :customers="customersStore.customers.value"
+      @select="selectCustomer" @create-new="navigateTo('/customers/new')" />
   </div>
 </template>
 
@@ -4194,8 +3542,8 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.slide-up-enter-from > div:last-child,
-.slide-up-leave-to > div:last-child {
+.slide-up-enter-from>div:last-child,
+.slide-up-leave-to>div:last-child {
   transform: translateY(100%);
 }
 
