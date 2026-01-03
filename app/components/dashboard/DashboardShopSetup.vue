@@ -186,6 +186,20 @@ const completeSetup = async () => {
 
     await shop.saveShopConfig(shopConfig);
 
+    // Auto-populate receipt settings from shop info
+    const receiptSettings = useReceiptSettings();
+    receiptSettings.updateHeader({
+      businessName: shopForm.value.name,
+      phone: shopForm.value.phone,
+      address: shopForm.value.address,
+    });
+    // Also set thank you message from settings if provided
+    if (settingsForm.value.receiptFooter) {
+      receiptSettings.updateFooter({
+        thankYouMessage: settingsForm.value.receiptFooter,
+      });
+    }
+
     // Create first branch
     const newBranch = await shop.createFirstBranch({
       name: branchForm.value.name,

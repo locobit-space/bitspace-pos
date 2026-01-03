@@ -52,6 +52,7 @@ const appConfig = useAppConfig();
 const { initSystemNotifications } = useNotifications();
 const usersComposable = useUsers();
 const shop = useShop();
+const setupCheck = useSetupCheck();
 
 // Sidebar state for mobile
 const sidebarOpen = ref(false);
@@ -62,35 +63,14 @@ const pageNavigationControl = inject<Ref<boolean> | undefined>(
   undefined
 );
 
-// Fast setup check using localStorage (synchronous, no delay)
-const hasCompletedSetup = ref(false);
-
-// Initialize setup check immediately from localStorage
-if (import.meta.client) {
-  const companyCode = localStorage.getItem("bitspace_company_code");
-  const shopConfigStr = localStorage.getItem("shopConfig");
-
-  // Shop is setup if we have a company code OR a shop config with name
-  if (companyCode) {
-    hasCompletedSetup.value = true;
-  } else if (shopConfigStr) {
-    try {
-      const shopConfig = JSON.parse(shopConfigStr);
-      hasCompletedSetup.value = !!shopConfig?.name;
-    } catch {
-      hasCompletedSetup.value = false;
-    }
-  }
-}
-
 // Check if navigation should be shown
 const showNavigation = computed(() => {
   // If page provides explicit control, use that (more accurate)
   if (pageNavigationControl !== undefined) {
     return pageNavigationControl.value;
   }
-  // Otherwise use fast localStorage check
-  return hasCompletedSetup.value;
+  // Otherwise use fast localStorage check from composable
+  return setupCheck.isSetupComplete.value;
 });
 
 // Close sidebar on route change

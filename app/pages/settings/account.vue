@@ -109,7 +109,7 @@
                           <code
                             class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded flex-1"
                           >
-                            ••••••••••••••••••••••••••••••••••••••••••••
+                            ••••••••••••••••••••••••••••••••••
                           </code>
                           <UButton
                             icon="i-heroicons-eye"
@@ -118,7 +118,7 @@
                             color="red"
                             @click="showNsecConfirmModal = true"
                           >
-                            {{ $t("account.reveal") || "Reveal" }}
+                            {{ $t("account.reveal", "Reveal") }}
                           </UButton>
                         </div>
                         <div v-else class="space-y-2">
@@ -141,7 +141,7 @@
                               color="red"
                               @click="copyNsec"
                             >
-                              {{ $t("common.copy") || "Copy" }}
+                              {{ $t("common.copy", "Copy") }}
                             </UButton>
                             <UButton
                               icon="i-heroicons-eye-slash"
@@ -149,7 +149,7 @@
                               variant="ghost"
                               @click="hideNsec"
                             >
-                              {{ $t("account.hide") || "Hide" }}
+                              {{ $t("account.hide", "Hide") }}
                             </UButton>
                           </div>
                         </div>
@@ -211,7 +211,7 @@
                   <UFormField
                     name="lud16"
                     :label="
-                      $t('account.lightning_address') || 'Lightning Address'
+                      $t('account.lightning_address', 'Lightning Address')
                     "
                   >
                     <UInput
@@ -224,7 +224,7 @@
 
                   <UFormField
                     name="website"
-                    :label="$t('account.website') || 'Website'"
+                    :label="$t('account.website', 'Website')"
                   >
                     <UInput
                       v-model="profileForm.website"
@@ -236,7 +236,7 @@
 
                   <UFormField
                     name="picture"
-                    :label="$t('account.picture_url') || 'Profile Picture URL'"
+                    :label="$t('account.picture_url', 'Profile Picture URL')"
                   >
                     <UInput
                       v-model="profileForm.picture"
@@ -250,7 +250,7 @@
                 <div class="mt-6">
                   <UFormField
                     name="about"
-                    :label="$t('account.about') || 'About'"
+                    :label="$t('account.about', 'About')"
                   >
                     <UTextarea
                       v-model="profileForm.about"
@@ -265,7 +265,7 @@
                 <div class="mt-6">
                   <UFormField
                     name="banner"
-                    :label="$t('account.banner_url') || 'Banner Image URL'"
+                    :label="$t('account.banner_url', 'Banner Image URL')"
                   >
                     <UInput
                       v-model="profileForm.banner"
@@ -283,7 +283,7 @@
                     @click="loadNostrProfile"
                   >
                     <UIcon name="i-heroicons-arrow-down-tray" class="mr-2" />
-                    {{ $t("account.load_from_nostr") || "Load from Nostr" }}
+                    {{ $t("account.load_from_nostr", "Load from Nostr") }}
                   </UButton>
                   <UButton
                     type="submit"
@@ -291,7 +291,7 @@
                     :loading="isUpdatingProfile"
                   >
                     <UIcon name="i-heroicons-arrow-up-tray" class="mr-2" />
-                    {{ $t("account.publish_to_nostr") || "Publish to Nostr" }}
+                    {{ $t("account.publish_to_nostr", "Publish to Nostr") }}
                   </UButton>
                 </div>
               </UForm>
@@ -798,38 +798,43 @@
               </ul>
             </div>
 
-            <div>
+            <!-- Simple checkbox confirmation -->
+            <div
+              class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+            >
+              <UCheckbox v-model="nsecConfirmChecked" class="mt-0.5" />
               <label
-                class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block"
+                class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                @click="nsecConfirmChecked = !nsecConfirmChecked"
               >
                 {{
-                  $t("account.nsec_confirm_type") ||
-                  "Type 'I UNDERSTAND' to reveal your key:"
+                  $t("account.nsec_confirm_checkbox") ||
+                  "I understand the risks and want to copy my private key"
                 }}
               </label>
-              <UInput
-                v-model="nsecConfirmText"
-                placeholder="I UNDERSTAND"
-                class="font-mono"
-              />
             </div>
           </div>
 
           <template #footer>
-            <div class="flex justify-end gap-3">
+            <div class="flex flex-col sm:flex-row justify-end gap-2">
               <UButton
                 color="gray"
                 variant="ghost"
+                size="lg"
+                class="min-h-[44px]"
                 @click="closeNsecConfirmModal"
               >
                 {{ $t("common.cancel") || "Cancel" }}
               </UButton>
               <UButton
                 color="red"
-                :disabled="nsecConfirmText !== 'I UNDERSTAND'"
-                @click="confirmRevealNsec"
+                size="lg"
+                icon="i-heroicons-clipboard-document"
+                class="min-h-[44px]"
+                :disabled="!nsecConfirmChecked"
+                @click="confirmAndCopyNsec"
               >
-                {{ $t("account.reveal_key") || "Reveal Key" }}
+                {{ $t("account.copy_key") || "Copy Key" }}
               </UButton>
             </div>
           </template>
@@ -883,7 +888,7 @@ const previewAvatar = ref("");
 const isLoadingProfile = ref(false);
 const showNsec = ref(false);
 const showNsecConfirmModal = ref(false);
-const nsecConfirmText = ref("");
+const nsecConfirmChecked = ref(false);
 
 // Current user info from Nostr
 const currentUserInfo = ref<{
@@ -1090,18 +1095,34 @@ const copyNsec = async () => {
 // Nsec confirmation modal functions
 const closeNsecConfirmModal = () => {
   showNsecConfirmModal.value = false;
-  nsecConfirmText.value = "";
+  nsecConfirmChecked.value = false;
 };
 
-const confirmRevealNsec = () => {
-  if (nsecConfirmText.value === "I UNDERSTAND") {
-    showNsec.value = true;
+const confirmAndCopyNsec = async () => {
+  if (!nsecConfirmChecked.value || !userNsec.value) return;
+
+  try {
+    await navigator.clipboard.writeText(userNsec.value);
+    toast.add({
+      title: t("account.nsec_copied") || "Private key copied!",
+      description:
+        t("account.nsec_copied_warning") || "Keep it safe and never share it!",
+      color: "warning",
+    });
     closeNsecConfirmModal();
+    showNsec.value = true;
 
     // Auto-hide after 60 seconds for security
     setTimeout(() => {
       showNsec.value = false;
     }, 60000);
+  } catch (error) {
+    console.error("Failed to copy nsec:", error);
+    toast.add({
+      title: t("common.error") || "Error",
+      description: t("common.copy_failed") || "Failed to copy to clipboard",
+      color: "error",
+    });
   }
 };
 

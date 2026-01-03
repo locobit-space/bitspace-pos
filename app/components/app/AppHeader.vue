@@ -354,10 +354,10 @@ const help = useHelp();
 const feedback = useFeedback();
 const chatStore = useChat();
 const { settings: chatSettings } = useChatSettings();
-const shop = useShop();
+const setupCheck = useSetupCheck();
 
 // Check if header features should be shown (after setup complete)
-const showHeaderFeatures = computed(() => shop.isSetupComplete.value);
+const showHeaderFeatures = computed(() => setupCheck.isSetupComplete.value);
 
 // Help & Support
 const showSupportModal = ref(false);

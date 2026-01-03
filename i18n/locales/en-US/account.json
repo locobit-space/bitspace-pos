@@ -117,6 +117,8 @@
     "nsec_warning_3": "You cannot revoke access once shared",
     "nsec_warning_4": "Never share on screenshots, chats, or emails",
     "nsec_confirm_type": "Type 'I UNDERSTAND' to reveal your key:",
+    "nsec_confirm_checkbox": "I understand the risks and want to copy my private key",
+    "copy_key": "Copy Key",
     "reveal_key": "Reveal Key",
     "viewProfile": "View profile",
     "editProfile": "Edit profile",

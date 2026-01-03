@@ -136,7 +136,8 @@
       "sync_failed": "Failed to sync settings",
       "what_syncs": "What gets synced:",
       "encrypted": "Encrypted",
-      "encrypted_desc": "All settings are encrypted with your company code before syncing. Only devices with the code can decrypt."
+      "encrypted_desc": "All settings are encrypted with your company code before syncing. Only devices with the code can decrypt.",
+      "tap_to_copy": "Tap to copy"
     },
     "security": {
       "title": "Security Settings",
