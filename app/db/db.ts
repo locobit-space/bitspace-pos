@@ -649,6 +649,10 @@ export interface EmployeeRecord {
   personalLeaveBalance: number;
   canAccessPOS: boolean;
   pin?: string;
+  // Staff Product Assignment
+  assignedProductIds?: string; // JSON array of product IDs
+  assignmentMode?: string; // 'all' | 'assigned' | 'category'
+  assignedCategoryIds?: string; // JSON array of category IDs
   commissionEnabled: boolean;
   commissionRate?: number;
   npub?: string;
@@ -770,6 +774,42 @@ export interface ChatConversationRecord {
 }
 
 // ============================================
+// 🎁 PROMOTIONS RECORD
+// ============================================
+
+export interface PromotionRecord {
+  id: string;
+  name: string;
+  description?: string;
+  type: string; // 'bogo' | 'discount' | 'bundle' | 'freebie'
+  status: string; // 'active' | 'inactive' | 'scheduled' | 'expired'
+  triggerProductIds: string; // JSON array
+  triggerQuantity: number;
+  triggerCategoryIds?: string; // JSON array
+  rewardType: string;
+  rewardProductIds: string; // JSON array
+  rewardQuantity: number;
+  rewardDiscount?: number;
+  rewardPercentage?: number;
+  startDate?: string;
+  endDate?: string;
+  daysOfWeek?: string; // JSON array of numbers
+  startTime?: string;
+  endTime?: string;
+  maxUsesPerOrder?: number;
+  maxUsesTotal?: number;
+  usageCount: number;
+  priority: number;
+  badgeText?: string;
+  badgeColor?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// ============================================
 // Database Class
 // ============================================
 
@@ -822,6 +862,9 @@ export class POSDatabase extends Dexie {
   // Chat/Messaging tables
   chatMessages!: Table<ChatMessageRecord, string>;
   chatConversations!: Table<ChatConversationRecord, string>;
+
+  // Promotions table
+  promotions!: Table<PromotionRecord, string>;
 
   constructor() {
     super("POSDatabase");
@@ -1328,6 +1371,64 @@ export class POSDatabase extends Dexie {
         "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, nostrEventId, synced",
       chatConversations:
         "id, type, lastMessageTime, unreadCount, isPinned, isPrivate, updatedAt",
+    });
+
+    // Version 14: Promotions (BOGO, Discounts, Bundles)
+    this.version(14).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      loyaltyMembers: "id, nostrPubkey, tier, points",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      accounts: "id, code, name, type, category, isActive, synced, updatedAt",
+      journalEntries: "id, entryNumber, date, status, synced, createdAt",
+      expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
+      employees:
+        "id, employeeCode, firstName, lastName, status, branchId, department, position, synced, updatedAt",
+      chatMessages:
+        "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, nostrEventId, synced",
+      chatConversations:
+        "id, type, lastMessageTime, unreadCount, isPinned, isPrivate, updatedAt",
+      // NEW: Promotions
+      promotions:
+        "id, name, type, status, startDate, endDate, priority, usageCount, synced, updatedAt",
     });
   }
 }

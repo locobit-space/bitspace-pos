@@ -156,6 +156,22 @@
       "success": "Employee list exported successfully"
     },
 
-    "duplicateSuccess": "Employee duplicated successfully"
+    "duplicateSuccess": "Employee duplicated successfully",
+
+    "productAssignment": "Product Assignment",
+    "productAssignmentDesc": "Control which products this staff can view and sell on POS",
+    "assignProducts": "Assign Products",
+    "assignCategories": "Assign Categories",
+    "selectProducts": "Select Products",
+    "selectCategories": "Select Categories",
+    "selectProductsPlaceholder": "Choose products...",
+    "selectCategoriesPlaceholder": "Choose categories...",
+    "assignmentMode": "Assignment Mode",
+    "allProducts": "All Products",
+    "assignedOnly": "Assigned Products Only",
+    "byCategory": "By Category",
+    "noAssignment": "No restrictions - all products visible",
+    "assigned": "assigned",
+    "assignmentSaved": "Product assignment saved"
   }
 }

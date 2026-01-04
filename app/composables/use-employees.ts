@@ -183,6 +183,13 @@ export function useEmployeesStore() {
       const records = await db.employees.toArray();
       return records.map((r: EmployeeRecord) => ({
         ...r,
+        // Parse JSON arrays for product assignment
+        assignedProductIds: r.assignedProductIds
+          ? JSON.parse(r.assignedProductIds)
+          : undefined,
+        assignedCategoryIds: r.assignedCategoryIds
+          ? JSON.parse(r.assignedCategoryIds)
+          : undefined,
         synced: undefined,
       })) as unknown as Employee[];
     } catch (e) {
@@ -199,6 +206,13 @@ export function useEmployeesStore() {
     }
     const record: EmployeeRecord = {
       ...employee,
+      // Serialize arrays to JSON strings for Dexie storage
+      assignedProductIds: employee.assignedProductIds
+        ? JSON.stringify(employee.assignedProductIds)
+        : undefined,
+      assignedCategoryIds: employee.assignedCategoryIds
+        ? JSON.stringify(employee.assignedCategoryIds)
+        : undefined,
       synced: false,
     };
     await db.employees.put(record);
@@ -380,6 +394,103 @@ export function useEmployeesStore() {
   }
 
   // ============================================
+  // 🏷️ PRODUCT ASSIGNMENT
+  // ============================================
+
+  /**
+   * Assign specific products to an employee
+   */
+  async function assignProducts(
+    employeeId: string,
+    productIds: string[]
+  ): Promise<boolean> {
+    const employee = getEmployee(employeeId);
+    if (!employee) return false;
+
+    await updateEmployee(employeeId, {
+      assignedProductIds: productIds,
+      assignmentMode: productIds.length > 0 ? "assigned" : "all",
+    });
+
+    return true;
+  }
+
+  /**
+   * Assign categories to an employee
+   */
+  async function assignCategories(
+    employeeId: string,
+    categoryIds: string[]
+  ): Promise<boolean> {
+    const employee = getEmployee(employeeId);
+    if (!employee) return false;
+
+    await updateEmployee(employeeId, {
+      assignedCategoryIds: categoryIds,
+      assignmentMode: categoryIds.length > 0 ? "category" : "all",
+    });
+
+    return true;
+  }
+
+  /**
+   * Set the assignment mode for an employee
+   */
+  async function setAssignmentMode(
+    employeeId: string,
+    mode: "all" | "assigned" | "category"
+  ): Promise<boolean> {
+    const employee = getEmployee(employeeId);
+    if (!employee) return false;
+
+    await updateEmployee(employeeId, { assignmentMode: mode });
+    return true;
+  }
+
+  /**
+   * Get assigned product IDs for an employee
+   */
+  function getAssignedProducts(employeeId: string): string[] {
+    const employee = getEmployee(employeeId);
+    return employee?.assignedProductIds || [];
+  }
+
+  /**
+   * Get assigned category IDs for an employee
+   */
+  function getAssignedCategories(employeeId: string): string[] {
+    const employee = getEmployee(employeeId);
+    return employee?.assignedCategoryIds || [];
+  }
+
+  /**
+   * Check if employee has access to a specific product
+   */
+  function canSellProduct(
+    employeeId: string,
+    productId: string,
+    productCategoryId: string
+  ): boolean {
+    const employee = getEmployee(employeeId);
+    if (!employee) return false;
+
+    const mode = employee.assignmentMode || "all";
+
+    switch (mode) {
+      case "all":
+        return true;
+      case "assigned":
+        return employee.assignedProductIds?.includes(productId) ?? false;
+      case "category":
+        return (
+          employee.assignedCategoryIds?.includes(productCategoryId) ?? false
+        );
+      default:
+        return true;
+    }
+  }
+
+  // ============================================
   // 🏖️ LEAVE MANAGEMENT
   // ============================================
 
@@ -523,5 +634,12 @@ export function useEmployeesStore() {
     calculateMonthlyPay,
     generateEmployeeCode,
     exportToExcel,
+    // Product Assignment
+    assignProducts,
+    assignCategories,
+    setAssignmentMode,
+    getAssignedProducts,
+    getAssignedCategories,
+    canSellProduct,
   };
 }

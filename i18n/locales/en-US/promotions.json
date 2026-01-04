@@ -1,0 +1,80 @@
+{
+  "promotions": {
+    "title": "Promotions",
+    "promotion": "Promotion",
+    "addPromotion": "Add Promotion",
+    "editPromotion": "Edit Promotion",
+    "create": "Create Promotion",
+    "searchPlaceholder": "Search promotions...",
+    "noPromotions": "No Promotions Yet",
+    "noPromotionsDescription": "Create your first promotion to boost sales",
+    "createSuccess": "Promotion created successfully",
+    "updateSuccess": "Promotion updated successfully",
+    "deleteSuccess": "Promotion deleted successfully",
+
+    "type": {
+      "label": "Promotion Type",
+      "bogo": "Buy One Get One",
+      "discount": "Fixed Discount",
+      "bundle": "Bundle Deal",
+      "freebie": "Free Gift"
+    },
+
+    "status": {
+      "label": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "scheduled": "Scheduled",
+      "expired": "Expired"
+    },
+
+    "fields": {
+      "name": "Promotion Name",
+      "namePlaceholder": "e.g., Buy 1 Get 1 Free Coffee",
+      "description": "Description",
+      "descriptionPlaceholder": "Promotion details...",
+      "triggerProducts": "Trigger Products",
+      "triggerProductsHint": "Products that activate this promotion",
+      "triggerQuantity": "Trigger Quantity",
+      "triggerQuantityHint": "How many to buy to trigger",
+      "rewardProducts": "Free/Reward Products",
+      "rewardProductsHint": "Products given as reward",
+      "rewardQuantity": "Reward Quantity",
+      "rewardQuantityHint": "How many free items",
+      "priority": "Priority",
+      "priorityHint": "Higher priority promotions apply first",
+      "badgeText": "Badge Text",
+      "badgeTextPlaceholder": "e.g., BUY 1 GET 1 FREE"
+    },
+
+    "schedule": {
+      "title": "Schedule",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "daysOfWeek": "Days of Week",
+      "allDays": "All Days",
+      "specificDays": "Specific Days"
+    },
+
+    "limits": {
+      "title": "Usage Limits",
+      "perOrder": "Max Uses Per Order",
+      "total": "Total Usage Limit",
+      "unlimited": "Unlimited",
+      "usageCount": "Times Used"
+    },
+
+    "bogo": "Buy One Get One",
+    "bogoFree": "Buy 1 Get 1 FREE",
+    "triggerProduct": "When buying",
+    "freeProduct": "Get free",
+    "applied": "Promotion Applied!",
+    "free": "FREE",
+    "savings": "You save",
+
+    "confirm": {
+      "deleteTitle": "Delete Promotion",
+      "deleteMessage": "Are you sure you want to delete this promotion? This action cannot be undone."
+    }
+  }
+}
