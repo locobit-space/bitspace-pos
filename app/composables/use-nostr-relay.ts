@@ -457,8 +457,32 @@ export const useNostrRelay = () => {
   ) {
     try {
       const useRelays = selectedRelays || readRelays.value;
-      return pool.subscribeMany(useRelays, [filter], callbacks);
+      console.log(
+        "[NostrRelay] 🔌 Starting subscription to",
+        useRelays.length,
+        "relays with filter:",
+        JSON.stringify(filter)
+      );
+      const sub = pool.subscribeMany(useRelays, [filter], {
+        onevent: (event) => {
+          console.log(
+            "[NostrRelay] 📨 Event received, kind:",
+            event.kind,
+            "id:",
+            event.id.slice(0, 8) + "..."
+          );
+          callbacks.onevent(event);
+        },
+        oneose: () => {
+          console.log(
+            "[NostrRelay] ✅ Subscription EOSE (end of stored events)"
+          );
+          callbacks.oneose?.();
+        },
+      });
+      return sub;
     } catch (e) {
+      console.error("[NostrRelay] ❌ Subscription failed:", e);
       error.value = e;
       return null;
     }

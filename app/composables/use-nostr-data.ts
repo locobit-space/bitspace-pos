@@ -1702,6 +1702,8 @@ export function useNostrData() {
 
   /**
    * Subscribe to real-time updates
+   * ENHANCED: Now supports team sync via company code hash tag
+   * This allows all staff in the same company to receive each other's updates
    */
   function subscribeToUpdates(callbacks: {
     onProduct?: (product: Product) => void;
@@ -1711,34 +1713,102 @@ export function useNostrData() {
     const keys = getUserKeys();
     if (!keys) return null;
 
-    const filter = {
+    const company = useCompany();
+
+    // Build filter based on company mode
+    // If company code is enabled, filter by company tag to get ALL team updates
+    // Otherwise, filter by author only (personal mode)
+    const filter: Record<string, unknown> = {
       kinds: [NOSTR_KINDS.PRODUCT, NOSTR_KINDS.ORDER, NOSTR_KINDS.CUSTOMER],
-      authors: [keys.pubkey],
       since: Math.floor(Date.now() / 1000),
     };
+
+    if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
+      // TEAM MODE: Subscribe to all events with the company code tag
+      // This enables cross-device sync between all staff members
+      filter["#c"] = [company.companyCodeHash.value];
+      console.log(
+        "[NostrData] Subscribing to team updates with company hash:",
+        company.companyCodeHash.value.slice(0, 8) + "..."
+      );
+    } else {
+      // PERSONAL MODE: Only subscribe to own events
+      filter.authors = [keys.pubkey];
+      console.log("[NostrData] Subscribing to personal updates only");
+    }
 
     return relay.subscribeToEvents(
       filter as Parameters<typeof relay.subscribeToEvents>[0],
       {
         onevent: async (event) => {
-          const isEncrypted =
-            event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
-          const data = isEncrypted
-            ? await decryptData(event.content)
-            : JSON.parse(event.content);
+          // In team mode, we process ALL events including our own
+          // (staff may share same keys, and we want updates from all devices)
+          // In personal mode, skip own events
+          const isTeamMode = company.isCompanyCodeEnabled.value;
+          if (!isTeamMode && event.pubkey === keys.pubkey) {
+            return;
+          }
 
-          if (!data) return;
+          console.log(
+            "[NostrData] 📥 Subscription received event:",
+            event.kind,
+            "from:",
+            event.pubkey.slice(0, 8) + "...",
+            "isOwn:",
+            event.pubkey === keys.pubkey
+          );
 
-          switch (event.kind) {
-            case NOSTR_KINDS.PRODUCT:
-              callbacks.onProduct?.(data as Product);
-              break;
-            case NOSTR_KINDS.ORDER:
-              callbacks.onOrder?.(data as Order);
-              break;
-            case NOSTR_KINDS.CUSTOMER:
-              callbacks.onCustomer?.(data as LoyaltyMember);
-              break;
+          try {
+            const isEncrypted =
+              event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+
+            let data;
+            if (isEncrypted) {
+              // Try company code decryption first for team data
+              if (company.isCompanyCodeEnabled.value) {
+                try {
+                  const payload = JSON.parse(event.content);
+                  if (payload.v === 4) {
+                    // Company-code encrypted
+                    data = await company.decryptWithCode(
+                      payload.ct,
+                      company.companyCode.value || ""
+                    );
+                  } else {
+                    data = await decryptData(event.content);
+                  }
+                } catch {
+                  data = await decryptData(event.content);
+                }
+              } else {
+                data = await decryptData(event.content);
+              }
+            } else {
+              data = JSON.parse(event.content);
+            }
+
+            if (!data) return;
+
+            switch (event.kind) {
+              case NOSTR_KINDS.PRODUCT:
+                callbacks.onProduct?.(data as Product);
+                break;
+              case NOSTR_KINDS.ORDER:
+                console.log(
+                  "[NostrData] 📨 Real-time order update received:",
+                  (data as Order).id?.slice(-8)
+                );
+                callbacks.onOrder?.(data as Order);
+                break;
+              case NOSTR_KINDS.CUSTOMER:
+                callbacks.onCustomer?.(data as LoyaltyMember);
+                break;
+            }
+          } catch (e) {
+            console.warn(
+              "[NostrData] Failed to process subscription event:",
+              e
+            );
           }
         },
       }

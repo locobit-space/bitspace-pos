@@ -716,7 +716,9 @@ onUnmounted(() => {
                     :class="getStatusColor(order.kitchenStatus)"
                   />
                   <span class="font-bold text-lg text-gray-900 dark:text-white">
-                    #{{ order.id.slice(-4).toUpperCase() }}
+                    #{{ order.orderNumber }}-{{
+                      order?.code || order.id.slice(-4).toUpperCase()
+                    }}
                   </span>
                 </div>
               </div>
