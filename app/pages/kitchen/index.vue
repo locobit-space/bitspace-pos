@@ -15,6 +15,8 @@ useHead({
 const { t } = useI18n();
 const ordersStore = useOrders();
 const toast = useToast();
+const nostrData = useNostrData();
+const company = useCompany();
 
 // ============================================
 // State
@@ -159,23 +161,18 @@ const updateKitchenStatus = async (
         : {}),
     });
 
-    // Broadcast to POS when order is ready
-    if (kitchenStatus === "ready") {
-      try {
-        const readyChannel = new BroadcastChannel("bitspace-kitchen-ready");
-        readyChannel.postMessage({
-          type: "order-ready",
-          order: JSON.parse(
-            JSON.stringify({ ...order, kitchenStatus: "ready" })
-          ),
-        });
-        readyChannel.close();
-      } catch (e) {
-        console.warn("BroadcastChannel not available:", e);
-      }
-    }
+    // ============================================
+    // 🔔 MULTI-CHANNEL NOTIFICATION SYSTEM
+    // ============================================
+    // Publish ALL status changes to BroadcastChannel + Nostr
+    // The Nostr subscription (initPosAlerts) creates notifications on ALL devices
+    // This prevents duplicates and ensures all devices get notified
+    // ============================================
 
-    // Play sound
+    // Publish to BroadcastChannel + Nostr for ALL status changes
+    await notifyKitchenStatusChange(order, kitchenStatus);
+
+    // Play sound locally for instant feedback
     if (soundEnabled.value) {
       if (kitchenStatus === "ready") {
         playBellSound();
@@ -185,6 +182,82 @@ const updateKitchenStatus = async (
     }
   } catch (error) {
     console.error("Error updating kitchen status:", error);
+  }
+};
+
+/**
+ * Notify all devices about kitchen status change
+ * Uses 2-tier system: BroadcastChannel + Nostr
+ * Notifications are created by initPosAlerts subscription to avoid duplicates
+ */
+const notifyKitchenStatusChange = async (
+  order: Order,
+  status: "new" | "preparing" | "ready" | "served"
+) => {
+  try {
+    // ─────────────────────────────────────────
+    // 1️⃣ BROADCAST CHANNEL (Same Browser)
+    // ─────────────────────────────────────────
+    try {
+      const readyChannel = new BroadcastChannel("bitspace-kitchen-ready");
+      readyChannel.postMessage({
+        type: "kitchen-status-change",
+        status,
+        order: JSON.parse(JSON.stringify({ ...order, kitchenStatus: status })),
+        timestamp: new Date().toISOString(),
+      });
+      readyChannel.close();
+    } catch (e) {
+      console.warn("[Kitchen] BroadcastChannel not available:", e);
+    }
+
+    // ─────────────────────────────────────────
+    // 2️⃣ NOSTR EVENT (Cross-Device)
+    // ─────────────────────────────────────────
+    // Publish kitchen alert to Nostr with company tag
+    // This ensures ALL staff devices get notified via initPosAlerts
+    try {
+      // Map status to Nostr event type
+      const eventTypeMap = {
+        new: "new-order",
+        preparing: "order-preparing",
+        ready: "order-ready",
+        served: "order-served",
+      };
+
+      const alertData = {
+        type: eventTypeMap[status],
+        orderId: order.id,
+        orderNumber: order.orderNumber || order.id.slice(-6),
+        orderCode: order.orderNumber || order.id.slice(-6),
+        status,
+        customer: order.customer || "Customer",
+        tableName: order.tableName,
+        total: order.total,
+        items: order.items.length,
+        itemCount: order.items.length,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Publish as POS_ALERT event with company tag for cross-device sync
+      await nostrData.publishKitchenAlert(
+        alertData,
+        company.companyCodeHash.value
+      );
+    } catch (e) {
+      console.error("[Kitchen] ❌ Failed to publish Nostr alert:", e);
+    }
+
+    // ─────────────────────────────────────────
+    // 3️⃣ NOTIFICATION CENTER (UI)
+    // ─────────────────────────────────────────
+    // ✅ NO LOCAL NOTIFICATIONS - Let initPosAlerts handle ALL notifications
+    // This prevents duplicates and ensures consistent cross-device notifications
+    console.log(
+      `[Kitchen] 📢 Notification will be created by initPosAlerts subscription for status: ${status}`
+    );
+  } catch (error) {
+    console.error("[Kitchen] Failed to send notifications:", error);
   }
 };
 
@@ -219,7 +292,7 @@ const playClickSound = () => {
   audio.play().catch(() => {});
 };
 
-const _playNewOrderSound = () => {
+const playNewOrderSound = () => {
   if (soundEnabled.value) {
     playBellSound();
   }
@@ -248,11 +321,11 @@ const handleNewOrder = (order: Order) => {
 
     // Show toast notification
     toast.add({
-      title: t("kitchen.newOrder") || "🔔 New Order!",
+      title: t("kitchen.newOrder", "🔔 New Order!"),
       description: `#${order.id.slice(-6).toUpperCase()} - ${
         order.tableNumber
           ? "Table " + order.tableNumber
-          : t("orders.walkInCustomer") || "Walk-in"
+          : t("orders.walkInCustomer", "Walk-in")
       }`,
       color: "blue",
       icon: "i-heroicons-bell-alert",
@@ -418,10 +491,12 @@ onUnmounted(() => {
         <!-- Logo & Title -->
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-lg"
-            >
-              <NuxtLinkLocale to="/">👨‍🍳</NuxtLinkLocale>
+            <div>
+              <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-lg"
+              >
+                <NuxtLinkLocale to="/">👨‍🍳</NuxtLinkLocale>
+              </div>
             </div>
             <div>
               <h1 class="text-lg font-bold text-gray-900 dark:text-white">
@@ -498,22 +573,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Right Side -->
-        <div class="flex items-center gap-4">
-          <!-- Current Time -->
-          <div class="text-right">
-            <div
-              class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums"
-            >
-              {{
-                currentTime.toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })
-              }}
-            </div>
-          </div>
-
+        <div class="flex items-center gap-2">
           <!-- Batch Selection Controls -->
           <div class="flex items-center gap-2">
             <UButton
@@ -526,8 +586,8 @@ onUnmounted(() => {
               {{
                 kitchenOrders.length > 0 &&
                 kitchenOrders.every((o) => selectedOrderIds.has(o.id))
-                  ? t("common.deselectAll", "Deselect All")
-                  : t("common.selectAll", "Select All")
+                  ? t("common.deselectAll") || "Deselect All"
+                  : t("common.selectAll") || "Select All"
               }}
             </UButton>
 
@@ -544,8 +604,8 @@ onUnmounted(() => {
             >
               {{
                 isSelectionMode
-                  ? t("common.cancel", "Cancel")
-                  : t("common.select", "Select")
+                  ? t("common.cancel") || "Cancel"
+                  : t("common.select") || "Select"
               }}
             </UButton>
           </div>
@@ -585,6 +645,9 @@ onUnmounted(() => {
               POS
             </UButton>
           </NuxtLinkLocale>
+
+          <!-- Notification Center -->
+          <NotificationCenter />
         </div>
       </div>
     </header>
@@ -653,7 +716,9 @@ onUnmounted(() => {
                     :class="getStatusColor(order.kitchenStatus)"
                   />
                   <span class="font-bold text-lg text-gray-900 dark:text-white">
-                    #{{ order.id.slice(-4).toUpperCase() }}
+                    #{{ order.orderNumber }}-{{
+                      order?.code || order.id.slice(-4).toUpperCase()
+                    }}
                   </span>
                 </div>
               </div>

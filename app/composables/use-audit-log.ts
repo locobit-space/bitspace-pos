@@ -455,8 +455,8 @@ export function useAuditLog() {
   async function initialize(): Promise<void> {
     if (isInitialized.value) return;
 
-    // Load from storage if available
-    company.loadCompanyCode();
+    // Load from storage if available (with auto-migration)
+    await company.loadCompanyCode();
 
     // Fetch logs
     await getLogs({ limit: 100 });

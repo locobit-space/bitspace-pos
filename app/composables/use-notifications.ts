@@ -13,6 +13,19 @@ const unreadCount = ref(0);
 const isNotificationCenterOpen = ref(false);
 const lastLowStockCheck = ref<number>(0);
 const LOW_STOCK_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes between checks
+let posAlertsInitialized = false; // Singleton guard for POS alerts subscription
+
+// Browser Notification API state
+const browserNotificationPermission = ref<
+  NotificationPermission | "unsupported"
+>("default");
+
+// Initialize browser notification permission check
+if (typeof window !== "undefined" && "Notification" in window) {
+  browserNotificationPermission.value = Notification.permission;
+} else if (typeof window !== "undefined") {
+  browserNotificationPermission.value = "unsupported";
+}
 
 export const useNotifications = () => {
   const sound = useSound();
@@ -25,9 +38,16 @@ export const useNotifications = () => {
 
   /**
    * Add a new notification
+   * @param notification - The notification to add
+   * @param options - Optional settings (skipToast: don't show toast, skipSound: don't play sound, skipBrowserNotification: don't show browser notification)
    */
   function addNotification(
-    notification: Omit<POSNotification, "id" | "read" | "createdAt">
+    notification: Omit<POSNotification, "id" | "read" | "createdAt">,
+    options?: {
+      skipToast?: boolean;
+      skipSound?: boolean;
+      skipBrowserNotification?: boolean;
+    }
   ): POSNotification {
     const newNotification: POSNotification = {
       ...notification,
@@ -45,11 +65,24 @@ export const useNotifications = () => {
       notifications.value = notifications.value.slice(0, 100);
     }
 
-    // Play sound based on type
-    playNotificationSound(notification.type);
+    // Play sound based on type and kitchen status (unless skipped)
+    if (!options?.skipSound) {
+      playNotificationSound(
+        notification.type,
+        notification.kitchenStatus,
+        notification.persistent
+      );
+    }
 
-    // Show toast notification
-    showToast(newNotification);
+    // Show toast notification (unless persistent or skipped)
+    if (!notification.persistent && !options?.skipToast) {
+      showToast(newNotification);
+    }
+
+    // Show browser notification for important alerts (unless skipped)
+    if (!options?.skipBrowserNotification) {
+      showBrowserNotification(newNotification);
+    }
 
     // Save to localStorage
     saveNotifications();
@@ -58,9 +91,38 @@ export const useNotifications = () => {
   }
 
   /**
-   * Play sound based on notification type
+   * Play sound based on notification type and kitchen status
    */
-  function playNotificationSound(type: POSNotification["type"]) {
+  function playNotificationSound(
+    type: POSNotification["type"],
+    kitchenStatus?: string,
+    persistent?: boolean
+  ) {
+    // Persistent/critical alerts use urgent sound
+    if (persistent) {
+      sound.playLowStockAlert();
+      return;
+    }
+
+    // Kitchen-specific sounds
+    if (type === "order" && kitchenStatus) {
+      switch (kitchenStatus) {
+        case "new":
+          sound.playNotification();
+          break;
+        case "ready":
+          sound.playSuccess(); // Different sound for ready orders
+          break;
+        case "served":
+          sound.playNotification();
+          break;
+        default:
+          sound.playNotification();
+      }
+      return;
+    }
+
+    // Default sound mapping
     switch (type) {
       case "payment":
         sound.playSuccess();
@@ -81,6 +143,122 @@ export const useNotifications = () => {
         break;
       default:
         sound.playNotification();
+    }
+  }
+
+  // ============================================
+  // 🌐 BROWSER NOTIFICATION API
+  // ============================================
+
+  /**
+   * Request permission for browser notifications
+   * Shows a prompt to the user if permission hasn't been granted yet
+   */
+  async function requestBrowserNotificationPermission(): Promise<boolean> {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      browserNotificationPermission.value = "unsupported";
+      return false;
+    }
+
+    if (Notification.permission === "granted") {
+      browserNotificationPermission.value = "granted";
+      return true;
+    }
+
+    if (Notification.permission === "denied") {
+      browserNotificationPermission.value = "denied";
+      return false;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      browserNotificationPermission.value = permission;
+      return permission === "granted";
+    } catch (e) {
+      console.error("[Notifications] Failed to request permission:", e);
+      return false;
+    }
+  }
+
+  /**
+   * Show a native browser notification
+   * Shows for ALL notifications when tab is not focused
+   * Shows for important alerts even when tab is focused
+   */
+  function showBrowserNotification(notification: POSNotification): void {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    // Auto-request permission if not yet determined
+    if (Notification.permission === "default") {
+      Notification.requestPermission().then((permission) => {
+        browserNotificationPermission.value = permission;
+        if (permission === "granted") {
+          // Retry showing the notification after permission granted
+          showBrowserNotification(notification);
+        }
+      });
+      return;
+    }
+
+    if (Notification.permission !== "granted") return;
+
+    // Check if tab/window is currently focused
+    const isTabFocused = document.hasFocus();
+
+    // Determine if we should show browser notification:
+    // 1. Always show for important alerts (high/critical priority, persistent, or alert type)
+    // 2. Show for ALL notifications if tab is NOT focused (background)
+    const isImportant =
+      notification.priority === "high" ||
+      notification.priority === "critical" ||
+      notification.persistent ||
+      notification.type === "alert";
+
+    const shouldShowBrowser = isImportant || !isTabFocused;
+
+    if (!shouldShowBrowser) return;
+
+    try {
+      // Map notification type to emoji for title
+      const emojiMap: Record<POSNotification["type"], string> = {
+        payment: "💰",
+        order: "🍽️",
+        stock: "📦",
+        loyalty: "⭐",
+        ai_insight: "✨",
+        alert: "🔔",
+        system: "⚙️",
+        system_update: "🚀",
+      };
+
+      const emoji = emojiMap[notification.type] || "🔔";
+      const title = `${emoji} ${notification.title}`;
+
+      const browserNotif = new Notification(title, {
+        body: notification.message,
+        icon: "/favicon.ico", // Use app favicon
+        badge: "/favicon.ico",
+        tag: notification.id, // Prevents duplicate notifications
+        requireInteraction: notification.persistent || false,
+        silent: true, // We play our own sound
+      });
+
+      // Focus the window when notification is clicked
+      browserNotif.onclick = () => {
+        window.focus();
+        if (notification.actionUrl) {
+          navigateTo(notification.actionUrl);
+        }
+        isNotificationCenterOpen.value = true;
+        browserNotif.close();
+      };
+
+      // Auto-close after 10 seconds for non-persistent notifications
+      if (!notification.persistent) {
+        setTimeout(() => browserNotif.close(), 10000);
+      }
+    } catch (e) {
+      console.error("[Notifications] Failed to show browser notification:", e);
     }
   }
 
@@ -149,7 +327,7 @@ export const useNotifications = () => {
       actions = [
         {
           label: "View More",
-          click: () => {
+          onClick: () => {
             isNotificationCenterOpen.value = true;
           },
         },
@@ -162,7 +340,6 @@ export const useNotifications = () => {
       color,
       icon: iconMap[notification.type] || "i-heroicons-bell",
       actions,
-      timeout: notification.message.length > maxLength ? 6000 : 4000, // Longer for truncated messages
     });
   }
 
@@ -538,11 +715,655 @@ export const useNotifications = () => {
     });
   }
 
+  // ============================================
+  // 👨‍🍳 KITCHEN NOTIFICATIONS
+  // ============================================
+
+  /**
+   * Notify kitchen status change with quick actions
+   */
+  function notifyKitchenStatusChange(
+    orderId: string,
+    orderNumber: string,
+    status: "new" | "preparing" | "ready" | "served",
+    customer: string,
+    tableName?: string,
+    itemCount?: number
+  ) {
+    // Deduplicate: Check if we already have this notification (same order + status)
+    const existingNotif = notifications.value.find(
+      (n) => n.data?.orderId === orderId && n.data?.kitchenStatus === status
+    );
+    if (existingNotif) {
+      return; // Skip duplicate
+    }
+
+    const statusConfig = {
+      new: {
+        emoji: "🆕",
+        title: t("kitchen.newOrder", "New Order"),
+        priority: "high" as NotificationPriority,
+        groupKey: "kitchen-new",
+      },
+      preparing: {
+        emoji: "👨‍🍳",
+        title: t("kitchen.preparing", "Preparing"),
+        priority: "medium" as NotificationPriority,
+        groupKey: "kitchen-preparing",
+      },
+      ready: {
+        emoji: "🔔",
+        title: t("kitchen.orderReady", "Order Ready!"),
+        priority: "high" as NotificationPriority,
+        groupKey: "kitchen-ready",
+      },
+      served: {
+        emoji: "✅",
+        title: t("kitchen.orderServed", "Order Served"),
+        priority: "low" as NotificationPriority,
+        groupKey: "kitchen-served",
+      },
+    };
+
+    const config = statusConfig[status];
+    const tableInfo = tableName ? ` - ${tableName}` : "";
+    const items = itemCount ? ` (${itemCount} items)` : "";
+
+    addNotification({
+      type: "order",
+      title: `${config.emoji} ${config.title}${tableInfo}`,
+      message: `Order #${orderNumber} - ${customer}${items}`,
+      priority: config.priority,
+      actionUrl: `/orders/${orderId}`,
+      kitchenStatus: status,
+      groupKey: config.groupKey,
+      data: {
+        orderId,
+        orderNumber,
+        status,
+        customer,
+        tableName,
+        itemCount,
+        kitchenStatus: status,
+      },
+    });
+  }
+
+  /**
+   * Notify waiter call (persistent, requires acknowledgment)
+   */
+  function notifyWaiterCall(
+    tableNumber: string,
+    tableName?: string,
+    sessionId?: string
+  ) {
+    const displayName = tableName || `Table ${tableNumber}`;
+
+    addNotification({
+      type: "alert",
+      title: `🔔 ${displayName} needs assistance!`,
+      message: t("notifications.waiterCall", "Customer called for waiter"),
+      priority: "critical",
+      persistent: true, // Don't auto-dismiss
+      requiresAcknowledgment: true,
+      actionUrl: "/tables",
+      data: {
+        tableNumber,
+        tableName,
+        sessionId,
+        serviceType: "waiter_call",
+      },
+    });
+  }
+
+  /**
+   * Notify bill request (persistent, high priority)
+   */
+  function notifyBillRequest(
+    tableNumber: string,
+    tableName?: string,
+    sessionId?: string,
+    total?: number,
+    orderCount?: number
+  ) {
+    const displayName = tableName || `Table ${tableNumber}`;
+    const totalInfo = total ? ` - Total: ${total}` : "";
+    const ordersInfo = orderCount ? `${orderCount} orders` : "";
+
+    addNotification({
+      type: "alert",
+      title: `💰 ${displayName} requesting bill!`,
+      message: `${ordersInfo}${totalInfo}`,
+      priority: "high",
+      persistent: true,
+      requiresAcknowledgment: true,
+      actionUrl: "/pos",
+      data: {
+        tableNumber,
+        tableName,
+        sessionId,
+        sessionTotal: total,
+        orderCount,
+        serviceType: "bill_request",
+      },
+    });
+  }
+
   /**
    * Toggle notification center
    */
   function toggleNotificationCenter() {
     isNotificationCenterOpen.value = !isNotificationCenterOpen.value;
+  }
+
+  /**
+   * Initialize system notifications from Nostr (announcements channel)
+   */
+  async function initSystemNotifications() {
+    const { $nostr } = useNuxtApp();
+
+    // Track processed event IDs to prevent duplicates from multiple relays
+    const processedEventIds = new Set<string>();
+
+    // Announcement tags to listen for
+    const ANNOUNCEMENT_TAGS = [
+      "bnos.space-announcement", // General announcements
+      "bnos.space-update", // Version updates
+      "bnos.space-feature", // New features
+      "bnos.space-maintenance", // Scheduled maintenance
+      "bnos.space-security", // Security alerts
+      "bnos.space-bugfix", // Important bug fixes
+      // for dev
+      import.meta.env.DEV && "test-announcement",
+    ];
+
+    // Map announcement tags to notification properties
+    const getAnnouncementConfig = (tags: string[]) => {
+      // Check tag priority (security > maintenance > update > feature > bugfix > general)
+      if (tags.some((t) => t === "bnos.space-security")) {
+        return {
+          type: "alert" as const,
+          priority: "high" as NotificationPriority,
+          icon: "🔒",
+          defaultTitle: "Security Alert",
+        };
+      }
+      if (tags.some((t) => t === "bnos.space-maintenance")) {
+        return {
+          type: "system" as const,
+          priority: "medium" as NotificationPriority,
+          icon: "🔧",
+          defaultTitle: "Maintenance Notice",
+        };
+      }
+      if (tags.some((t) => t === "bnos.space-update")) {
+        return {
+          type: "system_update" as const,
+          priority: "medium" as NotificationPriority,
+          icon: "🚀",
+          defaultTitle: "System Update",
+        };
+      }
+      if (tags.some((t) => t === "bnos.space-feature")) {
+        return {
+          type: "system_update" as const,
+          priority: "low" as NotificationPriority,
+          icon: "✨",
+          defaultTitle: "New Feature",
+        };
+      }
+      if (tags.some((t) => t === "bnos.space-bugfix")) {
+        return {
+          type: "system" as const,
+          priority: "low" as NotificationPriority,
+          icon: "🐛",
+          defaultTitle: "Bug Fix",
+        };
+      }
+      // Default for bnos.space-announcement or unknown
+      return {
+        type: "system_update" as const,
+        priority: "medium" as NotificationPriority,
+        icon: "📢",
+        defaultTitle: "System Announcement",
+      };
+    };
+
+    // Process incoming events with deduplication
+    const processEvent = (event: any) => {
+      if (processedEventIds.has(event.id)) return;
+      processedEventIds.add(event.id);
+      // Skip if already have this notification
+      if (notifications.value.find((n) => n.data?.nostrEventId === event.id))
+        return;
+      const eventTags =
+        event.tags
+          ?.filter((t: string[]) => t[0] === "t")
+          .map((t: string[]) => t[1]) || [];
+      const config = getAnnouncementConfig(eventTags);
+      const contentLines = event.content.split("\n");
+      const title = contentLines[0]?.startsWith("#")
+        ? contentLines[0].replace(/^#+\s*/, "")
+        : `${config.icon} ${config.defaultTitle}`;
+      const message = contentLines[0]?.startsWith("#")
+        ? contentLines.slice(1).join("\n").trim()
+        : event.content;
+
+      addNotification({
+        type: config.type,
+        title,
+        message: message || event.content,
+        priority: config.priority,
+        data: {
+          nostrEventId: event.id,
+          pubkey: event.pubkey,
+          timestamp: event.created_at,
+          tags: eventTags,
+          category:
+            eventTags.find((t: string) => t.startsWith("bnos.space-")) ||
+            "announcement",
+        },
+      });
+    };
+
+    try {
+      const filter = {
+        kinds: [NOSTR_KINDS.TEXT_NOTE],
+        "#t": ANNOUNCEMENT_TAGS,
+        limit: 10,
+      };
+
+      // Get all relay URLs (deduplicated)
+      const allRelays = [
+        ...new Set([...useNostrRelay().DEFAULT_RELAYS.map((r) => r.url)]),
+      ];
+
+      if (allRelays.length === 0) {
+        console.error("[Notifications] No relays configured");
+        return;
+      }
+
+      // Initial fetch of recent announcements
+      const events = await $nostr.pool.querySync(allRelays, filter);
+      // Deduplicate and process events
+      const uniqueEvents = new Map<string, any>();
+      events.forEach(
+        (e) => !uniqueEvents.has(e.id) && uniqueEvents.set(e.id, e)
+      );
+      Array.from(uniqueEvents.values())
+        .sort((a, b) => b.created_at - a.created_at)
+        .forEach(processEvent);
+      // Real-time subscription for new announcements
+      $nostr.pool.subscribeMany(
+        allRelays.slice(0, 2),
+        [
+          {
+            kinds: [NOSTR_KINDS.TEXT_NOTE],
+            "#t": ANNOUNCEMENT_TAGS,
+            since: Math.floor(Date.now() / 1000),
+          },
+        ],
+        {
+          onevent: processEvent,
+        }
+      );
+    } catch (e) {
+      console.error("Failed to initialize system notifications:", e);
+    }
+  }
+
+  /**
+   * Initialize POS alerts from Nostr
+   * Subscribes to waiter calls, bill requests, and kitchen status alerts
+   */
+  async function initPosAlerts() {
+    // Singleton guard - prevent multiple subscriptions
+    if (posAlertsInitialized) return;
+    posAlertsInitialized = true;
+
+    const { $nostr } = useNuxtApp();
+    const company = useCompany();
+
+    const companyCodeHash = company.companyCodeHash.value;
+    const ownerPubkey = company.ownerPubkey.value;
+
+    if (!companyCodeHash && !ownerPubkey) {
+      console.warn(
+        "[POS Alerts] No company code or owner pubkey - alerts disabled"
+      );
+      return;
+    }
+
+    // Track processed event IDs to prevent duplicates
+    const processedEventIds = new Set<string>();
+    const sessionStartTime = Math.floor(Date.now() / 1000);
+
+    // Process incoming POS_ALERT events
+    // isHistorical = true for initial fetch or polling, false for real-time subscription
+    const processAlert = (event: any, isHistorical = false) => {
+      if (processedEventIds.has(event.id)) return;
+      processedEventIds.add(event.id);
+
+      // Only skip toast/sound for historical events (initial fetch or polling)
+      // Real-time subscription events (isHistorical=false) should ALWAYS play sound
+      // This ensures customer alerts like waiter calls trigger sounds immediately
+      const skipNotify = isHistorical;
+
+      try {
+        const data = JSON.parse(event.content);
+
+        const kitchenStatusMap: Record<
+          string,
+          "new" | "preparing" | "ready" | "served"
+        > = {
+          "new-order": "new",
+          "order-preparing": "preparing",
+          "order-ready": "ready",
+          "order-served": "served",
+        };
+
+        if (data.type === "waiter-call") {
+          notifyWaiterCallWithOptions(
+            data.tableNumber,
+            data.tableName,
+            data.sessionId,
+            skipNotify
+          );
+        } else if (data.type === "bill-request") {
+          notifyBillRequestWithOptions(
+            data.tableNumber,
+            data.tableName,
+            data.sessionId,
+            data.total,
+            data.orderCount,
+            skipNotify
+          );
+        } else {
+          const status = kitchenStatusMap[data.type];
+          if (status) {
+            notifyKitchenStatusChangeWithOptions(
+              data.orderId,
+              data.orderCode || data.orderNumber || data.orderId?.slice(-6),
+              status,
+              data.customer || "Customer",
+              data.tableName,
+              data.itemCount || data.items,
+              skipNotify
+            );
+          }
+        }
+      } catch (e) {
+        console.error("[POS Alerts] Failed to process alert:", e);
+      }
+    };
+
+    // Helper functions that accept skipNotify option
+    const notifyKitchenStatusChangeWithOptions = (
+      orderId: string,
+      orderNumber: string,
+      status: "new" | "preparing" | "ready" | "served",
+      customer: string,
+      tableName?: string,
+      itemCount?: number,
+      skipNotify = false
+    ) => {
+      const existingNotif = notifications.value.find(
+        (n) => n.data?.orderId === orderId && n.data?.kitchenStatus === status
+      );
+      if (existingNotif) return;
+
+      const statusConfig = {
+        new: {
+          emoji: "🆕",
+          title: t("kitchen.newOrder", "New Order"),
+          priority: "high" as NotificationPriority,
+          groupKey: "kitchen-new",
+        },
+        preparing: {
+          emoji: "👨‍🍳",
+          title: t("kitchen.preparing", "Preparing"),
+          priority: "medium" as NotificationPriority,
+          groupKey: "kitchen-preparing",
+        },
+        ready: {
+          emoji: "🔔",
+          title: t("kitchen.orderReady", "Order Ready!"),
+          priority: "high" as NotificationPriority,
+          groupKey: "kitchen-ready",
+        },
+        served: {
+          emoji: "✅",
+          title: t("kitchen.orderServed", "Order Served"),
+          priority: "low" as NotificationPriority,
+          groupKey: "kitchen-served",
+        },
+      };
+
+      const config = statusConfig[status];
+      const tableInfo = tableName ? ` - ${tableName}` : "";
+      const items = itemCount ? ` (${itemCount} items)` : "";
+
+      addNotification(
+        {
+          type: "order",
+          title: `${config.emoji} ${config.title}${tableInfo}`,
+          message: `Order #${orderNumber} - ${customer}${items}`,
+          priority: config.priority,
+          actionUrl: `/orders/${orderId}`,
+          kitchenStatus: status,
+          groupKey: config.groupKey,
+          data: {
+            orderId,
+            orderNumber,
+            status,
+            customer,
+            tableName,
+            itemCount,
+            kitchenStatus: status,
+          },
+        },
+        { skipToast: skipNotify, skipSound: skipNotify }
+      );
+    };
+
+    const notifyWaiterCallWithOptions = (
+      tableNumber: string,
+      tableName?: string,
+      sessionId?: string,
+      skipNotify = false
+    ) => {
+      const displayName = tableName || `Table ${tableNumber}`;
+      addNotification(
+        {
+          type: "alert",
+          title: `🔔 ${displayName} needs assistance!`,
+          message: t("notifications.waiterCall", "Customer called for waiter"),
+          priority: "critical",
+          persistent: true,
+          requiresAcknowledgment: true,
+          actionUrl: "/tables",
+          data: {
+            tableNumber,
+            tableName,
+            sessionId,
+            serviceType: "waiter_call",
+          },
+        },
+        { skipToast: skipNotify, skipSound: skipNotify }
+      );
+    };
+
+    const notifyBillRequestWithOptions = (
+      tableNumber: string,
+      tableName?: string,
+      sessionId?: string,
+      total?: number,
+      orderCount?: number,
+      skipNotify = false
+    ) => {
+      const displayName = tableName || `Table ${tableNumber}`;
+      const totalInfo = total ? ` - Total: ${total}` : "";
+      const ordersInfo = orderCount ? `${orderCount} orders` : "";
+      addNotification(
+        {
+          type: "alert",
+          title: `💰 ${displayName} requesting bill!`,
+          message: `${ordersInfo}${totalInfo}`,
+          priority: "high",
+          persistent: true,
+          requiresAcknowledgment: true,
+          actionUrl: "/pos",
+          data: {
+            tableNumber,
+            tableName,
+            sessionId,
+            sessionTotal: total,
+            orderCount,
+            serviceType: "bill_request",
+          },
+        },
+        { skipToast: skipNotify, skipSound: skipNotify }
+      );
+    };
+
+    try {
+      // Use SAME relays as customer (from use-nostr-relay config)
+      // This ensures customer publishes and POS subscribes to identical relay set
+      const relayConfig = useNostrRelay();
+
+      // CRITICAL: Initialize relays first to add them to the pool
+      await relayConfig.init();
+
+      // Use the ACTUAL configured relays (not static defaults)
+      let allRelays = relayConfig.writeRelays.value;
+
+      if (!allRelays || allRelays.length === 0) {
+        allRelays = relayConfig.DEFAULT_RELAYS.map((r) => r.url);
+      }
+
+      const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+
+      // Build filter - fetch ALL POS_ALERT events and filter client-side
+      // Many relays don't support custom tag filtering (#c), so we filter after fetching
+      const baseFilter = {
+        kinds: [NOSTR_KINDS.POS_ALERT],
+        limit: 50,
+      };
+
+      // Client-side filter function
+      const matchesFilter = (event: any): boolean => {
+        const tags = event.tags || [];
+
+        // Check for company code hash match
+        if (companyCodeHash) {
+          const cTag = tags.find(
+            (t: string[]) => t[0] === "c" && t[1] === companyCodeHash
+          );
+          if (cTag) return true;
+        }
+
+        // Check for owner pubkey match
+        if (ownerPubkey) {
+          const pTag = tags.find(
+            (t: string[]) => t[0] === "p" && t[1] === ownerPubkey
+          );
+          if (pTag) return true;
+        }
+
+        return false;
+      };
+
+      // Initial fetch of existing events
+      try {
+        const allEvents = await $nostr.pool.querySync(allRelays, baseFilter);
+
+        const matchingEvents = allEvents.filter(matchesFilter);
+
+        // Deduplicate and process matching events
+        const uniqueEvents = new Map<string, any>();
+        for (const event of matchingEvents) {
+          if (!uniqueEvents.has(event.id)) {
+            uniqueEvents.set(event.id, event);
+          }
+        }
+
+        // Process existing events (newest first) - mark as historical to skip toast/sound
+        Array.from(uniqueEvents.values())
+          .sort((a: any, b: any) => b.created_at - a.created_at)
+          .forEach((e) => processAlert(e, true)); // isHistorical = true
+      } catch (e) {
+        console.error("[POS Alerts] Failed to fetch existing events:", e);
+      }
+
+      // Real-time subscription with multiple filters (OR relationship)
+      // Each filter is checked independently - event matches if ANY filter matches
+      // This ensures we receive alerts from:
+      // 1. Staff (tagged with companyCodeHash)
+      // 2. Customers (tagged with ownerPubkey)
+      const realtimeFilters: Record<string, any>[] = [];
+
+      // Filter for company code hash (staff-to-staff alerts)
+      if (companyCodeHash) {
+        realtimeFilters.push({
+          kinds: [NOSTR_KINDS.POS_ALERT],
+          "#c": [companyCodeHash],
+        });
+      }
+
+      // Filter for owner pubkey (customer-to-staff alerts)
+      // Customers tag alerts with ownerPubkey since they don't have companyCodeHash
+      if (ownerPubkey) {
+        realtimeFilters.push({
+          kinds: [NOSTR_KINDS.POS_ALERT],
+          "#p": [ownerPubkey],
+        });
+        // Also check #c with ownerPubkey (customer uses both tags)
+        realtimeFilters.push({
+          kinds: [NOSTR_KINDS.POS_ALERT],
+          "#c": [ownerPubkey],
+        });
+      }
+
+      console.log(
+        "[POS Alerts] 🔌 Subscribing with",
+        realtimeFilters.length,
+        "filters"
+      );
+
+      // Real-time subscription with multiple filters
+      const sub = $nostr.pool.subscribeMany(allRelays, realtimeFilters, {
+        onevent(event: any) {
+          console.log(
+            "[POS Alerts] 📨 Received event:",
+            event.id.slice(0, 8) + "..."
+          );
+          if (matchesFilter(event)) processAlert(event);
+        },
+      });
+
+      // Polling fallback for relays that don't push via WebSocket
+      const POLL_INTERVAL = 5000;
+      const pollForEvents = async () => {
+        try {
+          const events = await $nostr.pool.querySync(allRelays, baseFilter);
+          // Process as historical since these are fetched, not pushed
+          events.filter(matchesFilter).forEach((e) => processAlert(e, true));
+        } catch {
+          // Silent fail
+        }
+      };
+      const pollInterval = setInterval(pollForEvents, POLL_INTERVAL);
+
+      // Cleanup on page unload
+      if (import.meta.client) {
+        window.addEventListener("beforeunload", () => {
+          sub?.close();
+          clearInterval(pollInterval);
+        });
+      }
+    } catch (e) {
+      console.error("[POS Alerts] ❌ Failed to initialize:", e);
+    }
   }
 
   // ============================================
@@ -575,6 +1396,11 @@ export const useNotifications = () => {
     notifyLoyaltyPoints,
     notifyAIInsight,
 
+    // Kitchen notifications
+    notifyKitchenStatusChange,
+    notifyWaiterCall,
+    notifyBillRequest,
+
     // Low stock monitoring
     checkLowStock,
     getLowStockSummary,
@@ -582,346 +1408,11 @@ export const useNotifications = () => {
     // System Announcements
     initSystemNotifications,
     initPosAlerts,
+
+    // Browser notifications
+    requestBrowserNotificationPermission,
+    browserNotificationPermission: computed(
+      () => browserNotificationPermission.value
+    ),
   };
 };
-
-/**
- * Initialize system notifications from Nostr
- * Subscribes to the official Bitspace announcement channel
- * Includes both initial fetch and real-time subscription
- */
-async function initSystemNotifications() {
-  const { $nostr } = useNuxtApp();
-  const notificationsStore = useNotifications();
-
-  // Track processed event IDs to prevent duplicates from multiple relays
-  const processedEventIds = new Set<string>();
-
-  // Announcement tags to listen for
-  const ANNOUNCEMENT_TAGS = [
-    "bnos.space-announcement", // General announcements
-    "bnos.space-update", // Version updates
-    "bnos.space-feature", // New features
-    "bnos.space-maintenance", // Scheduled maintenance
-    "bnos.space-security", // Security alerts
-    "bnos.space-bugfix", // Important bug fixes
-    // for dev
-    // "test-announcement",
-  ];
-
-  // Map announcement tags to notification properties
-  const getAnnouncementConfig = (tags: string[]) => {
-    // Check tag priority (security > maintenance > update > feature > bugfix > general)
-    if (tags.some((t) => t === "bnos.space-security")) {
-      return {
-        type: "alert" as const,
-        priority: "high" as NotificationPriority,
-        icon: "🔒",
-        defaultTitle: "Security Alert",
-      };
-    }
-    if (tags.some((t) => t === "bnos.space-maintenance")) {
-      return {
-        type: "system" as const,
-        priority: "medium" as NotificationPriority,
-        icon: "🔧",
-        defaultTitle: "Maintenance Notice",
-      };
-    }
-    if (tags.some((t) => t === "bnos.space-update")) {
-      return {
-        type: "system_update" as const,
-        priority: "medium" as NotificationPriority,
-        icon: "🚀",
-        defaultTitle: "System Update",
-      };
-    }
-    if (tags.some((t) => t === "bnos.space-feature")) {
-      return {
-        type: "system_update" as const,
-        priority: "low" as NotificationPriority,
-        icon: "✨",
-        defaultTitle: "New Feature",
-      };
-    }
-    if (tags.some((t) => t === "bnos.space-bugfix")) {
-      return {
-        type: "system" as const,
-        priority: "low" as NotificationPriority,
-        icon: "🐛",
-        defaultTitle: "Bug Fix",
-      };
-    }
-    // Default for bnos.space-announcement or unknown
-    return {
-      type: "system_update" as const,
-      priority: "medium" as NotificationPriority,
-      icon: "📢",
-      defaultTitle: "System Announcement",
-    };
-  };
-
-  // Helper to process incoming events (with deduplication)
-  const processEvent = (event: any) => {
-    // Skip if already processed this event ID (from another relay)
-    if (processedEventIds.has(event.id)) {
-      return;
-    }
-    processedEventIds.add(event.id);
-
-    // Also check if we already have this notification in storage
-    const existing = notificationsStore.notifications.value.find(
-      (n) => n.data?.nostrEventId === event.id
-    );
-
-    if (!existing) {
-      // Extract tags from the event
-      const eventTags =
-        event.tags
-          ?.filter((tag: string[]) => tag[0] === "t")
-          .map((tag: string[]) => tag[1]) || [];
-
-      // Get announcement configuration based on tags
-      const config = getAnnouncementConfig(eventTags);
-
-      // Parse title from content (first line or use default)
-      const contentLines = event.content.split("\n");
-      const title = contentLines[0]?.startsWith("#")
-        ? contentLines[0].replace(/^#+\s*/, "")
-        : `${config.icon} ${config.defaultTitle}`;
-      const message = contentLines[0]?.startsWith("#")
-        ? contentLines.slice(1).join("\n").trim()
-        : event.content;
-
-      // Create notification with dynamic type and priority
-      notificationsStore.addNotification({
-        type: config.type,
-        title,
-        message: message || event.content,
-        priority: config.priority,
-        data: {
-          nostrEventId: event.id,
-          pubkey: event.pubkey,
-          timestamp: event.created_at,
-          tags: eventTags,
-          category:
-            eventTags.find((t: string) => t.startsWith("bnos.space-")) ||
-            "announcement",
-        },
-      });
-    }
-  };
-
-  try {
-    const filter = {
-      kinds: [NOSTR_KINDS.TEXT_NOTE],
-      "#t": ANNOUNCEMENT_TAGS,
-      limit: 10,
-    };
-
-    // Get all relay URLs (deduplicated)
-    const allRelays = [
-      ...new Set([...useNostrRelay().DEFAULT_RELAYS.map((r) => r.url)]),
-    ];
-
-    if (allRelays.length === 0) {
-      console.error("[Notifications] No relays configured");
-      return;
-    }
-
-    // Initial fetch of recent announcements
-    const events = await $nostr.pool.querySync(allRelays, filter);
-
-    // Deduplicate events by ID before processing
-    const uniqueEvents = new Map<string, any>();
-    for (const event of events) {
-      if (!uniqueEvents.has(event.id)) {
-        uniqueEvents.set(event.id, event);
-      }
-    }
-
-    // Sort by timestamp (newest first) and process
-    Array.from(uniqueEvents.values())
-      .sort((a: any, b: any) => b.created_at - a.created_at)
-      .forEach(processEvent);
-
-    // Set up real-time subscription for new announcements
-    const realtimeFilter = {
-      kinds: [NOSTR_KINDS.TEXT_NOTE],
-      "#t": ANNOUNCEMENT_TAGS,
-      since: Math.floor(Date.now() / 1000), // Only new events from now
-    };
-
-    // Subscribe to real-time updates (fewer relays for real-time to reduce duplicates)
-    $nostr.pool.subscribeMany(allRelays.slice(0, 2), [realtimeFilter], {
-      onevent(event: any) {
-        processEvent(event);
-      },
-      oneose() {
-        // End of stored events, subscription continues for real-time
-        console.log("[Notifications] Real-time subscription active");
-      },
-    });
-  } catch (e) {
-    console.error("Failed to initialize system notifications:", e);
-  }
-}
-
-/**
- * Initialize POS alerts from Nostr
- * Listens for real-time alerts from customer orders (waiter calls, bill requests, new orders)
- *
- * IMPORTANT: Subscribes using company owner's pubkey, NOT individual staff pubkey.
- * Customer alerts are always tagged with company owner's pubkey from order.vue.
- *
- * Features:
- * - Uses company.ownerPubkey for subscription (matches customer alert targeting)
- * - Reliable relay selection (uses same relays as customer for consistency)
- * - Parameterized replaceable events (kind 30050) for better relay propagation
- * - Automatic reconnection on failure
- * - Duplicate event prevention
- * - Graceful error handling
- */
-async function initPosAlerts() {
-  const { $nostr } = useNuxtApp();
-  const notificationsStore = useNotifications();
-  const company = useCompany();
-
-  // Get company owner's pubkey (this is who customer alerts are tagged to)
-  const ownerPubkey = company.ownerPubkey.value;
-
-  if (!ownerPubkey) {
-    console.warn(
-      "[POS Alerts] ⚠️ No company owner pubkey found - POS alerts disabled. Set up company profile in settings."
-    );
-    return;
-  }
-
-  // Track processed event IDs to prevent duplicates
-  const processedEventIds = new Set<string>();
-
-  // Helper to process incoming POS_ALERT events
-  const processAlert = (event: any) => {
-    // Skip if already processed
-    if (processedEventIds.has(event.id)) {
-      console.log("[POS Alerts] ⏭️ Skipping duplicate event:", event.id);
-      return;
-    }
-    processedEventIds.add(event.id);
-
-    try {
-      const data = JSON.parse(event.content);
-      console.log("[POS Alerts] 🔔 Processing alert:", data.type, data);
-
-      const tableName = data.tableName || `Table ${data.tableNumber}`;
-
-      // Add notification based on alert type
-      if (data.type === "waiter-call") {
-        notificationsStore.addNotification({
-          type: "alert",
-          title: `🔔 ${tableName} needs assistance!`,
-          message: "Customer called for waiter",
-          priority: "high",
-          actionUrl: "/tables",
-          data: {
-            tableNumber: data.tableNumber,
-            tableName: data.tableName,
-            serviceType: "waiter_call",
-            nostrEventId: event.id,
-          },
-        });
-      } else if (data.type === "bill-request") {
-        notificationsStore.addNotification({
-          type: "alert",
-          title: `💰 ${tableName} requesting bill!`,
-          message: `${data.orderCount || 0} orders - Total: ${data.total || 0}`,
-          priority: "high",
-          actionUrl: "/pos",
-          data: {
-            tableNumber: data.tableNumber,
-            tableName: data.tableName,
-            sessionId: data.sessionId,
-            sessionTotal: data.total,
-            orderCount: data.orderCount,
-            serviceType: "bill_request",
-            nostrEventId: event.id,
-          },
-        });
-      } else if (data.type === "new-order") {
-        notificationsStore.addNotification({
-          type: "order",
-          title: `🆕 New Order from ${tableName}`,
-          message: `Order #${data.orderCode || data.orderId}`,
-          priority: "high",
-          actionUrl: "/orders",
-          data: {
-            tableNumber: data.tableNumber,
-            tableName: data.tableName,
-            orderId: data.orderId,
-            orderCode: data.orderCode,
-            total: data.total,
-            sessionId: data.sessionId,
-            nostrEventId: event.id,
-          },
-        });
-      }
-    } catch (e) {
-      console.error("[POS Alerts] ❌ Failed to process alert:", e);
-    }
-  };
-
-  try {
-    // Use SAME relays as customer (from use-nostr-relay config)
-    // This ensures customer publishes and POS subscribes to identical relay set
-    const relayConfig = useNostrRelay();
-
-    // CRITICAL: Initialize relays first to add them to the pool
-    await relayConfig.init();
-
-    // Use the ACTUAL configured relays (not static defaults)
-    let allRelays = relayConfig.writeRelays.value;
-
-    // Fallback to defaults if no custom relays configured
-    if (!allRelays || allRelays.length === 0) {
-      console.warn(
-        "[POS Alerts] ⚠️ No write relays configured, falling back to defaults"
-      );
-      allRelays = relayConfig.DEFAULT_RELAYS.map((r) => r.url);
-    }
-
-    // Subscribe to POS_ALERT events targeted at company owner
-    // Using kind 1050 (Regular) for reliable delivery and storage
-    const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
-
-    // Filter 1: Watch company channel (preferred)
-    const filterC = {
-      kinds: [NOSTR_KINDS.POS_ALERT],
-      "#c": [ownerPubkey],
-      // No since constraint for now to ensure we see history
-    };
-
-    // Filter 2: Watch direct p-tags (legacy/backup)
-    const filterP = {
-      kinds: [NOSTR_KINDS.POS_ALERT],
-      "#p": [ownerPubkey],
-    };
-    // Subscribe to real-time alerts using OR logic (pass array of filters)
-    const sub = $nostr.pool.subscribeMany(allRelays, [filterC, filterP], {
-      onevent(event: any) {
-        processAlert(event);
-      },
-      oneose() {
-        // Subscription active
-      },
-    });
-
-    // Cleanup on page unload
-    if (import.meta.client) {
-      window.addEventListener("beforeunload", () => {
-        sub?.close();
-      });
-    }
-  } catch (e) {
-    console.error("[POS Alerts] ❌ Failed to initialize:", e);
-  }
-}

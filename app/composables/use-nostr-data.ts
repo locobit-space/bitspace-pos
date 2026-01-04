@@ -3,7 +3,7 @@
 // Syncs POS data to Nostr relays with NIP-04/44 encryption
 // Uses centralized useEncryption module for all crypto operations
 // ============================================
-
+import { nip19 } from "nostr-tools";
 import { finalizeEvent, type UnsignedEvent, type Event } from "nostr-tools";
 import type {
   Product,
@@ -17,7 +17,6 @@ import type {
 } from "~/types";
 
 // Import centralized NOSTR_KINDS
-export { NOSTR_KINDS, type NostrKind } from "~/types/nostr-kinds";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // ============================================
@@ -62,17 +61,45 @@ export function useNostrData() {
   const getUserKeys = (): { pubkey: string; privkey: string | null } | null => {
     if (!import.meta.client) return null;
 
+    // Helper to normalize private key to hex format
+    const normalizePrivkey = (
+      key: string | null | undefined
+    ): string | null => {
+      if (!key) return null;
+
+      // If already hex (64 chars), return as-is
+      if (/^[0-9a-f]{64}$/i.test(key)) {
+        return key.toLowerCase();
+      }
+
+      // If nsec format, decode to hex
+      if (key.startsWith("nsec1")) {
+        try {
+          const { data } = nip19.decode(key);
+          return data as string;
+        } catch (e) {
+          console.error("[NostrData] Failed to decode nsec:", e);
+          return null;
+        }
+      }
+
+      return null;
+    };
+
     // 1. Try nostrUser localStorage (users who logged in with nsec)
     const stored = localStorage.getItem("nostrUser");
     if (stored) {
       try {
         const user = JSON.parse(stored);
         const pubkey = user.pubkey || user.publicKey;
-        const privkey = user.privateKey || user.privkey || user.nsec;
+        const privkeyRaw = user.privateKey || user.privkey || user.nsec;
+        const privkey = normalizePrivkey(privkeyRaw);
+
         if (pubkey) {
-          return { pubkey, privkey: privkey || null };
+          return { pubkey, privkey };
         }
-      } catch {
+      } catch (e) {
+        console.error("[NostrData] Failed to parse nostrUser:", e);
         // Continue to fallback
       }
     }
@@ -331,6 +358,7 @@ export function useNostrData() {
     tags: string[][] = []
   ): Promise<Event | null> {
     const keys = getUserKeys();
+
     if (!keys) {
       error.value = "No Nostr keys available";
       return null;
@@ -347,9 +375,12 @@ export function useNostrData() {
     // If we have privkey, sign directly
     if (keys.privkey) {
       try {
-        return finalizeEvent(unsignedEvent, hexToBytes(keys.privkey));
+        const privkeyBytes = hexToBytes(keys.privkey);
+        const signedEvent = finalizeEvent(unsignedEvent, privkeyBytes);
+        return signedEvent;
       } catch (e) {
         error.value = `Failed to sign event: ${e}`;
+        console.error("[NostrData] Signing failed:", e);
         return null;
       }
     }
@@ -365,13 +396,17 @@ export function useNostrData() {
           return signedEvent as Event;
         } catch (e) {
           error.value = `NIP-07 signing failed: ${e}`;
+          console.error("[NostrData] NIP-07 signing failed:", e);
           return null;
         }
+      } else {
+        console.warn("[NostrData] ⚠️ No NIP-07 extension available");
       }
     }
 
     error.value =
       "No signing method available (no privkey and no NIP-07 extension)";
+    console.error("[NostrData] ❌ No signing method available");
     return null;
   }
 
@@ -478,7 +513,6 @@ export function useNostrData() {
         if (ownerPubkey && ownerPubkey !== keys!.pubkey) {
           if (!authors.includes(ownerPubkey)) {
             authors.push(ownerPubkey);
-            console.log("[NostrData] Staff: Including owner pubkey in query");
           }
         }
         // For OWNER: We can't fetch staff list here (circular dependency)
@@ -709,6 +743,56 @@ export function useNostrData() {
     );
   }
 
+  /**
+   * Publish kitchen alert for cross-device notifications
+   * Uses POS_ALERT kind (1050) for real-time propagation
+   */
+  async function publishKitchenAlert(
+    alertData: {
+      type: string;
+      orderId: string;
+      orderNumber?: string;
+      status: string;
+      customer?: string;
+      total?: number;
+      items?: number;
+      timestamp: string;
+    },
+    companyCodeHash?: string | null
+  ): Promise<Event | null> {
+    try {
+      const tags: string[][] = [
+        ["type", alertData.type],
+        ["order_id", alertData.orderId],
+        ["status", alertData.status],
+      ];
+
+      // Add company tag for team-wide broadcast
+      if (companyCodeHash) {
+        tags.push(["c", companyCodeHash]);
+      }
+
+      // Add optional fields
+      if (alertData.orderNumber) {
+        tags.push(["order_num", String(alertData.orderNumber)]);
+      }
+
+      const event = await createEvent(
+        NOSTR_KINDS.POS_ALERT,
+        JSON.stringify(alertData),
+        tags
+      );
+
+      if (!event) return null;
+
+      const success = await relay.publishEvent(event);
+      return success ? event : null;
+    } catch (err) {
+      console.error("[NostrData] Failed to publish kitchen alert:", err);
+      return null;
+    }
+  }
+
   async function getOrder(id: string): Promise<Order | null> {
     const events = await queryEvents([NOSTR_KINDS.ORDER], {
       dTags: [id],
@@ -852,7 +936,6 @@ export function useNostrData() {
         return null;
       }
 
-      console.log("[NostrData] Anonymous order published:", order.id);
       return signedEvent;
     } catch (e) {
       console.error("[NostrData] Failed to save anonymous order:", e);
@@ -1394,11 +1477,6 @@ export function useNostrData() {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
 
-    console.log(
-      "[NostrData] Fetching staff by company code hash:",
-      codeHash.slice(0, 8)
-    );
-
     // Query events with company code tag from specific owner
     const filter: Record<string, unknown> = {
       kinds: [NOSTR_KINDS.STAFF_MEMBER],
@@ -1508,11 +1586,10 @@ export function useNostrData() {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
 
-    // Query public events with company code tag - NO author filter since we don't know who owns it
     const filter = {
       kinds: [NOSTR_KINDS.COMPANY_INDEX],
       "#c": [codeHash],
-      limit: 1,
+      limit: 10,
     };
 
     try {
@@ -1520,24 +1597,13 @@ export function useNostrData() {
         filter as Parameters<typeof relay.queryEvents>[0]
       );
 
-      if (events.length === 0) {
-        console.log("[NostrData] No company index found for code");
-        return null;
-      }
+      if (events.length === 0) return null;
 
-      const event = events[0]!;
+      const sortedEvents = events.sort((a, b) => b.created_at - a.created_at);
+      const event = sortedEvents[0]!;
       const data = JSON.parse(event.content);
 
-      if (data.ownerPubkey) {
-        console.log(
-          "[NostrData] Found owner pubkey:",
-          data.ownerPubkey.slice(0, 8)
-        );
-        return data.ownerPubkey;
-      }
-
-      // Fallback: use event author as owner
-      return event.pubkey;
+      return data.ownerPubkey || event.pubkey;
     } catch (e) {
       console.error("[NostrData] Failed to discover owner:", e);
       return null;
@@ -1636,6 +1702,8 @@ export function useNostrData() {
 
   /**
    * Subscribe to real-time updates
+   * ENHANCED: Now supports team sync via company code hash tag
+   * This allows all staff in the same company to receive each other's updates
    */
   function subscribeToUpdates(callbacks: {
     onProduct?: (product: Product) => void;
@@ -1645,34 +1713,102 @@ export function useNostrData() {
     const keys = getUserKeys();
     if (!keys) return null;
 
-    const filter = {
+    const company = useCompany();
+
+    // Build filter based on company mode
+    // If company code is enabled, filter by company tag to get ALL team updates
+    // Otherwise, filter by author only (personal mode)
+    const filter: Record<string, unknown> = {
       kinds: [NOSTR_KINDS.PRODUCT, NOSTR_KINDS.ORDER, NOSTR_KINDS.CUSTOMER],
-      authors: [keys.pubkey],
       since: Math.floor(Date.now() / 1000),
     };
+
+    if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
+      // TEAM MODE: Subscribe to all events with the company code tag
+      // This enables cross-device sync between all staff members
+      filter["#c"] = [company.companyCodeHash.value];
+      console.log(
+        "[NostrData] Subscribing to team updates with company hash:",
+        company.companyCodeHash.value.slice(0, 8) + "..."
+      );
+    } else {
+      // PERSONAL MODE: Only subscribe to own events
+      filter.authors = [keys.pubkey];
+      console.log("[NostrData] Subscribing to personal updates only");
+    }
 
     return relay.subscribeToEvents(
       filter as Parameters<typeof relay.subscribeToEvents>[0],
       {
         onevent: async (event) => {
-          const isEncrypted =
-            event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
-          const data = isEncrypted
-            ? await decryptData(event.content)
-            : JSON.parse(event.content);
+          // In team mode, we process ALL events including our own
+          // (staff may share same keys, and we want updates from all devices)
+          // In personal mode, skip own events
+          const isTeamMode = company.isCompanyCodeEnabled.value;
+          if (!isTeamMode && event.pubkey === keys.pubkey) {
+            return;
+          }
 
-          if (!data) return;
+          console.log(
+            "[NostrData] 📥 Subscription received event:",
+            event.kind,
+            "from:",
+            event.pubkey.slice(0, 8) + "...",
+            "isOwn:",
+            event.pubkey === keys.pubkey
+          );
 
-          switch (event.kind) {
-            case NOSTR_KINDS.PRODUCT:
-              callbacks.onProduct?.(data as Product);
-              break;
-            case NOSTR_KINDS.ORDER:
-              callbacks.onOrder?.(data as Order);
-              break;
-            case NOSTR_KINDS.CUSTOMER:
-              callbacks.onCustomer?.(data as LoyaltyMember);
-              break;
+          try {
+            const isEncrypted =
+              event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+
+            let data;
+            if (isEncrypted) {
+              // Try company code decryption first for team data
+              if (company.isCompanyCodeEnabled.value) {
+                try {
+                  const payload = JSON.parse(event.content);
+                  if (payload.v === 4) {
+                    // Company-code encrypted
+                    data = await company.decryptWithCode(
+                      payload.ct,
+                      company.companyCode.value || ""
+                    );
+                  } else {
+                    data = await decryptData(event.content);
+                  }
+                } catch {
+                  data = await decryptData(event.content);
+                }
+              } else {
+                data = await decryptData(event.content);
+              }
+            } else {
+              data = JSON.parse(event.content);
+            }
+
+            if (!data) return;
+
+            switch (event.kind) {
+              case NOSTR_KINDS.PRODUCT:
+                callbacks.onProduct?.(data as Product);
+                break;
+              case NOSTR_KINDS.ORDER:
+                console.log(
+                  "[NostrData] 📨 Real-time order update received:",
+                  (data as Order).id?.slice(-8)
+                );
+                callbacks.onOrder?.(data as Order);
+                break;
+              case NOSTR_KINDS.CUSTOMER:
+                callbacks.onCustomer?.(data as LoyaltyMember);
+                break;
+            }
+          } catch (e) {
+            console.warn(
+              "[NostrData] Failed to process subscription event:",
+              e
+            );
           }
         },
       }
@@ -1764,6 +1900,9 @@ export function useNostrData() {
     recordStockAdjustment,
     getStockHistory,
     saveProductActivityLog,
+
+    // Kitchen Alerts
+    publishKitchenAlert,
 
     // Sync
     fullSync,

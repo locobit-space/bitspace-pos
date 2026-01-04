@@ -10,7 +10,7 @@ import type {
   Order,
   OrderType,
 } from "~/types";
-
+import { POS_CURRENCY_OPTIONS } from "~/composables/use-currency";
 definePageMeta({
   layout: "blank",
   middleware: ["auth"],
@@ -47,7 +47,7 @@ const ordersStore = useOrders();
 const tablesStore = useTables();
 const lightning = useLightning();
 const currency = useCurrency();
-import { POS_CURRENCY_OPTIONS } from "~/composables/use-currency";
+
 const offline = useOffline();
 const sound = useSound();
 const receipt = useReceipt();
@@ -55,7 +55,8 @@ const receiptGenerator = useReceiptGenerator();
 const customersStore = useCustomers();
 const tableSession = useTableSession();
 const { t } = useI18n();
-
+const orderSyncNotifications = useOrderSyncNotifications();
+const toast = useToast();
 // ============================================
 // UI State
 // ============================================
@@ -70,9 +71,14 @@ const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
 const showTableSwitcher = ref(false); // Table switcher modal
 const showPendingOrdersModal = ref(false); // Pending orders for payment
+const autoServeOnPayment = ref(
+  localStorage.getItem("pos_auto_serve_on_payment") !== "false"
+); // Auto-mark orders as served when paid (default: true)
 const showSplitBillModal = ref(false); // Split bill modal
 const showCustomerModal = ref(false); // Customer lookup modal
 const showBarcodeScannerModal = ref(false); // Barcode scanner modal
+const showVoidOrderModal = ref(false); // Void/cancel order modal
+const orderToVoid = ref<{ id: string; orderNumber?: string } | null>(null); // Order being cancelled
 const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mode
 const splitOrder = ref<Order | null>(null); // Order being split
 const splitCount = ref(2); // Number of people splitting
@@ -159,7 +165,6 @@ const selectCustomer = (
     phone: customer.phone,
   });
 
-  const toast = useToast();
   toast.add({
     title: "Customer Selected",
     description: customer.name || "Customer",
@@ -211,6 +216,7 @@ const isOrderSelectedForMerge = (orderId: string) => {
 };
 
 const mergeSelectedOrders = async () => {
+  const toast = useToast();
   if (ordersToMerge.value.length < 2) {
     toast.add({
       title: "Select at least 2 orders",
@@ -883,6 +889,19 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       await offline.storeOfflinePayment(order, paymentProof);
     }
 
+    // Auto-serve kitchen status if enabled (mark as served when paid)
+    if (
+      autoServeOnPayment.value &&
+      order.kitchenStatus &&
+      order.kitchenStatus !== "served"
+    ) {
+      await ordersStore.updateOrderStatus(order.id, order.status, {
+        kitchenStatus: "served",
+        servedAt: new Date().toISOString(),
+      });
+      order.kitchenStatus = "served";
+    }
+
     // Store completed order for receipt modal
     completedOrder.value = order;
     completedPaymentMethod.value = method;
@@ -1329,6 +1348,85 @@ const closeSplitBill = () => {
   splitPaidCount.value = 0;
 };
 
+/**
+ * Open void order modal for current cart
+ */
+const openVoidOrderModal = () => {
+  // Can only void if there's a pending order loaded
+  const pendingOrder = ordersStore.orders.value.find(
+    (o) =>
+      o.status === "pending" &&
+      o.items.some((item) =>
+        pos.cartItems.value.some(
+          (cartItem) => cartItem.productId === item.productId
+        )
+      )
+  );
+
+  if (!pendingOrder) {
+    toast.add({
+      title: t("common.error"),
+      description: t("pos.no_pending_order_to_void"),
+      color: "red",
+    });
+    return;
+  }
+
+  orderToVoid.value = {
+    id: pendingOrder.id,
+    orderNumber: pendingOrder.orderNumber,
+  };
+  showVoidOrderModal.value = true;
+};
+
+/**
+ * Open void order modal for a specific order (from pending orders list)
+ */
+const openVoidModalForOrder = (order: Order) => {
+  orderToVoid.value = {
+    id: order.id,
+    orderNumber: order.orderNumber,
+  };
+  showPendingOrdersModal.value = false;
+  showVoidOrderModal.value = true;
+};
+
+/**
+ * Handle void/cancel order confirmation
+ */
+const handleVoidOrder = async (orderId: string, reason: string) => {
+  try {
+    isProcessing.value = true;
+
+    const result = await ordersStore.voidOrder(orderId, reason);
+
+    if (result) {
+      toast.add({
+        title: t("pos.order_voided"),
+        description: t("pos.order_voided_success", {
+          orderNumber: result.orderNumber || orderId.slice(-8),
+        }),
+        color: "green",
+      });
+
+      // Clear cart
+      pos.clearCart();
+
+      // Play sound
+      sound.playSuccess();
+    }
+  } catch (error) {
+    console.error("[POS] Failed to void order:", error);
+    toast.add({
+      title: t("common.error"),
+      description: t("common.something_went_wrong"),
+      color: "red",
+    });
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 // ============================================
 // Tax Calculation
 // ============================================
@@ -1555,6 +1653,9 @@ onMounted(async () => {
   await offline.init();
   await productsStore.init();
   await ordersStore.init();
+
+  // Initialize order sync notifications for multi-device updates
+  orderSyncNotifications.initOrderSyncNotifications();
 
   if (!pos.isSessionActive.value) {
     pos.startSession("main", "staff-1", 0);
@@ -2036,30 +2137,6 @@ onUnmounted(() => {
               </NuxtLinkLocale>
             </UTooltip>
 
-            <!-- Kitchen Display Link (with pending orders badge) -->
-            <UTooltip
-              :text="
-                pendingKitchenOrders > 0
-                  ? `Kitchen (${pendingKitchenOrders} new)`
-                  : 'Kitchen Display'
-              "
-            >
-              <NuxtLinkLocale to="/kitchen" class="relative">
-                <UButton
-                  icon="i-heroicons-fire"
-                  :color="pendingKitchenOrders > 0 ? 'amber' : 'neutral'"
-                  variant="ghost"
-                  size="sm"
-                />
-                <span
-                  v-if="pendingKitchenOrders > 0"
-                  class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse"
-                >
-                  {{ pendingKitchenOrders > 9 ? "9+" : pendingKitchenOrders }}
-                </span>
-              </NuxtLinkLocale>
-            </UTooltip>
-
             <!-- Settings Button -->
             <UTooltip text="Quick Settings">
               <UButton
@@ -2082,6 +2159,9 @@ onUnmounted(() => {
                 />
               </NuxtLinkLocale>
             </UTooltip>
+
+            <!-- Notification Center -->
+            <NotificationCenter />
           </div>
         </div>
 
@@ -2103,7 +2183,7 @@ onUnmounted(() => {
                   "
                 >
                   <UButton
-                    size="2xs"
+                    size="xs"
                     color="amber"
                     variant="soft"
                     icon="i-heroicons-qr-code"
@@ -2164,6 +2244,30 @@ onUnmounted(() => {
                 {{ t("pos.pendingBills") || "Bills" }}</span
               >
             </UButton>
+
+            <!-- Kitchen Display Link (with pending orders badge) -->
+            <UTooltip
+              :text="
+                pendingKitchenOrders > 0
+                  ? `Kitchen (${pendingKitchenOrders} new)`
+                  : 'Kitchen Display'
+              "
+            >
+              <NuxtLinkLocale to="/kitchen" class="relative">
+                <UButton
+                  icon="i-heroicons-fire"
+                  :color="pendingKitchenOrders > 0 ? 'amber' : 'neutral'"
+                  variant="ghost"
+                  size="sm"
+                />
+                <span
+                  v-if="pendingKitchenOrders > 0"
+                  class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse"
+                >
+                  {{ pendingKitchenOrders > 9 ? "9+" : pendingKitchenOrders }}
+                </span>
+              </NuxtLinkLocale>
+            </UTooltip>
 
             <!-- Customer Monitor -->
             <UTooltip text="Customer Monitor">
@@ -2332,14 +2436,24 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <UButton
-            v-if="pos.cartItems.value.length > 0"
-            icon="i-heroicons-trash"
-            color="red"
-            variant="ghost"
-            size="xs"
-            @click="pos.clearCart"
-          />
+          <div v-if="pos.cartItems.value.length > 0" class="flex gap-1">
+            <UButton
+              icon="i-heroicons-x-circle"
+              color="red"
+              variant="ghost"
+              size="xs"
+              :title="t('pos.void_order')"
+              @click="openVoidOrderModal"
+            />
+            <UButton
+              icon="i-heroicons-trash"
+              color="gray"
+              variant="ghost"
+              size="xs"
+              :title="t('common.clear')"
+              @click="pos.clearCart"
+            />
+          </div>
         </div>
 
         <!-- Order Type Selector -->
@@ -2975,6 +3089,51 @@ onUnmounted(() => {
                 <span>{{ type.label }}</span>
               </button>
             </div>
+
+            <!-- Table Selector (Mobile - for dine-in) -->
+            <div v-if="pos.orderType.value === 'dine_in'" class="mt-3">
+              <div v-if="tables.length > 0" class="flex gap-2">
+                <button
+                  class="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all touch-manipulation"
+                  :class="
+                    currentTable
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                  "
+                  @click="showTableSwitcher = true"
+                >
+                  <UIcon name="i-heroicons-table-cells" class="w-5 h-5" />
+                  <span v-if="currentTable" class="font-medium">{{
+                    currentTable.name
+                  }}</span>
+                  <span v-else>{{
+                    $t("pos.selectTable", "Select Table")
+                  }}</span>
+                  <UIcon
+                    name="i-heroicons-chevron-right"
+                    class="w-4 h-4 ml-auto opacity-50"
+                  />
+                </button>
+                <button
+                  v-if="pos.tableNumber.value"
+                  title="Clear table"
+                  class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors touch-manipulation"
+                  @click="clearTableSelection"
+                >
+                  <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
+                </button>
+              </div>
+              <UInput
+                v-else
+                v-model="pos.tableNumber.value"
+                :placeholder="
+                  $t('pos.tableNumberOptional', 'Table # (optional)')
+                "
+                size="sm"
+                icon="i-heroicons-table-cells"
+                class="w-full"
+              />
+            </div>
           </div>
 
           <!-- Cart Items (Scrollable) -->
@@ -3304,6 +3463,14 @@ onUnmounted(() => {
       @add="addCustomItem"
     />
 
+    <!-- Void Order Modal -->
+    <PosVoidOrderModal
+      v-model:open="showVoidOrderModal"
+      :order-id="orderToVoid?.id"
+      :order-number="orderToVoid?.orderNumber"
+      @confirm="handleVoidOrder"
+    />
+
     <!-- Held Orders Modal -->
     <PosHeldOrdersModal
       v-model:open="showHeldOrdersModal"
@@ -3375,7 +3542,7 @@ onUnmounted(() => {
             class="text-center py-8 text-gray-400 dark:text-gray-500"
           >
             <span class="text-4xl block mb-2">✅</span>
-            {{ t("pos.noPendingBills") || "No pending bills" }}
+            {{ t("pos.noPendingBills", "No pending bills") }}
           </div>
 
           <div v-else class="space-y-3 max-h-96 overflow-auto">
@@ -3397,10 +3564,10 @@ onUnmounted(() => {
                   <UCheckbox
                     v-if="isMergeMode"
                     :model-value="isOrderSelectedForMerge(order.id)"
-                    @click.stop
-                    @update:model-value="toggleOrderForMerge(order)"
                     color="violet"
                     class="mr-1"
+                    @click.stop
+                    @update:model-value="toggleOrderForMerge(order)"
                   />
                   <span
                     v-if="order.orderNumber"
@@ -3459,7 +3626,7 @@ onUnmounted(() => {
                 </div>
                 <p v-if="order.items.length > 3" class="text-xs italic">
                   +{{ order.items.length - 3 }}
-                  {{ t("common.more") || "more" }}...
+                  {{ t("common.more", "more") }}...
                 </p>
               </div>
 
@@ -3468,29 +3635,38 @@ onUnmounted(() => {
                   size="sm"
                   color="emerald"
                   variant="soft"
-                  @click="loadOrderForEditing(order)"
+                  @click.stop="loadOrderForEditing(order)"
                 >
                   <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
-                  {{ t("common.edit") || "Edit" }}
+                  {{ t("common.edit", "Edit") }}
                 </UButton>
                 <UButton
                   block
                   size="sm"
                   color="primary"
-                  @click="selectPendingOrderForPayment(order)"
+                  @click.stop="selectPendingOrderForPayment(order)"
                 >
                   <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
-                  {{ t("pos.collectPayment") || "Pay" }}
+                  {{ t("pos.collectPayment", "Pay") }}
                 </UButton>
                 <UButton
                   size="sm"
                   color="amber"
                   variant="soft"
                   class="text-nowrap"
-                  @click="openSplitBill(order)"
+                  @click.stop="openSplitBill(order)"
                 >
                   <UIcon name="i-heroicons-scissors" class="w-4 h-4" />
-                  {{ t("pos.splitBill") || "Split" }}
+                  {{ t("pos.splitBill", "Split") }}
+                </UButton>
+                <UButton
+                  size="sm"
+                  color="red"
+                  variant="ghost"
+                  :title="t('pos.void_order')"
+                  @click.stop="openVoidModalForOrder(order)"
+                >
+                  <UIcon name="i-heroicons-x-circle" class="w-4 h-4" />
                 </UButton>
               </div>
             </div>
@@ -3794,6 +3970,38 @@ onUnmounted(() => {
                   </div>
                 </div>
               </Transition>
+            </div>
+
+            <!-- Kitchen Auto-Serve Setting -->
+            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">👨‍🍳</span>
+                  <div>
+                    <span class="font-medium text-gray-900 dark:text-white">
+                      {{ $t("pos.autoServeOnPayment", "Auto-CloseKitchen") }}
+                    </span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {{
+                        $t(
+                          "pos.autoServeOnPaymentDesc",
+                          'Mark orders as "served" when payment is completed'
+                        )
+                      }}
+                    </p>
+                  </div>
+                </div>
+                <USwitch
+                  v-model="autoServeOnPayment"
+                  @update:model-value="
+                    (val) =>
+                      localStorage.setItem(
+                        'pos_auto_serve_on_payment',
+                        String(val)
+                      )
+                  "
+                />
+              </div>
             </div>
 
             <!-- Session Info -->

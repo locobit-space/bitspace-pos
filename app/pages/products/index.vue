@@ -13,6 +13,14 @@
       </div>
       <div class="flex items-center gap-2">
         <div class="flex gap-2">
+          <UButton
+            variant="soft"
+            color="violet"
+            :label="$t('common.syncNow', 'Sync')"
+            icon="i-heroicons-arrow-path"
+            :loading="isSyncing"
+            @click="handleSyncFromNostr"
+          />
           <UDropdownMenu :items="[
             [
               {
@@ -1088,6 +1096,9 @@ const endIndex = computed(() =>
   Math.min(startIndex.value + itemsPerPage.value, filteredProducts.value.length)
 );
 
+// Sync state
+const isSyncing = ref(false);
+
 // Methods
 const resetFilters = () => {
   selectedBranch.value = "all";
@@ -1095,6 +1106,27 @@ const resetFilters = () => {
   selectedStatus.value = "all";
   searchQuery.value = "";
   currentPage.value = 1;
+};
+
+// Handle sync from Nostr
+const handleSyncFromNostr = async () => {
+  isSyncing.value = true;
+  try {
+    await productsStore.loadFromNostr();
+    toast.add({
+      title: t("common.success"),
+      description: t("common.synced"),
+      color: "green",
+    });
+  } catch (error) {
+    toast.add({
+      title: t("common.error"),
+      description: t("common.something_went_wrong"),
+      color: "red",
+    });
+  } finally {
+    isSyncing.value = false;
+  }
 };
 
 // Handle product type change - auto-set trackStock based on type (kept for form)

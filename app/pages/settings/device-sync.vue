@@ -334,7 +334,40 @@ async function handleConnectCompany() {
   isConnecting.value = true;
 
   try {
-    // First, try to discover the owner's pubkey by company code
+    // ═══════════════════════════════════════════════════════════
+    // 🔑 ENSURE STAFF HAS NOSTR KEYS FOR PUBLISHING ALERTS
+    // ═══════════════════════════════════════════════════════════
+    const nostrUser = useNostrUser();
+    const nostrKey = useNostrKey();
+    const { $nostr } = useNuxtApp();
+
+    // If no keys exist, generate them automatically
+    if (!nostrKey.hasKey()) {
+      console.log(
+        "[DeviceSync] 🔑 No Nostr keys found - generating keys for staff..."
+      );
+      const newUser = $nostr.generateKeys();
+      await nostrUser.setupUser(newUser.privateKey);
+      console.log(
+        "[DeviceSync] ✅ Keys generated! Pubkey:",
+        newUser.publicKey.slice(0, 8) + "..."
+      );
+
+      toast.add({
+        title: "Keys Generated",
+        description:
+          "Nostr keys created for this device. You can now publish kitchen alerts!",
+        color: "green",
+        icon: "i-heroicons-key",
+        timeout: 3000,
+      });
+    } else {
+      console.log("[DeviceSync] ✓ User already has Nostr keys");
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 🔍 DISCOVER OWNER PUBKEY BY COMPANY CODE
+    // ═══════════════════════════════════════════════════════════
     const nostrData = useNostrData();
     let ownerPubkey: string | null = null;
     try {
@@ -347,12 +380,24 @@ async function handleConnectCompany() {
     await company.setCompanyCode(companyCodeInput.value, ownerPubkey || undefined);
     company.toggleCompanyCode(true);
 
-    toast.add({
-      title: t("auth.company.connectSuccess") || "Connected!",
-      description: t("auth.company.syncingData") || "Syncing company data...",
-      icon: "i-heroicons-check-circle",
-      color: "success",
-    });
+    // Show appropriate toast based on whether owner was found
+    if (ownerPubkey) {
+      toast.add({
+        title: t("auth.company.connectSuccess") || "Connected!",
+        description: t("auth.company.syncingData") || "Syncing company data...",
+        icon: "i-heroicons-check-circle",
+        color: "success",
+      });
+    } else {
+      toast.add({
+        title: "Connected with Limited Features",
+        description:
+          "Could not discover owner. You can still use company code features, but some cross-device notifications may not work. Ask owner to sign in at least once.",
+        icon: "i-heroicons-exclamation-triangle",
+        color: "amber",
+        timeout: 8000,
+      });
+    }
 
     companyCodeInput.value = "";
 

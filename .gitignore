@@ -28,3 +28,6 @@ dist.zip
 .output.zip
 nuxt.zip
 output.zip
+# Docker volumes
+nostr_data/
+pg_data/
