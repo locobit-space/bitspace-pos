@@ -787,12 +787,13 @@ async function initPosAlerts() {
   const notificationsStore = useNotifications();
   const company = useCompany();
 
-  // Get company owner's pubkey (this is who customer alerts are tagged to)
+  // Get company code hash for filtering kitchen alerts
+  const companyCodeHash = company.companyCodeHash.value;
   const ownerPubkey = company.ownerPubkey.value;
 
-  if (!ownerPubkey) {
+  if (!companyCodeHash && !ownerPubkey) {
     console.warn(
-      "[POS Alerts] ⚠️ No company owner pubkey found - POS alerts disabled. Set up company profile in settings."
+      "[POS Alerts] ⚠️ No company code or owner pubkey found - POS alerts disabled. Set up company profile in settings."
     );
     return;
   }
@@ -864,6 +865,46 @@ async function initPosAlerts() {
             nostrEventId: event.id,
           },
         });
+      } else if (data.type === "order-ready") {
+        // Kitchen alert: Order is ready for pickup/serving
+        notificationsStore.addNotification({
+          type: "order",
+          title: `✅ Order Ready!`,
+          message: `Order #${data.orderNumber || data.orderId.slice(-6)} - ${
+            data.customer || "Customer"
+          } (${data.items || 0} items)`,
+          priority: "high",
+          actionUrl: "/orders",
+          data: {
+            orderId: data.orderId,
+            orderNumber: data.orderNumber,
+            customer: data.customer,
+            total: data.total,
+            items: data.items,
+            status: data.status,
+            nostrEventId: event.id,
+          },
+        });
+      } else if (data.type === "order-served") {
+        // Kitchen alert: Order has been served/completed
+        notificationsStore.addNotification({
+          type: "order",
+          title: `🎉 Order Served`,
+          message: `Order #${data.orderNumber || data.orderId.slice(-6)} - ${
+            data.customer || "Customer"
+          } completed`,
+          priority: "medium",
+          actionUrl: "/orders",
+          data: {
+            orderId: data.orderId,
+            orderNumber: data.orderNumber,
+            customer: data.customer,
+            total: data.total,
+            items: data.items,
+            status: data.status,
+            nostrEventId: event.id,
+          },
+        });
       }
     } catch (e) {
       console.error("[POS Alerts] ❌ Failed to process alert:", e);
@@ -893,25 +934,42 @@ async function initPosAlerts() {
     // Using kind 1050 (Regular) for reliable delivery and storage
     const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
 
-    // Filter 1: Watch company channel (preferred)
-    const filterC = {
-      kinds: [NOSTR_KINDS.POS_ALERT],
-      "#c": [ownerPubkey],
-      // No since constraint for now to ensure we see history
-    };
+    // Build filters array dynamically based on what we have
+    const filters: any[] = [];
 
-    // Filter 2: Watch direct p-tags (legacy/backup)
-    const filterP = {
-      kinds: [NOSTR_KINDS.POS_ALERT],
-      "#p": [ownerPubkey],
-    };
+    // Filter 1: Watch company code hash channel (for kitchen alerts)
+    if (companyCodeHash) {
+      filters.push({
+        kinds: [NOSTR_KINDS.POS_ALERT],
+        "#c": [companyCodeHash],
+      });
+    }
+
+    // Filter 2: Watch direct p-tags (for customer alerts tagged with owner pubkey)
+    if (ownerPubkey) {
+      filters.push({
+        kinds: [NOSTR_KINDS.POS_ALERT],
+        "#p": [ownerPubkey],
+      });
+    }
+
+    console.log(
+      `[POS Alerts] 🔔 Subscribing to alerts with ${filters.length} filter(s)`,
+      {
+        companyCodeHash: companyCodeHash?.slice(0, 8),
+        ownerPubkey: ownerPubkey?.slice(0, 8),
+        relays: allRelays,
+      }
+    );
+
     // Subscribe to real-time alerts using OR logic (pass array of filters)
-    const sub = $nostr.pool.subscribeMany(allRelays, [filterC, filterP], {
+    const sub = $nostr.pool.subscribeMany(allRelays, filters, {
       onevent(event: any) {
+        console.log("[POS Alerts] 📥 Event received from relay:", event.id?.slice(0, 8), event);
         processAlert(event);
       },
       oneose() {
-        // Subscription active
+        console.log("[POS Alerts] ✅ Subscription active (EOSE received)");
       },
     });
 

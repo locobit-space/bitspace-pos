@@ -15,6 +15,9 @@ useHead({
 const { t } = useI18n();
 const ordersStore = useOrders();
 const toast = useToast();
+const notificationsStore = useNotifications();
+const nostrData = useNostrData();
+const company = useCompany();
 
 // ============================================
 // State
@@ -159,20 +162,17 @@ const updateKitchenStatus = async (
         : {}),
     });
 
-    // Broadcast to POS when order is ready
-    if (kitchenStatus === "ready") {
-      try {
-        const readyChannel = new BroadcastChannel("bitspace-kitchen-ready");
-        readyChannel.postMessage({
-          type: "order-ready",
-          order: JSON.parse(
-            JSON.stringify({ ...order, kitchenStatus: "ready" })
-          ),
-        });
-        readyChannel.close();
-      } catch (e) {
-        console.warn("BroadcastChannel not available:", e);
-      }
+    // ============================================
+    // 🔔 MULTI-CHANNEL NOTIFICATION SYSTEM
+    // ============================================
+    // 1. BroadcastChannel (same browser, instant)
+    // 2. Nostr events (cross-device, persistent)
+    // 3. Notification center (UI notifications)
+    // ============================================
+
+    // Notify on status changes (ready/served are most important)
+    if (kitchenStatus === "ready" || kitchenStatus === "served") {
+      await notifyKitchenStatusChange(order, kitchenStatus);
     }
 
     // Play sound
@@ -185,6 +185,106 @@ const updateKitchenStatus = async (
     }
   } catch (error) {
     console.error("Error updating kitchen status:", error);
+  }
+};
+
+/**
+ * Notify all devices about kitchen status change
+ * Uses 3-tier system: BroadcastChannel + Nostr + Notification Center
+ */
+const notifyKitchenStatusChange = async (
+  order: Order,
+  status: "ready" | "served"
+) => {
+  try {
+    // ─────────────────────────────────────────
+    // 1️⃣ BROADCAST CHANNEL (Same Browser)
+    // ─────────────────────────────────────────
+    try {
+      const readyChannel = new BroadcastChannel("bitspace-kitchen-ready");
+      readyChannel.postMessage({
+        type: "kitchen-status-change",
+        status,
+        order: JSON.parse(JSON.stringify({ ...order, kitchenStatus: status })),
+        timestamp: new Date().toISOString(),
+      });
+      readyChannel.close();
+    } catch (e) {
+      console.warn("[Kitchen] BroadcastChannel not available:", e);
+    }
+
+    // ─────────────────────────────────────────
+    // 2️⃣ NOSTR EVENT (Cross-Device)
+    // ─────────────────────────────────────────
+    // Publish kitchen alert to Nostr with company tag
+    // This ensures ALL staff devices get notified
+    try {
+      const alertData = {
+        type: status === "ready" ? "order-ready" : "order-served",
+        orderId: order.id,
+        orderNumber: order.orderNumber || order.id.slice(-6),
+        status,
+        customer: order.customer || "Customer",
+        total: order.total,
+        items: order.items.length,
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log(
+        `[Kitchen] 📡 Publishing ${alertData.type} to Nostr with company hash:`,
+        company.companyCodeHash.value?.slice(0, 8)
+      );
+
+      // Publish as POS_ALERT event with company tag for cross-device sync
+      const publishedEvent = await nostrData.publishKitchenAlert(
+        alertData,
+        company.companyCodeHash.value
+      );
+
+      if (publishedEvent) {
+        console.log(
+          "[Kitchen] ✅ Kitchen alert published to Nostr:",
+          publishedEvent.id.slice(0, 8)
+        );
+      } else {
+        console.warn("[Kitchen] ⚠️ No event returned from publishKitchenAlert");
+      }
+    } catch (e) {
+      console.error("[Kitchen] ❌ Failed to publish Nostr alert:", e);
+    }
+
+    // ─────────────────────────────────────────
+    // 3️⃣ NOTIFICATION CENTER (UI)
+    // ─────────────────────────────────────────
+    const orderRef = `#${order.orderNumber || order.id.slice(-6)}`;
+    const customer = order.customer || "Customer";
+
+    if (status === "ready") {
+      notificationsStore.addNotification({
+        type: "order",
+        title: t("kitchen.orderReady"),
+        message: t("kitchen.orderReadyMessage", {
+          order: orderRef,
+          customer,
+        }),
+        data: { orderId: order.id, status },
+        priority: "high",
+        actionUrl: `/orders/${order.id}`,
+      });
+    } else if (status === "served") {
+      notificationsStore.addNotification({
+        type: "order",
+        title: t("kitchen.orderServed"),
+        message: t("kitchen.orderServedMessage", {
+          order: orderRef,
+          customer,
+        }),
+        data: { orderId: order.id, status },
+        priority: "medium",
+      });
+    }
+  } catch (error) {
+    console.error("[Kitchen] Failed to send notifications:", error);
   }
 };
 
@@ -526,8 +626,8 @@ onUnmounted(() => {
               {{
                 kitchenOrders.length > 0 &&
                 kitchenOrders.every((o) => selectedOrderIds.has(o.id))
-                  ? t("common.deselectAll", "Deselect All")
-                  : t("common.selectAll", "Select All")
+                  ? t("common.deselectAll") || "Deselect All"
+                  : t("common.selectAll") || "Select All"
               }}
             </UButton>
 
@@ -544,8 +644,8 @@ onUnmounted(() => {
             >
               {{
                 isSelectionMode
-                  ? t("common.cancel", "Cancel")
-                  : t("common.select", "Select")
+                  ? t("common.cancel") || "Cancel"
+                  : t("common.select") || "Select"
               }}
             </UButton>
           </div>

@@ -3,7 +3,7 @@
 // Syncs POS data to Nostr relays with NIP-04/44 encryption
 // Uses centralized useEncryption module for all crypto operations
 // ============================================
-
+import { nip19 } from "nostr-tools";
 import { finalizeEvent, type UnsignedEvent, type Event } from "nostr-tools";
 import type {
   Product,
@@ -17,7 +17,6 @@ import type {
 } from "~/types";
 
 // Import centralized NOSTR_KINDS
-export { NOSTR_KINDS, type NostrKind } from "~/types/nostr-kinds";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // ============================================
@@ -62,17 +61,43 @@ export function useNostrData() {
   const getUserKeys = (): { pubkey: string; privkey: string | null } | null => {
     if (!import.meta.client) return null;
 
+    // Helper to normalize private key to hex format
+    const normalizePrivkey = (key: string | null | undefined): string | null => {
+      if (!key) return null;
+
+      // If already hex (64 chars), return as-is
+      if (/^[0-9a-f]{64}$/i.test(key)) {
+        return key.toLowerCase();
+      }
+
+      // If nsec format, decode to hex
+      if (key.startsWith("nsec1")) {
+        try {
+          const { data } = nip19.decode(key);
+          return data as string;
+        } catch (e) {
+          console.error("[NostrData] Failed to decode nsec:", e);
+          return null;
+        }
+      }
+
+      return null;
+    };
+
     // 1. Try nostrUser localStorage (users who logged in with nsec)
     const stored = localStorage.getItem("nostrUser");
     if (stored) {
       try {
         const user = JSON.parse(stored);
         const pubkey = user.pubkey || user.publicKey;
-        const privkey = user.privateKey || user.privkey || user.nsec;
+        const privkeyRaw = user.privateKey || user.privkey || user.nsec;
+        const privkey = normalizePrivkey(privkeyRaw);
+
         if (pubkey) {
-          return { pubkey, privkey: privkey || null };
+          return { pubkey, privkey };
         }
-      } catch {
+      } catch (e) {
+        console.error("[NostrData] Failed to parse nostrUser:", e);
         // Continue to fallback
       }
     }
@@ -330,9 +355,21 @@ export function useNostrData() {
     content: string,
     tags: string[][] = []
   ): Promise<Event | null> {
+    console.log(`[NostrData] 🔨 createEvent called for kind ${kind}`);
+
     const keys = getUserKeys();
+    console.log("[NostrData] 🔑 getUserKeys() result:", keys ? {
+      hasPubkey: !!keys.pubkey,
+      pubkeyLength: keys.pubkey?.length,
+      pubkeyPreview: keys.pubkey?.slice(0, 8) + "...",
+      hasPrivkey: !!keys.privkey,
+      privkeyLength: keys.privkey?.length,
+      privkeyFormat: keys.privkey?.startsWith("nsec") ? "nsec (bech32)" : keys.privkey ? "hex" : "none"
+    } : "null - NO KEYS");
+
     if (!keys) {
       error.value = "No Nostr keys available";
+      console.error("[NostrData] ❌ No keys available - cannot create event");
       return null;
     }
 
@@ -344,15 +381,38 @@ export function useNostrData() {
       pubkey: keys.pubkey,
     };
 
+    console.log("[NostrData] 📄 Unsigned event created:", {
+      kind: unsignedEvent.kind,
+      pubkey: unsignedEvent.pubkey.slice(0, 8) + "...",
+      tagsCount: unsignedEvent.tags.length,
+      contentLength: unsignedEvent.content.length
+    });
+
     // If we have privkey, sign directly
     if (keys.privkey) {
+      console.log("[NostrData] 🔐 Attempting to sign with privkey...");
       try {
-        return finalizeEvent(unsignedEvent, hexToBytes(keys.privkey));
+        console.log("[NostrData] 🔢 Converting privkey to bytes...");
+        const privkeyBytes = hexToBytes(keys.privkey);
+        console.log("[NostrData] ✅ Privkey converted to bytes, length:", privkeyBytes.length);
+
+        console.log("[NostrData] ✍️ Calling finalizeEvent...");
+        const signedEvent = finalizeEvent(unsignedEvent, privkeyBytes);
+        console.log("[NostrData] ✅ Event signed successfully! ID:", signedEvent.id.slice(0, 8) + "...");
+        return signedEvent;
       } catch (e) {
         error.value = `Failed to sign event: ${e}`;
+        console.error("[NostrData] ❌ Signing failed:", e);
+        console.error("[NostrData] 🔍 Error details:", {
+          errorType: typeof e,
+          errorMessage: e instanceof Error ? e.message : String(e),
+          errorStack: e instanceof Error ? e.stack : undefined
+        });
         return null;
       }
     }
+
+    console.log("[NostrData] 🌐 No privkey, trying NIP-07 extension...");
 
     // NIP-07: Use extension to sign
     if (import.meta.client) {
@@ -360,18 +420,24 @@ export function useNostrData() {
         nostr?: { signEvent: (event: UnsignedEvent) => Promise<Event> };
       };
       if (win.nostr?.signEvent) {
+        console.log("[NostrData] 📲 NIP-07 extension found, requesting signature...");
         try {
           const signedEvent = await win.nostr.signEvent(unsignedEvent);
+          console.log("[NostrData] ✅ NIP-07 signed successfully!");
           return signedEvent as Event;
         } catch (e) {
           error.value = `NIP-07 signing failed: ${e}`;
+          console.error("[NostrData] ❌ NIP-07 signing failed:", e);
           return null;
         }
+      } else {
+        console.warn("[NostrData] ⚠️ No NIP-07 extension available");
       }
     }
 
     error.value =
       "No signing method available (no privkey and no NIP-07 extension)";
+    console.error("[NostrData] ❌ No signing method available");
     return null;
   }
 
@@ -707,6 +773,89 @@ export function useNostrData() {
       ].filter((t) => t.length > 0) as string[][],
       shouldEncrypt
     );
+  }
+
+  /**
+   * Publish kitchen alert for cross-device notifications
+   * Uses POS_ALERT kind (1050) for real-time propagation
+   */
+  async function publishKitchenAlert(
+    alertData: {
+      type: string;
+      orderId: string;
+      orderNumber?: string;
+      status: string;
+      customer?: string;
+      total?: number;
+      items?: number;
+      timestamp: string;
+    },
+    companyCodeHash?: string | null
+  ): Promise<Event | null> {
+    try {
+      console.log(
+        `[NostrData] 📤 Publishing kitchen alert:`,
+        alertData.type,
+        `for order ${alertData.orderNumber || alertData.orderId.slice(-6)}`
+      );
+
+      const tags: string[][] = [
+        ["type", alertData.type],
+        ["order_id", alertData.orderId],
+        ["status", alertData.status],
+      ];
+
+      // Add company tag for team-wide broadcast
+      if (companyCodeHash) {
+        tags.push(["c", companyCodeHash]);
+        console.log(
+          `[NostrData] 🏷️ Tagging with company hash: ${companyCodeHash.slice(0, 8)}...`
+        );
+      } else {
+        console.warn(
+          "[NostrData] ⚠️ No company hash provided - alert won't reach team!"
+        );
+      }
+
+      // Add optional fields (MUST convert to string for Nostr spec)
+      if (alertData.orderNumber) {
+        tags.push(["order_num", String(alertData.orderNumber)]);
+      }
+
+      console.log(NOSTR_KINDS.POS_ALERT, alertData, tags);
+      const event = await createEvent(
+        NOSTR_KINDS.POS_ALERT,
+        JSON.stringify(alertData),
+        tags
+      );
+
+      console.log("[NostrData] 📝 Kitchen alert event created:", event);
+
+      if (!event) {
+        console.error("[NostrData] ❌ Failed to create event");
+        return null;
+      }
+
+      console.log(
+        `[NostrData] 📡 Publishing to ${relay.writeRelays.value.length} relay(s):`,
+        relay.writeRelays.value
+      );
+
+      const success = await relay.publishEvent(event);
+
+      if (success) {
+        console.log(
+          `[NostrData] ✅ Kitchen alert published successfully! Event ID: ${event.id.slice(0, 8)}...`
+        );
+        return event;
+      } else {
+        console.error("[NostrData] ❌ Failed to publish to relays");
+        return null;
+      }
+    } catch (error) {
+      console.error("[NostrData] ❌ Failed to publish kitchen alert:", error);
+      return null;
+    }
   }
 
   async function getOrder(id: string): Promise<Order | null> {
@@ -1508,11 +1657,15 @@ export function useNostrData() {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
 
+    console.log(
+      `[NostrData] 🔍 Discovering owner for company code hash: ${codeHash.slice(0, 8)}...`
+    );
+
     // Query public events with company code tag - NO author filter since we don't know who owns it
     const filter = {
       kinds: [NOSTR_KINDS.COMPANY_INDEX],
       "#c": [codeHash],
-      limit: 1,
+      limit: 10, // Get more results to find the latest
     };
 
     try {
@@ -1520,26 +1673,46 @@ export function useNostrData() {
         filter as Parameters<typeof relay.queryEvents>[0]
       );
 
+      console.log(
+        `[NostrData] 📡 Found ${events.length} company index event(s)`
+      );
+
       if (events.length === 0) {
-        console.log("[NostrData] No company index found for code");
+        console.warn(
+          "[NostrData] ⚠️ No company index found - owner may not have published it yet"
+        );
+        console.warn(
+          "[NostrData] 💡 Owner should sign in at least once to publish company index"
+        );
         return null;
       }
 
-      const event = events[0]!;
+      // Sort by created_at descending to get the latest
+      const sortedEvents = events.sort((a, b) => b.created_at - a.created_at);
+      const event = sortedEvents[0]!;
+
+      console.log(
+        `[NostrData] 📄 Using event from: ${new Date(event.created_at * 1000).toLocaleString()}`
+      );
+
       const data = JSON.parse(event.content);
 
       if (data.ownerPubkey) {
         console.log(
-          "[NostrData] Found owner pubkey:",
-          data.ownerPubkey.slice(0, 8)
+          "[NostrData] ✅ Found owner pubkey:",
+          data.ownerPubkey.slice(0, 8) + "..."
         );
         return data.ownerPubkey;
       }
 
       // Fallback: use event author as owner
+      console.log(
+        "[NostrData] 📝 Using event author as owner:",
+        event.pubkey.slice(0, 8) + "..."
+      );
       return event.pubkey;
     } catch (e) {
-      console.error("[NostrData] Failed to discover owner:", e);
+      console.error("[NostrData] ❌ Failed to discover owner:", e);
       return null;
     }
   }
@@ -1764,6 +1937,9 @@ export function useNostrData() {
     recordStockAdjustment,
     getStockHistory,
     saveProductActivityLog,
+
+    // Kitchen Alerts
+    publishKitchenAlert,
 
     // Sync
     fullSync,
