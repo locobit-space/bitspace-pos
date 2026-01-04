@@ -239,25 +239,11 @@ const notifyKitchenStatusChange = async (
         timestamp: new Date().toISOString(),
       };
 
-      console.log(
-        `[Kitchen] 📡 Publishing ${alertData.type} to Nostr with company hash:`,
-        company.companyCodeHash.value?.slice(0, 8)
-      );
-
       // Publish as POS_ALERT event with company tag for cross-device sync
-      const publishedEvent = await nostrData.publishKitchenAlert(
+      await nostrData.publishKitchenAlert(
         alertData,
         company.companyCodeHash.value
       );
-
-      if (publishedEvent) {
-        console.log(
-          "[Kitchen] ✅ Kitchen alert published to Nostr:",
-          publishedEvent.id.slice(0, 8)
-        );
-      } else {
-        console.warn("[Kitchen] ⚠️ No event returned from publishKitchenAlert");
-      }
     } catch (e) {
       console.error("[Kitchen] ❌ Failed to publish Nostr alert:", e);
     }
@@ -306,7 +292,7 @@ const playClickSound = () => {
   audio.play().catch(() => {});
 };
 
-const _playNewOrderSound = () => {
+const playNewOrderSound = () => {
   if (soundEnabled.value) {
     playBellSound();
   }
@@ -335,11 +321,11 @@ const handleNewOrder = (order: Order) => {
 
     // Show toast notification
     toast.add({
-      title: t("kitchen.newOrder") || "🔔 New Order!",
+      title: t("kitchen.newOrder", "🔔 New Order!"),
       description: `#${order.id.slice(-6).toUpperCase()} - ${
         order.tableNumber
           ? "Table " + order.tableNumber
-          : t("orders.walkInCustomer") || "Walk-in"
+          : t("orders.walkInCustomer", "Walk-in")
       }`,
       color: "blue",
       icon: "i-heroicons-bell-alert",

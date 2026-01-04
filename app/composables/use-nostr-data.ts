@@ -357,30 +357,10 @@ export function useNostrData() {
     content: string,
     tags: string[][] = []
   ): Promise<Event | null> {
-    console.log(`[NostrData] 🔨 createEvent called for kind ${kind}`);
-
     const keys = getUserKeys();
-    console.log(
-      "[NostrData] 🔑 getUserKeys() result:",
-      keys
-        ? {
-            hasPubkey: !!keys.pubkey,
-            pubkeyLength: keys.pubkey?.length,
-            pubkeyPreview: keys.pubkey?.slice(0, 8) + "...",
-            hasPrivkey: !!keys.privkey,
-            privkeyLength: keys.privkey?.length,
-            privkeyFormat: keys.privkey?.startsWith("nsec")
-              ? "nsec (bech32)"
-              : keys.privkey
-              ? "hex"
-              : "none",
-          }
-        : "null - NO KEYS"
-    );
 
     if (!keys) {
       error.value = "No Nostr keys available";
-      console.error("[NostrData] ❌ No keys available - cannot create event");
       return null;
     }
 
@@ -392,44 +372,18 @@ export function useNostrData() {
       pubkey: keys.pubkey,
     };
 
-    console.log("[NostrData] 📄 Unsigned event created:", {
-      kind: unsignedEvent.kind,
-      pubkey: unsignedEvent.pubkey.slice(0, 8) + "...",
-      tagsCount: unsignedEvent.tags.length,
-      contentLength: unsignedEvent.content.length,
-    });
-
     // If we have privkey, sign directly
     if (keys.privkey) {
-      console.log("[NostrData] 🔐 Attempting to sign with privkey...");
       try {
-        console.log("[NostrData] 🔢 Converting privkey to bytes...");
         const privkeyBytes = hexToBytes(keys.privkey);
-        console.log(
-          "[NostrData] ✅ Privkey converted to bytes, length:",
-          privkeyBytes.length
-        );
-
-        console.log("[NostrData] ✍️ Calling finalizeEvent...");
         const signedEvent = finalizeEvent(unsignedEvent, privkeyBytes);
-        console.log(
-          "[NostrData] ✅ Event signed successfully! ID:",
-          signedEvent.id.slice(0, 8) + "..."
-        );
         return signedEvent;
       } catch (e) {
         error.value = `Failed to sign event: ${e}`;
-        console.error("[NostrData] ❌ Signing failed:", e);
-        console.error("[NostrData] 🔍 Error details:", {
-          errorType: typeof e,
-          errorMessage: e instanceof Error ? e.message : String(e),
-          errorStack: e instanceof Error ? e.stack : undefined,
-        });
+        console.error("[NostrData] Signing failed:", e);
         return null;
       }
     }
-
-    console.log("[NostrData] 🌐 No privkey, trying NIP-07 extension...");
 
     // NIP-07: Use extension to sign
     if (import.meta.client) {
@@ -437,16 +391,12 @@ export function useNostrData() {
         nostr?: { signEvent: (event: UnsignedEvent) => Promise<Event> };
       };
       if (win.nostr?.signEvent) {
-        console.log(
-          "[NostrData] 📲 NIP-07 extension found, requesting signature..."
-        );
         try {
           const signedEvent = await win.nostr.signEvent(unsignedEvent);
-          console.log("[NostrData] ✅ NIP-07 signed successfully!");
           return signedEvent as Event;
         } catch (e) {
           error.value = `NIP-07 signing failed: ${e}`;
-          console.error("[NostrData] ❌ NIP-07 signing failed:", e);
+          console.error("[NostrData] NIP-07 signing failed:", e);
           return null;
         }
       } else {
@@ -563,7 +513,6 @@ export function useNostrData() {
         if (ownerPubkey && ownerPubkey !== keys!.pubkey) {
           if (!authors.includes(ownerPubkey)) {
             authors.push(ownerPubkey);
-            console.log("[NostrData] Staff: Including owner pubkey in query");
           }
         }
         // For OWNER: We can't fetch staff list here (circular dependency)
@@ -812,12 +761,6 @@ export function useNostrData() {
     companyCodeHash?: string | null
   ): Promise<Event | null> {
     try {
-      console.log(
-        `[NostrData] 📤 Publishing kitchen alert:`,
-        alertData.type,
-        `for order ${alertData.orderNumber || alertData.orderId.slice(-6)}`
-      );
-
       const tags: string[][] = [
         ["type", alertData.type],
         ["order_id", alertData.orderId],
@@ -827,19 +770,9 @@ export function useNostrData() {
       // Add company tag for team-wide broadcast
       if (companyCodeHash) {
         tags.push(["c", companyCodeHash]);
-        console.log(
-          `[NostrData] 🏷️ Tagging with company hash: ${companyCodeHash.slice(
-            0,
-            8
-          )}...`
-        );
-      } else {
-        console.warn(
-          "[NostrData] ⚠️ No company hash provided - alert won't reach team!"
-        );
       }
 
-      // Add optional fields (MUST convert to string for Nostr spec)
+      // Add optional fields
       if (alertData.orderNumber) {
         tags.push(["order_num", String(alertData.orderNumber)]);
       }
@@ -850,27 +783,12 @@ export function useNostrData() {
         tags
       );
 
-      if (!event) {
-        console.error("[NostrData] ❌ Failed to create event");
-        return null;
-      }
+      if (!event) return null;
 
       const success = await relay.publishEvent(event);
-
-      if (success) {
-        console.log(
-          `[NostrData] ✅ Kitchen alert published successfully! Event ID: ${event.id.slice(
-            0,
-            8
-          )}...`
-        );
-        return event;
-      } else {
-        console.error("[NostrData] ❌ Failed to publish to relays");
-        return null;
-      }
-    } catch (error) {
-      console.error("[NostrData] ❌ Failed to publish kitchen alert:", error);
+      return success ? event : null;
+    } catch (err) {
+      console.error("[NostrData] Failed to publish kitchen alert:", err);
       return null;
     }
   }
@@ -1018,7 +936,6 @@ export function useNostrData() {
         return null;
       }
 
-      console.log("[NostrData] Anonymous order published:", order.id);
       return signedEvent;
     } catch (e) {
       console.error("[NostrData] Failed to save anonymous order:", e);
@@ -1560,11 +1477,6 @@ export function useNostrData() {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
 
-    console.log(
-      "[NostrData] Fetching staff by company code hash:",
-      codeHash.slice(0, 8)
-    );
-
     // Query events with company code tag from specific owner
     const filter: Record<string, unknown> = {
       kinds: [NOSTR_KINDS.STAFF_MEMBER],
@@ -1674,18 +1586,10 @@ export function useNostrData() {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
 
-    console.log(
-      `[NostrData] 🔍 Discovering owner for company code hash: ${codeHash.slice(
-        0,
-        8
-      )}...`
-    );
-
-    // Query public events with company code tag - NO author filter since we don't know who owns it
     const filter = {
       kinds: [NOSTR_KINDS.COMPANY_INDEX],
       "#c": [codeHash],
-      limit: 10, // Get more results to find the latest
+      limit: 10,
     };
 
     try {
@@ -1693,48 +1597,15 @@ export function useNostrData() {
         filter as Parameters<typeof relay.queryEvents>[0]
       );
 
-      console.log(
-        `[NostrData] 📡 Found ${events.length} company index event(s)`
-      );
+      if (events.length === 0) return null;
 
-      if (events.length === 0) {
-        console.warn(
-          "[NostrData] ⚠️ No company index found - owner may not have published it yet"
-        );
-        console.warn(
-          "[NostrData] 💡 Owner should sign in at least once to publish company index"
-        );
-        return null;
-      }
-
-      // Sort by created_at descending to get the latest
       const sortedEvents = events.sort((a, b) => b.created_at - a.created_at);
       const event = sortedEvents[0]!;
-
-      console.log(
-        `[NostrData] 📄 Using event from: ${new Date(
-          event.created_at * 1000
-        ).toLocaleString()}`
-      );
-
       const data = JSON.parse(event.content);
 
-      if (data.ownerPubkey) {
-        console.log(
-          "[NostrData] ✅ Found owner pubkey:",
-          data.ownerPubkey.slice(0, 8) + "..."
-        );
-        return data.ownerPubkey;
-      }
-
-      // Fallback: use event author as owner
-      console.log(
-        "[NostrData] 📝 Using event author as owner:",
-        event.pubkey.slice(0, 8) + "..."
-      );
-      return event.pubkey;
+      return data.ownerPubkey || event.pubkey;
     } catch (e) {
-      console.error("[NostrData] ❌ Failed to discover owner:", e);
+      console.error("[NostrData] Failed to discover owner:", e);
       return null;
     }
   }

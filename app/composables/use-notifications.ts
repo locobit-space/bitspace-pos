@@ -13,6 +13,7 @@ const unreadCount = ref(0);
 const isNotificationCenterOpen = ref(false);
 const lastLowStockCheck = ref<number>(0);
 const LOW_STOCK_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes between checks
+let posAlertsInitialized = false; // Singleton guard for POS alerts subscription
 
 export const useNotifications = () => {
   const sound = useSound();
@@ -25,9 +26,12 @@ export const useNotifications = () => {
 
   /**
    * Add a new notification
+   * @param notification - The notification to add
+   * @param options - Optional settings (skipToast: don't show toast, skipSound: don't play sound)
    */
   function addNotification(
-    notification: Omit<POSNotification, "id" | "read" | "createdAt">
+    notification: Omit<POSNotification, "id" | "read" | "createdAt">,
+    options?: { skipToast?: boolean; skipSound?: boolean }
   ): POSNotification {
     const newNotification: POSNotification = {
       ...notification,
@@ -45,15 +49,17 @@ export const useNotifications = () => {
       notifications.value = notifications.value.slice(0, 100);
     }
 
-    // Play sound based on type and kitchen status
-    playNotificationSound(
-      notification.type,
-      notification.kitchenStatus,
-      notification.persistent
-    );
+    // Play sound based on type and kitchen status (unless skipped)
+    if (!options?.skipSound) {
+      playNotificationSound(
+        notification.type,
+        notification.kitchenStatus,
+        notification.persistent
+      );
+    }
 
-    // Show toast notification (unless persistent - those stay in notification center)
-    if (!notification.persistent) {
+    // Show toast notification (unless persistent or skipped)
+    if (!notification.persistent && !options?.skipToast) {
       showToast(newNotification);
     }
 
@@ -587,6 +593,14 @@ export const useNotifications = () => {
     tableName?: string,
     itemCount?: number
   ) {
+    // Deduplicate: Check if we already have this notification (same order + status)
+    const existingNotif = notifications.value.find(
+      (n) => n.data?.orderId === orderId && n.data?.kitchenStatus === status
+    );
+    if (existingNotif) {
+      return; // Skip duplicate
+    }
+
     const statusConfig = {
       new: {
         emoji: "🆕",
@@ -778,55 +792,41 @@ export const useNotifications = () => {
       };
     };
 
-    // Helper to process incoming events (with deduplication)
+    // Process incoming events with deduplication
     const processEvent = (event: any) => {
-      // Skip if already processed this event ID (from another relay)
-      if (processedEventIds.has(event.id)) {
-        return;
-      }
+      if (processedEventIds.has(event.id)) return;
       processedEventIds.add(event.id);
+      // Skip if already have this notification
+      if (notifications.value.find((n) => n.data?.nostrEventId === event.id))
+        return;
+      const eventTags =
+        event.tags
+          ?.filter((t: string[]) => t[0] === "t")
+          .map((t: string[]) => t[1]) || [];
+      const config = getAnnouncementConfig(eventTags);
+      const contentLines = event.content.split("\n");
+      const title = contentLines[0]?.startsWith("#")
+        ? contentLines[0].replace(/^#+\s*/, "")
+        : `${config.icon} ${config.defaultTitle}`;
+      const message = contentLines[0]?.startsWith("#")
+        ? contentLines.slice(1).join("\n").trim()
+        : event.content;
 
-      // Also check if we already have this notification in storage
-      const existing = notifications.value.find(
-        (n) => n.data?.nostrEventId === event.id
-      );
-
-      if (!existing) {
-        // Extract tags from the event
-        const eventTags =
-          event.tags
-            ?.filter((tag: string[]) => tag[0] === "t")
-            .map((tag: string[]) => tag[1]) || [];
-
-        // Get announcement configuration based on tags
-        const config = getAnnouncementConfig(eventTags);
-
-        // Parse title from content (first line or use default)
-        const contentLines = event.content.split("\n");
-        const title = contentLines[0]?.startsWith("#")
-          ? contentLines[0].replace(/^#+\s*/, "")
-          : `${config.icon} ${config.defaultTitle}`;
-        const message = contentLines[0]?.startsWith("#")
-          ? contentLines.slice(1).join("\n").trim()
-          : event.content;
-
-        // Create notification with dynamic type and priority
-        addNotification({
-          type: config.type,
-          title,
-          message: message || event.content,
-          priority: config.priority,
-          data: {
-            nostrEventId: event.id,
-            pubkey: event.pubkey,
-            timestamp: event.created_at,
-            tags: eventTags,
-            category:
-              eventTags.find((t: string) => t.startsWith("bnos.space-")) ||
-              "announcement",
-          },
-        });
-      }
+      addNotification({
+        type: config.type,
+        title,
+        message: message || event.content,
+        priority: config.priority,
+        data: {
+          nostrEventId: event.id,
+          pubkey: event.pubkey,
+          timestamp: event.created_at,
+          tags: eventTags,
+          category:
+            eventTags.find((t: string) => t.startsWith("bnos.space-")) ||
+            "announcement",
+        },
+      });
     };
 
     try {
@@ -848,37 +848,28 @@ export const useNotifications = () => {
 
       // Initial fetch of recent announcements
       const events = await $nostr.pool.querySync(allRelays, filter);
-
-      // Deduplicate events by ID before processing
+      // Deduplicate and process events
       const uniqueEvents = new Map<string, any>();
-      for (const event of events) {
-        if (!uniqueEvents.has(event.id)) {
-          uniqueEvents.set(event.id, event);
-        }
-      }
-
-      // Sort by timestamp (newest first) and process
+      events.forEach(
+        (e) => !uniqueEvents.has(e.id) && uniqueEvents.set(e.id, e)
+      );
       Array.from(uniqueEvents.values())
-        .sort((a: any, b: any) => b.created_at - a.created_at)
+        .sort((a, b) => b.created_at - a.created_at)
         .forEach(processEvent);
-
-      // Set up real-time subscription for new announcements
-      const realtimeFilter = {
-        kinds: [NOSTR_KINDS.TEXT_NOTE],
-        "#t": ANNOUNCEMENT_TAGS,
-        since: Math.floor(Date.now() / 1000), // Only new events from now
-      };
-
-      // Subscribe to real-time updates (fewer relays for real-time to reduce duplicates)
-      $nostr.pool.subscribeMany(allRelays.slice(0, 2), [realtimeFilter], {
-        onevent(event: any) {
-          processEvent(event);
-        },
-        oneose() {
-          // End of stored events, subscription continues for real-time
-          console.log("[Notifications] Real-time subscription active");
-        },
-      });
+      // Real-time subscription for new announcements
+      $nostr.pool.subscribeMany(
+        allRelays.slice(0, 2),
+        [
+          {
+            kinds: [NOSTR_KINDS.TEXT_NOTE],
+            "#t": ANNOUNCEMENT_TAGS,
+            since: Math.floor(Date.now() / 1000),
+          },
+        ],
+        {
+          onevent: processEvent,
+        }
+      );
     } catch (e) {
       console.error("Failed to initialize system notifications:", e);
     }
@@ -889,32 +880,40 @@ export const useNotifications = () => {
    * Subscribes to waiter calls, bill requests, and kitchen status alerts
    */
   async function initPosAlerts() {
+    // Singleton guard - prevent multiple subscriptions
+    if (posAlertsInitialized) return;
+    posAlertsInitialized = true;
+
     const { $nostr } = useNuxtApp();
     const company = useCompany();
 
-    // Get company code hash for filtering kitchen alerts
     const companyCodeHash = company.companyCodeHash.value;
     const ownerPubkey = company.ownerPubkey.value;
 
     if (!companyCodeHash && !ownerPubkey) {
       console.warn(
-        "[POS Alerts] ⚠️ No company code or owner pubkey found - POS alerts disabled. Set up company profile in settings."
+        "[POS Alerts] No company code or owner pubkey - alerts disabled"
       );
       return;
     }
 
     // Track processed event IDs to prevent duplicates
     const processedEventIds = new Set<string>();
+    const sessionStartTime = Math.floor(Date.now() / 1000);
 
-    // Process incoming POS_ALERT events (with deduplication)
-    const processAlert = (event: any) => {
+    // Process incoming POS_ALERT events
+    // isHistorical = true for initial fetch, false for real-time events
+    const processAlert = (event: any, isHistorical = false) => {
       if (processedEventIds.has(event.id)) return;
       processedEventIds.add(event.id);
+
+      // Skip toast/sound for old events (more than 30 seconds old)
+      const isOldEvent = event.created_at < sessionStartTime - 30;
+      const skipNotify = isHistorical || isOldEvent;
 
       try {
         const data = JSON.parse(event.content);
 
-        // Route alert to appropriate notification handler
         const kitchenStatusMap: Record<
           string,
           "new" | "preparing" | "ready" | "served"
@@ -926,31 +925,167 @@ export const useNotifications = () => {
         };
 
         if (data.type === "waiter-call") {
-          notifyWaiterCall(data.tableNumber, data.tableName, data.sessionId);
+          notifyWaiterCallWithOptions(
+            data.tableNumber,
+            data.tableName,
+            data.sessionId,
+            skipNotify
+          );
         } else if (data.type === "bill-request") {
-          notifyBillRequest(
+          notifyBillRequestWithOptions(
             data.tableNumber,
             data.tableName,
             data.sessionId,
             data.total,
-            data.orderCount
+            data.orderCount,
+            skipNotify
           );
         } else {
           const status = kitchenStatusMap[data.type];
           if (status) {
-            notifyKitchenStatusChange(
+            notifyKitchenStatusChangeWithOptions(
               data.orderId,
               data.orderCode || data.orderNumber || data.orderId?.slice(-6),
               status,
               data.customer || "Customer",
               data.tableName,
-              data.itemCount || data.items
+              data.itemCount || data.items,
+              skipNotify
             );
           }
         }
       } catch (e) {
-        console.error("[POS Alerts] ❌ Failed to process alert:", e);
+        console.error("[POS Alerts] Failed to process alert:", e);
       }
+    };
+
+    // Helper functions that accept skipNotify option
+    const notifyKitchenStatusChangeWithOptions = (
+      orderId: string,
+      orderNumber: string,
+      status: "new" | "preparing" | "ready" | "served",
+      customer: string,
+      tableName?: string,
+      itemCount?: number,
+      skipNotify = false
+    ) => {
+      const existingNotif = notifications.value.find(
+        (n) => n.data?.orderId === orderId && n.data?.kitchenStatus === status
+      );
+      if (existingNotif) return;
+
+      const statusConfig = {
+        new: {
+          emoji: "🆕",
+          title: t("kitchen.newOrder", "New Order"),
+          priority: "high" as NotificationPriority,
+          groupKey: "kitchen-new",
+        },
+        preparing: {
+          emoji: "👨‍🍳",
+          title: t("kitchen.preparing", "Preparing"),
+          priority: "medium" as NotificationPriority,
+          groupKey: "kitchen-preparing",
+        },
+        ready: {
+          emoji: "🔔",
+          title: t("kitchen.orderReady", "Order Ready!"),
+          priority: "high" as NotificationPriority,
+          groupKey: "kitchen-ready",
+        },
+        served: {
+          emoji: "✅",
+          title: t("kitchen.orderServed", "Order Served"),
+          priority: "low" as NotificationPriority,
+          groupKey: "kitchen-served",
+        },
+      };
+
+      const config = statusConfig[status];
+      const tableInfo = tableName ? ` - ${tableName}` : "";
+      const items = itemCount ? ` (${itemCount} items)` : "";
+
+      addNotification(
+        {
+          type: "order",
+          title: `${config.emoji} ${config.title}${tableInfo}`,
+          message: `Order #${orderNumber} - ${customer}${items}`,
+          priority: config.priority,
+          actionUrl: `/orders/${orderId}`,
+          kitchenStatus: status,
+          groupKey: config.groupKey,
+          data: {
+            orderId,
+            orderNumber,
+            status,
+            customer,
+            tableName,
+            itemCount,
+            kitchenStatus: status,
+          },
+        },
+        { skipToast: skipNotify, skipSound: skipNotify }
+      );
+    };
+
+    const notifyWaiterCallWithOptions = (
+      tableNumber: string,
+      tableName?: string,
+      sessionId?: string,
+      skipNotify = false
+    ) => {
+      const displayName = tableName || `Table ${tableNumber}`;
+      addNotification(
+        {
+          type: "alert",
+          title: `🔔 ${displayName} needs assistance!`,
+          message: t("notifications.waiterCall", "Customer called for waiter"),
+          priority: "critical",
+          persistent: true,
+          requiresAcknowledgment: true,
+          actionUrl: "/tables",
+          data: {
+            tableNumber,
+            tableName,
+            sessionId,
+            serviceType: "waiter_call",
+          },
+        },
+        { skipToast: skipNotify, skipSound: skipNotify }
+      );
+    };
+
+    const notifyBillRequestWithOptions = (
+      tableNumber: string,
+      tableName?: string,
+      sessionId?: string,
+      total?: number,
+      orderCount?: number,
+      skipNotify = false
+    ) => {
+      const displayName = tableName || `Table ${tableNumber}`;
+      const totalInfo = total ? ` - Total: ${total}` : "";
+      const ordersInfo = orderCount ? `${orderCount} orders` : "";
+      addNotification(
+        {
+          type: "alert",
+          title: `💰 ${displayName} requesting bill!`,
+          message: `${ordersInfo}${totalInfo}`,
+          priority: "high",
+          persistent: true,
+          requiresAcknowledgment: true,
+          actionUrl: "/pos",
+          data: {
+            tableNumber,
+            tableName,
+            sessionId,
+            sessionTotal: total,
+            orderCount,
+            serviceType: "bill_request",
+          },
+        },
+        { skipToast: skipNotify, skipSound: skipNotify }
+      );
     };
 
     try {
@@ -964,78 +1099,97 @@ export const useNotifications = () => {
       // Use the ACTUAL configured relays (not static defaults)
       let allRelays = relayConfig.writeRelays.value;
 
-      // Fallback to defaults if no custom relays configured
       if (!allRelays || allRelays.length === 0) {
-        console.warn(
-          "[POS Alerts] ⚠️ No write relays configured, falling back to defaults"
-        );
         allRelays = relayConfig.DEFAULT_RELAYS.map((r) => r.url);
       }
 
       const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
 
-      // Build filters array dynamically based on what we have
-      const filters: any[] = [];
+      // Build filter - fetch ALL POS_ALERT events and filter client-side
+      // Many relays don't support custom tag filtering (#c), so we filter after fetching
+      const baseFilter = {
+        kinds: [NOSTR_KINDS.POS_ALERT],
+        limit: 50,
+      };
 
-      // Filter 1: Watch company code hash channel (for kitchen alerts)
-      if (companyCodeHash) {
-        filters.push({
-          kinds: [1, NOSTR_KINDS.POS_ALERT],
-          "#c": [companyCodeHash],
-          limit: 20, // Fetch last 20 events
-        });
-      }
+      // Client-side filter function
+      const matchesFilter = (event: any): boolean => {
+        const tags = event.tags || [];
 
-      // Filter 2: Watch direct p-tags (for customer alerts tagged with owner pubkey)
-      if (ownerPubkey) {
-        filters.push({
-          kinds: [1, NOSTR_KINDS.POS_ALERT],
-          "#p": [ownerPubkey],
-          limit: 20, // Fetch last 20 events
-        });
-      }
+        // Check for company code hash match
+        if (companyCodeHash) {
+          const cTag = tags.find(
+            (t: string[]) => t[0] === "c" && t[1] === companyCodeHash
+          );
+          if (cTag) return true;
+        }
+
+        // Check for owner pubkey match
+        if (ownerPubkey) {
+          const pTag = tags.find(
+            (t: string[]) => t[0] === "p" && t[1] === ownerPubkey
+          );
+          if (pTag) return true;
+        }
+
+        return false;
+      };
 
       // Initial fetch of existing events
       try {
-        const existingEvents = await $nostr.pool.querySync(allRelays, filters);
+        const allEvents = await $nostr.pool.querySync(allRelays, baseFilter);
 
-        // Deduplicate and process existing events
+        const matchingEvents = allEvents.filter(matchesFilter);
+
+        // Deduplicate and process matching events
         const uniqueEvents = new Map<string, any>();
-        for (const event of existingEvents) {
+        for (const event of matchingEvents) {
           if (!uniqueEvents.has(event.id)) {
             uniqueEvents.set(event.id, event);
           }
         }
 
-        // Process existing events (newest first)
+        // Process existing events (newest first) - mark as historical to skip toast/sound
         Array.from(uniqueEvents.values())
           .sort((a: any, b: any) => b.created_at - a.created_at)
-          .forEach(processAlert);
+          .forEach((e) => processAlert(e, true)); // isHistorical = true
       } catch (e) {
-        console.error("[POS Alerts] ⚠️ Failed to fetch existing events:", e);
+        console.error("[POS Alerts] Failed to fetch existing events:", e);
       }
 
-      // Real-time subscription for new events
-      const realtimeFilters = filters.map((f) => ({
-        ...f,
-        since: Math.floor(Date.now() / 1000), // Only NEW events from now
-        limit: undefined, // Remove limit for subscription
-      }));
+      // Real-time subscription with server-side tag filtering where supported
+      // Client-side matchesFilter() handles relays that don't support tag queries
+      const realtimeFilter: Record<string, any> = {
+        kinds: [NOSTR_KINDS.POS_ALERT],
+      };
+      if (companyCodeHash) realtimeFilter["#c"] = [companyCodeHash];
+      if (ownerPubkey) realtimeFilter["#p"] = [ownerPubkey];
 
-      // Subscribe to real-time alerts using OR logic (pass array of filters)
-      const sub = $nostr.pool.subscribeMany(allRelays, realtimeFilters, {
+      // Real-time subscription
+      const sub = $nostr.pool.subscribeMany(allRelays, [realtimeFilter], {
         onevent(event: any) {
-          processAlert(event);
-        },
-        oneose() {
-          console.log("[POS Alerts] ✅ Subscription active (EOSE received)");
+          if (matchesFilter(event)) processAlert(event);
         },
       });
+
+      // Polling fallback for relays that don't push via WebSocket
+      const POLL_INTERVAL = 5000;
+      const pollForEvents = async () => {
+        try {
+          const events = await $nostr.pool.querySync(allRelays, baseFilter);
+          // Process as historical since these are fetched, not pushed
+          events.filter(matchesFilter).forEach((e) => processAlert(e, true));
+        } catch {
+          // Silent fail
+        }
+      };
+      const pollInterval = setInterval(pollForEvents, POLL_INTERVAL);
 
       // Cleanup on page unload
       if (import.meta.client) {
         window.addEventListener("beforeunload", () => {
           sub?.close();
+          clearInterval(pollInterval);
         });
       }
     } catch (e) {
