@@ -15,11 +15,13 @@ const isOpen = computed({
 
 // Filters
 const searchQuery = ref("");
-const activeTab = ref<"all" | "unread" | "system" | "announcements">("all");
+const activeTab = ref<"all" | "unread" | "announcements">("all");
 const priorityFilter = ref<"all" | "critical" | "high" | "medium" | "low">(
   "all"
 );
-const announcementCategoryFilter = ref<"all" | "security" | "maintenance" | "update" | "feature" | "bugfix">("all");
+const announcementCategoryFilter = ref<
+  "all" | "security" | "maintenance" | "update" | "feature" | "bugfix"
+>("all");
 const showSettings = ref(false);
 
 // Notification preferences (stored in localStorage)
@@ -65,14 +67,13 @@ const filteredNotifications = computed(() => {
   // Filter by tab
   if (activeTab.value === "unread") {
     list = list.filter((n) => !n.read);
-  } else if (activeTab.value === "system") {
-    list = list.filter(
-      (n) => n.type === "system_update" || n.type === "system"
-    );
   } else if (activeTab.value === "announcements") {
     // Only show announcement-type notifications
     list = list.filter(
-      (n) => n.type === "system_update" || n.type === "system" || n.type === "alert"
+      (n) =>
+        n.type === "system_update" ||
+        n.type === "system" ||
+        (n.type === "alert" && !n.data?.serviceType)
     );
 
     // Filter by announcement category if selected
@@ -162,21 +163,22 @@ const unreadCount = computed(() => {
   ).length;
 });
 
-const systemUnreadCount = computed(() => {
-  return notificationsStore.notifications.value.filter(
-    (n) => !n.read && n.type === "system_update"
-  ).length;
-});
-
 const announcementCount = computed(() => {
   return notificationsStore.notifications.value.filter(
-    (n) => n.type === "system_update" || n.type === "system" || n.type === "alert"
+    (n) =>
+      n.type === "system_update" ||
+      n.type === "system" ||
+      (n.type === "alert" && !n.data?.serviceType)
   ).length;
 });
 
 const announcementUnreadCount = computed(() => {
   return notificationsStore.notifications.value.filter(
-    (n) => !n.read && (n.type === "system_update" || n.type === "system" || n.type === "alert")
+    (n) =>
+      !n.read &&
+      (n.type === "system_update" ||
+        n.type === "system" ||
+        (n.type === "alert" && !n.data?.serviceType))
   ).length;
 });
 
@@ -305,6 +307,7 @@ const tabs = computed(() => [
     count: unreadCount.value,
     dot: "red",
   },
+
   {
     key: "announcements" as const,
     label: t("announcements.title", "Announcements"),
@@ -312,12 +315,6 @@ const tabs = computed(() => [
     dot: "indigo",
     icon: "i-heroicons-megaphone",
   },
-  // {
-  //   key: "system" as const,
-  //   label: t("notifications.system", "System"),
-  //   count: systemUnreadCount.value,
-  //   dot: "blue",
-  // },
 ]);
 
 // Priority filter options
@@ -395,6 +392,57 @@ const announcementCategories = computed(() => {
     },
   ];
 });
+
+// Time-based urgency
+function getUrgencyLevel(
+  createdAt: string,
+  kitchenStatus?: string
+): {
+  level: "normal" | "warning" | "urgent" | "critical";
+  color: string;
+  label: string;
+} {
+  if (kitchenStatus === "served") {
+    return { level: "normal", color: "gray", label: "" };
+  }
+
+  const now = Date.now();
+  const created = new Date(createdAt).getTime();
+  const minutesWaiting = Math.floor((now - created) / 60000);
+
+  if (minutesWaiting > 15) {
+    return {
+      level: "critical",
+      color: "red",
+      label: `${minutesWaiting}m - URGENT!`,
+    };
+  }
+  if (minutesWaiting > 10) {
+    return { level: "urgent", color: "orange", label: `${minutesWaiting}m` };
+  }
+  if (minutesWaiting > 5) {
+    return { level: "warning", color: "yellow", label: `${minutesWaiting}m` };
+  }
+  return {
+    level: "normal",
+    color: "green",
+    label: minutesWaiting > 0 ? `${minutesWaiting}m` : "Just now",
+  };
+}
+
+// Kitchen status badge
+function getKitchenStatusBadge(status?: string) {
+  if (!status) return null;
+
+  const badges = {
+    new: { label: "New", color: "blue", icon: "i-heroicons-sparkles" },
+    preparing: { label: "Preparing", color: "amber", icon: "i-heroicons-fire" },
+    ready: { label: "Ready", color: "green", icon: "i-heroicons-check-circle" },
+    served: { label: "Served", color: "gray", icon: "i-heroicons-check" },
+  };
+
+  return badges[status as keyof typeof badges] || null;
+}
 </script>
 
 <template>
@@ -416,7 +464,7 @@ const announcementCategories = computed(() => {
           class="absolute top-0 right-0 -mt-1 -mr-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white rounded-full ring-2 ring-white dark:ring-gray-900 transition-transform"
           :class="[
             { 'scale-110': hasNewNotification },
-            announcementUnreadCount > 0 ? 'bg-indigo-500' : 'bg-red-500'
+            announcementUnreadCount > 0 ? 'bg-indigo-500' : 'bg-red-500',
           ]"
         >
           {{ totalUnread > 99 ? "99+" : totalUnread }}
@@ -561,7 +609,10 @@ const announcementCategories = computed(() => {
                     ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-800'
                     : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 "
-                @click="announcementCategoryFilter = category.value as typeof announcementCategoryFilter"
+                @click="
+                  announcementCategoryFilter =
+                    category.value as typeof announcementCategoryFilter
+                "
               >
                 <UIcon :name="category.icon" class="w-3.5 h-3.5" />
                 <span>{{ category.label }}</span>
@@ -722,6 +773,92 @@ const announcementCategories = computed(() => {
                           {{ notification.message }}
                         </p>
 
+                        <!-- Kitchen Status & Urgency Indicators -->
+                        <div
+                          v-if="
+                            notification.kitchenStatus ||
+                            (notification.type === 'order' &&
+                              notification.createdAt)
+                          "
+                          class="mt-2 flex items-center gap-2 flex-wrap"
+                        >
+                          <!-- Kitchen Status Badge -->
+                          <UBadge
+                            v-if="
+                              getKitchenStatusBadge(notification.kitchenStatus)
+                            "
+                            size="xs"
+                            :color="
+                              getKitchenStatusBadge(notification.kitchenStatus)
+                                ?.color
+                            "
+                            variant="subtle"
+                          >
+                            <UIcon
+                              :name="
+                                getKitchenStatusBadge(
+                                  notification.kitchenStatus
+                                )?.icon || ''
+                              "
+                              class="w-3 h-3 mr-1"
+                            />
+                            {{
+                              getKitchenStatusBadge(notification.kitchenStatus)
+                                ?.label
+                            }}
+                          </UBadge>
+
+                          <!-- Time-based Urgency -->
+                          <UBadge
+                            v-if="
+                              notification.type === 'order' &&
+                              getUrgencyLevel(
+                                notification.createdAt,
+                                notification.kitchenStatus
+                              ).label
+                            "
+                            size="xs"
+                            :color="
+                              getUrgencyLevel(
+                                notification.createdAt,
+                                notification.kitchenStatus
+                              ).color
+                            "
+                            variant="solid"
+                            class="animate-pulse"
+                          >
+                            <UIcon
+                              name="i-heroicons-clock"
+                              class="w-3 h-3 mr-1"
+                            />
+                            {{
+                              getUrgencyLevel(
+                                notification.createdAt,
+                                notification.kitchenStatus
+                              ).label
+                            }}
+                          </UBadge>
+
+                          <!-- Persistent Indicator -->
+                          <UBadge
+                            v-if="notification.persistent"
+                            size="xs"
+                            color="red"
+                            variant="solid"
+                          >
+                            <UIcon
+                              name="i-heroicons-exclamation-circle"
+                              class="w-3 h-3 mr-1"
+                            />
+                            {{
+                              t(
+                                "notifications.requiresAction",
+                                "Action Required"
+                              )
+                            }}
+                          </UBadge>
+                        </div>
+
                         <!-- System Update Badge -->
                         <div
                           v-if="notification.type === 'system_update'"
@@ -746,8 +883,70 @@ const announcementCategories = computed(() => {
                           </UBadge>
                         </div>
 
-                        <!-- Action URL indicator -->
-                        <div v-if="notification.actionUrl" class="mt-2">
+                        <!-- Quick Action Buttons (Note: actions would need to be added via API) -->
+                        <!-- This is a placeholder showing how action buttons would look -->
+                        <div
+                          v-if="
+                            notification.persistent ||
+                            notification.type === 'order'
+                          "
+                          class="mt-3 flex gap-2"
+                          @click.stop
+                        >
+                          <!-- Navigate to details -->
+                          <UButton
+                            v-if="notification.actionUrl"
+                            size="xs"
+                            variant="soft"
+                            color="primary"
+                            @click="handleNotificationClick(notification)"
+                          >
+                            <UIcon
+                              name="i-heroicons-eye"
+                              class="w-3 h-3 mr-1"
+                            />
+                            {{ t("common.view", "View") }}
+                          </UButton>
+
+                          <!-- Mark as acknowledged (for persistent) -->
+                          <UButton
+                            v-if="notification.persistent && !notification.read"
+                            size="xs"
+                            variant="solid"
+                            color="green"
+                            @click="markAsRead(notification.id)"
+                          >
+                            <UIcon
+                              name="i-heroicons-check"
+                              class="w-3 h-3 mr-1"
+                            />
+                            {{ t("notifications.acknowledge", "Acknowledge") }}
+                          </UButton>
+
+                          <!-- Dismiss -->
+                          <UButton
+                            size="xs"
+                            variant="ghost"
+                            color="gray"
+                            @click="deleteNotification(notification.id)"
+                          >
+                            <UIcon
+                              name="i-heroicons-x-mark"
+                              class="w-3 h-3 mr-1"
+                            />
+                            {{ t("common.dismiss", "Dismiss") }}
+                          </UButton>
+                        </div>
+
+                        <!-- Action URL indicator (for non-persistent notifications) -->
+                        <div
+                          v-if="
+                            notification.actionUrl &&
+                            !notification.persistent &&
+                            notification.type !== 'order'
+                          "
+                          class="mt-2"
+                        >
                           <span
                             class="text-xs text-primary-500 flex items-center gap-1"
                           >

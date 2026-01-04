@@ -38,6 +38,9 @@
     "clearConfirmTitle": "Clear all notifications?",
     "clearConfirmMessage": "This will permanently delete all notifications. This action cannot be undone.",
     "settings": "Notification settings",
+    "waiterCall": "Customer called for waiter",
+    "requiresAction": "Action Required",
+    "acknowledge": "Acknowledge",
     "stats": {
       "total": "Total",
       "unread": "Unread",

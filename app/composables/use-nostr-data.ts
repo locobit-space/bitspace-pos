@@ -62,7 +62,9 @@ export function useNostrData() {
     if (!import.meta.client) return null;
 
     // Helper to normalize private key to hex format
-    const normalizePrivkey = (key: string | null | undefined): string | null => {
+    const normalizePrivkey = (
+      key: string | null | undefined
+    ): string | null => {
       if (!key) return null;
 
       // If already hex (64 chars), return as-is
@@ -358,14 +360,23 @@ export function useNostrData() {
     console.log(`[NostrData] 🔨 createEvent called for kind ${kind}`);
 
     const keys = getUserKeys();
-    console.log("[NostrData] 🔑 getUserKeys() result:", keys ? {
-      hasPubkey: !!keys.pubkey,
-      pubkeyLength: keys.pubkey?.length,
-      pubkeyPreview: keys.pubkey?.slice(0, 8) + "...",
-      hasPrivkey: !!keys.privkey,
-      privkeyLength: keys.privkey?.length,
-      privkeyFormat: keys.privkey?.startsWith("nsec") ? "nsec (bech32)" : keys.privkey ? "hex" : "none"
-    } : "null - NO KEYS");
+    console.log(
+      "[NostrData] 🔑 getUserKeys() result:",
+      keys
+        ? {
+            hasPubkey: !!keys.pubkey,
+            pubkeyLength: keys.pubkey?.length,
+            pubkeyPreview: keys.pubkey?.slice(0, 8) + "...",
+            hasPrivkey: !!keys.privkey,
+            privkeyLength: keys.privkey?.length,
+            privkeyFormat: keys.privkey?.startsWith("nsec")
+              ? "nsec (bech32)"
+              : keys.privkey
+              ? "hex"
+              : "none",
+          }
+        : "null - NO KEYS"
+    );
 
     if (!keys) {
       error.value = "No Nostr keys available";
@@ -385,7 +396,7 @@ export function useNostrData() {
       kind: unsignedEvent.kind,
       pubkey: unsignedEvent.pubkey.slice(0, 8) + "...",
       tagsCount: unsignedEvent.tags.length,
-      contentLength: unsignedEvent.content.length
+      contentLength: unsignedEvent.content.length,
     });
 
     // If we have privkey, sign directly
@@ -394,11 +405,17 @@ export function useNostrData() {
       try {
         console.log("[NostrData] 🔢 Converting privkey to bytes...");
         const privkeyBytes = hexToBytes(keys.privkey);
-        console.log("[NostrData] ✅ Privkey converted to bytes, length:", privkeyBytes.length);
+        console.log(
+          "[NostrData] ✅ Privkey converted to bytes, length:",
+          privkeyBytes.length
+        );
 
         console.log("[NostrData] ✍️ Calling finalizeEvent...");
         const signedEvent = finalizeEvent(unsignedEvent, privkeyBytes);
-        console.log("[NostrData] ✅ Event signed successfully! ID:", signedEvent.id.slice(0, 8) + "...");
+        console.log(
+          "[NostrData] ✅ Event signed successfully! ID:",
+          signedEvent.id.slice(0, 8) + "..."
+        );
         return signedEvent;
       } catch (e) {
         error.value = `Failed to sign event: ${e}`;
@@ -406,7 +423,7 @@ export function useNostrData() {
         console.error("[NostrData] 🔍 Error details:", {
           errorType: typeof e,
           errorMessage: e instanceof Error ? e.message : String(e),
-          errorStack: e instanceof Error ? e.stack : undefined
+          errorStack: e instanceof Error ? e.stack : undefined,
         });
         return null;
       }
@@ -420,7 +437,9 @@ export function useNostrData() {
         nostr?: { signEvent: (event: UnsignedEvent) => Promise<Event> };
       };
       if (win.nostr?.signEvent) {
-        console.log("[NostrData] 📲 NIP-07 extension found, requesting signature...");
+        console.log(
+          "[NostrData] 📲 NIP-07 extension found, requesting signature..."
+        );
         try {
           const signedEvent = await win.nostr.signEvent(unsignedEvent);
           console.log("[NostrData] ✅ NIP-07 signed successfully!");
@@ -809,7 +828,10 @@ export function useNostrData() {
       if (companyCodeHash) {
         tags.push(["c", companyCodeHash]);
         console.log(
-          `[NostrData] 🏷️ Tagging with company hash: ${companyCodeHash.slice(0, 8)}...`
+          `[NostrData] 🏷️ Tagging with company hash: ${companyCodeHash.slice(
+            0,
+            8
+          )}...`
         );
       } else {
         console.warn(
@@ -822,30 +844,25 @@ export function useNostrData() {
         tags.push(["order_num", String(alertData.orderNumber)]);
       }
 
-      console.log(NOSTR_KINDS.POS_ALERT, alertData, tags);
       const event = await createEvent(
         NOSTR_KINDS.POS_ALERT,
         JSON.stringify(alertData),
         tags
       );
 
-      console.log("[NostrData] 📝 Kitchen alert event created:", event);
-
       if (!event) {
         console.error("[NostrData] ❌ Failed to create event");
         return null;
       }
 
-      console.log(
-        `[NostrData] 📡 Publishing to ${relay.writeRelays.value.length} relay(s):`,
-        relay.writeRelays.value
-      );
-
       const success = await relay.publishEvent(event);
 
       if (success) {
         console.log(
-          `[NostrData] ✅ Kitchen alert published successfully! Event ID: ${event.id.slice(0, 8)}...`
+          `[NostrData] ✅ Kitchen alert published successfully! Event ID: ${event.id.slice(
+            0,
+            8
+          )}...`
         );
         return event;
       } else {
@@ -1658,7 +1675,10 @@ export function useNostrData() {
     const codeHash = await company.hashCompanyCode(companyCode);
 
     console.log(
-      `[NostrData] 🔍 Discovering owner for company code hash: ${codeHash.slice(0, 8)}...`
+      `[NostrData] 🔍 Discovering owner for company code hash: ${codeHash.slice(
+        0,
+        8
+      )}...`
     );
 
     // Query public events with company code tag - NO author filter since we don't know who owns it
@@ -1692,7 +1712,9 @@ export function useNostrData() {
       const event = sortedEvents[0]!;
 
       console.log(
-        `[NostrData] 📄 Using event from: ${new Date(event.created_at * 1000).toLocaleString()}`
+        `[NostrData] 📄 Using event from: ${new Date(
+          event.created_at * 1000
+        ).toLocaleString()}`
       );
 
       const data = JSON.parse(event.content);

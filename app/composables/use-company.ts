@@ -245,8 +245,9 @@ export function useCompany() {
 
   /**
    * Load company code from storage
+   * Auto-migrates old 8-character hashes to new 16-character format
    */
-  function loadCompanyCode(): void {
+  async function loadCompanyCode(): Promise<void> {
     if (!import.meta.client) return;
 
     const storedCode = localStorage.getItem(STORAGE_KEYS.COMPANY_CODE);
@@ -257,8 +258,34 @@ export function useCompany() {
     const storedEnabled = localStorage.getItem(STORAGE_KEYS.IS_ENABLED);
 
     if (storedCode) companyCode.value = storedCode;
-    if (storedHash) companyCodeHash.value = storedHash;
     if (storedPubkey) ownerPubkey.value = storedPubkey;
+
+    // ============================================
+    // 🔄 AUTO-MIGRATION: Fix old 8-char hashes
+    // ============================================
+    if (storedCode && storedHash) {
+      // Check if hash is old format (8 chars) or mismatched
+      const correctHash = await hashCompanyCode(storedCode);
+
+      if (storedHash !== correctHash) {
+        console.warn(
+          `[Company] 🔄 Migrating company hash from ${storedHash.length} to ${correctHash.length} characters`
+        );
+        console.log(
+          `[Company] Old hash: ${storedHash.slice(0, 8)}... → New hash: ${correctHash.slice(0, 8)}...`
+        );
+
+        // Update to correct hash
+        companyCodeHash.value = correctHash;
+        localStorage.setItem(STORAGE_KEYS.COMPANY_CODE_HASH, correctHash);
+
+        console.log("[Company] ✅ Hash migration complete");
+      } else {
+        companyCodeHash.value = storedHash;
+      }
+    } else if (storedHash) {
+      companyCodeHash.value = storedHash;
+    }
 
     // Default to false if not set, otherwise parse value
     isCompanyCodeEnabled.value = storedEnabled === "true";

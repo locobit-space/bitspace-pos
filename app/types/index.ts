@@ -1895,6 +1895,62 @@ export interface Cart {
 
 export type NotificationPriority = "low" | "medium" | "high" | "critical";
 
+/**
+ * Kitchen order status for enhanced tracking
+ */
+export type KitchenStatus = "new" | "preparing" | "ready" | "served";
+
+/**
+ * Quick action button for notifications
+ */
+export interface NotificationAction {
+  label: string;
+  variant?: "solid" | "outline" | "ghost" | "soft";
+  color?: "primary" | "green" | "blue" | "red" | "orange" | "gray";
+  icon?: string;
+  onClick: () => void | Promise<void>;
+  requiresConfirm?: boolean; // Show confirmation dialog before action
+  confirmTitle?: string;
+  confirmMessage?: string;
+}
+
+/**
+ * Device role for filtering notifications
+ */
+export type DeviceRole = "all" | "pos" | "kitchen" | "waiter" | "manager";
+
+/**
+ * Device notification preferences
+ */
+export interface DeviceSettings {
+  deviceRole: DeviceRole;
+  deviceName?: string;
+  notificationPreferences: {
+    soundEnabled: boolean;
+    vibrationEnabled: boolean;
+
+    // Type filters
+    showNewOrders: boolean;
+    showKitchenReady: boolean;
+    showKitchenServed: boolean;
+    showWaiterCalls: boolean;
+    showBillRequests: boolean;
+    showPayments: boolean;
+    showStockAlerts: boolean;
+    showSystemUpdates: boolean;
+
+    // Sound customization
+    newOrderSound: "notification" | "bell" | "chime";
+    readySound: "bell" | "ding" | "success";
+    urgentSound: "alert" | "siren" | "alarm";
+
+    // Display preferences
+    autoMarkServedAsRead: boolean;
+    groupSimilarNotifications: boolean;
+    showNotificationDuration: number; // Toast duration in seconds
+  };
+}
+
 export interface POSNotification {
   id: string;
   type:
@@ -1915,6 +1971,14 @@ export interface POSNotification {
   actionUrl?: string; // Link to navigate when clicked
   expiresAt?: string; // Auto-dismiss after this time
   nostrEventId?: string;
+
+  // Enhanced features
+  persistent?: boolean; // Don't auto-dismiss (for critical alerts like waiter calls)
+  requiresAcknowledgment?: boolean; // Must be manually dismissed
+  actions?: NotificationAction[]; // Quick action buttons
+  kitchenStatus?: KitchenStatus; // Current kitchen status for order notifications
+  groupKey?: string; // Group similar notifications together
+  urgencyLevel?: "normal" | "warning" | "urgent" | "critical"; // Time-based urgency
 }
 
 // ============================================

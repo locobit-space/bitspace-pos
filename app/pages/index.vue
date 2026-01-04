@@ -291,7 +291,7 @@ const handleWelcomeCreate = () => {
 onMounted(async () => {
   // Initialize shop and company config
   await shop.init();
-  company.loadCompanyCode();
+  await company.loadCompanyCode();
 
   // If company code is enabled, user is staff - go straight to dashboard
   if (company.isCompanyCodeEnabled.value) {

@@ -1,22 +1,21 @@
 <template>
-    <div class="h-screen">
-        <slot />
-        <!-- Notification Center - available on all blank layout pages -->
-        <NotificationCenter />
-    </div>
+  <div class="h-screen">
+    <slot />
+  </div>
 </template>
 
 <script setup lang="ts">
 const { initPosAlerts } = useNotifications();
 const company = useCompany();
 
-onMounted(() => {
-    // Load company code first (required for POS alerts subscription)
-    company.loadCompanyCode();
+onMounted(async () => {
+  // Load company code first (required for POS alerts subscription)
+  // This will auto-migrate old 8-char hashes to new 16-char format
+  await company.loadCompanyCode();
 
-    // Initialize POS alerts for cross-device notifications
-    // Enables: kitchen status updates, waiter calls, bill requests via Nostr
-    initPosAlerts();
+  // Initialize POS alerts for cross-device notifications
+  // Enables: kitchen status updates, waiter calls, bill requests via Nostr
+  initPosAlerts();
 });
 </script>
 

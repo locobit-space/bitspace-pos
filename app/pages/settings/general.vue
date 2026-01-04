@@ -1091,7 +1091,7 @@ const formatSyncTime = (isoString: string) => {
 };
 
 // Handle tab query parameter
-onMounted(() => {
+onMounted(async () => {
   const tabParam = route.query.tab as string;
   if (tabParam === "security") {
     activeTab.value = "3"; // Security is now the 4th tab (index 3) after adding sync tab
@@ -1101,8 +1101,8 @@ onMounted(() => {
     activeTab.value = "2";
   }
 
-  // Load company code
-  company.loadCompanyCode();
+  // Load company code (with auto-migration)
+  await company.loadCompanyCode();
   companyCodeData.code = company.companyCode.value;
 });
 

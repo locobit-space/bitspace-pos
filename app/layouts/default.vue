@@ -90,8 +90,9 @@ onMounted(async () => {
   }
 
   // Load company code from localStorage first (required for POS alerts)
+  // This will auto-migrate old 8-char hashes to new 16-char format
   const company = useCompany();
-  company.loadCompanyCode();
+  await company.loadCompanyCode();
 
   // Initialize system notifications
   initSystemNotifications();

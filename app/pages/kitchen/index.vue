@@ -15,7 +15,6 @@ useHead({
 const { t } = useI18n();
 const ordersStore = useOrders();
 const toast = useToast();
-const notificationsStore = useNotifications();
 const nostrData = useNostrData();
 const company = useCompany();
 
@@ -165,17 +164,15 @@ const updateKitchenStatus = async (
     // ============================================
     // 🔔 MULTI-CHANNEL NOTIFICATION SYSTEM
     // ============================================
-    // 1. BroadcastChannel (same browser, instant)
-    // 2. Nostr events (cross-device, persistent)
-    // 3. Notification center (UI notifications)
+    // Publish ALL status changes to BroadcastChannel + Nostr
+    // The Nostr subscription (initPosAlerts) creates notifications on ALL devices
+    // This prevents duplicates and ensures all devices get notified
     // ============================================
 
-    // Notify on status changes (ready/served are most important)
-    if (kitchenStatus === "ready" || kitchenStatus === "served") {
-      await notifyKitchenStatusChange(order, kitchenStatus);
-    }
+    // Publish to BroadcastChannel + Nostr for ALL status changes
+    await notifyKitchenStatusChange(order, kitchenStatus);
 
-    // Play sound
+    // Play sound locally for instant feedback
     if (soundEnabled.value) {
       if (kitchenStatus === "ready") {
         playBellSound();
@@ -190,11 +187,12 @@ const updateKitchenStatus = async (
 
 /**
  * Notify all devices about kitchen status change
- * Uses 3-tier system: BroadcastChannel + Nostr + Notification Center
+ * Uses 2-tier system: BroadcastChannel + Nostr
+ * Notifications are created by initPosAlerts subscription to avoid duplicates
  */
 const notifyKitchenStatusChange = async (
   order: Order,
-  status: "ready" | "served"
+  status: "new" | "preparing" | "ready" | "served"
 ) => {
   try {
     // ─────────────────────────────────────────
@@ -217,16 +215,27 @@ const notifyKitchenStatusChange = async (
     // 2️⃣ NOSTR EVENT (Cross-Device)
     // ─────────────────────────────────────────
     // Publish kitchen alert to Nostr with company tag
-    // This ensures ALL staff devices get notified
+    // This ensures ALL staff devices get notified via initPosAlerts
     try {
+      // Map status to Nostr event type
+      const eventTypeMap = {
+        new: "new-order",
+        preparing: "order-preparing",
+        ready: "order-ready",
+        served: "order-served",
+      };
+
       const alertData = {
-        type: status === "ready" ? "order-ready" : "order-served",
+        type: eventTypeMap[status],
         orderId: order.id,
         orderNumber: order.orderNumber || order.id.slice(-6),
+        orderCode: order.orderNumber || order.id.slice(-6),
         status,
         customer: order.customer || "Customer",
+        tableName: order.tableName,
         total: order.total,
         items: order.items.length,
+        itemCount: order.items.length,
         timestamp: new Date().toISOString(),
       };
 
@@ -256,33 +265,11 @@ const notifyKitchenStatusChange = async (
     // ─────────────────────────────────────────
     // 3️⃣ NOTIFICATION CENTER (UI)
     // ─────────────────────────────────────────
-    const orderRef = `#${order.orderNumber || order.id.slice(-6)}`;
-    const customer = order.customer || "Customer";
-
-    if (status === "ready") {
-      notificationsStore.addNotification({
-        type: "order",
-        title: t("kitchen.orderReady"),
-        message: t("kitchen.orderReadyMessage", {
-          order: orderRef,
-          customer,
-        }),
-        data: { orderId: order.id, status },
-        priority: "high",
-        actionUrl: `/orders/${order.id}`,
-      });
-    } else if (status === "served") {
-      notificationsStore.addNotification({
-        type: "order",
-        title: t("kitchen.orderServed"),
-        message: t("kitchen.orderServedMessage", {
-          order: orderRef,
-          customer,
-        }),
-        data: { orderId: order.id, status },
-        priority: "medium",
-      });
-    }
+    // ✅ NO LOCAL NOTIFICATIONS - Let initPosAlerts handle ALL notifications
+    // This prevents duplicates and ensures consistent cross-device notifications
+    console.log(
+      `[Kitchen] 📢 Notification will be created by initPosAlerts subscription for status: ${status}`
+    );
   } catch (error) {
     console.error("[Kitchen] Failed to send notifications:", error);
   }
@@ -518,10 +505,12 @@ onUnmounted(() => {
         <!-- Logo & Title -->
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-lg"
-            >
-              <NuxtLinkLocale to="/">👨‍🍳</NuxtLinkLocale>
+            <div>
+              <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-lg"
+              >
+                <NuxtLinkLocale to="/">👨‍🍳</NuxtLinkLocale>
+              </div>
             </div>
             <div>
               <h1 class="text-lg font-bold text-gray-900 dark:text-white">
@@ -598,22 +587,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Right Side -->
-        <div class="flex items-center gap-4">
-          <!-- Current Time -->
-          <div class="text-right">
-            <div
-              class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums"
-            >
-              {{
-                currentTime.toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })
-              }}
-            </div>
-          </div>
-
+        <div class="flex items-center gap-2">
           <!-- Batch Selection Controls -->
           <div class="flex items-center gap-2">
             <UButton
@@ -685,6 +659,9 @@ onUnmounted(() => {
               POS
             </UButton>
           </NuxtLinkLocale>
+
+          <!-- Notification Center -->
+          <NotificationCenter />
         </div>
       </div>
     </header>
