@@ -15,6 +15,18 @@ const lastLowStockCheck = ref<number>(0);
 const LOW_STOCK_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes between checks
 let posAlertsInitialized = false; // Singleton guard for POS alerts subscription
 
+// Browser Notification API state
+const browserNotificationPermission = ref<
+  NotificationPermission | "unsupported"
+>("default");
+
+// Initialize browser notification permission check
+if (typeof window !== "undefined" && "Notification" in window) {
+  browserNotificationPermission.value = Notification.permission;
+} else if (typeof window !== "undefined") {
+  browserNotificationPermission.value = "unsupported";
+}
+
 export const useNotifications = () => {
   const sound = useSound();
   const { t } = useI18n();
@@ -27,11 +39,15 @@ export const useNotifications = () => {
   /**
    * Add a new notification
    * @param notification - The notification to add
-   * @param options - Optional settings (skipToast: don't show toast, skipSound: don't play sound)
+   * @param options - Optional settings (skipToast: don't show toast, skipSound: don't play sound, skipBrowserNotification: don't show browser notification)
    */
   function addNotification(
     notification: Omit<POSNotification, "id" | "read" | "createdAt">,
-    options?: { skipToast?: boolean; skipSound?: boolean }
+    options?: {
+      skipToast?: boolean;
+      skipSound?: boolean;
+      skipBrowserNotification?: boolean;
+    }
   ): POSNotification {
     const newNotification: POSNotification = {
       ...notification,
@@ -61,6 +77,11 @@ export const useNotifications = () => {
     // Show toast notification (unless persistent or skipped)
     if (!notification.persistent && !options?.skipToast) {
       showToast(newNotification);
+    }
+
+    // Show browser notification for important alerts (unless skipped)
+    if (!options?.skipBrowserNotification) {
+      showBrowserNotification(newNotification);
     }
 
     // Save to localStorage
@@ -122,6 +143,122 @@ export const useNotifications = () => {
         break;
       default:
         sound.playNotification();
+    }
+  }
+
+  // ============================================
+  // 🌐 BROWSER NOTIFICATION API
+  // ============================================
+
+  /**
+   * Request permission for browser notifications
+   * Shows a prompt to the user if permission hasn't been granted yet
+   */
+  async function requestBrowserNotificationPermission(): Promise<boolean> {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      browserNotificationPermission.value = "unsupported";
+      return false;
+    }
+
+    if (Notification.permission === "granted") {
+      browserNotificationPermission.value = "granted";
+      return true;
+    }
+
+    if (Notification.permission === "denied") {
+      browserNotificationPermission.value = "denied";
+      return false;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      browserNotificationPermission.value = permission;
+      return permission === "granted";
+    } catch (e) {
+      console.error("[Notifications] Failed to request permission:", e);
+      return false;
+    }
+  }
+
+  /**
+   * Show a native browser notification
+   * Shows for ALL notifications when tab is not focused
+   * Shows for important alerts even when tab is focused
+   */
+  function showBrowserNotification(notification: POSNotification): void {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    // Auto-request permission if not yet determined
+    if (Notification.permission === "default") {
+      Notification.requestPermission().then((permission) => {
+        browserNotificationPermission.value = permission;
+        if (permission === "granted") {
+          // Retry showing the notification after permission granted
+          showBrowserNotification(notification);
+        }
+      });
+      return;
+    }
+
+    if (Notification.permission !== "granted") return;
+
+    // Check if tab/window is currently focused
+    const isTabFocused = document.hasFocus();
+
+    // Determine if we should show browser notification:
+    // 1. Always show for important alerts (high/critical priority, persistent, or alert type)
+    // 2. Show for ALL notifications if tab is NOT focused (background)
+    const isImportant =
+      notification.priority === "high" ||
+      notification.priority === "critical" ||
+      notification.persistent ||
+      notification.type === "alert";
+
+    const shouldShowBrowser = isImportant || !isTabFocused;
+
+    if (!shouldShowBrowser) return;
+
+    try {
+      // Map notification type to emoji for title
+      const emojiMap: Record<POSNotification["type"], string> = {
+        payment: "💰",
+        order: "🍽️",
+        stock: "📦",
+        loyalty: "⭐",
+        ai_insight: "✨",
+        alert: "🔔",
+        system: "⚙️",
+        system_update: "🚀",
+      };
+
+      const emoji = emojiMap[notification.type] || "🔔";
+      const title = `${emoji} ${notification.title}`;
+
+      const browserNotif = new Notification(title, {
+        body: notification.message,
+        icon: "/favicon.ico", // Use app favicon
+        badge: "/favicon.ico",
+        tag: notification.id, // Prevents duplicate notifications
+        requireInteraction: notification.persistent || false,
+        silent: true, // We play our own sound
+      });
+
+      // Focus the window when notification is clicked
+      browserNotif.onclick = () => {
+        window.focus();
+        if (notification.actionUrl) {
+          navigateTo(notification.actionUrl);
+        }
+        isNotificationCenterOpen.value = true;
+        browserNotif.close();
+      };
+
+      // Auto-close after 10 seconds for non-persistent notifications
+      if (!notification.persistent) {
+        setTimeout(() => browserNotif.close(), 10000);
+      }
+    } catch (e) {
+      console.error("[Notifications] Failed to show browser notification:", e);
     }
   }
 
@@ -902,14 +1039,15 @@ export const useNotifications = () => {
     const sessionStartTime = Math.floor(Date.now() / 1000);
 
     // Process incoming POS_ALERT events
-    // isHistorical = true for initial fetch, false for real-time events
+    // isHistorical = true for initial fetch or polling, false for real-time subscription
     const processAlert = (event: any, isHistorical = false) => {
       if (processedEventIds.has(event.id)) return;
       processedEventIds.add(event.id);
 
-      // Skip toast/sound for old events (more than 30 seconds old)
-      const isOldEvent = event.created_at < sessionStartTime - 30;
-      const skipNotify = isHistorical || isOldEvent;
+      // Only skip toast/sound for historical events (initial fetch or polling)
+      // Real-time subscription events (isHistorical=false) should ALWAYS play sound
+      // This ensures customer alerts like waiter calls trigger sounds immediately
+      const skipNotify = isHistorical;
 
       try {
         const data = JSON.parse(event.content);
@@ -1157,17 +1295,48 @@ export const useNotifications = () => {
         console.error("[POS Alerts] Failed to fetch existing events:", e);
       }
 
-      // Real-time subscription with server-side tag filtering where supported
-      // Client-side matchesFilter() handles relays that don't support tag queries
-      const realtimeFilter: Record<string, any> = {
-        kinds: [NOSTR_KINDS.POS_ALERT],
-      };
-      if (companyCodeHash) realtimeFilter["#c"] = [companyCodeHash];
-      if (ownerPubkey) realtimeFilter["#p"] = [ownerPubkey];
+      // Real-time subscription with multiple filters (OR relationship)
+      // Each filter is checked independently - event matches if ANY filter matches
+      // This ensures we receive alerts from:
+      // 1. Staff (tagged with companyCodeHash)
+      // 2. Customers (tagged with ownerPubkey)
+      const realtimeFilters: Record<string, any>[] = [];
 
-      // Real-time subscription
-      const sub = $nostr.pool.subscribeMany(allRelays, [realtimeFilter], {
+      // Filter for company code hash (staff-to-staff alerts)
+      if (companyCodeHash) {
+        realtimeFilters.push({
+          kinds: [NOSTR_KINDS.POS_ALERT],
+          "#c": [companyCodeHash],
+        });
+      }
+
+      // Filter for owner pubkey (customer-to-staff alerts)
+      // Customers tag alerts with ownerPubkey since they don't have companyCodeHash
+      if (ownerPubkey) {
+        realtimeFilters.push({
+          kinds: [NOSTR_KINDS.POS_ALERT],
+          "#p": [ownerPubkey],
+        });
+        // Also check #c with ownerPubkey (customer uses both tags)
+        realtimeFilters.push({
+          kinds: [NOSTR_KINDS.POS_ALERT],
+          "#c": [ownerPubkey],
+        });
+      }
+
+      console.log(
+        "[POS Alerts] 🔌 Subscribing with",
+        realtimeFilters.length,
+        "filters"
+      );
+
+      // Real-time subscription with multiple filters
+      const sub = $nostr.pool.subscribeMany(allRelays, realtimeFilters, {
         onevent(event: any) {
+          console.log(
+            "[POS Alerts] 📨 Received event:",
+            event.id.slice(0, 8) + "..."
+          );
           if (matchesFilter(event)) processAlert(event);
         },
       });
@@ -1239,5 +1408,11 @@ export const useNotifications = () => {
     // System Announcements
     initSystemNotifications,
     initPosAlerts,
+
+    // Browser notifications
+    requestBrowserNotificationPermission,
+    browserNotificationPermission: computed(
+      () => browserNotificationPermission.value
+    ),
   };
 };
