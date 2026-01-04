@@ -10,7 +10,7 @@ import type {
   Order,
   OrderType,
 } from "~/types";
-
+import { POS_CURRENCY_OPTIONS } from "~/composables/use-currency";
 definePageMeta({
   layout: "blank",
   middleware: ["auth"],
@@ -47,7 +47,7 @@ const ordersStore = useOrders();
 const tablesStore = useTables();
 const lightning = useLightning();
 const currency = useCurrency();
-import { POS_CURRENCY_OPTIONS } from "~/composables/use-currency";
+
 const offline = useOffline();
 const sound = useSound();
 const receipt = useReceipt();
@@ -55,7 +55,8 @@ const receiptGenerator = useReceiptGenerator();
 const customersStore = useCustomers();
 const tableSession = useTableSession();
 const { t } = useI18n();
-
+const orderSyncNotifications = useOrderSyncNotifications();
+const toast = useToast();
 // ============================================
 // UI State
 // ============================================
@@ -76,6 +77,8 @@ const autoServeOnPayment = ref(
 const showSplitBillModal = ref(false); // Split bill modal
 const showCustomerModal = ref(false); // Customer lookup modal
 const showBarcodeScannerModal = ref(false); // Barcode scanner modal
+const showVoidOrderModal = ref(false); // Void/cancel order modal
+const orderToVoid = ref<{ id: string; orderNumber?: string } | null>(null); // Order being cancelled
 const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mode
 const splitOrder = ref<Order | null>(null); // Order being split
 const splitCount = ref(2); // Number of people splitting
@@ -162,7 +165,6 @@ const selectCustomer = (
     phone: customer.phone,
   });
 
-  const toast = useToast();
   toast.add({
     title: "Customer Selected",
     description: customer.name || "Customer",
@@ -1346,6 +1348,85 @@ const closeSplitBill = () => {
   splitPaidCount.value = 0;
 };
 
+/**
+ * Open void order modal for current cart
+ */
+const openVoidOrderModal = () => {
+  // Can only void if there's a pending order loaded
+  const pendingOrder = ordersStore.orders.value.find(
+    (o) =>
+      o.status === "pending" &&
+      o.items.some((item) =>
+        pos.cartItems.value.some(
+          (cartItem) => cartItem.productId === item.productId
+        )
+      )
+  );
+
+  if (!pendingOrder) {
+    toast.add({
+      title: t("common.error"),
+      description: t("pos.no_pending_order_to_void"),
+      color: "red",
+    });
+    return;
+  }
+
+  orderToVoid.value = {
+    id: pendingOrder.id,
+    orderNumber: pendingOrder.orderNumber,
+  };
+  showVoidOrderModal.value = true;
+};
+
+/**
+ * Open void order modal for a specific order (from pending orders list)
+ */
+const openVoidModalForOrder = (order: Order) => {
+  orderToVoid.value = {
+    id: order.id,
+    orderNumber: order.orderNumber,
+  };
+  showPendingOrdersModal.value = false;
+  showVoidOrderModal.value = true;
+};
+
+/**
+ * Handle void/cancel order confirmation
+ */
+const handleVoidOrder = async (orderId: string, reason: string) => {
+  try {
+    isProcessing.value = true;
+
+    const result = await ordersStore.voidOrder(orderId, reason);
+
+    if (result) {
+      toast.add({
+        title: t("pos.order_voided"),
+        description: t("pos.order_voided_success", {
+          orderNumber: result.orderNumber || orderId.slice(-8),
+        }),
+        color: "green",
+      });
+
+      // Clear cart
+      pos.clearCart();
+
+      // Play sound
+      sound.playSuccess();
+    }
+  } catch (error) {
+    console.error("[POS] Failed to void order:", error);
+    toast.add({
+      title: t("common.error"),
+      description: t("common.something_went_wrong"),
+      color: "red",
+    });
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 // ============================================
 // Tax Calculation
 // ============================================
@@ -1572,6 +1653,9 @@ onMounted(async () => {
   await offline.init();
   await productsStore.init();
   await ordersStore.init();
+
+  // Initialize order sync notifications for multi-device updates
+  orderSyncNotifications.initOrderSyncNotifications();
 
   if (!pos.isSessionActive.value) {
     pos.startSession("main", "staff-1", 0);
@@ -2352,14 +2436,24 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <UButton
-            v-if="pos.cartItems.value.length > 0"
-            icon="i-heroicons-trash"
-            color="red"
-            variant="ghost"
-            size="xs"
-            @click="pos.clearCart"
-          />
+          <div v-if="pos.cartItems.value.length > 0" class="flex gap-1">
+            <UButton
+              icon="i-heroicons-x-circle"
+              color="red"
+              variant="ghost"
+              size="xs"
+              :title="t('pos.void_order')"
+              @click="openVoidOrderModal"
+            />
+            <UButton
+              icon="i-heroicons-trash"
+              color="gray"
+              variant="ghost"
+              size="xs"
+              :title="t('common.clear')"
+              @click="pos.clearCart"
+            />
+          </div>
         </div>
 
         <!-- Order Type Selector -->
@@ -3369,6 +3463,14 @@ onUnmounted(() => {
       @add="addCustomItem"
     />
 
+    <!-- Void Order Modal -->
+    <PosVoidOrderModal
+      v-model:open="showVoidOrderModal"
+      :order-id="orderToVoid?.id"
+      :order-number="orderToVoid?.orderNumber"
+      @confirm="handleVoidOrder"
+    />
+
     <!-- Held Orders Modal -->
     <PosHeldOrdersModal
       v-model:open="showHeldOrdersModal"
@@ -3440,7 +3542,7 @@ onUnmounted(() => {
             class="text-center py-8 text-gray-400 dark:text-gray-500"
           >
             <span class="text-4xl block mb-2">✅</span>
-            {{ t("pos.noPendingBills") || "No pending bills" }}
+            {{ t("pos.noPendingBills", "No pending bills") }}
           </div>
 
           <div v-else class="space-y-3 max-h-96 overflow-auto">
@@ -3462,10 +3564,10 @@ onUnmounted(() => {
                   <UCheckbox
                     v-if="isMergeMode"
                     :model-value="isOrderSelectedForMerge(order.id)"
-                    @click.stop
-                    @update:model-value="toggleOrderForMerge(order)"
                     color="violet"
                     class="mr-1"
+                    @click.stop
+                    @update:model-value="toggleOrderForMerge(order)"
                   />
                   <span
                     v-if="order.orderNumber"
@@ -3524,7 +3626,7 @@ onUnmounted(() => {
                 </div>
                 <p v-if="order.items.length > 3" class="text-xs italic">
                   +{{ order.items.length - 3 }}
-                  {{ t("common.more") || "more" }}...
+                  {{ t("common.more", "more") }}...
                 </p>
               </div>
 
@@ -3533,29 +3635,38 @@ onUnmounted(() => {
                   size="sm"
                   color="emerald"
                   variant="soft"
-                  @click="loadOrderForEditing(order)"
+                  @click.stop="loadOrderForEditing(order)"
                 >
                   <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
-                  {{ t("common.edit") || "Edit" }}
+                  {{ t("common.edit", "Edit") }}
                 </UButton>
                 <UButton
                   block
                   size="sm"
                   color="primary"
-                  @click="selectPendingOrderForPayment(order)"
+                  @click.stop="selectPendingOrderForPayment(order)"
                 >
                   <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
-                  {{ t("pos.collectPayment") || "Pay" }}
+                  {{ t("pos.collectPayment", "Pay") }}
                 </UButton>
                 <UButton
                   size="sm"
                   color="amber"
                   variant="soft"
                   class="text-nowrap"
-                  @click="openSplitBill(order)"
+                  @click.stop="openSplitBill(order)"
                 >
                   <UIcon name="i-heroicons-scissors" class="w-4 h-4" />
-                  {{ t("pos.splitBill") || "Split" }}
+                  {{ t("pos.splitBill", "Split") }}
+                </UButton>
+                <UButton
+                  size="sm"
+                  color="red"
+                  variant="ghost"
+                  :title="t('pos.void_order')"
+                  @click.stop="openVoidModalForOrder(order)"
+                >
+                  <UIcon name="i-heroicons-x-circle" class="w-4 h-4" />
                 </UButton>
               </div>
             </div>

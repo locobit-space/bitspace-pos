@@ -207,6 +207,24 @@
     "autoServeOnPayment": "Auto-Close Kitchen",
     "autoServeOnPaymentDesc": "Mark orders as \"served\" when payment is completed",
     "mergeOrders": "Merge",
-    "mergeSelected": "Merge"
+    "mergeSelected": "Merge",
+    "void_order": "Cancel Order",
+    "void_order_desc": "Cancel order #{orderNumber}",
+    "void_order_warning": "This action cannot be undone",
+    "void_order_warning_desc": "Cancelling this order will remove it from active orders and notify all devices",
+    "void_reason": "Reason for cancellation",
+    "custom_reason": "Custom Reason",
+    "void_reason_placeholder": "Enter a reason for cancelling this order...",
+    "void_reasons": {
+      "customer_request": "Customer Request",
+      "wrong_order": "Wrong Order",
+      "duplicate": "Duplicate Order",
+      "kitchen_error": "Kitchen Error",
+      "out_of_stock": "Out of Stock",
+      "other": "Other"
+    },
+    "order_voided": "Order Cancelled",
+    "order_voided_success": "Order #{orderNumber} has been cancelled",
+    "no_pending_order_to_void": "No pending order to cancel. Please save the current cart first."
   }
 }

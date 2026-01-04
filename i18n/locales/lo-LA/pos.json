@@ -207,6 +207,24 @@
     "autoServeOnPayment": "ປິດຄົວອັດຕະໂນມັດ",
     "autoServeOnPaymentDesc": "ໝາຍອໍເດີ້ເປັນ \"ສົ່ງແລ້ວ\" ເມື່ອຈ່າຍເງິນສຳເລັດ",
     "mergeOrders": "ລວມ",
-    "mergeSelected": "ລວມ"
+    "mergeSelected": "ລວມ",
+    "void_order": "ຍົກເລີກອໍເດີ້",
+    "void_order_desc": "ຍົກເລີກອໍເດີ້ #{orderNumber}",
+    "void_order_warning": "ບໍ່ສາມາດຍົກເລີກການກະທຳນີ້ໄດ້",
+    "void_order_warning_desc": "ການຍົກເລີກອໍເດີ້ນີ້ຈະລຶບມັນອອກຈາກອໍເດີ້ທີ່ເຮັດວຽກຢູ່ ແລະ ແຈ້ງເຕືອນທຸກອຸປະກອນ",
+    "void_reason": "ເຫດຜົນໃນການຍົກເລີກ",
+    "custom_reason": "ເຫດຜົນອື່ນໆ",
+    "void_reason_placeholder": "ໃສ່ເຫດຜົນໃນການຍົກເລີກອໍເດີ້ນີ້...",
+    "void_reasons": {
+      "customer_request": "ລູກຄ້າຮ້ອງຂໍ",
+      "wrong_order": "ອໍເດີ້ຜິດ",
+      "duplicate": "ອໍເດີ້ຊ້ຳກັນ",
+      "kitchen_error": "ຄົວຜິດພາດ",
+      "out_of_stock": "ສິນຄ້າໝົດ",
+      "other": "ອື່ນໆ"
+    },
+    "order_voided": "ຍົກເລີກອໍເດີ້ແລ້ວ",
+    "order_voided_success": "ຍົກເລີກອໍເດີ້ #{orderNumber} ສຳເລັດແລ້ວ",
+    "no_pending_order_to_void": "ບໍ່ມີອໍເດີ້ລໍຖ້າທີ່ຈະຍົກເລີກ. ກະລຸນາບັນທຶກກະຕ່າປັດຈຸບັນກ່ອນ."
   }
 }

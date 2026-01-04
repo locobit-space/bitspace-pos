@@ -106,6 +106,19 @@
       "syncFailedDesc": "ບໍ່ສາມາດຊິ້ງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່.",
       "offline": "ໂໝດອອຟໄລນ໌",
       "offlineDesc": "ທ່ານກຳລັງເຮັດວຽກແບບອອຟໄລນ໌"
-    }
+    },
+    "order_completed_elsewhere": "ອໍເດີ້ຖືກຈ່າຍແລ້ວຈາກອຸປະກອນອື່ນ",
+    "order_completed_elsewhere_desc": "ອໍເດີ້ #{orderNumber} ຖືກຈ່າຍແລ້ວໂດຍພະນັກງານຄົນອື່ນ",
+    "order_cancelled": "ຍົກເລີກອໍເດີ້ແລ້ວ",
+    "order_cancelled_desc": "ອໍເດີ້ #{orderNumber} ຖືກຍົກເລີກຈາກອຸປະກອນອື່ນ",
+    "order_refunded": "ຄືນເງິນອໍເດີ້ແລ້ວ",
+    "order_refunded_desc": "ອໍເດີ້ #{orderNumber} ຖືກຄືນເງິນຈາກອຸປະກອນອື່ນ",
+    "order_preparing": "ອໍເດີ້ຢູ່ໃນຄົວ",
+    "order_ready": "ອໍເດີ້ພ້ອມແລ້ວ",
+    "order_served": "ສົ່ງອໍເດີ້ແລ້ວ",
+    "order_updated": "ອໍເດີ້ຖືກອັບເດດ",
+    "order_items_changed": "ລາຍການໃນອໍເດີ້ #{orderNumber} ຖືກແກ້ໄຂຈາກອຸປະກອນອື່ນ",
+    "orders_synced": "ຊິ້ງອໍເດີ້ແລ້ວ",
+    "orders_synced_desc": "ຊິ້ງອໍເດີ້ {count} ລາຍການຈາກອຸປະກອນອື່ນ"
   }
 }

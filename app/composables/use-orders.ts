@@ -111,18 +111,15 @@ export function useOrders() {
   }
 
   /**
-   * NEW: Fetch recent order updates from Nostr
-   * Similar to kitchen alerts - fetches last N hours of orders to catch missed updates
-   * This ensures devices that were offline or started late get recent changes
+   * Fetch recent order updates from Nostr
+   * Catches missed updates from offline period or late device startup
    */
   async function fetchRecentOrderUpdates(hoursBack: number = 24): Promise<number> {
     try {
-      console.log(`[Orders] 🔄 Fetching order updates from last ${hoursBack} hours...`);
-
       const sinceTimestamp = Math.floor(Date.now() / 1000) - (hoursBack * 3600);
       const recentOrders = await loadFromNostr({
         since: sinceTimestamp,
-        limit: 100 // Fetch up to 100 recent orders
+        limit: 100
       });
 
       let updatedCount = 0;
@@ -132,7 +129,6 @@ export function useOrders() {
         const existingIndex = orders.value.findIndex((o) => o.id === recentOrder.id);
 
         if (existingIndex >= 0) {
-          // Order exists - check if incoming is newer
           const existing = orders.value[existingIndex];
           const existingTime = existing?.updatedAt
             ? new Date(existing.updatedAt).getTime()
@@ -142,50 +138,59 @@ export function useOrders() {
             : new Date(recentOrder.date).getTime();
 
           if (incomingTime > existingTime) {
-            // Update with newer version
             orders.value.splice(existingIndex, 1, recentOrder);
             await saveToLocal(recentOrder);
             updatedCount++;
-
-            // Broadcast update to other tabs
             broadcastOrderUpdate(recentOrder);
-
-            console.log(
-              `[Orders] ✅ Updated order ${recentOrder.id.slice(-8)} - ` +
-              `Status: ${recentOrder.status}, Kitchen: ${recentOrder.kitchenStatus}`
-            );
+            notifyOrderUpdated(recentOrder, existing);
           }
         } else {
-          // New order - add it
           orders.value.unshift(recentOrder);
           await saveToLocal(recentOrder);
           newCount++;
-
-          // Broadcast new order to other tabs
           broadcastOrderUpdate(recentOrder);
-
-          console.log(`[Orders] ➕ Added new order ${recentOrder.id.slice(-8)}`);
         }
       }
 
-      // Re-sort orders by date
       orders.value.sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
 
-      console.log(
-        `[Orders] ✅ History fetch complete: ${updatedCount} updated, ${newCount} new`
-      );
+      if (updatedCount + newCount > 0) {
+        console.log(`[Orders] Synced ${updatedCount} updates, ${newCount} new`);
+      }
 
       return updatedCount + newCount;
     } catch (e) {
-      console.error("[Orders] ❌ Failed to fetch recent order updates:", e);
+      console.error("[Orders] Sync failed:", e);
       return 0;
     }
   }
 
   /**
-   * NEW: Broadcast order update to other tabs/windows (same browser)
+   * Notify UI components about order updates
+   * Dispatches custom event for visual feedback (toasts, badges, etc.)
+   */
+  function notifyOrderUpdated(updatedOrder: Order, previousOrder: Order): void {
+    if (!import.meta.client) return;
+
+    // Emit custom event for UI components to listen to
+    const event = new CustomEvent("bitspace-order-updated", {
+      detail: {
+        order: updatedOrder,
+        previous: previousOrder,
+        changes: {
+          status: previousOrder.status !== updatedOrder.status,
+          kitchenStatus: previousOrder.kitchenStatus !== updatedOrder.kitchenStatus,
+          items: previousOrder.items.length !== updatedOrder.items.length,
+        },
+      },
+    });
+    window.dispatchEvent(event);
+  }
+
+  /**
+   * Broadcast order update to other tabs/windows (same browser)
    */
   function broadcastOrderUpdate(order: Order): void {
     if (!import.meta.client) return;
@@ -194,7 +199,6 @@ export function useOrders() {
       if (!orderBroadcastChannel) {
         orderBroadcastChannel = new BroadcastChannel("bitspace-order-sync");
 
-        // Listen for updates from other tabs
         orderBroadcastChannel.onmessage = async (event) => {
           const { type, order: updatedOrder } = event.data;
 
@@ -202,7 +206,6 @@ export function useOrders() {
             const existingIndex = orders.value.findIndex((o) => o.id === updatedOrder.id);
 
             if (existingIndex >= 0) {
-              // Update existing order if incoming is newer
               const existing = orders.value[existingIndex];
               const existingTime = existing?.updatedAt
                 ? new Date(existing.updatedAt).getTime()
@@ -214,18 +217,13 @@ export function useOrders() {
               if (incomingTime >= existingTime) {
                 orders.value.splice(existingIndex, 1, updatedOrder);
                 await saveToLocal(updatedOrder);
-                console.log(
-                  `[Orders] 📡 BroadcastChannel update: ${updatedOrder.id.slice(-8)} - ${updatedOrder.status}`
-                );
+                notifyOrderUpdated(updatedOrder, existing);
               }
             } else {
-              // New order from another tab
               orders.value.unshift(updatedOrder);
               await saveToLocal(updatedOrder);
-              console.log(`[Orders] 📡 BroadcastChannel new order: ${updatedOrder.id.slice(-8)}`);
             }
 
-            // Re-sort
             orders.value.sort(
               (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
             );
@@ -233,14 +231,12 @@ export function useOrders() {
         };
       }
 
-      // Send update to other tabs
       orderBroadcastChannel.postMessage({
         type: "order-update",
         order,
       });
-    } catch (e) {
-      // BroadcastChannel not supported or failed
-      console.debug("[Orders] BroadcastChannel not available:", e);
+    } catch {
+      // BroadcastChannel not supported - gracefully degrade
     }
   }
 
@@ -249,12 +245,11 @@ export function useOrders() {
    * Uses session cache to skip re-init on page revisits
    */
   async function init(): Promise<void> {
-    // Session cache: If already initialized with data, just trigger background sync
+    // Session cache: Skip re-init if already loaded
     if (isInitialized && orders.value.length > 0) {
-      console.log("[Orders] Session cache hit, triggering background sync");
       if (offline.isOnline.value && !isSyncing.value) {
-        syncWithNostr({ batchSize: 50 }); // Fire and forget
-        fetchRecentOrderUpdates(24); // Also fetch recent updates
+        syncWithNostr({ batchSize: 50 });
+        fetchRecentOrderUpdates(24);
       }
       return;
     }
@@ -270,51 +265,29 @@ export function useOrders() {
         }
       }
 
-      // STEP 1: Load from local DB first (fast) - UI can render immediately
+      // Load from local DB first (fast UI render)
       isLoading.value = true;
       orders.value = await loadFromLocal();
-      isLoading.value = false; // UI renders NOW with local data
+      isLoading.value = false;
 
-      // Mark as initialized for session caching
       isInitialized = true;
 
-      // Check for pending orders from customer order pages (localStorage broadcast)
       await pickupPendingCustomerOrders();
 
-      // Count pending syncs
       const pending = await db.localOrders.where("syncedAt").equals(0).count();
       syncPending.value = pending;
 
-      // STEP 2: Fetch recent order updates (catch missed updates from offline period)
+      // Fetch recent updates in background
       if (offline.isOnline.value) {
-        // NEW: Fetch orders updated in last 24 hours to catch any missed updates
-        fetchRecentOrderUpdates(24)
-          .then((count) => {
-            if (count > 0) {
-              console.log(`[Orders] ✅ Caught up on ${count} order updates`);
-            }
-          })
-          .catch((e) => {
-            console.warn("[Orders] Failed to fetch recent updates:", e);
-          });
-      }
+        fetchRecentOrderUpdates(24);
 
-      // STEP 3: Sync with Nostr in BACKGROUND (non-blocking)
-      if (offline.isOnline.value) {
         isSyncing.value = true;
         syncWithNostr({ batchSize: 50 })
-          .then(() => {
-            console.log("[Orders] Background sync completed");
-          })
-          .catch((e) => {
-            console.warn("[Orders] Background sync failed:", e);
-          })
-          .finally(() => {
-            isSyncing.value = false;
-          });
+          .catch((e) => console.warn("[Orders] Sync failed:", e))
+          .finally(() => (isSyncing.value = false));
       }
 
-      // Listen for new orders from customer tabs (same browser)
+      // Setup real-time sync
       if (import.meta.client) {
         window.addEventListener("storage", handleStorageEvent);
         window.addEventListener(
@@ -322,16 +295,8 @@ export function useOrders() {
           handleNewOrderEvent as EventListener
         );
 
-        // Initialize BroadcastChannel (happens on first broadcastOrderUpdate call)
-        // This is for instant sync between tabs in same browser
-
-        // Start REAL-TIME subscription for cross-device sync
         subscribeToOrderUpdates();
-
-        // NEW: Start aggressive polling for pending orders (5 seconds)
         startPendingOrdersPolling(5000);
-
-        // Start background sync as fallback (every 60 seconds - reduced frequency since we have real-time)
         startBackgroundSync(60000);
       }
     } catch (e) {
@@ -973,34 +938,22 @@ export function useOrders() {
                 orders.value.splice(existingIndex, 1, recentOrder);
                 await saveToLocal(recentOrder);
                 updatedCount++;
-
-                // Broadcast to other tabs
                 broadcastOrderUpdate(recentOrder);
-
-                console.log(
-                  `[Orders] 🔄 Polling update: ${recentOrder.id.slice(-8)} - ` +
-                  `${existing.status} → ${recentOrder.status}, ` +
-                  `Kitchen: ${existing.kitchenStatus} → ${recentOrder.kitchenStatus}`
-                );
+                notifyOrderUpdated(recentOrder, existing);
               }
             }
           }
         }
 
         if (updatedCount > 0) {
-          // Re-sort orders
           orders.value.sort(
             (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
           );
         }
-      } catch (e) {
-        console.debug("[Orders] Polling failed (will retry):", e);
+      } catch {
+        // Polling failed - will retry on next interval
       }
     }, intervalMs);
-
-    console.log(
-      `[Orders] 🔄 Pending orders polling started (every ${intervalMs / 1000}s)`
-    );
   }
 
   /**
@@ -1010,25 +963,18 @@ export function useOrders() {
     if (backgroundSyncInterval) {
       clearInterval(backgroundSyncInterval);
       backgroundSyncInterval = null;
-      console.log("[Orders] Background sync stopped");
     }
-    // NEW: Stop pending orders polling
     if (pendingOrdersPollingInterval) {
       clearInterval(pendingOrdersPollingInterval);
       pendingOrdersPollingInterval = null;
-      console.log("[Orders] Pending orders polling stopped");
     }
-    // Also close real-time subscription
     if (orderSubscription) {
       orderSubscription.close();
       orderSubscription = null;
-      console.log("[Orders] Real-time subscription closed");
     }
-    // Close BroadcastChannel
     if (orderBroadcastChannel) {
       orderBroadcastChannel.close();
       orderBroadcastChannel = null;
-      console.log("[Orders] BroadcastChannel closed");
     }
   }
 

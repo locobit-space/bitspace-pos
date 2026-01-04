@@ -737,7 +737,7 @@ export const useNotifications = () => {
       "bnos.space-security", // Security alerts
       "bnos.space-bugfix", // Important bug fixes
       // for dev
-      "test-announcement",
+      import.meta.env.DEV && "test-announcement",
     ];
 
     // Map announcement tags to notification properties

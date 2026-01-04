@@ -30,6 +30,7 @@
     "status": "Status",
     "success": "Success",
     "error": "Error",
+    "something_went_wrong": "Something went wrong",
     "loading": "Loading...",
     "processing": "Processing...",
     "syncing": "Syncing...",

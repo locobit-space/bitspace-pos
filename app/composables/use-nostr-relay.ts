@@ -178,19 +178,7 @@ export const useNostrRelay = () => {
     try {
       // Step 1: Load from localStorage first (fast startup)
       const storedRelays = loadFromStorage();
-
-      if (storedRelays.length > 0) {
-        relayConfigs.value = storedRelays;
-        console.log(
-          "[useNostrRelay] Loaded",
-          storedRelays.length,
-          "relays from localStorage"
-        );
-      } else {
-        // Use defaults if nothing stored
-        relayConfigs.value = [...DEFAULT_RELAYS];
-        console.log("[useNostrRelay] Using default relays");
-      }
+      relayConfigs.value = [...storedRelays, ...DEFAULT_RELAYS]
 
       // Step 2: Connect to relays immediately (don't wait for Nostr settings)
       await connect();
@@ -457,12 +445,6 @@ export const useNostrRelay = () => {
   ) {
     try {
       const useRelays = selectedRelays || readRelays.value;
-      console.log(
-        "[NostrRelay] 🔌 Starting subscription to",
-        useRelays.length,
-        "relays with filter:",
-        JSON.stringify(filter)
-      );
       const sub = pool.subscribeMany(useRelays, [filter], {
         onevent: (event) => {
           console.log(
@@ -474,9 +456,6 @@ export const useNostrRelay = () => {
           callbacks.onevent(event);
         },
         oneose: () => {
-          console.log(
-            "[NostrRelay] ✅ Subscription EOSE (end of stored events)"
-          );
           callbacks.oneose?.();
         },
       });

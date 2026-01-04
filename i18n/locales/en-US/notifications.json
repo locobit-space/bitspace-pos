@@ -109,6 +109,19 @@
       "syncFailedDesc": "Failed to sync data. Please try again.",
       "offline": "Offline Mode",
       "offlineDesc": "You are now working offline"
-    }
+    },
+    "order_completed_elsewhere": "Order Paid on Another Device",
+    "order_completed_elsewhere_desc": "Order #{orderNumber} was paid by another staff member",
+    "order_cancelled": "Order Cancelled",
+    "order_cancelled_desc": "Order #{orderNumber} was cancelled on another device",
+    "order_refunded": "Order Refunded",
+    "order_refunded_desc": "Order #{orderNumber} was refunded on another device",
+    "order_preparing": "Order In Kitchen",
+    "order_ready": "Order Ready for Pickup",
+    "order_served": "Order Served",
+    "order_updated": "Order Updated",
+    "order_items_changed": "Order #{orderNumber} items were modified on another device",
+    "orders_synced": "Orders Synced",
+    "orders_synced_desc": "Synced {count} order updates from other devices"
   }
 }
