@@ -13,7 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { getProductName, getStatusColor, getStatusText } = usePromotionHelpers();
+const { getStatusColor, getStatusText } = usePromotionHelpers();
 const productsStore = useProductsStore();
 
 const isOpen = computed({
@@ -24,36 +24,39 @@ const isOpen = computed({
 // Type display info
 const typeInfo = computed(() => {
   if (!props.promotion) return null;
-  const types: Record<string, { icon: string; color: string; label: string; description: string }> = {
+  const types: Record<
+    string,
+    { icon: string; color: string; label: string; description: string }
+  > = {
     bogo: {
       icon: "🎁",
       color: "green",
       label: "BOGO",
-      description: "Buy One Get One promotion"
+      description: "Buy One Get One promotion",
     },
     discount: {
       icon: "💰",
       color: "blue",
       label: "Discount",
-      description: "Price discount promotion"
+      description: "Price discount promotion",
     },
     tiered: {
       icon: "📊",
       color: "purple",
       label: "Tiered",
-      description: "Volume-based discount tiers"
+      description: "Volume-based discount tiers",
     },
     bundle: {
       icon: "📦",
       color: "amber",
       label: "Bundle",
-      description: "Bundle products together"
+      description: "Bundle products together",
     },
     freebie: {
       icon: "🎀",
       color: "pink",
       label: "Free Gift",
-      description: "Free product with purchase"
+      description: "Free product with purchase",
     },
   };
   return types[props.promotion.type] || types.bogo;
@@ -69,28 +72,28 @@ function formatDate(dateString?: string): string {
 function formatDaysOfWeek(days?: number[]): string {
   if (!days || days.length === 0) return "All days";
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return days.map(d => dayNames[d]).join(", ");
+  return days.map((d) => dayNames[d]).join(", ");
 }
 
 // Get trigger products
 const triggerProducts = computed(() => {
   if (!props.promotion) return [];
   return props.promotion.triggerProductIds
-    .map(id => productsStore.getProduct(id))
-    .filter(p => p !== undefined);
+    .map((id) => productsStore.getProduct(id))
+    .filter((p) => p !== undefined);
 });
 
 // Get reward products
 const rewardProducts = computed(() => {
   if (!props.promotion) return [];
   return props.promotion.rewardProductIds
-    .map(id => productsStore.getProduct(id))
-    .filter(p => p !== undefined);
+    .map((id) => productsStore.getProduct(id))
+    .filter((p) => p !== undefined);
 });
 </script>
 
 <template>
-  <UModal v-model="isOpen" :ui="{ width: 'sm:max-w-2xl' }">
+  <UModal v-model:open="isOpen">
     <template #header>
       <div class="flex items-center gap-3">
         <div
@@ -116,7 +119,9 @@ const rewardProducts = computed(() => {
         <!-- Status & Priority -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               {{ t("common.status", "Status") }}
             </label>
             <UBadge
@@ -126,7 +131,9 @@ const rewardProducts = computed(() => {
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               {{ t("promotions.priority", "Priority") }}
             </label>
             <div class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -137,19 +144,26 @@ const rewardProducts = computed(() => {
 
         <!-- Date Range -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
             {{ t("promotions.dateRange", "Date Range") }}
           </label>
           <div class="flex items-center gap-2 text-gray-900 dark:text-white">
             <span>{{ formatDate(promotion.startDate) }}</span>
-            <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 text-gray-400" />
+            <UIcon
+              name="i-heroicons-arrow-right"
+              class="w-4 h-4 text-gray-400"
+            />
             <span>{{ formatDate(promotion.endDate) }}</span>
           </div>
         </div>
 
         <!-- Days of Week -->
         <div v-if="promotion.daysOfWeek && promotion.daysOfWeek.length > 0">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
             {{ t("promotions.daysOfWeek", "Active Days") }}
           </label>
           <div class="text-gray-900 dark:text-white">
@@ -159,18 +173,28 @@ const rewardProducts = computed(() => {
 
         <!-- Scope -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
             {{ t("promotions.scope", "Scope") }}
           </label>
           <UBadge
-            :label="promotion.scope === 'all' ? 'All Products' : promotion.scope === 'products' ? 'Specific Products' : 'Categories'"
+            :label="
+              promotion.scope === 'all'
+                ? 'All Products'
+                : promotion.scope === 'products'
+                ? 'Specific Products'
+                : 'Categories'
+            "
             variant="subtle"
           />
         </div>
 
         <!-- Trigger Products -->
         <div v-if="triggerProducts.length > 0">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
             {{ t("promotions.triggerProducts", "Trigger Products") }}
             <span class="text-xs text-gray-500">
               (Buy {{ promotion.triggerQuantity }}×)
@@ -182,7 +206,22 @@ const rewardProducts = computed(() => {
               :key="product.id"
               class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
             >
-              <div class="text-2xl">{{ product.image || "📦" }}</div>
+              <div class="text-2xl">
+                <img
+                  v-if="product.image && product.image.startsWith('http')"
+                  :src="product.image"
+                  :alt="product.name"
+                  class="object-cover rounded-lg w-24 h-24"
+                />
+                <div
+                  v-else
+                  class="w-24 h-24 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-lg"
+                >
+                  <span class="text-3xl">
+                    {{ "📦" }}
+                  </span>
+                </div>
+              </div>
               <div class="flex-1">
                 <div class="font-medium text-gray-900 dark:text-white">
                   {{ product.name }}
@@ -192,21 +231,27 @@ const rewardProducts = computed(() => {
                 </div>
               </div>
               <div class="text-sm font-medium text-gray-900 dark:text-white">
-                ฿{{ product.price }}
+                {{ product.price }}
               </div>
             </div>
           </div>
         </div>
 
         <!-- Reward/Discount Details -->
-        <div class="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
-          <label class="block text-sm font-medium text-green-800 dark:text-green-300 mb-3">
+        <div
+          class="p-4 bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800"
+        >
+          <label
+            class="block text-sm font-medium text-green-800 dark:text-green-300 mb-3"
+          >
             {{ t("promotions.reward", "Reward") }}
           </label>
 
           <!-- BOGO/Freebie Reward -->
           <div v-if="promotion.type === 'bogo' || promotion.type === 'freebie'">
-            <div class="text-lg font-semibold text-green-700 dark:text-green-300 mb-3">
+            <div
+              class="text-lg font-semibold text-green-700 dark:text-green-300 mb-3"
+            >
               Get {{ promotion.rewardQuantity }}× FREE
             </div>
             <div class="space-y-2">
@@ -215,14 +260,25 @@ const rewardProducts = computed(() => {
                 :key="product.id"
                 class="flex items-center gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg"
               >
-                <div class="text-2xl">{{ product.image || "🎁" }}</div>
+                <div class="text-2xl">
+                  <div v-if="product.image && product.image.startsWith('http')">
+                    <img
+                      :src="product.image"
+                      :alt="product.name"
+                      class="object-cover rounded-lg w-24 h-24"
+                    />
+                  </div>
+                  <span v-else>🎁</span>
+                </div>
                 <div class="flex-1">
                   <div class="font-medium text-gray-900 dark:text-white">
                     {{ product.name }}
                   </div>
                 </div>
-                <div class="text-sm font-medium text-green-600 dark:text-green-400">
-                  FREE (฿{{ product.price }} value)
+                <div
+                  class="text-sm font-medium text-green-600 dark:text-green-400"
+                >
+                  FREE ({{ product.price }} value)
                 </div>
               </div>
             </div>
@@ -234,9 +290,7 @@ const rewardProducts = computed(() => {
               <span v-if="promotion.discountType === 'percentage'">
                 {{ promotion.discountValue }}% OFF
               </span>
-              <span v-else>
-                ฿{{ promotion.discountValue }} OFF
-              </span>
+              <span v-else> ฿{{ promotion.discountValue }} OFF </span>
             </div>
           </div>
 
@@ -253,13 +307,13 @@ const rewardProducts = computed(() => {
                     Buy {{ tier.minQuantity }}+
                   </span>
                 </div>
-                <div class="text-lg font-semibold text-green-600 dark:text-green-400">
+                <div
+                  class="text-lg font-semibold text-green-600 dark:text-green-400"
+                >
                   <span v-if="tier.discountType === 'percentage'">
                     {{ tier.discountValue }}% OFF
                   </span>
-                  <span v-else>
-                    ฿{{ tier.discountValue }} OFF
-                  </span>
+                  <span v-else> ฿{{ tier.discountValue }} OFF </span>
                 </div>
               </div>
             </div>
@@ -276,7 +330,9 @@ const rewardProducts = computed(() => {
         <!-- Usage Limits -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               {{ t("promotions.usageCount", "Times Used") }}
             </label>
             <div class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -287,7 +343,9 @@ const rewardProducts = computed(() => {
             </div>
           </div>
           <div v-if="promotion.maxUsesPerOrder">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               {{ t("promotions.maxPerOrder", "Max Per Order") }}
             </label>
             <div class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -298,7 +356,9 @@ const rewardProducts = computed(() => {
 
         <!-- Description -->
         <div v-if="promotion.description">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
             {{ t("common.description", "Description") }}
           </label>
           <p class="text-gray-700 dark:text-gray-300">
@@ -309,16 +369,16 @@ const rewardProducts = computed(() => {
         <!-- Metadata -->
         <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
           <div class="grid grid-cols-2 gap-4 text-sm">
-            <div>
+            <div class="flex flex-col">
               <span class="text-gray-500 dark:text-gray-400">Created:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">
-                {{ formatDate(promotion.createdAt) }}
+              <span class="text-gray-900 dark:text-white">
+                {{ $d(new Date(promotion.createdAt || ""), "long") }}
               </span>
             </div>
-            <div>
+            <div class="flex flex-col">
               <span class="text-gray-500 dark:text-gray-400">Updated:</span>
-              <span class="ml-2 text-gray-900 dark:text-white">
-                {{ formatDate(promotion.updatedAt) }}
+              <span class="text-gray-900 dark:text-white">
+                {{ $d(new Date(promotion.updatedAt || ""), "long") }}
               </span>
             </div>
           </div>

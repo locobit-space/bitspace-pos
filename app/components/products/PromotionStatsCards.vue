@@ -24,32 +24,34 @@ const totalUses = computed(() =>
 </script>
 
 <template>
-  <div class="flex px-4 gap-4">
-    <!-- Total Promotions Card -->
-    <CommonStatCard
-      :icon="'i-heroicons-gift'"
-      icon-color="blue"
-      :label="t('common.total', 'Total')"
-      :value="totalPromotions"
-      :loading="isLoading"
-    />
+  <div class="px-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <!-- Total Promotions Card -->
+      <CommonStatCard
+        :icon="'i-heroicons-gift'"
+        icon-color="blue"
+        :label="t('common.total', 'Total')"
+        :value="totalPromotions"
+        :loading="isLoading"
+      />
 
-    <!-- Active Promotions Card -->
-    <CommonStatCard
-      :icon="'i-heroicons-check-circle'"
-      icon-color="green"
-      :label="t('common.active', 'Active')"
-      :value="activePromotions"
-      :loading="isLoading"
-    />
+      <!-- Active Promotions Card -->
+      <CommonStatCard
+        :icon="'i-heroicons-check-circle'"
+        icon-color="green"
+        :label="t('common.active', 'Active')"
+        :value="activePromotions"
+        :loading="isLoading"
+      />
 
-    <!-- Total Uses Card -->
-    <CommonStatCard
-      :icon="'i-heroicons-chart-bar'"
-      icon-color="purple"
-      :label="t('promotions.totalUses', 'Uses')"
-      :value="totalUses"
-      :loading="isLoading"
-    />
+      <!-- Total Uses Card -->
+      <CommonStatCard
+        :icon="'i-heroicons-chart-bar'"
+        icon-color="purple"
+        :label="t('promotions.totalUses', 'Uses')"
+        :value="totalUses"
+        :loading="isLoading"
+      />
+    </div>
   </div>
 </template>
