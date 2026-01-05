@@ -111,6 +111,38 @@ export function useProductsStore() {
   const filteredProducts = computed(() => {
     let result = [...products.value];
 
+    // Staff Product Assignment Filter
+    // If current user is staff, filter products based on assignment
+    const auth = useAuth();
+    const currentUser = auth.user.value;
+
+    if (currentUser && currentUser.role === "staff") {
+      const employeesStore = useEmployeesStore();
+
+      // Find employee record for current staff user
+      const employee = employeesStore.employees.value.find(
+        (e) => e.userId === currentUser.id || e.npub === currentUser.npub
+      );
+
+      if (employee) {
+        const mode = employee.assignmentMode || "all";
+
+        // Filter based on assignment mode
+        if (mode === "assigned" && employee.assignedProductIds?.length) {
+          // Only assigned products
+          result = result.filter((p) =>
+            employee.assignedProductIds?.includes(p.id)
+          );
+        } else if (mode === "category" && employee.assignedCategoryIds?.length) {
+          // Only products from assigned categories
+          result = result.filter((p) =>
+            employee.assignedCategoryIds?.includes(p.categoryId)
+          );
+        }
+        // mode === "all" - no filtering needed
+      }
+    }
+
     // Category filter
     if (selectedCategory.value === "favorites") {
       result = result.filter((p) => favoriteIds.value.has(p.id));

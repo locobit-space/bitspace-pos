@@ -28,6 +28,8 @@ export type ShopType =
   | "gym"
   | "karaoke"
   | "garage"
+  | "dry_clean"
+  | "car_care"
   | "enterprise"
   | "other";
 
@@ -497,6 +499,11 @@ export interface Employee {
   userId?: string;
   canAccessPOS: boolean;
   pin?: string;
+
+  // Staff Product Assignment
+  assignedProductIds?: string[]; // Product IDs this staff can sell (empty = all products)
+  assignmentMode?: "all" | "assigned" | "category"; // How products are filtered
+  assignedCategoryIds?: string[]; // Categories if mode = 'category'
 
   // Commission Settings
   commissionEnabled: boolean;
@@ -1766,6 +1773,7 @@ export interface Order {
   tip?: number;
   tax?: number;
   discount?: number;
+  appliedPromotions?: AppliedPromotion[]; // Promotions applied to this order
   loyaltyPointsEarned?: number;
   eReceiptId?: string;
   isOffline?: boolean;
@@ -2811,4 +2819,129 @@ export interface RentalBooking {
   returnedAt?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+// ============================================
+// 🎁 PROMOTION TYPES
+// BOGO, Discounts, Bundles, Tiered
+// ============================================
+
+/**
+ * Promotion type categories
+ */
+export type PromotionType =
+  | "bogo"
+  | "discount"
+  | "bundle"
+  | "freebie"
+  | "tiered";
+
+/**
+ * Discount calculation type
+ */
+export type DiscountType = "percentage" | "fixed";
+
+/**
+ * What the promotion applies to
+ * - all: Applies to all products in cart
+ * - products: Applies to specific products
+ * - categories: Applies to specific categories
+ */
+export type PromotionScope = "all" | "products" | "categories";
+
+/**
+ * Promotion status
+ */
+export type PromotionStatus = "active" | "inactive" | "scheduled" | "expired";
+
+/**
+ * Tiered discount level
+ */
+export interface PromotionTier {
+  minQuantity: number; // Buy X or more
+  discountType: DiscountType;
+  discountValue: number; // % or fixed amount
+}
+
+/**
+ * Promotion configuration
+ */
+export interface Promotion {
+  id: string;
+  name: string;
+  description?: string;
+  type: PromotionType;
+  status: PromotionStatus;
+
+  // === SCOPE ===
+  scope: PromotionScope; // What this promo applies to
+
+  // Trigger conditions (for BOGO/bundle/freebie)
+  triggerProductIds: string[]; // Products that trigger this promotion
+  triggerQuantity: number; // Qty needed to trigger (e.g., 1 for "buy 1")
+  triggerCategoryIds?: string[]; // Or any product from these categories
+
+  // === DISCOUNT (for discount/tiered types) ===
+  discountType?: DiscountType; // percentage or fixed
+  discountValue?: number; // The discount % or amount
+
+  // Tiered discounts (for tiered type)
+  tiers?: PromotionTier[]; // e.g., [{qty:2, discount:10}, {qty:3, discount:20}]
+
+  // === REWARDS (for BOGO/freebie) ===
+  rewardType: "free_product" | "discount" | "percentage_off";
+  rewardProductIds: string[]; // Products given free (can differ from trigger)
+  rewardQuantity: number; // Qty given free (e.g., 1 for "get 1 free")
+  rewardDiscount?: number; // Fixed amount discount
+  rewardPercentage?: number; // Percentage off
+
+  // === CONDITIONS ===
+  minOrderValue?: number; // Minimum cart total to qualify
+  minQuantity?: number; // Minimum product quantity
+  customerTiers?: string[]; // e.g., ["vip", "gold"] - limit to specific customer tiers
+  firstOrderOnly?: boolean; // Only for new customers
+  maxItemsAffected?: number; // Max items this promo can apply to
+
+  // === TIME CONSTRAINTS ===
+  startDate?: string;
+  endDate?: string;
+  daysOfWeek?: number[]; // 0-6 for specific days (0 = Sunday)
+  startTime?: string; // Daily start time (HH:mm)
+  endTime?: string; // Daily end time (HH:mm)
+
+  // === USAGE LIMITS ===
+  maxUsesPerOrder?: number; // Max times applied per order
+  maxUsesPerCustomer?: number; // Max uses per customer
+  maxUsesTotal?: number; // Total usage limit
+  usageCount: number; // Current usage count
+
+  // === STACKING ===
+  stackable?: boolean; // Can combine with other promotions
+  excludePromotionIds?: string[]; // Cannot combine with these promos
+  priority: number; // Higher = applied first
+
+  // === DISPLAY ===
+  badgeText?: string; // e.g., "BUY 1 GET 1 FREE"
+  badgeColor?: string;
+  highlightOnPOS?: boolean; // Highlight in POS product grid
+
+  // === METADATA ===
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
+/**
+ * Applied promotion in cart/order
+ */
+export interface AppliedPromotion {
+  promotionId: string;
+  promotionName: string;
+  type: PromotionType;
+  triggerItemIds: string[]; // Cart item IDs that triggered
+  rewardItemIds: string[]; // Cart item IDs that are rewards (free)
+  discountAmount: number; // Total discount value
+  discountType?: DiscountType;
+  timesApplied: number; // How many times applied in this order
+  description?: string; // Human readable description of what was applied
 }

@@ -114,6 +114,8 @@ export const NOSTR_KINDS = {
   LOYALTY_REWARD: 30302,
   /** Coupon/discount code */
   COUPON: 30310,
+  /** Promotion (BOGO, discounts, bundles) */
+  PROMOTION: 30313,
   /** Membership tier/plan */
   MEMBERSHIP: 30311,
   /** Membership subscription */

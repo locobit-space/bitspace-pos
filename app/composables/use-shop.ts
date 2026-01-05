@@ -78,6 +78,8 @@ export function getDefaultFeatures(shopType: ShopType): EnabledFeatures {
     case "garage":
       return { ...base, invoicing: true, inventory: true };
     case "service":
+    case "dry_clean":
+    case "car_care":
       return { ...base, invoicing: true, inventory: false };
     case "enterprise":
       return {

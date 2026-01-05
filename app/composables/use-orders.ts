@@ -41,6 +41,15 @@ export function useOrders() {
     }
   };
 
+  // Lazy load POS settings
+  const getPOSSettings = () => {
+    try {
+      return usePOSSettings();
+    } catch {
+      return null;
+    }
+  };
+
   // Get current user's pubkey for store order queries
   const getUserPubkey = (): string | null => {
     if (!import.meta.client) return null;
@@ -520,6 +529,7 @@ export function useOrders() {
    * Complete order with payment proof
    * Auto-deducts ingredients if recipe exists
    * Auto-creates accounting journal entry
+   * Auto-closes kitchen status if setting is enabled
    */
   async function completeOrder(
     orderId: string,
@@ -558,7 +568,13 @@ export function useOrders() {
       // Don't block order completion if accounting fails
     }
 
-    const result = await updateOrderStatus(orderId, "completed", {
+    // Check if auto-close kitchen status is enabled
+    const posSettings = getPOSSettings();
+    const shouldAutoCloseKitchen =
+      posSettings?.autoCloseKitchenStatusOnPayment.value || false;
+
+    // Prepare update data
+    const updateData: Partial<Order> = {
       paymentMethod,
       paymentProof: paymentProof
         ? {
@@ -572,7 +588,18 @@ export function useOrders() {
             isOffline: !offline.isOnline.value,
           }
         : undefined,
-    });
+    };
+
+    // Auto-close kitchen status if enabled and order has a kitchen status
+    if (shouldAutoCloseKitchen && order.kitchenStatus) {
+      updateData.kitchenStatus = "served";
+      console.log(
+        "[Orders] Auto-closing kitchen status for order:",
+        orderId.slice(-8)
+      );
+    }
+
+    const result = await updateOrderStatus(orderId, "completed", updateData);
 
     // Log order completion
     if (result) {

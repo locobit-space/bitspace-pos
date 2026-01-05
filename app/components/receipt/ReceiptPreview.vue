@@ -19,6 +19,7 @@ const emit = defineEmits<{
 // Composables
 const receipt = useReceipt();
 const currency = useCurrency();
+const receiptSettings = useReceiptSettings();
 const { t } = useI18n();
 
 // State
@@ -165,6 +166,9 @@ const close = () => {
           <div
             class="space-y-2 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700"
           >
+            <div class="font-semibold text-xs text-gray-700 dark:text-gray-300 mb-2">
+              ITEMS
+            </div>
             <div
               v-for="(item, index) in currentReceipt.items"
               :key="index"
@@ -172,19 +176,70 @@ const close = () => {
             >
               <div class="flex-1">
                 <span>{{ item.quantity }}× {{ item.name }}</span>
+                <span class="text-xs text-gray-500 ml-2">
+                  @ {{ currency.format(item.unitPrice, currentReceipt.currency) }}
+                </span>
                 <div v-if="item.variant" class="text-xs text-gray-500 pl-3">
                   └ {{ item.variant }}
                 </div>
+                <div v-if="item.modifiers && item.modifiers.length > 0" class="text-xs text-gray-500 pl-3">
+                  └ {{ item.modifiers.join(', ') }}
+                </div>
+                <div v-if="item.notes" class="text-xs text-gray-500 pl-3 italic">
+                  └ {{ item.notes }}
+                </div>
+                <div v-if="item.freeQuantity && item.freeQuantity > 0" class="text-xs text-green-600 dark:text-green-400 pl-3 font-semibold">
+                  └ 🎁 {{ item.freeQuantity }} FREE
+                </div>
               </div>
-              <span>{{
+              <span class="font-medium">{{
                 currency.format(item.total, currentReceipt.currency)
               }}</span>
             </div>
           </div>
 
+          <!-- Promotions Detail Section -->
+          <div
+            v-if="currentReceipt.appliedPromotions && currentReceipt.appliedPromotions.length > 0 && receiptSettings.settings.value.content.showPromotionDetails"
+            class="space-y-3 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700"
+          >
+            <div class="font-semibold text-xs text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+              <span>🎁</span>
+              <span>PROMOTIONS APPLIED</span>
+            </div>
+            <div
+              v-for="promo in currentReceipt.appliedPromotions"
+              :key="promo.promotionId"
+              class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded text-xs space-y-2"
+            >
+              <!-- Promotion Name & Type -->
+              <div class="font-bold text-green-700 dark:text-green-400 text-sm border-b border-green-200 dark:border-green-700 pb-1">
+                {{ promo.promotionName }}
+              </div>
+
+              <!-- Description -->
+              <div v-if="promo.description" class="text-green-600 dark:text-green-500 italic">
+                {{ promo.description }}
+              </div>
+
+              <!-- Savings Box -->
+              <div class="bg-white dark:bg-gray-800 p-2 rounded border-2 border-green-400 dark:border-green-600">
+                <div class="flex justify-between items-center">
+                  <span class="text-green-700 dark:text-green-400 font-semibold">💰 You Saved:</span>
+                  <span class="text-green-700 dark:text-green-400 font-bold text-base">
+                    {{ currency.format(promo.discountAmount, currentReceipt.currency) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Totals -->
           <div class="space-y-1">
-            <div class="flex justify-between text-gray-500">
+            <div class="font-semibold text-xs text-gray-700 dark:text-gray-300 mb-2">
+              SUMMARY
+            </div>
+            <div class="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Subtotal</span>
               <span>
                 {{
@@ -195,6 +250,22 @@ const close = () => {
                 }}
               </span>
             </div>
+            <!-- Total Promotion Savings -->
+            <div
+              v-if="currentReceipt.appliedPromotions && currentReceipt.appliedPromotions.length > 0"
+              class="flex justify-between text-green-600 dark:text-green-400 font-medium"
+            >
+              <span>Promotion Savings</span>
+              <span>
+                -{{
+                  currency.format(
+                    currentReceipt.appliedPromotions.reduce((sum, p) => sum + p.discountAmount, 0),
+                    currentReceipt.currency
+                  )
+                }}
+              </span>
+            </div>
+            <!-- Regular Discount (non-promotion) -->
             <div
               v-if="currentReceipt.discount && currentReceipt.discount > 0"
               class="flex justify-between text-green-600 dark:text-green-400"
@@ -211,7 +282,7 @@ const close = () => {
             </div>
             <div
               v-if="currentReceipt.tax && currentReceipt.tax > 0"
-              class="flex justify-between text-gray-500"
+              class="flex justify-between text-gray-600 dark:text-gray-400"
             >
               <span>Tax</span>
               <span>{{
@@ -220,7 +291,7 @@ const close = () => {
             </div>
             <div
               v-if="currentReceipt.tip"
-              class="flex justify-between text-gray-500"
+              class="flex justify-between text-gray-600 dark:text-gray-400"
             >
               <span>Tip</span>
               <span>{{
@@ -228,9 +299,9 @@ const close = () => {
               }}</span>
             </div>
             <div
-              class="flex justify-between font-bold text-lg pt-2 border-t border-double border-gray-400 dark:border-gray-600"
+              class="flex justify-between font-bold text-xl pt-2 mt-2 border-t-2 border-double border-gray-400 dark:border-gray-600"
             >
-              <span>TOTAL</span>
+              <span>TOTAL PAID</span>
               <span>{{
                 currency.format(currentReceipt.total, currentReceipt.currency)
               }}</span>

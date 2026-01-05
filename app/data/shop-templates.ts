@@ -81,6 +81,22 @@ export const SHOP_TYPE_META: ShopTypeMeta[] = [
     descriptionLao: "ຊ່ອມແປງລົດຍົນ ແລະ ລົດຈັກ ພ້ອມອະໄຫຼ່",
   },
   {
+    type: "dry_clean",
+    name: "Dry Cleaning & Laundry",
+    nameLao: "ຮ້ານຊັກແຫ້ງ",
+    icon: "i-heroicons-sparkles",
+    description: "Dry cleaning, laundry and pressing services",
+    descriptionLao: "ບໍລິການຊັກແຫ້ງ, ຊັກລີດ ແລະ ຮີດຜ້າ",
+  },
+  {
+    type: "car_care",
+    name: "Car Wash & Detailing",
+    nameLao: "ຮ້ານລ້າງລົດ",
+    icon: "i-heroicons-paint-brush",
+    description: "Car washing, detailing and cleaning services",
+    descriptionLao: "ບໍລິການລ້າງລົດ, ດູແລລົດ ແລະ ເຄື່ອງລ້າງລົດ",
+  },
+  {
     type: "enterprise",
     name: "Enterprise",
     nameLao: "ອົງກອນ",
@@ -1269,4 +1285,22 @@ export function getShopTypeMeta(type: ShopType): ShopTypeMeta | undefined {
  */
 export function getAllShopTypes(): ShopTypeMeta[] {
   return SHOP_TYPE_META;
+}
+
+/**
+ * Determine if products should track stock by default for this shop type
+ * Food service businesses (cafe, restaurant) typically don't track individual product stock
+ * since they prepare items on-demand from ingredients.
+ * Service businesses (dry clean, car care) don't track stock either.
+ */
+export function shouldTrackStockByDefault(type: ShopType): boolean {
+  const noTrackTypes: ShopType[] = [
+    "cafe",
+    "restaurant",
+    "karaoke", // Food/drinks prepared on-demand
+    "service", // Services don't have physical stock
+    "dry_clean", // Service-based, no stock tracking
+    "car_care", // Service-based, no stock tracking
+  ];
+  return !noTrackTypes.includes(type);
 }

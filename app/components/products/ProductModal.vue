@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { z } from "zod";
 import type { Product, Category, Unit, Branch, ProductVariant } from "~/types";
+import { shouldTrackStockByDefault } from "~/data/shop-templates";
 
 // Props
 interface Props {
@@ -139,10 +140,17 @@ const productEmojis = [
   "🍬",
 ];
 
+// Shop composable to get shop type
+const shop = useShop();
+
 // Form State
 const form = ref<ProductFormData>(getDefaultForm());
 
 function getDefaultForm(): ProductFormData {
+  // Determine trackStock default based on shop type
+  const shopType = shop.shopConfig.value?.shopType || "other";
+  const defaultTrackStock = shouldTrackStockByDefault(shopType);
+
   return {
     name: "",
     sku: "",
@@ -158,7 +166,7 @@ function getDefaultForm(): ProductFormData {
     status: "active",
     image: "📦",
     productType: "good",
-    trackStock: true,
+    trackStock: defaultTrackStock,
     hasExpiry: false,
     defaultShelfLifeDays: undefined,
     trackLots: false,

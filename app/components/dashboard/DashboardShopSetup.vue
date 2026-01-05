@@ -3,7 +3,7 @@
 <script setup lang="ts">
 import type { ShopConfig } from "~/composables/use-shop";
 import type { ShopType, ShopVisibility } from "~/types";
-import { getShopTypeConfig } from "~/data/shop-templates";
+import { getShopTypeConfig, shouldTrackStockByDefault } from "~/data/shop-templates";
 // Currency options (imported from centralized constant)
 import { CURRENCY_OPTIONS } from "~/composables/use-currency";
 const emit = defineEmits<{
@@ -113,6 +113,9 @@ const applyProductTemplates = async () => {
 
   const config = selectedTypeConfig.value;
 
+  // Determine if products should track stock based on shop type
+  const trackStock = shouldTrackStockByDefault(shopType.value);
+
   // Create categories
   for (const cat of config.categories) {
     await productsStore.addCategory({
@@ -145,6 +148,7 @@ const applyProductTemplates = async () => {
         branchId: "",
         status: "active",
         image: prod.image, // Pass the image URL from template
+        trackStock, // Apply smart default based on shop type
       });
     }
   }

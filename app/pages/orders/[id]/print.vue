@@ -221,6 +221,12 @@
                     >
                       {{ $t("products.sku") }}: {{ item.sku }}
                     </p>
+                    <p
+                      class="text-xs text-green-600 dark:text-green-400 font-semibold mt-1"
+                      v-if="item.freeQuantity && item.freeQuantity > 0"
+                    >
+                      🎁 {{ item.freeQuantity }} FREE
+                    </p>
                   </div>
                 </td>
                 <td
@@ -253,9 +259,60 @@
           </table>
         </div>
 
+        <!-- Promotions Detail Section -->
+        <div
+          v-if="billData.appliedPromotions && billData.appliedPromotions.length > 0 && receiptSettings.settings.value.content.showPromotionDetails"
+          class="mt-6 mb-4 border-4 border-green-300 dark:border-green-700 rounded-xl p-5 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30"
+        >
+          <h3 class="font-bold text-green-800 dark:text-green-300 mb-4 flex items-center gap-3 text-xl border-b-2 border-green-300 dark:border-green-700 pb-2">
+            <span class="text-3xl">🎁</span>
+            <span>PROMOTIONS APPLIED</span>
+          </h3>
+          <div class="space-y-4">
+            <div
+              v-for="promo in billData.appliedPromotions"
+              :key="promo.promotionId"
+              class="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-green-400 dark:border-green-600 shadow-md"
+            >
+              <!-- Promotion Name -->
+              <div class="font-bold text-green-800 dark:text-green-300 mb-2 text-lg border-b border-green-200 dark:border-green-700 pb-2">
+                {{ promo.promotionName }}
+              </div>
+
+              <!-- Description -->
+              <div v-if="promo.description" class="text-green-700 dark:text-green-400 mb-3 italic">
+                ✨ {{ promo.description }}
+              </div>
+
+              <!-- Savings Highlight -->
+              <div class="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 p-3 rounded-lg border-2 border-green-500 dark:border-green-600">
+                <div class="flex justify-between items-center">
+                  <span class="text-green-800 dark:text-green-300 font-bold text-base">💰 You Saved:</span>
+                  <span class="text-green-800 dark:text-green-200 font-black text-2xl">
+                    {{ formatCurrency(promo.discountAmount) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Savings Footer -->
+          <div class="mt-4 pt-3 border-t-2 border-green-300 dark:border-green-700">
+            <div class="flex justify-between items-center">
+              <span class="text-green-800 dark:text-green-300 font-bold text-lg">🎉 Total Promotion Savings:</span>
+              <span class="text-green-800 dark:text-green-200 font-black text-3xl">
+                {{ formatCurrency(billData.appliedPromotions.reduce((sum, p) => sum + p.discountAmount, 0)) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- Summary Section -->
         <div class="flex justify-end">
           <div class="w-full md:w-96 space-y-3">
+            <div class="font-bold text-sm text-gray-700 dark:text-gray-300 mb-2">
+              SUMMARY
+            </div>
             <div
               class="flex justify-between py-2 border-t dark:border-slate-800 border-gray-200"
             >
@@ -266,6 +323,19 @@
                 formatCurrency(billData.subtotal)
               }}</span>
             </div>
+            <!-- Total Promotion Savings -->
+            <div
+              v-if="billData.appliedPromotions && billData.appliedPromotions.length > 0"
+              class="flex justify-between py-2"
+            >
+              <span class="text-green-600 dark:text-green-400 font-medium">
+                Promotion Savings:
+              </span>
+              <span class="font-bold text-green-600 dark:text-green-400">
+                -{{ formatCurrency(billData.appliedPromotions.reduce((sum, p) => sum + p.discountAmount, 0)) }}
+              </span>
+            </div>
+            <!-- Regular Discount -->
             <div v-if="billData.discount > 0" class="flex justify-between py-2">
               <span class="text-gray-600 dark:text-gray-400"
                 >{{ $t("common.discount") }}:</span
@@ -291,12 +361,12 @@
               }}</span>
             </div>
             <div
-              class="flex justify-between py-3 border-t-2 dark:border-slate-800 border-gray-300"
+              class="flex justify-between py-3 border-t-2 dark:border-slate-800 border-gray-300 bg-gray-50 dark:bg-gray-800 px-2 rounded"
             >
-              <span class="text-lg font-semibold text-gray-900 dark:text-white"
-                >{{ $t("common.total") }}:</span
+              <span class="text-xl font-bold text-gray-900 dark:text-white"
+                >TOTAL PAID:</span
               >
-              <span class="text-lg font-bold text-primary-600">{{
+              <span class="text-xl font-bold text-primary-600">{{
                 formatCurrency(billData.total)
               }}</span>
             </div>
@@ -422,6 +492,12 @@ interface BillData {
   customer: CustomerInfo;
   items: BillItem[];
   subtotal: number;
+  appliedPromotions?: Array<{
+    promotionId: string;
+    promotionName: string;
+    discountAmount: number;
+    description?: string;
+  }>;
   discount: number;
   tax: number;
   taxRate: number;
@@ -482,6 +558,7 @@ const billData = ref<BillData>({
   },
   items: [],
   subtotal: 0,
+  appliedPromotions: [],
   discount: 0,
   tax: 0,
   taxRate: 0,
@@ -576,6 +653,12 @@ onMounted(async () => {
             total: item.total,
           })),
           subtotal: order.total - (order.tax || 0) + (order.discount || 0),
+          appliedPromotions: order.appliedPromotions?.map(promo => ({
+            promotionId: promo.promotionId,
+            promotionName: promo.promotionName,
+            discountAmount: promo.discountAmount,
+            description: promo.description,
+          })),
           discount: order.discount || 0,
           tax: order.tax || 0,
           taxRate: 0, // Derived or fixed

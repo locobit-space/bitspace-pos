@@ -93,6 +93,12 @@ export const useReceiptGenerator = () => {
       // Financial summary
       subtotal: order.total - (order.tax || 0) - (order.tip || 0),
       discount: order.discount || 0,
+      appliedPromotions: order.appliedPromotions?.map(promo => ({
+        promotionId: promo.promotionId,
+        promotionName: promo.promotionName,
+        discountAmount: promo.discountAmount,
+        description: promo.description,
+      })),
       tax: order.tax || 0,
       tip: order.tip,
       total: order.total,
