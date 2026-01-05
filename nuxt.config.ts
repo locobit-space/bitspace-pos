@@ -20,6 +20,17 @@ export default defineNuxtConfig({
     },
   },
 
+  app: {
+    pageTransition: {
+      name: "page",
+      mode: "out-in",
+    },
+    layoutTransition: {
+      name: "layout",
+      mode: "out-in",
+    },
+  },
+
   css: ["~/assets/fonts/stylesheet.css", "~/assets/css/main.css"],
 
   modules: [
@@ -256,6 +267,7 @@ export default defineNuxtConfig({
           "lo-LA/help.json",
           "lo-LA/onboarding.json",
           "lo-LA/order.json",
+          "lo-LA/promotions.json",
         ],
       },
       {
@@ -300,6 +312,7 @@ export default defineNuxtConfig({
           "en-US/help.json",
           "en-US/onboarding.json",
           "en-US/order.json",
+          "en-US/promotions.json",
         ],
       },
       {
@@ -339,6 +352,7 @@ export default defineNuxtConfig({
           "th-TH/employees.json",
           "th-TH/legal.json",
           "th-TH/help.json",
+          "th-TH/promotions.json",
         ],
       },
     ],

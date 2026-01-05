@@ -511,6 +511,12 @@ export interface Employee {
 
   // Nostr Integration
   npub?: string;
+  pubkeyHex?: string;
+
+  // Access Control
+  accessExpiresAt?: string; // When login access expires
+  accessRevokedAt?: string; // If access was revoked
+  accessRevokedReason?: string; // Why access was revoked
 
   // Metadata
   notes?: string;

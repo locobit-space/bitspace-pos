@@ -17,6 +17,9 @@
     "deleteSuccessDesc": "The promotion has been removed",
     "statusUpdated": "Status Updated",
     "statusUpdatedDesc": "Promotion status has been changed",
+    "preselected": "Product Pre-selected",
+    "activePromotions": "Active Promotions",
+    "manage": "Manage Promotions",
 
     "type": {
       "label": "Promotion Type",
@@ -155,14 +158,16 @@
 
     "form": {
       "basicInfo": "Basic Information",
+      "typeSetup": "Type Selection",
+      "setupSetup": "Setup",
+      "conditionsSetup": "Conditions",
+      "displaySetup": "Display",
       "triggerSetup": "Trigger Setup",
       "rewardSetup": "Reward Setup",
       "discountSetup": "Discount Setup",
       "tierSetup": "Tier Setup",
-      "conditionsSetup": "Conditions",
       "scheduleSetup": "Schedule",
-      "limitsSetup": "Limits",
-      "displaySetup": "Display"
+      "limitsSetup": "Limits"
     },
 
     "confirm": {

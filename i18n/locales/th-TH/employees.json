@@ -20,6 +20,32 @@
       "inactive": "ไม่ใช้งาน"
     },
     "permissions": "สิทธิ์",
-    "noEmployees": "ยังไม่มีพนักงาน"
+    "noEmployees": "ยังไม่มีพนักงาน",
+    "access": {
+      "title": "จัดการการเข้าถึง",
+      "active": "ใช้งานได้",
+      "revoked": "ถูกยกเลิก",
+      "expired": "หมดอายุแล้ว",
+      "none": "ไม่มีการเข้าถึง",
+      "noNostrKey": "ไม่มีคีย์ Nostr",
+      "nostrPublicKey": "คีย์สาธารณะ Nostr (npub)",
+      "expiryDate": "วันหมดอายุ",
+      "noExpiry": "ไม่หมดอายุ (ถาวร)",
+      "expiryHint": "ปล่อยว่างสำหรับการเข้าถึงถาวร หรือกำหนดวันเพื่อหมดอายุอัตโนมัติ",
+      "expiresOn": "หมดอายุ",
+      "expiredOn": "หมดอายุแล้ว",
+      "reason": "เหตุผล",
+      "revokeReason": "เหตุผลการยกเลิก (ไม่บังคับ)",
+      "revokeReasonPlaceholder": "ตัวอย่าง: ลาออก, ปัญหาความปลอดภัย",
+      "revoke": "ยกเลิกการเข้าถึง",
+      "restore": "คืนค่าการเข้าถึง",
+      "saveSettings": "บันทึกการตั้งค่า",
+      "manageAccess": "จัดการการเข้าถึง",
+      "granted": "อนุมัติแล้ว",
+      "grantSuccess": "บันทึกการตั้งค่าสำเร็จ",
+      "revokedSuccess": "ยกเลิกสำเร็จ",
+      "restoreSuccess": "คืนค่าสำเร็จ",
+      "restored": "คืนค่าแล้ว"
+    }
   }
 }

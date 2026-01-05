@@ -9,8 +9,6 @@ import type {
   PromotionStatus,
   PromotionScope,
   DiscountType,
-  PromotionTier,
-  AppliedPromotion,
   Product,
 } from "~/types";
 import { db, type PromotionRecord } from "~/db/db";
@@ -29,6 +27,9 @@ const isInitialized = ref(false);
 export function usePromotionsStore() {
   const toast = useToast();
   const { t } = useI18n();
+  const nostrData = useNostrData();
+  const offline = useOffline();
+  const company = useCompany();
 
   // ============================================
   // 📊 COMPUTED
@@ -157,6 +158,132 @@ export function usePromotionsStore() {
   }
 
   // ============================================
+  // 📡 NOSTR SYNC
+  // ============================================
+
+  async function syncPromotionToNostr(promotion: Promotion): Promise<boolean> {
+    try {
+      const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+      
+      // Sync promotion with company code tag for team visibility
+      const tags: string[][] = [
+        ["d", promotion.id],
+        ["type", promotion.type],
+        ["status", promotion.status],
+        ["name", promotion.name],
+      ];
+
+      // Add company code hash tag for team sync
+      if (company.companyCodeHash.value) {
+        tags.push(["c", company.companyCodeHash.value]);
+      }
+
+      const event = await nostrData.publishReplaceableEvent(
+        NOSTR_KINDS.PROMOTION,
+        promotion,
+        promotion.id,
+        tags,
+        true // Encrypt promotion data
+      );
+
+      if (event && db.promotions) {
+        await db.promotions.update(promotion.id, {
+          synced: true,
+          nostrEventId: event.id,
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error("[Promotions] Failed to sync to Nostr:", e);
+      return false;
+    }
+  }
+
+  async function loadPromotionsFromNostr(): Promise<Promotion[]> {
+    try {
+      const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+      const results = await nostrData.getAllEventsOfKind<Promotion>(
+        NOSTR_KINDS.PROMOTION
+      );
+
+      const promotions: Promotion[] = [];
+      for (const result of results) {
+        const promo = result.data as Promotion;
+        // Skip deleted promotions
+        if ((promo as any).deleted) continue;
+        promotions.push(promo);
+      }
+
+      return promotions;
+    } catch (e) {
+      console.error("[Promotions] Failed to load from Nostr:", e);
+      return [];
+    }
+  }
+
+  async function syncAllToNostr(): Promise<{ synced: number; failed: number }> {
+    if (!offline.isOnline.value) {
+      return { synced: 0, failed: 0 };
+    }
+
+    let synced = 0;
+    let failed = 0;
+
+    if (!db.promotions) return { synced, failed };
+
+    const unsyncedPromotions = await db.promotions
+      .filter((p) => !p.synced)
+      .toArray();
+
+    for (const record of unsyncedPromotions) {
+      // Parse back the promotion
+      const promotion: Promotion = {
+        id: record.id,
+        name: record.name,
+        description: record.description,
+        type: record.type as PromotionType,
+        status: record.status as PromotionStatus,
+        scope: (record.scope || "all") as PromotionScope,
+        triggerProductIds: JSON.parse(record.triggerProductIds),
+        triggerCategoryIds: record.triggerCategoryIds
+          ? JSON.parse(record.triggerCategoryIds)
+          : undefined,
+        triggerQuantity: record.triggerQuantity,
+        rewardProductIds: JSON.parse(record.rewardProductIds),
+        rewardQuantity: record.rewardQuantity,
+        rewardType: record.rewardType as "free_product" | "discount" | "percentage_off",
+        rewardDiscount: record.rewardDiscount,
+        discountType: record.discountType as DiscountType | undefined,
+        discountValue: record.discountValue,
+        priority: record.priority,
+        startDate: record.startDate,
+        endDate: record.endDate,
+        daysOfWeek: record.daysOfWeek ? JSON.parse(record.daysOfWeek) : undefined,
+        tiers: record.tiers ? JSON.parse(record.tiers) : undefined,
+        maxUsesTotal: record.maxUsesTotal,
+        maxUsesPerCustomer: record.maxUsesPerCustomer,
+        maxUsesPerOrder: record.maxUsesPerOrder,
+        usageCount: record.usageCount,
+        customerTiers: record.customerTiers ? JSON.parse(record.customerTiers) : undefined,
+        excludePromotionIds: record.excludePromotionIds
+          ? JSON.parse(record.excludePromotionIds)
+          : undefined,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+
+      if (await syncPromotionToNostr(promotion)) {
+        synced++;
+      } else {
+        failed++;
+      }
+    }
+
+    return { synced, failed };
+  }
+
+  // ============================================
   // 🔄 INITIALIZATION
   // ============================================
 
@@ -166,7 +293,30 @@ export function usePromotionsStore() {
     error.value = null;
 
     try {
+      // Load from local first
       promotions.value = await loadPromotionsFromLocal();
+
+      // Try to sync from Nostr if online
+      if (offline.isOnline.value) {
+        try {
+          const nostrPromotions = await loadPromotionsFromNostr();
+          
+          // Merge with local data (Nostr is source of truth)
+          for (const nostrPromo of nostrPromotions) {
+            const existingIndex = promotions.value.findIndex(p => p.id === nostrPromo.id);
+            if (existingIndex >= 0) {
+              promotions.value[existingIndex] = nostrPromo;
+            } else {
+              promotions.value.push(nostrPromo);
+            }
+            // Save to local
+            await savePromotionToLocal(nostrPromo);
+          }
+        } catch (e) {
+          console.warn("[Promotions] Failed to load from Nostr, using local only:", e);
+        }
+      }
+
       isInitialized.value = true;
     } catch (e) {
       error.value = `Failed to initialize promotions: ${e}`;
@@ -195,8 +345,13 @@ export function usePromotionsStore() {
     promotions.value.push(promotion);
     await savePromotionToLocal(promotion);
 
+    // Sync to Nostr if online
+    if (offline.isOnline.value) {
+      await syncPromotionToNostr(promotion);
+    }
+
     toast.add({
-      title: t("promotions.createSuccess") || "Promotion created",
+      title: t("promotions.createSuccess", "Promotion created"),
       icon: "i-heroicons-check-circle",
       color: "success",
     });
@@ -223,6 +378,11 @@ export function usePromotionsStore() {
     promotions.value[index] = updated;
     await savePromotionToLocal(updated);
 
+    // Sync to Nostr if online
+    if (offline.isOnline.value) {
+      await syncPromotionToNostr(updated);
+    }
+
     toast.add({
       title: t("promotions.updateSuccess") || "Promotion updated",
       icon: "i-heroicons-check-circle",
@@ -239,6 +399,22 @@ export function usePromotionsStore() {
     promotions.value.splice(index, 1);
     if (db.promotions) {
       await db.promotions.delete(id);
+    }
+
+    // Mark as deleted on Nostr (soft delete)
+    if (offline.isOnline.value) {
+      try {
+        const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+        await nostrData.publishReplaceableEvent(
+          NOSTR_KINDS.PROMOTION,
+          { deleted: true, deletedAt: new Date().toISOString() },
+          id,
+          [["deleted", "true"]],
+          true
+        );
+      } catch (e) {
+        console.error("[Promotions] Failed to mark as deleted on Nostr:", e);
+      }
     }
 
     toast.add({
@@ -472,5 +648,10 @@ export function usePromotionsStore() {
     applyBOGO,
     calculateDiscount,
     incrementUsage,
+
+    // Nostr Sync
+    syncPromotionToNostr,
+    loadPromotionsFromNostr,
+    syncAllToNostr,
   };
 }

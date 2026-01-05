@@ -9,6 +9,7 @@ useHead(
 )
 
 const { t } = useI18n();
+const toast = useToast();
 const employeesStore = useEmployeesStore();
 
 // Initialize on mount
@@ -25,8 +26,15 @@ const showDetailModal = ref(false);
 const showEditModal = ref(false);
 const showTerminateModal = ref(false);
 const showDeleteModal = ref(false);
+const showAccessModal = ref(false);
 const selectedEmployee = ref<Employee | null>(null);
 const employeeToEdit = ref<Employee | null>(null);
+
+// Access control form
+const accessForm = reactive({
+  expiresAt: "",
+  revokeReason: "",
+});
 
 // Status options
 const statusOptions = [
@@ -66,6 +74,18 @@ const employmentTypeLabels: Record<EmploymentType, string> = {
   freelance: t("employees.type.freelance"),
 };
 
+// Copy to clipboard helper
+function copyToClipboard(text: string) {
+  if (import.meta.client) {
+    window.navigator.clipboard.writeText(text);
+    toast.add({
+      title: t("common.copied") || "Copied!",
+      icon: "i-heroicons-clipboard-document-check",
+      color: "success",
+    });
+  }
+}
+
 // Status badge color
 function getStatusColor(
   status: EmployeeStatus
@@ -81,6 +101,130 @@ function getStatusColor(
       return "error";
     default:
       return "neutral";
+  }
+}
+
+// Access status helpers
+function getAccessStatus(employee: Employee): "active" | "expired" | "revoked" | "none" {
+  if (employee.accessRevokedAt) return "revoked";
+  if (employee.accessExpiresAt && new Date(employee.accessExpiresAt) < new Date()) return "expired";
+  if (employee.npub) return "active";
+  return "none";
+}
+
+function getAccessStatusColor(status: "active" | "expired" | "revoked" | "none"): "success" | "error" | "warning" | "neutral" {
+  switch (status) {
+    case "active": return "success";
+    case "revoked": return "error";
+    case "expired": return "warning";
+    default: return "neutral";
+  }
+}
+
+function getAccessStatusLabel(status: "active" | "expired" | "revoked" | "none"): string {
+  switch (status) {
+    case "active": return t("employees.access.active") || "Access Active";
+    case "revoked": return t("employees.access.revoked") || "Access Revoked";
+    case "expired": return t("employees.access.expired") || "Access Expired";
+    default: return t("employees.access.none") || "No Access";
+  }
+}
+
+// Open access modal
+function openAccessModal(employee: Employee) {
+  selectedEmployee.value = employee;
+  accessForm.expiresAt = employee.accessExpiresAt?.split("T")[0] || "";
+  accessForm.revokeReason = "";
+  showAccessModal.value = true;
+}
+
+// Grant access (set expiry date)
+async function grantAccess() {
+  if (!selectedEmployee.value) return;
+  
+  try {
+    await employeesStore.updateEmployee(selectedEmployee.value.id, {
+      accessExpiresAt: accessForm.expiresAt ? new Date(accessForm.expiresAt).toISOString() : undefined,
+      accessRevokedAt: undefined,
+      accessRevokedReason: undefined,
+    });
+    
+    toast.add({
+      title: t("employees.access.granted") || "Access Granted",
+      description: accessForm.expiresAt 
+        ? `${t("employees.access.expiresOn") || "Expires on"}: ${new Date(accessForm.expiresAt).toLocaleDateString()}`
+        : t("employees.access.noExpiry") || "No expiry set",
+      icon: "i-heroicons-check-circle",
+      color: "green",
+    });
+    
+    showAccessModal.value = false;
+    await employeesStore.init();
+  } catch (e) {
+    toast.add({
+      title: t("common.error"),
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
+  }
+}
+
+// Revoke access
+async function revokeAccess() {
+  if (!selectedEmployee.value) return;
+  
+  try {
+    await employeesStore.updateEmployee(selectedEmployee.value.id, {
+      accessRevokedAt: new Date().toISOString(),
+      accessRevokedReason: accessForm.revokeReason || "Revoked by manager",
+    });
+    
+    toast.add({
+      title: t("employees.access.revokedSuccess") || "Access Revoked",
+      description: selectedEmployee.value.firstName + " " + selectedEmployee.value.lastName,
+      icon: "i-heroicons-no-symbol",
+      color: "warning",
+    });
+    
+    showAccessModal.value = false;
+    await employeesStore.init();
+  } catch (e) {
+    toast.add({
+      title: t("common.error"),
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
+  }
+}
+
+// Restore access
+async function restoreAccess() {
+  if (!selectedEmployee.value) return;
+  
+  try {
+    await employeesStore.updateEmployee(selectedEmployee.value.id, {
+      accessRevokedAt: undefined,
+      accessRevokedReason: undefined,
+    });
+    
+    toast.add({
+      title: t("employees.access.restored") || "Access Restored",
+      description: selectedEmployee.value.firstName + " " + selectedEmployee.value.lastName,
+      icon: "i-heroicons-check-circle",
+      color: "green",
+    });
+    
+    showAccessModal.value = false;
+    await employeesStore.init();
+  } catch (e) {
+    toast.add({
+      title: t("common.error"),
+      description: String(e),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "red",
+    });
   }
 }
 
@@ -145,6 +289,8 @@ const departmentOptions = computed(() => [
 
 // Actions dropdown items
 function getActionItems(employee: Employee) {
+  const accessStatus = getAccessStatus(employee);
+  
   return [
     [
       {
@@ -165,8 +311,32 @@ function getActionItems(employee: Employee) {
     ],
     [
       {
+        label: t("employees.actions.manageAccess") || "Manage Access",
+        icon: "i-heroicons-key",
+        click: () => openAccessModal(employee),
+      },
+      accessStatus === "revoked" || accessStatus === "expired"
+        ? {
+            label: t("employees.actions.restoreAccess") || "Restore Access",
+            icon: "i-heroicons-arrow-path",
+            color: "success" as const,
+            click: async () => {
+              selectedEmployee.value = employee;
+              await restoreAccess();
+            },
+          }
+        : {
+            label: t("employees.actions.revokeAccess") || "Revoke Access",
+            icon: "i-heroicons-no-symbol",
+            color: "warning" as const,
+            click: () => openAccessModal(employee),
+            disabled: accessStatus === "none",
+          },
+    ],
+    [
+      {
         label: t("employees.actions.terminate"),
-        icon: "i-heroicons-no-symbol",
+        icon: "i-heroicons-user-minus",
         color: "warning" as const,
         click: () => confirmTerminate(employee),
         disabled: employee.status === "terminated",
@@ -196,27 +366,26 @@ function getSortIcon(field: string) {
 }
 
 // Nostr sync actions
-const toast = useToast();
 const isSyncing = ref(false);
 
 const syncActions = computed(() => [
   [
     {
-      label: "Sync All to Nostr",
+      label: t("employees.actions.syncToNostr") || "Sync All to Nostr",
       icon: "i-heroicons-cloud-arrow-up",
       onClick: async () => {
         isSyncing.value = true;
         try {
           const result = await employeesStore.syncAllToNostr();
           toast.add({
-            title: "Sync Complete",
-            description: `${result.success} synced, ${result.failed} failed`,
+            title: t("employees.sync.complete") || "Sync Complete",
+            description: `${result.success} ${t("employees.sync.synced") || "synced"}, ${result.failed} ${t("employees.sync.failed") || "failed"}`,
             icon: "i-heroicons-check-circle",
             color: "green",
           });
         } catch (e) {
           toast.add({
-            title: "Sync Failed",
+            title: t("employees.sync.failed") || "Sync Failed",
             description: String(e),
             icon: "i-heroicons-exclamation-triangle",
             color: "red",
@@ -227,21 +396,21 @@ const syncActions = computed(() => [
       },
     },
     {
-      label: "Pull from Nostr",
+      label: t("employees.actions.pullFromNostr") || "Pull from Nostr",
       icon: "i-heroicons-arrow-down-tray",
       onClick: async () => {
         isSyncing.value = true;
         try {
           const result = await employeesStore.pullFromNostr();
           toast.add({
-            title: "Pull Complete",
-            description: `${result.imported} imported, ${result.updated} updated`,
+            title: t("employees.sync.pullComplete") || "Pull Complete",
+            description: `${result.imported} ${t("employees.sync.imported") || "imported"}, ${result.updated} ${t("employees.sync.updated") || "updated"}`,
             icon: "i-heroicons-check-circle",
             color: "green",
           });
         } catch (e) {
           toast.add({
-            title: "Pull Failed",
+            title: t("employees.sync.pullFailed") || "Pull Failed",
             description: String(e),
             icon: "i-heroicons-exclamation-triangle",
             color: "red",
@@ -419,12 +588,29 @@ function handleDetailRefresh() {
       <!-- Grid View -->
       <div v-else-if="viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div v-for="employee in employeesStore.filteredEmployees.value" :key="employee.id"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow cursor-pointer group">
+          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow cursor-pointer group"
+          :class="{ 'opacity-60': getAccessStatus(employee) === 'revoked' || getAccessStatus(employee) === 'expired' }">
           <!-- Avatar & Status & Actions -->
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-3" @click="viewEmployee(employee)">
-              <UAvatar :src="employee.avatar" :alt="`${employee.firstName} ${employee.lastName}`" size="xl"
-                class="ring-2 ring-white dark:ring-gray-800" />
+              <div class="relative">
+                <UAvatar :src="employee.avatar" :alt="`${employee.firstName} ${employee.lastName}`" size="xl"
+                  class="ring-2 ring-white dark:ring-gray-800" />
+                <!-- Access indicator dot -->
+                <div v-if="employee.npub" 
+                  class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center"
+                  :class="{
+                    'bg-green-500': getAccessStatus(employee) === 'active',
+                    'bg-red-500': getAccessStatus(employee) === 'revoked',
+                    'bg-amber-500': getAccessStatus(employee) === 'expired',
+                  }"
+                >
+                  <UIcon 
+                    :name="getAccessStatus(employee) === 'active' ? 'i-heroicons-check-micro' : 'i-heroicons-x-mark-micro'" 
+                    class="w-2.5 h-2.5 text-white" 
+                  />
+                </div>
+              </div>
             </div>
             <div class="flex items-center gap-1">
               <UBadge :color="getStatusColor(employee.status)" size="sm">
@@ -450,17 +636,28 @@ function handleDetailRefresh() {
             </p>
 
             <!-- Quick Info -->
-            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
               <UBadge color="neutral" variant="subtle" size="xs">
                 {{ employmentTypeLabels[employee.employmentType] }}
               </UBadge>
-              <span class="text-xs text-gray-500">{{
-                employee.department
-              }}</span>
+              <!-- Access status badge -->
+              <UBadge 
+                v-if="employee.npub" 
+                :color="getAccessStatusColor(getAccessStatus(employee))" 
+                variant="subtle" 
+                size="xs"
+              >
+                <UIcon name="i-heroicons-key" class="w-3 h-3 mr-1" />
+                {{ getAccessStatusLabel(getAccessStatus(employee)) }}
+              </UBadge>
             </div>
 
-            <!-- Contact -->
-            <div class="flex items-center gap-3 mt-3 text-sm text-gray-500">
+            <!-- Department & Contact -->
+            <div class="flex items-center gap-3 mt-2 text-sm text-gray-500">
+              <span v-if="employee.department" class="flex items-center gap-1">
+                <UIcon name="i-heroicons-building-office" class="w-3 h-3" />
+                {{ employee.department }}
+              </span>
               <span v-if="employee.phone" class="flex items-center gap-1">
                 <UIcon name="i-heroicons-phone" class="w-3 h-3" />
                 {{ employee.phone }}
@@ -523,10 +720,23 @@ function handleDetailRefresh() {
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="employee in employeesStore.filteredEmployees.value" :key="employee.id"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer" @click="viewEmployee(employee)">
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+              :class="{ 'opacity-60': getAccessStatus(employee) === 'revoked' || getAccessStatus(employee) === 'expired' }"
+              @click="viewEmployee(employee)">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
-                  <UAvatar :src="employee.avatar" :alt="`${employee.firstName} ${employee.lastName}`" size="sm" />
+                  <div class="relative">
+                    <UAvatar :src="employee.avatar" :alt="`${employee.firstName} ${employee.lastName}`" size="sm" />
+                    <!-- Access indicator dot -->
+                    <div v-if="employee.npub" 
+                      class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800"
+                      :class="{
+                        'bg-green-500': getAccessStatus(employee) === 'active',
+                        'bg-red-500': getAccessStatus(employee) === 'revoked',
+                        'bg-amber-500': getAccessStatus(employee) === 'expired',
+                      }"
+                    />
+                  </div>
                   <div>
                     <p class="font-medium text-gray-900 dark:text-white">
                       {{ employee.firstName }} {{ employee.lastName }}
@@ -544,9 +754,20 @@ function handleDetailRefresh() {
                 {{ employee.department || "-" }}
               </td>
               <td class="px-4 py-3">
-                <UBadge :color="getStatusColor(employee.status)" size="sm">
-                  {{ t(`employees.status.${employee.status}`) }}
-                </UBadge>
+                <div class="flex items-center gap-2">
+                  <UBadge :color="getStatusColor(employee.status)" size="sm">
+                    {{ t(`employees.status.${employee.status}`) }}
+                  </UBadge>
+                  <UBadge 
+                    v-if="employee.npub" 
+                    :color="getAccessStatusColor(getAccessStatus(employee))" 
+                    variant="subtle" 
+                    size="xs"
+                  >
+                    <UIcon name="i-heroicons-key" class="w-2.5 h-2.5 mr-0.5" />
+                    {{ getAccessStatus(employee) === 'active' ? '' : getAccessStatusLabel(getAccessStatus(employee)) }}
+                  </UBadge>
+                </div>
               </td>
               <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell">
                 {{ formatCurrency(employee.baseSalary, employee.currency) }}
@@ -659,6 +880,162 @@ function handleDetailRefresh() {
             <UButton color="error" @click="handleDelete">
               {{ t("employees.confirm.confirm") }}
             </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Access Management Modal -->
+    <UModal v-model:open="showAccessModal" title="Access Management" description="Manage employee access">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center gap-4 mb-6">
+            <UAvatar 
+              :src="selectedEmployee?.avatar" 
+              :alt="`${selectedEmployee?.firstName} ${selectedEmployee?.lastName}`" 
+              size="lg" 
+            />
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ selectedEmployee?.firstName }} {{ selectedEmployee?.lastName }}
+              </h3>
+              <p class="text-sm text-gray-500">{{ selectedEmployee?.position }}</p>
+              <p class="text-xs text-gray-400 mt-1">{{ selectedEmployee?.employeeCode }}</p>
+            </div>
+          </div>
+
+          <!-- Current Access Status -->
+          <div class="mb-6 p-4 rounded-lg" :class="{
+            'bg-green-50 dark:bg-green-900/20': getAccessStatus(selectedEmployee!) === 'active',
+            'bg-red-50 dark:bg-red-900/20': getAccessStatus(selectedEmployee!) === 'revoked',
+            'bg-amber-50 dark:bg-amber-900/20': getAccessStatus(selectedEmployee!) === 'expired',
+            'bg-gray-50 dark:bg-gray-800': !selectedEmployee?.npub,
+          }">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-full" :class="{
+                'bg-green-100 dark:bg-green-900/40': getAccessStatus(selectedEmployee!) === 'active',
+                'bg-red-100 dark:bg-red-900/40': getAccessStatus(selectedEmployee!) === 'revoked',
+                'bg-amber-100 dark:bg-amber-900/40': getAccessStatus(selectedEmployee!) === 'expired',
+                'bg-gray-100 dark:bg-gray-700': !selectedEmployee?.npub,
+              }">
+                <UIcon 
+                  :name="selectedEmployee?.npub ? 'i-heroicons-key' : 'i-heroicons-key'" 
+                  class="w-5 h-5" 
+                  :class="{
+                    'text-green-600': getAccessStatus(selectedEmployee!) === 'active',
+                    'text-red-600': getAccessStatus(selectedEmployee!) === 'revoked',
+                    'text-amber-600': getAccessStatus(selectedEmployee!) === 'expired',
+                    'text-gray-400': !selectedEmployee?.npub,
+                  }"
+                />
+              </div>
+              <div>
+                <p class="font-medium" :class="{
+                  'text-green-700 dark:text-green-400': getAccessStatus(selectedEmployee!) === 'active',
+                  'text-red-700 dark:text-red-400': getAccessStatus(selectedEmployee!) === 'revoked',
+                  'text-amber-700 dark:text-amber-400': getAccessStatus(selectedEmployee!) === 'expired',
+                  'text-gray-600 dark:text-gray-400': !selectedEmployee?.npub,
+                }">
+                  {{ selectedEmployee?.npub ? getAccessStatusLabel(getAccessStatus(selectedEmployee!)) : t('employees.access.noNostrKey') }}
+                </p>
+                <p v-if="selectedEmployee?.accessExpiresAt" class="text-xs mt-0.5" :class="{
+                  'text-green-600 dark:text-green-500': getAccessStatus(selectedEmployee!) === 'active',
+                  'text-amber-600 dark:text-amber-500': getAccessStatus(selectedEmployee!) === 'expired',
+                }">
+                  {{ getAccessStatus(selectedEmployee!) === 'expired' ? t('employees.access.expiredOn') : t('employees.access.expiresOn') }}: 
+                  {{ new Date(selectedEmployee.accessExpiresAt).toLocaleDateString() }}
+                </p>
+                <p v-if="selectedEmployee?.accessRevokedReason" class="text-xs text-red-600 dark:text-red-500 mt-0.5">
+                  {{ t('employees.access.reason') }}: {{ selectedEmployee.accessRevokedReason }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nostr Key Info -->
+          <div v-if="selectedEmployee?.npub" class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {{ t('employees.access.nostrPublicKey') }}
+            </label>
+            <div class="flex items-center gap-2">
+              <code class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-mono text-gray-600 dark:text-gray-400 truncate">
+                {{ selectedEmployee.npub }}
+              </code>
+              <UButton 
+                color="neutral" 
+                variant="ghost" 
+                icon="i-heroicons-clipboard-document" 
+                size="sm"
+                @click="copyToClipboard(selectedEmployee?.npub || '')"
+              />
+            </div>
+          </div>
+
+          <!-- Access Settings -->
+          <div v-if="getAccessStatus(selectedEmployee!) !== 'revoked'" class="space-y-4 mb-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ t('employees.access.expiryDate') }}
+              </label>
+              <UInput 
+                v-model="accessForm.expiresAt" 
+                type="date" 
+                :placeholder="t('employees.access.noExpiry')"
+                :min="new Date().toISOString().split('T')[0]"
+              />
+              <p class="text-xs text-gray-500 mt-1">{{ t('employees.access.expiryHint') }}</p>
+            </div>
+          </div>
+
+          <!-- Revoke Reason (shown when revoking) -->
+          <div v-if="getAccessStatus(selectedEmployee!) === 'active' || getAccessStatus(selectedEmployee!) === 'expired'" class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {{ t('employees.access.revokeReason') }}
+            </label>
+            <UInput 
+              v-model="accessForm.revokeReason" 
+              :placeholder="t('employees.access.revokeReasonPlaceholder')"
+            />
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <UButton 
+              color="neutral" 
+              variant="ghost" 
+              class="sm:mr-auto"
+              @click="showAccessModal = false"
+            >
+              {{ t('common.cancel') }}
+            </UButton>
+            
+            <template v-if="getAccessStatus(selectedEmployee!) === 'revoked'">
+              <UButton 
+                color="success" 
+                icon="i-heroicons-check-circle"
+                @click="restoreAccess()"
+              >
+                {{ t('employees.access.restore') }}
+              </UButton>
+            </template>
+            <template v-else>
+              <UButton 
+                v-if="selectedEmployee?.npub"
+                color="error" 
+                variant="soft"
+                icon="i-heroicons-no-symbol"
+                @click="revokeAccess()"
+              >
+                {{ t('employees.access.revoke') }}
+              </UButton>
+              <UButton 
+                color="primary" 
+                icon="i-heroicons-check"
+                @click="grantAccess()"
+              >
+                {{ t('employees.access.saveSettings') }}
+              </UButton>
+            </template>
           </div>
         </div>
       </template>

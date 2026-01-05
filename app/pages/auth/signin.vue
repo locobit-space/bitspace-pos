@@ -1,5 +1,5 @@
 <!-- pages/auth/signin.vue -->
-<!-- 🔐 Sign In Page - Hasura Auth + Nostr -->
+<!-- 🔐 Sign In Page - Simplified Nostr-Only Auth -->
 <script setup lang="ts">
 definePageMeta({
   layout: "blank",
@@ -13,36 +13,24 @@ useHead({
 
 const auth = useAuth();
 const router = useRouter();
+const toast = useToast();
 const nostrUser = useNostrUser();
 const usersComposable = useUsers();
 const { syncNostrOwner } = usersComposable;
 
-// Staff users state
-const staffUsers = computed(() => usersComposable.users.value);
-const isLoadingUsers = ref(true);
-
-// Form state
-const email = ref("");
-const password = ref("");
-const rememberMe = ref(false);
-const showPassword = ref(false);
-
 // UI state
-const activeTab = ref<"email" | "nostr" | "staff">("nostr");
-const showPinPad = ref(false);
 const hasNostr = ref(false);
 const nostrConnecting = ref(false);
-const showManualNpub = ref(false);
 const showNsecInput = ref(false);
-const manualNpub = ref("");
 const manualNsec = ref("");
 const detectedExtension = ref<"alby" | "nos2x" | "unknown" | null>(null);
 const nostrError = ref<string | null>(null);
 
-// Company code state
+// Company code state (for cross-device sync)
 const companyCodeInput = ref("");
 const isLoadingCompanyCode = ref(false);
 const companyCodeError = ref<string | null>(null);
+const showCompanyCode = ref(false);
 const company = useCompany();
 const nostrData = useNostrData();
 
@@ -56,205 +44,21 @@ function formatCompanyCodeInput(event: Event) {
   const input = event.target as HTMLInputElement;
   let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-  // Support both old (4-4-4) and new (5-5-5) formats
-  const rawLength = value.length;
-
-  if (rawLength <= 12) {
-    // Old format: XXXX-XXXX-XXXX (4-4-4)
-    if (value.length > 4) {
-      value = value.slice(0, 4) + "-" + value.slice(4);
-    }
-    if (value.length > 9) {
-      value = value.slice(0, 9) + "-" + value.slice(9);
-    }
-    if (value.length > 14) {
-      value = value.slice(0, 14);
-    }
-  } else {
-    // New format: XXXXX-XXXXX-XXXXX (5-5-5)
-    if (value.length > 5) {
-      value = value.slice(0, 5) + "-" + value.slice(5);
-    }
-    if (value.length > 11) {
-      value = value.slice(0, 11) + "-" + value.slice(11);
-    }
-    if (value.length > 17) {
-      value = value.slice(0, 17);
-    }
+  // Support format: XXXXX-XXXXX-XXXXX (5-5-5)
+  if (value.length > 5) {
+    value = value.slice(0, 5) + "-" + value.slice(5);
+  }
+  if (value.length > 11) {
+    value = value.slice(0, 11) + "-" + value.slice(11);
+  }
+  if (value.length > 17) {
+    value = value.slice(0, 17);
   }
 
   companyCodeInput.value = value;
 }
 
-// Sign in with email (local staff first, then cloud fallback)
-const handleEmailSignIn = async () => {
-  // Clear any previous errors
-  auth.error.value = null;
-
-  // 1. Try local staff login first
-  const localResult = await usersComposable.loginWithPassword(
-    email.value,
-    password.value
-  );
-
-  if (localResult.success && localResult.user) {
-    await handleStaffLogin(localResult.user, "password");
-    return;
-  }
-
-  // 2. If local user exists but credentials wrong, show that error
-  if (localResult.error && localResult.error !== "Invalid credentials") {
-    auth.error.value = localResult.error;
-    return;
-  }
-
-  // 3. Check if this email exists locally (user exists but wrong password)
-  const allUsers = usersComposable.users.value;
-  const localUserExists = allUsers.some(
-    (u) =>
-      u.email?.toLowerCase().trim() === email.value.toLowerCase().trim() ||
-      u.name.toLowerCase().trim() === email.value.toLowerCase().trim()
-  );
-
-  if (localUserExists) {
-    // User exists locally but password/credentials wrong
-    auth.error.value = localResult.error || "Invalid credentials";
-    return;
-  }
-
-  // 4. Fallback to Hasura/Cloud login only if no local user found
-  try {
-    const success = await auth.signInWithEmail(email.value, password.value);
-    if (success) {
-      router.push("/");
-    }
-  } catch (e) {
-    // Network error - user might not have internet
-    console.error("Cloud login failed:", e);
-    auth.error.value =
-      "User not found. Create an account or check your credentials.";
-  }
-};
-
-// Sign in with Google
-const handleGoogleSignIn = () => {
-  auth.signInWithGoogle();
-};
-
-// Handle company code submit (for cross-device staff login)
-const settingsSync = useSettingsSync();
-
-const handleCompanyCodeSubmit = async () => {
-  const codeValue = companyCodeInput.value.replace(/-/g, ""); // Remove dashes for validation
-  if (codeValue.length < 6) return;
-
-  isLoadingCompanyCode.value = true;
-  companyCodeError.value = null;
-
-  try {
-    // Get owner pubkey from storage OR discover it via company index
-    let ownerPubkey = company.ownerPubkey.value;
-
-    if (!ownerPubkey) {
-      // Try to discover owner pubkey from company index event
-
-      ownerPubkey = await nostrData.discoverOwnerByCompanyCode(
-        companyCodeInput.value
-      );
-
-      if (!ownerPubkey) {
-        companyCodeError.value = "Invalid code. Check with your manager.";
-        return;
-      }
-    }
-
-    // Fetch staff from Nostr using company code
-    const staff = await nostrData.fetchStaffByCompanyCode(
-      companyCodeInput.value,
-      ownerPubkey
-    );
-
-    if (staff.length === 0) {
-      companyCodeError.value = "Invalid code or no staff found.";
-      return;
-    }
-
-    // Save company code for future use
-    await company.setCompanyCode(companyCodeInput.value, ownerPubkey);
-
-    // Merge fetched users with local storage
-    const STORAGE_KEY = "bitspace_users";
-    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    const existingIds = new Set(existing.map((u: { id: string }) => u.id));
-
-    for (const user of staff) {
-      if (!existingIds.has(user.id)) {
-        existing.push(user);
-      }
-    }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-
-    // Reinitialize users composable to pick up new users
-    await usersComposable.refreshFromNostr();
-
-    // 🔄 Fetch and apply owner's settings (Lightning, Receipt, Tax, Bank, Cloudinary)
-    try {
-      const syncSuccess = await settingsSync.fetchAndApplySettings(
-        companyCodeInput.value
-      );
-      if (syncSuccess) {
-        console.log("[Signin] Applied owner settings from cloud");
-      }
-    } catch (e) {
-      console.warn("[Signin] Failed to sync settings:", e);
-      // Non-blocking - continue even if settings sync fails
-    }
-
-    companyCodeInput.value = ""; // Clear input
-  } catch (e) {
-    console.error("[Signin] Company code error:", e);
-    companyCodeError.value = "Failed to connect. Check code and try again.";
-  } finally {
-    isLoadingCompanyCode.value = false;
-  }
-};
-
-// Handle QR code scan result
-const invite = useInvite();
-
-const handleQrScanned = async (data: string) => {
-  try {
-    // Parse the invite link
-    const result = await invite.parseInviteLink(data);
-
-    if (!result.success || !result.data) {
-      companyCodeError.value = result.error || "Invalid QR code";
-      return;
-    }
-
-    // Import the user
-    const imported = await invite.importFromInvite(result.data);
-
-    if (!imported) {
-      companyCodeError.value = "Failed to import user data";
-      return;
-    }
-
-    // Refresh users
-    await usersComposable.refreshFromNostr();
-
-    // If we have users now, they'll show up in the staff list
-  } catch (error) {
-    console.error("[Signin] QR scan error:", error);
-    companyCodeError.value = "Failed to process QR code";
-  }
-};
-
-const handleQrError = (message: string) => {
-  console.error("[Signin] QR error:", message);
-  companyCodeError.value = message;
-};
+// Handle Nostr extension sign in
 const handleNostrSignIn = async () => {
   nostrConnecting.value = true;
   nostrError.value = null;
@@ -262,19 +66,32 @@ const handleNostrSignIn = async () => {
   try {
     const success = await auth.signInWithNostr();
     if (success) {
-      // First fetch existing users from Nostr
       await usersComposable.refreshFromNostr();
 
-      // Check if this user already exists
       const nostrPubkeyCookie = useCookie("nostr-pubkey");
       const existingUser = usersComposable.users.value.find(
         (u) => u.pubkeyHex === nostrPubkeyCookie.value
       );
 
       if (existingUser) {
+        // Check if user is blocked or expired
+        if (existingUser.revokedAt) {
+          nostrError.value =
+            t("auth.signin.accessRevoked") ||
+            "🚫 Access has been revoked. Contact your manager.";
+          return;
+        }
+        if (
+          existingUser.expiresAt &&
+          new Date(existingUser.expiresAt) < new Date()
+        ) {
+          nostrError.value =
+            t("auth.signin.accessExpired") ||
+            "⏰ Access has expired. Contact your manager.";
+          return;
+        }
         usersComposable.setCurrentUser(existingUser);
       } else {
-        // New user - create owner
         await syncNostrOwner();
       }
 
@@ -307,7 +124,6 @@ const triggerNos2xPopup = async () => {
       return;
     }
 
-    // This should trigger the nos2x popup
     const pubkey = await win.nostr.getPublicKey();
 
     if (
@@ -324,7 +140,30 @@ const triggerNos2xPopup = async () => {
     }
 
     if (typeof pubkey === "string" && pubkey.length >= 32) {
-      // Use the signInWithNpub for quick login
+      // Check if user exists and has access
+      await usersComposable.refreshFromNostr();
+      const existingUser = usersComposable.users.value.find(
+        (u) => u.pubkeyHex === pubkey
+      );
+
+      if (existingUser) {
+        if (existingUser.revokedAt) {
+          nostrError.value =
+            t("auth.signin.accessRevoked") ||
+            "🚫 Access has been revoked. Contact your manager.";
+          return;
+        }
+        if (
+          existingUser.expiresAt &&
+          new Date(existingUser.expiresAt) < new Date()
+        ) {
+          nostrError.value =
+            t("auth.signin.accessExpired") ||
+            "⏰ Access has expired. Contact your manager.";
+          return;
+        }
+      }
+
       const success = await auth.signInWithNpub(pubkey);
       if (success) {
         router.push("/");
@@ -333,9 +172,7 @@ const triggerNos2xPopup = async () => {
       nostrError.value = "Invalid public key format from extension";
     }
   } catch (e) {
-    console.error("[nos2x] Error:", e);
     const msg = e instanceof Error ? e.message : String(e);
-
     if (msg.includes("rejected") || msg.includes("denied")) {
       nostrError.value =
         "Request was rejected. Please approve the permission in nos2x.";
@@ -347,32 +184,7 @@ const triggerNos2xPopup = async () => {
   }
 };
 
-// Sign in with manual npub
-const handleNpubSignIn = async () => {
-  if (!manualNpub.value.trim()) return;
-
-  const success = await auth.signInWithNpub(manualNpub.value);
-  if (success) {
-    // First fetch existing users from Nostr
-    await usersComposable.refreshFromNostr();
-
-    // Check if this user already exists
-    const nostrPubkeyCookie = useCookie("nostr-pubkey");
-    const existingUser = usersComposable.users.value.find(
-      (u) => u.pubkeyHex === nostrPubkeyCookie.value
-    );
-
-    if (existingUser) {
-      usersComposable.setCurrentUser(existingUser);
-    } else {
-      await syncNostrOwner();
-    }
-
-    router.push("/");
-  }
-};
-
-// Sign in with nsec (private key)
+// Sign in with nsec (private key) - Universal login for owner & staff
 const handleNsecSignIn = async () => {
   if (!manualNsec.value.trim()) return;
 
@@ -382,17 +194,13 @@ const handleNsecSignIn = async () => {
   try {
     const nsec = manualNsec.value.trim();
 
-    // Set up the user with nostrUser composable (same as AccountSwitchModal)
-    // This will save keys to localStorage and fetch profile from relays
     const setupSuccess = await nostrUser.setupUser(nsec);
-
     if (!setupSuccess) {
       throw new Error(
         "Invalid private key format. Use nsec1... or 64-char hex."
       );
     }
 
-    // Get the derived pubkey from storage
     const nostrStorage = useNostrStorage();
     const { userInfo } = nostrStorage.loadCurrentUser();
 
@@ -408,56 +216,141 @@ const handleNsecSignIn = async () => {
     });
     nostrCookie.value = pubkeyHex;
 
-    // IMPORTANT: First try to fetch existing users from Nostr to check if this is staff
+    // Fetch existing users to check if this is staff
     await usersComposable.refreshFromNostr();
 
-    // Check if this user already exists (either as staff or owner)
     const existingUser = usersComposable.users.value.find(
       (u) => u.pubkeyHex === pubkeyHex
     );
 
     if (existingUser) {
-      // User exists - just log them in (could be staff or owner)
+      // Check access status
+      if (existingUser.revokedAt) {
+        nostrError.value =
+          t("auth.signin.accessRevoked") ||
+          "🚫 Access has been revoked. Contact your manager.";
+        manualNsec.value = "";
+        return;
+      }
+      if (
+        existingUser.expiresAt &&
+        new Date(existingUser.expiresAt) < new Date()
+      ) {
+        nostrError.value =
+          t("auth.signin.accessExpired") ||
+          "⏰ Access has expired. Contact your manager.";
+        manualNsec.value = "";
+        return;
+      }
+
       usersComposable.setCurrentUser(existingUser);
+      toast.add({
+        title: t("auth.signin.welcomeBack") || "Welcome back!",
+        description: existingUser.name,
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
     } else {
-      // No existing user - this is a new owner setup
+      // New user - create as owner
       await syncNostrOwner();
-
-      // Initialize company code for owner (generates if not exists)
       const companyCode = await company.initializeCompany(pubkeyHex);
-
-      // Publish company index for cross-device discovery
       const codeHash = await company.hashCompanyCode(companyCode);
       await nostrData.publishCompanyIndex(codeHash);
+
+      toast.add({
+        title: t("auth.signin.accountCreated") || "Account created!",
+        description: t("auth.signin.ownerSetup") || "You are now the owner",
+        icon: "i-heroicons-sparkles",
+        color: "green",
+      });
     }
 
-    // Clear the input
     manualNsec.value = "";
-
-    // Navigate to home
     router.push("/");
   } catch (e) {
-    console.error("[Nsec] Error:", e);
     nostrError.value = e instanceof Error ? e.message : "Invalid private key";
   } finally {
     nostrConnecting.value = false;
   }
 };
 
-// Handle staff login success
-const handleStaffLogin = async (
-  user: { id: string; name: string },
-  _method: string
-) => {
-  // Make sure the user is set as current in useUsers composable
-  // (StaffLogin component uses staffAuth which doesn't update useUsers)
-  const fullUser = usersComposable.users.value.find((u) => u.id === user.id);
-  if (fullUser) {
-    usersComposable.setCurrentUser(fullUser);
-  }
+// Handle company code submit (sync staff from another device)
+const settingsSync = useSettingsSync();
 
-  // Navigate to home
-  router.push("/");
+const handleCompanyCodeSubmit = async () => {
+  const codeValue = companyCodeInput.value.replace(/-/g, "");
+  if (codeValue.length < 6) return;
+
+  isLoadingCompanyCode.value = true;
+  companyCodeError.value = null;
+
+  try {
+    let ownerPubkey = company.ownerPubkey.value;
+
+    if (!ownerPubkey) {
+      ownerPubkey = await nostrData.discoverOwnerByCompanyCode(
+        companyCodeInput.value
+      );
+      if (!ownerPubkey) {
+        companyCodeError.value =
+          t("auth.signin.invalidCode") ||
+          "Invalid code. Check with your manager.";
+        return;
+      }
+    }
+
+    const staff = await nostrData.fetchStaffByCompanyCode(
+      companyCodeInput.value,
+      ownerPubkey
+    );
+
+    if (staff.length === 0) {
+      companyCodeError.value =
+        t("auth.signin.noStaffFound") || "Invalid code or no staff found.";
+      return;
+    }
+
+    await company.setCompanyCode(companyCodeInput.value, ownerPubkey);
+
+    // Merge fetched users
+    const STORAGE_KEY = "bitspace_users";
+    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const existingIds = new Set(existing.map((u: { id: string }) => u.id));
+
+    for (const user of staff) {
+      if (!existingIds.has(user.id)) {
+        existing.push(user);
+      }
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+    await usersComposable.refreshFromNostr();
+
+    // Sync settings
+    try {
+      await settingsSync.fetchAndApplySettings(companyCodeInput.value);
+    } catch (e) {
+      console.warn("[Signin] Settings sync failed:", e);
+    }
+
+    toast.add({
+      title: t("auth.signin.syncSuccess") || "Synced!",
+      description: `${staff.length} ${
+        t("auth.signin.staffSynced") || "staff members synced"
+      }`,
+      icon: "i-heroicons-check-circle",
+      color: "green",
+    });
+
+    companyCodeInput.value = "";
+    showCompanyCode.value = false;
+  } catch (e) {
+    companyCodeError.value =
+      t("auth.signin.syncFailed") ||
+      "Failed to connect. Check code and try again.";
+  } finally {
+    isLoadingCompanyCode.value = false;
+  }
 };
 
 // Check if already authenticated and check Nostr extension
@@ -466,25 +359,19 @@ onMounted(async () => {
     router.push("/");
   }
 
-  // Load existing users from localStorage (safe - doesn't create default owner)
+  // Load existing users from localStorage
   usersComposable.loadUsersOnly();
-  isLoadingUsers.value = false;
 
-  // Check for Nostr extension after a short delay (extensions may load async)
+  // Check for Nostr extension after a short delay
   setTimeout(() => {
     hasNostr.value = auth.hasNostrExtension();
 
-    // Detect which extension is installed
     if (hasNostr.value && typeof window !== "undefined") {
       const win = window as unknown as {
-        nostr?: {
-          _requests?: unknown;
-          signSchnorr?: unknown;
-        };
+        nostr?: { _requests?: unknown; signSchnorr?: unknown };
         alby?: unknown;
       };
 
-      // Alby typically has alby object or specific methods
       if (win.alby || (win.nostr && "_requests" in win.nostr)) {
         detectedExtension.value = "alby";
       } else if (win.nostr && "signSchnorr" in win.nostr) {
@@ -492,7 +379,6 @@ onMounted(async () => {
       } else {
         detectedExtension.value = "unknown";
       }
-      console.log("[Nostr] Detected extension:", detectedExtension.value);
     }
   }, 500);
 });
@@ -500,41 +386,41 @@ onMounted(async () => {
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center"
+    class="min-h-screen bg-linear-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center"
   >
     <!-- Background Pattern -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
-      <!-- Top right glow -->
       <div
-        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl"
+        class="absolute -top-40 -right-40 w-96 h-96 bg-linear-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl"
       />
-      <!-- Bottom left glow -->
       <div
-        class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl"
+        class="absolute -bottom-40 -left-40 w-96 h-96 bg-linear-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl"
       />
-      <!-- Center subtle glow -->
       <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-linear-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl"
       />
     </div>
 
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
-      <!-- Back to Home -->
-      <div class="mb-6">
+      <!-- Back to Home & Language Switcher -->
+      <div class="mb-6 flex w-full gap-6 items-center justify-between">
         <NuxtLinkLocale
           to="/"
-          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          class="inline-flex whitespace-nowrap flex-1 items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           {{ t("common.back") }}
         </NuxtLinkLocale>
+        <div class="max-w-sm">
+          <CommonSwitchLanguage />
+        </div>
       </div>
 
       <!-- Logo & Header -->
       <div class="text-center mb-8">
         <div class="flex justify-center mb-4">
           <div
-            class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20"
+            class="w-16 h-16 bg-linear-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20"
           >
             <span class="text-3xl">⚡</span>
           </div>
@@ -551,775 +437,377 @@ onMounted(async () => {
       <div
         class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
       >
-        <!-- Tabs -->
-        <div class="flex border-b border-gray-200 dark:border-gray-800">
-          <button
-            class="flex-1 py-4 text-center font-medium transition-colors"
-            :class="
-              activeTab === 'nostr'
-                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            "
-            @click="activeTab = 'nostr'"
-          >
-            <span class="mr-2">⚡</span>
-            {{ t("auth.signin.tabNostr") }}
-          </button>
-          <!-- <button
-            class="flex-1 py-4 text-center font-medium transition-colors"
-            :class="
-              activeTab === 'email'
-                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            "
-            @click="activeTab = 'email'"
-          >
-            <span class="mr-2">📧</span>
-            {{ t("auth.signin.tabEmail") }}
-          </button> -->
-          <button
-            class="flex-1 py-4 text-center font-medium transition-colors"
-            :class="
-              activeTab === 'staff'
-                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            "
-            @click="
-              activeTab = 'staff';
-              showPinPad = false;
-            "
-          >
-            <span class="mr-2">👤</span>
-            {{ t("auth.signin.tabStaff") || "Staff" }}
-          </button>
-        </div>
-
         <div class="p-6">
           <!-- Error Message -->
           <div
-            v-if="auth.error.value"
-            class="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+            v-if="nostrError"
+            class="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 dark:text-red-400 text-sm whitespace-pre-line"
           >
-            {{ auth.error.value }}
+            <div class="flex items-start gap-3">
+              <UIcon
+                name="i-heroicons-exclamation-triangle"
+                class="w-5 h-5 flex-shrink-0 mt-0.5"
+              />
+              <span>{{ nostrError }}</span>
+            </div>
           </div>
 
-          <!-- Email Sign In -->
-          <div v-if="activeTab === 'email'" class="space-y-4">
-            <!-- Google Sign In -->
-            <UButton
-              block
-              size="lg"
-              color="neutral"
-              variant="outline"
-              :loading="auth.isLoading.value"
-              icon="material-icon-theme:google"
-              @click="handleGoogleSignIn"
-            >
-              {{ t("auth.google.signIn") }}
-            </UButton>
-
-            <USeparator
-              :label="
-                t('common.or') +
-                ' ' +
-                t('auth.signin.signIn').toLowerCase() +
-                ' with email'
-              "
-            />
-
-            <form class="space-y-4" @submit.prevent="handleEmailSignIn">
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >{{ t("auth.signin.email") }}</label
-                >
-                <UInput
-                  v-model="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  size="lg"
-                  required
-                  class="w-full"
-                />
+          <!-- Nostr Extension Login (if available) -->
+          <template v-if="hasNostr && !showNsecInput && !showCompanyCode">
+            <div class="text-center py-4">
+              <div
+                class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+              >
+                <span class="text-3xl">🔑</span>
               </div>
+              <h3
+                class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
+              >
+                {{ t("auth.nostr.signIn") }}
+              </h3>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">
+                {{ t("auth.nostr.description") }}
+              </p>
+            </div>
 
-              <div>
-                <label
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {{ t("auth.signin.password") }}
-                </label>
-                <UInput
-                  v-model="password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="••••••••"
-                  size="lg"
-                  required
-                  class="w-full"
-                >
-                  <template #trailing>
-                    <UButton
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      :icon="
-                        showPassword
-                          ? 'i-heroicons-eye-slash'
-                          : 'i-heroicons-eye'
-                      "
-                      @click="showPassword = !showPassword"
-                    />
-                  </template>
-                </UInput>
-              </div>
+            <!-- Detected Extension Badge -->
+            <div v-if="detectedExtension" class="flex justify-center mb-4">
+              <span
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                :class="{
+                  'bg-amber-500/20 text-amber-600 dark:text-amber-400':
+                    detectedExtension === 'alby',
+                  'bg-purple-500/20 text-purple-600 dark:text-purple-400':
+                    detectedExtension === 'nos2x',
+                  'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400':
+                    detectedExtension === 'unknown',
+                }"
+              >
+                <span v-if="detectedExtension === 'alby'">🐝</span>
+                <span v-else-if="detectedExtension === 'nos2x'">🔐</span>
+                <span v-else>🔌</span>
+                {{
+                  detectedExtension === "alby"
+                    ? t("auth.nostr.albyDetected")
+                    : detectedExtension === "nos2x"
+                    ? t("auth.nostr.nos2xDetected")
+                    : t("auth.nostr.extensionDetected")
+                }}
+              </span>
+            </div>
 
-              <div class="flex items-center justify-between">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <UCheckbox v-model="rememberMe" />
-                  <span class="text-sm text-gray-600 dark:text-gray-400">{{
-                    t("auth.signin.rememberMe")
-                  }}</span>
-                </label>
-                <NuxtLinkLocale
-                  to="/auth/forgot-password"
-                  class="text-sm text-amber-500 hover:text-amber-400"
-                >
-                  {{ t("auth.signin.forgotPassword") }}
-                </NuxtLinkLocale>
-              </div>
+            <!-- Extension Connect Buttons -->
+            <div class="space-y-2">
+              <UButton
+                block
+                size="lg"
+                :color="detectedExtension === 'alby' ? 'primary' : 'neutral'"
+                :variant="detectedExtension === 'alby' ? 'solid' : 'outline'"
+                :loading="nostrConnecting"
+                @click="handleNostrSignIn"
+              >
+                <template #leading>
+                  <span class="text-lg">🐝</span>
+                </template>
+                {{ t("auth.nostr.connectAlby") }}
+              </UButton>
 
               <UButton
-                type="submit"
+                block
+                size="lg"
+                :color="detectedExtension === 'nos2x' ? 'primary' : 'neutral'"
+                :variant="detectedExtension === 'nos2x' ? 'solid' : 'outline'"
+                :loading="nostrConnecting"
+                @click="triggerNos2xPopup"
+              >
+                <template #leading>
+                  <span class="text-lg">🔐</span>
+                </template>
+                {{ t("auth.nostr.connectNos2x") }}
+              </UButton>
+            </div>
+
+            <!-- Divider -->
+            <div class="relative my-6">
+              <div class="absolute inset-0 flex items-center">
+                <div
+                  class="w-full border-t border-gray-200 dark:border-gray-700"
+                />
+              </div>
+              <div class="relative flex justify-center text-sm">
+                <span class="bg-white dark:bg-gray-900 px-2 text-gray-500">
+                  {{ t("common.or") }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Alternative Login Options -->
+            <div class="space-y-3">
+              <UButton
+                block
+                color="neutral"
+                variant="outline"
+                @click="showNsecInput = true"
+              >
+                <template #leading>
+                  <UIcon name="i-heroicons-key" class="w-5 h-5" />
+                </template>
+                {{ t("auth.signin.loginWithKey") || "Login with Private Key" }}
+              </UButton>
+
+              <UButton
+                block
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                @click="showCompanyCode = true"
+              >
+                <template #leading>
+                  <UIcon name="i-heroicons-building-office" class="w-4 h-4" />
+                </template>
+                {{
+                  t("auth.signin.syncFromCompany") || "Sync from Company Code"
+                }}
+              </UButton>
+            </div>
+          </template>
+
+          <!-- No Extension - Show nsec input as primary -->
+          <template v-else-if="!showCompanyCode">
+            <div class="text-center py-4">
+              <div
+                class="w-16 h-16 bg-linear-to-br from-amber-500/20 to-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+              >
+                <span class="text-3xl">🔐</span>
+              </div>
+              <h3
+                class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
+              >
+                {{ t("auth.signin.title") }}
+              </h3>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">
+                {{
+                  t("auth.signin.enterKeyDesc") ||
+                  "Enter your private key to sign in"
+                }}
+              </p>
+            </div>
+
+            <!-- nsec Input -->
+            <div class="space-y-4">
+              <UInput
+                v-model="manualNsec"
+                type="password"
+                :placeholder="
+                  t('auth.signin.nsecPlaceholder') ||
+                  'nsec1... or hex private key'
+                "
+                size="lg"
+                class="w-full"
+                icon="i-heroicons-key"
+              />
+
+              <UButton
                 block
                 size="lg"
                 color="primary"
-                :loading="auth.isLoading.value"
+                :loading="nostrConnecting"
+                :disabled="!manualNsec.trim()"
+                @click="handleNsecSignIn"
               >
+                <template #leading>
+                  <UIcon
+                    name="i-heroicons-arrow-right-end-on-rectangle"
+                    class="w-5 h-5"
+                  />
+                </template>
                 {{ t("auth.signin.signIn") }}
               </UButton>
-            </form>
-          </div>
 
-          <!-- Staff Login -->
-          <div v-else-if="activeTab === 'staff'" class="space-y-4">
-            <div v-if="isLoadingUsers" class="text-center py-8">
-              <UIcon
-                name="i-heroicons-arrow-path"
-                class="w-8 h-8 animate-spin text-primary-500 mx-auto"
-              />
-              <p class="text-gray-500 mt-2">{{ t("common.loading") }}</p>
-            </div>
-
-            <div v-else-if="staffUsers.length === 0" class="text-center py-4">
-              <!-- Company Code Input -->
-              <div v-if="!companyCodeInput" class="space-y-4">
-                <div
-                  class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3"
-                >
-                  <span class="text-3xl opacity-50">🏪</span>
-                </div>
-                <h3
-                  class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
-                >
-                  {{
-                    t("auth.signin.enterCompanyCode") || "Enter Company Code"
-                  }}
-                </h3>
-                <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                  {{
-                    t("auth.signin.companyCodeHint") ||
-                    "Get the code from your manager (e.g. XXXXX-XXXXX-XXXXX)"
-                  }}
-                </p>
-
-                <div class="max-w-xs mx-auto">
-                  <UInput
-                    v-model="companyCodeInput"
-                    type="text"
-                    maxlength="17"
-                    size="lg"
-                    class="text-center text-xl tracking-widest font-mono w-full"
-                    :placeholder="'XXXXX-XXXXX-XXXXX'"
-                    @input="formatCompanyCodeInput"
-                    @keyup.enter="handleCompanyCodeSubmit"
-                  />
-                </div>
-
-                <UButton
-                  :loading="isLoadingCompanyCode"
-                  :disabled="!isValidCompanyCode"
-                  color="primary"
-                  class="mt-4"
-                  @click="handleCompanyCodeSubmit"
-                >
-                  {{ t("auth.signin.connectWithCode") || "Connect" }}
-                </UButton>
-
-                <div v-if="companyCodeError" class="mt-2">
-                  <UAlert color="error" :title="companyCodeError" />
-                </div>
-              </div>
-
-              <!-- OR Divider -->
-              <div class="relative my-4">
-                <div class="absolute inset-0 flex items-center">
-                  <div
-                    class="w-full border-t border-gray-200 dark:border-gray-700"
-                  />
-                </div>
-                <div class="relative flex justify-center text-sm">
-                  <span class="bg-white dark:bg-gray-900 px-2 text-gray-500">
-                    {{ t("common.or") || "or" }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- QR Scanner Button -->
-              <AuthQrScanner
-                @scanned="handleQrScanned"
-                @error="handleQrError"
-              />
-
-              <!-- Fallback: Create account link for owners -->
+              <!-- Info box -->
               <div
-                class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800"
+                class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl"
               >
-                <p class="text-gray-500 text-sm">
-                  {{ t("auth.signin.noCodeQuestion") || "Don't have a code?" }}
-                </p>
-                <UButton variant="link" size="sm" @click="activeTab = 'nostr'">
-                  {{ t("auth.signin.loginAsOwner") || "Login as Owner" }}
-                </UButton>
-              </div>
-            </div>
-
-            <div v-else>
-              <!-- Staff Login Button (Click to reveal PIN pad) -->
-              <!-- Staff User Grid -->
-              <div v-if="!showPinPad">
-                <div class="text-center mb-6">
-                  <h3
-                    class="text-lg font-semibold text-gray-900 dark:text-white"
-                  >
-                    {{ t("auth.staffLogin") || "Who is working?" }}
-                  </h3>
-                  <p class="text-sm text-gray-500 mt-1">
+                <p
+                  class="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2"
+                >
+                  <UIcon
+                    name="i-heroicons-light-bulb"
+                    class="w-4 h-4 flex-shrink-0 mt-0.5"
+                  />
+                  <span>
                     {{
-                      t("auth.selectProfile") || "Select your profile to login"
+                      t("auth.signin.keyInfo") ||
+                      "Your key is stored locally and never sent to servers. Use the same key on all devices."
                     }}
-                  </p>
-                </div>
-
-                <div
-                  class="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto p-1 custom-scrollbar"
-                >
-                  <button
-                    v-for="user in staffUsers"
-                    :key="user.id"
-                    class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all group"
-                    @click="showPinPad = true"
-                  >
-                    <div
-                      class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:bg-white dark:group-hover:bg-gray-800 transition-colors"
-                    >
-                      <UIcon
-                        name="i-heroicons-user"
-                        class="w-6 h-6 text-gray-500 group-hover:text-primary-500 transition-colors"
-                      />
-                    </div>
-                    <span
-                      class="font-medium text-gray-900 dark:text-white text-sm line-clamp-1"
-                    >
-                      {{ user.name }}
-                    </span>
-                    <span
-                      class="text-xs text-gray-500 group-hover:text-primary-600 dark:group-hover:text-primary-400"
-                    >
-                      {{
-                        user.role === "admin"
-                          ? t("settings.users.roleAdmin") || "Admin"
-                          : t("settings.users.roleStaff") || "Staff"
-                      }}
-                    </span>
-                  </button>
-
-                  <!-- Add Quick Login Button if list is long -->
-                  <!-- Or just keep it clean with user grid -->
-                </div>
-              </div>
-
-              <!-- PIN Pad Component -->
-              <div v-else>
-                <div class="mb-4">
-                  <UButton
-                    variant="ghost"
-                    icon="i-heroicons-arrow-left"
-                    class="mb-2"
-                    @click="showPinPad = false"
-                  >
-                    {{ t("common.back") }}
-                  </UButton>
-                </div>
-                <AuthStaffLogin
-                  :users="staffUsers"
-                  :show-nostr="true"
-                  :show-password="true"
-                  @login="handleStaffLogin"
-                />
+                  </span>
+                </p>
               </div>
             </div>
-          </div>
 
-          <!-- Nostr Sign In -->
-          <div v-else-if="activeTab == 'nostr'" class="space-y-4">
-            <!-- Nostr Extension Available -->
-            <template v-if="hasNostr">
-              <div class="text-center py-4">
-                <div
-                  class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
-                >
-                  <span class="text-3xl">🔑</span>
-                </div>
-                <h3
-                  class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
-                >
-                  {{ t("auth.nostr.signIn") }}
-                </h3>
-                <p class="text-gray-600 dark:text-gray-400 text-sm">
-                  {{ t("auth.nostr.description") }}
-                </p>
-              </div>
-
-              <!-- Detected Extension Badge -->
-              <div v-if="detectedExtension" class="flex justify-center mb-2">
-                <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                  :class="{
-                    'bg-amber-500/20 text-amber-600 dark:text-amber-400':
-                      detectedExtension === 'alby',
-                    'bg-purple-500/20 text-purple-600 dark:text-purple-400':
-                      detectedExtension === 'nos2x',
-                    'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400':
-                      detectedExtension === 'unknown',
-                  }"
-                >
-                  <span v-if="detectedExtension === 'alby'">🐝</span>
-                  <span v-else-if="detectedExtension === 'nos2x'">🔐</span>
-                  <span v-else>🔌</span>
-                  {{
-                    detectedExtension === "alby"
-                      ? t("auth.nostr.albyDetected")
-                      : detectedExtension === "nos2x"
-                      ? t("auth.nostr.nos2xDetected")
-                      : t("auth.nostr.extensionDetected")
-                  }}
-                </span>
-              </div>
-
-              <!-- Nostr Error -->
-              <div
-                v-if="nostrError"
-                class="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm whitespace-pre-line"
+            <!-- Back button if coming from extension view -->
+            <div v-if="hasNostr" class="mt-4">
+              <UButton
+                block
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                @click="showNsecInput = false"
               >
-                {{ nostrError }}
-              </div>
+                <template #leading>
+                  <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
+                </template>
+                {{ t("auth.signin.useExtension") || "Use Browser Extension" }}
+              </UButton>
+            </div>
 
-              <!-- Extension Connect Buttons -->
-              <div class="space-y-2">
-                <!-- Alby Button -->
-                <UButton
-                  block
-                  size="lg"
-                  :color="detectedExtension === 'alby' ? 'primary' : 'neutral'"
-                  :variant="detectedExtension === 'alby' ? 'solid' : 'outline'"
-                  :loading="nostrConnecting"
-                  @click="handleNostrSignIn"
-                >
-                  <template #leading>
-                    <span class="text-lg">🐝</span>
-                  </template>
-                  {{ t("auth.nostr.connectAlby") }}
-                </UButton>
-
-                <!-- nos2x Button -->
-                <UButton
-                  block
-                  size="lg"
-                  :color="detectedExtension === 'nos2x' ? 'primary' : 'neutral'"
-                  :variant="detectedExtension === 'nos2x' ? 'solid' : 'outline'"
-                  :loading="nostrConnecting"
-                  @click="triggerNos2xPopup"
-                >
-                  <template #leading>
-                    <span class="text-lg">🔐</span>
-                  </template>
-                  {{ t("auth.nostr.connectNos2x") }}
-                </UButton>
-              </div>
-
-              <!-- Extension Help -->
-              <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                  <span class="text-amber-400">💡</span>
-                  <strong
-                    v-if="detectedExtension === 'alby'"
-                    class="text-gray-700 dark:text-gray-300"
-                    >Alby Tips:</strong
-                  >
-                  <strong
-                    v-else-if="detectedExtension === 'nos2x'"
-                    class="text-gray-700 dark:text-gray-300"
-                    >nos2x Tips:</strong
-                  >
-                  <strong v-else class="text-gray-700 dark:text-gray-300"
-                    >Tips:</strong
-                  >
-                </p>
-                <ul class="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-                  <template v-if="detectedExtension === 'alby'">
-                    <li>• Make sure Alby is unlocked</li>
-                    <li>• Go to Settings → Nostr → Enable Nostr</li>
-                    <li>• Allow this site when prompted</li>
-                  </template>
-                  <template v-else-if="detectedExtension === 'nos2x'">
-                    <li>• Click the nos2x icon to unlock</li>
-                    <li>• Approve the permission request</li>
-                  </template>
-                  <template v-else>
-                    <li>• Make sure extension is unlocked</li>
-                    <li>• Allow this site to access your key</li>
-                  </template>
-                </ul>
-              </div>
-
-              <!-- Manual npub fallback -->
-              <div class="mt-4">
-                <button
-                  type="button"
-                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center"
-                  @click="
-                    showManualNpub = !showManualNpub;
-                    showNsecInput = false;
-                  "
-                >
-                  {{
-                    showManualNpub
-                      ? "← Back to extension"
-                      : "Extension not working? Enter npub manually"
-                  }}
-                </button>
-
-                <div v-if="showManualNpub" class="mt-3 space-y-3">
-                  <UInput
-                    v-model="manualNpub"
-                    placeholder="npub1... or hex pubkey"
-                    size="lg"
-                    class="w-full"
-                  />
-                  <UButton
-                    block
-                    color="neutral"
-                    :loading="auth.isLoading.value"
-                    :disabled="!manualNpub.trim()"
-                    @click="handleNpubSignIn"
-                  >
-                    Sign in with npub
-                  </UButton>
-                  <p class="text-xs text-gray-500 text-center">
-                    ⚠️ Read-only mode: Some features require extension signing
-                  </p>
-                </div>
-              </div>
-
-              <!-- Login with nsec (Private Key) -->
-              <div class="mt-3">
-                <button
-                  type="button"
-                  class="text-sm text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 w-full text-center"
-                  @click="
-                    showNsecInput = !showNsecInput;
-                    showManualNpub = false;
-                  "
-                >
-                  {{
-                    showNsecInput
-                      ? "← Hide private key login"
-                      : "🔑 Login with private key (nsec)"
-                  }}
-                </button>
-
-                <div v-if="showNsecInput" class="mt-3 space-y-3">
-                  <!-- Security Warning -->
-                  <div
-                    class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
-                  >
-                    <p class="text-xs text-red-400 flex items-start gap-2">
-                      <span class="text-base">⚠️</span>
-                      <span>
-                        <strong class="block mb-1">Security Warning</strong>
-                        Entering your private key here is less secure than using
-                        an extension. Only use this on trusted devices.
-                      </span>
-                    </p>
-                  </div>
-
-                  <UInput
-                    v-model="manualNsec"
-                    type="password"
-                    placeholder="nsec1... or 64-char hex private key"
-                    size="lg"
-                    class="w-full"
-                  />
-
-                  <UButton
-                    block
-                    color="primary"
-                    :loading="nostrConnecting"
-                    :disabled="!manualNsec.trim()"
-                    @click="handleNsecSignIn"
-                  >
-                    <template #leading>
-                      <span class="text-lg">🔐</span>
-                    </template>
-                    Sign in with Private Key
-                  </UButton>
-
-                  <p class="text-xs text-gray-500 text-center">
-                    Your key will be stored in session storage and cleared when
-                    you close the browser.
-                  </p>
-                </div>
-              </div>
-            </template>
-
-            <!-- No Nostr Extension -->
-            <template v-else>
-              <div class="text-center py-4">
-                <div
-                  class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3"
-                >
-                  <span class="text-3xl opacity-50">🔌</span>
-                </div>
-                <h3
-                  class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
-                >
-                  Install Nostr Extension
-                </h3>
-                <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                  Choose a NIP-07 compatible extension:
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <!-- Alby -->
-                <a
-                  href="https://getalby.com"
-                  target="_blank"
-                  class="block p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-colors"
-                >
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center"
-                    >
-                      <span class="text-2xl">🐝</span>
-                    </div>
-                    <div class="flex-1 text-left">
-                      <div
-                        class="font-semibold text-amber-600 dark:text-amber-400"
-                      >
-                        Alby
-                      </div>
-                      <div class="text-xs text-gray-600 dark:text-gray-400">
-                        Lightning wallet + Nostr signer
-                      </div>
-                    </div>
-                    <div class="text-amber-500">
-                      <Icon name="mynaui:external-link-solid" class="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div class="mt-2 flex gap-2">
-                    <span
-                      class="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded"
-                      >Recommended</span
-                    >
-                    <span
-                      class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded"
-                      >Lightning</span
-                    >
-                  </div>
-                </a>
-
-                <!-- nos2x -->
-                <a
-                  href="https://chrome.google.com/webstore/detail/nos2x/kpgefcfmnafjgpblomihpgmejjdanjjp"
-                  target="_blank"
-                  class="block p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl hover:bg-purple-500/20 transition-colors"
-                >
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center"
-                    >
-                      <span class="text-2xl">🔐</span>
-                    </div>
-                    <div class="flex-1 text-left">
-                      <div
-                        class="font-semibold text-purple-600 dark:text-purple-400"
-                      >
-                        nos2x
-                      </div>
-                      <div class="text-xs text-gray-600 dark:text-gray-400">
-                        Simple & lightweight signer
-                      </div>
-                    </div>
-                    <div class="text-purple-500">
-                      <Icon name="mynaui:external-link-solid" class="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div class="mt-2 flex gap-2">
-                    <span
-                      class="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded"
-                      >Lightweight</span
-                    >
-                    <span
-                      class="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded"
-                      >Chrome</span
-                    >
-                  </div>
-                </a>
-              </div>
-
-              <!-- Manual npub for users without extension -->
-              <div
-                class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800"
+            <!-- Sync from Company Code -->
+            <div
+              class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+            >
+              <UButton
+                block
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                @click="showCompanyCode = true"
               >
-                <button
-                  type="button"
-                  class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 w-full text-center"
-                  @click="
-                    showManualNpub = !showManualNpub;
-                    showNsecInput = false;
-                  "
-                >
-                  {{
-                    showManualNpub ? "← Hide" : "Already have a key? Enter npub"
-                  }}
-                </button>
+                <template #leading>
+                  <UIcon name="i-heroicons-building-office" class="w-4 h-4" />
+                </template>
+                {{
+                  t("auth.signin.syncFromCompany") || "Sync from Company Code"
+                }}
+              </UButton>
+            </div>
 
-                <div v-if="showManualNpub" class="mt-3 space-y-3">
-                  <UInput
-                    v-model="manualNpub"
-                    placeholder="npub1... or hex pubkey"
-                    size="lg"
-                    class="w-full"
-                  />
-                  <UButton
-                    block
-                    color="neutral"
-                    :loading="auth.isLoading.value"
-                    :disabled="!manualNpub.trim()"
-                    @click="handleNpubSignIn"
-                  >
-                    Sign in with npub
-                  </UButton>
-                  <p class="text-xs text-gray-500 text-center">
-                    ⚠️ Read-only mode without extension
-                  </p>
-                </div>
-              </div>
-
-              <!-- Login with nsec (Private Key) for users without extension -->
-              <div class="mt-3">
-                <button
-                  type="button"
-                  class="text-sm text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 w-full text-center"
-                  @click="
-                    showNsecInput = !showNsecInput;
-                    showManualNpub = false;
-                  "
-                >
-                  {{
-                    showNsecInput
-                      ? "← Hide private key login"
-                      : "🔑 Login with private key (nsec)"
-                  }}
-                </button>
-
-                <div v-if="showNsecInput" class="mt-3 space-y-3">
-                  <!-- Security Warning -->
-                  <div
-                    class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
-                  >
-                    <p class="text-xs text-red-400 flex items-start gap-2">
-                      <span class="text-base">⚠️</span>
-                      <span>
-                        <strong class="block mb-1">Security Warning</strong>
-                        Entering your private key here is less secure than using
-                        an extension. Only use this on trusted devices.
-                      </span>
-                    </p>
-                  </div>
-
-                  <UInput
-                    v-model="manualNsec"
-                    type="password"
-                    placeholder="nsec1... or 64-char hex private key"
-                    size="lg"
-                    class="w-full"
-                  />
-
-                  <UButton
-                    block
-                    color="primary"
-                    :loading="nostrConnecting"
-                    :disabled="!manualNsec.trim()"
-                    @click="handleNsecSignIn"
-                  >
-                    <template #leading>
-                      <span class="text-lg">🔐</span>
-                    </template>
-                    Sign in with Private Key
-                  </UButton>
-
-                  <p class="text-xs text-gray-500 text-center">
-                    Your key will be stored in session storage and cleared when
-                    you close the browser.
-                  </p>
-                </div>
-              </div>
-            </template>
-
-            <!-- Nostr Benefits -->
-            <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-xl">
+            <!-- Install Extension Links -->
+            <div
+              v-if="!hasNostr"
+              class="mt-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-xl"
+            >
               <h4
                 class="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3"
               >
-                Why Nostr?
+                {{
+                  t("auth.signin.noExtension") ||
+                  "Don't have a Nostr extension?"
+                }}
               </h4>
-              <ul class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                <li class="flex items-center gap-2">
-                  <span class="text-green-400">✓</span>
-                  No email or password required
-                </li>
-                <li class="flex items-center gap-2">
-                  <span class="text-green-400">✓</span>
-                  You control your identity
-                </li>
-                <li class="flex items-center gap-2">
-                  <span class="text-green-400">✓</span>
-                  Works with Lightning payments
-                </li>
-                <li class="flex items-center gap-2">
-                  <span class="text-green-400">✓</span>
-                  Same key for loyalty rewards
-                </li>
-              </ul>
+              <div class="flex gap-2">
+                <a
+                  href="https://getalby.com"
+                  target="_blank"
+                  class="flex-1 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg hover:bg-amber-500/20 transition-colors text-center"
+                >
+                  <span class="text-xl">🐝</span>
+                  <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    Alby
+                  </p>
+                </a>
+                <a
+                  href="https://chrome.google.com/webstore/detail/nos2x/kpgefcfmnafjgpblomihpgmejjdanjjp"
+                  target="_blank"
+                  class="flex-1 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg hover:bg-purple-500/20 transition-colors text-center"
+                >
+                  <span class="text-xl">🔐</span>
+                  <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                    nos2x
+                  </p>
+                </a>
+              </div>
             </div>
-          </div>
+          </template>
+
+          <!-- Company Code Sync -->
+          <template v-if="showCompanyCode">
+            <div class="text-center py-4">
+              <div
+                class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3"
+              >
+                <UIcon
+                  name="i-heroicons-building-office-2"
+                  class="w-8 h-8 text-blue-500"
+                />
+              </div>
+              <h3
+                class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
+              >
+                {{ t("auth.signin.syncTitle") || "Sync Staff Data" }}
+              </h3>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">
+                {{
+                  t("auth.signin.syncDesc") ||
+                  "Enter your company code to sync staff data"
+                }}
+              </p>
+            </div>
+
+            <div class="space-y-4">
+              <UInput
+                v-model="companyCodeInput"
+                type="text"
+                maxlength="17"
+                size="lg"
+                class="text-center text-xl tracking-widest font-mono w-full"
+                placeholder="XXXXX-XXXXX-XXXXX"
+                @input="formatCompanyCodeInput"
+                @keyup.enter="handleCompanyCodeSubmit"
+              />
+
+              <div v-if="companyCodeError">
+                <UAlert color="error" :title="companyCodeError" />
+              </div>
+
+              <UButton
+                block
+                size="lg"
+                color="primary"
+                :loading="isLoadingCompanyCode"
+                :disabled="!isValidCompanyCode"
+                @click="handleCompanyCodeSubmit"
+              >
+                <template #leading>
+                  <UIcon name="i-heroicons-cloud-arrow-down" class="w-5 h-5" />
+                </template>
+                {{ t("auth.signin.syncNow") || "Sync Now" }}
+              </UButton>
+
+              <UButton
+                block
+                color="neutral"
+                variant="ghost"
+                @click="showCompanyCode = false"
+              >
+                <template #leading>
+                  <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
+                </template>
+                {{ t("common.back") }}
+              </UButton>
+            </div>
+
+            <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800/50 rounded-xl">
+              <p
+                class="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-2"
+              >
+                <UIcon
+                  name="i-heroicons-information-circle"
+                  class="w-4 h-4 flex-shrink-0 mt-0.5"
+                />
+                <span>
+                  {{
+                    t("auth.signin.syncInfo") ||
+                    "Get the company code from your manager. This will sync all staff data to your device."
+                  }}
+                </span>
+              </p>
+            </div>
+          </template>
         </div>
 
         <!-- Footer -->
         <div
-          class="px-6 py-5 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-800/50 border-t border-gray-200 dark:border-gray-800"
+          class="px-6 py-5 bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-800/50 border-t border-gray-200 dark:border-gray-800"
         >
           <div class="flex items-center justify-center gap-2 text-sm">
             <span class="text-gray-600 dark:text-gray-400">
@@ -1334,6 +822,35 @@ onMounted(async () => {
             </NuxtLinkLocale>
           </div>
         </div>
+      </div>
+
+      <!-- Why Nostr Section -->
+      <div
+        class="mt-6 p-4 bg-white/50 dark:bg-gray-800/30 rounded-xl border border-gray-200 dark:border-gray-700"
+      >
+        <h4
+          class="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3 text-center"
+        >
+          {{ t("auth.signin.whyNostr") || "Why Nostr?" }}
+        </h4>
+        <ul class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+          <li class="flex items-center gap-2">
+            <span class="text-green-500">✓</span>
+            {{ t("auth.signin.benefit1") || "No email or password required" }}
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-green-500">✓</span>
+            {{ t("auth.signin.benefit2") || "You control your identity" }}
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-green-500">✓</span>
+            {{ t("auth.signin.benefit3") || "Works with Lightning payments" }}
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-green-500">✓</span>
+            {{ t("auth.signin.benefit4") || "Same key for all devices" }}
+          </li>
+        </ul>
       </div>
 
       <!-- Bottom Links -->
@@ -1362,7 +879,6 @@ onMounted(async () => {
           </a>
         </div>
 
-        <!-- Copyright -->
         <p class="mt-4 text-xs text-gray-400 dark:text-gray-600">
           © {{ new Date().getFullYear() }} {{ t("app.copyright") }}
         </p>

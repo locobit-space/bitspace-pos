@@ -300,25 +300,6 @@
                   {{ getStatusText(user) }}
                 </UBadge>
 
-                <!-- PIN indicator -->
-                <UTooltip
-                  :text="
-                    user.pin
-                      ? $t('settings.users.pinSet')
-                      : $t('settings.users.noPin')
-                  "
-                >
-                  <UIcon
-                    :name="
-                      user.pin
-                        ? 'i-heroicons-check-circle'
-                        : 'i-heroicons-minus-circle'
-                    "
-                    :class="user.pin ? 'text-green-500' : 'text-gray-400'"
-                    class="w-5 h-5"
-                  />
-                </UTooltip>
-
                 <!-- Expiry -->
                 <span
                   v-if="user.expiresAt"
@@ -451,10 +432,10 @@
             </h3>
           </template>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Nostr Auth -->
+          <div class="space-y-4">
+            <!-- Nostr Auth - Primary Method -->
             <div
-              class="p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20"
+              class="p-4 rounded-lg border-2 border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20"
             >
               <div class="flex items-center gap-3 mb-2">
                 <div
@@ -464,68 +445,56 @@
                 </div>
                 <div>
                   <h4 class="font-medium text-gray-900 dark:text-white">
-                    Nostr
+                    Nostr (nsec/npub)
                   </h4>
                   <UBadge color="purple" variant="subtle" size="xs">{{
                     $t("settings.users.recommended")
                   }}</UBadge>
                 </div>
               </div>
-              <p class="text-sm text-gray-600 dark:text-gray-300">
+              <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
                 {{ $t("settings.users.authDesc.nostr") }}
               </p>
+              <div class="bg-purple-100 dark:bg-purple-900/40 rounded-lg p-3">
+                <p class="text-xs text-purple-700 dark:text-purple-300">
+                  <UIcon name="i-heroicons-information-circle" class="w-4 h-4 inline mr-1" />
+                  {{ $t("settings.users.nostrBenefits") || "Staff can login from any device using their nsec key. Owner can also use browser extensions (Alby, nos2x)." }}
+                </p>
+              </div>
             </div>
 
-            <!-- Password Auth -->
-            <div
-              class="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20"
-            >
-              <div class="flex items-center gap-3 mb-2">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center"
-                >
-                  <UIcon
-                    name="i-heroicons-lock-closed"
-                    class="w-5 h-5 text-white"
-                  />
+            <!-- How it works -->
+            <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <h4 class="font-medium text-gray-900 dark:text-white mb-3">
+                <UIcon name="i-heroicons-question-mark-circle" class="w-5 h-5 inline mr-1" />
+                {{ $t("settings.users.howItWorks") || "How Authentication Works" }}
+              </h4>
+              <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                <div class="flex items-start gap-3">
+                  <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="text-xs font-bold text-purple-600 dark:text-purple-400">1</span>
+                  </div>
+                  <p>{{ $t("settings.users.step1") || "Owner creates staff accounts with roles and permissions" }}</p>
                 </div>
-                <div>
-                  <h4 class="font-medium text-gray-900 dark:text-white">
-                    {{ $t("settings.users.password") }}
-                  </h4>
-                  <UBadge color="blue" variant="subtle" size="xs">{{
-                    $t("settings.users.traditional")
-                  }}</UBadge>
+                <div class="flex items-start gap-3">
+                  <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="text-xs font-bold text-purple-600 dark:text-purple-400">2</span>
+                  </div>
+                  <p>{{ $t("settings.users.step2") || "Staff receives their nsec key or generates one via invite link" }}</p>
                 </div>
-              </div>
-              <p class="text-sm text-gray-600 dark:text-gray-300">
-                {{ $t("settings.users.authDesc.password") }}
-              </p>
-            </div>
-
-            <!-- PIN Auth -->
-            <div
-              class="p-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
-            >
-              <div class="flex items-center gap-3 mb-2">
-                <div
-                  class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center"
-                >
-                  <UIcon
-                    name="i-heroicons-hashtag"
-                    class="w-5 h-5 text-white"
-                  />
+                <div class="flex items-start gap-3">
+                  <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="text-xs font-bold text-purple-600 dark:text-purple-400">3</span>
+                  </div>
+                  <p>{{ $t("settings.users.step3") || "Staff enters company code + their nsec to login from any device" }}</p>
                 </div>
-                <div>
-                  <h4 class="font-medium text-gray-900 dark:text-white">PIN</h4>
-                  <UBadge color="green" variant="subtle" size="xs">{{
-                    $t("settings.users.quickAccess")
-                  }}</UBadge>
+                <div class="flex items-start gap-3">
+                  <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="text-xs font-bold text-purple-600 dark:text-purple-400">4</span>
+                  </div>
+                  <p>{{ $t("settings.users.step4") || "All data syncs automatically via Nostr relays" }}</p>
                 </div>
               </div>
-              <p class="text-sm text-gray-600 dark:text-gray-300">
-                {{ $t("settings.users.authDesc.pin") }}
-              </p>
             </div>
           </div>
         </UCard>
@@ -598,24 +567,35 @@
                 :label="$t('settings.users.authMethodLabel')"
                 required
               >
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-1 gap-2">
+                  <!-- Nostr is the primary/default method -->
                   <button
-                    v-for="method in authMethodOptions"
-                    :key="method.value"
                     type="button"
-                    class="p-3 rounded-lg border-2 transition-all text-center"
+                    class="p-4 rounded-lg border-2 transition-all text-left flex items-center gap-4"
                     :class="
-                      userForm.authMethod === method.value
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      userForm.authMethod === 'nostr'
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                     "
-                    @click="userForm.authMethod = method.value"
+                    @click="userForm.authMethod = 'nostr'"
                   >
-                    <UIcon
-                      :name="method.icon"
-                      class="w-6 h-6 mx-auto mb-1 text-primary-500"
+                    <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                      <UIcon name="i-heroicons-key" class="w-5 h-5 text-white" />
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <p class="font-medium text-gray-900 dark:text-white">Nostr (nsec/npub)</p>
+                        <UBadge color="purple" variant="subtle" size="xs">{{ $t("settings.users.recommended") }}</UBadge>
+                      </div>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {{ $t("settings.users.nostrAuthDesc") || "Secure, decentralized login from any device" }}
+                      </p>
+                    </div>
+                    <UIcon 
+                      v-if="userForm.authMethod === 'nostr'" 
+                      name="i-heroicons-check-circle-solid" 
+                      class="w-6 h-6 text-purple-500" 
                     />
-                    <p class="text-sm font-medium">{{ method.label }}</p>
                   </button>
                 </div>
               </UFormField>
@@ -625,7 +605,7 @@
                 v-if="userForm.authMethod === 'nostr'"
                 class="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg"
               >
-                <UFormField :label="$t('settings.users.npub')" required>
+                <UFormField :label="$t('settings.users.npub')">
                   <UInput
                     v-model="userForm.npub"
                     :placeholder="$t('settings.users.npubPlaceholder')"
@@ -633,87 +613,10 @@
                     class="font-mono w-full"
                   />
                   <template #hint>
-                    {{ $t("settings.users.npubHint") }}
+                    {{ $t("settings.users.npubHintOptional") || "Optional - can be set when staff first logs in with their nsec" }}
                   </template>
                 </UFormField>
               </div>
-
-              <!-- Password Auth Fields -->
-              <div
-                v-if="userForm.authMethod === 'password'"
-                class="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
-              >
-                <UFormField
-                  :label="$t('settings.users.password')"
-                  :required="!editingUser"
-                >
-                  <UInput
-                    v-model="userForm.password"
-                    type="password"
-                    :placeholder="
-                      editingUser
-                        ? $t('settings.users.passwordPlaceholderEdit')
-                        : $t('settings.users.passwordPlaceholder')
-                    "
-                    icon="i-heroicons-lock-closed"
-                    class="w-full"
-                  />
-                </UFormField>
-                <UFormField
-                  v-if="userForm.password"
-                  :label="$t('settings.users.confirmPassword')"
-                  required
-                >
-                  <UInput
-                    v-model="userForm.confirmPassword"
-                    type="password"
-                    :placeholder="
-                      $t('settings.users.confirmPasswordPlaceholder')
-                    "
-                    icon="i-heroicons-lock-closed"
-                    class="w-full"
-                  />
-                </UFormField>
-                <!-- Password strength indicator -->
-                <div v-if="userForm.password" class="space-y-1">
-                  <div class="flex gap-1">
-                    <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="h-1 flex-1 rounded"
-                      :class="
-                        i <= passwordStrength
-                          ? strengthColors[passwordStrength - 1]
-                          : 'bg-gray-200 dark:bg-gray-700'
-                      "
-                    />
-                  </div>
-                  <p
-                    class="text-xs"
-                    :class="
-                      strengthTextColors[passwordStrength - 1] ||
-                      'text-gray-500'
-                    "
-                  >
-                    {{ passwordStrengthText }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- PIN (available for all auth methods as quick access) -->
-              <UFormField :label="$t('settings.users.pin')">
-                <UInput
-                  v-model="userForm.pin"
-                  type="password"
-                  maxlength="6"
-                  :placeholder="$t('settings.users.pinPlaceholder')"
-                  icon="i-heroicons-hashtag"
-                  class="w-full"
-                />
-                <template #hint>
-                  {{ $t("settings.users.pinHint") }}
-                </template>
-              </UFormField>
 
               <!-- Role -->
               <UFormField :label="$t('settings.users.role')" required>
@@ -1152,7 +1055,7 @@ const generateInviteLink = async (user: StoreUser) => {
     });
 
     showInviteModal.value = true;
-  } catch (error) {
+  } catch (_error) {
     toast.add({
       title: t("common.error") || "Error",
       description: "Failed to generate invite link",
@@ -1236,7 +1139,7 @@ const userForm = reactive({
   confirmPassword: "",
   npub: "",
   role: "staff" as UserRole,
-  authMethod: "pin" as AuthMethod,
+  authMethod: "nostr" as AuthMethod,
   isActive: true,
   expiresAt: "",
 });
@@ -1262,25 +1165,13 @@ const permissionsForm = reactive<UserPermissions>({
   canAdjustStock: false,
 });
 
-// Auth method options
-const authMethodOptions = [
+// Auth method options - Nostr only (kept for potential future use)
+const _authMethodOptions = [
   {
     value: "nostr" as AuthMethod,
     label: "Nostr",
     icon: "i-heroicons-key",
     color: "purple",
-  },
-  {
-    value: "password" as AuthMethod,
-    label: t("settings.users.password"),
-    icon: "i-heroicons-lock-closed",
-    color: "blue",
-  },
-  {
-    value: "pin" as AuthMethod,
-    label: "PIN",
-    icon: "i-heroicons-hashtag",
-    color: "green",
   },
 ];
 
@@ -1300,21 +1191,21 @@ const roleDescriptions = [
   { id: "staff", color: "gray" as const },
 ];
 
-// Password strength
-const strengthColors = [
+// Password strength (kept for potential future use)
+const _strengthColors = [
   "bg-red-500",
   "bg-orange-500",
   "bg-yellow-500",
   "bg-green-500",
 ];
-const strengthTextColors = [
+const _strengthTextColors = [
   "text-red-500",
   "text-orange-500",
   "text-yellow-500",
   "text-green-500",
 ];
 
-const passwordStrength = computed(() => {
+const _passwordStrength = computed(() => {
   const pwd = userForm.password;
   if (!pwd) return 0;
   let strength = 0;
@@ -1325,14 +1216,14 @@ const passwordStrength = computed(() => {
   return strength;
 });
 
-const passwordStrengthText = computed(() => {
+const _passwordStrengthText = computed(() => {
   const texts = [
     t("settings.users.passwordWeak"),
     t("settings.users.passwordFair"),
     t("settings.users.passwordGood"),
     t("settings.users.passwordStrong"),
   ];
-  return texts[passwordStrength.value - 1] || "";
+  return texts[_passwordStrength.value - 1] || "";
 });
 
 // Methods
@@ -1409,7 +1300,7 @@ const openCreateModal = () => {
   userForm.confirmPassword = "";
   userForm.npub = "";
   userForm.role = "staff";
-  userForm.authMethod = "pin";
+  userForm.authMethod = "nostr";
   userForm.isActive = true;
   userForm.expiresAt = "";
   showUserModal.value = true;
@@ -1449,36 +1340,6 @@ const saveUser = async () => {
     return;
   }
 
-  // Validate auth method specific fields
-  if (userForm.authMethod === "nostr" && !userForm.npub && !editingUser.value) {
-    toast.add({ title: t("settings.users.npubRequired"), color: "red" });
-    return;
-  }
-
-  if (userForm.authMethod === "password" && !editingUser.value) {
-    if (!userForm.password) {
-      toast.add({ title: t("settings.users.passwordRequired"), color: "red" });
-      return;
-    }
-    if (userForm.password !== userForm.confirmPassword) {
-      toast.add({ title: t("settings.users.passwordMismatch"), color: "red" });
-      return;
-    }
-    const validation = staffAuth.validatePasswordStrength(userForm.password);
-    if (!validation.valid) {
-      toast.add({ title: validation.errors[0], color: "red" });
-      return;
-    }
-  }
-
-  if (userForm.pin) {
-    const pinValidation = staffAuth.validatePin(userForm.pin);
-    if (!pinValidation.valid) {
-      toast.add({ title: pinValidation.error!, color: "red" });
-      return;
-    }
-  }
-
   // Validate npub format if provided
   if (userForm.npub && !staffAuth.validateNpub(userForm.npub)) {
     toast.add({ title: t("settings.users.invalidNpub"), color: "red" });
@@ -1495,23 +1356,15 @@ const saveUser = async () => {
         email: userForm.email || undefined,
         role: userForm.role,
         isActive: userForm.isActive,
-        authMethod: userForm.authMethod,
+        authMethod: "nostr",
         permissions: { ...DEFAULT_PERMISSIONS[userForm.role] },
         expiresAt: userForm.expiresAt
           ? new Date(userForm.expiresAt).toISOString()
           : undefined,
       };
 
-      if (userForm.pin) {
-        updates.pin = userForm.pin;
-      }
-
       if (userForm.npub) {
         updates.npub = userForm.npub;
-      }
-
-      if (userForm.password && userForm.authMethod === "password") {
-        updates.passwordHash = userForm.password;
       }
 
       await usersComposable.updateUser(editingUser.value.id, updates);
@@ -1521,11 +1374,9 @@ const saveUser = async () => {
       await usersComposable.createUser({
         name: userForm.name,
         email: userForm.email || undefined,
-        pin: userForm.pin || undefined,
-        password: userForm.password || undefined,
         npub: userForm.npub || undefined,
         role: userForm.role,
-        authMethod: userForm.authMethod,
+        authMethod: "nostr",
         expiresAt: userForm.expiresAt
           ? new Date(userForm.expiresAt).toISOString()
           : undefined,
