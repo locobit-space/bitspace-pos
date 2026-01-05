@@ -181,14 +181,14 @@ const handleCancel = () => {
           <div class="flex items-start gap-4">
             <!-- Product Image -->
             <div
-              class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 shadow-md"
+              class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-0 shadow-md"
             >
               <img
                 v-if="product.image"
                 :src="product.image"
                 :alt="product.name"
                 class="w-full h-full object-cover"
-              />
+              >
               <div
                 v-else
                 class="w-full h-full flex items-center justify-center text-3xl"

@@ -22,13 +22,13 @@ const { t } = useI18n();
 // Computed for v-model binding
 const isVisible = computed({
   get: () => props.modelValue,
-  set: (value: boolean) => emit('update:modelValue', value),
+  set: (value: boolean) => emit("update:modelValue", value),
 });
 
 // Confirmation handler
 function handleConfirm() {
   if (props.promotion) {
-    emit('confirm', props.promotion);
+    emit("confirm", props.promotion);
   }
 }
 
@@ -48,20 +48,33 @@ function handleCancel() {
 
     <template #body>
       <p class="text-gray-600 dark:text-gray-400">
-        {{ 
-          t("promotions.deleteConfirmation", { 
-            name: promotion?.name || t("common.unnamed", "Unnamed Promotion") 
-          }) 
+        {{
+          t("promotions.deleteConfirmation", {
+            name: promotion?.name || t("common.unnamed", "Unnamed Promotion"),
+          })
         }}
       </p>
-      
+
       <!-- Warning details -->
-      <div v-if="promotion" class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+      <div
+        v-if="promotion"
+        class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
+      >
         <div class="flex items-start gap-2">
-          <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+          <UIcon
+            name="i-heroicons-exclamation-triangle"
+            class="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5"
+          />
           <div class="text-sm text-yellow-800 dark:text-yellow-200">
             <p class="font-medium">{{ t("common.warning", "Warning") }}</p>
-            <p>{{ t("promotions.deleteWarning", "This action cannot be undone. This will permanently remove the promotion and all its usage data.") }}</p>
+            <p>
+              {{
+                t(
+                  "promotions.deleteWarning",
+                  "This action cannot be undone. This will permanently remove the promotion and all its usage data."
+                )
+              }}
+            </p>
           </div>
         </div>
       </div>
@@ -69,15 +82,15 @@ function handleCancel() {
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <UButton 
-          color="gray" 
-          variant="outline" 
+        <UButton
+          color="gray"
+          variant="outline"
           :label="t('common.cancel')"
           :disabled="isLoading"
           @click="handleCancel"
         />
-        <UButton 
-          color="red" 
+        <UButton
+          color="red"
           :label="t('common.delete')"
           :loading="isLoading"
           @click="handleConfirm"

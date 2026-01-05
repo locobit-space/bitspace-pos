@@ -21,11 +21,11 @@ const { t } = useI18n();
 
 // Event handlers
 function handleToggleStatus(promotion: Promotion) {
-  emit('toggleStatus', promotion);
+  emit("toggleStatus", promotion);
 }
 
 function handleDelete(promotion: Promotion) {
-  emit('delete', promotion);
+  emit("delete", promotion);
 }
 </script>
 
@@ -34,22 +34,34 @@ function handleDelete(promotion: Promotion) {
     <table class="w-full">
       <thead>
         <tr class="border-b border-gray-200 dark:border-gray-700">
-          <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+          <th
+            class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+          >
             {{ t("common.name", "Name") }}
           </th>
-          <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+          <th
+            class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+          >
             {{ t("promotions.trigger", "Trigger") }}
           </th>
-          <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+          <th
+            class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+          >
             {{ t("promotions.reward", "Reward") }}
           </th>
-          <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+          <th
+            class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+          >
             {{ t("common.status", "Status") }}
           </th>
-          <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+          <th
+            class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+          >
             {{ t("promotions.uses", "Uses") }}
           </th>
-          <th class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+          <th
+            class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+          >
             {{ t("common.actions", "Actions") }}
           </th>
         </tr>
@@ -64,14 +76,21 @@ function handleDelete(promotion: Promotion) {
               >
                 <UIcon name="i-heroicons-gift" class="w-8 h-8 text-gray-400" />
               </div>
-              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <h3
+                class="text-lg font-medium text-gray-900 dark:text-white mb-2"
+              >
                 {{ t("promotions.noPromotions", "No Promotions Yet") }}
               </h3>
               <p class="text-gray-500 mb-4">
-                {{ t("promotions.noPromotionsDescription", "Create your first BOGO promotion to get started") }}
+                {{
+                  t(
+                    "promotions.noPromotionsDescription",
+                    "Create your first BOGO promotion to get started"
+                  )
+                }}
               </p>
-              <UButton 
-                color="primary" 
+              <UButton
+                color="primary"
                 icon="i-heroicons-plus"
                 @click="emit('create')"
               >
@@ -85,7 +104,9 @@ function handleDelete(promotion: Promotion) {
         <tr v-if="isLoading && promotions.length === 0">
           <td colspan="6" class="py-8">
             <div class="flex justify-center">
-              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+              />
             </div>
           </td>
         </tr>

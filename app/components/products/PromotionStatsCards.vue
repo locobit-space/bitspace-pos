@@ -15,10 +15,10 @@ const { t } = useI18n();
 
 // Computed stats
 const totalPromotions = computed(() => props.promotions.length);
-const activePromotions = computed(() => 
-  props.promotions.filter(p => p.status === "active").length
+const activePromotions = computed(
+  () => props.promotions.filter((p) => p.status === "active").length
 );
-const totalUses = computed(() => 
+const totalUses = computed(() =>
   props.promotions.reduce((total, p) => total + p.usageCount, 0)
 );
 </script>

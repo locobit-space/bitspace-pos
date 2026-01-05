@@ -16,118 +16,181 @@ const emit = defineEmits<{
   delete: [promotion: Promotion];
 }>();
 
-const { 
-  getProductName, 
-  getStatusColor, 
-  getStatusText 
-} = usePromotionHelpers();
+const { t } = useI18n();
+const { getProductName, getStatusColor, getStatusText } = usePromotionHelpers();
 
-// Computed properties
-const additionalTriggerCount = computed(() => 
-  Math.max(0, props.promotion.triggerProductIds.length - 1)
-);
+// Type display info
+const typeInfo = computed(() => {
+  const types: Record<string, { icon: string; color: string; label: string }> =
+    {
+      bogo: { icon: "🎁", color: "green", label: "BOGO" },
+      discount: { icon: "💰", color: "blue", label: "Discount" },
+      tiered: { icon: "📊", color: "purple", label: "Tiered" },
+      bundle: { icon: "📦", color: "amber", label: "Bundle" },
+      freebie: { icon: "🎀", color: "pink", label: "Free Gift" },
+    };
+  return types[props.promotion.type] || types.bogo;
+});
 
-const additionalRewardCount = computed(() => 
-  Math.max(0, props.promotion.rewardProductIds.length - 1)
-);
+// Get promotion description based on type
+const triggerDescription = computed(() => {
+  const p = props.promotion;
+  switch (p.type) {
+    case "bogo":
+    case "freebie":
+      const productName = getProductName(p.triggerProductIds[0] || "");
+      const extra =
+        p.triggerProductIds.length > 1
+          ? ` +${p.triggerProductIds.length - 1}`
+          : "";
+      return `Buy ${p.triggerQuantity}× ${productName}${extra}`;
+    case "discount":
+      if (p.triggerProductIds.length > 0) {
+        return `${p.triggerProductIds.length} product(s)`;
+      }
+      return "All products";
+    case "tiered":
+      return `${p.tiers?.length || 0} tier levels`;
+    case "bundle":
+      return `${p.triggerProductIds.length} products`;
+    default:
+      return "-";
+  }
+});
+
+const rewardDescription = computed(() => {
+  const p = props.promotion;
+  switch (p.type) {
+    case "bogo":
+    case "freebie":
+      const productName = getProductName(p.rewardProductIds[0] || "");
+      return `Get ${p.rewardQuantity}× ${productName} FREE`;
+    case "discount":
+      if (p.discountType === "percentage") {
+        return `${p.discountValue}% off`;
+      }
+      return `฿${p.discountValue} off`;
+    case "tiered":
+      if (p.tiers && p.tiers.length > 0) {
+        const firstTier = p.tiers[0];
+        const lastTier = p.tiers[p.tiers.length - 1];
+        if (firstTier && lastTier) {
+          return `${firstTier.discountValue}% → ${lastTier.discountValue}%`;
+        }
+      }
+      return "-";
+    case "bundle":
+      return `${p.discountValue || 0}% off bundle`;
+    default:
+      return "-";
+  }
+});
 
 const statusColor = computed(() => getStatusColor(props.promotion.status));
 const statusText = computed(() => getStatusText(props.promotion.status));
 
+// Check if promotion has time restrictions
+const hasRestrictions = computed(() => {
+  const p = props.promotion;
+  return (
+    p.startDate ||
+    p.endDate ||
+    (p.daysOfWeek && p.daysOfWeek.length > 0) ||
+    p.maxUsesTotal
+  );
+});
+
 // Event handlers
 function handleToggleStatus() {
-  emit('toggleStatus', props.promotion);
+  emit("toggleStatus", props.promotion);
 }
 
 function handleDelete() {
-  emit('delete', props.promotion);
+  emit("delete", props.promotion);
 }
 </script>
 
 <template>
-  <tr 
+  <tr
     class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
   >
-    <!-- Name Column -->
+    <!-- Name & Type Column -->
     <td class="py-3 px-4">
-      <div>
-        <div class="font-medium text-gray-900 dark:text-white">
-          {{ promotion.name }}
+      <div class="flex items-start gap-3">
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+          :class="`bg-${typeInfo.color}-100 dark:bg-${typeInfo.color}-900/20`"
+        >
+          {{ typeInfo.icon }}
         </div>
-        <div class="text-sm text-gray-500">
-          {{ promotion.badgeText }}
+        <div>
+          <div class="font-medium text-gray-900 dark:text-white">
+            {{ promotion.name }}
+          </div>
+          <div class="flex items-center gap-2 mt-0.5">
+            <UBadge :color="typeInfo.color" variant="subtle" size="xs">
+              {{ typeInfo.label }}
+            </UBadge>
+            <span v-if="hasRestrictions" class="text-xs text-gray-400">
+              <UIcon name="i-heroicons-clock" class="w-3 h-3 inline" />
+            </span>
+          </div>
         </div>
       </div>
     </td>
 
     <!-- Trigger Column -->
     <td class="py-3 px-4">
-      <div class="text-sm">
-        <span class="font-medium">Buy {{ promotion.triggerQuantity }}×</span>
-        <span class="text-primary-600 dark:text-primary-400 ml-1">
-          {{ getProductName(promotion.triggerProductIds[0] || '') }}
-        </span>
-        <span 
-          v-if="additionalTriggerCount > 0" 
-          class="text-gray-400 ml-1"
-        >
-          +{{ additionalTriggerCount }} more
-        </span>
+      <div class="text-sm text-gray-700 dark:text-gray-300">
+        {{ triggerDescription }}
       </div>
     </td>
 
-    <!-- Reward Column -->
+    <!-- Reward/Discount Column -->
     <td class="py-3 px-4">
       <div class="text-sm">
-        <span class="font-medium">Get {{ promotion.rewardQuantity }}×</span>
-        <span class="text-green-600 dark:text-green-400 ml-1">
-          {{ getProductName(promotion.rewardProductIds[0] || '') }}
+        <span
+          v-if="promotion.type === 'bogo' || promotion.type === 'freebie'"
+          class="text-green-600 dark:text-green-400 font-medium"
+        >
+          {{ rewardDescription }}
         </span>
-        <UBadge 
-          color="green" 
-          variant="subtle" 
-          size="xs" 
-          class="ml-1"
-        >
-          FREE
-        </UBadge>
-        <span 
-          v-if="additionalRewardCount > 0" 
-          class="text-gray-400 ml-1"
-        >
-          +{{ additionalRewardCount }} more
+        <span v-else class="text-blue-600 dark:text-blue-400 font-medium">
+          {{ rewardDescription }}
         </span>
       </div>
     </td>
 
     <!-- Status Column -->
     <td class="py-3 px-4">
-      <UBadge 
-        :color="statusColor"
-        :label="statusText"
-      />
+      <UBadge :color="statusColor" :label="statusText" />
     </td>
 
     <!-- Uses Column -->
     <td class="py-3 px-4">
-      <span class="text-sm font-medium text-gray-900 dark:text-white">
-        {{ promotion.usageCount }}
-      </span>
+      <div class="text-sm">
+        <span class="font-medium text-gray-900 dark:text-white">
+          {{ promotion.usageCount }}
+        </span>
+        <span v-if="promotion.maxUsesTotal" class="text-gray-400">
+          / {{ promotion.maxUsesTotal }}
+        </span>
+      </div>
     </td>
 
     <!-- Actions Column -->
     <td class="py-3 px-4">
       <div class="flex items-center gap-2">
-        <USwitch 
-          :model-value="promotion.status === 'active'" 
+        <USwitch
+          :model-value="promotion.status === 'active'"
           size="sm"
           :disabled="isLoading"
           @update:model-value="handleToggleStatus"
         />
-        <UButton 
-          color="red" 
-          variant="ghost" 
-          size="sm" 
+        <UButton
+          color="red"
+          variant="ghost"
+          size="sm"
           icon="i-heroicons-trash"
           :disabled="isLoading"
           @click="handleDelete"

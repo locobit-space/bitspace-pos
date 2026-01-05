@@ -781,27 +781,60 @@ export interface PromotionRecord {
   id: string;
   name: string;
   description?: string;
-  type: string; // 'bogo' | 'discount' | 'bundle' | 'freebie'
+  type: string; // 'bogo' | 'discount' | 'bundle' | 'freebie' | 'tiered'
   status: string; // 'active' | 'inactive' | 'scheduled' | 'expired'
+
+  // Scope
+  scope?: string; // 'product' | 'category' | 'order'
+
+  // Trigger
   triggerProductIds: string; // JSON array
   triggerQuantity: number;
   triggerCategoryIds?: string; // JSON array
+
+  // Discount (for discount/tiered types)
+  discountType?: string; // 'percentage' | 'fixed'
+  discountValue?: number;
+  tiers?: string; // JSON array of PromotionTier
+
+  // Reward (for BOGO/freebie)
   rewardType: string;
   rewardProductIds: string; // JSON array
   rewardQuantity: number;
   rewardDiscount?: number;
   rewardPercentage?: number;
+
+  // Conditions
+  minOrderValue?: number;
+  minQuantity?: number;
+  customerTiers?: string; // JSON array
+  firstOrderOnly?: boolean;
+  maxItemsAffected?: number;
+
+  // Time constraints
   startDate?: string;
   endDate?: string;
   daysOfWeek?: string; // JSON array of numbers
   startTime?: string;
   endTime?: string;
+
+  // Usage limits
   maxUsesPerOrder?: number;
+  maxUsesPerCustomer?: number;
   maxUsesTotal?: number;
   usageCount: number;
+
+  // Stacking
+  stackable?: boolean;
+  excludePromotionIds?: string; // JSON array
   priority: number;
+
+  // Display
   badgeText?: string;
   badgeColor?: string;
+  highlightOnPOS?: boolean;
+
+  // Metadata
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

@@ -7,6 +7,9 @@ import type {
   Promotion,
   PromotionType,
   PromotionStatus,
+  PromotionScope,
+  DiscountType,
+  PromotionTier,
   AppliedPromotion,
   Product,
 } from "~/types";
@@ -62,6 +65,21 @@ export function usePromotionsStore() {
     activePromotions.value.filter((p) => p.type === "bogo")
   );
 
+  // Discount promotions (percentage or fixed)
+  const discountPromotions = computed(() =>
+    activePromotions.value.filter((p) => p.type === "discount")
+  );
+
+  // Tiered promotions
+  const tieredPromotions = computed(() =>
+    activePromotions.value.filter((p) => p.type === "tiered")
+  );
+
+  // Bundle promotions
+  const bundlePromotions = computed(() =>
+    activePromotions.value.filter((p) => p.type === "bundle")
+  );
+
   // ============================================
   // 🗄️ LOCAL STORAGE (Dexie)
   // ============================================
@@ -75,6 +93,7 @@ export function usePromotionsStore() {
       const records = await db.promotions.toArray();
       return records.map((r: PromotionRecord) => ({
         ...r,
+        // Parse JSON array fields
         triggerProductIds: r.triggerProductIds
           ? JSON.parse(r.triggerProductIds)
           : [],
@@ -85,8 +104,18 @@ export function usePromotionsStore() {
           ? JSON.parse(r.rewardProductIds)
           : [],
         daysOfWeek: r.daysOfWeek ? JSON.parse(r.daysOfWeek) : undefined,
+        tiers: r.tiers ? JSON.parse(r.tiers) : undefined,
+        customerTiers: r.customerTiers
+          ? JSON.parse(r.customerTiers)
+          : undefined,
+        excludePromotionIds: r.excludePromotionIds
+          ? JSON.parse(r.excludePromotionIds)
+          : undefined,
+        // Cast string types
         type: r.type as PromotionType,
         status: r.status as PromotionStatus,
+        scope: (r.scope || "product") as PromotionScope,
+        discountType: r.discountType as DiscountType | undefined,
         rewardType: r.rewardType as
           | "free_product"
           | "discount"
@@ -106,6 +135,7 @@ export function usePromotionsStore() {
     }
     const record: PromotionRecord = {
       ...promotion,
+      // Stringify JSON array fields
       triggerProductIds: JSON.stringify(promotion.triggerProductIds),
       triggerCategoryIds: promotion.triggerCategoryIds
         ? JSON.stringify(promotion.triggerCategoryIds)
@@ -113,6 +143,13 @@ export function usePromotionsStore() {
       rewardProductIds: JSON.stringify(promotion.rewardProductIds),
       daysOfWeek: promotion.daysOfWeek
         ? JSON.stringify(promotion.daysOfWeek)
+        : undefined,
+      tiers: promotion.tiers ? JSON.stringify(promotion.tiers) : undefined,
+      customerTiers: promotion.customerTiers
+        ? JSON.stringify(promotion.customerTiers)
+        : undefined,
+      excludePromotionIds: promotion.excludePromotionIds
+        ? JSON.stringify(promotion.excludePromotionIds)
         : undefined,
       synced: false,
     };
@@ -341,6 +378,68 @@ export function usePromotionsStore() {
     });
   }
 
+  /**
+   * Calculate discount for a promotion based on its type
+   * @param promotion - The promotion to apply
+   * @param itemTotal - Total price of applicable items
+   * @param quantity - Total quantity of applicable items
+   */
+  function calculateDiscount(
+    promotion: Promotion,
+    itemTotal: number,
+    quantity: number
+  ): { discountAmount: number; discountDescription: string } {
+    let discountAmount = 0;
+    let discountDescription = "";
+
+    switch (promotion.type) {
+      case "discount":
+        if (
+          promotion.discountType === "percentage" &&
+          promotion.discountValue
+        ) {
+          discountAmount = (itemTotal * promotion.discountValue) / 100;
+          discountDescription = `${promotion.discountValue}% off`;
+        } else if (
+          promotion.discountType === "fixed" &&
+          promotion.discountValue
+        ) {
+          discountAmount = Math.min(promotion.discountValue, itemTotal);
+          discountDescription = `฿${promotion.discountValue} off`;
+        }
+        break;
+
+      case "tiered":
+        if (promotion.tiers && promotion.tiers.length > 0) {
+          // Find the best applicable tier (highest quantity threshold met)
+          const applicableTiers = promotion.tiers
+            .filter((tier) => quantity >= tier.minQuantity)
+            .sort((a, b) => b.minQuantity - a.minQuantity);
+
+          if (applicableTiers.length > 0) {
+            const tier = applicableTiers[0]!;
+            if (tier.discountType === "percentage") {
+              discountAmount = (itemTotal * tier.discountValue) / 100;
+              discountDescription = `Buy ${tier.minQuantity}+ get ${tier.discountValue}% off`;
+            } else {
+              discountAmount = Math.min(tier.discountValue, itemTotal);
+              discountDescription = `Buy ${tier.minQuantity}+ get ฿${tier.discountValue} off`;
+            }
+          }
+        }
+        break;
+
+      case "bogo":
+        // BOGO is handled by applyBOGO function
+        break;
+
+      default:
+        break;
+    }
+
+    return { discountAmount, discountDescription };
+  }
+
   // ============================================
   // 📤 EXPORT
   // ============================================
@@ -355,6 +454,9 @@ export function usePromotionsStore() {
     // Computed
     activePromotions,
     bogoPromotions,
+    discountPromotions,
+    tieredPromotions,
+    bundlePromotions,
 
     // Methods
     init,
@@ -365,9 +467,10 @@ export function usePromotionsStore() {
     getPromotionsForProduct,
     getPromotionsForCategory,
 
-    // BOGO Logic
+    // Promotion Logic
     checkPromotions,
     applyBOGO,
+    calculateDiscount,
     incrementUsage,
   };
 }

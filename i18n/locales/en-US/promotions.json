@@ -1,6 +1,7 @@
 {
   "promotions": {
     "title": "Promotions",
+    "subtitle": "Manage BOGO, discounts, and promotional offers",
     "promotion": "Promotion",
     "addPromotion": "Add Promotion",
     "editPromotion": "Edit Promotion",
@@ -8,16 +9,40 @@
     "searchPlaceholder": "Search promotions...",
     "noPromotions": "No Promotions Yet",
     "noPromotionsDescription": "Create your first promotion to boost sales",
-    "createSuccess": "Promotion created successfully",
-    "updateSuccess": "Promotion updated successfully",
-    "deleteSuccess": "Promotion deleted successfully",
+    "createSuccess": "Promotion Created",
+    "createSuccessDesc": "Your promotion has been created successfully",
+    "updateSuccess": "Promotion Updated",
+    "updateSuccessDesc": "Promotion settings have been saved",
+    "deleteSuccess": "Promotion Deleted",
+    "deleteSuccessDesc": "The promotion has been removed",
+    "statusUpdated": "Status Updated",
+    "statusUpdatedDesc": "Promotion status has been changed",
 
     "type": {
       "label": "Promotion Type",
       "bogo": "Buy One Get One",
-      "discount": "Fixed Discount",
+      "discount": "Discount",
       "bundle": "Bundle Deal",
-      "freebie": "Free Gift"
+      "freebie": "Free Gift",
+      "tiered": "Tiered Discount",
+      "bogoDesc": "Buy X get Y free",
+      "discountDesc": "Percentage or fixed amount off",
+      "bundleDesc": "Discount when buying multiple products together",
+      "freebieDesc": "Free item with qualifying purchase",
+      "tieredDesc": "Buy more, save more"
+    },
+
+    "scope": {
+      "label": "Applies To",
+      "product": "Specific Products",
+      "category": "Product Categories",
+      "order": "Entire Order"
+    },
+
+    "discountType": {
+      "label": "Discount Type",
+      "percentage": "Percentage Off",
+      "fixed": "Fixed Amount Off"
     },
 
     "status": {
@@ -35,16 +60,45 @@
       "descriptionPlaceholder": "Promotion details...",
       "triggerProducts": "Trigger Products",
       "triggerProductsHint": "Products that activate this promotion",
+      "triggerCategories": "Trigger Categories",
       "triggerQuantity": "Trigger Quantity",
       "triggerQuantityHint": "How many to buy to trigger",
       "rewardProducts": "Free/Reward Products",
       "rewardProductsHint": "Products given as reward",
       "rewardQuantity": "Reward Quantity",
       "rewardQuantityHint": "How many free items",
+      "discountValue": "Discount Value",
+      "discountPercent": "Discount Percentage",
+      "discountAmount": "Discount Amount",
       "priority": "Priority",
       "priorityHint": "Higher priority promotions apply first",
       "badgeText": "Badge Text",
-      "badgeTextPlaceholder": "e.g., BUY 1 GET 1 FREE"
+      "badgeTextPlaceholder": "e.g., BUY 1 GET 1 FREE",
+      "badgeColor": "Badge Color"
+    },
+
+    "conditions": {
+      "title": "Conditions",
+      "minOrderValue": "Minimum Order Value",
+      "minOrderValueHint": "Cart must be at least this amount",
+      "minQuantity": "Minimum Quantity",
+      "minQuantityHint": "Must buy at least this many items",
+      "customerTier": "Customer Tier",
+      "customerTierHint": "Limit to specific customer tiers",
+      "allCustomers": "All Customers",
+      "firstOrderOnly": "First Order Only",
+      "firstOrderOnlyHint": "Only applies to new customers",
+      "maxItemsAffected": "Max Items Affected",
+      "maxItemsAffectedHint": "Maximum items this promo applies to"
+    },
+
+    "tiers": {
+      "title": "Tier Levels",
+      "addTier": "Add Tier",
+      "removeTier": "Remove Tier",
+      "quantity": "Buy",
+      "discount": "Get",
+      "example": "e.g., Buy 2 get 10% off, Buy 3 get 20% off"
     },
 
     "schedule": {
@@ -53,24 +107,63 @@
       "endDate": "End Date",
       "daysOfWeek": "Days of Week",
       "allDays": "All Days",
-      "specificDays": "Specific Days"
+      "specificDays": "Specific Days",
+      "timeRange": "Time Range",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "allDay": "All Day"
     },
 
     "limits": {
       "title": "Usage Limits",
       "perOrder": "Max Uses Per Order",
+      "perCustomer": "Max Uses Per Customer",
       "total": "Total Usage Limit",
       "unlimited": "Unlimited",
       "usageCount": "Times Used"
     },
 
+    "stacking": {
+      "title": "Stacking Rules",
+      "stackable": "Can Stack",
+      "stackableHint": "Can combine with other promotions",
+      "exclusive": "Exclusive",
+      "exclusiveHint": "Cannot combine with other promotions",
+      "excludePromotions": "Exclude Promotions",
+      "excludePromotionsHint": "Cannot combine with these specific promotions"
+    },
+
+    "display": {
+      "title": "Display Options",
+      "highlightOnPOS": "Highlight on POS",
+      "highlightOnPOSHint": "Show promotional badge in product grid"
+    },
+
+    "trigger": "Trigger",
+    "reward": "Reward",
+    "uses": "Uses",
+    "totalUses": "Total Uses",
     "bogo": "Buy One Get One",
     "bogoFree": "Buy 1 Get 1 FREE",
     "triggerProduct": "When buying",
+    "rewardProduct": "Get free",
     "freeProduct": "Get free",
     "applied": "Promotion Applied!",
     "free": "FREE",
     "savings": "You save",
+    "deleteConfirmation": "Are you sure you want to delete \"{name}\"?",
+
+    "form": {
+      "basicInfo": "Basic Information",
+      "triggerSetup": "Trigger Setup",
+      "rewardSetup": "Reward Setup",
+      "discountSetup": "Discount Setup",
+      "tierSetup": "Tier Setup",
+      "conditionsSetup": "Conditions",
+      "scheduleSetup": "Schedule",
+      "limitsSetup": "Limits",
+      "displaySetup": "Display"
+    },
 
     "confirm": {
       "deleteTitle": "Delete Promotion",
