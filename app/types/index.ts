@@ -28,6 +28,8 @@ export type ShopType =
   | "gym"
   | "karaoke"
   | "garage"
+  | "dry_clean"
+  | "car_care"
   | "enterprise"
   | "other";
 

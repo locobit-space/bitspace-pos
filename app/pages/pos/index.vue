@@ -48,6 +48,7 @@ const tablesStore = useTables();
 const lightning = useLightning();
 const currency = useCurrency();
 const promotionsStore = usePromotionsStore();
+const posSettings = usePOSSettings(); // POS settings for auto-close kitchen
 
 const offline = useOffline();
 const sound = useSound();
@@ -73,9 +74,6 @@ const showExtras = ref(false); // Toggle for coupon/discount/tip section
 const filterByPromotions = ref(false); // Filter to show only products with promotions
 const showTableSwitcher = ref(false); // Table switcher modal
 const showPendingOrdersModal = ref(false); // Pending orders for payment
-const autoServeOnPayment = ref(
-  localStorage.getItem("pos_auto_serve_on_payment") !== "false"
-); // Auto-mark orders as served when paid (default: true)
 const showSplitBillModal = ref(false); // Split bill modal
 const showCustomerModal = ref(false); // Customer lookup modal
 const showBarcodeScannerModal = ref(false); // Barcode scanner modal
@@ -83,7 +81,16 @@ const showVoidOrderModal = ref(false); // Void/cancel order modal
 const orderToVoid = ref<{ id: string; orderNumber?: string } | null>(null); // Order being cancelled
 const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mode
 const showPaymentOrderDetails = ref(false); // Toggle order details in payment modal
+// Per-order: Auto-close kitchen status when payment completes (defaults to global setting)
+const autoCloseKitchenOnPayment = ref(posSettings.autoCloseKitchenStatusOnPayment.value);
 const splitOrder = ref<Order | null>(null); // Order being split
+
+// Reset checkbox to global setting when payment modal opens
+watch(showPaymentModal, (isOpen) => {
+  if (isOpen) {
+    autoCloseKitchenOnPayment.value = posSettings.autoCloseKitchenStatusOnPayment.value;
+  }
+});
 const splitCount = ref(2); // Number of people splitting
 const splitPaidCount = ref(0); // Number of portions already paid
 const isProcessing = ref(false);
@@ -945,9 +952,9 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       await offline.storeOfflinePayment(order, paymentProof);
     }
 
-    // Auto-serve kitchen status if enabled (mark as served when paid)
+    // Auto-serve kitchen status if checkbox is checked (mark as served when paid)
     if (
-      autoServeOnPayment.value &&
+      autoCloseKitchenOnPayment.value &&
       order.kitchenStatus &&
       order.kitchenStatus !== "served"
     ) {
@@ -956,6 +963,10 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
         servedAt: new Date().toISOString(),
       });
       order.kitchenStatus = "served";
+      console.log(
+        "[POS] Auto-closed kitchen status for order:",
+        order.id.slice(-8)
+      );
     }
 
     // Store completed order for receipt modal
@@ -3529,8 +3540,8 @@ onUnmounted(() => {
         >
           <!-- Order Summary Toggle Button -->
           <button
-            @click="showPaymentOrderDetails = !showPaymentOrderDetails"
             class="w-full mb-3 flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            @click="showPaymentOrderDetails = !showPaymentOrderDetails"
           >
             <div class="flex items-center gap-2">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -3640,6 +3651,26 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Kitchen Auto-Close Checkbox -->
+          <div class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <UCheckbox
+                v-model="autoCloseKitchenOnPayment"
+                size="lg"
+              />
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">
+                    👨‍🍳 {{ $t("pos.autoCloseKitchen", "Auto-Close Kitchen") }}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {{ $t("pos.autoCloseKitchenDesc", "Mark order as served when payment completes") }}
+                </p>
+              </div>
+            </label>
           </div>
 
           <PaymentSelector
@@ -4254,26 +4285,25 @@ onUnmounted(() => {
                   <span class="text-xl">👨‍🍳</span>
                   <div>
                     <span class="font-medium text-gray-900 dark:text-white">
-                      {{ $t("pos.autoServeOnPayment", "Auto-CloseKitchen") }}
+                      {{ $t("pos.autoServeOnPayment", "Auto-Close Kitchen") }}
                     </span>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {{
                         $t(
                           "pos.autoServeOnPaymentDesc",
-                          'Mark orders as "served" when payment is completed'
+                          'Automatically mark orders as "served" when payment is completed'
                         )
                       }}
                     </p>
                   </div>
                 </div>
                 <USwitch
-                  v-model="autoServeOnPayment"
+                  v-model="posSettings.settings.value.autoCloseKitchenStatusOnPayment"
                   @update:model-value="
                     (val) =>
-                      localStorage.setItem(
-                        'pos_auto_serve_on_payment',
-                        String(val)
-                      )
+                      posSettings.updateSettings({
+                        autoCloseKitchenStatusOnPayment: val,
+                      })
                   "
                 />
               </div>
