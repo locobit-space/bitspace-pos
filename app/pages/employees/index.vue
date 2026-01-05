@@ -194,6 +194,71 @@ function getSortIcon(field: string) {
     ? "i-heroicons-chevron-up"
     : "i-heroicons-chevron-down";
 }
+
+// Nostr sync actions
+const toast = useToast();
+const isSyncing = ref(false);
+
+const syncActions = computed(() => [
+  [
+    {
+      label: "Sync All to Nostr",
+      icon: "i-heroicons-cloud-arrow-up",
+      onClick: async () => {
+        isSyncing.value = true;
+        try {
+          const result = await employeesStore.syncAllToNostr();
+          toast.add({
+            title: "Sync Complete",
+            description: `${result.success} synced, ${result.failed} failed`,
+            icon: "i-heroicons-check-circle",
+            color: "green",
+          });
+        } catch (e) {
+          toast.add({
+            title: "Sync Failed",
+            description: String(e),
+            icon: "i-heroicons-exclamation-triangle",
+            color: "red",
+          });
+        } finally {
+          isSyncing.value = false;
+        }
+      },
+    },
+    {
+      label: "Pull from Nostr",
+      icon: "i-heroicons-arrow-down-tray",
+      onClick: async () => {
+        isSyncing.value = true;
+        try {
+          const result = await employeesStore.pullFromNostr();
+          toast.add({
+            title: "Pull Complete",
+            description: `${result.imported} imported, ${result.updated} updated`,
+            icon: "i-heroicons-check-circle",
+            color: "green",
+          });
+        } catch (e) {
+          toast.add({
+            title: "Pull Failed",
+            description: String(e),
+            icon: "i-heroicons-exclamation-triangle",
+            color: "red",
+          });
+        } finally {
+          isSyncing.value = false;
+        }
+      },
+    },
+  ],
+]);
+
+// Handle detail modal refresh
+function handleDetailRefresh() {
+  // Refresh the employee data
+  employeesStore.init();
+}
 </script>
 
 <template>
@@ -226,6 +291,11 @@ function getSortIcon(field: string) {
               @click="employeesStore.exportToExcel">
               {{ t("employees.actions.export") }}
             </UButton>
+            <UDropdownMenu :items="syncActions">
+              <UButton color="neutral" variant="ghost" icon="i-heroicons-cloud-arrow-up">
+                {{ t("employees.actions.nostrSync") || "Nostr Sync" }}
+              </UButton>
+            </UDropdownMenu>
             <UButton color="primary" icon="i-heroicons-plus" @click="showCreateModal = true">
               {{ t("employees.addEmployee") }}
             </UButton>
@@ -524,7 +594,7 @@ function getSortIcon(field: string) {
           employeeToEdit = selectedEmployee;
         showEditModal = true;
         showDetailModal = false;
-        " />
+        " @refresh="handleDetailRefresh" @duplicate="(id) => handleDuplicate(employeesStore.getEmployee(id)!)" @terminate="(id) => confirmTerminate(employeesStore.getEmployee(id)!)" @delete="(id) => confirmDelete(employeesStore.getEmployee(id)!)" />
       </template>
     </UModal>
 

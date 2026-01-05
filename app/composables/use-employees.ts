@@ -3,10 +3,11 @@
 // Employee Management with Dexie + Nostr
 // ============================================
 
-import type { Employee, EmployeeStatus } from "~/types";
+import type { Employee, EmployeeStatus, StoreUser } from "~/types";
 import { db, type EmployeeRecord } from "~/db/db";
 import { generateUUIDv7, generateReadableId } from "~/utils/id";
 import * as XLSX from "xlsx";
+import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // Singleton state
 const employees = ref<Employee[]>([]);
@@ -267,6 +268,18 @@ export function useEmployeesStore() {
     employees.value.push(employee);
     await saveEmployeeToLocal(employee);
 
+    // Auto-sync to Nostr
+    syncEmployeeToNostr(employee).catch((e) =>
+      console.warn("[Employee] Failed to auto-sync to Nostr:", e)
+    );
+
+    // Create StoreUser if POS access is enabled
+    if (employee.canAccessPOS) {
+      createStoreUserFromEmployee(employee.id).catch((e) =>
+        console.warn("[Employee] Failed to create StoreUser:", e)
+      );
+    }
+
     toast.add({
       title: t("employees.createSuccess"),
       icon: "i-heroicons-check-circle",
@@ -295,6 +308,18 @@ export function useEmployeesStore() {
 
     employees.value[index] = updated;
     await saveEmployeeToLocal(updated);
+
+    // Auto-sync to Nostr
+    syncEmployeeToNostr(updated).catch((e) =>
+      console.warn("[Employee] Failed to auto-sync to Nostr:", e)
+    );
+
+    // Update StoreUser if POS access changed
+    if (updated.canAccessPOS) {
+      createStoreUserFromEmployee(updated.id).catch((e) =>
+        console.warn("[Employee] Failed to update StoreUser:", e)
+      );
+    }
 
     toast.add({
       title: t("employees.updateSuccess"),
@@ -592,6 +617,204 @@ export function useEmployeesStore() {
   }
 
   // ============================================
+  // 📡 NOSTR SYNC
+  // ============================================
+
+  /**
+   * Sync employee to Nostr
+   * Saves employee data to Nostr relays using STAFF_MEMBER kind
+   */
+  async function syncEmployeeToNostr(employee: Employee): Promise<boolean> {
+    try {
+      const nostrData = useNostrData();
+      const company = useCompany();
+
+      // Get company code hash for tagging
+      const companyTag = company.companyCodeHash.value
+        ? ["c", company.companyCodeHash.value]
+        : [];
+
+      // Publish to Nostr with encryption
+      const event = await nostrData.publishReplaceableEvent(
+        NOSTR_KINDS.STAFF_MEMBER,
+        employee,
+        employee.id,
+        [
+          ["name", `${employee.firstName} ${employee.lastName}`],
+          ["code", employee.employeeCode],
+          ["role", "staff"],
+          employee.npub ? ["p", employee.npub] : [],
+          companyTag,
+        ].filter((t) => t.length > 0) as string[][],
+        true // Encrypt employee data for privacy
+      );
+
+      if (event) {
+        // Mark as synced in local DB
+        await db.employees?.update(employee.id, { synced: true });
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      console.error("[Employee] Failed to sync to Nostr:", e);
+      return false;
+    }
+  }
+
+  /**
+   * Fetch all employees from Nostr
+   * Retrieves employee data from relays
+   */
+  async function fetchEmployeesFromNostr(): Promise<Employee[]> {
+    try {
+      const nostrData = useNostrData();
+      const results = await nostrData.getAllEventsOfKind<Employee>(
+        NOSTR_KINDS.STAFF_MEMBER
+      );
+
+      return results
+        .map((r) => r.data)
+        .filter((e) => e && e.id && e.firstName && e.lastName);
+    } catch (e) {
+      console.error("[Employee] Failed to fetch from Nostr:", e);
+      return [];
+    }
+  }
+
+  /**
+   * Sync all local employees to Nostr
+   */
+  async function syncAllToNostr(): Promise<{ success: number; failed: number }> {
+    let success = 0;
+    let failed = 0;
+
+    for (const employee of employees.value) {
+      const result = await syncEmployeeToNostr(employee);
+      if (result) success++;
+      else failed++;
+    }
+
+    return { success, failed };
+  }
+
+  /**
+   * Pull employees from Nostr and merge with local data
+   * Updates local storage with remote data
+   */
+  async function pullFromNostr(): Promise<{
+    imported: number;
+    updated: number;
+  }> {
+    try {
+      const remoteEmployees = await fetchEmployeesFromNostr();
+      let imported = 0;
+      let updated = 0;
+
+      for (const remoteEmployee of remoteEmployees) {
+        const existing = employees.value.find((e) => e.id === remoteEmployee.id);
+
+        if (existing) {
+          // Update if remote is newer
+          const remoteTime = new Date(remoteEmployee.updatedAt).getTime();
+          const localTime = new Date(existing.updatedAt).getTime();
+
+          if (remoteTime > localTime) {
+            employees.value = employees.value.map((e) =>
+              e.id === remoteEmployee.id ? remoteEmployee : e
+            );
+            await saveEmployeeToLocal(remoteEmployee);
+            updated++;
+          }
+        } else {
+          // Import new employee
+          employees.value.push(remoteEmployee);
+          await saveEmployeeToLocal(remoteEmployee);
+          imported++;
+        }
+      }
+
+      if (imported > 0 || updated > 0) {
+        toast.add({
+          title: `Synced from Nostr: ${imported} new, ${updated} updated`,
+          icon: "i-heroicons-arrow-down-tray",
+          color: "success",
+        });
+      }
+
+      return { imported, updated };
+    } catch (e) {
+      console.error("[Employee] Failed to pull from Nostr:", e);
+      toast.add({
+        title: "Failed to sync from Nostr",
+        icon: "i-heroicons-exclamation-circle",
+        color: "error",
+      });
+      return { imported: 0, updated: 0 };
+    }
+  }
+
+  /**
+   * Create or update StoreUser from Employee
+   * Links employee to POS access if canAccessPOS is enabled
+   */
+  async function createStoreUserFromEmployee(
+    employeeId: string
+  ): Promise<StoreUser | null> {
+    const employee = getEmployee(employeeId);
+    if (!employee || !employee.canAccessPOS) {
+      return null;
+    }
+
+    try {
+      const users = useUsers();
+
+      // Check if user already exists
+      const existingUser = users.users.value.find(
+        (u) => u.id === employee.userId || u.npub === employee.npub
+      );
+
+      const userData: Partial<StoreUser> = {
+        id: employee.userId || generateUUIDv7(),
+        name: employee.displayName || `${employee.firstName} ${employee.lastName}`,
+        email: employee.email,
+        pin: employee.pin,
+        role: "staff" as const,
+        branchId: employee.branchId,
+        isActive: employee.status === "active",
+        avatar: employee.avatar,
+        authMethod: employee.npub ? "nostr" : "pin",
+        npub: employee.npub,
+      };
+
+      if (existingUser) {
+        // Update existing user
+        await users.updateUser(existingUser.id, userData);
+
+        // Update employee with userId
+        if (!employee.userId) {
+          await updateEmployee(employee.id, { userId: existingUser.id });
+        }
+
+        return existingUser;
+      } else {
+        // Create new user
+        const newUser = await users.createUser(userData as any);
+
+        // Update employee with userId
+        if (newUser) {
+          await updateEmployee(employee.id, { userId: newUser.id });
+        }
+
+        return newUser;
+      }
+    } catch (e) {
+      console.error("[Employee] Failed to create store user:", e);
+      return null;
+    }
+  }
+
+  // ============================================
   // 📤 EXPORT
   // ============================================
 
@@ -641,5 +864,12 @@ export function useEmployeesStore() {
     getAssignedProducts,
     getAssignedCategories,
     canSellProduct,
+
+    // Nostr Sync
+    syncEmployeeToNostr,
+    fetchEmployeesFromNostr,
+    syncAllToNostr,
+    pullFromNostr,
+    createStoreUserFromEmployee,
   };
 }

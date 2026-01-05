@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 👥 Employee Detail Component - View employee information
+// 👥 Employee Detail Component - View employee information with tabs
 import type { Employee } from "~/types";
 
 const props = defineProps<{
@@ -12,9 +12,33 @@ const emit = defineEmits<{
   (e: "duplicate", id: string): void;
   (e: "terminate", id: string): void;
   (e: "delete", id: string): void;
+  (e: "refresh"): void;
 }>();
 
 const { t } = useI18n();
+const employeesStore = useEmployeesStore();
+
+// Tab state
+const activeTab = ref(0);
+const tabs = computed(() => [
+  {
+    label: t("employees.tabs.overview") || "Overview",
+    icon: "i-heroicons-user-circle",
+  },
+  {
+    label: t("employees.tabs.productAssignment") || "Product Assignment",
+    icon: "i-heroicons-shopping-bag",
+    disabled: !props.employee.canAccessPOS,
+  },
+  {
+    label: t("employees.tabs.posAccess") || "POS Access",
+    icon: "i-heroicons-device-tablet",
+  },
+  {
+    label: t("employees.tabs.leave") || "Leave & Payroll",
+    icon: "i-heroicons-calendar-days",
+  },
+]);
 
 // Status badge color
 function getStatusColor(
@@ -112,8 +136,15 @@ const tenure = computed(() => {
       </div>
     </div>
 
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 dark:border-gray-700 px-6 pt-4">
+      <UTabs v-model="activeTab" :items="tabs" />
+    </div>
+
     <!-- Content -->
     <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <!-- Tab 0: Overview -->
+      <div v-if="activeTab === 0" class="space-y-6">
       <!-- Quick Stats -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
@@ -301,6 +332,32 @@ const tenure = computed(() => {
         <p class="text-sm text-gray-700 dark:text-gray-300">
           {{ employee.notes }}
         </p>
+      </div>
+      </div>
+      <!-- End Tab 0 -->
+
+      <!-- Tab 1: Product Assignment -->
+      <div v-else-if="activeTab === 1">
+        <StaffProductAssignment
+          :employee="props.employee"
+          @updated="emit('refresh')"
+        />
+      </div>
+
+      <!-- Tab 2: POS Access & Nostr -->
+      <div v-else-if="activeTab === 2">
+        <EmployeePOSAccess
+          :employee="props.employee"
+          @updated="emit('refresh')"
+        />
+      </div>
+
+      <!-- Tab 3: Leave & Payroll -->
+      <div v-else-if="activeTab === 3">
+        <EmployeeLeaveManagement
+          :employee="props.employee"
+          @updated="emit('refresh')"
+        />
       </div>
     </div>
 
