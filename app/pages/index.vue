@@ -2,7 +2,6 @@
 <!-- 📊 Dashboard - Real-time Sales KPIs & Business Overview -->
 <script setup lang="ts">
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
 });
 
@@ -337,138 +336,140 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Welcome Choice (Join vs Create) -->
-  <DashboardWelcomeChoice
-    v-if="showWelcome"
-    @join="handleWelcomeJoin"
-    @create="handleWelcomeCreate"
-  />
+  <div>
+    <!-- Welcome Choice (Join vs Create) -->
+    <DashboardWelcomeChoice
+      v-if="showWelcome"
+      @join="handleWelcomeJoin"
+      @create="handleWelcomeCreate"
+    />
 
-  <!-- Shop Setup Wizard (for owners) -->
-  <DashboardShopSetup v-else-if="showSetup" @complete="handleSetupComplete" />
+    <!-- Shop Setup Wizard (for owners) -->
+    <DashboardShopSetup v-else-if="showSetup" @complete="handleSetupComplete" />
 
-  <!-- Main Dashboard -->
-  <div v-else class="min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
-    <!-- Header -->
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4"
-    >
-      <div class="flex items-center gap-3">
-        <span class="text-xl">{{ greeting.emoji }}</span>
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            {{ greeting.text }}
-          </p>
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ t("dashboard.title") }}
-          </h1>
-        </div>
-        <span
-          v-if="isRefreshing"
-          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400"
-        >
-          <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
-          {{ t("common.syncing") }}
-        </span>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <!-- Period Selector -->
-        <CommonButtonGroup
-          v-model="selectedPeriod"
-          :items="[
-            {
-              value: 'today',
-              label: t('dashboard.today'),
-              indicator: { show: true },
-            },
-            { value: 'week', label: t('dashboard.week') },
-            { value: 'month', label: t('dashboard.month') },
-          ]"
-        />
-
-        <NuxtLinkLocale to="/pos">
-          <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
-            {{ t("pos.terminal") }}
-          </UButton>
-        </NuxtLinkLocale>
-      </div>
-    </div>
-
-    <!-- Loading Skeletons -->
-    <template v-if="isInitialLoad && !hasCachedData">
-      <div class="grid grid-cols-12 gap-3">
-        <div
-          v-for="i in 4"
-          :key="i"
-          class="col-span-12 sm:col-span-6 lg:col-span-3"
-        >
-          <div
-            class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+    <!-- Main Dashboard -->
+    <div v-else class="min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
+      <!-- Header -->
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-xl">{{ greeting.emoji }}</span>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ greeting.text }}
+            </p>
+            <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t("dashboard.title") }}
+            </h1>
+          </div>
+          <span
+            v-if="isRefreshing"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400"
           >
-            <USkeleton class="h-3 w-16 mb-2" />
-            <USkeleton class="h-6 w-28" />
+            <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
+            {{ t("common.syncing") }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Period Selector -->
+          <CommonButtonGroup
+            v-model="selectedPeriod"
+            :items="[
+              {
+                value: 'today',
+                label: t('dashboard.today'),
+                indicator: { show: true },
+              },
+              { value: 'week', label: t('dashboard.week') },
+              { value: 'month', label: t('dashboard.month') },
+            ]"
+          />
+
+          <NuxtLinkLocale to="/pos">
+            <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
+              {{ t("pos.terminal") }}
+            </UButton>
+          </NuxtLinkLocale>
+        </div>
+      </div>
+
+      <!-- Loading Skeletons -->
+      <template v-if="isInitialLoad && !hasCachedData">
+        <div class="grid grid-cols-12 gap-3">
+          <div
+            v-for="i in 4"
+            :key="i"
+            class="col-span-12 sm:col-span-6 lg:col-span-3"
+          >
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-3 w-16 mb-2" />
+              <USkeleton class="h-6 w-28" />
+            </div>
           </div>
         </div>
-      </div>
-    </template>
+      </template>
 
-    <!-- Dashboard Content -->
-    <template v-else>
-      <!-- Onboarding Checklist (shown after setup) -->
-      <div v-if="showOnboardingChecklist" class="mb-6">
-        <DashboardOnboardingChecklist @dismiss="handleChecklistDismiss" />
-      </div>
-
-      <div class="grid grid-cols-12 gap-3">
-        <!-- KPI Cards -->
-        <div class="col-span-12">
-          <DashboardKPICards
-            :kpis="kpis"
-            :today-stats="todayStats"
-            :selected-period="selectedPeriod"
-          />
+      <!-- Dashboard Content -->
+      <template v-else>
+        <!-- Onboarding Checklist (shown after setup) -->
+        <div v-if="showOnboardingChecklist" class="mb-6">
+          <DashboardOnboardingChecklist @dismiss="handleChecklistDismiss" />
         </div>
 
-        <!-- Sales Chart -->
-        <div class="col-span-12 lg:col-span-8">
-          <DashboardSalesChart
-            :hourly-sales="hourlySales"
-            :peak-hour="peakHour"
-          />
-        </div>
+        <div class="grid grid-cols-12 gap-3">
+          <!-- KPI Cards -->
+          <div class="col-span-12">
+            <DashboardKPICards
+              :kpis="kpis"
+              :today-stats="todayStats"
+              :selected-period="selectedPeriod"
+            />
+          </div>
 
-        <!-- Business Health -->
-        <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-          <DashboardBusinessHealth :finance-health="financeHealth" />
-        </div>
+          <!-- Sales Chart -->
+          <div class="col-span-12 lg:col-span-8">
+            <DashboardSalesChart
+              :hourly-sales="hourlySales"
+              :peak-hour="peakHour"
+            />
+          </div>
 
-        <!-- Payment Breakdown -->
-        <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-          <DashboardPaymentBreakdown :kpis="kpis" />
-        </div>
+          <!-- Business Health -->
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <DashboardBusinessHealth :finance-health="financeHealth" />
+          </div>
 
-        <!-- Top Products -->
-        <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-          <DashboardTopProducts :products="topProducts" />
-        </div>
+          <!-- Payment Breakdown -->
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <DashboardPaymentBreakdown :kpis="kpis" />
+          </div>
 
-        <!-- Recent Orders -->
-        <div class="col-span-12 lg:col-span-6">
-          <DashboardRecentOrders :orders="recentOrders" />
-        </div>
+          <!-- Top Products -->
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <DashboardTopProducts :products="topProducts" />
+          </div>
 
-        <!-- Low Stock -->
-        <div class="col-span-12 lg:col-span-6">
-          <DashboardLowStock :products="lowStockProducts" />
-        </div>
+          <!-- Recent Orders -->
+          <div class="col-span-12 lg:col-span-6">
+            <DashboardRecentOrders :orders="recentOrders" />
+          </div>
 
-        <!-- Quick Actions -->
-        <div class="col-span-12">
-          <DashboardQuickActions />
+          <!-- Low Stock -->
+          <div class="col-span-12 lg:col-span-6">
+            <DashboardLowStock :products="lowStockProducts" />
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="col-span-12">
+            <DashboardQuickActions />
+          </div>
         </div>
-      </div>
-    </template>
+      </template>
+    </div>
   </div>
 </template>
 

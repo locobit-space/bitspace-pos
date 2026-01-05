@@ -2,7 +2,6 @@
 <!-- Floating help button that appears on all pages -->
 <script setup lang="ts">
 const help = useHelp();
-const nostrHelp = useNostrHelp();
 const { t } = useI18n();
 
 // Show pulse animation only on first visits
@@ -52,7 +51,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40">
+  <div class="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-40">
     <!-- Pulse ring (only for first-time users) -->
     <div
       v-if="!hasSeenHelp"

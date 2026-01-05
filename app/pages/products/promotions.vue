@@ -1,11 +1,17 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-4">
+    <div
+      class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-4"
+    >
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+        <h1
+          class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white"
+        >
           {{ $t("promotions.title", "Promotions") }}
-          <span class="text-gray-500 dark:text-gray-400">({{ promotionsStore.promotions.value.length }})</span>
+          <span class="text-gray-500 dark:text-gray-400"
+            >({{ promotionsStore.promotions.value.length }})</span
+          >
         </h1>
         <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
           {{
@@ -21,10 +27,10 @@
           color="primary"
           class="text-sm sm:text-base"
           icon="i-heroicons-plus"
-          @click="showCreateModal = true"
           block
+          @click="showCreateModal = true"
         >
-          <span class="sm:inline">{{ $t('common.add') }}</span>
+          <span class="sm:inline">{{ $t("common.add") }}</span>
         </UButton>
       </div>
     </div>
@@ -77,7 +83,6 @@ useHead({
 
 const { t } = useI18n();
 const toast = useToast();
-const route = useRoute();
 const promotionsStore = usePromotionsStore();
 const productsStore = useProducts();
 
@@ -88,7 +93,6 @@ const {
   showValidationError,
   prepareSubmissionData,
   setLoading,
-  formData,
 } = usePromotionForm();
 
 // UI State
@@ -101,31 +105,6 @@ const isProcessing = ref(false);
 // Initialize stores
 onMounted(async () => {
   await Promise.all([promotionsStore.init(), productsStore.init()]);
-
-  // Check for product pre-selection from query params
-  if (route.query.productId && route.query.productName) {
-    const productId = route.query.productId as string;
-    const productName = route.query.productName as string;
-
-    // Pre-fill form with product
-    formData.value.scope = "products";
-    formData.value.triggerProductIds = [productId];
-    formData.value.name = `Promotion for ${productName}`;
-
-    // Open modal automatically
-    showCreateModal.value = true;
-
-    // Show toast notification
-    toast.add({
-      title: t("promotions.preselected", "Product Pre-selected"),
-      description: t(
-        "promotions.preselectedDesc",
-        `Creating promotion for ${productName}`
-      ),
-      color: "primary",
-      icon: "i-heroicons-gift",
-    });
-  }
 });
 
 // Event handlers
@@ -150,15 +129,6 @@ async function handleCreatePromotion() {
 
     showCreateModal.value = false;
     resetForm();
-
-    toast.add({
-      title: t("promotions.createSuccess", "Promotion Created"),
-      description: t(
-        "promotions.createSuccessDesc",
-        "Your BOGO promotion has been created successfully"
-      ),
-      color: "success",
-    });
   } catch (error) {
     console.error("Failed to create promotion:", error);
     toast.add({
@@ -237,16 +207,4 @@ async function handleDeleteConfirm(promotion: Promotion) {
     isProcessing.value = false;
   }
 }
-
-// Computed properties for better performance
-const _hasPromotions = computed(
-  () => promotionsStore.promotions.value.length > 0
-);
-const _activePromotionsCount = computed(
-  () =>
-    promotionsStore.promotions.value.filter((p) => p.status === "active").length
-);
-const _totalUsageCount = computed(() =>
-  promotionsStore.promotions.value.reduce((total, p) => total + p.usageCount, 0)
-);
 </script>

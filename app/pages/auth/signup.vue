@@ -184,41 +184,44 @@ onMounted(() => {
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center"
+    class="min-h-screen bg-linear-to-br py-6 from-gray-50 via-white to-amber-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col justify-center"
   >
     <!-- Background Pattern -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <!-- Top right glow -->
       <div
-        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl"
+        class="absolute -top-40 -right-40 w-96 h-96 bg-linear-to-br from-amber-400/20 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/5 rounded-full blur-3xl"
       />
       <!-- Bottom left glow -->
       <div
-        class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl"
+        class="absolute -bottom-40 -left-40 w-96 h-96 bg-linear-to-tr from-purple-400/15 to-pink-500/10 dark:from-purple-500/10 dark:to-pink-500/5 rounded-full blur-3xl"
       />
       <!-- Center subtle glow -->
       <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-linear-to-r from-amber-200/10 via-transparent to-purple-200/10 dark:from-amber-500/5 dark:via-transparent dark:to-purple-500/5 rounded-full blur-3xl"
       />
     </div>
 
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
-      <!-- Back to Home -->
-      <div class="mb-6">
+      <!-- Back to Home & Language Switcher -->
+      <div class="mb-6 flex w-full gap-6 items-center justify-between">
         <NuxtLinkLocale
           to="/"
-          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          class="inline-flex whitespace-nowrap items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           {{ t("common.back") }}
         </NuxtLinkLocale>
+       <div class="max-w-sm">
+         <CommonSwitchLanguage />
+       </div>
       </div>
 
       <!-- Logo & Header -->
       <div class="text-center mb-8">
         <div class="flex justify-center mb-4">
           <div
-            class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20"
+            class="w-16 h-16 bg-linear-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20"
           >
             <span class="text-3xl">⚡</span>
           </div>
@@ -467,12 +470,12 @@ onMounted(() => {
           class="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-800 text-center"
         >
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?
+            {{ t("auth.signup.hasAccount") }}
             <NuxtLink
               to="/auth/signin"
               class="text-amber-500 hover:text-amber-400 font-medium"
             >
-              Sign in
+              {{ t("auth.signup.signIn") }}
             </NuxtLink>
           </p>
         </div>
