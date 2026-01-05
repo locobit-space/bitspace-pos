@@ -69,7 +69,7 @@ function getDefaultFormData(): PromotionFormData {
     name: "",
     description: "",
     type: "bogo",
-    scope: "product",
+    scope: "products",
     triggerProductIds: [],
     triggerCategoryIds: [],
     triggerQuantity: 1,
@@ -130,9 +130,9 @@ const typeOptions = [
 ];
 
 const scopeOptions = [
-  { value: "product", label: "Specific Products" },
-  { value: "category", label: "Product Categories" },
-  { value: "order", label: "Entire Order" },
+  { value: "products", label: "Specific Products" },
+  { value: "categories", label: "Product Categories" },
+  { value: "all", label: "All Products" },
 ];
 
 const discountTypeOptions = [

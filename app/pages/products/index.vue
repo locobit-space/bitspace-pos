@@ -69,8 +69,40 @@
         </template>
         <UButton v-if="canEditProducts" color="primary" variant="soft" size="lg" :label="$t('products.lookup.discover')"
           icon="i-heroicons-magnifying-glass-circle" @click="showLookupModal = true" />
+        <UButton color="amber" variant="soft" size="lg" :label="$t('promotions.title', 'Promotions')"
+          icon="i-heroicons-gift" :badge="activePromotionsCount > 0 ? activePromotionsCount : undefined"
+          @click="navigateTo('/products/promotions')" />
         <UButton v-if="canEditProducts" color="primary" size="lg" :label="$t('common.add')" icon="i-heroicons-plus"
           @click="openProductModal()" />
+      </div>
+    </div>
+
+    <!-- Quick Stats Banner (if promotions are active) -->
+    <div v-if="activePromotionsCount > 0" class="px-4">
+      <div class="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <UIcon name="i-heroicons-gift" class="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                {{ activePromotionsCount }} {{ $t('promotions.activePromotions', 'Active Promotions') }}
+              </h3>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                {{ productsWithPromotions }} {{ $t('products.withPromotions', 'products with active promotions') }}
+              </p>
+            </div>
+          </div>
+          <UButton 
+            color="amber" 
+            variant="solid" 
+            size="sm" 
+            :label="$t('promotions.manage', 'Manage Promotions')"
+            trailing-icon="i-heroicons-arrow-right"
+            @click="navigateTo('/products/promotions')"
+          />
+        </div>
       </div>
     </div>
 
@@ -266,7 +298,7 @@
               </div>
             </td>
             <td class="py-3 px-4">
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
                 <UBadge :color="product.status === 'active' ? 'green' : 'gray'"
                   :label="$t(`common.${product.status}`)" />
                 <UBadge :color="product.isPublic !== false ? 'blue' : 'orange'" variant="subtle">
@@ -282,6 +314,16 @@
                       : $t("products.private") || "Private"
                   }}
                 </UBadge>
+                <!-- Promotion indicator -->
+                <UTooltip v-if="hasActivePromotion(product.id)" 
+                  :text="`${getProductPromotions(product.id).length} active promotion(s)`">
+                  <UBadge color="amber" variant="solid">
+                    <template #leading>
+                      <UIcon name="i-heroicons-gift" class="w-3 h-3" />
+                    </template>
+                    {{ getProductPromotions(product.id).length }}
+                  </UBadge>
+                </UTooltip>
               </div>
             </td>
             <td class="py-3 px-4" @click.stop>
@@ -289,6 +331,10 @@
                 <UButton color="gray" variant="ghost" size="sm" icon="i-heroicons-eye" @click="viewProduct(product)" />
                 <UButton v-if="canEditProducts" color="gray" variant="ghost" size="sm" icon="i-heroicons-pencil"
                   @click="editProduct(product)" />
+                <UTooltip v-if="canEditProducts" text="Create Promotion">
+                  <UButton color="amber" variant="ghost" size="sm" icon="i-heroicons-gift"
+                    @click="createPromotionForProduct(product)" />
+                </UTooltip>
                 <UButton v-if="canDeleteProducts" color="red" variant="ghost" size="sm" icon="i-heroicons-trash"
                   @click="deleteProduct(product)" />
               </div>
@@ -759,6 +805,7 @@ useHead({
 
 // Use real products store with Nostr sync & encryption
 const productsStore = useProductsStore();
+const promotionsStore = usePromotionsStore();
 const toast = useToast();
 const { t } = useI18n();
 const { canEditProducts, canDeleteProducts } = usePermissions();
@@ -1204,6 +1251,15 @@ const viewProduct = (product: Product) => {
 const deleteProduct = (product: Product) => {
   productToDelete.value = product;
   showDeleteModal.value = true;
+};
+
+// Create promotion for specific product
+const createPromotionForProduct = (product: Product) => {
+  // Navigate to promotions page with product pre-selected
+  navigateTo({
+    path: '/products/promotions',
+    query: { productId: product.id, productName: product.name }
+  });
 };
 
 // Handler for importing products from public database lookup
@@ -1887,9 +1943,39 @@ watch([selectedBranch, selectedCategory, selectedStatus, searchQuery], () => {
   currentPage.value = 1;
 });
 
-// Initialize store on mount
+// ============================================
+// Promotion helpers
+// ============================================
+const activePromotionsCount = computed(() =>
+  promotionsStore.activePromotions.value.length
+);
+
+// Count products with active promotions
+const productsWithPromotions = computed(() => {
+  return products.value.filter(product => hasActivePromotion(product.id)).length;
+});
+
+// Check if product has active promotions
+const getProductPromotions = (productId: string) => {
+  return promotionsStore.activePromotions.value.filter((promo: any) => {
+    if (promo.scope === 'all') return true;
+    if (promo.scope === 'products' && promo.triggerProductIds?.includes(productId)) return true;
+    const product = productsStore.getProduct(productId);
+    if (promo.scope === 'categories' && product && promo.triggerCategoryIds?.includes(product.categoryId)) return true;
+    return false;
+  });
+};
+
+const hasActivePromotion = (productId: string) => {
+  return getProductPromotions(productId).length > 0;
+};
+
+// Initialize stores on mount
 onMounted(async () => {
-  await productsStore.init();
+  await Promise.all([
+    productsStore.init(),
+    promotionsStore.init(),
+  ]);
 });
 
 // Meta and SEO

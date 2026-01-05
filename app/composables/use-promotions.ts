@@ -114,7 +114,7 @@ export function usePromotionsStore() {
         // Cast string types
         type: r.type as PromotionType,
         status: r.status as PromotionStatus,
-        scope: (r.scope || "product") as PromotionScope,
+        scope: (r.scope || "all") as PromotionScope,
         discountType: r.discountType as DiscountType | undefined,
         rewardType: r.rewardType as
           | "free_product"

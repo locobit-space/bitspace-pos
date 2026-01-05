@@ -29,11 +29,12 @@
         />
 
         <!-- Table -->
-        <ProductsPromotionTable 
+        <ProductsPromotionTable
             :promotions="promotionsStore.promotions.value as Promotion[]"
             :is-loading="isProcessing"
             @toggle-status="handleToggleStatus"
             @delete="handleDelete"
+            @view-details="handleViewDetails"
             @create="handleCreateFromTable"
         />
 
@@ -51,6 +52,12 @@
             :is-loading="isProcessing"
             @confirm="handleDeleteConfirm"
         />
+
+        <!-- Details Modal -->
+        <ProductsPromotionDetailsModal
+            v-model="showDetailsModal"
+            :promotion="selectedPromotion"
+        />
     </div>
 </template>
 
@@ -63,6 +70,7 @@ useHead({
 
 const { t } = useI18n();
 const toast = useToast();
+const route = useRoute();
 const promotionsStore = usePromotionsStore();
 const productsStore = useProducts();
 
@@ -72,12 +80,14 @@ const {
     validateForm, 
     showValidationError, 
     prepareSubmissionData,
-    setLoading 
+    setLoading,
+    formData
 } = usePromotionForm();
 
 // UI State
 const showCreateModal = ref(false);
 const showDeleteModal = ref(false);
+const showDetailsModal = ref(false);
 const selectedPromotion = ref<Promotion | null>(null);
 const isProcessing = ref(false);
 
@@ -87,6 +97,28 @@ onMounted(async () => {
         promotionsStore.init(),
         productsStore.init(),
     ]);
+
+    // Check for product pre-selection from query params
+    if (route.query.productId && route.query.productName) {
+        const productId = route.query.productId as string;
+        const productName = route.query.productName as string;
+        
+        // Pre-fill form with product
+        formData.value.scope = 'products';
+        formData.value.triggerProductIds = [productId];
+        formData.value.name = `Promotion for ${productName}`;
+        
+        // Open modal automatically
+        showCreateModal.value = true;
+        
+        // Show toast notification
+        toast.add({
+            title: t("promotions.preselected", "Product Pre-selected"),
+            description: t("promotions.preselectedDesc", `Creating promotion for ${productName}`),
+            color: "primary",
+            icon: "i-heroicons-gift",
+        });
+    }
 });
 
 // Event handlers
@@ -157,6 +189,11 @@ async function handleToggleStatus(promotion: Promotion) {
 async function handleDelete(promotion: Promotion) {
     selectedPromotion.value = promotion;
     showDeleteModal.value = true;
+}
+
+async function handleViewDetails(promotion: Promotion) {
+    selectedPromotion.value = promotion;
+    showDetailsModal.value = true;
 }
 
 async function handleDeleteConfirm(promotion: Promotion) {

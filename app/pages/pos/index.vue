@@ -47,6 +47,7 @@ const ordersStore = useOrders();
 const tablesStore = useTables();
 const lightning = useLightning();
 const currency = useCurrency();
+const promotionsStore = usePromotionsStore();
 
 const offline = useOffline();
 const sound = useSound();
@@ -69,6 +70,7 @@ const showSettingsModal = ref(false);
 const showProductOptionsModal = ref(false);
 const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
+const filterByPromotions = ref(false); // Filter to show only products with promotions
 const showTableSwitcher = ref(false); // Table switcher modal
 const showPendingOrdersModal = ref(false); // Pending orders for payment
 const autoServeOnPayment = ref(
@@ -360,6 +362,59 @@ const tipOptions = [
   { label: "15%", value: 15 },
   { label: "20%", value: 20 },
 ];
+
+// ============================================
+// Promotion Helpers
+// ============================================
+
+// Check if a product has active promotions
+const hasPromotion = (productId: string): boolean => {
+  return promotionsStore.activePromotions.value.some((promo) => {
+    if (promo.scope === 'all') return true;
+    if (promo.scope === 'products' && promo.triggerProductIds?.includes(productId)) return true;
+    const product = productsStore.getProduct(productId);
+    if (promo.scope === 'categories' && product && promo.triggerCategoryIds?.includes(product.categoryId)) return true;
+    return false;
+  });
+};
+
+// Get promotion count for a product
+const getProductPromotionCount = (productId: string): number => {
+  return promotionsStore.activePromotions.value.filter((promo) => {
+    if (promo.scope === 'all') return true;
+    if (promo.scope === 'products' && promo.triggerProductIds?.includes(productId)) return true;
+    const product = productsStore.getProduct(productId);
+    if (promo.scope === 'categories' && product && promo.triggerCategoryIds?.includes(product.categoryId)) return true;
+    return false;
+  }).length;
+};
+
+// Filter products by promotions
+const displayedProducts = computed(() => {
+  const filtered = productsStore.filteredProducts.value;
+  if (!filterByPromotions.value) {
+    return filtered;
+  }
+  return filtered.filter(product => hasPromotion(product.id));
+});
+
+// Count products with promotions
+const productsWithPromotionsCount = computed(() => {
+  return productsStore.filteredProducts.value.filter(product => hasPromotion(product.id)).length;
+});
+
+// Auto-calculate promotions when cart changes
+watch(
+  () => pos.cartItems.value,
+  async () => {
+    if (pos.cartItems.value.length > 0) {
+      await pos.calculatePromotions();
+    } else {
+      pos.clearPromotions();
+    }
+  },
+  { deep: true }
+);
 
 // ============================================
 // Product Methods
@@ -1447,13 +1502,9 @@ const taxAmount = computed(() => {
 
 // Override total calculation to include tax
 const totalWithTax = computed(() => {
-  if (taxInclusive.value) {
-    // Tax already in subtotal, just add tip
-    return pos.subtotal.value + pos.tipAmount.value;
-  } else {
-    // Add tax on top
-    return pos.subtotal.value + taxAmount.value + pos.tipAmount.value;
-  }
+  // Use pos.total which already includes all discounts (promotions + manual discounts)
+  // and all additions (tax + tip)
+  return pos.total.value;
 });
 
 // Calculate sats amount with tax
@@ -1653,6 +1704,7 @@ onMounted(async () => {
   await offline.init();
   await productsStore.init();
   await ordersStore.init();
+  await promotionsStore.init();
 
   // Initialize order sync notifications for multi-device updates
   orderSyncNotifications.initOrderSyncNotifications();
@@ -2300,6 +2352,31 @@ onUnmounted(() => {
             <span>{{ categoryIcons[cat.id] || "📁" }}</span>
             <span>{{ cat.name }}</span>
           </button>
+
+          <!-- Promotions Filter Button -->
+          <button
+            v-if="productsWithPromotionsCount > 0"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 relative"
+            :class="
+              filterByPromotions
+                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 animate-pulse'
+                : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 border-2 border-green-300 dark:border-green-700'
+            "
+            @click="filterByPromotions = !filterByPromotions"
+          >
+            <span class="text-lg">🎁</span>
+            <span>Promotions</span>
+            <span
+              class="ml-1 px-2 py-0.5 rounded-full text-xs font-bold"
+              :class="
+                filterByPromotions
+                  ? 'bg-white/30 text-white'
+                  : 'bg-green-500 text-white'
+              "
+            >
+              {{ productsWithPromotionsCount }}
+            </span>
+          </button>
         </div>
       </header>
 
@@ -2307,13 +2384,66 @@ onUnmounted(() => {
       <div class="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-transparent">
         <!-- Pending Bill Requests (Session Bills) -->
         <PosPendingBillRequests />
+
+        <!-- Active Promotions Banner -->
         <div
-          v-if="productsStore.filteredProducts.value.length === 0"
+          v-if="pos.appliedPromotions.value.length > 0"
+          class="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl shadow-lg"
+        >
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-2xl animate-bounce">
+              🎁
+            </div>
+            <div>
+              <h3 class="font-bold text-green-800 dark:text-green-300 text-lg">
+                Active Promotions
+              </h3>
+              <p class="text-sm text-green-600 dark:text-green-400">
+                {{ pos.appliedPromotions.value.length }} promotion{{ pos.appliedPromotions.value.length > 1 ? 's' : '' }} applied
+              </p>
+            </div>
+            <div class="ml-auto text-right">
+              <p class="text-xs text-green-600 dark:text-green-400 font-medium">
+                Total Savings
+              </p>
+              <p class="text-2xl font-bold text-green-700 dark:text-green-300">
+                {{ currency.format(pos.promotionDiscount.value, pos.selectedCurrency.value) }}
+              </p>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div
+              v-for="promo in pos.appliedPromotions.value"
+              :key="promo.promotionId"
+              class="flex items-center justify-between p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🎉</span>
+                <div>
+                  <p class="font-medium text-gray-900 dark:text-white text-sm">
+                    {{ promo.promotionName }}
+                  </p>
+                  <p v-if="promo.description" class="text-xs text-gray-600 dark:text-gray-400">
+                    {{ promo.description }}
+                  </p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-green-600 dark:text-green-400">
+                  -{{ currency.format(promo.discountAmount, pos.selectedCurrency.value) }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="displayedProducts.length === 0"
           class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
         >
-          <span class="text-6xl mb-4">🔍</span>
-          <p class="text-lg">No products found</p>
-          <p class="text-sm mt-2">Try a different search or category</p>
+          <span class="text-6xl mb-4">{{ filterByPromotions ? '🎁' : '🔍' }}</span>
+          <p class="text-lg">{{ filterByPromotions ? 'No products with promotions' : 'No products found' }}</p>
+          <p class="text-sm mt-2">{{ filterByPromotions ? 'Try disabling the promotions filter' : 'Try a different search or category' }}</p>
         </div>
 
         <div
@@ -2321,7 +2451,7 @@ onUnmounted(() => {
           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
         >
           <button
-            v-for="product in productsStore.filteredProducts.value"
+            v-for="product in displayedProducts"
             :key="product.id"
             class="group relative bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700/50 hover:border-amber-500/50 dark:hover:border-amber-500/30 rounded-2xl p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-amber-500/5"
             @click="selectProduct(product)"
@@ -2334,6 +2464,14 @@ onUnmounted(() => {
             >
               ⭐
             </button>
+
+            <!-- Promotion Badge -->
+            <div
+              v-if="hasPromotion(product.id)"
+              class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg animate-pulse"
+            >
+              🎁 {{ getProductPromotionCount(product.id) }}
+            </div>
 
             <!-- Product Image/Emoji -->
             <div
@@ -2934,6 +3072,27 @@ onUnmounted(() => {
               }}</span
             >
           </div>
+          <!-- Promotion Discounts -->
+          <div
+            v-for="promo in pos.appliedPromotions.value"
+            :key="promo.promotionId"
+            class="flex justify-between text-green-600 dark:text-green-400"
+          >
+            <span class="flex items-center gap-1">
+              <span>🎁</span> {{ promo.promotionName }}
+              <span v-if="promo.description" class="text-xs opacity-75">
+                ({{ promo.description }})
+              </span>
+            </span>
+            <span
+              >-{{
+                currency.format(
+                  promo.discountAmount,
+                  pos.selectedCurrency.value
+                )
+              }}</span
+            >
+          </div>
           <div
             v-if="pos.tipAmount.value > 0"
             class="flex justify-between text-amber-600 dark:text-amber-400"
@@ -3367,6 +3526,97 @@ onUnmounted(() => {
         <div
           class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto"
         >
+          <!-- Order Summary with Promotions -->
+          <div class="mb-6 space-y-3">
+            <!-- Cart Items -->
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <h3 class="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-3">ORDER ITEMS</h3>
+              <div class="space-y-2">
+                <div
+                  v-for="item in pos.cartItems.value"
+                  :key="item.id"
+                  class="flex justify-between text-sm"
+                >
+                  <span class="text-gray-600 dark:text-gray-400">
+                    {{ item.quantity }}× {{ item.product.name }}
+                    <span class="text-xs text-gray-500">@ {{ currency.format(item.price, pos.selectedCurrency.value) }}</span>
+                  </span>
+                  <span class="font-medium">{{ currency.format(item.total, pos.selectedCurrency.value) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Applied Promotions -->
+            <div
+              v-if="pos.appliedPromotions.value.length > 0"
+              class="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg p-4"
+            >
+              <h3 class="font-semibold text-sm text-green-700 dark:text-green-400 mb-3 flex items-center gap-2">
+                <span>🎁</span> PROMOTIONS APPLIED
+              </h3>
+              <div class="space-y-2">
+                <div
+                  v-for="promo in pos.appliedPromotions.value"
+                  :key="promo.promotionId"
+                  class="bg-white dark:bg-gray-800 p-2 rounded border border-green-300 dark:border-green-700"
+                >
+                  <div class="font-medium text-green-700 dark:text-green-400 text-sm">
+                    {{ promo.promotionName }}
+                  </div>
+                  <div v-if="promo.description" class="text-xs text-green-600 dark:text-green-500">
+                    {{ promo.description }}
+                  </div>
+                  <div class="flex justify-between text-green-700 dark:text-green-400 font-semibold text-sm mt-1">
+                    <span>You Save:</span>
+                    <span>{{ currency.format(promo.discountAmount, pos.selectedCurrency.value) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+              <div class="space-y-1 text-sm">
+                <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>Subtotal:</span>
+                  <span>{{ currency.format(pos.subtotal.value, pos.selectedCurrency.value) }}</span>
+                </div>
+                <div
+                  v-if="pos.appliedPromotions.value.length > 0"
+                  class="flex justify-between text-green-600 dark:text-green-400 font-medium"
+                >
+                  <span>Promotion Savings:</span>
+                  <span>-{{ currency.format(pos.promotionDiscount.value, pos.selectedCurrency.value) }}</span>
+                </div>
+                <div
+                  v-if="pos.discountAmount.value > 0"
+                  class="flex justify-between text-green-600 dark:text-green-400"
+                >
+                  <span>Discount:</span>
+                  <span>-{{ currency.format(pos.discountAmount.value, pos.selectedCurrency.value) }}</span>
+                </div>
+                <div
+                  v-if="pos.tax.value > 0"
+                  class="flex justify-between text-gray-600 dark:text-gray-400"
+                >
+                  <span>Tax:</span>
+                  <span>{{ currency.format(pos.tax.value, pos.selectedCurrency.value) }}</span>
+                </div>
+                <div
+                  v-if="pos.tipAmount.value > 0"
+                  class="flex justify-between text-gray-600 dark:text-gray-400"
+                >
+                  <span>Tip:</span>
+                  <span>{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
+                </div>
+                <div class="flex justify-between font-bold text-lg pt-2 border-t-2 border-gray-300 dark:border-gray-600 mt-2">
+                  <span>TOTAL TO PAY:</span>
+                  <span class="text-primary-600">{{ currency.format(totalWithTax, pos.selectedCurrency.value) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <PaymentSelector
             v-if="showPaymentModal"
             :amount="

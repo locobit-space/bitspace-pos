@@ -1771,6 +1771,7 @@ export interface Order {
   tip?: number;
   tax?: number;
   discount?: number;
+  appliedPromotions?: AppliedPromotion[]; // Promotions applied to this order
   loyaltyPointsEarned?: number;
   eReceiptId?: string;
   isOffline?: boolean;
@@ -2840,8 +2841,11 @@ export type DiscountType = "percentage" | "fixed";
 
 /**
  * What the promotion applies to
+ * - all: Applies to all products in cart
+ * - products: Applies to specific products
+ * - categories: Applies to specific categories
  */
-export type PromotionScope = "product" | "category" | "order";
+export type PromotionScope = "all" | "products" | "categories";
 
 /**
  * Promotion status

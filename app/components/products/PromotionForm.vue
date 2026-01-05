@@ -201,9 +201,9 @@ function prevStep() {
                   :disabled="isLoading"
                 />
                 <span class="text-gray-500">×</span>
-                <!-- Products (when scope = product) -->
+                <!-- Products (when scope = products) -->
                 <USelectMenu
-                  v-if="form.scope === 'product'"
+                  v-if="form.scope === 'products'"
                   v-model="form.triggerProductIds"
                   :items="productItems"
                   multiple
@@ -214,9 +214,9 @@ function prevStep() {
                   class="flex-1"
                   :disabled="isLoading"
                 />
-                <!-- Categories (when scope = category) -->
+                <!-- Categories (when scope = categories) -->
                 <USelectMenu
-                  v-else-if="form.scope === 'category'"
+                  v-else-if="form.scope === 'categories'"
                   v-model="form.triggerCategoryIds"
                   :items="categoryItems"
                   multiple
@@ -296,7 +296,7 @@ function prevStep() {
             </UFormField>
             <!-- Apply To (varies by scope) -->
             <UFormField
-              v-if="form.scope === 'product'"
+              v-if="form.scope === 'products'"
               :label="
                 t('promotions.fields.triggerProducts', 'Apply To Products')
               "
@@ -313,7 +313,7 @@ function prevStep() {
               />
             </UFormField>
             <UFormField
-              v-else-if="form.scope === 'category'"
+              v-else-if="form.scope === 'categories'"
               :label="
                 t('promotions.fields.triggerCategories', 'Apply To Categories')
               "
@@ -404,7 +404,7 @@ function prevStep() {
 
             <!-- Apply To (varies by scope) -->
             <UFormField
-              v-if="form.scope === 'product'"
+              v-if="form.scope === 'products'"
               :label="
                 t('promotions.fields.triggerProducts', 'Apply To Products')
               "
@@ -421,7 +421,7 @@ function prevStep() {
               />
             </UFormField>
             <UFormField
-              v-else-if="form.scope === 'category'"
+              v-else-if="form.scope === 'categories'"
               :label="
                 t('promotions.fields.triggerCategories', 'Apply To Categories')
               "
@@ -461,7 +461,7 @@ function prevStep() {
 
             <!-- Bundle Items (varies by scope) -->
             <UFormField
-              v-if="form.scope === 'product'"
+              v-if="form.scope === 'products'"
               :label="t('promotions.fields.triggerProducts', 'Bundle Products')"
               required
             >
@@ -484,7 +484,7 @@ function prevStep() {
             </UFormField>
 
             <UFormField
-              v-else-if="form.scope === 'category'"
+              v-else-if="form.scope === 'categories'"
               :label="
                 t('promotions.fields.triggerCategories', 'Bundle Categories')
               "

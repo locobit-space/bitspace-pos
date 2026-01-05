@@ -15,6 +15,7 @@ import type {
   CurrencyCode,
   PaymentMethod,
   OrderType,
+  AppliedPromotion,
 } from "~/types";
 import { useCurrency } from "./use-currency";
 import { useTax } from "./use-tax";
@@ -29,6 +30,7 @@ const cartItems = ref<CartItem[]>([]);
 const selectedCurrency = ref<CurrencyCode>("LAK");
 const tipAmount = ref(0);
 const discountAmount = ref(0); // Track discount for receipts
+const appliedPromotions = ref<AppliedPromotion[]>([]); // Track applied promotions
 // taxRate is now managed by useTax composable
 const customerNote = ref("");
 const customerPubkey = ref<string | null>(null);
@@ -218,6 +220,8 @@ export const usePOS = () => {
   // Initialize composables
   const currency = useCurrency();
   const taxHelper = useTax();
+  const promotionsStore = usePromotionsStore();
+  const productsStore = useProducts();
 
   // Session computed (uses global state)
   const isSessionActive = computed(
@@ -428,6 +432,7 @@ export const usePOS = () => {
     cartItems.value = [];
     tipAmount.value = 0;
     discountAmount.value = 0; // Reset discount
+    appliedPromotions.value = []; // Reset promotions
     customerNote.value = "";
     customerPubkey.value = null;
     customerName.value = null;
@@ -503,6 +508,334 @@ export const usePOS = () => {
   };
 
   // ============================================
+  // Promotion Methods
+  // ============================================
+
+  /**
+   * Apply a promotion to the cart
+   */
+  const applyPromotion = (promotion: AppliedPromotion) => {
+    // Check if promotion is already applied
+    const existingIndex = appliedPromotions.value.findIndex(
+      (p) => p.promotionId === promotion.promotionId
+    );
+
+    if (existingIndex >= 0) {
+      // Update existing promotion
+      appliedPromotions.value[existingIndex] = promotion;
+    } else {
+      // Add new promotion
+      appliedPromotions.value.push(promotion);
+    }
+
+    broadcastCartState();
+  };
+
+  /**
+   * Remove a promotion from the cart
+   */
+  const removePromotion = (promotionId: string) => {
+    appliedPromotions.value = appliedPromotions.value.filter(
+      (p) => p.promotionId !== promotionId
+    );
+    broadcastCartState();
+  };
+
+  /**
+   * Clear all applied promotions
+   */
+  const clearPromotions = () => {
+    appliedPromotions.value = [];
+    broadcastCartState();
+  };
+
+  /**
+   * 🎁 Auto-calculate and apply eligible promotions based on cart contents
+   *
+   * This function automatically evaluates all active promotions and applies discounts
+   * to the current cart. Promotions are sorted by priority (higher first) and applied
+   * sequentially. Only promotions with calculable discounts are added to the cart.
+   *
+   * ## Promotion Scopes
+   * Determines which products a promotion applies to:
+   * - **all**: Applies to all products in cart
+   * - **products**: Applies only to specific products (via triggerProductIds)
+   * - **categories**: Applies only to products in specific categories (via triggerCategoryIds)
+   *
+   * ## Promotion Types & Calculation Logic
+   *
+   * ### 1. BOGO (Buy One Get One) / Freebie
+   * **How it works**: Customer buys X quantity of trigger products, gets Y reward products free
+   *
+   * **Requirements**:
+   * - `triggerProductIds`: Products that trigger the promotion
+   * - `triggerQuantity`: How many trigger products needed (e.g., 2 for "Buy 2")
+   * - `rewardType`: Type of reward (free_product, discount, percentage_off)
+   * - `rewardProductIds`: Products given free (for free_product type)
+   * - `rewardQuantity`: How many reward products given (e.g., 1 for "Get 1")
+   * - `rewardDiscount`: Discount amount (for discount/percentage_off types)
+   *
+   * **Calculation**:
+   * 1. Count trigger products in cart (only those matching triggerProductIds)
+   * 2. Calculate times applied: floor(triggerCount / (triggerQuantity + rewardQuantity))
+   * 3. Apply max uses limit if specified
+   * 4. Calculate discount based on rewardType:
+   *    - free_product: reward product price × reward quantity × times applied
+   *    - discount: fixed amount × times applied
+   *    - percentage_off: percentage of applicable items total
+   *
+   * **Example**: Buy 2 Coffee, Get 1 Free
+   * - triggerProductIds: [coffee-id]
+   * - triggerQuantity: 2
+   * - rewardQuantity: 1
+   * - Cart: 6 coffees → Applies 2 times (floor(6/(2+1))) → 2 free coffees, pay for 4
+   *
+   * ### 2. Discount
+   * **How it works**: Flat or percentage discount on applicable products
+   *
+   * **Requirements**:
+   * - `discountType`: percentage or fixed
+   * - `discountValue`: Amount (e.g., 10 for 10% or 10 for ฿10)
+   *
+   * **Calculation**:
+   * - percentage: (items total × discount value) / 100
+   * - fixed: min(discount value, items total) - can't exceed total
+   *
+   * **Example 1**: 20% off all drinks
+   * - scope: categories
+   * - triggerCategoryIds: [drinks-category-id]
+   * - discountType: percentage
+   * - discountValue: 20
+   * - Cart total ฿100 drinks → Discount ฿20
+   *
+   * **Example 2**: ฿50 off order
+   * - scope: all
+   * - discountType: fixed
+   * - discountValue: 50
+   * - Cart total ฿200 → Discount ฿50
+   *
+   * ### 3. Tiered Discount
+   * **How it works**: Different discounts based on quantity purchased
+   *
+   * **Requirements**:
+   * - `tiers`: Array of {minQuantity, discountType, discountValue}
+   *
+   * **Calculation**:
+   * 1. Count total quantity of applicable items
+   * 2. Find highest tier where quantity >= minQuantity
+   * 3. Apply that tier's discount (percentage or fixed)
+   *
+   * **Example**: Volume discount on coffee
+   * - Tiers:
+   *   - 3+ coffees: 10% off
+   *   - 5+ coffees: 15% off
+   *   - 10+ coffees: 20% off
+   * - Cart: 6 coffees @ ฿30 each = ฿180
+   * - Applies 15% tier → Discount ฿27 (180 × 0.15)
+   *
+   * ### 4. Bundle
+   * **How it works**: Discount when buying specific products together
+   *
+   * **Requirements**:
+   * - `triggerProductIds`: Array of product IDs that must ALL be in cart
+   * - `discountValue`: Percentage off the bundle
+   *
+   * **Calculation**:
+   * 1. Check if ALL required products are in cart
+   * 2. If yes, apply percentage discount to bundle total
+   * 3. If no, skip promotion
+   *
+   * **Example**: Meal combo (burger + fries + drink)
+   * - triggerProductIds: [burger-id, fries-id, drink-id]
+   * - discountValue: 15
+   * - Cart: Has all 3 products, total ฿120 → Discount ฿18 (120 × 0.15)
+   * - Cart: Missing fries → No discount applied
+   *
+   * ## Priority & Max Uses
+   * - Promotions sorted by `priority` field (higher = applied first)
+   * - `maxUsesPerOrder`: Limits how many times a promotion can apply in single order
+   *
+   * ## Output
+   * Updates `appliedPromotions` array with:
+   * - promotionId, promotionName, type
+   * - triggerItemIds: Products that triggered the promotion
+   * - rewardItemIds: Products given as rewards (for BOGO)
+   * - discountAmount: Total discount value (rounded)
+   * - description: Human-readable description (e.g., "Buy 2 Get 1 Free")
+   * - timesApplied: How many times promotion was applied
+   */
+  const calculatePromotions = async () => {
+    try {
+      // Initialize if needed
+      if (!promotionsStore.isInitialized.value) {
+        await promotionsStore.init();
+      }
+
+      if (cartItems.value.length === 0) {
+        appliedPromotions.value = [];
+        return;
+      }
+
+      const activePromotions = promotionsStore.activePromotions.value;
+      const newAppliedPromotions: AppliedPromotion[] = [];
+
+      // Sort promotions by priority (higher first)
+      const sortedPromotions = [...activePromotions].sort((a, b) => b.priority - a.priority);
+
+      for (const promotion of sortedPromotions) {
+        let discountAmount = 0;
+        let description = '';
+        const triggerItemIds: string[] = [];
+        const rewardItemIds: string[] = [];
+        let timesApplied = 0;
+
+        // Check if promotion applies to cart
+        const applicableItems = cartItems.value.filter(item => {
+          if (promotion.scope === 'all') return true;
+          if (promotion.scope === 'products' && promotion.triggerProductIds?.includes(item.product.id)) return true;
+          if (promotion.scope === 'categories' && promotion.triggerCategoryIds?.includes(item.product.categoryId)) return true;
+          return false;
+        });
+
+        if (applicableItems.length === 0) continue;
+
+        // Calculate discount based on promotion type
+        switch (promotion.type) {
+          case 'bogo':
+          case 'freebie': {
+            // Count trigger products
+            let triggerCount = 0;
+            applicableItems.forEach(item => {
+              if (promotion.triggerProductIds?.includes(item.product.id)) {
+                triggerCount += item.quantity;
+                triggerItemIds.push(item.product.id);
+              }
+            });
+
+            // Calculate how many times BOGO applies
+            // For "Buy X Get Y Free", you need (X + Y) items total for 1 application
+            // Example: Buy 1 Get 1 = need 2 items for 1 free
+            // Example: Buy 2 Get 1 = need 3 items for 1 free
+            const triggerQty = promotion.triggerQuantity || 1;
+            const rewardQty = promotion.rewardQuantity || 1;
+            const totalNeeded = triggerQty + rewardQty;
+
+            timesApplied = Math.floor(triggerCount / totalNeeded);
+
+            // Respect max uses per order
+            if (promotion.maxUsesPerOrder) {
+              timesApplied = Math.min(timesApplied, promotion.maxUsesPerOrder);
+            }
+
+            if (timesApplied > 0) {
+              // Calculate reward value
+              if (promotion.rewardType === 'free_product') {
+                const rewardQty = (promotion.rewardQuantity || 1) * timesApplied;
+                // Find reward product price
+                promotion.rewardProductIds?.forEach(productId => {
+                  const product = productsStore.getProduct(productId);
+                  if (product) {
+                    discountAmount += product.price * rewardQty;
+                    rewardItemIds.push(productId);
+                  }
+                });
+                description = `Buy ${promotion.triggerQuantity} Get ${promotion.rewardQuantity} Free`;
+              } else if (promotion.rewardType === 'discount') {
+                discountAmount = (promotion.rewardDiscount || 0) * timesApplied;
+                description = `฿${promotion.rewardDiscount} off`;
+              } else if (promotion.rewardType === 'percentage_off') {
+                const itemsTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
+                discountAmount = (itemsTotal * (promotion.rewardDiscount || 0)) / 100;
+                description = `${promotion.rewardDiscount}% off`;
+              }
+            }
+            break;
+          }
+
+          case 'discount': {
+            const itemsTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
+            applicableItems.forEach(item => triggerItemIds.push(item.product.id));
+
+            if (promotion.discountType === 'percentage') {
+              discountAmount = (itemsTotal * (promotion.discountValue || 0)) / 100;
+              description = `${promotion.discountValue}% off`;
+            } else if (promotion.discountType === 'fixed') {
+              discountAmount = Math.min(promotion.discountValue || 0, itemsTotal);
+              description = `฿${promotion.discountValue} off`;
+            }
+            timesApplied = 1;
+            break;
+          }
+
+          case 'tiered': {
+            const totalQuantity = applicableItems.reduce((sum, item) => sum + item.quantity, 0);
+            const itemsTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
+            applicableItems.forEach(item => triggerItemIds.push(item.product.id));
+
+            // Find applicable tier
+            if (promotion.tiers && promotion.tiers.length > 0) {
+              const applicableTiers = promotion.tiers
+                .filter(tier => totalQuantity >= tier.minQuantity)
+                .sort((a, b) => b.minQuantity - a.minQuantity);
+
+              if (applicableTiers.length > 0) {
+                const tier = applicableTiers[0];
+                if (tier.discountType === 'percentage') {
+                  discountAmount = (itemsTotal * tier.discountValue) / 100;
+                  description = `Buy ${tier.minQuantity}+ get ${tier.discountValue}% off`;
+                } else {
+                  discountAmount = Math.min(tier.discountValue, itemsTotal);
+                  description = `Buy ${tier.minQuantity}+ get ฿${tier.discountValue} off`;
+                }
+                timesApplied = 1;
+              }
+            }
+            break;
+          }
+
+          case 'bundle': {
+            // Check if all required products are in cart
+            const hasAllProducts = promotion.triggerProductIds?.every(productId =>
+              cartItems.value.some(item => item.product.id === productId)
+            );
+
+            if (hasAllProducts) {
+              const bundleTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
+              applicableItems.forEach(item => triggerItemIds.push(item.product.id));
+
+              discountAmount = (bundleTotal * (promotion.discountValue || 0)) / 100;
+              description = `${promotion.discountValue}% off bundle`;
+              timesApplied = 1;
+            }
+            break;
+          }
+        }
+
+        // Add promotion if discount was calculated
+        if (discountAmount > 0) {
+          newAppliedPromotions.push({
+            promotionId: promotion.id,
+            promotionName: promotion.name,
+            type: promotion.type,
+            triggerItemIds,
+            rewardItemIds,
+            discountAmount: Math.round(discountAmount),
+            discountType: promotion.discountType,
+            timesApplied,
+            description,
+          });
+        }
+      }
+
+      // Update applied promotions
+      appliedPromotions.value = newAppliedPromotions;
+      broadcastCartState();
+    } catch (error) {
+      console.error("Failed to calculate promotions:", error);
+    }
+  };
+
+  // ============================================
   // Cart Calculations
   // ============================================
 
@@ -520,8 +853,13 @@ export const usePOS = () => {
     return taxHelper.calculateTax(itemsWithCategory);
   });
 
+  // Calculate total promotion discount
+  const promotionDiscount = computed(() => {
+    return appliedPromotions.value.reduce((sum, promo) => sum + promo.discountAmount, 0);
+  });
+
   const total = computed(() => {
-    return subtotal.value + tax.value + tipAmount.value;
+    return Math.max(0, subtotal.value + tax.value + tipAmount.value - promotionDiscount.value - discountAmount.value);
   });
 
   const totalSats = computed(() => {
@@ -577,6 +915,7 @@ export const usePOS = () => {
       notes: customerNote.value || undefined,
       tip: tipAmount.value > 0 ? tipAmount.value : undefined,
       discount: discountAmount.value > 0 ? discountAmount.value : undefined,
+      appliedPromotions: appliedPromotions.value.length > 0 ? appliedPromotions.value : undefined,
       kitchenStatus: "new",
       // Order type fields
       orderType: orderType.value,
@@ -766,6 +1105,7 @@ export const usePOS = () => {
     selectedCurrency,
     tipAmount,
     discountAmount, // Discount amount for receipts
+    appliedPromotions, // Applied promotions
     taxSettings: taxHelper.settings, // Tax settings from useTax
     customerNote,
     customerPubkey,
@@ -775,6 +1115,7 @@ export const usePOS = () => {
     // Computed
     subtotal,
     tax,
+    promotionDiscount,
     total,
     totalSats,
     itemCount,
@@ -799,6 +1140,12 @@ export const usePOS = () => {
     applyDiscount,
     changeCurrency,
     calculateItemPrice,
+
+    // Promotion Methods
+    applyPromotion,
+    removePromotion,
+    clearPromotions,
+    calculatePromotions,
 
     // Order
     createOrder,

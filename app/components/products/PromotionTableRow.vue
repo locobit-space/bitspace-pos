@@ -14,6 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   toggleStatus: [promotion: Promotion];
   delete: [promotion: Promotion];
+  viewDetails: [promotion: Promotion];
 }>();
 
 const { t } = useI18n();
@@ -108,6 +109,10 @@ function handleToggleStatus() {
 function handleDelete() {
   emit("delete", props.promotion);
 }
+
+function handleViewDetails() {
+  emit("viewDetails", props.promotion);
+}
 </script>
 
 <template>
@@ -181,6 +186,14 @@ function handleDelete() {
     <!-- Actions Column -->
     <td class="py-3 px-4">
       <div class="flex items-center gap-2">
+        <UButton
+          color="gray"
+          variant="ghost"
+          size="sm"
+          icon="i-heroicons-eye"
+          :disabled="isLoading"
+          @click="handleViewDetails"
+        />
         <USwitch
           :model-value="promotion.status === 'active'"
           size="sm"

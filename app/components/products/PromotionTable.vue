@@ -15,6 +15,7 @@ const emit = defineEmits<{
   toggleStatus: [promotion: Promotion];
   delete: [promotion: Promotion];
   create: [];
+  viewDetails: [promotion: Promotion];
 }>();
 
 const { t } = useI18n();
@@ -26,6 +27,10 @@ function handleToggleStatus(promotion: Promotion) {
 
 function handleDelete(promotion: Promotion) {
   emit("delete", promotion);
+}
+
+function handleViewDetails(promotion: Promotion) {
+  emit("viewDetails", promotion);
 }
 </script>
 
@@ -119,6 +124,7 @@ function handleDelete(promotion: Promotion) {
           :is-loading="isLoading"
           @toggle-status="handleToggleStatus"
           @delete="handleDelete"
+          @view-details="handleViewDetails"
         />
       </tbody>
     </table>

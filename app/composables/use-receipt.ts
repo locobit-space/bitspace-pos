@@ -27,6 +27,12 @@ export interface EReceipt {
   items: ReceiptItem[];
   subtotal: number;
   discount: number;
+  appliedPromotions?: Array<{
+    promotionId: string;
+    promotionName: string;
+    discountAmount: number;
+    description?: string;
+  }>;
   tax: number;
   tip?: number;
   total: number;
