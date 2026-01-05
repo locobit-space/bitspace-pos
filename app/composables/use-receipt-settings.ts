@@ -34,6 +34,7 @@ export interface ReceiptContentSettings {
   showTaxBreakdown: boolean;
   showPaymentMethod: boolean;
   showChange: boolean;
+  showPromotionDetails: boolean; // Show detailed promotions section (hide to save paper)
 }
 
 export interface ReceiptFooterSettings {
@@ -106,6 +107,7 @@ const defaultSettings: SavedReceiptSettings = {
     showTaxBreakdown: false,
     showPaymentMethod: true,
     showChange: true,
+    showPromotionDetails: false, // Default: hide to save paper
   },
   footer: {
     thankYouMessage: "🥰 ຂອບມຸກຄອບຫໍ່ 🙏 !",

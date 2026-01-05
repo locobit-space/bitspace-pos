@@ -14,6 +14,8 @@ export interface ReceiptItem {
   variant?: string;
   modifiers?: string[];
   notes?: string;
+  freeQuantity?: number; // For promotions: how many of this item are free
+  productId?: string; // Product ID for matching with promotions
 }
 
 export interface EReceipt {
@@ -138,14 +140,23 @@ export const useReceipt = () => {
       .toString(36)
       .toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-    const receipt: EReceipt = {
-      id: receiptId,
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      orderCode: order.code,
-      merchantPubkey: undefined, // Filled in by Nostr layer
-      customerPubkey: order.customerPubkey,
-      items: order.items.map((item) => ({
+    // Calculate free quantities for each item based on promotions
+    const receiptItems: ReceiptItem[] = order.items.map((item) => {
+      let freeQuantity = 0;
+
+      // Check all applied promotions to see if this item is a reward (free)
+      if (order.appliedPromotions) {
+        for (const promo of order.appliedPromotions) {
+          // For BOGO promotions, rewardItemIds contains product IDs that are free
+          if (promo.rewardItemIds && promo.rewardItemIds.includes(item.product.id)) {
+            // Each application of the promotion gives rewardQuantity free items
+            // For "Buy 1 Get 1", timesApplied=1 means 1 free item
+            freeQuantity += promo.timesApplied;
+          }
+        }
+      }
+
+      return {
         name: item.product.name,
         unitPrice: item.price,
         quantity: item.quantity,
@@ -156,9 +167,26 @@ export const useReceipt = () => {
         sku: item.product.sku,
         productId: item.product.id,
         image: item.product.image,
-      })),
+        freeQuantity: freeQuantity > 0 ? freeQuantity : undefined,
+      };
+    });
+
+    const receipt: EReceipt = {
+      id: receiptId,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      orderCode: order.code,
+      merchantPubkey: undefined, // Filled in by Nostr layer
+      customerPubkey: order.customerPubkey,
+      items: receiptItems,
       subtotal: order.total - (order.tax || 0) + (order.discount || 0),
       discount: order.discount || 0,
+      appliedPromotions: order.appliedPromotions?.map((p) => ({
+        promotionId: p.promotionId,
+        promotionName: p.promotionName,
+        discountAmount: p.discountAmount,
+        description: p.description,
+      })),
       tax: order.tax || 0,
       tip: order.tip,
       total: order.total,
@@ -518,14 +546,57 @@ export const useReceipt = () => {
             : ""
         }
         ${item.notes ? `<div class="item-notes">📝 "${item.notes}"</div>` : ""}
+        ${
+          item.freeQuantity && item.freeQuantity > 0
+            ? `<div class="item-details" style="color: #16a34a; font-weight: 600;">└ 🎁 ${item.freeQuantity} FREE</div>`
+            : ""
+        }
       </div>
     `
       )
       .join("")}
   </div>
-  
+
   <div class="divider"></div>
-  
+
+  ${
+    receipt.appliedPromotions &&
+    receipt.appliedPromotions.length > 0 &&
+    receiptSettings.settings.value.content.showPromotionDetails
+      ? `
+  <div style="padding: 12px 0; background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; margin: 8px 0;">
+    <div style="text-align: center; font-weight: bold; color: #16a34a; margin-bottom: 8px;">
+      🎁 PROMOTIONS APPLIED 🎁
+    </div>
+    ${receipt.appliedPromotions
+      .map(
+        (promo) => `
+    <div style="margin: 8px; padding: 8px; background: white; border-radius: 4px; border: 1px solid #bbf7d0;">
+      <div style="font-weight: bold; color: #15803d; margin-bottom: 4px;">
+        ★ ${promo.promotionName} ★
+      </div>
+      ${
+        promo.description
+          ? `<div style="font-size: 10px; color: #16a34a; font-style: italic; margin-bottom: 4px;">${promo.description}</div>`
+          : ""
+      }
+      <div style="display: flex; justify-content: space-between; background: #dcfce7; padding: 4px 8px; border-radius: 4px; margin-top: 4px;">
+        <span style="color: #15803d; font-weight: 600;">💰 You Saved:</span>
+        <span style="color: #15803d; font-weight: bold;">${formatAmount(
+          promo.discountAmount,
+          receipt.currency
+        )}</span>
+      </div>
+    </div>
+    `
+      )
+      .join("")}
+  </div>
+  <div class="divider"></div>
+  `
+      : ""
+  }
+
   <div class="totals">
     ${
       receiptSettings.settings.value.content.showSubtotal
@@ -534,6 +605,22 @@ export const useReceipt = () => {
       <span>Subtotal</span>
       <span>${formatAmount(receipt.subtotal, receipt.currency)}</span>
     </div>
+    `
+        : ""
+    }
+    ${
+      receipt.appliedPromotions && receipt.appliedPromotions.length > 0
+        ? `
+      <div class="total-line" style="color: #16a34a; font-weight: 600;">
+        <span>Promotion Savings</span>
+        <span>-${formatAmount(
+          receipt.appliedPromotions.reduce(
+            (sum, p) => sum + p.discountAmount,
+            0
+          ),
+          receipt.currency
+        )}</span>
+      </div>
     `
         : ""
     }
@@ -815,13 +902,62 @@ export const useReceipt = () => {
       if (item.modifiers?.length)
         lines.push(`   + ${item.modifiers.join(", ")}`);
       if (item.notes) lines.push(`   📝 ${item.notes}`);
+      // Show free quantity if promotion applied
+      if (item.freeQuantity && item.freeQuantity > 0) {
+        lines.push(`   🎁 ${item.freeQuantity} FREE`);
+      }
       lines.push(rightAlign("", itemTotal));
     });
 
     lines.push(divider);
 
-    // Totals - respect content settings
+    // Promotions Applied (only if showPromotionDetails is enabled)
     const contentSettings = receiptSettings.settings.value.content;
+
+    if (
+      receipt.appliedPromotions &&
+      receipt.appliedPromotions.length > 0 &&
+      contentSettings.showPromotionDetails
+    ) {
+      lines.push("");
+      lines.push(center("🎁 PROMOTIONS APPLIED 🎁"));
+      lines.push(divider);
+
+      receipt.appliedPromotions.forEach((promo) => {
+        // Promotion name
+        lines.push(center(`★ ${promo.promotionName} ★`));
+
+        // Description
+        if (promo.description) {
+          lines.push(center(`(${promo.description})`));
+        }
+
+        // Savings
+        lines.push("");
+        lines.push(rightAlign(
+          "💰 You Saved:",
+          formatAmount(promo.discountAmount, receipt.currency)
+        ));
+        lines.push("");
+      });
+
+      // Total savings if multiple promotions
+      if (receipt.appliedPromotions.length > 1) {
+        const totalSavings = receipt.appliedPromotions.reduce(
+          (sum, p) => sum + p.discountAmount,
+          0
+        );
+        lines.push(rightAlign(
+          "🎉 Total Savings:",
+          formatAmount(totalSavings, receipt.currency)
+        ));
+        lines.push("");
+      }
+
+      lines.push(divider);
+    }
+
+    // Totals - respect content settings
 
     if (contentSettings.showSubtotal) {
       lines.push(
@@ -831,6 +967,21 @@ export const useReceipt = () => {
         )
       );
     }
+
+    // Promotion savings in totals
+    if (receipt.appliedPromotions && receipt.appliedPromotions.length > 0) {
+      const totalPromotionDiscount = receipt.appliedPromotions.reduce(
+        (sum, p) => sum + p.discountAmount,
+        0
+      );
+      lines.push(
+        rightAlign(
+          "Promotion Savings:",
+          `-${formatAmount(totalPromotionDiscount, receipt.currency)}`
+        )
+      );
+    }
+
     if (contentSettings.showDiscount && receipt.discount > 0) {
       lines.push(
         rightAlign(

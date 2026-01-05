@@ -82,6 +82,7 @@ const showBarcodeScannerModal = ref(false); // Barcode scanner modal
 const showVoidOrderModal = ref(false); // Void/cancel order modal
 const orderToVoid = ref<{ id: string; orderNumber?: string } | null>(null); // Order being cancelled
 const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mode
+const showPaymentOrderDetails = ref(false); // Toggle order details in payment modal
 const splitOrder = ref<Order | null>(null); // Order being split
 const splitCount = ref(2); // Number of people splitting
 const splitPaidCount = ref(0); // Number of portions already paid
@@ -3526,8 +3527,32 @@ onUnmounted(() => {
         <div
           class="p-6 bg-white dark:bg-gray-900 min-w-[400px] max-w-lg max-h-[85vh] overflow-y-auto"
         >
-          <!-- Order Summary with Promotions -->
-          <div class="mb-6 space-y-3">
+          <!-- Order Summary Toggle Button -->
+          <button
+            @click="showPaymentOrderDetails = !showPaymentOrderDetails"
+            class="w-full mb-3 flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ showPaymentOrderDetails ? 'Hide' : 'Show' }} Order Details
+              </span>
+              <span class="text-xs text-gray-500">
+                ({{ pos.cartItems.value.length }} items{{ pos.appliedPromotions.value.length > 0 ? ', ' + pos.appliedPromotions.value.length + ' promotion' + (pos.appliedPromotions.value.length > 1 ? 's' : '') : '' }})
+              </span>
+            </div>
+            <svg
+              :class="{ 'rotate-180': showPaymentOrderDetails }"
+              class="w-5 h-5 text-gray-500 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- Order Summary with Promotions (Collapsible) -->
+          <div v-show="showPaymentOrderDetails" class="mb-6 space-y-3">
             <!-- Cart Items -->
             <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
               <h3 class="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-3">ORDER ITEMS</h3>

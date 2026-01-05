@@ -221,6 +221,12 @@
                     >
                       {{ $t("products.sku") }}: {{ item.sku }}
                     </p>
+                    <p
+                      class="text-xs text-green-600 dark:text-green-400 font-semibold mt-1"
+                      v-if="item.freeQuantity && item.freeQuantity > 0"
+                    >
+                      🎁 {{ item.freeQuantity }} FREE
+                    </p>
                   </div>
                 </td>
                 <td
@@ -255,29 +261,48 @@
 
         <!-- Promotions Detail Section -->
         <div
-          v-if="billData.appliedPromotions && billData.appliedPromotions.length > 0"
-          class="mt-6 mb-4 border-2 border-green-200 dark:border-green-800 rounded-lg p-4 bg-green-50 dark:bg-green-900/20"
+          v-if="billData.appliedPromotions && billData.appliedPromotions.length > 0 && receiptSettings.settings.value.content.showPromotionDetails"
+          class="mt-6 mb-4 border-4 border-green-300 dark:border-green-700 rounded-xl p-5 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30"
         >
-          <h3 class="font-bold text-green-700 dark:text-green-400 mb-3 flex items-center gap-2">
-            <span class="text-xl">🎁</span>
-            PROMOTIONS APPLIED
+          <h3 class="font-bold text-green-800 dark:text-green-300 mb-4 flex items-center gap-3 text-xl border-b-2 border-green-300 dark:border-green-700 pb-2">
+            <span class="text-3xl">🎁</span>
+            <span>PROMOTIONS APPLIED</span>
           </h3>
-          <div class="space-y-3">
+          <div class="space-y-4">
             <div
               v-for="promo in billData.appliedPromotions"
               :key="promo.promotionId"
-              class="bg-white dark:bg-gray-800 p-3 rounded border border-green-300 dark:border-green-700"
+              class="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-green-400 dark:border-green-600 shadow-md"
             >
-              <div class="font-semibold text-green-700 dark:text-green-400 mb-1">
+              <!-- Promotion Name -->
+              <div class="font-bold text-green-800 dark:text-green-300 mb-2 text-lg border-b border-green-200 dark:border-green-700 pb-2">
                 {{ promo.promotionName }}
               </div>
-              <div v-if="promo.description" class="text-sm text-green-600 dark:text-green-500 mb-2">
-                {{ promo.description }}
+
+              <!-- Description -->
+              <div v-if="promo.description" class="text-green-700 dark:text-green-400 mb-3 italic">
+                ✨ {{ promo.description }}
               </div>
-              <div class="flex justify-between text-green-700 dark:text-green-400 font-bold">
-                <span>You Save:</span>
-                <span class="text-lg">{{ formatCurrency(promo.discountAmount) }}</span>
+
+              <!-- Savings Highlight -->
+              <div class="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 p-3 rounded-lg border-2 border-green-500 dark:border-green-600">
+                <div class="flex justify-between items-center">
+                  <span class="text-green-800 dark:text-green-300 font-bold text-base">💰 You Saved:</span>
+                  <span class="text-green-800 dark:text-green-200 font-black text-2xl">
+                    {{ formatCurrency(promo.discountAmount) }}
+                  </span>
+                </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Total Savings Footer -->
+          <div class="mt-4 pt-3 border-t-2 border-green-300 dark:border-green-700">
+            <div class="flex justify-between items-center">
+              <span class="text-green-800 dark:text-green-300 font-bold text-lg">🎉 Total Promotion Savings:</span>
+              <span class="text-green-800 dark:text-green-200 font-black text-3xl">
+                {{ formatCurrency(billData.appliedPromotions.reduce((sum, p) => sum + p.discountAmount, 0)) }}
+              </span>
             </div>
           </div>
         </div>

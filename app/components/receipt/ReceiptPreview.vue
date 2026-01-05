@@ -19,6 +19,7 @@ const emit = defineEmits<{
 // Composables
 const receipt = useReceipt();
 const currency = useCurrency();
+const receiptSettings = useReceiptSettings();
 const { t } = useI18n();
 
 // State
@@ -187,6 +188,9 @@ const close = () => {
                 <div v-if="item.notes" class="text-xs text-gray-500 pl-3 italic">
                   └ {{ item.notes }}
                 </div>
+                <div v-if="item.freeQuantity && item.freeQuantity > 0" class="text-xs text-green-600 dark:text-green-400 pl-3 font-semibold">
+                  └ 🎁 {{ item.freeQuantity }} FREE
+                </div>
               </div>
               <span class="font-medium">{{
                 currency.format(item.total, currentReceipt.currency)
@@ -196,26 +200,36 @@ const close = () => {
 
           <!-- Promotions Detail Section -->
           <div
-            v-if="currentReceipt.appliedPromotions && currentReceipt.appliedPromotions.length > 0"
+            v-if="currentReceipt.appliedPromotions && currentReceipt.appliedPromotions.length > 0 && receiptSettings.settings.value.content.showPromotionDetails"
             class="space-y-3 mb-3 pb-3 border-b border-dashed border-gray-300 dark:border-gray-700"
           >
-            <div class="font-semibold text-xs text-gray-700 dark:text-gray-300 mb-2">
-              🎁 PROMOTIONS APPLIED
+            <div class="font-semibold text-xs text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+              <span>🎁</span>
+              <span>PROMOTIONS APPLIED</span>
             </div>
             <div
               v-for="promo in currentReceipt.appliedPromotions"
               :key="promo.promotionId"
-              class="bg-green-50 dark:bg-green-900/20 p-2 rounded text-xs"
+              class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded text-xs space-y-2"
             >
-              <div class="font-semibold text-green-700 dark:text-green-400 mb-1">
+              <!-- Promotion Name & Type -->
+              <div class="font-bold text-green-700 dark:text-green-400 text-sm border-b border-green-200 dark:border-green-700 pb-1">
                 {{ promo.promotionName }}
               </div>
-              <div v-if="promo.description" class="text-green-600 dark:text-green-500 text-xs mb-1">
+
+              <!-- Description -->
+              <div v-if="promo.description" class="text-green-600 dark:text-green-500 italic">
                 {{ promo.description }}
               </div>
-              <div class="flex justify-between text-green-700 dark:text-green-400 font-medium">
-                <span>You Save:</span>
-                <span>{{ currency.format(promo.discountAmount, currentReceipt.currency) }}</span>
+
+              <!-- Savings Box -->
+              <div class="bg-white dark:bg-gray-800 p-2 rounded border-2 border-green-400 dark:border-green-600">
+                <div class="flex justify-between items-center">
+                  <span class="text-green-700 dark:text-green-400 font-semibold">💰 You Saved:</span>
+                  <span class="text-green-700 dark:text-green-400 font-bold text-base">
+                    {{ currency.format(promo.discountAmount, currentReceipt.currency) }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
