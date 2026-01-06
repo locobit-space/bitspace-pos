@@ -15,11 +15,8 @@
     "minMax": "Min / Max",
     "value": "Value",
     "inStock": "In Stock",
-    "instock": "In Stock",
     "lowStock": "Low Stock",
-    "lowstock": "Low Stock",
     "outOfStock": "Out of Stock",
-    "outofstock": "Out of Stock",
     "overstocked": "Overstocked",
     "addStock": "Add Stock",
     "stockAdded": "Stock Added",
@@ -143,6 +140,12 @@
     "productNotFound": "Product Not Found",
     "unknownProduct": "Unknown Product",
     "scanning": "Scanning...",
-    "startingCamera": "Starting camera..."
+    "startingCamera": "Starting camera...",
+    "outof-stock": "Out of Stock",
+    "manufacturingDate": "Manufacturing Date",
+     "unitCost": "Unit Cost",
+    "totalCost": "Total Cost",
+    "lotTracking": "Lot Tracking",
+    "generateLot": "Generate Lot Automatically"
   }
 }

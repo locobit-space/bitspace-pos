@@ -260,7 +260,7 @@ const handleAddStock = async (data: AddStockFormData) => {
           expiryDate: data.expiryDate,
           manufacturingDate: data.manufacturingDate,
           notes: data.notes,
-          createdBy: "system", // TODO: Get current user
+          createdBy: useUserIdentifier().getCurrentUserIdentifier(), // Use npub for decentralized identity
         });
       }
 

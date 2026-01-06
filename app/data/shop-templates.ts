@@ -97,6 +97,14 @@ export const SHOP_TYPE_META: ShopTypeMeta[] = [
     descriptionLao: "ບໍລິການລ້າງລົດ, ດູແລລົດ ແລະ ເຄື່ອງລ້າງລົດ",
   },
   {
+    type: "noodles",
+    name: "Noodle Shop",
+    nameLao: "ຮ້ານເຝີ",
+    icon: "i-heroicons-fire",
+    description: "Noodle soups, dry noodles and Asian cuisine",
+    descriptionLao: "ເຝີ, ເຂົ້າປຽກ, ແລະ ອາຫານເອເຊຍ",
+  },
+  {
     type: "enterprise",
     name: "Enterprise",
     nameLao: "ອົງກອນ",
@@ -1260,6 +1268,343 @@ export const SHOP_TYPE_TEMPLATES: ShopTypeConfig[] = [
       },
     ],
   },
+
+  // ========== NOODLE SHOP ==========
+  {
+    type: "noodles",
+    meta: SHOP_TYPE_META.find((m) => m.type === "noodles")!,
+    categories: [
+      {
+        id: "cat-noodle-soup",
+        name: "Noodle Soup",
+        nameLao: "ເຝີນ້ຳ",
+        icon: "🍜",
+        sortOrder: 1,
+      },
+      {
+        id: "cat-dry-noodles",
+        name: "Dry Noodles",
+        nameLao: "ເຝີແຫ້ງ",
+        icon: "🍝",
+        sortOrder: 2,
+      },
+      {
+        id: "cat-rice-dishes",
+        name: "Rice Dishes",
+        nameLao: "ເຂົ້າ",
+        icon: "🍚",
+        sortOrder: 3,
+      },
+      {
+        id: "cat-appetizers-noodles",
+        name: "Appetizers",
+        nameLao: "ອາຫານເລີ່ມຕົ້ນ",
+        icon: "🥟",
+        sortOrder: 4,
+      },
+      {
+        id: "cat-drinks-noodles",
+        name: "Drinks",
+        nameLao: "ເຄື່ອງດື່ມ",
+        icon: "🥤",
+        sortOrder: 5,
+      },
+      {
+        id: "cat-extras",
+        name: "Add-ons & Extras",
+        nameLao: "ເພີ່ມເຕີມ",
+        icon: "➕",
+        sortOrder: 6,
+      },
+    ],
+    products: [
+      // Noodle Soup
+      {
+        id: "prod-pho-beef",
+        name: "Beef Pho",
+        nameLao: "ເຝີນ້ຳເນື້ອ",
+        categoryId: "cat-noodle-soup",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-pho-chicken",
+        name: "Chicken Pho",
+        nameLao: "ເຝີນ້ຳໄກ່",
+        categoryId: "cat-noodle-soup",
+        price: 30000,
+        image:
+          "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-khao-piak-sen",
+        name: "Khao Piak Sen",
+        nameLao: "ເຂົ້າປຽກເສັ້ນ",
+        categoryId: "cat-noodle-soup",
+        price: 30000,
+        image:
+          "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-tom-yum-noodle",
+        name: "Tom Yum Noodle",
+        nameLao: "ເຝີຕົ້ມຍຳ",
+        categoryId: "cat-noodle-soup",
+        price: 40000,
+        image:
+          "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-wonton-soup",
+        name: "Wonton Noodle Soup",
+        nameLao: "ເຝີກຽວ",
+        categoryId: "cat-noodle-soup",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-boat-noodle",
+        name: "Boat Noodle",
+        nameLao: "ເຝີເຮືອ",
+        categoryId: "cat-noodle-soup",
+        price: 25000,
+        image:
+          "https://images.unsplash.com/photo-1555126634-323283e090fa?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-fish-ball-noodle",
+        name: "Fish Ball Noodle Soup",
+        nameLao: "ເຝີລູກຊິ້ນປາ",
+        categoryId: "cat-noodle-soup",
+        price: 30000,
+        image:
+          "https://images.unsplash.com/photo-1604908177453-7462950a6a7b?w=400&h=400&fit=crop",
+      },
+      // Dry Noodles
+      {
+        id: "prod-pad-thai",
+        name: "Pad Thai",
+        nameLao: "ຜັດໄທ",
+        categoryId: "cat-dry-noodles",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-pad-see-ew",
+        name: "Pad See Ew",
+        nameLao: "ຜັດຊີອິ້ວ",
+        categoryId: "cat-dry-noodles",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1626804475297-41608ea09aeb?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-dry-noodle-pork",
+        name: "Dry Noodle with Pork",
+        nameLao: "ເຝີແຫ້ງໝູ",
+        categoryId: "cat-dry-noodles",
+        price: 30000,
+        image:
+          "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-dry-wonton",
+        name: "Dry Wonton Noodle",
+        nameLao: "ເຝີກຽວແຫ້ງ",
+        categoryId: "cat-dry-noodles",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-chow-mein",
+        name: "Chow Mein",
+        nameLao: "ເຝີຜັດ",
+        categoryId: "cat-dry-noodles",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400&h=400&fit=crop",
+      },
+      // Rice Dishes
+      {
+        id: "prod-fried-rice-noodles",
+        name: "Fried Rice",
+        nameLao: "ເຂົ້າຜັດ",
+        categoryId: "cat-rice-dishes",
+        price: 30000,
+        image:
+          "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-khao-man-gai",
+        name: "Chicken Rice",
+        nameLao: "ເຂົ້າມັນໄກ່",
+        categoryId: "cat-rice-dishes",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-congee",
+        name: "Rice Porridge",
+        nameLao: "ເຂົ້າປຽກ",
+        categoryId: "cat-rice-dishes",
+        price: 25000,
+        image:
+          "https://images.unsplash.com/photo-1589907579622-5ca0cd961a99?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-rice-pork",
+        name: "Rice with Grilled Pork",
+        nameLao: "ເຂົ້າໝູປີ້ງ",
+        categoryId: "cat-rice-dishes",
+        price: 35000,
+        image:
+          "https://images.unsplash.com/photo-1585937421612-70e813a63fd8?w=400&h=400&fit=crop",
+      },
+      // Appetizers
+      {
+        id: "prod-spring-rolls-noodles",
+        name: "Spring Rolls",
+        nameLao: "ປໍເປ້ຍສົດ",
+        categoryId: "cat-appetizers-noodles",
+        price: 20000,
+        image:
+          "https://images.unsplash.com/photo-1548507200-e9df0fa8e0c6?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-fried-spring-rolls",
+        name: "Fried Spring Rolls",
+        nameLao: "ປໍເປ້ຍທອດ",
+        categoryId: "cat-appetizers-noodles",
+        price: 25000,
+        image:
+          "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-dumplings",
+        name: "Dumplings (5pcs)",
+        nameLao: "ກຽວ (5 ໂຕ)",
+        categoryId: "cat-appetizers-noodles",
+        price: 25000,
+        image:
+          "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-crispy-wonton",
+        name: "Crispy Wonton",
+        nameLao: "ກຽວທອດ",
+        categoryId: "cat-appetizers-noodles",
+        price: 20000,
+        image:
+          "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-fish-cake",
+        name: "Fish Cake",
+        nameLao: "ທອດມັນປາ",
+        categoryId: "cat-appetizers-noodles",
+        price: 30000,
+        image:
+          "https://images.unsplash.com/photo-1625944230945-1b7dd3b949ab?w=400&h=400&fit=crop",
+      },
+      // Drinks
+      {
+        id: "prod-thai-tea",
+        name: "Thai Iced Tea",
+        nameLao: "ຊາເຢັນ",
+        categoryId: "cat-drinks-noodles",
+        price: 15000,
+        image:
+          "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-lemon-tea",
+        name: "Lemon Tea",
+        nameLao: "ຊານະມາວ",
+        categoryId: "cat-drinks-noodles",
+        price: 12000,
+        image:
+          "https://images.unsplash.com/photo-1577968897966-3d27ca2ba3b4?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-soy-milk",
+        name: "Soy Milk",
+        nameLao: "ນົມຖົ່ວເຫຼືອງ",
+        categoryId: "cat-drinks-noodles",
+        price: 10000,
+        image:
+          "https://images.unsplash.com/photo-1616799963053-f155a2d0c572?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-water-noodles",
+        name: "Bottled Water",
+        nameLao: "ນ້ຳດື່ມ",
+        categoryId: "cat-drinks-noodles",
+        price: 5000,
+        image:
+          "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-soft-drink-noodles",
+        name: "Soft Drink",
+        nameLao: "ນ້ຳອັດລົມ",
+        categoryId: "cat-drinks-noodles",
+        price: 10000,
+        image:
+          "https://images.unsplash.com/photo-1581006852262-e4307cf6283a?w=400&h=400&fit=crop",
+      },
+      // Add-ons & Extras
+      {
+        id: "prod-extra-meat",
+        name: "Extra Meat",
+        nameLao: "ເນື້ອເພີ່ມ",
+        categoryId: "cat-extras",
+        price: 15000,
+        image:
+          "https://images.unsplash.com/photo-1588347818036-8f9e7e5f5e8b?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-extra-egg",
+        name: "Extra Egg",
+        nameLao: "ໄຂ່ເພີ່ມ",
+        categoryId: "cat-extras",
+        price: 5000,
+        image:
+          "https://images.unsplash.com/photo-1582169296194-e4d644c48063?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-extra-noodles",
+        name: "Extra Noodles",
+        nameLao: "ເຝີເພີ່ມ",
+        categoryId: "cat-extras",
+        price: 10000,
+        image:
+          "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-extra-vegetables",
+        name: "Extra Vegetables",
+        nameLao: "ຜັກເພີ່ມ",
+        categoryId: "cat-extras",
+        price: 8000,
+        image:
+          "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=400&fit=crop",
+      },
+      {
+        id: "prod-extra-fish-balls",
+        name: "Extra Fish Balls",
+        nameLao: "ລູກຊິ້ນປາເພີ່ມ",
+        categoryId: "cat-extras",
+        price: 10000,
+        image:
+          "https://images.unsplash.com/photo-1604908177453-7462950a6a7b?w=400&h=400&fit=crop",
+      },
+    ],
+  },
 ];
 
 // ============================================
@@ -1297,6 +1642,7 @@ export function shouldTrackStockByDefault(type: ShopType): boolean {
   const noTrackTypes: ShopType[] = [
     "cafe",
     "restaurant",
+    "noodles", // Food prepared on-demand from ingredients
     "karaoke", // Food/drinks prepared on-demand
     "service", // Services don't have physical stock
     "dry_clean", // Service-based, no stock tracking

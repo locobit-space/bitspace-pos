@@ -592,7 +592,7 @@ export function useProductsStore() {
   async function addProduct(
     productData: Omit<Product, "id" | "createdAt" | "updatedAt">
   ): Promise<Product> {
-    const currentUser = getCurrentUser();
+    const { getCurrentUserIdentifier } = useUserIdentifier();
     const { id, code } = EntityId.product();
     const product: Product = {
       ...productData,
@@ -600,7 +600,7 @@ export function useProductsStore() {
       sku: productData.sku || code, // Use code as SKU if not provided
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      createdBy: currentUser?.id,
+      createdBy: getCurrentUserIdentifier(), // Use npub for decentralized identity
     };
 
     // Add to state
@@ -635,7 +635,7 @@ export function useProductsStore() {
     if (index === -1) return null;
 
     const existing = products.value[index]!;
-    const currentUser = getCurrentUser();
+    const { getCurrentUserIdentifier } = useUserIdentifier();
 
     // Track changes for logging
     const changes: { field: string; oldValue: unknown; newValue: unknown }[] =
@@ -656,7 +656,7 @@ export function useProductsStore() {
       id: existing.id, // Ensure ID doesn't change
       createdAt: existing.createdAt,
       updatedAt: new Date().toISOString(),
-      updatedBy: currentUser?.id,
+      updatedBy: getCurrentUserIdentifier(), // Use npub for decentralized identity
     };
 
     products.value[index] = updatedProduct;

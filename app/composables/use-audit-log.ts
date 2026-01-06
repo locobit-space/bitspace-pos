@@ -136,33 +136,13 @@ export function useAuditLog() {
       metadata?: Record<string, unknown>;
     }
   ): Promise<AuditLog | null> {
-    // Get current user info
-    const keys = nostrData.getUserKeys();
-    if (!keys) {
-      console.warn("[AuditLog] No user keys available, skipping log");
-      return null;
-    }
+    // Get current user info using new utility
+    const { getCurrentUserIdentifier, getCurrentUserName } = useUserIdentifier();
+    const userId = getCurrentUserIdentifier();
+    const userName = getCurrentUserName();
 
-    // Try to get user name from various sources
-    let userName = "Unknown User";
-    try {
-      if (import.meta.client) {
-        const stored = localStorage.getItem("nostrUser");
-        if (stored) {
-          const user = JSON.parse(stored);
-          userName = user.name || user.displayName || userName;
-        }
-        // Fallback to bitspace user
-        if (userName === "Unknown User") {
-          const authState = localStorage.getItem("bitspace_current_user");
-          if (authState) {
-            const state = JSON.parse(authState);
-            userName = state.user?.name || state.user?.displayName || userName;
-          }
-        }
-      }
-    } catch {
-      // Keep default
+    if (userId === 'system') {
+      console.warn("[AuditLog] No user identity available, logging as system");
     }
 
     // Get IP and user agent (client-side only)
@@ -177,7 +157,7 @@ export function useAuditLog() {
     const log: AuditLog = {
       id: generateId(),
       action,
-      userId: keys.pubkey,
+      userId, // Uses npub from useUserIdentifier for decentralized identity
       userName,
       timestamp: new Date().toISOString(),
       details,

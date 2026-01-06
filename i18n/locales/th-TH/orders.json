@@ -51,7 +51,8 @@
       "processing": "กำลังดำเนินการ",
       "completed": "เสร็จสิ้น",
       "cancelled": "ยกเลิก",
-      "refunded": "คืนเงินแล้ว"
+      "refunded": "คืนเงินแล้ว",
+      "failed": "ล้มเหลว"
     },
     "notFound": "ไม่พบคำสั่งซื้อ",
     "notFoundDescription": "ไม่พบคำสั่งซื้อที่คุณกำลังหา",

@@ -296,6 +296,7 @@ export const useReceipt = () => {
       bank_transfer: "🏦 Bank Transfer",
       external: "📱 External",
       qr_static: "📱 QR Code",
+      split: "✂️ Split Bill",
     };
     return labels[method || ""] || method || "Other";
   };

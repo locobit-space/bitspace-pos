@@ -143,6 +143,13 @@
     "productNotFound": "ไม่พบสินค้า",
     "unknownProduct": "สินค้าไม่ทราบชื่อ",
     "scanning": "กำลังสแกน...",
-    "startingCamera": "กำลังเปิดกล้อง..."
+    "startingCamera": "กำลังเปิดกล้อง...",
+    "outof-stock": "หมดสต็อก",
+    "manufacturingDate": "วันที่ผลิต",
+    "addStockDesc": "เพิ่มสต็อกสำหรับสินค้าที่เลือก",
+    "unitCost": "ต้นทุนต่อหน่วย",
+    "totalCost": "ต้นทุนรวม",
+    "lotTracking": "การติดตาม Lot",
+    "generateLot": "สร้าง Lot อัตโนมัติ"
   }
 }

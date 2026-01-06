@@ -194,7 +194,7 @@ export function useStockLots() {
     purchaseOrderId?: string;
     qualityGrade?: 'A' | 'B' | 'C';
     notes?: string;
-    createdBy: string;
+    createdBy: string; // npub or user identifier
   }): Promise<StockLot | null> {
     try {
       const now = Date.now();

@@ -63,7 +63,34 @@
       "bitcoin": "Bitcoin On-chain",
       "bitcoinDesc": "Traditional Bitcoin payments",
       "ready": "Ready for Marketplace!",
-      "readyDesc": "Your store will be publicly discoverable. Customers can find you and pay with Lightning."
+      "readyDesc": "Your store will be publicly discoverable. Customers can find you and pay with Lightning.",
+      "setup": {
+        "title": "Complete Your Marketplace Profile",
+        "subtitle": "Help customers discover your store by completing these details",
+        "progress": "Profile Completion",
+        "action": "Complete Profile",
+        "location": "Location",
+        "hours": "Business Hours",
+        "services": "Services",
+        "description": "Description",
+        "lightning": "Lightning Address",
+        "phone": "Phone"
+      },
+      "location": {
+        "title": "Location",
+        "address": "Address",
+        "city": "City",
+        "country": "Country",
+        "lat": "Latitude",
+        "lng": "Longitude",
+        "detect": "Detect Current Location"
+      },
+      "hours": {
+        "title": "Business Hours",
+        "timezone": "Timezone",
+        "applyAll": "Use same hours for all days",
+        "closed": "Closed"
+      }
     },
     "welcome": {
       "title": "Welcome to BNOS",

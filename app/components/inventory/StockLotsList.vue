@@ -38,12 +38,12 @@
 
     <!-- Lots Table -->
     <div
-      class="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-hidden"
+      class=" border-gray-200 dark:border-gray-700 overflow-hidden"
     >
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
-            <tr class="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
               <th
                 class="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
@@ -118,9 +118,15 @@
               <!-- Product -->
               <td class="py-3 px-4">
                 <div class="flex items-center gap-2">
-                  <span class="text-xl">{{
-                    getProductImage(lot.productId)
-                  }}</span>
+                  <span class="text-xl">
+                    <img
+                      v-if="getProductImage(lot.productId).startsWith('http')"
+                      :src="getProductImage(lot.productId)"
+                      alt="Product Image"
+                      class="w-8 h-8 rounded-md object-cover"
+                    />
+                    <span v-else>{{ getProductImage(lot.productId) }}</span>
+                  </span>
                   <div>
                     <p
                       class="font-medium text-gray-900 dark:text-white text-sm"
@@ -195,7 +201,7 @@
               <td class="py-3 px-4 text-right">
                 <div class="flex items-center justify-end gap-1">
                   <UTooltip
-                    :text="$t('inventory.adjustQty') || 'Adjust Quantity'"
+                    :text="$t('inventory.adjustQty', 'Adjust Quantity')"
                   >
                     <UButton
                       icon="i-heroicons-plus-minus"
@@ -206,7 +212,7 @@
                     />
                   </UTooltip>
                   <UTooltip
-                    :text="$t('inventory.movePosition') || 'Move Position'"
+                    :text="$t('inventory.movePosition', 'Move Position')"
                   >
                     <UButton
                       icon="i-heroicons-arrows-right-left"
@@ -313,14 +319,14 @@ const currentPage = ref(1);
 const itemsPerPage = 10;
 
 // Options
-const statusOptions = [
-  { value: "all", label: "All Status" },
-  { value: "available", label: "✅ Available" },
-  { value: "low", label: "📉 Low" },
-  { value: "expiring", label: "⏰ Expiring" },
-  { value: "expired", label: "🚫 Expired" },
-  { value: "quarantine", label: "⚠️ Quarantine" },
-];
+const statusOptions = computed(() => [
+  { value: "all", label: t('inventory.allStatus', 'All Status') },
+  { value: "available", label: t('inventory.statusAvailable', '✅ Available') },
+  { value: "low", label: t('inventory.statusLow', '📉 Low') },
+  { value: "expiring", label: t('inventory.statusExpiring', '⏰ Expiring') },
+  { value: "expired", label: t('inventory.statusExpired', '🚫 Expired') },
+  { value: "quarantined", label: t('inventory.statusQuarantined', '⚠️ Quarantine') },
+]);
 
 // Computed
 const filteredLots = computed(() => {
@@ -430,17 +436,17 @@ function getLotActions(lot: StockLot) {
   return [
     [
       {
-        label: t("inventory.viewDetails") || "View Details",
+        label: t("common.viewDetails", "View Details"),
         icon: "i-heroicons-eye",
         onSelect: () => emit("view", lot),
       },
       {
-        label: t("inventory.adjustStock") || "Adjust Stock",
+        label: t("inventory.adjustStock", "Adjust Stock"),
         icon: "i-heroicons-plus-minus",
         onSelect: () => emit("adjust", lot),
       },
       {
-        label: t("inventory.movePosition") || "Move Position",
+        label: t("inventory.movePosition", "Move Position"),
         icon: "i-heroicons-arrows-right-left",
         onSelect: () => emit("move", lot),
       },
@@ -449,8 +455,8 @@ function getLotActions(lot: StockLot) {
       {
         label:
           lot.status === "quarantine"
-            ? t("inventory.releaseFromQuarantine") || "Release"
-            : t("inventory.quarantine") || "Quarantine",
+            ? t("inventory.releaseFromQuarantine", "Release")
+            : t("inventory.quarantine", "Quarantine"),
         icon: "i-heroicons-shield-exclamation",
         color: "amber" as const,
         onSelect: () => emit("quarantine", lot),

@@ -3,7 +3,10 @@
 <script setup lang="ts">
 import type { ShopConfig } from "~/composables/use-shop";
 import type { ShopType, ShopVisibility } from "~/types";
-import { getShopTypeConfig, shouldTrackStockByDefault } from "~/data/shop-templates";
+import {
+  getShopTypeConfig,
+  shouldTrackStockByDefault,
+} from "~/data/shop-templates";
 // Currency options (imported from centralized constant)
 import { CURRENCY_OPTIONS } from "~/composables/use-currency";
 const emit = defineEmits<{
@@ -15,6 +18,8 @@ const shop = useShop();
 const company = useCompany();
 const toast = useToast();
 const productsStore = useProductsStore();
+const marketplace = useMarketplace();
+const nostrUser = useNostrUser();
 
 // Setup steps (5 steps if public, 4 if private)
 const currentStep = ref(1);
@@ -73,7 +78,6 @@ const serviceOptions = [
 
 // Company code (generated on mount)
 const generatedCompanyCode = ref("");
-
 
 const currencyOptions = CURRENCY_OPTIONS;
 
@@ -161,6 +165,21 @@ const completeSetup = async () => {
     // Auto-generate tags from shop type
     const autoTags = [shopType.value.toLowerCase().replace(/_/g, "-")];
 
+    // Auto-generate marketplace description if not provided and shop is public
+    let marketplaceDesc = marketplaceForm.value.marketplaceDescription;
+    if (
+      shopForm.value.visibility === "public" &&
+      !marketplaceDesc &&
+      shopForm.value.name
+    ) {
+      // Generate friendly description from shop name and type
+      const typeLabel = shopType.value.replace(/_/g, " ");
+      marketplaceDesc = `Welcome to ${shopForm.value.name} - Your trusted ${typeLabel}`;
+      if (shopForm.value.address) {
+        marketplaceDesc += ` located at ${shopForm.value.address}`;
+      }
+    }
+
     // Save shop config with auto-tags and platform tag
     const shopConfig: Partial<ShopConfig> = {
       name: shopForm.value.name,
@@ -181,8 +200,7 @@ const completeSetup = async () => {
       ...(shopForm.value.visibility === "public" && {
         lud16: marketplaceForm.value.lud16 || undefined,
         nip05: marketplaceForm.value.nip05 || undefined,
-        marketplaceDescription:
-          marketplaceForm.value.marketplaceDescription || undefined,
+        marketplaceDescription: marketplaceDesc || undefined,
         services: marketplaceForm.value.services,
         acceptsLightning: marketplaceForm.value.acceptsLightning,
         acceptsBitcoin: marketplaceForm.value.acceptsBitcoin,
@@ -228,7 +246,7 @@ const completeSetup = async () => {
         try {
           const parsed = JSON.parse(nostrUser);
           ownerPubkey = parsed.pubkey || parsed.publicKey || "";
-        } catch (e) {
+        } catch {
           console.warn("Failed to parse nostrUser");
         }
       }
@@ -248,9 +266,46 @@ const completeSetup = async () => {
           console.log(
             "[ShopSetup] Published company index for staff discovery"
           );
-        } catch (e) {
-          console.warn("[ShopSetup] Failed to publish company index:", e);
+        } catch (_e) {
+          console.warn("[ShopSetup] Failed to publish company index:", _e);
         }
+      }
+    }
+
+    // Auto-publish to Nostr marketplace if visibility is public
+    if (shopForm.value.visibility === "public") {
+      // Check if user is authenticated with Nostr before attempting to publish
+      // Check both the state and localStorage as fallback
+      let hasNostrAuth = nostrUser.user.value?.publicKey;
+
+      if (!hasNostrAuth && import.meta.client) {
+        // Fallback: check localStorage directly
+        const storedNostrUser = localStorage.getItem("nostrUser");
+        if (storedNostrUser) {
+          try {
+            const parsed = JSON.parse(storedNostrUser);
+            hasNostrAuth = !!(parsed.pubkey || parsed.publicKey);
+          } catch {
+            console.warn("Failed to parse nostrUser from localStorage");
+          }
+        }
+      }
+
+      if (hasNostrAuth) {
+        try {
+          await marketplace.publishStoreToMarketplace();
+          console.log(
+            "[ShopSetup] Successfully published store to Nostr marketplace"
+          );
+        } catch (e) {
+          console.warn("[ShopSetup] Failed to publish to marketplace:", e);
+          // Don't block setup completion if marketplace publish fails
+        }
+      } else {
+        console.log(
+          "[ShopSetup] Skipping marketplace publish - user not authenticated with Nostr. " +
+            "You can publish later from Settings > Marketplace."
+        );
       }
     }
 
@@ -291,6 +346,9 @@ watch(
 
 // Generate company code on mount
 onMounted(() => {
+  // Initialize Nostr user from localStorage if available
+  nostrUser.initializeUser();
+
   if (!company.hasCompanyCode.value) {
     generatedCompanyCode.value = company.generateCompanyCode();
   } else {
@@ -643,8 +701,8 @@ onMounted(() => {
           <!-- Product Templates -->
           <div class="pt-2">
             <ShopProductTemplatePreview
-              :shop-type="shopType"
               v-model="applyTemplates"
+              :shop-type="shopType"
             />
           </div>
 

@@ -2,6 +2,19 @@
 // 🚀 bnos.space - FUTURISTIC TYPE SYSTEM
 // Lightning + Nostr + Decentralised Commerce
 // ============================================
+//
+// 🆔 USER IDENTIFICATION PATTERN:
+// All CRUD operations use npub (Nostr public key) for user identification
+// instead of traditional user_id. This provides:
+// - Decentralized identity (no central authority)
+// - Privacy (no PII required)
+// - Portability (works across relays and platforms)
+// - Consistency (same identity everywhere)
+//
+// Use: useUserIdentifier().getCurrentUserIdentifier()
+// Returns: npub1... (preferred) or fallback to legacy ID
+// Fields: createdBy, updatedBy, userId, etc.
+// ============================================
 
 import { NOSTR_KINDS } from "./nostr-kinds";
 
@@ -22,7 +35,8 @@ export type ShopType =
   | "cafe"
   | "restaurant"
   | "retail"
-  | "grocery"
+  | "grocery" 
+  | "noodles"
   | "service"
   | "pharmacy"
   | "gym"
@@ -1210,7 +1224,8 @@ export type PaymentMethod =
   | "cash"
   | "qr_static"
   | "bank_transfer"
-  | "external";
+  | "external"
+  | "split";
 
 export type PaymentStatus =
   | "pending"
@@ -2253,6 +2268,30 @@ export interface StoreSettings {
   customization?: CustomizationSettings;
   notificationSettings?: NotificationPreferences;
   relays?: RelayConfig[];
+
+  // 🛒 MARKETPLACE SETTINGS
+  marketplace?: {
+    visibility?: "public" | "private";
+    shopType?: string;
+    isListed?: boolean;
+    marketplaceJoinedAt?: string;
+    marketplaceDescription?: string;
+    nip05?: string;
+    lud16?: string;
+    services?: string[];
+    acceptsLightning?: boolean;
+    acceptsBitcoin?: boolean;
+    tags?: string[];
+    platformTag?: string;
+    geolocation?: {
+      lat?: number;
+      lng?: number;
+      address?: string;
+      city?: string;
+      country?: string;
+    };
+    businessHours?: Record<string, { open: string; close: string }>;
+  };
 
   // Accounting settings
   accounting?: {

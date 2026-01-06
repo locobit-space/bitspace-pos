@@ -35,7 +35,7 @@ export interface CycleCount {
   countedItems: number;
   varianceCount: number;
   varianceValue: number;
-  createdBy: string;
+  createdBy: string; // npub or user identifier
   countedBy?: string;
   approvedBy?: string;
   notes?: string;

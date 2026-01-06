@@ -56,7 +56,8 @@
       "enterCompanyCode": "ປ້ອນລະຫັດບໍລິສັດ",
       "codeUpdated": "ອັບເດດລະຫັດບໍລິສັດແລ້ວ",
       "inviteLink": "ລິ້ງເຊີນ",
-      "refunded": "ຄືນເງິນ"
+      "refunded": "ຄືນເງິນ",
+      "failed": "ລົ້ມເຫລວ"
     },
     "notFound": "ບໍ່ພົບອໍເດີ້",
     "notFoundDescription": "ອໍເດີ້ທີ່ທ່ານກຳລັງຊອກຫາບໍ່ມີ",

@@ -99,7 +99,7 @@ const tenure = computed(() => {
 <template>
   <div class="bg-white dark:bg-gray-800 h-full overflow-hidden flex flex-col">
     <!-- Header with gradient -->
-    <div class="relative bg-gradient-to-r from-primary-500 to-primary-600 p-6 text-white">
+    <div class="relative bg-linear-to-r from-primary-500 to-primary-600 p-6 text-white">
       <UButton class="absolute top-4 right-4" color="white" variant="ghost" icon="i-heroicons-x-mark"
         @click="emit('close')" />
 

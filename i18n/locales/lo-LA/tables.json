@@ -1,6 +1,7 @@
 {
   "tables": {
     "title": "ຈັດການໂຕະ",
+    "subtitle": "ໂຕະ ແລະ ບ່ອນນັ່ງ",
     "description": "ຈັດການໂຕະ ແລະ ການສັ່ງອາຫານຜ່ານ QR code",
     "addTable": "ເພີ່ມໂຕະ",
     "editTable": "ແກ້ໄຂໂຕະ",
