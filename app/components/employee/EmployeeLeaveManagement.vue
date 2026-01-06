@@ -26,19 +26,19 @@ const adjustmentAmount = ref(0);
 const leaveTypes = [
   {
     type: "annual",
-    label: "Annual Leave",
+    label: t('employees.annualLeave', 'Annual Leave'),
     icon: "i-heroicons-calendar",
     color: "blue",
   },
   {
     type: "sick",
-    label: "Sick Leave",
+    label: t('employees.sickLeave', 'Sick Leave'),
     icon: "i-heroicons-heart",
     color: "red",
   },
   {
     type: "personal",
-    label: "Personal Leave",
+    label: t('employees.personalLeave', 'Personal Leave'),
     icon: "i-heroicons-user",
     color: "purple",
   },
@@ -48,10 +48,10 @@ const leaveTypes = [
 async function adjustLeave() {
   if (adjustmentAmount.value === 0) {
     toast.add({
-      title: "Invalid Amount",
-      description: "Please enter a non-zero amount",
-      icon: "i-heroicons-exclamation-triangle",
-      color: "orange",
+      title: t('errors.invalidAmount', 'Invalid Amount'),
+      description: t('errors.nonZeroAmount', 'Please enter a non-zero amount'),
+      icon: 'i-heroicons-exclamation-triangle',
+      color: 'orange',
     });
     return;
   }
@@ -65,10 +65,10 @@ async function adjustLeave() {
     );
 
     toast.add({
-      title: "Leave Balance Updated",
-      description: `${adjustmentType.value} leave adjusted by ${adjustmentAmount.value} days`,
-      icon: "i-heroicons-check-circle",
-      color: "green",
+      title: t('employees.leaveUpdated', 'Leave Balance Updated'),
+      description: t('employees.leaveAdjustedBy', `${adjustmentType.value} leave adjusted by ${adjustmentAmount.value} days`),
+      icon: 'i-heroicons-check-circle',
+      color: 'green',
     });
 
     adjustmentAmount.value = 0;
@@ -146,7 +146,7 @@ const monthlyPay = computed(() => {
       </h3>
 
       <div class="space-y-4">
-        <UFormField label="Leave Type">
+        <UFormField :label="t('employees.leaveType', 'Leave Type')">
           <USelectMenu
             v-model="adjustmentType"
             :items="leaveTypes.map(lt => ({ value: lt.type, label: lt.label }))"
@@ -156,8 +156,8 @@ const monthlyPay = computed(() => {
         </UFormField>
 
         <UFormField
-          label="Adjustment Amount"
-          help="Positive to add, negative to deduct"
+          :label="t('employees.adjustmentAmount', 'Adjustment Amount')"
+          :help="t('employees.adjustmentHelp', 'Positive to add, negative to deduct')"
         >
           <UInput
             v-model.number="adjustmentAmount"
@@ -191,7 +191,7 @@ const monthlyPay = computed(() => {
       <div class="grid grid-cols-2 gap-4">
         <!-- Base Salary -->
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-          <p class="text-sm text-gray-500 mb-1">Base Salary</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t('employees.baseSalary', 'Base Salary') }}</p>
           <p class="text-xl font-bold text-gray-900 dark:text-white">
             {{ formatCurrency(employee.baseSalary, employee.currency) }}
           </p>
@@ -202,25 +202,25 @@ const monthlyPay = computed(() => {
 
         <!-- Monthly Estimate -->
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-          <p class="text-sm text-gray-500 mb-1">Monthly Estimate</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t('employees.monthlyEstimate', 'Monthly Estimate') }}</p>
           <p class="text-xl font-bold text-gray-900 dark:text-white">
             {{ formatCurrency(monthlyPay, employee.currency) }}
           </p>
-          <p class="text-xs text-gray-500 mt-1">Calculated monthly</p>
+          <p class="text-xs text-gray-500 mt-1">{{ t('employees.calculatedMonthly', 'Calculated monthly') }}</p>
         </div>
 
         <!-- Commission -->
         <div v-if="employee.commissionEnabled" class="bg-white dark:bg-gray-800 rounded-lg p-4">
-          <p class="text-sm text-gray-500 mb-1">Commission Rate</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t('employees.commissionRate', 'Commission Rate') }}</p>
           <p class="text-xl font-bold text-success-600 dark:text-success-400">
             {{ employee.commissionRate }}%
           </p>
-          <p class="text-xs text-gray-500 mt-1">Per sale</p>
+          <p class="text-xs text-gray-500 mt-1">{{ t('employees.perSale', 'Per sale') }}</p>
         </div>
 
         <!-- Payment Method -->
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-          <p class="text-sm text-gray-500 mb-1">Payment Method</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t('employees.paymentMethod', 'Payment Method') }}</p>
           <p class="text-lg font-medium text-gray-900 dark:text-white capitalize">
             {{ employee.preferredPaymentMethod }}
           </p>
@@ -242,28 +242,28 @@ const monthlyPay = computed(() => {
 
       <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <p class="text-gray-500">Employment Type</p>
+          <p class="text-gray-500">{{ t('employees.employmentType', 'Employment Type') }}</p>
           <p class="font-medium text-gray-900 dark:text-white capitalize">
             {{ employee.employmentType.replace("-", " ") }}
           </p>
         </div>
 
         <div>
-          <p class="text-gray-500">Hire Date</p>
+          <p class="text-gray-500">{{ t('employees.hireDate', 'Hire Date') }}</p>
           <p class="font-medium text-gray-900 dark:text-white">
             {{ employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "-" }}
           </p>
         </div>
 
         <div v-if="employee.overtimeRate">
-          <p class="text-gray-500">Overtime Rate</p>
+          <p class="text-gray-500">{{ t('employees.overtimeRate', 'Overtime Rate') }}</p>
           <p class="font-medium text-gray-900 dark:text-white">
             {{ employee.overtimeRate }}x
           </p>
         </div>
 
         <div>
-          <p class="text-gray-500">Status</p>
+          <p class="text-gray-500">{{ t('employees.status.label', 'Status') }}</p>
           <UBadge
             :color="employee.status === 'active' ? 'green' : 'gray'"
             variant="subtle"

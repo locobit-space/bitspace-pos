@@ -54,8 +54,8 @@ async function togglePOSAccess() {
     toast.add({
       title: t("common.success"),
       description: canAccessPOS.value
-        ? "POS access enabled"
-        : "POS access disabled",
+        ? t('employees.posAccessEnabled', 'POS access enabled')
+        : t('employees.posAccessDisabled', 'POS access disabled'),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -84,7 +84,7 @@ async function savePOSCredentials() {
 
     toast.add({
       title: t("common.success"),
-      description: "POS credentials saved",
+      description: t('employees.credentialsSaved', 'POS credentials saved'),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -110,19 +110,19 @@ async function syncToNostr() {
 
     if (success) {
       toast.add({
-        title: "Synced to Nostr",
-        description: "Employee data published to relays",
+        title: t('employees.syncedToNostr', 'Synced to Nostr'),
+        description: t('employees.dataPublishedToRelays', 'Employee data published to relays'),
         icon: "i-heroicons-cloud-arrow-up",
         color: "green",
       });
     } else {
-      throw new Error("Sync failed");
+      throw new Error(t('employees.syncFailed', 'Sync failed'));
     }
 
     emit("updated");
   } catch (e) {
     toast.add({
-      title: "Sync Failed",
+      title: t('employees.syncFailed', 'Sync Failed'),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -142,19 +142,19 @@ async function createStoreUser() {
 
     if (user) {
       toast.add({
-        title: "StoreUser Created",
-        description: `User "${user.name}" created with role: ${user.role}`,
+        title: t('employees.userCreated', 'StoreUser Created'),
+        description: t('employees.userCreatedWithRole', `User "${user.name}" created with role: ${user.role}`),
         icon: "i-heroicons-user-plus",
         color: "green",
       });
     } else {
-      throw new Error("Failed to create user");
+      throw new Error(t('employees.failedCreateUser', 'Failed to create user'));
     }
 
     emit("updated");
   } catch (e) {
     toast.add({
-      title: "Creation Failed",
+      title: t('employees.creationFailed', 'Creation Failed'),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -187,10 +187,10 @@ watch(
             {{ t("employees.posAccess") || "POS Access" }}
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Allow this employee to access the POS system and create orders
+            {{ t('employees.posAccessDesc', 'Allow this employee to access the POS system and create orders') }}
           </p>
         </div>
-        <UToggle
+        <USwitch
           v-model="canAccessPOS"
           :disabled="isLoading"
           @update:model-value="togglePOSAccess"
@@ -202,14 +202,14 @@ watch(
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-              StoreUser Account
+              {{ t('employees.storeUserAccount', 'StoreUser Account') }}
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400">
               <template v-if="storeUser">
-                ✅ Linked to user: {{ storeUser.name }} ({{ storeUser.role }})
+                ✅ {{ t('employees.linkedToUser', `Linked to user: ${storeUser.name} (${storeUser.role})`) }}
               </template>
               <template v-else>
-                ⚠️ No StoreUser account linked
+                ⚠️ {{ t('employees.noUserLinked', 'No StoreUser account linked') }}
               </template>
             </p>
           </div>
@@ -221,7 +221,7 @@ watch(
             :loading="isLoading"
             @click="createStoreUser"
           >
-            Create Account
+            {{ t('employees.createAccount', 'Create Account') }}
           </UButton>
         </div>
       </div>
@@ -233,21 +233,21 @@ watch(
         {{ t("employees.posCredentials") || "POS Credentials" }}
       </h3>
 
-      <UFormField label="PIN (4-6 digits)" help="Staff can login with PIN">
+      <UFormField :label="t('employees.pin', 'PIN (4-6 digits)')" :help="t('employees.pinHelp', 'Staff can login with PIN')">
         <UInput
           v-model="pin"
           type="password"
-          placeholder="1234"
+          :placeholder="t('employees.pinPlaceholder', '1234')"
           maxlength="6"
           icon="i-heroicons-lock-closed"
         />
       </UFormField>
 
-      <UFormField label="Nostr Public Key (npub)" help="For Nostr-based authentication">
+      <UFormField :label="t('employees.npub', 'Nostr Public Key (npub)')" :help="t('employees.npubHelp', 'For Nostr-based authentication')">
         <UInput
           v-model="npub"
           type="text"
-          placeholder="npub1..."
+          :placeholder="t('employees.npubPlaceholder', 'npub1...')"
           icon="i-heroicons-key"
         />
       </UFormField>
@@ -273,13 +273,13 @@ watch(
             {{ t("employees.nostrSync") || "Nostr Sync" }}
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Sync employee data to Nostr relays for cross-device access
+            {{ t('employees.nostrSyncDesc', 'Sync employee data to Nostr relays for cross-device access') }}
           </p>
         </div>
         <UBadge
           :color="isSynced ? 'green' : 'gray'"
           variant="subtle"
-          :label="isSynced ? 'Synced' : 'Not synced'"
+          :label="isSynced ? t('employees.synced', 'Synced') : t('employees.notSynced', 'Not synced')"
         />
       </div>
 
@@ -287,15 +287,15 @@ watch(
       <div class="space-y-3 text-sm">
         <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
           <UIcon name="i-heroicons-shield-check" class="w-4 h-4" />
-          <span>Employee data is encrypted before syncing</span>
+          <span>{{ t('employees.encryptedBeforeSync', 'Employee data is encrypted before syncing') }}</span>
         </div>
         <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
           <UIcon name="i-heroicons-globe-alt" class="w-4 h-4" />
-          <span>Accessible from any device with company code</span>
+          <span>{{ t('employees.accessibleAnyDevice', 'Accessible from any device with company code') }}</span>
         </div>
         <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
           <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
-          <span>Auto-syncs on create and update</span>
+          <span>{{ t('employees.autoSyncsOnUpdate', 'Auto-syncs on create and update') }}</span>
         </div>
       </div>
 
@@ -306,7 +306,7 @@ watch(
           :loading="isSyncing"
           @click="syncToNostr"
         >
-          Sync Now
+          {{ t('employees.syncNow', 'Sync Now') }}
         </UButton>
       </div>
     </div>
@@ -315,25 +315,25 @@ watch(
     <div class="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-6">
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
         <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-primary-500" />
-        How Staff Can Login
+        {{ t('employees.howToLogin', 'How Staff Can Login') }}
       </h3>
       <div class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
         <div class="flex items-start gap-2">
-          <UIcon name="i-heroicons-1-circle" class="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
+          <UIcon name="i-heroicons-1-circle" class="w-5 h-5 text-primary-500 shrink-0 mt-0.5" />
           <div>
-            <strong>With PIN:</strong> Enter {{ employee.employeeCode }} or select staff name, then enter PIN
+            <strong>{{ t('employees.withPin', 'With PIN') }}:</strong> {{ t('employees.pinLoginInstructions', `Enter ${employee.employeeCode} or select staff name, then enter PIN`) }}
           </div>
         </div>
         <div v-if="npub" class="flex items-start gap-2">
-          <UIcon name="i-heroicons-2-circle" class="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
+          <UIcon name="i-heroicons-2-circle" class="w-5 h-5 text-primary-500 shrink-0 mt-0.5" />
           <div>
-            <strong>With nsec:</strong> Staff enters their Nostr private key (nsec1...) to login
+            <strong>{{ t('employees.withNsec', 'With nsec') }}:</strong> {{ t('employees.nsecLoginInstructions', 'Staff enters their Nostr private key (nsec1...) to login') }}
           </div>
         </div>
         <div v-if="npub" class="flex items-start gap-2">
-          <UIcon name="i-heroicons-3-circle" class="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
+          <UIcon name="i-heroicons-3-circle" class="w-5 h-5 text-primary-500 shrink-0 mt-0.5" />
           <div>
-            <strong>With NIP-07:</strong> Use Alby or nos2x browser extension for one-click login
+            <strong>{{ t('employees.withNIP07', 'With NIP-07') }}:</strong> {{ t('employees.nip07Instructions', 'Use Alby or nos2x browser extension for one-click login') }}
           </div>
         </div>
       </div>

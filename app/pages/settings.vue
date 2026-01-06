@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { settingsNavigation } from '~/config/settings-navigation';
+
 definePageMeta({
   middleware: ["auth"],
 });
@@ -10,88 +12,19 @@ useHead({
 const { t } = useI18n();
 const route = useRoute();
 
-const navItems = computed(() => [
-  {
-    label: t("settings.general.title"),
-    to: "/settings/general",
-    icon: "i-heroicons-cog-6-tooth",
-  },
-  {
-    label: t("settings.account.title"),
-    to: "/settings/account",
-    icon: "i-heroicons-user-circle",
-  },
-  {
-    label: t("settings.security.title"),
-    to: "/settings/security",
-    icon: "i-heroicons-key",
-  },
-  {
-    label: t("settings.relays.title"),
-    to: "/settings/relays",
-    icon: "i-heroicons-server-stack",
-  },
-  {
-    label: t("settings.lightning.title"),
-    to: "/settings/lightning",
-    icon: "i-heroicons-bolt",
-  },
-  {
-    label: t("settings.customization.title"),
-    to: "/settings/customization",
-    icon: "i-heroicons-sparkles",
-  },
-  {
-    label: t("settings.chat.title"),
-    to: "/settings/chat",
-    icon: "i-heroicons-chat-bubble-left-right",
-  },
-  {
-    label: t("settings.features.title") || "Features & Modules",
-    to: "/settings/features",
-    icon: "i-heroicons-squares-plus",
-  },
-  {
-    label: t("settings.marketplace.title") || "Marketplace",
-    to: "/settings/marketplace",
-    icon: "i-heroicons-globe-alt",
-  },
-  {
-    label: t("settings.users.title"),
-    to: "/settings/users",
-    icon: "i-heroicons-users",
-  },
-  {
-    label: t("settings.tax.title"),
-    to: "/settings/tax",
-    icon: "i-heroicons-receipt-percent",
-  },
-  {
-    label: t("settings.receipt.title"),
-    to: "/settings/receipt",
-    icon: "i-heroicons-document-text",
-  },
-  {
-    label: t("settings.bankAccounts.title"),
-    to: "/settings/bank-accounts",
-    icon: "i-heroicons-building-library",
-  },
-  {
-    label: t("settings.backup.title"),
-    to: "/settings/backup",
-    icon: "i-heroicons-cloud-arrow-up",
-  },
-  {
-    label: t("auth.deviceSync.title"),
-    to: "/settings/device-sync",
-    icon: "i-heroicons-arrow-path",
-  },
-  {
-    label: t("settings.auditLog.title"),
-    to: "/settings/audit-log",
-    icon: "i-heroicons-shield-check",
-  },
-]);
+const navItems = computed(() => 
+  settingsNavigation
+    .sort((a, b) => a.order - b.order)
+    .map(item => {
+      const parts = item.label.split('.');
+      const fallback = parts[parts.length - 1] || 'Settings';
+      return {
+        label: t(item.label, fallback),
+        to: item.to,
+        icon: item.icon,
+      };
+    })
+);
 
 const isActive = (path: string) => {
   return route.path === path || route.path.startsWith(path + "/");
@@ -125,7 +58,7 @@ const isActive = (path: string) => {
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
           ]"
         >
-          <UIcon :name="item.icon" class="w-5 h-5 flex-shrink-0" />
+          <UIcon :name="item.icon" class="w-5 h-5 shrink-0" />
           <span>{{ item.label }}</span>
         </NuxtLinkLocale>
       </nav>

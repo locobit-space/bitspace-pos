@@ -296,31 +296,31 @@ function getActionItems(employee: Employee) {
       {
         label: t("employees.actions.view"),
         icon: "i-heroicons-eye",
-        click: () => viewEmployee(employee),
+        onClick: () => viewEmployee(employee),
       },
       {
         label: t("employees.actions.edit"),
         icon: "i-heroicons-pencil-square",
-        click: () => editEmployee(employee),
+        onClick: () => editEmployee(employee),
       },
       {
         label: t("employees.actions.duplicate"),
         icon: "i-heroicons-document-duplicate",
-        click: () => handleDuplicate(employee),
+        onClick: () => handleDuplicate(employee),
       },
     ],
     [
       {
         label: t("employees.actions.manageAccess") || "Manage Access",
         icon: "i-heroicons-key",
-        click: () => openAccessModal(employee),
+        onClick: () => openAccessModal(employee),
       },
       accessStatus === "revoked" || accessStatus === "expired"
         ? {
             label: t("employees.actions.restoreAccess") || "Restore Access",
             icon: "i-heroicons-arrow-path",
             color: "success" as const,
-            click: async () => {
+            onClick: async () => {
               selectedEmployee.value = employee;
               await restoreAccess();
             },
@@ -329,7 +329,7 @@ function getActionItems(employee: Employee) {
             label: t("employees.actions.revokeAccess") || "Revoke Access",
             icon: "i-heroicons-no-symbol",
             color: "warning" as const,
-            click: () => openAccessModal(employee),
+            onClick: () => openAccessModal(employee),
             disabled: accessStatus === "none",
           },
     ],
@@ -338,14 +338,14 @@ function getActionItems(employee: Employee) {
         label: t("employees.actions.terminate"),
         icon: "i-heroicons-user-minus",
         color: "warning" as const,
-        click: () => confirmTerminate(employee),
+        onClick: () => confirmTerminate(employee),
         disabled: employee.status === "terminated",
       },
       {
         label: t("employees.actions.deletePermanently"),
         icon: "i-heroicons-trash",
         color: "error" as const,
-        click: () => confirmDelete(employee),
+        onClick: () => confirmDelete(employee),
       },
     ],
   ];

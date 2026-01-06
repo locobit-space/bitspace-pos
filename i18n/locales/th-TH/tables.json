@@ -1,6 +1,7 @@
 {
   "tables": {
     "title": "โต๊ะ",
+    "subtitle": "โต๊ะและที่นั่ง",
     "zones": "โซน",
     "addZone": "เพิ่มโซน",
     "addTable": "เพิ่มโต๊ะ",

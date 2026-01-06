@@ -575,6 +575,7 @@
     },
     "bankAccounts": {
       "title": "Bank Accounts",
+      "subtitle": "Payment transfers",
       "description": "Manage bank accounts for payment transfers",
       "addAccount": "Add Bank Account",
       "addFirstAccount": "Add Your First Bank Account",
@@ -936,6 +937,7 @@
     },
     "chat": {
       "title": "Chat",
+      "subtitle": "Messaging preferences",
       "description": "Configure chat and messaging preferences",
       "general": "General Settings",
       "enableChat": "Enable Chat",

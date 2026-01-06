@@ -1,6 +1,7 @@
 {
   "tables": {
     "title": "Table Management",
+    "subtitle": "Tables & seating",
     "description": "Manage tables, seating, and reservations",
     "addTable": "Add Table",
     "editTable": "Edit Table",

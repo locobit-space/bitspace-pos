@@ -24,7 +24,7 @@
             :src="userProfile.avatar || '/default-avatar.png'"
             :alt="userProfile.name"
             class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-primary-500 object-cover"
-          />
+          >
           <div
             class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-gray-900"
           />
@@ -69,140 +69,38 @@
 
     <!-- Settings Grid - Single column on mobile, 2 on tablet+ -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-      <!-- Your Keys -->
+      <!-- Personal Settings -->
       <NuxtLinkLocale
-        to="/settings/security"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-red-300 dark:hover:border-red-700 hover:shadow-md transition-all"
+        v-for="item in personalSettings"
+        :key="item.id"
+        :to="item.to"
+        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all"
+        :class="getColorClasses(item.color as any).border"
       >
         <div
-          class="p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-h-[64px] active:bg-gray-50 dark:active:bg-gray-800/50"
+          class="p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-h-16 active:bg-gray-50 dark:active:bg-gray-800/50"
         >
           <div
-            class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0"
+            class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0"
+            :class="getColorClasses(item.color as any).bg"
           >
             <UIcon
-              name="i-heroicons-key"
-              class="w-5 h-5 sm:w-6 sm:h-6 text-red-600"
+              :name="item.icon"
+              class="w-5 h-5 sm:w-6 sm:h-6"
+              :class="getColorClasses(item.color as any).text"
             />
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t("settings.security.title", "Your keys") }}
+              {{ $t(item.label, item.label.split('.').pop() || '') }}
             </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t("settings.security.subtitle") }}
+            <p v-if="$t(item.label.replace('.title', '.subtitle'))" class="text-sm text-gray-500 dark:text-gray-400 truncate">
+              {{ $t(item.label.replace('.title', '.subtitle')) }}
             </p>
           </div>
           <UIcon
             name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
-        </div>
-      </NuxtLinkLocale>
-
-      <!-- Relays Settings -->
-      <NuxtLinkLocale
-        to="/settings/relays"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all"
-      >
-        <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center"
-          >
-            <UIcon
-              name="i-heroicons-server-stack"
-              class="w-6 h-6 text-violet-600"
-            />
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t("settings.relays.title") }}
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t("settings.relays.subtitle") }}
-            </p>
-          </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
-        </div>
-      </NuxtLinkLocale>
-
-      <!-- Wallets (Lightning) -->
-      <NuxtLinkLocale
-        to="/settings/lightning"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all"
-      >
-        <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
-          >
-            <span class="text-xl">⚡</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t("settings.lightning.title", "Wallets") }}
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t("settings.lightning.subtitle") }}
-            </p>
-          </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
-        </div>
-      </NuxtLinkLocale>
-
-      <!-- Crypto Payments -->
-      <NuxtLinkLocale
-        to="/settings/crypto"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all"
-      >
-        <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center"
-          >
-            <span class="text-xl">₿</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t("settings.crypto.title", "Crypto Payments") }}
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t("settings.crypto.subtitle", "Bitcoin & USDT") }}
-            </p>
-          </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
-          />
-        </div>
-      </NuxtLinkLocale>
-
-      <!-- Customization -->
-      <NuxtLinkLocale
-        to="/settings/customization"
-        class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-md transition-all"
-      >
-        <div class="p-4 flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center"
-          >
-            <UIcon name="i-heroicons-sparkles" class="w-6 h-6 text-teal-600" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t("settings.customization.title") }}
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t("settings.customization.subtitle") }}
-            </p>
-          </div>
-          <UIcon
-            name="i-heroicons-chevron-right"
-            class="w-5 h-5 text-gray-400 flex-shrink-0"
+            class="w-5 h-5 text-gray-400 shrink-0"
           />
         </div>
       </NuxtLinkLocale>
@@ -214,202 +112,35 @@
         {{ $t("settings.sectionBusiness") }}
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <!-- General Store Settings -->
         <NuxtLinkLocale
-          to="/settings/general"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md transition-all"
+          v-for="item in businessSettings"
+          :key="item.id"
+          :to="item.to"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all"
+          :class="getColorClasses(item.color as any).border"
         >
           <div class="p-4 flex items-center gap-4">
             <div
-              class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
+              class="w-12 h-12 rounded-xl flex items-center justify-center"
+              :class="getColorClasses(item.color as any).bg"
             >
               <UIcon
-                name="i-heroicons-building-storefront"
-                class="w-6 h-6 text-gray-600"
+                :name="item.icon"
+                class="w-6 h-6"
+                :class="getColorClasses(item.color as any).text"
               />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.general.title") }}
+                {{ $t(item.label, item.label.split('.').pop() || '') }}
               </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.general.subtitle") }}
+              <p v-if="$t(item.label.replace('.title', '.subtitle')) || $t(item.label.replace('.title', '.description'))" class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ $t(item.label.replace('.title', '.subtitle')) || $t(item.label.replace('.title', '.description')) }}
               </p>
             </div>
             <UIcon
               name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Marketplace -->
-        <NuxtLinkLocale
-          to="/settings/marketplace"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-globe-alt"
-                class="w-6 h-6 text-blue-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.marketplace.title", "Marketplace") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.marketplace.subtitle", "Store visibility") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Tax -->
-        <NuxtLinkLocale
-          to="/settings/tax"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-receipt-percent"
-                class="w-6 h-6 text-green-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.tax.title") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.tax.subtitle") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Receipt -->
-        <NuxtLinkLocale
-          to="/settings/receipt"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-document-text"
-                class="w-6 h-6 text-indigo-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.receipt.title") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.receipt.subtitle") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Bank Accounts -->
-        <NuxtLinkLocale
-          to="/settings/bank-accounts"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-building-library"
-                class="w-6 h-6 text-emerald-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.bankAccounts.title") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.bankAccounts.description") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Users & Permissions -->
-        <NuxtLinkLocale
-          to="/settings/users"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
-            >
-              <UIcon name="i-heroicons-users" class="w-6 h-6 text-blue-600" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.users.title") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.users.subtitle") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Tables -->
-        <NuxtLinkLocale
-          to="/settings/tables"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-qr-code"
-                class="w-6 h-6 text-purple-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("tables.title") || "Tables" }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("tables.description") || "QR code ordering" }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
+              class="w-5 h-5 text-gray-400 shrink-0"
             />
           </div>
         </NuxtLinkLocale>
@@ -422,149 +153,35 @@
         {{ $t("settings.sectionSystem") }}
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <!-- Backup -->
         <NuxtLinkLocale
-          to="/settings/backup"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-cyan-300 dark:hover:border-cyan-700 hover:shadow-md transition-all"
+          v-for="item in systemSettings"
+          :key="item.id"
+          :to="item.to"
+          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all"
+          :class="getColorClasses(item.color as any).border"
         >
           <div class="p-4 flex items-center gap-4">
             <div
-              class="w-12 h-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center"
+              class="w-12 h-12 rounded-xl flex items-center justify-center"
+              :class="getColorClasses(item.color as any).bg"
             >
               <UIcon
-                name="i-heroicons-cloud-arrow-up"
-                class="w-6 h-6 text-cyan-600"
+                :name="item.icon"
+                class="w-6 h-6"
+                :class="getColorClasses(item.color as any).text"
               />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.backup.title") }}
+                {{ $t(item.label, item.label.split('.').pop() || '') }}
               </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.backup.subtitle") }}
+              <p v-if="$t(item.label.replace('.title', '.subtitle'))" class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ $t(item.label.replace('.title', '.subtitle')) }}
               </p>
             </div>
             <UIcon
               name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Audit Log -->
-        <NuxtLinkLocale
-          to="/settings/audit-log"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-shield-check"
-                class="w-6 h-6 text-rose-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.auditLog.title") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.auditLog.subtitle") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Features -->
-        <NuxtLinkLocale
-          to="/settings/features"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-squares-plus"
-                class="w-6 h-6 text-orange-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.features.title") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.features.subtitle") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- Integrations -->
-        <NuxtLinkLocale
-          to="/settings/integrations"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-puzzle-piece"
-                class="w-6 h-6 text-sky-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.integrations.title") || "Integrations" }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{
-                  $t("settings.integrations.subtitle") || "Cloudinary, API keys"
-                }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-            />
-          </div>
-        </NuxtLinkLocale>
-
-        <!-- About -->
-        <NuxtLinkLocale
-          to="/settings/about"
-          class="block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-md transition-all"
-        >
-          <div class="p-4 flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
-            >
-              <UIcon
-                name="i-heroicons-information-circle"
-                class="w-6 h-6 text-amber-600"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.about.title") }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t("settings.about.subtitle") }}
-              </p>
-            </div>
-            <UIcon
-              name="i-heroicons-chevron-right"
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
+              class="w-5 h-5 text-gray-400 shrink-0"
             />
           </div>
         </NuxtLinkLocale>
@@ -574,13 +191,19 @@
 </template>
 
 <script setup lang="ts">
+import {
+  getPersonalSettings,
+  getBusinessSettings,
+  getSystemSettings,
+  settingsColorClasses,
+} from '~/config/settings-navigation';
+
 definePageMeta({
   layout: "default",
   middleware: ["auth"],
 });
 
 const { t } = useI18n();
-const nostrRelay = useNostrRelay();
 
 // User profile data
 const userProfile = ref({
@@ -613,6 +236,16 @@ async function loadUserProfile() {
   } catch (error) {
     console.error("Failed to load user profile:", error);
   }
+}
+
+// Get settings by section
+const personalSettings = getPersonalSettings();
+const businessSettings = getBusinessSettings();
+const systemSettings = getSystemSettings();
+
+// Helper to get color classes
+function getColorClasses(color: keyof typeof settingsColorClasses) {
+  return settingsColorClasses[color] || settingsColorClasses.gray;
 }
 
 // Initialize
