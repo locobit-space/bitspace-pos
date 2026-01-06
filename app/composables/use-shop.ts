@@ -162,6 +162,9 @@ const error = useState<string | null>("error", () => null);
 export function useShop() {
   const nostrData = useNostrData();
   const productsStore = useProductsStore();
+  
+  // NOTE: Don't call useMarketplace() here - circular dependency!
+  // useMarketplace calls useShop, so we lazy-load it in publishToMarketplace()
 
   // Check if shop is configured
   const hasShopConfig = computed(() => !!shopConfig.value?.name);
@@ -175,7 +178,8 @@ export function useShop() {
 
   // Convert StoreSettings to ShopConfig
   function storeSettingsToShopConfig(settings: StoreSettings): ShopConfig {
-    const shopType: ShopType = "other";
+    const shopType: ShopType = (settings.marketplace?.shopType as ShopType) || "other";
+    const mp = settings.marketplace;
     return {
       name: settings.general?.storeName || "",
       address: settings.general?.storeAddress,
@@ -188,12 +192,25 @@ export function useShop() {
       taxRate: settings.general?.taxRate || 0,
       tipEnabled: settings.general?.tipEnabled || false,
       receiptFooter: settings.general?.receiptFooter,
-      // Shop type & visibility defaults
-      visibility: "private",
+      // Shop type & visibility from marketplace settings
+      visibility: mp?.visibility || "private",
       shopType,
       enabledFeatures:
         (settings.general?.enabledFeatures as unknown as EnabledFeatures) ||
         getDefaultFeatures(shopType),
+      // Marketplace fields
+      isListed: mp?.isListed ?? false,
+      marketplaceJoinedAt: mp?.marketplaceJoinedAt,
+      marketplaceDescription: mp?.marketplaceDescription,
+      nip05: mp?.nip05,
+      lud16: mp?.lud16,
+      services: mp?.services,
+      acceptsLightning: mp?.acceptsLightning ?? false,
+      acceptsBitcoin: mp?.acceptsBitcoin ?? false,
+      tags: mp?.tags,
+      platformTag: mp?.platformTag || "bnos.space",
+      geolocation: mp?.geolocation,
+      businessHours: mp?.businessHours,
     };
   }
 
@@ -325,6 +342,17 @@ export function useShop() {
         tags: config.tags ?? shopConfig.value?.tags ?? [],
         platformTag:
           config.platformTag ?? shopConfig.value?.platformTag ?? "bnos.space",
+        // Marketplace fields (preserve these!)
+        nip05: config.nip05 ?? shopConfig.value?.nip05,
+        lud16: config.lud16 ?? shopConfig.value?.lud16,
+        geolocation: config.geolocation ?? shopConfig.value?.geolocation,
+        businessHours: config.businessHours ?? shopConfig.value?.businessHours,
+        services: config.services ?? shopConfig.value?.services,
+        paymentMethods: config.paymentMethods ?? shopConfig.value?.paymentMethods,
+        acceptsLightning: config.acceptsLightning ?? shopConfig.value?.acceptsLightning ?? false,
+        acceptsBitcoin: config.acceptsBitcoin ?? shopConfig.value?.acceptsBitcoin ?? false,
+        isListed: config.isListed ?? shopConfig.value?.isListed ?? false,
+        marketplaceJoinedAt: config.marketplaceJoinedAt ?? shopConfig.value?.marketplaceJoinedAt,
       };
 
       // Get existing settings or create new
@@ -333,6 +361,23 @@ export function useShop() {
         general: shopConfigToGeneralSettings(newConfig),
         lightning: existingSettings?.lightning || defaultLightningSettings,
         security: existingSettings?.security || defaultSecuritySettings,
+        // Save marketplace settings to Nostr!
+        marketplace: {
+          visibility: newConfig.visibility,
+          shopType: newConfig.shopType,
+          isListed: newConfig.isListed,
+          marketplaceJoinedAt: newConfig.marketplaceJoinedAt,
+          marketplaceDescription: newConfig.marketplaceDescription,
+          nip05: newConfig.nip05,
+          lud16: newConfig.lud16,
+          services: newConfig.services,
+          acceptsLightning: newConfig.acceptsLightning,
+          acceptsBitcoin: newConfig.acceptsBitcoin,
+          tags: newConfig.tags,
+          platformTag: newConfig.platformTag,
+          geolocation: newConfig.geolocation,
+          businessHours: newConfig.businessHours,
+        },
         updatedAt: new Date().toISOString(),
       };
 
@@ -413,7 +458,7 @@ export function useShop() {
 
   /**
    * Publish store to marketplace for discovery
-   * Creates a STORE_PROFILE event (Kind 30079)
+   * Creates a PUBLIC_STORE_PROFILE event (Kind 30954)
    */
   async function publishToMarketplace(): Promise<boolean> {
     if (!shopConfig.value) {
@@ -424,42 +469,86 @@ export function useShop() {
     try {
       isLoading.value = true;
 
-      // Build marketplace profile from shop config
-      const profile: MarketplaceProfile = {
-        pubkey: "", // Will be set by nostrData when signing
-        name: shopConfig.value.name,
-        description: shopConfig.value.marketplaceDescription,
-        logo: shopConfig.value.logo,
-        shopType: shopConfig.value.shopType,
-        categories: [], // Derive from shopType
-        tags: shopConfig.value.tags,
-        geolocation: shopConfig.value.geolocation,
-        phone: shopConfig.value.phone,
-        email: shopConfig.value.email,
-        socialLinks: shopConfig.value.socialLinks,
-        businessHours: shopConfig.value.businessHours,
-        services: shopConfig.value.services,
-        paymentMethods: shopConfig.value.paymentMethods,
-        acceptsLightning: shopConfig.value.acceptsLightning ?? false,
-        acceptsBitcoin: shopConfig.value.acceptsBitcoin ?? false,
-        nip05: shopConfig.value.nip05,
-        lud16: shopConfig.value.lud16,
-        isListed: true,
-        joinedAt:
-          shopConfig.value.marketplaceJoinedAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Save the profile to Nostr as STORE_PROFILE event
-      // Note: This will be handled by nostrData with kind 30079
+      // First update the shop config to public
       await saveShopConfig({
         isListed: true,
         visibility: "public",
-        marketplaceJoinedAt: profile.joinedAt,
+        marketplaceJoinedAt: shopConfig.value.marketplaceJoinedAt || new Date().toISOString(),
       });
 
-      console.log("✅ Published to marketplace:", profile);
-      return true;
+      // Get pubkey from localStorage (avoid circular dependency with useMarketplace)
+      let pubkey: string | null = null;
+      if (import.meta.client) {
+        const nostrUser = localStorage.getItem("nostrUser");
+        if (nostrUser) {
+          try {
+            const parsed = JSON.parse(nostrUser);
+            pubkey = parsed.pubkey || parsed.publicKey || null;
+          } catch {
+            console.warn("Failed to parse nostrUser");
+          }
+        }
+      }
+
+      if (!pubkey) {
+        console.log("[Shop] No Nostr pubkey found, skipping marketplace publish");
+        return true; // Don't fail, just skip Nostr publish
+      }
+
+      // Build marketplace profile from shop config
+      const config = shopConfig.value;
+      const profile: Partial<MarketplaceProfile> = {
+        name: config.name || "",
+        description: config.marketplaceDescription || config.address || "",
+        logo: config.logo,
+        shopType: config.shopType || "retail",
+        nip05: config.nip05,
+        lud16: config.lud16,
+        phone: config.phone,
+        services: config.services ? [...config.services] : [],
+        acceptsLightning: config.acceptsLightning ?? true,
+        acceptsBitcoin: config.acceptsBitcoin ?? false,
+        isListed: true,
+        joinedAt: config.marketplaceJoinedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Add geolocation if available
+      if (config.geolocation) {
+        profile.geolocation = config.geolocation;
+      }
+
+      // Add business hours if available
+      if (config.businessHours) {
+        profile.businessHours = config.businessHours;
+      }
+
+      // Build tags for the event
+      const tags: string[][] = [
+        ["d", pubkey], // Unique identifier
+        ["t", config.shopType || "retail"], // Shop type tag
+      ];
+
+      // Add service tags
+      if (config.services) {
+        for (const service of config.services) {
+          tags.push(["s", service]);
+        }
+      }
+
+      // Publish to Nostr using kind 30954 (PUBLIC_STORE_PROFILE)
+      const success = await nostrData.publishEvent(
+        30954, // NOSTR_KINDS.PUBLIC_STORE_PROFILE
+        JSON.stringify(profile),
+        tags
+      );
+
+      if (success) {
+        console.log("✅ Published to marketplace");
+        return true;
+      } else {
+        throw new Error("Failed to publish to Nostr marketplace");
+      }
     } catch (e) {
       error.value = `Failed to publish to marketplace: ${e}`;
       console.error(error.value);

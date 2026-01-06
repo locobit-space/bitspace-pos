@@ -51,7 +51,8 @@
       "processing": "Processing",
       "completed": "Completed",
       "cancelled": "Cancelled",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "failed": "Failed"
     },
     "notFound": "Order Not Found",
     "notFoundDescription": "The order you're looking for doesn't exist",

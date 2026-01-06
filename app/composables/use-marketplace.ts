@@ -46,7 +46,25 @@ export function useMarketplace() {
   // ─────────────────────────────────────────
 
   function getPubkey(): string | null {
-    return auth.user.value?.nostrPubkey || null;
+    // First check auth state
+    if (auth.user.value?.nostrPubkey) {
+      return auth.user.value.nostrPubkey;
+    }
+
+    // Fallback: check localStorage (same as company code section)
+    if (import.meta.client) {
+      const nostrUser = localStorage.getItem("nostrUser");
+      if (nostrUser) {
+        try {
+          const parsed = JSON.parse(nostrUser);
+          return parsed.pubkey || parsed.publicKey || null;
+        } catch {
+          console.warn("Failed to parse nostrUser from localStorage");
+        }
+      }
+    }
+
+    return null;
   }
 
   // ─────────────────────────────────────────

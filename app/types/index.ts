@@ -2254,6 +2254,30 @@ export interface StoreSettings {
   notificationSettings?: NotificationPreferences;
   relays?: RelayConfig[];
 
+  // 🛒 MARKETPLACE SETTINGS
+  marketplace?: {
+    visibility?: "public" | "private";
+    shopType?: string;
+    isListed?: boolean;
+    marketplaceJoinedAt?: string;
+    marketplaceDescription?: string;
+    nip05?: string;
+    lud16?: string;
+    services?: string[];
+    acceptsLightning?: boolean;
+    acceptsBitcoin?: boolean;
+    tags?: string[];
+    platformTag?: string;
+    geolocation?: {
+      lat?: number;
+      lng?: number;
+      address?: string;
+      city?: string;
+      country?: string;
+    };
+    businessHours?: Record<string, { open: string; close: string }>;
+  };
+
   // Accounting settings
   accounting?: {
     enabled: boolean; // ON/OFF toggle for auto journal entries

@@ -143,6 +143,7 @@
     "productNotFound": "ไม่พบสินค้า",
     "unknownProduct": "สินค้าไม่ทราบชื่อ",
     "scanning": "กำลังสแกน...",
-    "startingCamera": "กำลังเปิดกล้อง..."
+    "startingCamera": "กำลังเปิดกล้อง...",
+    "outof-stock": "หมดสต็อก"
   }
 }

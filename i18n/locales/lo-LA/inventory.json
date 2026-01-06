@@ -124,6 +124,7 @@
     "confirmQuarantine": "ກັກກັນລ໋ອດນີ້ບໍ?",
     "lotQuarantined": "ກັກກັນລ໋ອດແລ້ວ",
     "receiveStock": "ຮັບສິນຄ້າ",
-    "pendingSync": "ລໍຖ້າຊິງຄ໌"
+    "pendingSync": "ລໍຖ້າຊິງຄ໌",
+    "outof-stock": "ໝົດສິນຄ້າ"
   }
 }

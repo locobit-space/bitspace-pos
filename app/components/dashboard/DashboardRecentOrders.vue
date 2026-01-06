@@ -26,6 +26,8 @@ const getStatusColor = (
     pending: "yellow",
     processing: "yellow",
     cancelled: "red",
+    refunded: "green",
+    failed: "red"
   };
   return colors[status] || "gray";
 };
