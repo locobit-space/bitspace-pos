@@ -2,6 +2,19 @@
 // 🚀 bnos.space - FUTURISTIC TYPE SYSTEM
 // Lightning + Nostr + Decentralised Commerce
 // ============================================
+//
+// 🆔 USER IDENTIFICATION PATTERN:
+// All CRUD operations use npub (Nostr public key) for user identification
+// instead of traditional user_id. This provides:
+// - Decentralized identity (no central authority)
+// - Privacy (no PII required)
+// - Portability (works across relays and platforms)
+// - Consistency (same identity everywhere)
+//
+// Use: useUserIdentifier().getCurrentUserIdentifier()
+// Returns: npub1... (preferred) or fallback to legacy ID
+// Fields: createdBy, updatedBy, userId, etc.
+// ============================================
 
 import { NOSTR_KINDS } from "./nostr-kinds";
 
@@ -22,7 +35,8 @@ export type ShopType =
   | "cafe"
   | "restaurant"
   | "retail"
-  | "grocery"
+  | "grocery" 
+  | "noodles"
   | "service"
   | "pharmacy"
   | "gym"

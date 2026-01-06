@@ -137,7 +137,7 @@ async function handleCreateCount() {
     scheduledDate: createForm.value.scheduledDate,
     items,
     notes: createForm.value.notes,
-    createdBy: "staff_1", // TODO: Get from auth
+    createdBy: useUserIdentifier().getCurrentUserIdentifier(), // Use npub for decentralized identity
   });
 
   if (result) {

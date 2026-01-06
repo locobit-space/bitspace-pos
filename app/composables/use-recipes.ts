@@ -469,7 +469,7 @@ export function useRecipes() {
       items: planItems,
       totalIngredientCost: totalCost,
       status: 'planned',
-      createdBy: 'current_user', // TODO: Get from auth
+      createdBy: useUserIdentifier().getCurrentUserIdentifier(), // Use npub for decentralized identity
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
