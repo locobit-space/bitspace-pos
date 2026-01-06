@@ -420,6 +420,11 @@ onMounted(async () => {
           <DashboardOnboardingChecklist @dismiss="handleChecklistDismiss" />
         </div>
 
+        <!-- Marketplace Setup Notification -->
+        <div class="mb-6">
+          <DashboardMarketplaceSetup />
+        </div>
+
         <div class="grid grid-cols-12 gap-3">
           <!-- KPI Cards -->
           <div class="col-span-12">

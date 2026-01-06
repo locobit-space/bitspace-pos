@@ -52,6 +52,11 @@ const navItems = computed(() => [
     icon: "i-heroicons-squares-plus",
   },
   {
+    label: t("settings.marketplace.title") || "Marketplace",
+    to: "/settings/marketplace",
+    icon: "i-heroicons-globe-alt",
+  },
+  {
     label: t("settings.users.title"),
     to: "/settings/users",
     icon: "i-heroicons-users",

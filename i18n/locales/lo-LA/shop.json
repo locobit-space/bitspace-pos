@@ -63,7 +63,34 @@
       "bitcoin": "Bitcoin On-chain",
       "bitcoinDesc": "ຊຳລະ Bitcoin ແບບດັ້ງເດີມ",
       "ready": "ພ້ອມສຳລັບ Marketplace!",
-      "readyDesc": "ຮ້ານຂອງທ່ານຈະຄົ້ນຫາໄດ້ສາທາລະນະ. ລູກຄ້າສາມາດຊອກຫາທ່ານ ແລະ ຊຳລະດ້ວຍ Lightning."
+      "readyDesc": "ຮ້ານຂອງທ່ານຈະຄົ້ນຫາໄດ້ສາທາລະນະ. ລູກຄ້າສາມາດຊອກຫາທ່ານ ແລະ ຊຳລະດ້ວຍ Lightning.",
+      "setup": {
+        "title": "ກະລຸນາເພີ່ມຂໍ້ມູນ Marketplace",
+        "subtitle": "ຊ່ວຍໃຫ້ລູກຄ້າຊອກຫາຮ້ານຂອງທ່ານໄດ້ງ່າຍຂຶ້ນ",
+        "progress": "ຄວາມສຳເລັດຂອງໂປຣໄຟລ໌",
+        "action": "ເພີ່ມຂໍ້ມູນໃຫ້ຄົບ",
+        "location": "ສະຖານທີ່",
+        "hours": "ເວລາເປີດ-ປິດ",
+        "services": "ບໍລິການ",
+        "description": "ຄຳອະທິບາຍ",
+        "lightning": "ທີ່ຢູ່ Lightning",
+        "phone": "ເບີໂທ"
+      },
+      "location": {
+        "title": "ສະຖານທີ່",
+        "address": "ທີ່ຢູ່",
+        "city": "ເມືອງ",
+        "country": "ປະເທດ",
+        "lat": "ລາຕິຈູດ",
+        "lng": "ລອງຈິຈູດ",
+        "detect": "ກວດຫາຕຳແໜ່ງປັດຈຸບັນ"
+      },
+      "hours": {
+        "title": "ເວລາເປີດ-ປິດ",
+        "timezone": "ເຂດເວລາ",
+        "applyAll": "ໃຊ້ເວລາດຽວກັນສຳລັບທຸກມື້",
+        "closed": "ປິດ"
+      }
     },
     "welcome": {
       "title": "ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ BNOS",

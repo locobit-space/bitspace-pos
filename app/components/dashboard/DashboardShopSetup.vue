@@ -161,6 +161,21 @@ const completeSetup = async () => {
     // Auto-generate tags from shop type
     const autoTags = [shopType.value.toLowerCase().replace(/_/g, "-")];
 
+    // Auto-generate marketplace description if not provided and shop is public
+    let marketplaceDesc = marketplaceForm.value.marketplaceDescription;
+    if (
+      shopForm.value.visibility === "public" &&
+      !marketplaceDesc &&
+      shopForm.value.name
+    ) {
+      // Generate friendly description from shop name and type
+      const typeLabel = shopType.value.replace(/_/g, " ");
+      marketplaceDesc = `Welcome to ${shopForm.value.name} - Your trusted ${typeLabel}`;
+      if (shopForm.value.address) {
+        marketplaceDesc += ` located at ${shopForm.value.address}`;
+      }
+    }
+
     // Save shop config with auto-tags and platform tag
     const shopConfig: Partial<ShopConfig> = {
       name: shopForm.value.name,
@@ -181,8 +196,7 @@ const completeSetup = async () => {
       ...(shopForm.value.visibility === "public" && {
         lud16: marketplaceForm.value.lud16 || undefined,
         nip05: marketplaceForm.value.nip05 || undefined,
-        marketplaceDescription:
-          marketplaceForm.value.marketplaceDescription || undefined,
+        marketplaceDescription: marketplaceDesc || undefined,
         services: marketplaceForm.value.services,
         acceptsLightning: marketplaceForm.value.acceptsLightning,
         acceptsBitcoin: marketplaceForm.value.acceptsBitcoin,
@@ -228,7 +242,7 @@ const completeSetup = async () => {
         try {
           const parsed = JSON.parse(nostrUser);
           ownerPubkey = parsed.pubkey || parsed.publicKey || "";
-        } catch (e) {
+        } catch {
           console.warn("Failed to parse nostrUser");
         }
       }
@@ -248,9 +262,23 @@ const completeSetup = async () => {
           console.log(
             "[ShopSetup] Published company index for staff discovery"
           );
-        } catch (e) {
-          console.warn("[ShopSetup] Failed to publish company index:", e);
+        } catch (_e) {
+          console.warn("[ShopSetup] Failed to publish company index:", _e);
         }
+      }
+    }
+
+    // Auto-publish to Nostr marketplace if visibility is public
+    if (shopForm.value.visibility === "public") {
+      try {
+        const marketplace = useMarketplace();
+        await marketplace.publishStoreToMarketplace();
+        console.log(
+          "[ShopSetup] Successfully published store to Nostr marketplace"
+        );
+      } catch (e) {
+        console.warn("[ShopSetup] Failed to publish to marketplace:", e);
+        // Don't block setup completion if marketplace publish fails
       }
     }
 
@@ -643,8 +671,8 @@ onMounted(() => {
           <!-- Product Templates -->
           <div class="pt-2">
             <ShopProductTemplatePreview
-              :shop-type="shopType"
               v-model="applyTemplates"
+              :shop-type="shopType"
             />
           </div>
 

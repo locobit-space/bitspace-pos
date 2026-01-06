@@ -100,6 +100,58 @@
                 </div>
             </UCard>
 
+            <!-- Location -->
+            <UCard>
+                <template #header>
+                    <div class="flex items-center gap-2">
+                        <UIcon name="i-heroicons-map-pin" class="w-5 h-5 text-red-500" />
+                        <span class="font-medium">{{ $t("marketplace.location.title", "Location") }}</span>
+                    </div>
+                </template>
+                <div class="space-y-3">
+                    <UInput v-model="formData.address" :placeholder="$t('shop.addressPlaceholder', 'Street address')" icon="i-heroicons-map-pin" />
+                    <div class="grid grid-cols-2 gap-3">
+                        <UInput v-model="formData.city" :placeholder="$t('marketplace.location.city', 'City')" />
+                        <UInput v-model="formData.country" :placeholder="$t('marketplace.location.country', 'Country')" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <UInput v-model.number="formData.lat" type="number" step="0.000001" :placeholder="$t('marketplace.location.lat', 'Latitude')" />
+                        <UInput v-model.number="formData.lng" type="number" step="0.000001" :placeholder="$t('marketplace.location.lng', 'Longitude')" />
+                    </div>
+                    <UButton color="gray" variant="soft" icon="i-heroicons-map-pin" size="sm" @click="getCurrentLocation">
+                        {{ $t("marketplace.location.detect", "Detect Current Location") }}
+                    </UButton>
+                </div>
+            </UCard>
+
+            <!-- Business Hours -->
+            <UCard>
+                <template #header>
+                    <div class="flex items-center gap-2">
+                        <UIcon name="i-heroicons-clock" class="w-5 h-5 text-indigo-500" />
+                        <span class="font-medium">{{ $t("marketplace.hours.title", "Business Hours") }}</span>
+                    </div>
+                </template>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ $t("marketplace.hours.applyAll", "Use same hours for all days") }}</span>
+                        <UButton color="gray" variant="soft" size="xs" @click="applyToAllDays">{{ $t("common.apply") }}</UButton>
+                    </div>
+                    <div v-for="day in daysOfWeek" :key="day" class="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <USwitch v-model="enabledDays[day]" size="sm" />
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white capitalize">{{ day }}</p>
+                        </div>
+                        <template v-if="enabledDays[day]">
+                            <UInput v-model="formData.businessHours[day]!.open" type="time" size="sm" class="w-28" />
+                            <span class="text-gray-400">—</span>
+                            <UInput v-model="formData.businessHours[day]!.close" type="time" size="sm" class="w-28" />
+                        </template>
+                        <span v-else class="text-sm text-gray-400">{{ $t("marketplace.hours.closed", "Closed") }}</span>
+                    </div>
+                </div>
+            </UCard>
+
             <!-- Payment Methods -->
             <UCard>
                 <template #header>
@@ -179,6 +231,34 @@ const formData = ref({
     services: [] as string[],
     acceptsLightning: true,
     acceptsBitcoin: false,
+    address: "",
+    city: "",
+    country: "",
+    lat: 0,
+    lng: 0,
+    businessHours: {
+        monday: { open: "09:00", close: "18:00" },
+        tuesday: { open: "09:00", close: "18:00" },
+        wednesday: { open: "09:00", close: "18:00" },
+        thursday: { open: "09:00", close: "18:00" },
+        friday: { open: "09:00", close: "18:00" },
+        saturday: { open: "09:00", close: "18:00" },
+        sunday: { open: "09:00", close: "18:00" },
+    },
+});
+
+// Days of week
+const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+
+// Enabled days
+const enabledDays = ref<Record<string, boolean>>({
+    monday: true,
+    tuesday: true,
+    wednesday: true,
+    thursday: true,
+    friday: true,
+    saturday: true,
+    sunday: true,
 });
 
 // Service options
@@ -241,6 +321,25 @@ async function toggleVisibility(newValue: boolean) {
 async function saveSettings() {
     isSaving.value = true;
     try {
+        // Build geolocation
+        const geolocation = formData.value.address || formData.value.lat
+            ? {
+                lat: formData.value.lat || 0,
+                lng: formData.value.lng || 0,
+                address: formData.value.address,
+                city: formData.value.city,
+                country: formData.value.country,
+            }
+            : undefined;
+
+        // Build business hours (only enabled days)
+        const businessHours: any = { timezone: "Asia/Vientiane" };
+        daysOfWeek.forEach((day) => {
+            if (enabledDays.value[day] && formData.value.businessHours[day]) {
+                businessHours[day] = formData.value.businessHours[day];
+            }
+        });
+
         await shop.saveShopConfig({
             lud16: formData.value.lud16 || undefined,
             nip05: formData.value.nip05 || undefined,
@@ -248,6 +347,8 @@ async function saveSettings() {
             services: formData.value.services,
             acceptsLightning: formData.value.acceptsLightning,
             acceptsBitcoin: formData.value.acceptsBitcoin,
+            geolocation,
+            businessHours: Object.keys(businessHours).length > 1 ? businessHours : undefined,
         });
 
         toast.add({
@@ -266,6 +367,52 @@ async function saveSettings() {
     }
 }
 
+async function getCurrentLocation() {
+    if (!navigator.geolocation) {
+        toast.add({
+            title: t("common.error"),
+            description: "Geolocation not supported",
+            color: "error",
+        });
+        return;
+    }
+
+    try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        formData.value.lat = position.coords.latitude;
+        formData.value.lng = position.coords.longitude;
+
+        toast.add({
+            title: t("common.success"),
+            description: "Location detected",
+            color: "success",
+        });
+    } catch (error) {
+        toast.add({
+            title: t("common.error"),
+            description: "Failed to get location",
+            color: "error",
+        });
+    }
+}
+
+function applyToAllDays() {
+    const template = formData.value.businessHours.monday;
+    daysOfWeek.forEach((day) => {
+        if (enabledDays.value[day]) {
+            formData.value.businessHours[day] = { ...template };
+        }
+    });
+    toast.add({
+        title: t("common.success"),
+        description: "Applied to all enabled days",
+        color: "success",
+    });
+}
+
 function loadSettings() {
     const config = shop.shopConfig.value;
     if (config) {
@@ -276,7 +423,26 @@ function loadSettings() {
             services: [...(config.services || [])],
             acceptsLightning: config.acceptsLightning ?? true,
             acceptsBitcoin: config.acceptsBitcoin ?? false,
+            address: config.geolocation?.address || "",
+            city: config.geolocation?.city || "",
+            country: config.geolocation?.country || "",
+            lat: config.geolocation?.lat || 0,
+            lng: config.geolocation?.lng || 0,
+            businessHours: {
+                monday: config.businessHours?.monday || { open: "09:00", close: "18:00" },
+                tuesday: config.businessHours?.tuesday || { open: "09:00", close: "18:00" },
+                wednesday: config.businessHours?.wednesday || { open: "09:00", close: "18:00" },
+                thursday: config.businessHours?.thursday || { open: "09:00", close: "18:00" },
+                friday: config.businessHours?.friday || { open: "09:00", close: "18:00" },
+                saturday: config.businessHours?.saturday || { open: "09:00", close: "18:00" },
+                sunday: config.businessHours?.sunday || { open: "09:00", close: "18:00" },
+            },
         };
+
+        // Update enabled days
+        daysOfWeek.forEach((day) => {
+            enabledDays.value[day] = !!config.businessHours?.[day];
+        });
     }
 }
 
