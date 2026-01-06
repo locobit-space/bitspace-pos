@@ -93,6 +93,14 @@ watch(showPaymentModal, (isOpen) => {
 });
 const splitCount = ref(2); // Number of people splitting
 const splitPaidCount = ref(0); // Number of portions already paid
+const splitPayments = ref<Array<{
+  portionNumber: number;
+  amount: number;
+  method: PaymentMethod;
+  paidAt: string;
+  proof?: unknown;
+}>>([]); // Track individual split payments
+const isProcessingSplit = ref(false); // Separate flag for split payment processing
 const isProcessing = ref(false);
 
 // Open camera scanner directly
@@ -284,9 +292,9 @@ const splitAmountPerPerson = computed(() => {
 
 const splitRemainingAmount = computed(() => {
   if (!splitOrder.value || splitCount.value < 2) return 0;
-  return (
-    splitOrder.value.total - splitPaidCount.value * splitAmountPerPerson.value
-  );
+  // Calculate based on actual payments made
+  const totalPaid = splitPayments.value.reduce((sum, p) => sum + p.amount, 0);
+  return Math.max(0, splitOrder.value.total - totalPaid);
 });
 
 const splitRemainingSplits = computed(() => {
@@ -837,6 +845,11 @@ const proceedToPayment = async (method?: PaymentMethod) => {
 
   defaultPaymentMethod.value = method || null;
 
+  // Clear split state - this is a regular cart payment
+  splitOrder.value = null;
+  splitPaidCount.value = 0;
+  splitPayments.value = [];
+
   // Notify customer display that payment is pending
   pos.setPaymentState({
     status: "pending",
@@ -852,6 +865,12 @@ const proceedToPayment = async (method?: PaymentMethod) => {
 };
 
 const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
+  // Check if this is a split payment
+  if (splitOrder.value && showSplitBillModal.value) {
+    await handleSplitPaymentComplete(method, proof);
+    return;
+  }
+
   isProcessing.value = true;
 
   try {
@@ -1145,6 +1164,12 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 const cancelPayment = () => {
   showPaymentModal.value = false;
   isProcessing.value = false;
+  
+  // If this was a split payment in progress (and split modal was previously open), restore it
+  if (splitOrder.value && splitPaidCount.value < splitCount.value && !selectedPendingOrder.value) {
+    showSplitBillModal.value = true;
+  }
+  
   selectedPendingOrder.value = null;
   pos.setPaymentState({ status: "idle" });
 };
@@ -1155,6 +1180,11 @@ const cancelPayment = () => {
 const selectPendingOrderForPayment = (order: Order) => {
   selectedPendingOrder.value = order;
   showPendingOrdersModal.value = false;
+
+  // Clear split state - this is a regular payment, not a split
+  splitOrder.value = null;
+  splitPaidCount.value = 0;
+  splitPayments.value = [];
 
   // Set payment state with order total
   pos.setPaymentState({
@@ -1332,64 +1362,147 @@ const openSplitBill = (order: Order) => {
   splitOrder.value = order;
   splitCount.value = 2;
   splitPaidCount.value = 0;
+  splitPayments.value = []; // Reset payment history
+  isProcessingSplit.value = false;
   showPendingOrdersModal.value = false;
   showSplitBillModal.value = true;
 };
 
 /**
- * Pay one portion of a split bill
+ * Pay one portion of a split bill - opens payment modal with per-person amount
  */
-const paySplitPortion = async (method: PaymentMethod, proof: unknown) => {
-  if (!splitOrder.value) return;
+const paySplitPortion = async () => {
+  if (!splitOrder.value || isProcessingSplit.value) return;
+  
+  if (splitPaidCount.value >= splitCount.value) {
+    const toast = useToast();
+    toast.add({
+      title: t("pos.splitComplete") || "Already Paid",
+      description: t("pos.allPortionsPaid") || "All portions have been paid",
+      icon: "i-heroicons-check-circle",
+      color: "green",
+    });
+    return;
+  }
 
-  isProcessing.value = true;
+  // Set the payment amount to the per-person amount
+  pos.setPaymentState({
+    status: "pending",
+    amount: splitAmountPerPerson.value,
+    satsAmount: currency.toSats(splitAmountPerPerson.value, splitOrder.value.currency || "LAK"),
+  });
+
+  // Hide split modal and open payment modal
+  showSplitBillModal.value = false;
+  defaultPaymentMethod.value = null;
+  showPaymentModal.value = true;
+};
+
+/**
+ * Handle split payment completion (called from payment modal)
+ */
+const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown) => {
+  if (!splitOrder.value || isProcessingSplit.value) return;
+
+  isProcessingSplit.value = true;
 
   try {
+    // Record this payment
+    splitPayments.value.push({
+      portionNumber: splitPaidCount.value + 1,
+      amount: splitAmountPerPerson.value,
+      method,
+      paidAt: new Date().toISOString(),
+      proof,
+    });
+
     splitPaidCount.value++;
+
+    // Play sound
+    if (method === "lightning" || method === "bolt12" || method === "lnurl") {
+      sound.playLightningZap();
+    } else if (method === "cash") {
+      sound.playCashRegister();
+    } else {
+      sound.playSuccess();
+    }
 
     // Check if all portions are paid
     if (splitPaidCount.value >= splitCount.value) {
-      // All paid - mark order as completed
+      // All paid - complete the order
       await ordersStore.updateOrderStatus(splitOrder.value.id, "completed", {
-        paymentMethod: method,
+        paymentMethod: "split", // Mark as split payment
+        paymentProof: {
+          id: `split_${Date.now()}`,
+          orderId: splitOrder.value.id,
+          paymentHash: `SPLIT-${splitCount.value}-WAYS`,
+          preimage: JSON.stringify(splitPayments.value),
+          amount: splitOrder.value.totalSats || 0,
+          receivedAt: new Date().toISOString(),
+          method: "split" as PaymentMethod,
+          isOffline: !navigator.onLine,
+        },
       });
 
-      // Play success sound and show notification
+      // Play completion sound
       sound.playOrderComplete();
 
       const toast = useToast();
       toast.add({
         title: t("pos.splitComplete") || "Split Bill Complete!",
-        description: `${splitCount.value} people paid ${currency.format(
+        description: `${splitCount.value} ${t("pos.people") || "people"} paid ${currency.format(
           splitAmountPerPerson.value,
           splitOrder.value.currency || "LAK"
-        )} each`,
+        )} ${t("pos.each") || "each"}`,
         icon: "i-heroicons-check-circle",
         color: "green",
       });
 
+      // Store completed order for receipt
+      completedOrder.value = splitOrder.value;
+      completedPaymentMethod.value = "split" as PaymentMethod;
+
+      // Generate receipt
+      const generatedReceipt = receipt.generateReceipt(splitOrder.value, splitOrder.value.paymentProof);
+      receipt.storeEBill(generatedReceipt);
+
+      // Reset table if applicable
+      if (splitOrder.value.tableNumber) {
+        const table = tablesStore.tables.value.find(
+          (t) => t.name === splitOrder.value!.tableNumber || t.number === splitOrder.value!.tableNumber
+        );
+        if (table) {
+          await tablesStore.freeTable(table.id);
+        }
+      }
+
+      // Close modals and reset
       closeSplitBill();
+      showReceiptModal.value = true;
     } else {
       // More portions to pay
-      sound.playCashRegister();
-
       const toast = useToast();
       toast.add({
         title: t("pos.portionPaid") || "Portion Paid!",
-        description: `${splitRemainingSplits.value} ${
-          t("pos.moreToGo") || "more to go"
-        } (${currency.format(
+        description: `${splitRemainingSplits.value} ${t("pos.moreToGo") || "more to go"} - ${currency.format(
           splitRemainingAmount.value,
           splitOrder.value.currency || "LAK"
-        )} ${t("pos.remaining") || "remaining"})`,
+        )} ${t("pos.remaining") || "remaining"}`,
         icon: "i-heroicons-check",
         color: "blue",
       });
 
+      // Close payment modal and re-show split modal for next portion
       showPaymentModal.value = false;
+      showSplitBillModal.value = true;
     }
   } catch (e) {
     console.error("Failed to process split payment:", e);
+    
+    // Rollback the payment record
+    if (splitPayments.value.length > 0) {
+      splitPayments.value.pop();
+    }
     splitPaidCount.value = Math.max(0, splitPaidCount.value - 1);
 
     const toast = useToast();
@@ -1400,7 +1513,7 @@ const paySplitPortion = async (method: PaymentMethod, proof: unknown) => {
       color: "red",
     });
   } finally {
-    isProcessing.value = false;
+    isProcessingSplit.value = false;
   }
 };
 
@@ -1413,6 +1526,9 @@ const closeSplitBill = () => {
   splitOrder.value = null;
   splitCount.value = 2;
   splitPaidCount.value = 0;
+  splitPayments.value = [];
+  isProcessingSplit.value = false;
+  pos.setPaymentState({ status: "idle" });
 };
 
 /**
@@ -4100,6 +4216,35 @@ onUnmounted(() => {
             </div>
           </div>
 
+          <!-- Payment History -->
+          <div v-if="splitPayments.length > 0" class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {{ t("pos.paymentHistory") || "Payment History" }}
+            </h4>
+            <div class="space-y-2">
+              <div
+                v-for="payment in splitPayments"
+                :key="payment.portionNumber"
+                class="flex items-center justify-between bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="text-green-600 dark:text-green-400">✓</span>
+                  <div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                      {{ t("pos.portion") || "Portion" }} {{ payment.portionNumber }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      {{ payment.method.toUpperCase() }} • {{ new Date(payment.paidAt).toLocaleTimeString() }}
+                    </div>
+                  </div>
+                </div>
+                <div class="text-sm font-semibold text-green-600 dark:text-green-400">
+                  {{ currency.format(payment.amount, splitOrder?.currency || "LAK") }}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Actions -->
           <div class="flex gap-3">
             <UButton
@@ -4113,13 +4258,9 @@ onUnmounted(() => {
             <UButton
               block
               color="primary"
-              :loading="isProcessing"
-              @click="
-                () => {
-                  showSplitBillModal = false;
-                  showPaymentModal = true;
-                }
-              "
+              :loading="isProcessingSplit"
+              :disabled="splitPaidCount >= splitCount"
+              @click="paySplitPortion"
             >
               {{
                 splitPaidCount > 0

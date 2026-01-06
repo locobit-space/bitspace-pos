@@ -91,6 +91,7 @@ const paymentMethodIcons: Record<string, string> = {
   qr_static: "i-heroicons-qr-code",
   bank: "i-heroicons-building-library",
   bank_transfer: "i-heroicons-building-library",
+  split: "i-heroicons-scissors",
 };
 
 // Computed

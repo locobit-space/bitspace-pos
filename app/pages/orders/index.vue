@@ -199,6 +199,7 @@ const getPaymentIcon = (method?: string) => {
     lnurl: "⚡",
     card: "💳",
     bank: "🏦",
+    split: "✂️",
   };
   return icons[method || ""] || "💰";
 };

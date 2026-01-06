@@ -1224,7 +1224,8 @@ export type PaymentMethod =
   | "cash"
   | "qr_static"
   | "bank_transfer"
-  | "external";
+  | "external"
+  | "split";
 
 export type PaymentStatus =
   | "pending"
