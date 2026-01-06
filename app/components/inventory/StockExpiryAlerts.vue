@@ -21,7 +21,7 @@
           <div>
             <p class="text-2xl font-bold">{{ expiredCount }}</p>
             <p class="text-xs opacity-75">
-              {{ $t("inventory.expired") || "Expired" }}
+              {{ $t("inventory.expired", "Expired") }}
             </p>
           </div>
         </div>
@@ -42,7 +42,7 @@
           <div>
             <p class="text-2xl font-bold">{{ urgentCount }}</p>
             <p class="text-xs opacity-75">
-              {{ $t("inventory.urgentExpiry") || "≤3 days" }}
+              {{ $t("inventory.urgentExpiry", "≤3 days") }}
             </p>
           </div>
         </div>
@@ -65,7 +65,7 @@
           <div>
             <p class="text-2xl font-bold">{{ criticalCount }}</p>
             <p class="text-xs opacity-75">
-              {{ $t("inventory.criticalExpiry") || "≤7 days" }}
+              {{ $t("inventory.criticalExpiry", "≤7 days") }}
             </p>
           </div>
         </div>
@@ -88,7 +88,7 @@
           <div>
             <p class="text-2xl font-bold">{{ warningCount }}</p>
             <p class="text-xs opacity-75">
-              {{ $t("inventory.warningExpiry") || "≤30 days" }}
+              {{ $t("inventory.warningExpiry", "≤30 days") }}
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@
             size="xs"
             @click="acknowledgeAll"
           >
-            {{ $t("inventory.acknowledgeAll") || "Acknowledge All" }}
+            {{ $t("inventory.acknowledgeAll", "Acknowledge All") }}
           </UButton>
           <UButton
             icon="i-heroicons-arrow-path"
@@ -168,7 +168,7 @@
             >
               <span class="flex items-center gap-1">
                 <UIcon name="i-heroicons-cube" class="w-3.5 h-3.5" />
-                {{ alert.currentQuantity }} {{ $t("common.units") || "units" }}
+                {{ alert.currentQuantity }} {{ $t("common.units", "units") }}
               </span>
               <span class="flex items-center gap-1">
                 <UIcon name="i-heroicons-calendar" class="w-3.5 h-3.5" />
@@ -188,15 +188,15 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{
                 alert.daysUntilExpiry <= 0
-                  ? $t("inventory.expired") || "Expired"
-                  : $t("common.days") || "days"
+                  ? $t("inventory.expired", "Expired")
+                  : $t("common.days", "days")
               }}
             </p>
           </div>
 
           <!-- Actions -->
           <div class="flex items-center gap-1 shrink-0">
-            <UTooltip :text="$t('inventory.viewLot') || 'View Lot'">
+            <UTooltip :text="$t('inventory.viewLot', 'View Lot')">
               <UButton
                 icon="i-heroicons-eye"
                 color="neutral"
@@ -205,7 +205,7 @@
                 @click="$emit('view-lot', alert.lot)"
               />
             </UTooltip>
-            <UTooltip :text="$t('inventory.quarantine') || 'Quarantine'">
+            <UTooltip :text="$t('inventory.quarantine', 'Quarantine')">
               <UButton
                 icon="i-heroicons-shield-exclamation"
                 color="amber"
@@ -216,7 +216,7 @@
             </UTooltip>
             <UTooltip
               v-if="!alert.acknowledged"
-              :text="$t('inventory.acknowledge') || 'Acknowledge'"
+              :text="$t('inventory.acknowledge', 'Acknowledge')"
             >
               <UButton
                 icon="i-heroicons-check"
@@ -238,15 +238,19 @@
           <p class="font-medium">
             {{
               selectedFilter === "all"
-                ? $t("inventory.noExpiryAlerts") || "No expiry alerts"
-                : $t("inventory.noAlertsInCategory") ||
-                  "No alerts in this category"
+                ? $t("inventory.noExpiryAlerts", "No expiry alerts")
+                : $t(
+                    "inventory.noAlertsInCategory",
+                    "No alerts in this category"
+                  )
             }}
           </p>
           <p class="text-sm">
             {{
-              $t("inventory.stockHealthy") ||
-              "All stock is within acceptable expiry dates"
+              $t(
+                "inventory.stockHealthy",
+                "All stock is within acceptable expiry dates"
+              )
             }}
           </p>
         </div>
@@ -261,7 +265,7 @@
             class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
           >
             <span>📦</span>
-            {{ $t("inventory.lotDetails") || "Lot Details" }}
+            {{ $t("inventory.lotDetails", "Lot Details") }}
           </h3>
 
           <div v-if="selectedLot" class="space-y-4">
@@ -269,7 +273,7 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("inventory.lotNumber") || "Lot Number" }}
+                  {{ $t("inventory.lotNumber", "Lot Number") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ selectedLot.lotNumber }}
@@ -277,7 +281,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("inventory.batchCode") || "Batch Code" }}
+                  {{ $t("inventory.batchCode", "Batch Code") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ selectedLot.batchCode || "-" }}
@@ -285,7 +289,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("inventory.currentQty") || "Current Qty" }}
+                  {{ $t("inventory.currentQty", "Current Qty") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ selectedLot.currentQuantity }} /
@@ -294,7 +298,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("common.status") || "Status" }}
+                  {{ $t("common.status", "Status") }}
                 </p>
                 <UBadge :color="getLotStatusColor(selectedLot.status)">
                   {{ selectedLot.status }}
@@ -302,7 +306,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("inventory.expiryDate") || "Expiry Date" }}
+                  {{ $t("inventory.expiryDate", "Expiry Date") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{
@@ -314,7 +318,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("inventory.position") || "Position" }}
+                  {{ $t("inventory.position", "Position") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ selectedLot.positionCode || "-" }}
@@ -322,7 +326,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("inventory.supplier") || "Supplier" }}
+                  {{ $t("inventory.supplier", "Supplier") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ selectedLot.supplierName || "-" }}
@@ -330,7 +334,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("inventory.costPrice") || "Cost Price" }}
+                  {{ $t("inventory.costPrice", "Cost Price") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ formatCurrency(selectedLot.costPrice) }}
@@ -348,7 +352,7 @@
                 class="flex-1"
                 @click="showLotModal = false"
               >
-                {{ $t("common.close") || "Close" }}
+                {{ $t("common.close", "Close") }}
               </UButton>
               <UButton
                 v-if="selectedLot.status !== 'quarantine'"
@@ -356,7 +360,7 @@
                 class="flex-1"
                 @click="quarantineLot"
               >
-                {{ $t("inventory.quarantine") || "Quarantine" }}
+                {{ $t("inventory.quarantine", "Quarantine") }}
               </UButton>
             </div>
           </div>

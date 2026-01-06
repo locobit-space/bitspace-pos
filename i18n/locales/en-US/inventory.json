@@ -141,6 +141,11 @@
     "unknownProduct": "Unknown Product",
     "scanning": "Scanning...",
     "startingCamera": "Starting camera...",
-    "outof-stock": "Out of Stock"
+    "outof-stock": "Out of Stock",
+    "manufacturingDate": "Manufacturing Date",
+     "unitCost": "Unit Cost",
+    "totalCost": "Total Cost",
+    "lotTracking": "Lot Tracking",
+    "generateLot": "Generate Lot Automatically"
   }
 }

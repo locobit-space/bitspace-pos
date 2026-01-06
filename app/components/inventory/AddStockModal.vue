@@ -161,10 +161,7 @@ const expiryWarningColor = computed(() => {
                 {{ t("inventory.addStock") }}
               </h3>
               <p class="text-sm text-gray-500">
-                {{
-                  t("inventory.addStockDesc") ||
-                  "Add stock with optional lot tracking"
-                }}
+                {{ t("inventory.addStockDesc", "Add stock to inventory") }}
               </p>
             </div>
           </div>
@@ -253,33 +250,27 @@ const expiryWarningColor = computed(() => {
                 icon="i-heroicons-sparkles"
                 @click="generateLotNumber"
               >
-                {{ t("inventory.generateLot") || "Generate" }}
+                {{ t("inventory.generateLot", "Generate Lot Automatically") }}
               </UButton>
             </div>
 
             <!-- Lot Number -->
             <UFormField
-              :label="t('inventory.lotNumber') || 'Lot/Batch Number'"
+              :label="t('inventory.lotNumber', 'Lot/Batch Number')"
               class="mb-3"
             >
               <UInput
                 v-model="addStockForm.lotNumber"
-                :placeholder="
-                  t('inventory.lotNumberPlaceholder') ||
-                  'e.g., LOT-20251206-AB12'
-                "
+                placeholder="e.g., LOT-20251206-AB12"
                 class="w-full"
               />
             </UFormField>
 
             <!-- Dates Row -->
             <div class="grid grid-cols-2 gap-4">
-              <UFormField
-                :label="t('inventory.manufacturingDate') || 'Mfg Date'"
-              >
-                <UInput
+              <UFormField :label="t('inventory.manufacturingDate', 'Mfg Date')">
+                <CommonDatePicker
                   v-model="addStockForm.manufacturingDate"
-                  type="date"
                   class="w-full"
                 />
               </UFormField>
@@ -287,20 +278,19 @@ const expiryWarningColor = computed(() => {
               <UFormField :required="requiresExpiry">
                 <template #label>
                   <span class="flex items-center gap-2">
-                    {{ t("inventory.expiryDate") || "Expiry Date" }}
+                    {{ t("inventory.expiryDate", "Expiry Date") }}
                     <UBadge
                       v-if="requiresExpiry"
                       color="red"
                       size="xs"
                       variant="subtle"
                     >
-                      {{ t("common.required") || "Required" }}
+                      {{ t("common.required", "Required") }}
                     </UBadge>
                   </span>
                 </template>
-                <UInput
+                <CommonDatePicker
                   v-model="addStockForm.expiryDate"
-                  type="date"
                   class="w-full"
                 />
                 <!-- Expiry Warning -->
@@ -310,15 +300,15 @@ const expiryWarningColor = computed(() => {
                   :class="expiryWarningColor"
                 >
                   <template v-if="daysUntilExpiry <= 0">
-                    ⚠️ {{ t("inventory.alreadyExpired") || "Already expired!" }}
+                    ⚠️ {{ t("inventory.alreadyExpired", "Already expired!") }}
                   </template>
                   <template v-else-if="daysUntilExpiry <= 7">
                     ⚠️ {{ daysUntilExpiry }}
-                    {{ t("inventory.daysUntilExpiry") || "days until expiry" }}
+                    {{ t("inventory.daysUntilExpiry", "days until expiry") }}
                   </template>
                   <template v-else>
                     ✓ {{ daysUntilExpiry }}
-                    {{ t("inventory.daysUntilExpiry") || "days until expiry" }}
+                    {{ t("inventory.daysUntilExpiry", "days until expiry") }}
                   </template>
                 </p>
               </UFormField>
@@ -341,7 +331,7 @@ const expiryWarningColor = computed(() => {
             <UButton
               color="neutral"
               variant="outline"
-              :label="t('common.cancel')"
+              :label="t('common.cancel', 'Cancel')"
               @click="open = false"
             />
             <UButton

@@ -125,6 +125,11 @@
     "lotQuarantined": "ກັກກັນລ໋ອດແລ້ວ",
     "receiveStock": "ຮັບສິນຄ້າ",
     "pendingSync": "ລໍຖ້າຊິງຄ໌",
-    "outof-stock": "ໝົດສິນຄ້າ"
+    "outof-stock": "ໝົດສິນຄ້າ",
+    "manufacturingDate": "ວັນທີ່ຜະລິດ",
+    "unitCost": "ຕົ້ນທຶນຕໍ່ຫນ່ວຍ",
+    "totalCost": "ຕົ້ນທຶນລວມ",
+    "lotTracking": "ການຕິດຕາມລ໋ອດ",
+    "generateLot": "ສ້າງລ໋ອດອັດຕະໂນມັດ"
   }
 }

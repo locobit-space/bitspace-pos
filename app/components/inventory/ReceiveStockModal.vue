@@ -16,12 +16,14 @@
             </div>
             <div>
               <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-                {{ $t("inventory.receiveStock") || "Receive Stock" }}
+                {{ $t("inventory.receiveStock", "Receive Stock") }}
               </h2>
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 {{
-                  $t("inventory.receiveStockDesc") ||
-                  "Record incoming inventory with lot tracking"
+                  $t(
+                    "inventory.receiveStockDesc",
+                    "Record incoming inventory with lot tracking"
+                  )
                 }}
               </p>
             </div>
@@ -43,18 +45,18 @@
               class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
             >
               <span class="text-lg">📋</span>
-              {{ $t("inventory.receiptInfo") || "Receipt Information" }}
+              {{ $t("inventory.receiptInfo", "Receipt Information") }}
             </h3>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <!-- Supplier -->
-              <UFormField :label="$t('inventory.supplier') || 'Supplier'">
+              <UFormField :label="$t('inventory.supplier', 'Supplier')">
                 <USelect
                   v-model="form.supplierId"
                   :items="supplierOptions"
                   label-key="name"
                   value-key="id"
-                  :placeholder="$t('common.select') || 'Select...'"
+                  :placeholder="$t('common.select', 'Select...')"
                   searchable
                   clearable
                   class="w-full"
@@ -64,25 +66,25 @@
 
               <!-- Purchase Order (optional) -->
               <UFormField
-                :label="$t('inventory.purchaseOrder') || 'Purchase Order'"
+                :label="$t('inventory.purchaseOrder', 'Purchase Order')"
               >
                 <USelect
                   v-model="form.purchaseOrderId"
                   :items="poOptions"
                   label-key="label"
                   value-key="id"
-                  :placeholder="$t('common.optional') || 'Optional'"
+                  :placeholder="$t('common.optional', 'Optional')"
                   clearable
                   class="w-full"
                 />
               </UFormField>
 
               <!-- Invoice Number -->
-              <UFormField :label="$t('inventory.invoiceNumber') || 'Invoice #'">
+              <UFormField :label="$t('inventory.invoiceNumber', 'Invoice #')">
                 <UInput
                   v-model="form.invoiceNumber"
                   :placeholder="
-                    $t('inventory.invoicePlaceholder') || 'e.g., INV-2024-001'
+                    $t('inventory.invoicePlaceholder', 'e.g., INV-2024-001')
                   "
                   class="w-full"
                 />
@@ -92,23 +94,22 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Delivery Note -->
               <UFormField
-                :label="$t('inventory.deliveryNote') || 'Delivery Note'"
+                :label="$t('inventory.deliveryNote', 'Delivery Note')"
               >
                 <UInput
                   v-model="form.deliveryNote"
                   :placeholder="
-                    $t('inventory.deliveryNotePlaceholder') ||
-                    'Reference number'
+                    $t('inventory.deliveryNotePlaceholder', 'Reference number')
                   "
                   class="w-full"
                 />
               </UFormField>
 
               <!-- Notes -->
-              <UFormField :label="$t('common.notes') || 'Notes'">
+              <UFormField :label="$t('common.notes', 'Notes')">
                 <UInput
                   v-model="form.notes"
-                  :placeholder="$t('common.optional') || 'Optional notes...'"
+                  :placeholder="$t('common.optional', 'Optional notes...')"
                   class="w-full"
                 />
               </UFormField>
@@ -122,7 +123,7 @@
                 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
               >
                 <span class="text-lg">📦</span>
-                {{ $t("inventory.items") || "Items" }}
+                {{ $t("inventory.items", "Items") }}
                 <UBadge color="primary" variant="subtle">
                   {{ form.items.length }}
                 </UBadge>
@@ -134,7 +135,7 @@
                 icon="i-heroicons-plus"
                 @click="addItem"
               >
-                {{ $t("inventory.addItem") || "Add Item" }}
+                {{ $t("inventory.addItem", "Add Item") }}
               </UButton>
             </div>
 
@@ -156,8 +157,7 @@
                     <span class="font-medium text-gray-900 dark:text-white">
                       {{
                         item.productName ||
-                        $t("inventory.selectProduct") ||
-                        "Select Product"
+                        $t("inventory.selectProduct", "Select Product")
                       }}
                     </span>
                     <UBadge
@@ -190,14 +190,14 @@
                       :items="productOptions"
                       label-key="label"
                       value-key="id"
-                      :placeholder="$t('common.search') || 'Search...'"
+                      :placeholder="$t('common.search', 'Search...')"
                       searchable
                       class="w-full"
                       @update:model-value="(val) => onProductSelect(index, val)"
                     />
                   </UFormField>
 
-                  <UFormField :label="$t('inventory.quantity') || 'Quantity'">
+                  <UFormField :label="$t('inventory.quantity', 'Quantity')">
                     <UInput
                       v-model.number="item.receivedQty"
                       type="number"
@@ -208,7 +208,7 @@
                     />
                   </UFormField>
 
-                  <UFormField :label="$t('inventory.unitCost') || 'Unit Cost'">
+                  <UFormField :label="$t('inventory.unitCost', 'Unit Cost')">
                     <UInput
                       v-model.number="item.unitCost"
                       type="number"
@@ -223,26 +223,26 @@
                 <!-- Row 2: Lot & Expiry -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <UFormField
-                    :label="$t('inventory.lotNumber') || 'Lot/Batch #'"
+                    :label="$t('inventory.lotNumber', 'Lot/Batch #')"
                     required
                   >
                     <UInput
                       v-model="item.lotNumber"
                       :placeholder="
-                        $t('inventory.lotPlaceholder') || 'e.g., LOT-2024-001'
+                        $t('inventory.lotPlaceholder', 'e.g., LOT-2024-001')
                       "
                       class="w-full"
                     />
                   </UFormField>
 
                   <UFormField
-                    :label="$t('inventory.manufacturingDate') || 'Mfg. Date'"
+                    :label="$t('inventory.manufacturingDate', 'Mfg. Date')"
                   >
                     <UInput v-model="item.manufacturingDate" type="date" />
                   </UFormField>
 
                   <UFormField
-                    :label="$t('inventory.expiryDate') || 'Expiry Date'"
+                    :label="$t('inventory.expiryDate', 'Expiry Date')"
                     :required="item.requiresExpiry"
                   >
                     <UInput
@@ -256,13 +256,13 @@
                     />
                   </UFormField>
 
-                  <UFormField :label="$t('inventory.position') || 'Position'">
+                  <UFormField :label="$t('inventory.position', 'Position')">
                     <USelect
                       v-model="item.positionId"
                       :items="positionOptions"
                       label-key="label"
                       value-key="id"
-                      :placeholder="$t('common.select') || 'Select...'"
+                      :placeholder="$t('common.select', 'Select...')"
                       clearable
                       class="w-full"
                     />
@@ -288,11 +288,11 @@
                   <span class="text-sm font-medium">
                     {{
                       getDaysUntilExpiry(item.expiryDate) <= 0
-                        ? $t("inventory.expired") || "Product is expired!"
+                        ? $t("inventory.expired", "Product is expired!")
                         : `${
-                            $t("inventory.expiresIn") || "Expires in"
+                            $t("inventory.expiresIn", "Expires in")
                           } ${getDaysUntilExpiry(item.expiryDate)} ${
-                            $t("common.days") || "days"
+                            $t("common.days", "days")
                           }`
                     }}
                   </span>
@@ -301,7 +301,7 @@
                 <!-- Row 3: Quality & Notes -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <UFormField
-                    :label="$t('inventory.qualityGrade') || 'Quality'"
+                    :label="$t('inventory.qualityGrade', 'Quality')"
                   >
                     <USelect
                       v-model="item.qualityGrade"
@@ -313,7 +313,7 @@
                   </UFormField>
 
                   <UFormField
-                    :label="$t('inventory.accepted') || 'Accepted'"
+                    :label="$t('inventory.accepted', 'Accepted')"
                     class="md:col-span-1"
                   >
                     <div class="flex gap-2">
@@ -329,17 +329,17 @@
                         type="number"
                         min="0"
                         :max="item.receivedQty"
-                        :placeholder="$t('inventory.rejected') || 'Rejected'"
+                        :placeholder="$t('inventory.rejected', 'Rejected')"
                         class="flex-1"
                       />
                     </div>
                   </UFormField>
 
-                  <UFormField :label="$t('common.notes') || 'Notes'">
+                  <UFormField :label="$t('common.notes', 'Notes')">
                     <UInput
                       v-model="item.notes"
                       class="w-full"
-                      :placeholder="$t('common.optional') || 'Optional...'"
+                      :placeholder="$t('common.optional', 'Optional...')"
                     />
                   </UFormField>
                 </div>
@@ -350,7 +350,7 @@
                 >
                   <div class="text-sm">
                     <span class="text-gray-500 dark:text-gray-400"
-                      >{{ $t("common.total") || "Total" }}:</span
+                      >{{ $t("common.total", "Total") }}:</span
                     >
                     <span class="ml-2 font-bold text-gray-900 dark:text-white">
                       {{ formatCurrency(item.acceptedQty * item.unitCost) }}
@@ -367,7 +367,7 @@
             >
               <span class="text-4xl mb-3">📦</span>
               <p class="text-gray-500 dark:text-gray-400 mb-4">
-                {{ $t("inventory.noItemsAdded") || "No items added yet" }}
+                {{ $t("inventory.noItemsAdded", "No items added yet") }}
               </p>
               <UButton
                 color="primary"
@@ -375,7 +375,7 @@
                 icon="i-heroicons-plus"
                 @click="addItem"
               >
-                {{ $t("inventory.addFirstItem") || "Add First Item" }}
+                {{ $t("inventory.addFirstItem", "Add First Item") }}
               </UButton>
             </div>
           </div>
@@ -390,7 +390,7 @@
                 {{ form.items.length }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ $t("inventory.items") || "Items" }}
+                {{ $t("inventory.items", "Items") }}
               </p>
             </div>
             <div
@@ -400,7 +400,7 @@
                 {{ totalQuantity }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ $t("inventory.totalQty") || "Total Qty" }}
+                {{ $t("inventory.totalQty", "Total Qty") }}
               </p>
             </div>
             <div
@@ -412,7 +412,7 @@
                 {{ acceptedQuantity }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ $t("inventory.accepted") || "Accepted" }}
+                {{ $t("inventory.accepted", "Accepted") }}
               </p>
             </div>
             <div
@@ -422,7 +422,7 @@
                 {{ formatCurrency(totalValue) }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ $t("inventory.totalValue") || "Total Value" }}
+                {{ $t("inventory.totalValue", "Total Value") }}
               </p>
             </div>
           </div>
@@ -430,11 +430,11 @@
           <!-- Actions -->
           <div class="flex justify-between items-center">
             <UButton color="neutral" variant="outline" @click="close">
-              {{ $t("common.cancel") || "Cancel" }}
+              {{ $t("common.cancel", "Cancel") }}
             </UButton>
             <div class="flex gap-2">
               <UButton color="neutral" variant="soft" @click="saveDraft">
-                {{ $t("common.saveDraft") || "Save Draft" }}
+                {{ $t("common.saveDraft", "Save Draft") }}
               </UButton>
               <UButton
                 color="primary"
@@ -443,7 +443,7 @@
                 @click="submit"
               >
                 <UIcon name="i-heroicons-check" class="w-4 h-4 mr-1" />
-                {{ $t("inventory.receiveStock") || "Receive Stock" }}
+                {{ $t("inventory.receiveStock", "Receive Stock") }}
               </UButton>
             </div>
           </div>
