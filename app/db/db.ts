@@ -51,18 +51,8 @@ export interface OfflinePaymentRecord {
   orderData: string; // JSON string of order
 }
 
-// New: Loyalty Members
-export interface LoyaltyMemberRecord {
-  id: string;
-  nostrPubkey: string;
-  points: number;
-  tier: string;
-  totalSpent: number;
-  visitCount: number;
-  lastVisit: number;
-  joinedAt: number;
-  rewardsJson: string; // JSON string of rewards array
-}
+// Note: LoyaltyMemberRecord is deprecated - use CustomerRecord instead
+// CustomerRecord includes all loyalty features (points, tiers, etc.)
 
 // New: Local Orders (for offline support)
 export interface LocalOrder {
@@ -843,6 +833,57 @@ export interface PromotionRecord {
 }
 
 // ============================================
+// 💳 MEMBERSHIP RECORDS
+// Membership Plans & Subscriptions
+// ============================================
+
+export interface MembershipPlanRecord {
+  id: string;
+  name: string;
+  nameLao?: string;
+  description?: string;
+  duration: number; // days
+  price: number;
+  benefits: string; // JSON array
+  benefitsLao?: string; // JSON array
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+export interface MembershipRecord {
+  id: string;
+  customerId: string;
+  customerName: string;
+  planId: string;
+  planName: string;
+  startDate: string;
+  endDate: string;
+  status: "active" | "expired" | "cancelled" | "suspended";
+  checkInCount: number;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+export interface MembershipCheckInRecord {
+  id: string;
+  membershipId: string;
+  customerId: string;
+  customerName: string;
+  timestamp: number;
+  notes?: string;
+  staffId?: string;
+  nostrEventId?: string;
+  synced: boolean;
+}
+
+// ============================================
 // Database Class
 // ============================================
 
@@ -851,7 +892,7 @@ export class POSDatabase extends Dexie {
   meta!: Table<MetaEntry, string>;
   pendingSync!: Table<PendingSync, number>;
   offlinePayments!: Table<OfflinePaymentRecord, string>;
-  loyaltyMembers!: Table<LoyaltyMemberRecord, string>;
+  // Note: loyaltyMembers table is deprecated - use customers table instead
   localOrders!: Table<LocalOrder, string>;
   exchangeRates!: Table<ExchangeRateCache, string>;
   posSessions!: Table<POSSessionRecord, string>;
@@ -899,6 +940,11 @@ export class POSDatabase extends Dexie {
   // Promotions table
   promotions!: Table<PromotionRecord, string>;
 
+  // Membership tables
+  membershipPlans!: Table<MembershipPlanRecord, string>;
+  memberships!: Table<MembershipRecord, string>;
+  membershipCheckIns!: Table<MembershipCheckInRecord, string>;
+
   constructor() {
     super("POSDatabase");
 
@@ -908,13 +954,12 @@ export class POSDatabase extends Dexie {
       pendingSync: "++id, status",
     });
 
-    // Version 2: Add new tables for futuristic POS
+    // Version 2: Add new tables for futuristic POS (deprecated loyaltyMembers - use customers instead)
     this.version(2).stores({
       events: "id, kind, created_at, pubkey",
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -926,7 +971,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -948,7 +992,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -978,7 +1021,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1011,7 +1053,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1054,7 +1095,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1099,7 +1139,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1146,7 +1185,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1196,7 +1234,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1248,7 +1285,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1303,7 +1339,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1357,7 +1392,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1412,7 +1446,6 @@ export class POSDatabase extends Dexie {
       meta: "id, type",
       pendingSync: "++id, status",
       offlinePayments: "id, orderId, syncStatus, createdAt",
-      loyaltyMembers: "id, nostrPubkey, tier, points",
       localOrders: "id, status, paymentMethod, createdAt, syncedAt",
       exchangeRates: "id, updatedAt",
       posSessions: "id, branchId, staffId, status, startedAt",
@@ -1462,6 +1495,69 @@ export class POSDatabase extends Dexie {
       // NEW: Promotions
       promotions:
         "id, name, type, status, startDate, endDate, priority, usageCount, synced, updatedAt",
+    });
+
+    // Version 15: Membership Plans & Subscriptions
+    this.version(15).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      accounts: "id, code, name, type, category, isActive, synced, updatedAt",
+      journalEntries: "id, entryNumber, date, status, synced, createdAt",
+      expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
+      employees:
+        "id, employeeCode, firstName, lastName, status, branchId, department, position, synced, updatedAt",
+      chatMessages:
+        "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, nostrEventId, synced",
+      chatConversations:
+        "id, type, lastMessageTime, unreadCount, isPinned, isPrivate, updatedAt",
+      promotions:
+        "id, name, type, status, startDate, endDate, priority, usageCount, synced, updatedAt",
+      // NEW: Membership tables
+      membershipPlans:
+        "id, name, duration, price, isActive, sortOrder, synced, updatedAt",
+      memberships:
+        "id, customerId, planId, status, startDate, endDate, checkInCount, synced, updatedAt",
+      membershipCheckIns:
+        "id, membershipId, customerId, timestamp, staffId, synced",
     });
   }
 }

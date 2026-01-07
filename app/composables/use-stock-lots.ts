@@ -876,6 +876,235 @@ export function useStockLots() {
     });
   }
 
+  // ============================================
+  // 🔄 NOSTR SYNC
+  // ============================================
+
+  const nostrData = useNostrData();
+  const offline = useOffline();
+  const syncPending = ref(0);
+
+  // Nostr Event Kinds for Stock Lots
+  const NOSTR_KINDS = {
+    STOCK_LOT: 37001, // Business: Stock Lots/Batches
+    STOCK_RECEIPT: 37002, // Business: Stock Receipts
+    LOT_MOVEMENT: 37003, // Business: Lot Movements
+  };
+
+  async function syncStockLotToNostr(lot: StockLot): Promise<boolean> {
+    try {
+      const event = await nostrData.publishReplaceableEvent(
+        NOSTR_KINDS.STOCK_LOT,
+        JSON.stringify({
+          id: lot.id,
+          productId: lot.productId,
+          branchId: lot.branchId,
+          lotNumber: lot.lotNumber,
+          batchCode: lot.batchCode,
+          initialQuantity: lot.initialQuantity,
+          currentQuantity: lot.currentQuantity,
+          reservedQuantity: lot.reservedQuantity,
+          manufacturingDate: lot.manufacturingDate,
+          expiryDate: lot.expiryDate,
+          receivedDate: lot.receivedDate,
+          status: lot.status,
+          positionId: lot.positionId,
+          positionCode: lot.positionCode,
+          supplierId: lot.supplierId,
+          supplierName: lot.supplierName,
+          purchaseOrderId: lot.purchaseOrderId,
+          costPrice: lot.costPrice,
+          totalCost: lot.totalCost,
+          qualityGrade: lot.qualityGrade,
+          notes: lot.notes,
+          createdBy: lot.createdBy,
+          createdAt: lot.createdAt,
+          updatedAt: lot.updatedAt,
+        }),
+        lot.id // dTag
+      );
+
+      if (event) {
+        await db.stockLots.update(lot.id, {
+          synced: true,
+          nostrEventId: event.id,
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync stock lot to Nostr:', e);
+      return false;
+    }
+  }
+
+  async function syncStockReceiptToNostr(receipt: StockReceipt): Promise<boolean> {
+    try {
+      const event = await nostrData.publishReplaceableEvent(
+        NOSTR_KINDS.STOCK_RECEIPT,
+        JSON.stringify({
+          id: receipt.id,
+          branchId: receipt.branchId,
+          supplierId: receipt.supplierId,
+          supplierName: receipt.supplierName,
+          purchaseOrderId: receipt.purchaseOrderId,
+          receiptNumber: receipt.receiptNumber,
+          receiptDate: receipt.receiptDate,
+          status: receipt.status,
+          items: receipt.items,
+          notes: receipt.notes,
+          receivedBy: receipt.receivedBy,
+          createdAt: receipt.createdAt,
+          updatedAt: receipt.updatedAt,
+        }),
+        receipt.id // dTag
+      );
+
+      if (event) {
+        await db.stockReceipts.update(receipt.id, {
+          synced: true,
+          nostrEventId: event.id,
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync stock receipt to Nostr:', e);
+      return false;
+    }
+  }
+
+  async function syncLotMovementToNostr(movement: LotStockMovement): Promise<boolean> {
+    try {
+      const event = await nostrData.publishEvent(
+        NOSTR_KINDS.LOT_MOVEMENT,
+        JSON.stringify({
+          id: movement.id,
+          lotId: movement.lotId,
+          productId: movement.productId,
+          branchId: movement.branchId,
+          type: movement.type,
+          quantity: movement.quantity,
+          referenceId: movement.referenceId,
+          referenceType: movement.referenceType,
+          notes: movement.notes,
+          createdBy: movement.createdBy,
+          createdAt: movement.createdAt,
+        })
+      );
+
+      if (event) {
+        await db.lotStockMovements.update(movement.id, {
+          synced: true,
+          nostrEventId: event.id,
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to sync lot movement to Nostr:', e);
+      return false;
+    }
+  }
+
+  async function syncPendingData(): Promise<{
+    synced: number;
+    failed: number;
+  }> {
+    let synced = 0;
+    let failed = 0;
+
+    if (!offline.isOnline.value) {
+      return { synced, failed };
+    }
+
+    try {
+      // Sync unsynced stock lots
+      const unsyncedLots = await db.stockLots.filter((l) => !l.synced).toArray();
+      for (const lotRecord of unsyncedLots) {
+        const lot: StockLot = {
+          id: lotRecord.id,
+          productId: lotRecord.productId,
+          branchId: lotRecord.branchId,
+          lotNumber: lotRecord.lotNumber,
+          batchCode: lotRecord.batchCode,
+          initialQuantity: lotRecord.initialQuantity,
+          currentQuantity: lotRecord.currentQuantity,
+          reservedQuantity: lotRecord.reservedQuantity,
+          manufacturingDate: lotRecord.manufacturingDate ? new Date(lotRecord.manufacturingDate).toISOString() : undefined,
+          expiryDate: lotRecord.expiryDate ? new Date(lotRecord.expiryDate).toISOString() : undefined,
+          receivedDate: new Date(lotRecord.receivedDate).toISOString(),
+          status: lotRecord.status as StockLot['status'],
+          positionId: lotRecord.positionId,
+          positionCode: lotRecord.positionCode,
+          supplierId: lotRecord.supplierId,
+          supplierName: lotRecord.supplierName,
+          purchaseOrderId: lotRecord.purchaseOrderId,
+          costPrice: lotRecord.costPrice,
+          totalCost: lotRecord.totalCost,
+          qualityGrade: lotRecord.qualityGrade as StockLot['qualityGrade'],
+          notes: lotRecord.notes,
+          createdBy: lotRecord.createdBy,
+          createdAt: new Date(lotRecord.createdAt).toISOString(),
+          updatedAt: new Date(lotRecord.updatedAt).toISOString(),
+        };
+        const success = await syncStockLotToNostr(lot);
+        if (success) synced++;
+        else failed++;
+      }
+
+      // Sync unsynced receipts
+      const unsyncedReceipts = await db.stockReceipts.filter((r) => !r.synced).toArray();
+      for (const receiptRecord of unsyncedReceipts) {
+        const receipt: StockReceipt = {
+          id: receiptRecord.id,
+          branchId: receiptRecord.branchId,
+          supplierId: receiptRecord.supplierId,
+          supplierName: receiptRecord.supplierName,
+          purchaseOrderId: receiptRecord.purchaseOrderId,
+          receiptNumber: receiptRecord.receiptNumber,
+          receiptDate: new Date(receiptRecord.receiptDate).toISOString(),
+          status: receiptRecord.status as StockReceipt['status'],
+          items: JSON.parse(receiptRecord.itemsJson),
+          notes: receiptRecord.notes,
+          receivedBy: receiptRecord.receivedBy,
+          createdAt: new Date(receiptRecord.createdAt).toISOString(),
+          updatedAt: new Date(receiptRecord.updatedAt).toISOString(),
+        };
+        const success = await syncStockReceiptToNostr(receipt);
+        if (success) synced++;
+        else failed++;
+      }
+
+      // Sync unsynced movements
+      const unsyncedMovements = await db.lotStockMovements.filter((m) => !m.synced).toArray();
+      for (const movementRecord of unsyncedMovements) {
+        const movement: LotStockMovement = {
+          id: movementRecord.id,
+          lotId: movementRecord.lotId,
+          productId: movementRecord.productId,
+          branchId: movementRecord.branchId,
+          type: movementRecord.type as LotStockMovement['type'],
+          quantity: movementRecord.quantity,
+          referenceId: movementRecord.referenceId,
+          referenceType: movementRecord.referenceType,
+          notes: movementRecord.notes,
+          createdBy: movementRecord.createdBy,
+          createdAt: new Date(movementRecord.createdAt).toISOString(),
+        };
+        const success = await syncLotMovementToNostr(movement);
+        if (success) synced++;
+        else failed++;
+      }
+
+      syncPending.value = failed;
+    } catch (e) {
+      console.error('Failed to sync pending stock lots:', e);
+    }
+
+    return { synced, failed };
+  }
+
   return {
     // State
     stockLots,
@@ -886,6 +1115,7 @@ export function useStockLots() {
     isLoading,
     error,
     isInitialized,
+    syncPending,
     // Computed
     expiringLots,
     expiredLots,
@@ -906,5 +1136,7 @@ export function useStockLots() {
     // Utilities
     loadStockLots,
     loadStoragePositions,
+    // Sync
+    syncPendingData,
   };
 }
