@@ -754,6 +754,69 @@ export function useCustomers() {
     return result;
   }
 
+  // ============================================
+  // 🔄 SYNC PENDING DATA
+  // ============================================
+
+  async function syncPendingData(): Promise<{
+    synced: number;
+    failed: number;
+  }> {
+    let synced = 0;
+    let failed = 0;
+
+    if (!offline.isOnline.value) {
+      return { synced, failed };
+    }
+
+    try {
+      // Sync unsynced customers
+      const unsyncedCustomers = await db.customers
+        .filter((c) => !c.synced)
+        .toArray();
+
+      for (const customerRecord of unsyncedCustomers) {
+        try {
+          const customer: LoyaltyMember = {
+            id: customerRecord.id,
+            nostrPubkey: customerRecord.nostrPubkey,
+            name: customerRecord.name,
+            email: customerRecord.email,
+            phone: customerRecord.phone,
+            address: customerRecord.address,
+            notes: customerRecord.notes,
+            lud16: customerRecord.lud16,
+            tags: customerRecord.tags ? JSON.parse(customerRecord.tags) : [],
+            points: customerRecord.points,
+            tier: customerRecord.tier as LoyaltyMember["tier"],
+            totalSpent: customerRecord.totalSpent,
+            visitCount: customerRecord.visitCount,
+            lastVisit: new Date(customerRecord.lastVisit).toISOString(),
+            joinedAt: new Date(customerRecord.joinedAt).toISOString(),
+            zapRewards: [],
+          };
+
+          const success = await syncToNostr(customer);
+          if (success) {
+            synced++;
+          } else {
+            failed++;
+          }
+        } catch (e) {
+          console.error(`Failed to sync customer ${customerRecord.id}:`, e);
+          failed++;
+        }
+      }
+
+      syncPending.value = failed;
+    } catch (e) {
+      console.error("Failed to sync pending customers:", e);
+      error.value = `Sync failed: ${e}`;
+    }
+
+    return { synced, failed };
+  }
+
   return {
     // State
     customers,
@@ -800,6 +863,7 @@ export function useCustomers() {
 
     // Sync
     loadFromNostr,
+    syncPendingData,
 
     // Export/Import
     exportCustomers,
