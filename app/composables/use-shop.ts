@@ -450,6 +450,16 @@ export function useShop() {
         currentBranch.value = branches.value[0] || null;
       }
     }
+
+    // Register shop as workspace for multi-shop support
+    if (import.meta.client && shopConfig.value?.name) {
+      try {
+        const shopManager = useShopManager();
+        shopManager.registerCurrentShop();
+      } catch (e) {
+        console.warn("[Shop] Failed to register workspace:", e);
+      }
+    }
   }
 
   // ─────────────────────────────────────────

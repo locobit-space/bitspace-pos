@@ -216,7 +216,11 @@ export function useCompany() {
 
       return JSON.parse(decoder.decode(plaintext)) as T;
     } catch (error) {
-      console.error("[Company] Decryption failed:", error);
+      // This is expected when switching shops or trying to decrypt with wrong code
+      // Only log at debug level, not as error
+      if (import.meta.dev) {
+        console.debug("[Company] Decryption failed (wrong code or corrupted data)");
+      }
       return null;
     }
   }

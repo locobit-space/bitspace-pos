@@ -1,5 +1,7 @@
 {
   "common": {
+    "show": "ສະແດງ",
+    "hide": "ປິດ",
     "valid": "ຖືກຕ້ອງ",
     "copy": "ຄັດລອກ",
     "more": "ເພີ່ມເຕີມ",
@@ -21,6 +23,7 @@
     "update": "ອັບເດດ",
     "back": "ກັບຄືນ",
     "next": "ຕໍ່ໄປ",
+    "change": "ປ່ຽນ",
     "confirm": "ຢືນຢັນ",
     "confirmDelete": "ຢືນຢັນການລຶບ",
     "signOut": "ອອກຈາກລະບົບ",
@@ -130,6 +133,11 @@
     "refresh": "ຣີເຟຣຊ",
     "saveSettings": "ບັນທຶກການຕັ້ງຄ່າ",
     "overview": "ພາບລວມ",
+    "inventory": "ສິນຄ້າ",
+    "history": "ປະຫວັດ",
+    "recipes": "ສູດອາຫານ",
+    "never": "ບໍ່ເຄີຍ",
+    "dangerZone": "ພື້ນທີ່ອັນຕະລາຍ",
     "help": {
       "title": "ຊ່ວຍເຫຼືອ & ຄູ່ມື",
       "searchPlaceholder": "ຄົ້ນຫາ...",

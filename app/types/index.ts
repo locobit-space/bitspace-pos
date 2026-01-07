@@ -16,7 +16,7 @@
 // Fields: createdBy, updatedBy, userId, etc.
 // ============================================
 
-import { NOSTR_KINDS } from "./nostr-kinds";
+import type { NOSTR_KINDS } from "./nostr-kinds";
 
 // ============================================
 // 🏪 SHOP CONFIGURATION TYPES

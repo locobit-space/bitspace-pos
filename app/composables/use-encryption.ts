@@ -475,6 +475,58 @@ export function useEncryption() {
   }
 
   // ============================================
+  // Self-Encryption (User's own keys)
+  // For syncing private user data across devices
+  // ============================================
+
+  /**
+   * Encrypt data to self (using user's own Nostr keys)
+   * Used for syncing private data like workspace list across devices
+   */
+  async function encryptToSelf(plaintext: string): Promise<string | null> {
+    try {
+      const auth = useAuth();
+      const privkey = auth.getPrivateKey();
+      const pubkey = auth.user.value?.publicKey;
+
+      if (!privkey || !pubkey) {
+        console.debug('[Encryption] No keys available for self-encryption');
+        return null;
+      }
+
+      // Use NIP-04 for self-encryption (simpler, widely supported)
+      const ciphertext = await nip04.encrypt(privkey, pubkey, plaintext);
+      return ciphertext;
+    } catch (err) {
+      console.debug('[Encryption] Self-encryption failed:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Decrypt data from self (using user's own Nostr keys)
+   */
+  async function decryptFromSelf(ciphertext: string): Promise<string | null> {
+    try {
+      const auth = useAuth();
+      const privkey = auth.getPrivateKey();
+      const pubkey = auth.user.value?.publicKey;
+
+      if (!privkey || !pubkey) {
+        console.debug('[Encryption] No keys available for self-decryption');
+        return null;
+      }
+
+      // Decrypt NIP-04 self-encrypted content
+      const plaintext = await nip04.decrypt(privkey, pubkey, ciphertext);
+      return plaintext;
+    } catch (err) {
+      console.debug('[Encryption] Self-decryption failed:', err);
+      return null;
+    }
+  }
+
+  // ============================================
   // Field-Level Encryption for Sensitive Data
   // ============================================
 
@@ -742,6 +794,10 @@ export function useEncryption() {
     // High-Level API
     encrypt,
     decrypt,
+
+    // Self-Encryption (for cross-device sync)
+    encryptToSelf,
+    decryptFromSelf,
 
     // Algorithm-Specific
     encryptAES,

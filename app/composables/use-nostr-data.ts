@@ -263,8 +263,8 @@ export function useNostrData() {
             company.companyCode.value
           );
           return decrypted;
-        } catch (e) {
-          console.warn("[NostrData] Company code decrypt failed:", e);
+        } catch {
+          // Expected when switching shops or data from different company
           // Fall through to other methods
         }
       }

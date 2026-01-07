@@ -148,6 +148,8 @@ export const NOSTR_KINDS = {
   PERMISSION_REVOKE: 30511,
   /** Staff sync data (cross-device synchronization) */
   STAFF_SYNC: 30590,
+  /** User workspace list (encrypted, synced across devices with same nsec) */
+  USER_WORKSPACES: 30591,
 
   // ─────────────────────────────────────────
   // 🏢 BRANCH MANAGEMENT (30600-30699)

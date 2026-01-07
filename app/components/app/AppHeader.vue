@@ -2,7 +2,7 @@
   <header
     class="sticky top-0 z-40 flex items-center justify-between h-14 px-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
   >
-    <!-- Left: Hamburger (mobile) + Logo -->
+    <!-- Left: Hamburger (mobile) + Logo + Shop Switcher -->
     <div class="flex items-center gap-1">
       <!-- Hamburger Menu (Mobile Only) - Hidden during setup -->
       <button
@@ -14,16 +14,18 @@
       </button>
 
       <!-- Logo -->
-      <NuxtLinkLocale to="/" class="flex items-center gap-2">
+      <NuxtLinkLocale to="/" class="flex md:w-12 items-center justify-center gap-2">
         <div
           class="w-8 h-8 rounded-lg bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow"
         >
-          <span class="text-white font-bold text-sm">⚡</span>
+          <span title="BNOS" class="text-white font-bold text-sm">⚡</span>
         </div>
-        <span class="hidden sm:block font-bold text-gray-900 dark:text-white">
-          BNOS
-        </span>
       </NuxtLinkLocale>
+
+      <!-- Shop Switcher (visible after setup) -->
+      <div v-if="showHeaderFeatures" class="hidden md:block ml-2 pl-2 dark:border-gray-700">
+        <ShopSwitcher />
+      </div>
     </div>
 
     <!-- Right: Notifications + Profile -->
@@ -531,9 +533,9 @@ const providerBadgeClass = computed(() => {
   }
 });
 
-// Logout
+// Logout - use improved auth signOut that cleans all data
 const handleLogout = async () => {
-  await usersComposable.logout();
-  navigateTo("/auth/signin");
+  const auth = useAuth();
+  await auth.signOut({ keepWorkspaces: true }); // Keep workspaces for quick re-login
 };
 </script>

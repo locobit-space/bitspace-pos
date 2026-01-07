@@ -124,7 +124,7 @@ const stats = computed(() => {
                 {{ getCategoryName(category) }}
               </span>
               <span class="text-xs text-gray-500 dark:text-gray-400 ml-auto">
-                {{ productsByCategory[category.id]?.length || 0 }} {{ t('products.items') }}
+                {{ productsByCategory[category.id]?.length || 0 }} {{ t('common.items') }}
               </span>
             </div>
           </div>

@@ -1,5 +1,7 @@
 {
   "common": {
+    "show": "Show",
+    "hide": "Hide",
     "valid": "Valid",
     "copy": "Copy",
     "more": "More",
@@ -18,6 +20,7 @@
     "update": "Update",
     "back": "Back",
     "next": "Next",
+    "change": "Change",
     "confirm": "Confirm",
     "confirmDelete": "Confirm Delete",
     "signOut": "Sign Out",
@@ -141,6 +144,8 @@
     "inventory": "Inventory",
     "history": "History",
     "recipes": "Recipes",
+    "never": "Never",
+    "dangerZone": "Danger Zone",
     "help": {
       "title": "Help & Documentation",
       "searchPlaceholder": "Search help...",

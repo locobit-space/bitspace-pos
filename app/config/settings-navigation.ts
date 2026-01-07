@@ -146,6 +146,15 @@ export const settingsNavigation: SettingsNavItem[] = [
 
   // System Settings
   {
+    id: 'workspaces',
+    label: 'shop.workspaces',
+    to: '/settings/workspaces',
+    icon: 'i-heroicons-building-storefront',
+    color: 'violet',
+    section: 'system',
+    order: 19,
+  },
+  {
     id: 'backup',
     label: 'settings.backup.title',
     to: '/settings/backup',

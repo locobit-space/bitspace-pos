@@ -123,6 +123,24 @@
                 @submit="handleJoinCompany"
               />
 
+              <!-- Divider with "or" -->
+              <div class="flex items-center gap-3 my-2">
+                <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                <span class="text-xs text-gray-400 uppercase">{{ t('common.or', 'or') }}</span>
+                <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+              </div>
+
+              <!-- QR Scanner Button -->
+              <UButton
+                block
+                variant="outline"
+                size="lg"
+                @click="openQRScanner"
+              >
+                <UIcon name="i-heroicons-camera" class="w-5 h-5 mr-2" />
+                {{ t("auth.signin.scanQrToJoin", "Scan QR to Join") }}
+              </UButton>
+
               <p class="text-sm text-gray-500 text-center">
                 {{
                   t("shop.welcome.codeHint", "Ask your manager for this code")
@@ -182,6 +200,20 @@
         </div>
       </Transition>
     </div>
+
+    <!-- QR Scanner (hidden trigger, opens modal when showQRScanner is set) -->
+    <AuthQrScanner
+      @scanned="handleQRScanned"
+      @error="handleQRError"
+    >
+      <template #trigger="{ startScanning }">
+        <button 
+          ref="qrScannerTrigger" 
+          class="hidden" 
+          @click="startScanning"
+        />
+      </template>
+    </AuthQrScanner>
   </div>
 </template>
 
@@ -202,6 +234,38 @@ const companyCodeInput = ref("");
 const isConnecting = ref(false);
 const errorMsg = ref("");
 const isValidCode = ref(false);
+const qrScannerTrigger = ref<HTMLButtonElement | null>(null);
+
+// Open QR Scanner
+function openQRScanner() {
+  qrScannerTrigger.value?.click();
+}
+
+// Handle QR scan result
+function handleQRScanned(data: string) {
+  // Check if scanned data is a company code (8 chars alphanumeric)
+  const code = data.trim().toUpperCase();
+  if (/^[A-Z0-9]{8}$/.test(code)) {
+    companyCodeInput.value = code;
+    isValidCode.value = true;
+    // Auto-submit after successful scan
+    handleJoinCompany();
+  } else {
+    toast.add({
+      title: t('common.error', 'Error'),
+      description: t('shop.invalidQRCode', 'Invalid QR code. Please scan a valid company code.'),
+      color: 'error',
+    });
+  }
+}
+
+function handleQRError(message: string) {
+  toast.add({
+    title: t('common.error', 'Error'),
+    description: message,
+    color: 'error',
+  });
+}
 
 async function handleJoinCompany() {
   if (!isValidCode.value) return;
