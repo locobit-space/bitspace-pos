@@ -6,7 +6,10 @@
 // ============================================
 
 import { ref, computed } from "vue";
+import { finalizeEvent } from "nostr-tools/pure";
+import { hexToBytes } from "@noble/hashes/utils";
 import type { ShopConfig } from "./use-shop";
+import type { Event } from "nostr-tools";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 // ============================================
@@ -153,13 +156,22 @@ export function useShopManager() {
     if (state.value.workspaces.length === 0) return false;
 
     try {
-      const auth = useAuth();
       const nostrRelay = useNostrRelay();
       const encryption = useEncryption();
 
-      const userPubkey = auth.user.value?.publicKey;
-      if (!userPubkey) {
-        console.debug("[ShopManager] No user pubkey, skipping Nostr sync");
+      // Get user's keys from localStorage
+      const nostrUser = localStorage.getItem("nostrUser");
+      if (!nostrUser) {
+        console.debug("[ShopManager] No nostrUser, skipping Nostr sync");
+        return false;
+      }
+      
+      const parsed = JSON.parse(nostrUser);
+      const privkey = parsed.privkey || parsed.privateKey || parsed.seckey;
+      const pubkey = parsed.pubkey || parsed.publicKey;
+      
+      if (!privkey || !pubkey) {
+        console.debug("[ShopManager] No user keys, skipping Nostr sync");
         return false;
       }
 
@@ -192,16 +204,24 @@ export function useShopManager() {
         return false;
       }
 
-      // Publish to Nostr
-      const event = await nostrRelay.publishEvent({
+      // Create unsigned event
+      const unsignedEvent = {
         kind: NOSTR_KINDS.USER_WORKSPACES,
-        content: encrypted,
+        created_at: Math.floor(Date.now() / 1000),
         tags: [
           ["d", "workspaces"], // Replaceable event identifier
         ],
-      });
+        content: encrypted,
+        pubkey,
+      };
 
-      if (event) {
+      // Sign the event
+      const signedEvent = finalizeEvent(unsignedEvent, hexToBytes(privkey));
+
+      // Publish to Nostr
+      const success = await nostrRelay.publishEvent(signedEvent);
+
+      if (success) {
         console.log("[ShopManager] ✅ Synced workspaces to Nostr");
         return true;
       }
@@ -219,22 +239,30 @@ export function useShopManager() {
     if (!import.meta.client) return false;
 
     try {
-      const auth = useAuth();
       const nostrRelay = useNostrRelay();
       const encryption = useEncryption();
 
-      const userPubkey = auth.user.value?.publicKey;
-      if (!userPubkey) {
+      // Get user's pubkey from localStorage
+      const nostrUser = localStorage.getItem("nostrUser");
+      if (!nostrUser) {
+        console.debug("[ShopManager] No nostrUser, skipping Nostr load");
+        return false;
+      }
+      
+      const parsed = JSON.parse(nostrUser);
+      const pubkey = parsed.pubkey || parsed.publicKey;
+      
+      if (!pubkey) {
         console.debug("[ShopManager] No user pubkey, skipping Nostr load");
         return false;
       }
 
       console.log("[ShopManager] 📥 Loading workspaces from Nostr...");
 
-      // Fetch from Nostr
-      const events = await nostrRelay.fetchEvents({
+      // Fetch from Nostr using queryEvents
+      const events = await nostrRelay.queryEvents({
         kinds: [NOSTR_KINDS.USER_WORKSPACES],
-        authors: [userPubkey],
+        authors: [pubkey],
         "#d": ["workspaces"],
       });
 
@@ -244,7 +272,7 @@ export function useShopManager() {
       }
 
       // Get most recent event
-      const latestEvent = events.sort((a, b) => b.created_at - a.created_at)[0];
+      const latestEvent = events.sort((a: Event, b: Event) => b.created_at - a.created_at)[0];
       if (!latestEvent) return false;
 
       // Decrypt content
@@ -674,9 +702,104 @@ export function useShopManager() {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_WORKSPACE);
   }
 
+  /**
+   * 🔄 AUTO-MIGRATION: Migrate existing shop data to workspace
+   * For users updating from old version without workspace list
+   * Automatically creates a workspace from current shop config
+   */
+  function migrateExistingShopToWorkspace(): ShopWorkspace | null {
+    if (!import.meta.client) return null;
+
+    // Skip if already have workspaces
+    if (state.value.workspaces.length > 0) {
+      console.debug("[ShopManager] Workspaces exist, skip migration");
+      return null;
+    }
+
+    try {
+      // Check if shop is configured (old version data exists)
+      const shopConfigStr = localStorage.getItem("shopConfig");
+      if (!shopConfigStr) {
+        console.debug("[ShopManager] No shopConfig found, skip migration");
+        return null;
+      }
+
+      const shopConfig = JSON.parse(shopConfigStr);
+      if (!shopConfig.name) {
+        console.debug("[ShopManager] No shop name in config, skip migration");
+        return null;
+      }
+
+      // Get owner pubkey from various sources
+      let ownerPubkey: string | null = null;
+      
+      // Try nostrUser first
+      const nostrUser = localStorage.getItem("nostrUser");
+      if (nostrUser) {
+        try {
+          const parsed = JSON.parse(nostrUser);
+          ownerPubkey = parsed.pubkey || parsed.publicKey;
+        } catch {
+          // Ignore parse errors
+        }
+      }
+      
+      // Try nostr-pubkey
+      if (!ownerPubkey) {
+        ownerPubkey = localStorage.getItem("nostr-pubkey");
+      }
+      
+      // Try company owner pubkey
+      if (!ownerPubkey) {
+        ownerPubkey = localStorage.getItem("bitspace_company_owner_pubkey");
+      }
+
+      if (!ownerPubkey) {
+        console.debug("[ShopManager] No owner pubkey found, skip migration");
+        return null;
+      }
+
+      // Get company code if exists
+      const companyCode = localStorage.getItem("bitspace_company_code") || undefined;
+      const companyCodeHash = localStorage.getItem("bitspace_company_code_hash") || undefined;
+
+      console.log("[ShopManager] 🔄 AUTO-MIGRATION: Creating workspace from existing shop data");
+      console.log("[ShopManager] Shop:", shopConfig.name, "| Type:", shopConfig.shopType);
+
+      // Create workspace from existing shop config
+      const workspace = createWorkspaceFromShop(
+        {
+          name: shopConfig.name,
+          logo: shopConfig.logo,
+          shopType: shopConfig.shopType || "other",
+          currency: shopConfig.currency || "LAK",
+          address: shopConfig.address,
+        } as ShopConfig,
+        ownerPubkey,
+        companyCodeHash,
+        companyCode,
+        shopConfigStr
+      );
+
+      // Set as current workspace
+      state.value.currentWorkspaceId = workspace.id;
+      saveWorkspaces();
+
+      console.log("[ShopManager] ✅ Migration complete! Created workspace:", workspace.name, "ID:", workspace.id);
+      
+      return workspace;
+    } catch (e) {
+      console.error("[ShopManager] Migration failed:", e);
+      return null;
+    }
+  }
+
   // Auto-initialize
   if (import.meta.client) {
     init();
+    
+    // Run auto-migration for existing users after init
+    migrateExistingShopToWorkspace();
   }
 
   return {
@@ -704,9 +827,10 @@ export function useShopManager() {
     syncWorkspacesToNostr,
     loadWorkspacesFromNostr,
 
-    // Initialization
+    // Initialization & Migration
     init,
     registerCurrentShop,
     clearAllWorkspaces,
+    migrateExistingShopToWorkspace,
   };
 }

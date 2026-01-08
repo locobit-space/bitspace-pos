@@ -114,22 +114,7 @@ const allSteps = computed<WizardStep[]>(() => {
     },
   ];
 
-  // For workspace mode: only Type → Info → Confirm (simple flow)
-  if (isWorkspaceMode.value) {
-    // Skip branch, settings, marketplace - go straight to confirm
-    steps.push({
-      id: 'confirm',
-      title: t('shop.setup.stepConfirm', 'Confirm'),
-      subtitle: t('shop.setup.confirmDesc', 'Review & create'),
-      icon: 'i-heroicons-check-circle',
-      iconBg: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-      isValid: () => true,
-    });
-    return steps;
-  }
-
-  // Initial setup: full flow with all optional steps
-  // Add branch step for initial setup
+  // Add branch step (for both initial and workspace mode)
   if (props.showBranch) {
     steps.push({
       id: 'branch',
@@ -291,6 +276,15 @@ const completeSetup = async () => {
   isSubmitting.value = true;
 
   try {
+    // 🧹 IMPORTANT: Clear all local data when creating new workspace
+    // This prevents products/data from shop 1 appearing in shop 2
+    if (props.mode === 'workspace') {
+      console.log('[ShopSetup] Clearing data for new workspace...');
+      const shopManager = useShopManager();
+      await shopManager.clearShopData();
+      console.log('[ShopSetup] Data cleared successfully');
+    }
+
     const autoTags = [shopType.value.toLowerCase().replace(/_/g, '-')];
 
     let marketplaceDesc = marketplaceForm.marketplaceDescription;
@@ -345,14 +339,22 @@ const completeSetup = async () => {
       });
     }
 
-    // Create first branch (initial setup only)
-    if (props.mode === 'initial' && props.showBranch) {
+    // Create first branch
+    // For initial setup, create branch if configured
+    // For workspace mode, always create a branch with default name
+    const shouldCreateBranch = props.mode === 'initial' ? props.showBranch : true;
+    
+    if (shouldCreateBranch) {
+      const branchName = branchForm.name || shopForm.name;
+      const branchCode = branchForm.code || shopForm.name.trim().toUpperCase().replace(/\s+/g, '-').slice(0, 8);
+      
       const newBranch = await shop.createFirstBranch({
-        name: branchForm.name,
-        code: branchForm.code,
-        address: branchForm.address,
+        name: branchName,
+        code: branchCode,
+        address: branchForm.address || shopForm.address || '',
       });
 
+      // Apply product templates for both initial and workspace modes
       if (applyTemplates.value && newBranch) {
         await applyProductTemplates();
       }

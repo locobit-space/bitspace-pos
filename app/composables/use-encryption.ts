@@ -480,22 +480,40 @@ export function useEncryption() {
   // ============================================
 
   /**
+   * Get user's Nostr keys from localStorage
+   * Helper for self-encryption functions
+   */
+  function getNostrKeys(): { privkey: string; pubkey: string } | null {
+    try {
+      const nostrUser = localStorage.getItem("nostrUser");
+      if (nostrUser) {
+        const parsed = JSON.parse(nostrUser);
+        const privkey = parsed.privkey || parsed.privateKey || parsed.seckey;
+        const pubkey = parsed.pubkey || parsed.publicKey;
+        if (privkey && pubkey) {
+          return { privkey, pubkey };
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Encrypt data to self (using user's own Nostr keys)
    * Used for syncing private data like workspace list across devices
    */
   async function encryptToSelf(plaintext: string): Promise<string | null> {
     try {
-      const auth = useAuth();
-      const privkey = auth.getPrivateKey();
-      const pubkey = auth.user.value?.publicKey;
-
-      if (!privkey || !pubkey) {
+      const keys = getNostrKeys();
+      if (!keys) {
         console.debug('[Encryption] No keys available for self-encryption');
         return null;
       }
 
       // Use NIP-04 for self-encryption (simpler, widely supported)
-      const ciphertext = await nip04.encrypt(privkey, pubkey, plaintext);
+      const ciphertext = await nip04.encrypt(keys.privkey, keys.pubkey, plaintext);
       return ciphertext;
     } catch (err) {
       console.debug('[Encryption] Self-encryption failed:', err);
@@ -508,17 +526,14 @@ export function useEncryption() {
    */
   async function decryptFromSelf(ciphertext: string): Promise<string | null> {
     try {
-      const auth = useAuth();
-      const privkey = auth.getPrivateKey();
-      const pubkey = auth.user.value?.publicKey;
-
-      if (!privkey || !pubkey) {
+      const keys = getNostrKeys();
+      if (!keys) {
         console.debug('[Encryption] No keys available for self-decryption');
         return null;
       }
 
       // Decrypt NIP-04 self-encrypted content
-      const plaintext = await nip04.decrypt(privkey, pubkey, ciphertext);
+      const plaintext = await nip04.decrypt(keys.privkey, keys.pubkey, ciphertext);
       return plaintext;
     } catch (err) {
       console.debug('[Encryption] Self-decryption failed:', err);

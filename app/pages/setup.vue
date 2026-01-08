@@ -2,7 +2,7 @@
   <ShopSetupWizard
     :mode="isNewWorkspace ? 'workspace' : 'initial'"
     :show-templates="true"
-    :show-branch="!isNewWorkspace"
+    :show-branch="true"
     :show-marketplace="true"
     @complete="handleComplete"
     @cancel="handleCancel"
