@@ -211,6 +211,8 @@ export function useShop() {
       platformTag: mp?.platformTag || "bnos.space",
       geolocation: mp?.geolocation,
       businessHours: mp?.businessHours,
+      // Chat settings from Nostr
+      chatSettings: settings.chatSettings || { enabled: false },
     };
   }
 
@@ -378,6 +380,8 @@ export function useShop() {
           geolocation: newConfig.geolocation,
           businessHours: newConfig.businessHours,
         },
+        // Chat settings (synced across devices for all staff)
+        chatSettings: newConfig.chatSettings || { enabled: false },
         updatedAt: new Date().toISOString(),
       };
 

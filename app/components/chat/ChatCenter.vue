@@ -314,6 +314,25 @@ const handleTypingIndicator = () => {
   }
 };
 
+// Handle scroll for loading older messages
+const handleMessagesScroll = async (e: Event) => {
+  const container = e.target as HTMLElement;
+  
+  // If scrolled near top (within 100px), load older messages
+  if (container.scrollTop < 100 && chat.activeConversationId.value) {
+    const previousHeight = container.scrollHeight;
+    const loaded = await chat.loadOlderMessages(chat.activeConversationId.value);
+    
+    // Maintain scroll position after loading older messages
+    if (loaded) {
+      nextTick(() => {
+        const newHeight = container.scrollHeight;
+        container.scrollTop = newHeight - previousHeight;
+      });
+    }
+  }
+};
+
 // Get typing users for active conversation
 const typingText = computed(() => {
   if (!chat.activeConversationId.value) return "";
@@ -641,6 +660,7 @@ const typingText = computed(() => {
           <div
             ref="messagesContainer"
             class="flex-1 overflow-y-auto p-4 space-y-4 messages-container"
+            @scroll="handleMessagesScroll"
           >
             <!-- No conversation selected -->
             <div
@@ -665,6 +685,37 @@ const typingText = computed(() => {
 
             <!-- Messages list -->
             <template v-else>
+              <!-- Loading older messages indicator -->
+              <div
+                v-if="chat.isLoadingMore.value"
+                class="flex justify-center py-2"
+              >
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                  <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
+                  {{ t("chat.loadingOlder", "Loading older messages...") }}
+                </div>
+              </div>
+
+              <!-- No more messages indicator -->
+              <div
+                v-else-if="chat.hasMoreMessages.value.get(chat.activeConversationId.value!) === false"
+                class="flex justify-center py-2"
+              >
+                <span class="text-xs text-gray-400">
+                  {{ t("chat.noMoreMessages", "No older messages") }}
+                </span>
+              </div>
+
+              <!-- Scroll up hint -->
+              <div
+                v-else-if="chat.activeMessages.value.length >= 10"
+                class="flex justify-center py-2"
+              >
+                <span class="text-xs text-gray-400">
+                  ↑ {{ t("chat.scrollForMore", "Scroll up for older messages") }}
+                </span>
+              </div>
+
               <div
                 v-for="(message, index) in chat.activeMessages.value"
                 :key="message.id"

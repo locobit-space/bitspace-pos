@@ -735,6 +735,7 @@ export interface ChatMessageRecord {
   nostrEventId?: string;
   isEncrypted: boolean;
   synced: boolean;
+  reactions?: string; // JSON serialized Map<string, MessageReaction[]>
 }
 
 // Chat Conversation Record

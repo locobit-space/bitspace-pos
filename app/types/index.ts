@@ -2302,6 +2302,11 @@ export interface StoreSettings {
     fiscalYearStart: string; // "01-01" format
   };
 
+  // Chat settings (synced across devices)
+  chatSettings?: {
+    enabled: boolean;
+  };
+
   updatedAt?: string;
 }
 
