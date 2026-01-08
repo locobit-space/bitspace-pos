@@ -29,6 +29,8 @@ export const NOSTR_KINDS = {
   CONTACT_LIST: 3,
   /** Encrypted direct message (NIP-04) */
   ENCRYPTED_DM: 4,
+  /** Event deletion (NIP-09) */
+  DELETION: 5,
   /** Reaction to an event (NIP-25) */
   REACTION: 7,
 

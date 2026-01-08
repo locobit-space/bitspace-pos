@@ -56,6 +56,10 @@ const newChannelShopId = ref<string | undefined>(undefined);
 const showInviteModal = ref(false);
 const inviteSearchQuery = ref("");
 
+// Delete confirmation
+const showDeleteConfirm = ref(false);
+const conversationToDelete = ref<string | null>(null);
+
 // Get current shop ID
 const currentShopId = computed(() => {
   const shop = useShop();
@@ -122,7 +126,11 @@ const sendMessage = async () => {
   replyingTo.value = null; // Clear reply state
 
   if (chat.activeConversation.value.type === "channel") {
-    await chat.sendChannelMessage(chat.activeConversation.value.id, content, replyToId);
+    await chat.sendChannelMessage(
+      chat.activeConversation.value.id,
+      content,
+      replyToId
+    );
   } else {
     const recipient = chat.activeConversation.value.participants.find(
       (p) => p.pubkey !== useUsers().currentUser.value?.pubkeyHex
@@ -135,18 +143,38 @@ const sendMessage = async () => {
 };
 
 // Reactions (includes Bitcoin/Lightning for crypto payments)
-const reactionEmojis = ["👍", "❤️", "😂", "🎉", "👏", "🔥", "⚡", "₿", "💰", "✅", "❌"];
+const reactionEmojis = [
+  "⚡",
+  "₿",
+  "👍",
+  "❤️",
+  "😂",
+  "🎉",
+  "👏",
+  "🔥",
+  "💰",
+  "✅",
+];
 
 const toggleReaction = async (messageId: string, emoji: string) => {
   if (!chat.activeConversationId.value) return;
 
-  const reactions = chat.getMessageReactions(messageId, chat.activeConversationId.value);
+  const reactions = chat.getMessageReactions(
+    messageId,
+    chat.activeConversationId.value
+  );
   const currentUser = useUsers().currentUser.value;
   const emojiReactions = reactions.get(emoji) || [];
-  const hasReacted = emojiReactions.some((r) => r.pubkey === currentUser?.pubkeyHex);
+  const hasReacted = emojiReactions.some(
+    (r) => r.pubkey === currentUser?.pubkeyHex
+  );
 
   if (hasReacted) {
-    await chat.removeReaction(messageId, emoji, chat.activeConversationId.value);
+    await chat.removeReaction(
+      messageId,
+      emoji,
+      chat.activeConversationId.value
+    );
   } else {
     await chat.addReaction(messageId, emoji, chat.activeConversationId.value);
   }
@@ -317,12 +345,14 @@ const handleTypingIndicator = () => {
 // Handle scroll for loading older messages
 const handleMessagesScroll = async (e: Event) => {
   const container = e.target as HTMLElement;
-  
+
   // If scrolled near top (within 100px), load older messages
   if (container.scrollTop < 100 && chat.activeConversationId.value) {
     const previousHeight = container.scrollHeight;
-    const loaded = await chat.loadOlderMessages(chat.activeConversationId.value);
-    
+    const loaded = await chat.loadOlderMessages(
+      chat.activeConversationId.value
+    );
+
     // Maintain scroll position after loading older messages
     if (loaded) {
       nextTick(() => {
@@ -343,6 +373,26 @@ const typingText = computed(() => {
   if (users.length === 2) return `${users[0]} and ${users[1]} are typing...`;
   return `${users[0]} and ${users.length - 1} others are typing...`;
 });
+
+// Delete conversation with confirmation
+const confirmDelete = () => {
+  if (!chat.activeConversationId.value) return;
+  conversationToDelete.value = chat.activeConversationId.value;
+  showDeleteConfirm.value = true;
+};
+
+const deleteConversation = async () => {
+  if (!conversationToDelete.value) return;
+  
+  await chat.deleteConversation(conversationToDelete.value);
+  showDeleteConfirm.value = false;
+  conversationToDelete.value = null;
+  
+  // Go back on mobile
+  if (isMobile.value) {
+    backToConversations();
+  }
+};
 </script>
 
 <template>
@@ -359,7 +409,10 @@ const typingText = computed(() => {
         <div
           v-show="!isMobile || showMobileConversations"
           class="w-full md:w-72 lg:w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900/50"
-          :class="{ 'absolute inset-0 z-10 md:relative': isMobile && showMobileConversations }"
+          :class="{
+            'absolute inset-0 z-10 md:relative':
+              isMobile && showMobileConversations,
+          }"
         >
           <!-- Search & New Chat -->
           <div
@@ -503,7 +556,9 @@ const typingText = computed(() => {
                         >
                           {{ getOtherParticipant(conversation)?.name }}
                         </span>
-                        <span class="text-[10px] text-gray-400 whitespace-nowrap">
+                        <span
+                          class="text-[10px] text-gray-400 whitespace-nowrap"
+                        >
                           {{ formatTime(conversation.lastMessage.timestamp) }}
                         </span>
                       </div>
@@ -540,7 +595,10 @@ const typingText = computed(() => {
         <div
           v-show="!isMobile || !showMobileConversations"
           class="flex-1 flex flex-col bg-white dark:bg-gray-900"
-          :class="{ 'absolute inset-0 z-20 md:relative': isMobile && !showMobileConversations }"
+          :class="{
+            'absolute inset-0 z-20 md:relative':
+              isMobile && !showMobileConversations,
+          }"
         >
           <!-- Chat Header -->
           <div
@@ -641,7 +699,7 @@ const typingText = computed(() => {
                     label: t('chat.delete', 'Delete chat'),
                     icon: 'i-heroicons-trash',
                     color: 'red',
-                    onClick: () => chat.deleteConversation(chat.activeConversationId.value!),
+                    onClick: confirmDelete,
                   },
                 ],
               ]"
@@ -691,7 +749,10 @@ const typingText = computed(() => {
                 class="flex justify-center py-2"
               >
                 <div class="flex items-center gap-2 text-sm text-gray-500">
-                  <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
+                  <UIcon
+                    name="i-heroicons-arrow-path"
+                    class="w-4 h-4 animate-spin"
+                  />
                   {{ t("chat.loadingOlder", "Loading older messages...") }}
                 </div>
               </div>
@@ -712,17 +773,18 @@ const typingText = computed(() => {
                 class="flex justify-center py-2"
               >
                 <span class="text-xs text-gray-400">
-                  ↑ {{ t("chat.scrollForMore", "Scroll up for older messages") }}
+                  ↑
+                  {{ t("chat.scrollForMore", "Scroll up for older messages") }}
                 </span>
               </div>
 
               <div
                 v-for="(message, index) in chat.activeMessages.value"
                 :key="message.id"
-                class="flex flex-col"
+                class="flex gap-2"
                 :class="{
-                  'items-end': isMyMessage(message.senderPubkey),
-                  'items-start': !isMyMessage(message.senderPubkey),
+                  'flex-row-reverse': isMyMessage(message.senderPubkey),
+                  'flex-row': !isMyMessage(message.senderPubkey),
                   'mt-1':
                     index > 0 &&
                     chat.activeMessages.value?.[index - 1]?.senderPubkey ===
@@ -733,153 +795,215 @@ const typingText = computed(() => {
                       message.senderPubkey,
                 }"
               >
-                <!-- Sender Name (only in channels/groups and not me) -->
-                <span
+                <!-- Avatar (only show for first message in group) -->
+                <div
                   v-if="
                     !isMyMessage(message.senderPubkey) &&
-                    chat.activeConversation.value.type !== 'direct' &&
                     (index === 0 ||
                       chat.activeMessages.value?.[index - 1]?.senderPubkey !==
                         message.senderPubkey)
                   "
-                  class="text-xs text-gray-500 mb-1 ml-1"
+                  class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                 >
-                  {{ message.senderName }}
-                </span>
+                  {{ message.senderName?.charAt(0).toUpperCase() }}
+                </div>
+                <div
+                  v-else-if="!isMyMessage(message.senderPubkey)"
+                  class="w-8 flex-shrink-0"
+                />
 
-                <div class="group relative" :class="{ 'flex flex-col items-end': isMyMessage(message.senderPubkey), 'flex flex-col items-start': !isMyMessage(message.senderPubkey) }">
-                  <!-- Message Bubble -->
-                  <div
-                    class="max-w-[80%] rounded-2xl px-4 py-2 relative wrap-break-word"
-                    :class="{
-                      'bg-primary-500 text-white rounded-br-md': isMyMessage(
-                        message.senderPubkey
-                      ),
-                      'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-md':
-                        !isMyMessage(message.senderPubkey),
-                    }"
+                <div
+                  class="flex flex-col max-w-[75%]"
+                  :class="{
+                    'items-end': isMyMessage(message.senderPubkey),
+                    'items-start': !isMyMessage(message.senderPubkey),
+                  }"
+                >
+                  <!-- Sender Name (only in channels/groups and not me) -->
+                  <span
+                    v-if="
+                      !isMyMessage(message.senderPubkey) &&
+                      chat.activeConversation.value.type !== 'direct' &&
+                      (index === 0 ||
+                        chat.activeMessages.value?.[index - 1]?.senderPubkey !==
+                          message.senderPubkey)
+                    "
+                    class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 px-1"
                   >
-                    <!-- Reply Context -->
-                    <div
-                      v-if="message.replyToContent"
-                      class="mb-2 pb-2 border-l-2 pl-2 opacity-70 text-xs"
-                      :class="{
-                        'border-white': isMyMessage(message.senderPubkey),
-                        'border-gray-400 dark:border-gray-600': !isMyMessage(message.senderPubkey),
-                      }"
-                    >
-                      <div class="font-semibold">{{ message.replyToSender }}</div>
-                      <div class="line-clamp-2">{{ message.replyToContent }}</div>
-                    </div>
+                    {{ message.senderName }}
+                  </span>
 
-                    <p class="text-sm leading-relaxed whitespace-pre-wrap wrap-break-word">
-                      {{ message.content }}
-                    </p>
+                  <div class="group relative w-full">
+                    <!-- Message Bubble -->
                     <div
-                      class="flex items-center gap-1 mt-1 opacity-70"
+                      class="rounded-2xl px-3.5 py-2.5 relative wrap-break-word shadow-sm"
                       :class="{
-                        'justify-end': isMyMessage(message.senderPubkey),
+                        'bg-primary-500 text-white rounded-br-md': isMyMessage(
+                          message.senderPubkey
+                        ),
+                        'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-md':
+                          !isMyMessage(message.senderPubkey),
                       }"
                     >
-                      <span class="text-[10px] whitespace-nowrap">
-                        {{ formatTime(message.timestamp) }}
-                      </span>
-                      <!-- Status icons for sent messages -->
-                      <UIcon
-                        v-if="isMyMessage(message.senderPubkey)"
-                        :name="
-                          message.status === 'read'
-                            ? 'i-heroicons-check-circle-solid'
-                            : message.status === 'sent'
-                            ? 'i-heroicons-check'
-                            : message.status === 'failed'
-                            ? 'i-heroicons-exclamation-circle'
-                            : 'i-heroicons-clock'
-                        "
-                        class="w-3 h-3"
-                      />
-                    </div>
-
-                    <!-- Message Action Buttons (show on hover) -->
-                    <div
-                      class="absolute top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      :class="{
-                        'right-full mr-2': isMyMessage(message.senderPubkey),
-                        'left-full ml-2': !isMyMessage(message.senderPubkey),
-                      }"
-                    >
-                      <button
-                        class="p-1 rounded bg-white dark:bg-gray-700 shadow-md hover:bg-gray-100 dark:hover:bg-gray-600"
-                        @click="showReactionPicker = showReactionPicker === message.id ? null : message.id"
+                      <!-- Reply Context -->
+                      <div
+                        v-if="message.replyToContent"
+                        class="mb-2 pb-2 border-l-2 pl-2.5 opacity-75 text-xs rounded"
+                        :class="{
+                          'border-white bg-white/10': isMyMessage(
+                            message.senderPubkey
+                          ),
+                          'border-primary-500 bg-gray-50 dark:bg-gray-700/50':
+                            !isMyMessage(message.senderPubkey),
+                        }"
                       >
-                        <UIcon name="i-heroicons-face-smile" class="w-4 h-4" />
-                      </button>
-                      <button
-                        class="p-1 rounded bg-white dark:bg-gray-700 shadow-md hover:bg-gray-100 dark:hover:bg-gray-600"
-                        @click="startReply(message)"
-                      >
-                        <UIcon name="i-heroicons-arrow-uturn-left" class="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <!-- Reaction Picker (Emoji Selector) -->
-                    <div
-                      v-if="showReactionPicker === message.id"
-                      class="absolute bottom-full mb-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20"
-                      :class="{
-                        'right-0': isMyMessage(message.senderPubkey),
-                        'left-0': !isMyMessage(message.senderPubkey),
-                      }"
-                    >
-                      <!-- Quick reactions -->
-                      <div class="flex gap-1 mb-2">
-                        <button
-                          v-for="emoji in reactionEmojis"
-                          :key="emoji"
-                          class="min-w-8 min-h-8 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-lg transition-colors active:scale-95"
-                          @click="toggleReaction(message.id, emoji)"
-                        >
-                          {{ emoji }}
-                        </button>
+                        <div class="font-semibold mb-0.5">
+                          {{ message.replyToSender }}
+                        </div>
+                        <div class="line-clamp-2 opacity-80">
+                          {{ message.replyToContent }}
+                        </div>
                       </div>
-                      <!-- Custom emoji input -->
-                      <div class="flex gap-1 border-t border-gray-200 dark:border-gray-700 pt-2">
-                        <input
-                          v-model="customEmojiInput"
-                          type="text"
-                          placeholder="Type emoji..."
-                          maxlength="10"
-                          class="flex-1 px-2 py-1 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          @keydown.enter="addCustomReaction(message.id)"
+
+                      <p
+                        class="text-[13px] leading-relaxed whitespace-pre-wrap wrap-break-word"
+                      >
+                        {{ message.content }}
+                      </p>
+                      <div
+                        class="flex items-center gap-1.5 mt-1.5"
+                        :class="{
+                          'justify-end': isMyMessage(message.senderPubkey),
+                          'opacity-60': isMyMessage(message.senderPubkey),
+                          'opacity-50': !isMyMessage(message.senderPubkey),
+                        }"
+                      >
+                        <span class="text-[10px] font-medium whitespace-nowrap">
+                          {{ formatTime(message.timestamp) }}
+                        </span>
+                        <!-- Status icons for sent messages -->
+                        <UIcon
+                          v-if="isMyMessage(message.senderPubkey)"
+                          :name="
+                            message.status === 'read'
+                              ? 'i-heroicons-check-circle-solid'
+                              : message.status === 'sent'
+                              ? 'i-heroicons-check'
+                              : message.status === 'failed'
+                              ? 'i-heroicons-exclamation-circle'
+                              : 'i-heroicons-clock'
+                          "
+                          class="w-3 h-3"
                         />
+                      </div>
+
+                      <!-- Message Action Buttons (show on hover) -->
+                      <div
+                        class="absolute top-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        :class="{
+                          'right-full mr-2': isMyMessage(message.senderPubkey),
+                          'left-full ml-2': !isMyMessage(message.senderPubkey),
+                        }"
+                      >
                         <button
-                          @click="addCustomReaction(message.id)"
-                          class="px-2 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
+                          class="p-1.5 rounded-lg bg-white dark:bg-gray-700 shadow-md hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 transition-colors"
+                          @click="
+                            showReactionPicker =
+                              showReactionPicker === message.id
+                                ? null
+                                : message.id
+                          "
                         >
-                          Add
+                          <UIcon
+                            name="i-heroicons-face-smile"
+                            class="w-4 h-4 text-gray-600 dark:text-gray-300"
+                          />
+                        </button>
+                        <button
+                          class="p-1.5 rounded-lg bg-white dark:bg-gray-700 shadow-md hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 transition-colors"
+                          @click="startReply(message)"
+                        >
+                          <UIcon
+                            name="i-heroicons-arrow-uturn-left"
+                            class="w-4 h-4 text-gray-600 dark:text-gray-300"
+                          />
                         </button>
                       </div>
-                    </div>
-                  </div>
 
-                  <!-- Reactions Display -->
-                  <div
-                    v-if="message.reactions && message.reactions.size > 0"
-                    class="flex flex-wrap gap-1 mt-1 px-1"
-                  >
-                    <button
-                      v-for="[emoji, reactions] in message.reactions"
-                      :key="emoji"
-                      class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                      :class="{
-                        'ring-2 ring-primary-500': reactions.some(r => r.pubkey === useUsers().currentUser.value?.pubkeyHex)
-                      }"
-                      @click="toggleReaction(message.id, emoji)"
-                      :title="reactions.map(r => r.name).join(', ')"
+                      <!-- Reaction Picker (Emoji Selector) -->
+                      <div
+                        v-if="showReactionPicker === message.id"
+                        class="absolute bottom-full mb-2 p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-20"
+                        :class="{
+                          'right-0': isMyMessage(message.senderPubkey),
+                          'left-0': !isMyMessage(message.senderPubkey),
+                        }"
+                      >
+                        <!-- Quick reactions -->
+                        <div class="flex gap-1 mb-2">
+                          <button
+                            v-for="emoji in reactionEmojis"
+                            :key="emoji"
+                            class="min-w-9 min-h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-lg transition-all active:scale-90"
+                            @click="toggleReaction(message.id, emoji)"
+                          >
+                            {{ emoji }}
+                          </button>
+                        </div>
+                        <!-- Custom emoji input -->
+                        <div
+                          class="flex gap-1.5 border-t border-gray-200 dark:border-gray-700 pt-2"
+                        >
+                          <input
+                            v-model="customEmojiInput"
+                            type="text"
+                            placeholder="Type emoji..."
+                            maxlength="10"
+                            class="flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            @keydown.enter="addCustomReaction(message.id)"
+                          />
+                          <button
+                            @click="addCustomReaction(message.id)"
+                            class="px-3 py-1.5 text-xs font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-600 active:scale-95 transition-all"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Reactions Display -->
+                    <div
+                      v-if="message.reactions && message.reactions.size > 0"
+                      class="flex flex-wrap gap-1.5 mt-1.5"
                     >
-                      <span>{{ emoji }}</span>
-                      <span class="font-medium">{{ reactions.length }}</span>
-                    </button>
+                      <button
+                        v-for="[emoji, reactions] in message.reactions"
+                        :key="emoji"
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-95 border"
+                        :class="{
+                          'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/30':
+                            reactions.some(
+                              (r) =>
+                                r.pubkey ===
+                                useUsers().currentUser.value?.pubkeyHex
+                            ),
+                          'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700':
+                            !reactions.some(
+                              (r) =>
+                                r.pubkey ===
+                                useUsers().currentUser.value?.pubkeyHex
+                            ),
+                        }"
+                        @click="toggleReaction(message.id, emoji)"
+                        :title="reactions.map((r) => r.name).join(', ')"
+                      >
+                        <span class="text-sm leading-none">{{ emoji }}</span>
+                        <span class="font-semibold leading-none">{{
+                          reactions.length
+                        }}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -902,11 +1026,22 @@ const typingText = computed(() => {
             v-if="chat.activeConversation.value && typingText"
             class="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700"
           >
-            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <div
+              class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
+            >
               <div class="flex gap-1">
-                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                <span
+                  class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style="animation-delay: 0ms"
+                ></span>
+                <span
+                  class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style="animation-delay: 150ms"
+                ></span>
+                <span
+                  class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style="animation-delay: 300ms"
+                ></span>
               </div>
               <span class="italic">{{ typingText }}</span>
             </div>
@@ -924,7 +1059,9 @@ const typingText = computed(() => {
               class="mb-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-between"
             >
               <div class="flex-1 min-w-0">
-                <div class="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-1">
+                <div
+                  class="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-1"
+                >
                   Replying to {{ replyingTo.senderName }}
                 </div>
                 <div class="text-sm text-gray-600 dark:text-gray-400 truncate">
@@ -947,7 +1084,6 @@ const typingText = computed(() => {
                   variant="ghost"
                   color="gray"
                   :size="isMobile ? 'md' : 'sm'"
-                  class="min-w-11 min-h-11"
                   @click="showEmojiPicker = !showEmojiPicker"
                 />
                 <!-- Quick emoji panel (Touch-optimized) -->
@@ -988,15 +1124,16 @@ const typingText = computed(() => {
               </div>
 
               <!-- Send button (Touch-optimized) -->
-              <UButton
-                icon="i-heroicons-paper-airplane"
-                color="primary"
-                :size="isMobile ? 'lg' : 'md'"
-                :loading="chat.isSending.value"
-                :disabled="!messageInput.trim()"
-                class="min-w-11 min-h-11"
-                @click="sendMessage"
-              />
+              <div>
+                <UButton
+                  icon="i-heroicons-paper-airplane"
+                  color="primary"
+                  :size="isMobile ? 'lg' : 'md'"
+                  :loading="chat.isSending.value"
+                  :disabled="!messageInput.trim()"
+                  @click="sendMessage"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -1163,6 +1300,52 @@ const typingText = computed(() => {
               icon="i-heroicons-plus"
             />
           </div>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <!-- Delete Confirmation Modal -->
+  <UModal v-model:open="showDeleteConfirm">
+    <template #header>
+      <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">
+        {{ t("chat.deleteConfirm", "Delete Conversation?") }}
+      </h3>
+    </template>
+    <template #body>
+      <div class="p-4">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-600 dark:text-red-400" />
+          </div>
+          <div class="flex-1">
+            <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+              {{ 
+                chat.activeConversation.value?.type === "direct" 
+                  ? t("chat.deleteDirectWarning", "This will delete all messages in this conversation. This action cannot be undone.")
+                  : t("chat.deleteChannelWarning", "This will delete the channel and all its messages from your device. This action cannot be undone.")
+              }}
+            </p>
+            <p v-if="chat.activeConversation.value?.type !== 'direct'" class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t("chat.deleteChannelNote", "Note: This only deletes from your device. Other members can still access the channel.") }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <UButton
+            color="gray"
+            variant="ghost"
+            @click="showDeleteConfirm = false"
+          >
+            {{ t("common.cancel", "Cancel") }}
+          </UButton>
+          <UButton
+            color="red"
+            @click="deleteConversation"
+          >
+            {{ t("chat.delete", "Delete") }}
+          </UButton>
         </div>
       </div>
     </template>

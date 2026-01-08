@@ -246,35 +246,42 @@ export function useChat() {
 
   async function loadConversationsFromLocal(): Promise<void> {
     try {
+      // Load deleted conversation IDs
+      const deletedIds = new Set(
+        (await db.deletedConversations.toArray()).map((d) => d.id)
+      );
+
       const records = await db.chatConversations.toArray();
-      conversations.value = records.map((r) => ({
-        id: r.id,
-        type: r.type,
-        participants: JSON.parse(r.participantPubkeys).map(
-          (pubkey: string, i: number) => ({
-            pubkey,
-            name: JSON.parse(r.participantNames)[i] || "Unknown",
-          })
-        ),
-        groupName: r.groupName,
-        groupAvatar: r.groupAvatar,
-        lastMessage: {
-          content: r.lastMessageContent,
-          timestamp: r.lastMessageTime,
-          senderName: r.lastMessageSenderName,
-        },
-        unreadCount: r.unreadCount,
-        isPinned: r.isPinned,
-        isMuted: r.isMuted,
-        isPrivate: r.isPrivate,
-        key: r.key,
-        // NEW: Shop/Team Context
-        shopId: r.shopId,
-        scope: r.scope as "shop" | "company" | "department" | undefined,
-        tags: r.tags ? JSON.parse(r.tags) : [],
-        isReadOnly: r.isReadOnly,
-        memberPubkeys: r.memberPubkeys ? JSON.parse(r.memberPubkeys) : [],
-      }));
+      conversations.value = records
+        .filter((r) => !deletedIds.has(r.id)) // Filter out deleted conversations
+        .map((r) => ({
+          id: r.id,
+          type: r.type,
+          participants: JSON.parse(r.participantPubkeys).map(
+            (pubkey: string, i: number) => ({
+              pubkey,
+              name: JSON.parse(r.participantNames)[i] || "Unknown",
+            })
+          ),
+          groupName: r.groupName,
+          groupAvatar: r.groupAvatar,
+          lastMessage: {
+            content: r.lastMessageContent,
+            timestamp: r.lastMessageTime,
+            senderName: r.lastMessageSenderName,
+          },
+          unreadCount: r.unreadCount,
+          isPinned: r.isPinned,
+          isMuted: r.isMuted,
+          isPrivate: r.isPrivate,
+          key: r.key,
+          // NEW: Shop/Team Context
+          shopId: r.shopId,
+          scope: r.scope as "shop" | "company" | "department" | undefined,
+          tags: r.tags ? JSON.parse(r.tags) : [],
+          isReadOnly: r.isReadOnly,
+          memberPubkeys: r.memberPubkeys ? JSON.parse(r.memberPubkeys) : [],
+        }));
     } catch (e) {
       console.error("[Chat] Failed to load conversations:", e);
     }
@@ -367,6 +374,69 @@ export function useChat() {
   }
 
   /**
+   * Fetch reactions for a list of message event IDs
+   * Returns a Map of eventId -> Map of emoji -> MessageReaction[]
+   */
+  async function fetchReactionsForMessages(
+    messageEventIds: string[]
+  ): Promise<Map<string, Map<string, MessageReaction[]>>> {
+    const reactionsMap = new Map<string, Map<string, MessageReaction[]>>();
+    
+    if (!$nostr?.pool || messageEventIds.length === 0) {
+      return reactionsMap;
+    }
+
+    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+
+    try {
+      // Query for reactions (kind 7) that reference these messages
+      const reactionFilter = {
+        kinds: [NOSTR_KINDS.REACTION],
+        "#e": messageEventIds,
+        limit: 500, // Allow multiple reactions per message
+      };
+
+      const reactionEvents = await $nostr.pool.querySync(relayUrls, reactionFilter);
+
+      // Process each reaction
+      for (const reactionEvent of reactionEvents) {
+        const messageId = reactionEvent.tags.find((t: string[]) => t[0] === "e")?.[1];
+        const emoji = reactionEvent.content;
+
+        if (!messageId || !emoji) continue;
+
+        // Find reactor info
+        const reactor = usersStore.users.value.find(
+          (u) => u.pubkeyHex === reactionEvent.pubkey
+        );
+        const reactorName = reactor?.name || `User ${reactionEvent.pubkey.slice(0, 8)}`;
+
+        const reaction: MessageReaction = {
+          emoji,
+          pubkey: reactionEvent.pubkey,
+          name: reactorName,
+          timestamp: reactionEvent.created_at * 1000,
+          eventId: reactionEvent.id,
+        };
+
+        // Initialize nested maps if needed
+        if (!reactionsMap.has(messageId)) {
+          reactionsMap.set(messageId, new Map());
+        }
+        const messageReactions = reactionsMap.get(messageId)!;
+        if (!messageReactions.has(emoji)) {
+          messageReactions.set(emoji, []);
+        }
+        messageReactions.get(emoji)!.push(reaction);
+      }
+    } catch (e) {
+      console.error("[Chat] Failed to fetch reactions:", e);
+    }
+
+    return reactionsMap;
+  }
+
+  /**
    * Fetch historical messages from Nostr relays for a channel
    * This supplements local messages with remote ones
    */
@@ -423,6 +493,10 @@ export function useChat() {
         }
       });
       const events = Array.from(uniqueEvents.values());
+
+      // Fetch reactions for all these messages
+      const messageEventIds = events.map((e) => e.id);
+      const reactionsMap = await fetchReactionsForMessages(messageEventIds);
 
       // Process and save each event
       for (const event of events) {
@@ -493,6 +567,7 @@ export function useChat() {
           timestamp: event.created_at * 1000,
           status: "delivered",
           nostrEventId: event.id,
+          reactions: reactionsMap.get(event.id), // Add reactions from Nostr
         };
 
         await saveMessageToLocal(message);
@@ -548,6 +623,10 @@ export function useChat() {
       });
       const events = Array.from(uniqueEvents.values());
 
+      // Fetch reactions for all these messages
+      const messageEventIds = events.map((e) => e.id);
+      const reactionsMap = await fetchReactionsForMessages(messageEventIds);
+
       // Process each DM
       for (const event of events) {
         // Check if we already have this message
@@ -586,6 +665,7 @@ export function useChat() {
             timestamp: event.created_at * 1000,
             status: "delivered",
             nostrEventId: event.id,
+            reactions: reactionsMap.get(event.id), // Add reactions from Nostr
           };
 
           await saveMessageToLocal(message);
@@ -1999,6 +2079,16 @@ export function useChat() {
         let conversation = conversations.value.find((c) => c.id === channelId);
 
         if (!conversation) {
+          // Check if this conversation was deleted
+          const wasDeleted = await db.deletedConversations.get(channelId);
+          if (wasDeleted) {
+            console.log(
+              "[Chat] Ignoring message for deleted channel:",
+              channelId.slice(0, 16)
+            );
+            return;
+          }
+
           console.warn(
             "[Chat] Channel not found, auto-creating:",
             channelId.slice(0, 16)
@@ -2847,6 +2937,36 @@ export function useChat() {
       messages.value.set(conversationId, msgs);
     }
 
+    // Sync reactions for existing messages when opening conversation
+    const msgs = messages.value.get(conversationId) || [];
+    if (msgs.length > 0) {
+      const messageEventIds = msgs
+        .filter((m) => m.nostrEventId)
+        .map((m) => m.nostrEventId!);
+      
+      if (messageEventIds.length > 0) {
+        // Fetch latest reactions in background
+        fetchReactionsForMessages(messageEventIds).then(async (reactionsMap) => {
+          let updated = false;
+          for (const msg of msgs) {
+            if (msg.nostrEventId && reactionsMap.has(msg.nostrEventId)) {
+              msg.reactions = reactionsMap.get(msg.nostrEventId);
+              await saveMessageToLocal(msg);
+              updated = true;
+            }
+          }
+          
+          // Reload if any reactions were updated
+          if (updated) {
+            const updatedMsgs = await loadMessagesForConversation(conversationId);
+            messages.value.set(conversationId, updatedMsgs);
+          }
+        }).catch((e) => {
+          console.error("[Chat] Failed to sync reactions:", e);
+        });
+      }
+    }
+
     // Find the conversation to determine type
     const conv = conversations.value.find((c) => c.id === conversationId);
 
@@ -2943,7 +3063,77 @@ export function useChat() {
   }
 
   async function deleteConversation(conversationId: string): Promise<void> {
-    // Delete from DB
+    const keys = getUserKeys();
+    const conv = conversations.value.find((c) => c.id === conversationId);
+    
+    // Get all messages in this conversation
+    const msgs = await db.chatMessages
+      .where("conversationId")
+      .equals(conversationId)
+      .toArray();
+
+    // Publish deletion events to Nostr
+    if (keys?.pubkey && keys?.privkey && $nostr?.pool) {
+      try {
+        const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+        const privateKey = hexToBytes(nostrKey.decodePrivateKey(keys.privkey));
+
+        // If it's a channel and user is the creator, delete the channel itself
+        if (conv?.type === "channel" || conv?.type === "group") {
+          // Check if this user created the channel (conversation ID is the channel event ID)
+          // Try to find the channel creation event
+          const channelCreationEvents = await $nostr.pool.querySync(relayUrls, {
+            kinds: [NOSTR_KINDS.CHANNEL_CREATE],
+            ids: [conversationId],
+            authors: [keys.pubkey], // Only if we created it
+            limit: 1,
+          });
+
+          if (channelCreationEvents.length > 0) {
+            // We created this channel, publish deletion for the channel itself
+            const channelDeletionEvent = {
+              kind: NOSTR_KINDS.DELETION,
+              content: "Channel deleted by creator",
+              tags: [["e", conversationId], ["k", String(NOSTR_KINDS.CHANNEL_CREATE)]],
+              created_at: Math.floor(Date.now() / 1000),
+            };
+
+            const signedChannelDeletion = $nostr.finalizeEvent(channelDeletionEvent, privateKey);
+            await $nostr.pool.publish(relayUrls, signedChannelDeletion);
+            console.log("[Chat] 🗑️ Channel deleted on Nostr");
+          }
+        }
+
+        // Delete our own messages in the conversation
+        const myMessages = msgs.filter(
+          (m) => m.senderPubkey === keys.pubkey && m.nostrEventId
+        );
+
+        if (myMessages.length > 0) {
+          const deletionEvent = {
+            kind: NOSTR_KINDS.DELETION,
+            content: "Messages deleted by user",
+            tags: myMessages.map((m) => ["e", m.nostrEventId!]),
+            created_at: Math.floor(Date.now() / 1000),
+          };
+
+          const signedEvent = $nostr.finalizeEvent(deletionEvent, privateKey);
+          await $nostr.pool.publish(relayUrls, signedEvent);
+          console.log("[Chat] 🗑️ Messages deleted on Nostr");
+        }
+      } catch (e) {
+        console.error("[Chat] Failed to publish deletion events to Nostr:", e);
+        // Continue with local deletion even if Nostr publish fails
+      }
+    }
+
+    // Mark as deleted (so it doesn't reappear after refresh)
+    await db.deletedConversations.put({
+      id: conversationId,
+      deletedAt: Date.now(),
+    });
+
+    // Delete from local DB
     await db.chatConversations.delete(conversationId);
     await db.chatMessages
       .where("conversationId")
@@ -2976,6 +3166,11 @@ export function useChat() {
     }
 
     try {
+      // Load deleted conversation IDs to filter them out
+      const deletedIds = new Set(
+        (await db.deletedConversations.toArray()).map((d) => d.id)
+      );
+
       // Query team conversations by company code hash
       const teamConversations = await nostrData.getAllConversations({
         companyCodeHash: company.companyCodeHash.value,
@@ -2983,6 +3178,15 @@ export function useChat() {
 
       // Merge with local conversations
       for (const conv of teamConversations) {
+        // Skip if this conversation was deleted locally
+        if (deletedIds.has(conv.id)) {
+          console.log(
+            "[Chat] Skipping deleted conversation:",
+            conv.id.slice(0, 16)
+          );
+          continue;
+        }
+
         const existingIndex = conversations.value.findIndex(
           (c) => c.id === conv.id
         );
