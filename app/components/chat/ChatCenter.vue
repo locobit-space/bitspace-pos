@@ -1273,7 +1273,7 @@ const deleteConversation = async () => {
           v-model="inviteSearchQuery"
           :placeholder="t('chat.searchContacts', 'Search team members...')"
           icon="i-heroicons-magnifying-glass"
-          class="mb-4"
+          class="mb-4 w-full"
         />
 
         <div class="space-y-2 max-h-80 overflow-y-auto">

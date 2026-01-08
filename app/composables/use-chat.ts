@@ -1041,7 +1041,8 @@ export function useChat() {
     isPrivate: boolean = false,
     shopId?: string,
     scope: "shop" | "company" | "department" = "company",
-    tags: string[] = []
+    tags: string[] = [],
+    memberPubkeys: string[] = [] // NEW: Members to auto-invite to private channel
   ): Promise<string | null> {
     const keys = getUserKeys();
     if (!keys?.privkey) {
@@ -1110,10 +1111,36 @@ export function useChat() {
           scope,
           tags,
           isReadOnly: false,
-          memberPubkeys: isPrivate && currentPubkey ? [currentPubkey] : [], // Add creator to private channel
+          memberPubkeys: isPrivate && currentPubkey 
+            ? [currentPubkey, ...memberPubkeys.filter(pk => pk !== currentPubkey)] 
+            : [], // Add creator and invited members to private channel
         };
         conversations.value.unshift(newConversation);
         await saveConversationToLocal(newConversation);
+
+        // Auto-invite members to private channel
+        if (isPrivate && secretKey && memberPubkeys.length > 0) {
+          console.log(`[Chat] 🔐 Auto-inviting ${memberPubkeys.length} members to private channel`);
+          
+          for (const memberPubkey of memberPubkeys) {
+            if (memberPubkey === currentPubkey) continue; // Skip self
+            
+            try {
+              // Send encryption key via DM
+              const inviteContent = JSON.stringify({
+                type: "channel_invite",
+                channelId: conversationId,
+                channelName: name,
+                key: secretKey,
+              });
+              
+              await sendMessage(memberPubkey, inviteContent, "User");
+              console.log(`[Chat] ✅ Invited ${memberPubkey.slice(0, 8)} to private channel`);
+            } catch (err) {
+              console.error(`[Chat] Failed to invite ${memberPubkey.slice(0, 8)}:`, err);
+            }
+          }
+        }
 
         // NEW: Sync to Nostr if team mode and not a DM
         if (
@@ -1159,6 +1186,15 @@ export function useChat() {
       return false;
     }
 
+    // Add to member list
+    if (!conv.memberPubkeys) {
+      conv.memberPubkeys = [];
+    }
+    if (!conv.memberPubkeys.includes(pubkey)) {
+      conv.memberPubkeys.push(pubkey);
+      await saveConversationToLocal(conv);
+    }
+
     // We send the key securely via DM (Kind 4)
     const inviteContent = JSON.stringify({
       type: "channel_invite",
@@ -1168,6 +1204,52 @@ export function useChat() {
     });
 
     return await sendMessage(pubkey, inviteContent, "User"); // This sends Kind 4
+  }
+
+  /**
+   * Request access to a private channel
+   * Sends a request to the channel creator
+   */
+  async function requestChannelAccess(channelId: string): Promise<boolean> {
+    const conv = conversations.value.find((c) => c.id === channelId);
+    if (!conv || !conv.isPrivate) {
+      return false;
+    }
+
+    try {
+      const keys = getUserKeys();
+      if (!keys?.privkey || !$nostr?.pool) return false;
+
+      // Query for the channel creator (who created the channel)
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const channelCreationEvents = await $nostr.pool.querySync(relayUrls, {
+        kinds: [NOSTR_KINDS.CHANNEL_CREATE],
+        ids: [channelId],
+        limit: 1,
+      });
+
+      if (channelCreationEvents.length === 0) {
+        console.error("[Chat] Cannot find channel creator");
+        return false;
+      }
+
+      const creatorPubkey = channelCreationEvents[0].pubkey;
+
+      // Send access request via DM
+      const requestContent = JSON.stringify({
+        type: "channel_access_request",
+        channelId: conv.id,
+        channelName: conv.groupName,
+        requestedBy: keys.pubkey,
+      });
+
+      await sendMessage(creatorPubkey, requestContent, "User");
+      console.log("[Chat] 🔑 Access request sent to channel creator");
+      return true;
+    } catch (e) {
+      console.error("[Chat] Failed to request channel access:", e);
+      return false;
+    }
   }
 
   async function sendChannelMessage(
@@ -2090,35 +2172,121 @@ export function useChat() {
           }
 
           console.warn(
-            "[Chat] Channel not found, auto-creating:",
+            "[Chat] Channel not found, fetching metadata:",
             channelId.slice(0, 16)
           );
 
-          // Auto-create channel placeholder when receiving a message for unknown channel
-          // This ensures messages aren't lost when channels aren't synced properly
-          conversation = {
-            id: channelId,
-            type: "channel",
-            participants: [],
-            groupName: "Team Channel", // Placeholder name, will be updated by sync
-            lastMessage: {
-              content: "",
-              timestamp: 0,
-              senderName: "",
-            },
-            unreadCount: 0,
-            isPinned: false,
-            isMuted: false,
-          };
+          // Fetch channel metadata BEFORE creating to get isPrivate and key
+          if ($nostr?.pool) {
+            try {
+              const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+              const channelMetadata = await $nostr.pool.querySync(relayUrls, {
+                kinds: [NOSTR_KINDS.CHANNEL_CREATE],
+                ids: [channelId],
+                limit: 1,
+              });
+
+              if (channelMetadata.length > 0) {
+                const metadata = channelMetadata[0];
+                let channelData: any = {};
+                
+                try {
+                  channelData = JSON.parse(metadata.content);
+                } catch (e) {
+                  console.warn("[Chat] Failed to parse channel metadata");
+                }
+
+                // If private channel, try to get the key from Nostr data sync
+                let channelKey: string | undefined;
+                if (channelData.isPrivate && company.isCompanyCodeEnabled.value) {
+                  try {
+                    const syncedConv = await nostrData.getConversation(channelId);
+                    channelKey = syncedConv?.key;
+                    console.log("[Chat] 🔑 Retrieved channel key from sync:", !!channelKey);
+                  } catch (e) {
+                    console.warn("[Chat] Failed to get channel key from sync");
+                  }
+                }
+
+                conversation = {
+                  id: channelId,
+                  type: "channel",
+                  participants: [],
+                  groupName: channelData.name || "Team Channel",
+                  groupAvatar: channelData.picture,
+                  lastMessage: {
+                    content: "",
+                    timestamp: 0,
+                    senderName: "",
+                  },
+                  unreadCount: 0,
+                  isPinned: false,
+                  isMuted: false,
+                  isPrivate: channelData.isPrivate || false,
+                  key: channelKey,
+                  shopId: channelData.shopId,
+                  scope: channelData.scope,
+                  tags: channelData.tags,
+                  isReadOnly: channelData.isReadOnly,
+                  memberPubkeys: [],
+                };
+                
+                console.log("[Chat] ✅ Channel metadata fetched, isPrivate:", conversation.isPrivate, "hasKey:", !!conversation.key);
+              } else {
+                // No metadata found, create placeholder
+                conversation = {
+                  id: channelId,
+                  type: "channel",
+                  participants: [],
+                  groupName: "Team Channel",
+                  lastMessage: {
+                    content: "",
+                    timestamp: 0,
+                    senderName: "",
+                  },
+                  unreadCount: 0,
+                  isPinned: false,
+                  isMuted: false,
+                };
+              }
+            } catch (e) {
+              console.error("[Chat] Failed to fetch channel metadata:", e);
+              // Create placeholder on error
+              conversation = {
+                id: channelId,
+                type: "channel",
+                participants: [],
+                groupName: "Team Channel",
+                lastMessage: {
+                  content: "",
+                  timestamp: 0,
+                  senderName: "",
+                },
+                unreadCount: 0,
+                isPinned: false,
+                isMuted: false,
+              };
+            }
+          } else {
+            // No nostr pool, create placeholder
+            conversation = {
+              id: channelId,
+              type: "channel",
+              participants: [],
+              groupName: "Team Channel",
+              lastMessage: {
+                content: "",
+                timestamp: 0,
+                senderName: "",
+              },
+              unreadCount: 0,
+              isPinned: false,
+              isMuted: false,
+            };
+          }
+
           conversations.value.unshift(conversation);
           await saveConversationToLocal(conversation);
-
-          // Trigger a sync to get the proper channel metadata
-          if (company.isCompanyCodeEnabled.value) {
-            syncConversations().catch((e) =>
-              console.error("[Chat] Failed to sync after auto-create:", e)
-            );
-          }
         }
 
         // Parse message content
@@ -2128,16 +2296,21 @@ export function useChat() {
         if (conversation.isPrivate && conversation.key) {
           content = decryptChannelMessage(event.content, conversation.key);
         } else if (conversation.isPrivate && !conversation.key) {
+          // No key available - request access
           console.warn(
-            "[Chat] Private channel message but no key available yet"
+            "[Chat] 🔒 Private channel message but no key available"
           );
-          // Try to sync to get the key
-          if (company.isCompanyCodeEnabled.value) {
-            syncConversations().catch((e) =>
-              console.error("[Chat] Failed to sync for key:", e)
+          
+          // Auto-request access once
+          const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+          if (currentPubkey && !conversation.memberPubkeys?.includes(currentPubkey)) {
+            console.log("[Chat] 🔑 Auto-requesting channel access...");
+            requestChannelAccess(channelId).catch((e) =>
+              console.error("[Chat] Failed to request access:", e)
             );
           }
-          content = "🔒 [Encrypted - waiting for key sync...]";
+          
+          content = "🔒 [Private Channel - Requesting Access...]";
         } else {
           // Try to parse as JSON for non-private channels
           try {
@@ -2249,15 +2422,19 @@ export function useChat() {
         const content = await decryptMessage(event.content, event.pubkey);
         console.log("[Chat] ✅ DM decrypted, length:", content.length);
 
-        // CHECK FOR INVITE
+        // CHECK FOR INVITE OR ACCESS REQUEST
         try {
           const parsed = JSON.parse(content);
+          
+          // Handle channel invite
           if (
             parsed.type === "channel_invite" &&
             parsed.channelId &&
             parsed.key
           ) {
             // It's a channel invite!
+            console.log("[Chat] 🔑 Received channel invite:", parsed.channelName);
+            
             // Check if we already have this channel
             let existingConv = conversations.value.find(
               (c) => c.id === parsed.channelId
@@ -2267,10 +2444,24 @@ export function useChat() {
               if (!existingConv.key) {
                 existingConv.key = parsed.key;
                 existingConv.isPrivate = true;
+                
+                // Add self to member list
+                const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+                if (currentPubkey) {
+                  if (!existingConv.memberPubkeys) {
+                    existingConv.memberPubkeys = [];
+                  }
+                  if (!existingConv.memberPubkeys.includes(currentPubkey)) {
+                    existingConv.memberPubkeys.push(currentPubkey);
+                  }
+                }
+                
                 await saveConversationToLocal(existingConv);
+                console.log("[Chat] ✅ Channel key updated, can now decrypt messages");
               }
             } else {
               // Create new channel placeholder with key
+              const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
               const newConv: ChatConversation = {
                 id: parsed.channelId,
                 type: "channel",
@@ -2286,10 +2477,34 @@ export function useChat() {
                 isMuted: false,
                 isPrivate: true,
                 key: parsed.key,
+                memberPubkeys: currentPubkey ? [currentPubkey] : [],
               };
               conversations.value.unshift(newConv);
               await saveConversationToLocal(newConv);
               sound.playSuccess();
+              console.log("[Chat] ✅ Private channel created from invite");
+            }
+            return; // Stop processing as normal DM
+          }
+          
+          // Handle channel access request
+          if (
+            parsed.type === "channel_access_request" &&
+            parsed.channelId &&
+            parsed.requestedBy
+          ) {
+            console.log("[Chat] 🔐 Received access request for channel:", parsed.channelName);
+            
+            // Check if we have this channel and own it
+            const channel = conversations.value.find((c) => c.id === parsed.channelId);
+            if (channel && channel.key) {
+              // We have the channel - auto-invite the requester
+              try {
+                await inviteToChannel(parsed.channelId, parsed.requestedBy);
+                console.log("[Chat] ✅ Auto-invited requester to private channel");
+              } catch (err) {
+                console.error("[Chat] Failed to auto-invite:", err);
+              }
             }
             return; // Stop processing as normal DM
           }
@@ -3475,6 +3690,7 @@ export function useChat() {
     createChannel,
     sendChannelMessage,
     inviteToChannel,
+    requestChannelAccess,
     selectConversation,
     deleteConversation,
     togglePinConversation,
