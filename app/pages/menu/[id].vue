@@ -8,7 +8,7 @@
         class="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4"
       />
       <p class="text-gray-500">
-        {{ $t("common.redirecting") || "Redirecting..." }}
+        {{ $t("common.redirecting", "Redirecting...") }}
       </p>
     </div>
   </div>

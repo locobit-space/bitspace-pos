@@ -414,14 +414,14 @@ const getShopTypeGradient = (shopType: string): string => {
 };
 
 const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return t('common.never') || 'Never';
+  if (!dateStr) return t('common.never', 'Never');
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffDays === 0) return t('time.today') || 'Today';
-  if (diffDays === 1) return t('time.yesterday') || 'Yesterday';
+  if (diffDays === 0) return t('time.today', 'Today');
+  if (diffDays === 1) return t('time.yesterday', 'Yesterday');
   if (diffDays < 7) return t('time.daysAgo', { n: diffDays }) || `${diffDays} days ago`;
   return date.toLocaleDateString();
 };
@@ -430,13 +430,13 @@ const formatDate = (dateStr?: string): string => {
 const currentWorkspaceActions = computed(() => [
   [
     {
-      label: t('shop.setDefault') || 'Set as Default',
+      label: t('shop.setDefault', 'Set as Default'),
       icon: 'i-heroicons-star',
       disabled: currentWorkspace.value?.isDefault,
       onClick: () => currentWorkspace.value && shopManager.setDefaultWorkspace(currentWorkspace.value.id),
     },
     {
-      label: t('shop.editDetails') || 'Edit Details',
+      label: t('shop.editDetails', 'Edit Details'),
       icon: 'i-heroicons-pencil',
       onClick: () => navigateTo('/settings/general'),
     },
@@ -447,7 +447,7 @@ const currentWorkspaceActions = computed(() => [
 const getWorkspaceActions = (workspace: ShopWorkspace) => [
   [
     {
-      label: t('shop.setDefault') || 'Set as Default',
+      label: t('shop.setDefault', 'Set as Default'),
       icon: 'i-heroicons-star',
       disabled: workspace.isDefault,
       onClick: () => shopManager.setDefaultWorkspace(workspace.id),
@@ -455,7 +455,7 @@ const getWorkspaceActions = (workspace: ShopWorkspace) => [
   ],
   [
     {
-      label: t('common.delete') || 'Delete',
+      label: t('common.delete', 'Delete'),
       icon: 'i-heroicons-trash',
       color: 'red' as const,
       onClick: () => {
@@ -488,13 +488,13 @@ const handleSync = async () => {
   try {
     await shopManager.syncCurrentWorkspace();
     toast.add({
-      title: t('shop.syncSuccess') || 'Sync Complete',
-      description: t('shop.syncSuccessDescription') || 'Your data has been synced.',
+      title: t('shop.syncSuccess', 'Sync Complete'),
+      description: t('shop.syncSuccessDescription', 'Your data has been synced.'),
       color: 'green',
     });
   } catch (error) {
     toast.add({
-      title: t('shop.syncError') || 'Sync Failed',
+      title: t('shop.syncError', 'Sync Failed'),
       description: String(error),
       color: 'red',
     });
@@ -596,8 +596,8 @@ const confirmDelete = () => {
   if (workspaceToDelete.value) {
     shopManager.removeWorkspace(workspaceToDelete.value.id);
     toast.add({
-      title: t('shop.deleted') || 'Workspace Removed',
-      description: t('shop.deletedDescription') || 'The workspace has been removed from your list.',
+      title: t('shop.deleted', 'Workspace Removed'),
+      description: t('shop.deletedDescription', 'The workspace has been removed from your list.'),
       color: 'green',
     });
   }
@@ -607,8 +607,7 @@ const confirmDelete = () => {
 
 const handleFullLogout = async () => {
   const confirmed = confirm(
-    t('shop.confirmLogoutAll') ||
-    'Are you sure you want to sign out from all workspaces? This will clear all local data.'
+    t('shop.confirmLogoutAll', 'Are you sure you want to sign out from all workspaces? This will clear all local data.')
   );
 
   if (!confirmed) return;

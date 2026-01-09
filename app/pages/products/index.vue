@@ -72,7 +72,7 @@
               trailing-icon="i-heroicons-chevron-down-20-solid"
             >
               <span class="hidden sm:inline">{{
-                $t("common.data") || "Data"
+                $t("common.data", "Data")
               }}</span>
             </UButton>
           </UDropdownMenu>
@@ -81,7 +81,7 @@
         <template v-if="canEditProducts">
           <UTooltip
             :text="
-              $t('products.settings.manageCategories') || 'Manage Categories'
+              $t('products.settings.manageCategories', 'Manage Categories')
             "
           >
             <UButton
@@ -97,7 +97,7 @@
             </UButton>
           </UTooltip>
           <UTooltip
-            :text="$t('products.settings.manageUnits') || 'Manage Units'"
+            :text="$t('products.settings.manageUnits', 'Manage Units')"
           >
             <UButton
               color="neutral"
@@ -669,8 +669,8 @@
                   </template>
                   {{
                     product.isPublic !== false
-                      ? $t("products.public") || "Public"
-                      : $t("products.private") || "Private"
+                      ? $t("products.public", "Public")
+                      : $t("products.private", "Private")
                   }}
                 </UBadge>
                 <!-- Promotion indicator -->
@@ -1183,18 +1183,15 @@
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                   {{
                     settingsPanelTab === "categories"
-                      ? $t("products.settings.manageCategories") ||
-                        "Manage Categories"
-                      : $t("products.settings.manageUnits") || "Manage Units"
+                      ? $t("products.settings.manageCategories", "Manage Categories")
+                      : $t("products.settings.manageUnits", "Manage Units")
                   }}
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{
                     settingsPanelTab === "categories"
-                      ? $t("products.settings.manageCategoriesDesc") ||
-                        "Add, edit or delete product categories"
-                      : $t("products.settings.manageUnitsDesc") ||
-                        "Manage product measurement units"
+                      ? $t("products.settings.manageCategoriesDesc", "Add, edit or delete product categories")
+                      : $t("products.settings.manageUnitsDesc", "Manage product measurement units")
                   }}
                 </p>
               </div>
@@ -1220,7 +1217,7 @@
             >
               <span class="flex items-center justify-center gap-2">
                 <span>📁</span>
-                <span>{{ $t("products.category") || "Categories" }}</span>
+                <span>{{ $t("products.category", "Categories") }}</span>
                 <UBadge color="neutral" variant="subtle" size="sm">
                   {{ categories.length }}
                 </UBadge>
@@ -1241,7 +1238,7 @@
             >
               <span class="flex items-center justify-center gap-2">
                 <span>📐</span>
-                <span>{{ $t("products.unit") || "Units" }}</span>
+                <span>{{ $t("products.unit", "Units") }}</span>
                 <UBadge color="neutral" variant="subtle" size="sm">
                   {{ units.length }}
                 </UBadge>
@@ -1302,7 +1299,7 @@
                 class="text-center py-8 text-gray-400"
               >
                 <span class="text-4xl block mb-2">📁</span>
-                <p>{{ $t("products.noCategories") || "No categories yet" }}</p>
+                <p>{{ $t("products.noCategories", "No categories yet") }}</p>
               </div>
             </div>
 
@@ -1324,7 +1321,7 @@
                       {{ unit.name }}
                     </h3>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ $t("products.units.symbol") || "Symbol" }}:
+                      {{ $t("products.units.symbol", "Symbol") }}:
                       {{ unit.symbol }}
                     </p>
                   </div>
@@ -1346,7 +1343,7 @@
                 class="text-center py-8 text-gray-400"
               >
                 <span class="text-4xl block mb-2">📐</span>
-                <p>{{ $t("products.noUnits") || "No units yet" }}</p>
+                <p>{{ $t("products.noUnits", "No units yet") }}</p>
               </div>
             </div>
           </div>
@@ -1365,8 +1362,8 @@
             >
               {{
                 settingsPanelTab === "categories"
-                  ? $t("products.addCategory") || "Add Category"
-                  : $t("products.addUnit") || "Add Unit"
+                  ? $t("products.addCategory", "Add Category")
+                  : $t("products.addUnit", "Add Unit")
               }}
             </UButton>
           </div>
@@ -1390,10 +1387,10 @@
             <span>📁</span>
             {{
               editingCategory
-                ? $t("common.edit") || "Edit"
-                : $t("common.add") || "Add"
+                ? $t("common.edit", "Edit")
+                : $t("common.add", "Add")
             }}
-            {{ $t("products.category") || "Category" }}
+            {{ $t("products.category", "Category") }}
           </h3>
 
           <div class="space-y-4">
@@ -1402,7 +1399,7 @@
               <label
                 class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
               >
-                {{ $t("common.icon") || "Icon" }}
+                {{ $t("common.icon", "Icon") }}
               </label>
               <div class="flex flex-wrap gap-2">
                 <button
@@ -1423,21 +1420,20 @@
             </div>
 
             <!-- Name -->
-            <UFormField :label="$t('common.name') || 'Name'" required>
+            <UFormField :label="$t('common.name', 'Name')" required>
               <UInput
                 v-model="categoryForm.name"
                 :placeholder="
-                  $t('products.categories.namePlaceholder') ||
-                  'e.g., Drinks, Food, Snacks'
+                  $t('products.categories.namePlaceholder', 'e.g., Drinks, Food, Snacks')
                 "
               />
             </UFormField>
 
             <!-- Description -->
-            <UFormField :label="$t('common.description') || 'Description'">
+            <UFormField :label="$t('common.description', 'Description')">
               <UInput
                 v-model="categoryForm.description"
-                :placeholder="$t('common.optional') || 'Optional description'"
+                :placeholder="$t('common.optional', 'Optional description')"
               />
             </UFormField>
 
@@ -1448,7 +1444,7 @@
                 class="flex-1"
                 @click="showCategoryModal = false"
               >
-                {{ $t("common.cancel") || "Cancel" }}
+                {{ $t("common.cancel", "Cancel") }}
               </UButton>
               <UButton
                 color="primary"
@@ -1458,8 +1454,8 @@
               >
                 {{
                   editingCategory
-                    ? $t("common.update") || "Update"
-                    : $t("common.create") || "Create"
+                    ? $t("common.update", "Update")
+                    : $t("common.create", "Create")
                 }}
               </UButton>
             </div>
@@ -1484,10 +1480,10 @@
             <span>📐</span>
             {{
               editingUnit
-                ? $t("common.edit") || "Edit"
-                : $t("common.add") || "Add"
+                ? $t("common.edit", "Edit")
+                : $t("common.add", "Add")
             }}
-            {{ $t("products.unit") || "Unit" }}
+            {{ $t("products.unit", "Unit") }}
           </h3>
 
           <div class="space-y-4">
@@ -1496,7 +1492,7 @@
               <label
                 class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
               >
-                {{ $t("common.quickSelect") || "Quick Select" }}
+                {{ $t("common.quickSelect", "Quick Select") }}
               </label>
               <div class="flex flex-wrap gap-2">
                 <button
@@ -1520,25 +1516,24 @@
             </div>
 
             <!-- Name -->
-            <UFormField :label="$t('common.name') || 'Name'" required>
+            <UFormField :label="$t('common.name', 'Name')" required>
               <UInput
                 v-model="unitForm.name"
                 :placeholder="
-                  $t('products.units.namePlaceholder') ||
-                  'e.g., Piece, Kilogram, Liter'
+                  $t('products.units.namePlaceholder', 'e.g., Piece, Kilogram, Liter')
                 "
               />
             </UFormField>
 
             <!-- Symbol -->
             <UFormField
-              :label="$t('products.units.symbol') || 'Symbol'"
+              :label="$t('products.units.symbol', 'Symbol')"
               required
             >
               <UInput
                 v-model="unitForm.symbol"
                 :placeholder="
-                  $t('products.units.symbolPlaceholder') || 'e.g., pc, kg, L'
+                  $t('products.units.symbolPlaceholder', 'e.g., pc, kg, L')
                 "
               />
             </UFormField>
@@ -1551,7 +1546,7 @@
                 block
                 @click="showUnitModal = false"
               >
-                {{ $t("common.cancel") || "Cancel" }}
+                {{ $t("common.cancel", "Cancel") }}
               </UButton>
               <UButton
                 color="primary"
@@ -1562,8 +1557,8 @@
               >
                 {{
                   editingUnit
-                    ? $t("common.update") || "Update"
-                    : $t("common.create") || "Create"
+                    ? $t("common.update", "Update")
+                    : $t("common.create", "Create")
                 }}
               </UButton>
             </div>
@@ -1586,18 +1581,17 @@
             class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2"
           >
             <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
-            {{ $t("common.confirmDelete") || "Confirm Delete" }}
+            {{ $t("common.confirmDelete", "Confirm Delete") }}
           </h3>
 
           <p class="text-gray-600 dark:text-gray-400 mb-6">
             {{
-              $t("common.deleteConfirmMessage") ||
-              "Are you sure you want to delete"
+              $t("common.deleteConfirmMessage", "Are you sure you want to delete")
             }}
             <strong class="text-gray-900 dark:text-white">
               "{{ categoryToDelete?.name }}" </strong
             >?
-            {{ $t("common.cannotUndo") || "This action cannot be undone." }}
+            {{ $t("common.cannotUndo", "This action cannot be undone.") }}
           </p>
 
           <div class="flex gap-2">
@@ -1608,7 +1602,7 @@
               block
               @click="showDeleteCategoryModal = false"
             >
-              {{ $t("common.cancel") || "Cancel" }}
+              {{ $t("common.cancel", "Cancel") }}
             </UButton>
             <UButton
               color="red"
@@ -1617,7 +1611,7 @@
               block
               @click="executeDeleteCategory"
             >
-              {{ $t("common.delete") || "Delete" }}
+              {{ $t("common.delete", "Delete") }}
             </UButton>
           </div>
         </div>

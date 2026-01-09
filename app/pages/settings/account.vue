@@ -61,7 +61,7 @@
                   <h4
                     class="text-sm font-medium text-purple-800 dark:text-purple-200 mb-3"
                   >
-                    {{ $t("account.nostr_identity") || "Nostr Identity" }}
+                    {{ $t("account.nostr_identity", "Nostr Identity") }}
                     <span
                       class="text-xs font-normal text-purple-600 dark:text-purple-300 ml-2"
                       >(kind:0)</span
@@ -97,7 +97,7 @@
                           class="text-xs font-medium text-red-600 dark:text-red-400"
                         >
                           🔐
-                          {{ $t("account.backup_key") || "Backup Private Key" }}
+                          {{ $t("account.backup_key", "Backup Private Key") }}
                         </span>
                       </div>
                       <div v-if="userNsec" class="space-y-2">
@@ -159,15 +159,13 @@
                         class="text-xs text-gray-500 dark:text-gray-400 italic"
                       >
                         {{
-                          $t("account.no_nsec_available") ||
-                          "No private key available (using NIP-07 extension)"
+                          $t("account.no_nsec_available", "No private key available (using NIP-07 extension)")
                         }}
                       </p>
                       <p class="text-xs text-red-500 dark:text-red-400 mt-2">
                         ⚠️
                         {{
-                          $t("account.nsec_warning") ||
-                          "Never share your nsec! Anyone with this key has full control of your account."
+                          $t("account.nsec_warning", "Never share your nsec! Anyone with this key has full control of your account.")
                         }}
                       </p>
                     </div>
@@ -175,7 +173,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <UFormField name="name" :label="$t('account.name') || 'Name'">
+                  <UFormField name="name" :label="$t('account.name', 'Name')">
                     <UInput
                       v-model="profileForm.name"
                       placeholder="Your name"
@@ -186,7 +184,7 @@
 
                   <UFormField
                     name="displayName"
-                    :label="$t('account.display_name') || 'Display Name'"
+                    :label="$t('account.display_name', 'Display Name')"
                   >
                     <UInput
                       v-model="profileForm.displayName"
@@ -198,7 +196,7 @@
 
                   <UFormField
                     name="nip05"
-                    :label="$t('account.nip05') || 'NIP-05 (Nostr Address)'"
+                    :label="$t('account.nip05', 'NIP-05 (Nostr Address)')"
                   >
                     <UInput
                       v-model="profileForm.nip05"
@@ -751,7 +749,7 @@
             <div class="flex items-center gap-2 text-red-600 dark:text-red-400">
               <UIcon name="i-heroicons-exclamation-triangle" class="text-xl" />
               <h3 class="text-lg font-semibold">
-                {{ $t("account.nsec_confirm_title") || "⚠️ Security Warning" }}
+                {{ $t("account.nsec_confirm_title", "⚠️ Security Warning") }}
               </h3>
             </div>
           </template>
@@ -764,8 +762,7 @@
                 class="text-sm text-red-700 dark:text-red-300 font-medium mb-2"
               >
                 {{
-                  $t("account.nsec_confirm_warning") ||
-                  "Your private key (nsec) gives FULL ACCESS to your account!"
+                  $t("account.nsec_confirm_warning", "Your private key (nsec) gives FULL ACCESS to your account!")
                 }}
               </p>
               <ul
@@ -773,26 +770,22 @@
               >
                 <li>
                   {{
-                    $t("account.nsec_warning_1") ||
-                    "Anyone with this key can sign messages as you"
+                    $t("account.nsec_warning_1", "Anyone with this key can sign messages as you")
                   }}
                 </li>
                 <li>
                   {{
-                    $t("account.nsec_warning_2") ||
-                    "They can access all your encrypted data"
+                    $t("account.nsec_warning_2", "They can access all your encrypted data")
                   }}
                 </li>
                 <li>
                   {{
-                    $t("account.nsec_warning_3") ||
-                    "You cannot revoke access once shared"
+                    $t("account.nsec_warning_3", "You cannot revoke access once shared")
                   }}
                 </li>
                 <li>
                   {{
-                    $t("account.nsec_warning_4") ||
-                    "Never share on screenshots, chats, or emails"
+                    $t("account.nsec_warning_4", "Never share on screenshots, chats, or emails")
                   }}
                 </li>
               </ul>
@@ -808,8 +801,7 @@
                 @click="nsecConfirmChecked = !nsecConfirmChecked"
               >
                 {{
-                  $t("account.nsec_confirm_checkbox") ||
-                  "I understand the risks and want to copy my private key"
+                  $t("account.nsec_confirm_checkbox", "I understand the risks and want to copy my private key")
                 }}
               </label>
             </div>
@@ -824,7 +816,7 @@
                 class="min-h-[44px]"
                 @click="closeNsecConfirmModal"
               >
-                {{ $t("common.cancel") || "Cancel" }}
+                {{ $t("common.cancel", "Cancel") }}
               </UButton>
               <UButton
                 color="red"
@@ -834,7 +826,7 @@
                 :disabled="!nsecConfirmChecked"
                 @click="confirmAndCopyNsec"
               >
-                {{ $t("account.copy_key") || "Copy Key" }}
+                {{ $t("account.copy_key", "Copy Key") }}
               </UButton>
             </div>
           </template>
@@ -1067,7 +1059,7 @@ const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
     toast.add({
-      title: t("common.copied") || "Copied!",
+      title: t("common.copied", "Copied!"),
       color: "success",
     });
   } catch (error) {
@@ -1082,9 +1074,9 @@ const copyNsec = async () => {
   try {
     await navigator.clipboard.writeText(userNsec.value);
     toast.add({
-      title: t("account.nsec_copied") || "Private key copied!",
+      title: t("account.nsec_copied", "Private key copied!"),
       description:
-        t("account.nsec_copied_warning") || "Keep it safe and never share it!",
+        t("account.nsec_copied_warning", "Keep it safe and never share it!"),
       color: "warning",
     });
   } catch (error) {
@@ -1104,9 +1096,9 @@ const confirmAndCopyNsec = async () => {
   try {
     await navigator.clipboard.writeText(userNsec.value);
     toast.add({
-      title: t("account.nsec_copied") || "Private key copied!",
+      title: t("account.nsec_copied", "Private key copied!"),
       description:
-        t("account.nsec_copied_warning") || "Keep it safe and never share it!",
+        t("account.nsec_copied_warning", "Keep it safe and never share it!"),
       color: "warning",
     });
     closeNsecConfirmModal();
@@ -1119,8 +1111,8 @@ const confirmAndCopyNsec = async () => {
   } catch (error) {
     console.error("Failed to copy nsec:", error);
     toast.add({
-      title: t("common.error") || "Error",
-      description: t("common.copy_failed") || "Failed to copy to clipboard",
+      title: t("common.error", "Error"),
+      description: t("common.copy_failed", "Failed to copy to clipboard"),
       color: "error",
     });
   }
@@ -1134,7 +1126,7 @@ const hideNsec = () => {
 const loadNostrProfile = async () => {
   if (!currentUserInfo.value?.pubkey) {
     toast.add({
-      title: t("account.no_pubkey") || "No public key found",
+      title: t("account.no_pubkey", "No public key found"),
       color: "error",
     });
     return;
@@ -1154,19 +1146,19 @@ const loadNostrProfile = async () => {
       profileForm.website = profile.website || "";
 
       toast.add({
-        title: t("account.profile_loaded") || "Profile loaded from Nostr",
+        title: t("account.profile_loaded", "Profile loaded from Nostr"),
         color: "success",
       });
     } else {
       toast.add({
-        title: t("account.profile_not_found") || "No profile found on relays",
+        title: t("account.profile_not_found", "No profile found on relays"),
         color: "warning",
       });
     }
   } catch (error) {
     console.error("Failed to load profile:", error);
     toast.add({
-      title: t("account.load_failed") || "Failed to load profile",
+      title: t("account.load_failed", "Failed to load profile"),
       color: "error",
     });
   } finally {
@@ -1197,10 +1189,9 @@ const updateProfile = async () => {
 
     if (!userInfo?.userKeys?.nsec && !user?.nsec && !hasNip07) {
       toast.add({
-        title: t("account.no_keys") || "No signing keys available",
+        title: t("account.no_keys", "No signing keys available"),
         description:
-          t("account.need_keys_to_publish") ||
-          "You need a private key or NIP-07 extension to publish",
+          t("account.need_keys_to_publish", "You need a private key or NIP-07 extension to publish"),
         color: "error",
       });
       return;
@@ -1242,7 +1233,7 @@ const updateProfile = async () => {
 
       if (!published) {
         toast.add({
-          title: t("account.publish_failed") || "Failed to publish to relays",
+          title: t("account.publish_failed", "Failed to publish to relays"),
           color: "error",
         });
         return;
@@ -1284,19 +1275,19 @@ const updateProfile = async () => {
       refreshCurrentUserProfile();
 
       toast.add({
-        title: t("account.profile_published") || "Profile published to Nostr",
+        title: t("account.profile_published", "Profile published to Nostr"),
         color: "success",
       });
     } else {
       toast.add({
-        title: t("account.sign_failed") || "Failed to sign event",
+        title: t("account.sign_failed", "Failed to sign event"),
         color: "error",
       });
     }
   } catch (error) {
     console.error("Failed to publish profile:", error);
     toast.add({
-      title: t("account.publish_failed") || "Failed to publish profile",
+      title: t("account.publish_failed", "Failed to publish profile"),
       color: "error",
     });
   } finally {

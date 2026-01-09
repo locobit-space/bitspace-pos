@@ -27,11 +27,11 @@
             />
           </div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {{ $t("order.invalidLink") || "Invalid Link" }}
+            {{ $t("order.invalidLink", "Invalid Link") }}
           </h1>
           <p class="text-gray-500 mb-6">{{ error }}</p>
           <p class="text-sm text-gray-400">
-            {{ $t("order.askStaff") || "Please ask staff for a new QR code" }}
+            {{ $t("order.askStaff", "Please ask staff for a new QR code") }}
           </p>
         </div>
       </UCard>
@@ -64,7 +64,7 @@
           <!-- Order Number -->
           <div class="bg-primary-50 dark:bg-primary-900/30 rounded-xl p-4 mb-4">
             <p class="text-sm text-gray-500 mb-1">
-              {{ $t("order.orderNumber") || "Order #" }}
+              {{ $t("order.orderNumber", "Order #") }}
             </p>
             <p
               class="text-2xl font-bold text-primary-600 dark:text-primary-400"
@@ -112,7 +112,7 @@
           <div class="space-y-3">
             <UButton color="primary" size="lg" block @click="startNewOrder">
               <UIcon name="i-heroicons-plus" class="w-5 h-5 mr-2" />
-              {{ $t("order.orderMore") || "Order More" }}
+              {{ $t("order.orderMore", "Order More") }}
             </UButton>
             <UButton
               v-if="orderHistory.length > 0"
@@ -123,7 +123,7 @@
               @click="showOrderHistoryModal = true"
             >
               <UIcon name="i-heroicons-clock" class="w-5 h-5 mr-2" />
-              {{ $t("order.viewHistory") || "View Order History" }}
+              {{ $t("order.viewHistory", "View Order History") }}
             </UButton>
           </div>
         </div>
@@ -145,7 +145,7 @@
                   {{ tableInfo.tableName || `Table ${tableInfo.tableNumber}` }}
                 </h1>
                 <p class="text-xs text-gray-500">
-                  {{ $t("order.browseMenu") || "Browse our menu" }}
+                  {{ $t("order.browseMenu", "Browse our menu") }}
                 </p>
               </div>
             </div>
@@ -273,11 +273,11 @@
             class="w-16 h-16 text-gray-300 mx-auto mb-4"
           />
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            {{ $t("order.noProducts") || "No products available" }}
+            {{ $t("order.noProducts", "No products available") }}
           </h2>
           <p class="text-gray-500">
             {{
-              $t("order.noProductsDesc") || "Please ask staff for assistance"
+              $t("order.noProductsDesc", "Please ask staff for assistance")
             }}
           </p>
         </div>
@@ -299,7 +299,7 @@
               @click="callWaiter"
             >
               <UIcon name="i-heroicons-bell-alert" class="w-4 h-4 mr-1" />
-              {{ $t("order.callWaiter") || "Call Waiter" }}
+              {{ $t("order.callWaiter", "Call Waiter") }}
             </UButton>
             <UButton
               color="emerald"
@@ -310,7 +310,7 @@
               @click="requestBill"
             >
               <UIcon name="i-heroicons-receipt-percent" class="w-4 h-4 mr-1" />
-              {{ $t("order.requestBill") || "Request Bill" }}
+              {{ $t("order.requestBill", "Request Bill") }}
             </UButton>
           </div>
 
@@ -328,7 +328,7 @@
                 <span class="bg-white/20 rounded-full px-2 py-0.5 text-sm">{{
                   cartItemCount
                 }}</span>
-                {{ $t("order.viewCart") || "View Cart" }}
+                {{ $t("order.viewCart", "View Cart") }}
               </span>
               <span class="font-bold">{{ formatPrice(cartTotal) }}</span>
             </div>
@@ -345,7 +345,7 @@
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
-                  🛒 {{ $t("order.yourCart") || "Your Cart" }}
+                  🛒 {{ $t("order.yourCart", "Your Cart") }}
                 </h3>
                 <UButton
                   v-if="cart.length > 0"
@@ -354,7 +354,7 @@
                   size="xs"
                   @click="clearCart"
                 >
-                  {{ $t("order.clearCart") || "Clear" }}
+                  {{ $t("order.clearCart", "Clear") }}
                 </UButton>
               </div>
             </template>
@@ -367,7 +367,7 @@
                   class="w-16 h-16 text-gray-300 mx-auto mb-4"
                 />
                 <p class="text-gray-500">
-                  {{ $t("order.cartEmpty") || "Your cart is empty" }}
+                  {{ $t("order.cartEmpty", "Your cart is empty") }}
                 </p>
               </div>
 
@@ -417,7 +417,7 @@
                     <UInput
                       v-model="item.notes"
                       size="xs"
-                      :placeholder="$t('order.addNote') || 'Add note...'"
+                      :placeholder="$t('order.addNote', 'Add note...')"
                       class="mt-1"
                     />
                   </div>
@@ -452,7 +452,7 @@
               <div class="space-y-3">
                 <!-- Totals -->
                 <div class="flex justify-between text-lg font-bold">
-                  <span>{{ $t("order.total") || "Total" }}</span>
+                  <span>{{ $t("order.total", "Total") }}</span>
                   <span class="text-primary-600 dark:text-primary-400">{{
                     formatPrice(cartTotal)
                   }}</span>
@@ -471,7 +471,7 @@
                     name="i-heroicons-paper-airplane"
                     class="w-5 h-5 mr-2"
                   />
-                  {{ $t("order.placeOrder") || "Place Order" }}
+                  {{ $t("order.placeOrder", "Place Order") }}
                 </UButton>
               </div>
             </template>
@@ -488,7 +488,7 @@
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
-                  📋 {{ $t("order.orderHistory") || "Order History" }}
+                  📋 {{ $t("order.orderHistory", "Order History") }}
                 </h3>
                 <UButton
                   color="neutral"
@@ -507,7 +507,7 @@
                   class="w-16 h-16 text-gray-300 mx-auto mb-4"
                 />
                 <p class="text-gray-500">
-                  {{ $t("order.noHistory") || "No order history yet" }}
+                  {{ $t("order.noHistory", "No order history yet") }}
                 </p>
               </div>
 
@@ -562,7 +562,7 @@
                         name="i-heroicons-arrow-path"
                         class="w-4 h-4 mr-1"
                       />
-                      {{ $t("order.reorder") || "Reorder" }}
+                      {{ $t("order.reorder", "Reorder") }}
                     </UButton>
                   </div>
                 </div>
@@ -581,7 +581,7 @@
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold">
-                  🍽️ {{ $t("order.currentTab") || "Current Tab" }}
+                  🍽️ {{ $t("order.currentTab", "Current Tab") }}
                 </h3>
                 <UButton
                   color="neutral"
@@ -643,7 +643,7 @@
                 />
                 <p class="text-gray-500">
                   {{
-                    $t("order.noOrdersYet") || "No orders in this session yet"
+                    $t("order.noOrdersYet", "No orders in this session yet")
                   }}
                 </p>
               </div>
@@ -731,7 +731,7 @@
                     name="i-heroicons-receipt-percent"
                     class="w-5 h-5 mr-2"
                   />
-                  {{ $t("order.requestBill") || "Request Bill" }}
+                  {{ $t("order.requestBill", "Request Bill") }}
                 </UButton>
                 <div v-else class="text-center py-2">
                   <UBadge color="emerald" size="lg">
@@ -985,14 +985,14 @@ const broadcastOrderToAdmin = (order: Order) => {
 
 // Order status steps for timeline
 const orderStatusSteps = [
-  { key: "new", icon: "📝", label: t("order.statusNew") || "Placed" },
+  { key: "new", icon: "📝", label: t("order.statusNew", "Placed") },
   {
     key: "preparing",
     icon: "👨‍🍳",
-    label: t("order.statusPreparing") || "Preparing",
+    label: t("order.statusPreparing", "Preparing"),
   },
-  { key: "ready", icon: "✅", label: t("order.statusReady") || "Ready" },
-  { key: "served", icon: "🍽️", label: t("order.statusServed") || "Served" },
+  { key: "ready", icon: "✅", label: t("order.statusReady", "Ready") },
+  { key: "served", icon: "🍽️", label: t("order.statusServed", "Served") },
 ];
 
 // Menu categories (with "All" option)
@@ -1002,7 +1002,7 @@ const menuCategories = computed(() => {
     ownerCategories.value.length > 0
       ? ownerCategories.value.filter((c) => c.id !== "favorites")
       : productsStore.categories.value.filter((c) => c.id !== "favorites");
-  return [{ id: "all", name: t("common.all") || "All", icon: "📦" }, ...cats];
+  return [{ id: "all", name: t("common.all", "All"), icon: "📦" }, ...cats];
 });
 
 // Filtered products based on selected category
@@ -1128,15 +1128,15 @@ const getOrderStatusIconClass = (status: string) => {
 const getOrderStatusTitle = (status: string) => {
   switch (status) {
     case "new":
-      return t("order.orderPlaced") || "Order Placed!";
+      return t("order.orderPlaced", "Order Placed!");
     case "preparing":
-      return t("order.orderPreparing") || "Being Prepared...";
+      return t("order.orderPreparing", "Being Prepared...");
     case "ready":
-      return t("order.orderReady") || "Order Ready!";
+      return t("order.orderReady", "Order Ready!");
     case "served":
-      return t("order.orderServed") || "Enjoy Your Meal!";
+      return t("order.orderServed", "Enjoy Your Meal!");
     default:
-      return t("order.orderPlaced") || "Order Placed!";
+      return t("order.orderPlaced", "Order Placed!");
   }
 };
 
@@ -1144,19 +1144,18 @@ const getOrderStatusDescription = (status: string) => {
   switch (status) {
     case "new":
       return (
-        t("order.orderPlacedDesc") || "Your order has been sent to the kitchen"
+        t("order.orderPlacedDesc", "Your order has been sent to the kitchen")
       );
     case "preparing":
       return (
-        t("order.orderPreparingDesc") || "The chef is preparing your order"
+        t("order.orderPreparingDesc", "The chef is preparing your order")
       );
     case "ready":
       return (
-        t("order.orderReadyDesc") ||
-        "Your order is ready for pickup or delivery"
+        t("order.orderReadyDesc", "Your order is ready for pickup or delivery")
       );
     case "served":
-      return t("order.orderServedDesc") || "Thank you for dining with us!";
+      return t("order.orderServedDesc", "Thank you for dining with us!");
     default:
       return "";
   }
@@ -1182,15 +1181,15 @@ const getStatusColor = (status?: string) => {
 const getStatusLabel = (status?: string) => {
   switch (status) {
     case "new":
-      return t("order.statusNew") || "New";
+      return t("order.statusNew", "New");
     case "pending":
-      return t("order.statusPending") || "Pending";
+      return t("order.statusPending", "Pending");
     case "preparing":
-      return t("order.statusPreparing") || "Preparing";
+      return t("order.statusPreparing", "Preparing");
     case "ready":
-      return t("order.statusReady") || "Ready";
+      return t("order.statusReady", "Ready");
     case "served":
-      return t("order.statusServed") || "Served";
+      return t("order.statusServed", "Served");
     default:
       return status || "Unknown";
   }
@@ -1349,9 +1348,9 @@ const callWaiter = async () => {
 
     // Show toast to customer
     toast.add({
-      title: t("order.waiterCalled") || "Waiter Called!",
+      title: t("order.waiterCalled", "Waiter Called!"),
       description:
-        t("order.waiterCalledDesc") || "Staff will be with you shortly",
+        t("order.waiterCalledDesc", "Staff will be with you shortly"),
       icon: "i-heroicons-bell-alert",
       color: "amber",
     });
@@ -1375,7 +1374,7 @@ const callWaiter = async () => {
   } catch (e) {
     console.error("Failed to call waiter:", e);
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -1424,9 +1423,9 @@ const requestBill = async () => {
 
     // Show toast to customer
     toast.add({
-      title: t("order.billRequested") || "Bill Requested!",
+      title: t("order.billRequested", "Bill Requested!"),
       description:
-        t("order.billRequestedDesc") || "Staff will bring your bill shortly",
+        t("order.billRequestedDesc", "Staff will bring your bill shortly"),
       icon: "i-heroicons-receipt-percent",
       color: "emerald",
     });
@@ -1456,7 +1455,7 @@ const requestBill = async () => {
   } catch (e) {
     console.error("Failed to request bill:", e);
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -1484,7 +1483,7 @@ const reorderFromHistory = (historyOrder: Order) => {
   showCartModal.value = true;
 
   toast.add({
-    title: t("order.reorderAdded") || "Items Added to Cart",
+    title: t("order.reorderAdded", "Items Added to Cart"),
     icon: "i-heroicons-check-circle",
     color: "green",
   });
@@ -1665,10 +1664,9 @@ const submitOrder = async () => {
     cart.value = [];
 
     toast.add({
-      title: t("order.orderSuccess") || "Order placed!",
+      title: t("order.orderSuccess", "Order placed!"),
       description:
-        t("order.orderSuccessDesc") ||
-        "Your order has been sent to the kitchen",
+        t("order.orderSuccessDesc", "Your order has been sent to the kitchen"),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -1678,7 +1676,7 @@ const submitOrder = async () => {
   } catch (e) {
     console.error("Failed to submit order:", e);
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -1735,7 +1733,7 @@ onMounted(async () => {
   const token = route.query.t as string;
 
   if (!token) {
-    error.value = t("order.noToken") || "No table token provided";
+    error.value = t("order.noToken", "No table token provided");
     isLoading.value = false;
     return;
   }
@@ -1744,7 +1742,7 @@ onMounted(async () => {
 
   if (!result.valid) {
     error.value =
-      result.error || t("order.invalidToken") || "Invalid or expired token";
+      result.error || t("order.invalidToken", "Invalid or expired token");
     isLoading.value = false;
     return;
   }

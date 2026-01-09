@@ -72,7 +72,7 @@ function handleExtend(minutes: number) {
             {{ table?.name || `${t('pos.tables.room')} ${table?.number}` }}
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ t('pos.tables.checkout') || 'Room Checkout' }}
+            {{ t('pos.tables.checkout', 'Room Checkout') }}
           </p>
         </div>
       </div>
@@ -84,7 +84,7 @@ function handleExtend(minutes: number) {
         <div class="grid grid-cols-3 gap-4 text-center">
           <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ t('pos.tables.startTime') || 'Start' }}
+              {{ t('pos.tables.startTime', 'Start') }}
             </p>
             <p class="text-lg font-bold text-gray-900 dark:text-white">
               {{ startTime }}
@@ -92,7 +92,7 @@ function handleExtend(minutes: number) {
           </div>
           <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ t('pos.tables.endTime') || 'End' }}
+              {{ t('pos.tables.endTime', 'End') }}
             </p>
             <p class="text-lg font-bold text-gray-900 dark:text-white">
               {{ currentTime }}
@@ -100,7 +100,7 @@ function handleExtend(minutes: number) {
           </div>
           <div class="p-3 bg-primary-50 dark:bg-primary-900/30 rounded-xl">
             <p class="text-xs text-primary-600 dark:text-primary-400">
-              {{ t('pos.tables.duration') || 'Duration' }}
+              {{ t('pos.tables.duration', 'Duration') }}
             </p>
             <p class="text-lg font-bold text-primary-700 dark:text-primary-300">
               {{ checkoutData.durationFormatted }}
@@ -143,7 +143,7 @@ function handleExtend(minutes: number) {
         <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
           <div class="flex justify-between text-sm">
             <span class="text-gray-500 dark:text-gray-400">
-              {{ t('pos.tables.hourlyRate') || 'Rate per hour' }}
+              {{ t('pos.tables.hourlyRate', 'Rate per hour') }}
             </span>
             <span class="text-gray-900 dark:text-white">
               {{ formatCurrency(checkoutData.hourlyRate) }}
@@ -151,23 +151,23 @@ function handleExtend(minutes: number) {
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-500 dark:text-gray-400">
-              {{ t('pos.tables.minimumHours') || 'Minimum' }}
+              {{ t('pos.tables.minimumHours', 'Minimum') }}
             </span>
             <span class="text-gray-900 dark:text-white">
-              {{ checkoutData.minimumHours }} {{ t('common.hours') || 'hours' }}
+              {{ checkoutData.minimumHours }} {{ t('common.hours', 'hours') }}
             </span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-500 dark:text-gray-400">
-              {{ t('pos.tables.billedHours') || 'Billed hours' }}
+              {{ t('pos.tables.billedHours', 'Billed hours') }}
             </span>
             <span class="text-gray-900 dark:text-white font-medium">
-              {{ checkoutData.billedHours }} {{ t('common.hours') || 'hours' }}
+              {{ checkoutData.billedHours }} {{ t('common.hours', 'hours') }}
             </span>
           </div>
           <div class="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
             <span class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('pos.tables.roomCharge') || 'Room Charge' }}
+              {{ t('pos.tables.roomCharge', 'Room Charge') }}
             </span>
             <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
               {{ formatCurrency(checkoutData.roomCharge) }}
@@ -179,7 +179,7 @@ function handleExtend(minutes: number) {
         <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
           <p class="text-sm text-blue-700 dark:text-blue-300">
             <UIcon name="i-heroicons-information-circle" class="w-4 h-4 inline mr-1" />
-            {{ t('pos.tables.checkoutNote') || 'Room charge will be added to the order.' }}
+            {{ t('pos.tables.checkoutNote', 'Room charge will be added to the order.') }}
           </p>
         </div>
       </div>
@@ -196,7 +196,7 @@ function handleExtend(minutes: number) {
           size="lg"
           @click="handleCheckout"
         >
-          {{ t('pos.tables.confirmCheckout') || 'Checkout & Add to Bill' }}
+          {{ t('pos.tables.confirmCheckout', 'Checkout & Add to Bill') }}
         </UButton>
       </div>
     </template>

@@ -79,7 +79,7 @@
           color="primary"
           @click="startCamera"
         >
-          {{ $t("pos.scanner.startCamera") || "Start Camera" }}
+          {{ $t("pos.scanner.startCamera", "Start Camera") }}
         </UButton>
         <UButton
           v-else
@@ -89,7 +89,7 @@
           icon="i-heroicons-video-camera-slash"
           @click="stopCamera"
         >
-          {{ $t("pos.scanner.stopCamera") || "Stop Camera" }}
+          {{ $t("pos.scanner.stopCamera", "Stop Camera") }}
         </UButton>
       </div>
     </div>

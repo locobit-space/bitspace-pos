@@ -184,7 +184,7 @@ function getDefaultForm(): ProductFormData {
 const isEditing = computed(() => !!props.product?.id);
 
 const categoryOptions = computed(() => [
-  { id: "all", name: t("common.all") || "All" },
+  { id: "all", name: t("common.all", "All") },
   // Map categories without 'icon' property to prevent USelect from trying to render emoji as Icon
   ...props.categories.map((c) => ({ id: c.id, name: c.name })),
 ]);
@@ -192,7 +192,7 @@ const categoryOptions = computed(() => [
 const unitOptions = computed(() => props.units);
 
 const branchOptions = computed(() => [
-  { id: "all", name: t("common.allBranches") || "All Branches" },
+  { id: "all", name: t("common.allBranches", "All Branches") },
   ...props.branches,
 ]);
 
@@ -312,8 +312,7 @@ function handleCancel() {
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{
                     form.name ||
-                    t("products.newProductHint") ||
-                    "Fill in product details below"
+                    t("products.newProductHint", "Fill in product details below")
                   }}
                 </p>
               </div>

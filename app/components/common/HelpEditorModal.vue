@@ -84,10 +84,9 @@ async function handleSubmit() {
 
     if (article) {
       toast.add({
-        title: t("help.editor.publishSuccess") || "Help published!",
+        title: t("help.editor.publishSuccess", "Help published!"),
         description:
-          t("help.editor.publishedToNostr") ||
-          "Article saved to Nostr relays",
+          t("help.editor.publishedToNostr", "Article saved to Nostr relays"),
         color: "green",
         icon: "i-heroicons-check-circle",
       });
@@ -98,7 +97,7 @@ async function handleSubmit() {
     }
   } catch (e) {
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: `${e}`,
       color: "red",
       icon: "i-heroicons-x-circle",
@@ -118,8 +117,8 @@ async function handleSubmit() {
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
             {{
               article
-                ? t("help.editor.editArticle") || "Edit Help Article"
-                : t("help.editor.createArticle") || "Create Help Article"
+                ? t("help.editor.editArticle", "Edit Help Article")
+                : t("help.editor.createArticle", "Create Help Article")
             }}
           </h2>
           <UButton
@@ -134,7 +133,7 @@ async function handleSubmit() {
         <form class="space-y-4 overflow-y-auto max-h-[70vh]" @submit.prevent="handleSubmit">
           <!-- Page and Locale Row -->
           <div class="grid grid-cols-2 gap-4">
-            <UFormField :label="t('help.editor.page') || 'Page'">
+            <UFormField :label="t('help.editor.page', 'Page')">
               <USelect
                 v-model="form.pageId"
                 :items="pageOptions"
@@ -143,7 +142,7 @@ async function handleSubmit() {
               />
             </UFormField>
 
-            <UFormField :label="t('help.editor.language') || 'Language'">
+            <UFormField :label="t('help.editor.language', 'Language')">
               <USelect
                 v-model="form.locale"
                 :items="localeOptions"
@@ -154,28 +153,28 @@ async function handleSubmit() {
           </div>
 
           <!-- Title -->
-          <UFormField :label="t('help.editor.title') || 'Title'" required>
+          <UFormField :label="t('help.editor.title', 'Title')" required>
             <UInput
               v-model="form.title"
-              :placeholder="t('help.editor.titlePlaceholder') || 'e.g. How to use the POS'"
+              :placeholder="t('help.editor.titlePlaceholder', 'e.g. How to use the POS')"
               class="w-full"
             />
           </UFormField>
 
           <!-- Description -->
           <UFormField
-            :label="t('help.editor.description') || 'Description'"
+            :label="t('help.editor.description', 'Description')"
             required
           >
             <UInput
               v-model="form.description"
-              :placeholder="t('help.editor.descriptionPlaceholder') || 'Brief description of this help section'"
+              :placeholder="t('help.editor.descriptionPlaceholder', 'Brief description of this help section')"
               class="w-full"
             />
           </UFormField>
 
           <!-- Content (Markdown) -->
-          <UFormField :label="t('help.editor.content') || 'Content (Markdown)'">
+          <UFormField :label="t('help.editor.content', 'Content (Markdown)')">
             <div class="flex gap-2 mb-2">
               <UButton
                 type="button"
@@ -183,7 +182,7 @@ async function handleSubmit() {
                 :variant="showPreview ? 'ghost' : 'soft'"
                 @click="showPreview = false"
               >
-                {{ t("help.editor.write") || "Write" }}
+                {{ t("help.editor.write", "Write") }}
               </UButton>
               <UButton
                 type="button"
@@ -191,14 +190,14 @@ async function handleSubmit() {
                 :variant="showPreview ? 'soft' : 'ghost'"
                 @click="showPreview = true"
               >
-                {{ t("help.editor.preview") || "Preview" }}
+                {{ t("help.editor.preview", "Preview") }}
               </UButton>
             </div>
 
             <UTextarea
               v-if="!showPreview"
               v-model="form.content"
-              :placeholder="t('help.editor.contentPlaceholder') || 'Write detailed help content here. Supports **markdown** formatting.'"
+              :placeholder="t('help.editor.contentPlaceholder', 'Write detailed help content here. Supports **markdown** formatting.')"
               :rows="8"
               class="font-mono w-full"
             />
@@ -210,19 +209,19 @@ async function handleSubmit() {
             >
               <div v-if="form.content" v-html="form.content" />
               <p v-else class="text-gray-400 italic">
-                {{ t("help.editor.noContent") || "No content to preview" }}
+                {{ t("help.editor.noContent", "No content to preview") }}
               </p>
             </div>
           </UFormField>
 
           <!-- Tags -->
           <UFormField
-            :label="t('help.editor.tags') || 'Tags'"
-            :description="t('help.editor.tagsDescription') || 'Comma-separated tags for search'"
+            :label="t('help.editor.tags', 'Tags')"
+            :description="t('help.editor.tagsDescription', 'Comma-separated tags for search')"
           >
             <UInput
               v-model="form.tags"
-              :placeholder="t('help.editor.tagsPlaceholder') || 'e.g. sales, checkout, payment'"
+              :placeholder="t('help.editor.tagsPlaceholder', 'e.g. sales, checkout, payment')"
             />
           </UFormField>
 
@@ -234,7 +233,7 @@ async function handleSubmit() {
               variant="ghost"
               @click="emit('close')"
             >
-              {{ t("common.cancel") || "Cancel" }}
+              {{ t("common.cancel", "Cancel") }}
             </UButton>
             <UButton
               type="submit"
@@ -245,8 +244,8 @@ async function handleSubmit() {
             >
               {{
                 article
-                  ? t("help.editor.update") || "Update"
-                  : t("help.editor.publish") || "Publish to Nostr"
+                  ? t("help.editor.update", "Update")
+                  : t("help.editor.publish", "Publish to Nostr")
               }}
             </UButton>
           </div>

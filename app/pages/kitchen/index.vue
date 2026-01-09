@@ -419,7 +419,7 @@ const batchUpdateStatus = async (status: "preparing" | "ready" | "served") => {
   selectedOrderIds.value = new Set();
 
   toast.add({
-    title: t("common.processing") || "Processing...",
+    title: t("common.processing", "Processing..."),
     description: `Updating ${count} orders to ${status}...`,
     color: "blue",
     icon: "i-heroicons-arrow-path",
@@ -431,7 +431,7 @@ const batchUpdateStatus = async (status: "preparing" | "ready" | "served") => {
   }
 
   toast.add({
-    title: t("common.success") || "Success",
+    title: t("common.success", "Success"),
     description: `Updated ${count} orders to ${status}`,
     color: "green",
     icon: "i-heroicons-check-circle",
@@ -586,8 +586,8 @@ onUnmounted(() => {
               {{
                 kitchenOrders.length > 0 &&
                 kitchenOrders.every((o) => selectedOrderIds.has(o.id))
-                  ? t("common.deselectAll") || "Deselect All"
-                  : t("common.selectAll") || "Select All"
+                  ? t("common.deselectAll", "Deselect All")
+                  : t("common.selectAll", "Select All")
               }}
             </UButton>
 
@@ -604,8 +604,8 @@ onUnmounted(() => {
             >
               {{
                 isSelectionMode
-                  ? t("common.cancel") || "Cancel"
-                  : t("common.select") || "Select"
+                  ? t("common.cancel", "Cancel")
+                  : t("common.select", "Select")
               }}
             </UButton>
           </div>
@@ -896,7 +896,7 @@ onUnmounted(() => {
       <div class="flex items-center gap-2">
         <span class="font-bold text-lg">{{ selectedOrderIds.size }}</span>
         <span class="text-gray-500">{{
-          t("common.selected") || "selected"
+          t("common.selected", "selected")
         }}</span>
       </div>
 
@@ -907,7 +907,7 @@ onUnmounted(() => {
           icon="i-heroicons-fire"
           @click="batchUpdateStatus('preparing')"
         >
-          {{ t("kitchen.start") || "Start" }}
+          {{ t("kitchen.start", "Start") }}
         </UButton>
         <UButton
           color="green"
@@ -915,7 +915,7 @@ onUnmounted(() => {
           icon="i-heroicons-check"
           @click="batchUpdateStatus('ready')"
         >
-          {{ t("kitchen.ready") || "Ready" }}
+          {{ t("kitchen.ready", "Ready") }}
         </UButton>
         <UButton
           color="gray"
@@ -923,7 +923,7 @@ onUnmounted(() => {
           icon="i-heroicons-check-circle"
           @click="batchUpdateStatus('served')"
         >
-          {{ t("kitchen.served") || "Served" }}
+          {{ t("kitchen.served", "Served") }}
         </UButton>
       </div>
     </div>

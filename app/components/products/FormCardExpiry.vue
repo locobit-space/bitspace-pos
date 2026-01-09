@@ -49,12 +49,11 @@ const storageTypeOptions = computed(() => [
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t("products.expirySettings") || "Expiry & Lot Tracking" }}
+            {{ t("products.expirySettings", "Expiry & Lot Tracking") }}
           </h3>
           <p class="text-xs text-gray-500">
             {{
-              t("products.expirySettingsHint") ||
-              "Shelf life and batch management"
+              t("products.expirySettingsHint", "Shelf life and batch management")
             }}
           </p>
         </div>

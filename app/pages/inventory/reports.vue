@@ -213,7 +213,7 @@ const deadStock = computed(() => {
 // Chart data for aging
 const agingChartSeries = computed(() => [
   {
-    name: t("inventoryReports.stockValue") || "Stock Value",
+    name: t("inventoryReports.stockValue", "Stock Value"),
     type: "bar" as const,
     data: stockAging.value.map((b) => b.value),
     itemStyle: {
@@ -229,7 +229,7 @@ const agingChartCategories = computed(() =>
 // ABC Pie chart data
 const abcPieData = computed(() => [
   {
-    name: t("inventoryReports.abcPie") || "ABC Distribution",
+    name: t("inventoryReports.abcPie", "ABC Distribution"),
     type: "pie" as const,
     radius: ["40%", "70%"],
     data: [
@@ -299,8 +299,8 @@ const exportReport = async (format: "csv" | "excel") => {
   <div class="min-h-screen">
     <!-- Header -->
     <CommonPageHeader
-      :title="t('inventoryReports.title') || 'Inventory Analytics'"
-      :description="t('inventoryReports.description') || 'Stock valuation, aging analysis, and ABC classification'"
+      :title="t('inventoryReports.title', 'Inventory Analytics')"
+      :description="t('inventoryReports.description', 'Stock valuation, aging analysis, and ABC classification')"
     >
       <template #left>
         <UButton
@@ -339,22 +339,22 @@ const exportReport = async (format: "csv" | "excel") => {
           variant="link"
           :items="[
             {
-              label: t('inventoryReports.valuation') || 'Valuation',
+              label: t('inventoryReports.valuation', 'Valuation'),
               value: 'valuation',
               icon: 'i-heroicons-currency-dollar',
             },
             {
-              label: t('inventoryReports.aging') || 'Stock Aging',
+              label: t('inventoryReports.aging', 'Stock Aging'),
               value: 'aging',
               icon: 'i-heroicons-clock',
             },
             {
-              label: t('inventoryReports.abcAnalysis') || 'ABC Analysis',
+              label: t('inventoryReports.abcAnalysis', 'ABC Analysis'),
               value: 'abc',
               icon: 'i-heroicons-chart-pie',
             },
             {
-              label: t('inventoryReports.turnover') || 'Turnover',
+              label: t('inventoryReports.turnover', 'Turnover'),
               value: 'turnover',
               icon: 'i-heroicons-arrow-path',
             },
@@ -380,10 +380,10 @@ const exportReport = async (format: "csv" | "excel") => {
               <div>
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <span class="text-2xl">💰</span>
-                  {{ t('inventoryReports.totalInventoryValue') || 'Total Inventory Value' }}
+                  {{ t('inventoryReports.totalInventoryValue', 'Total Inventory Value') }}
                 </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {{ t('inventoryReports.valuationMethodHint') || 'Select valuation method to calculate' }}
+                  {{ t('inventoryReports.valuationMethodHint', 'Select valuation method to calculate') }}
                 </p>
               </div>
               <div class="flex items-center gap-3">
@@ -415,25 +415,25 @@ const exportReport = async (format: "csv" | "excel") => {
           <CommonStatCard
             icon="i-heroicons-cube"
             icon-color="blue"
-            :label="t('inventory.totalProducts') || 'Total Products'"
+            :label="t('inventory.totalProducts', 'Total Products')"
             :value="formatNumber(inventoryItems.length)"
           />
           <CommonStatCard
             icon="i-heroicons-archive-box"
             icon-color="purple"
-            :label="t('inventory.stockLots') || 'Stock Lots'"
+            :label="t('inventory.stockLots', 'Stock Lots')"
             :value="formatNumber(allLots.length)"
           />
           <CommonStatCard
             icon="i-heroicons-exclamation-triangle"
             icon-color="yellow"
-            :label="t('inventory.lowStockItems') || 'Low Stock'"
+            :label="t('inventory.lowStockItems', 'Low Stock')"
             :value="formatNumber(inventory.lowStockCount.value)"
           />
           <CommonStatCard
             icon="i-heroicons-x-circle"
             icon-color="red"
-            :label="t('inventoryReports.deadStock') || 'Dead Stock'"
+            :label="t('inventoryReports.deadStock', 'Dead Stock')"
             :value="formatNumber(deadStock.length)"
           />
         </div>
@@ -444,7 +444,7 @@ const exportReport = async (format: "csv" | "excel") => {
             <template #header>
               <h3 class="font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-squares-2x2" class="text-primary-500" />
-                {{ t('inventoryReports.valuationByCategory') || 'Valuation by Category' }}
+                {{ t('inventoryReports.valuationByCategory', 'Valuation by Category') }}
               </h3>
             </template>
             <div class="space-y-4">
@@ -515,7 +515,7 @@ const exportReport = async (format: "csv" | "excel") => {
             <template #header>
               <h3 class="font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-chart-bar" class="text-primary-500" />
-                {{ t('inventoryReports.stockAgingChart') || 'Stock Aging Distribution' }}
+                {{ t('inventoryReports.stockAgingChart', 'Stock Aging Distribution') }}
               </h3>
             </template>
             <div class="h-80">
@@ -536,10 +536,10 @@ const exportReport = async (format: "csv" | "excel") => {
               </div>
               <div class="flex-1">
                 <h4 class="font-semibold text-red-800 dark:text-red-200">
-                  {{ t('inventoryReports.deadStockAlert') || 'Dead Stock Alert' }}
+                  {{ t('inventoryReports.deadStockAlert', 'Dead Stock Alert') }}
                 </h4>
                 <p class="text-sm text-red-700 dark:text-red-300 mt-1">
-                  {{ deadStock.length }} {{ t('inventoryReports.lotsNoMovement') || 'lots with no movement in 90+ days' }}
+                  {{ deadStock.length }} {{ t('inventoryReports.lotsNoMovement', 'lots with no movement in 90+ days') }}
                 </p>
               </div>
               <UButton color="red" variant="soft" size="sm" @click="activeTab = 'valuation'">
@@ -564,7 +564,7 @@ const exportReport = async (format: "csv" | "excel") => {
               </div>
               <div>
                 <p class="text-sm text-green-700 dark:text-green-400">
-                  {{ t('inventoryReports.highValue') || 'High Value' }}
+                  {{ t('inventoryReports.highValue', 'High Value') }}
                 </p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">
                   {{ abcClassification.counts.A }} {{ t('common.items') }}
@@ -575,7 +575,7 @@ const exportReport = async (format: "csv" | "excel") => {
               {{ formatCurrency(abcClassification.values.A) }}
             </p>
             <p class="text-xs text-gray-500 mt-1">
-              ~80% {{ t('inventoryReports.ofTotalValue') || 'of total value' }}
+              ~80% {{ t('inventoryReports.ofTotalValue', 'of total value') }}
             </p>
           </div>
 
@@ -587,7 +587,7 @@ const exportReport = async (format: "csv" | "excel") => {
               </div>
               <div>
                 <p class="text-sm text-yellow-700 dark:text-yellow-400">
-                  {{ t('inventoryReports.mediumValue') || 'Medium Value' }}
+                  {{ t('inventoryReports.mediumValue', 'Medium Value') }}
                 </p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">
                   {{ abcClassification.counts.B }} {{ t('common.items') }}
@@ -598,7 +598,7 @@ const exportReport = async (format: "csv" | "excel") => {
               {{ formatCurrency(abcClassification.values.B) }}
             </p>
             <p class="text-xs text-gray-500 mt-1">
-              ~15% {{ t('inventoryReports.ofTotalValue') || 'of total value' }}
+              ~15% {{ t('inventoryReports.ofTotalValue', 'of total value') }}
             </p>
           </div>
 
@@ -610,7 +610,7 @@ const exportReport = async (format: "csv" | "excel") => {
               </div>
               <div>
                 <p class="text-sm text-gray-700 dark:text-gray-400">
-                  {{ t('inventoryReports.lowValue') || 'Low Value' }}
+                  {{ t('inventoryReports.lowValue', 'Low Value') }}
                 </p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">
                   {{ abcClassification.counts.C }} {{ t('common.items') }}
@@ -621,7 +621,7 @@ const exportReport = async (format: "csv" | "excel") => {
               {{ formatCurrency(abcClassification.values.C) }}
             </p>
             <p class="text-xs text-gray-500 mt-1">
-              ~5% {{ t('inventoryReports.ofTotalValue') || 'of total value' }}
+              ~5% {{ t('inventoryReports.ofTotalValue', 'of total value') }}
             </p>
           </div>
         </div>
@@ -632,7 +632,7 @@ const exportReport = async (format: "csv" | "excel") => {
             <template #header>
               <h3 class="font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-chart-pie" class="text-primary-500" />
-                {{ t('inventoryReports.valueDistribution') || 'Value Distribution' }}
+                {{ t('inventoryReports.valueDistribution', 'Value Distribution') }}
               </h3>
             </template>
             <div class="h-80">
@@ -645,7 +645,7 @@ const exportReport = async (format: "csv" | "excel") => {
             <template #header>
               <h3 class="font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-star" class="text-green-500" />
-                {{ t('inventoryReports.topAClassProducts') || 'Top A-Class Products' }}
+                {{ t('inventoryReports.topAClassProducts', 'Top A-Class Products') }}
               </h3>
             </template>
             <div class="space-y-3 max-h-80 overflow-y-auto">
@@ -687,25 +687,25 @@ const exportReport = async (format: "csv" | "excel") => {
           <CommonStatCard
             icon="i-heroicons-arrow-path"
             icon-color="blue"
-            :label="t('inventoryReports.turnoverRatio') || 'Turnover Ratio'"
+            :label="t('inventoryReports.turnoverRatio', 'Turnover Ratio')"
             :value="inventoryTurnover.ratio + 'x'"
           />
           <CommonStatCard
             icon="i-heroicons-calendar-days"
             icon-color="purple"
-            :label="t('inventoryReports.daysInInventory') || 'Days in Inventory'"
+            :label="t('inventoryReports.daysInInventory', 'Days in Inventory')"
             :value="inventoryTurnover.daysInInventory + ' ' + t('common.days')"
           />
           <CommonStatCard
             icon="i-heroicons-arrow-trending-up"
             icon-color="green"
-            :label="t('inventoryReports.totalSold') || 'Total Units Sold'"
+            :label="t('inventoryReports.totalSold', 'Total Units Sold')"
             :value="formatNumber(inventoryTurnover.totalSold)"
           />
           <CommonStatCard
             icon="i-heroicons-cube"
             icon-color="yellow"
-            :label="t('inventoryReports.avgInventory') || 'Avg Inventory'"
+            :label="t('inventoryReports.avgInventory', 'Avg Inventory')"
             :value="formatNumber(inventoryTurnover.avgInventory)"
           />
         </div>
@@ -715,20 +715,20 @@ const exportReport = async (format: "csv" | "excel") => {
           <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
             <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
               <UIcon name="i-heroicons-information-circle" />
-              {{ t('inventoryReports.understandingTurnover') || 'Understanding Inventory Turnover' }}
+              {{ t('inventoryReports.understandingTurnover', 'Understanding Inventory Turnover') }}
             </h4>
             <ul class="space-y-2 text-sm text-blue-700 dark:text-blue-300">
               <li class="flex items-start gap-2">
                 <span class="font-bold">•</span>
-                <span>{{ t('inventoryReports.turnoverHint1') || 'Higher turnover = faster-selling inventory (typically 4-6x is healthy for retail)' }}</span>
+                <span>{{ t('inventoryReports.turnoverHint1', 'Higher turnover = faster-selling inventory (typically 4-6x is healthy for retail)') }}</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="font-bold">•</span>
-                <span>{{ t('inventoryReports.turnoverHint2') || 'Days in Inventory shows how long stock sits before being sold' }}</span>
+                <span>{{ t('inventoryReports.turnoverHint2', 'Days in Inventory shows how long stock sits before being sold') }}</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="font-bold">•</span>
-                <span>{{ t('inventoryReports.turnoverHint3') || 'Low turnover may indicate overstocking or slow-moving items' }}</span>
+                <span>{{ t('inventoryReports.turnoverHint3', 'Low turnover may indicate overstocking or slow-moving items') }}</span>
               </li>
             </ul>
           </div>

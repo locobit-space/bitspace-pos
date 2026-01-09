@@ -97,7 +97,7 @@ const storageTypes = [
 
 // Computed
 const categoryOptions = computed(() => [
-  { id: "all", name: t("common.all") || "All Categories" },
+  { id: "all", name: t("common.all", "All Categories") },
   // Map categories without 'icon' property to prevent USelect from trying to render emoji as Icon
   ...ingredientsStore.categories.value
     .filter((c) => c.id)
@@ -214,7 +214,7 @@ async function saveIngredient() {
     toast.add({
       title: t("common.success"),
       description:
-        t("ingredients.messages.created") || "Ingredient created successfully",
+        t("ingredients.messages.created", "Ingredient created successfully"),
       color: "green",
       icon: "i-heroicons-check-circle",
     });
@@ -487,7 +487,7 @@ watch([searchQuery, selectedCategory], () => {
           <UInput
             v-model="searchQuery"
             :placeholder="
-              t('ingredients.searchPlaceholder') || 'Search ingredients...'
+              t('ingredients.searchPlaceholder', 'Search ingredients...')
             "
             icon="i-heroicons-magnifying-glass"
           />

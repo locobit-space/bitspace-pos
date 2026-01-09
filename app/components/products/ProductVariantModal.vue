@@ -236,7 +236,7 @@ const handleCancel = () => {
               class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2"
             >
               <span class="text-lg">📏</span>
-              {{ t("products.selectSize") || "Select Size" }}
+              {{ t("products.selectSize", "Select Size") }}
               <span class="text-red-500">*</span>
             </h4>
 
@@ -327,13 +327,12 @@ const handleCancel = () => {
               class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2"
             >
               <span class="text-lg">📝</span>
-              {{ t("products.specialInstructions") || "Special Instructions" }}
+              {{ t("products.specialInstructions", "Special Instructions") }}
             </h4>
             <UTextarea
               v-model="notes"
               :placeholder="
-                t('products.notesPlaceholder') ||
-                'E.g., Less ice, no sugar, extra spicy...'
+                t('products.notesPlaceholder', 'E.g., Less ice, no sugar, extra spicy...')
               "
               :rows="2"
               autoresize
@@ -381,7 +380,7 @@ const handleCancel = () => {
               <div class="flex items-center justify-between w-full px-2">
                 <span class="flex items-center gap-2">
                   <UIcon name="i-heroicons-shopping-cart" class="w-5 h-5" />
-                  {{ t("products.addToCart") || "Add to Cart" }}
+                  {{ t("products.addToCart", "Add to Cart") }}
                 </span>
                 <span>{{ formatPrice(finalPrice) }}</span>
               </div>

@@ -421,12 +421,11 @@ onUnmounted(() => {
         />
       </div>
       <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-        {{ t("payment.lightning.unlockRequired") || "Unlock Required" }}
+        {{ t("payment.lightning.unlockRequired", "Unlock Required") }}
       </h3>
       <p class="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
         {{
-          t("payment.lightning.unlockDescription") ||
-          "Enter your master password to access encrypted API keys."
+          t("payment.lightning.unlockDescription", "Enter your master password to access encrypted API keys.")
         }}
       </p>
 
@@ -446,7 +445,7 @@ onUnmounted(() => {
           icon="i-heroicons-lock-open"
           @click="handleUnlock"
         >
-          {{ t("settings.security.unlock") || "Unlock" }}
+          {{ t("settings.security.unlock", "Unlock") }}
         </UButton>
       </div>
 
@@ -610,13 +609,12 @@ onUnmounted(() => {
         >
           <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
           <span class="font-semibold text-sm">{{
-            t("payment.lightning.manualApproveTitle") || "Manual Override"
+            t("payment.lightning.manualApproveTitle", "Manual Override")
           }}</span>
         </div>
         <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
           {{
-            t("payment.lightning.manualApproveHint") ||
-            "If customer has paid but auto-detection failed (network issue, system error), you can manually approve:"
+            t("payment.lightning.manualApproveHint", "If customer has paid but auto-detection failed (network issue, system error), you can manually approve:")
           }}
         </p>
         <UButton
@@ -629,14 +627,12 @@ onUnmounted(() => {
           @click="emergencyApprove"
         >
           {{
-            t("payment.lightning.manualApprove") ||
-            "⚠️ Manually Approve Payment"
+            t("payment.lightning.manualApprove", "⚠️ Manually Approve Payment")
           }}
         </UButton>
         <p class="text-xs text-gray-400 mt-2">
           {{
-            t("payment.lightning.manualApproveWarning") ||
-            "Only use if you have confirmed payment was received."
+            t("payment.lightning.manualApproveWarning", "Only use if you have confirmed payment was received.")
           }}
         </p>
       </div>
@@ -652,8 +648,7 @@ onUnmounted(() => {
       >
         <p class="text-xs text-gray-400">
           {{
-            t("payment.lightning.manualApproveAvailableIn") ||
-            "Manual override available in"
+            t("payment.lightning.manualApproveAvailableIn", "Manual override available in")
           }}
           {{ manualApproveTimer }}s
         </p>

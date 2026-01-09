@@ -58,10 +58,10 @@ const form = ref<CustomerFormData>({
 
 // Tier options
 const tierOptions = computed(() => [
-  { value: "bronze", label: t("loyalty.bronze") || "Bronze" },
-  { value: "silver", label: t("loyalty.silver") || "Silver" },
-  { value: "gold", label: t("loyalty.gold") || "Gold" },
-  { value: "platinum", label: t("loyalty.platinum") || "Platinum" },
+  { value: "bronze", label: t("loyalty.bronze", "Bronze") },
+  { value: "silver", label: t("loyalty.silver", "Silver") },
+  { value: "gold", label: t("loyalty.gold", "Gold") },
+  { value: "platinum", label: t("loyalty.platinum", "Platinum") },
 ]);
 
 // Initialize form when customer prop changes
@@ -188,10 +188,10 @@ const handleSubmit = () => {
         class="md:col-span-2 pt-2 border-t border-gray-200 dark:border-gray-800"
       >
         <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          {{ t("customers.creditSettings") || "Credit Settings" }}
+          {{ t("customers.creditSettings", "Credit Settings") }}
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UFormField :label="t('settings.terms.title') || 'Payment Terms'">
+          <UFormField :label="t('settings.terms.title', 'Payment Terms')">
             <USelect
               v-model="form.defaultPaymentTermId"
               :items="paymentTermOptions"
@@ -202,7 +202,7 @@ const handleSubmit = () => {
             />
           </UFormField>
 
-          <UFormField :label="t('customers.creditLimit') || 'Credit Limit'">
+          <UFormField :label="t('customers.creditLimit', 'Credit Limit')">
             <UInput
               v-model.number="form.creditLimit"
               type="number"

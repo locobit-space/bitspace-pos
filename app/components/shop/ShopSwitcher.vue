@@ -349,7 +349,7 @@ const formatLastAccessed = (dateStr: string): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return t('time.justNow') || 'Just now';
+  if (diffMins < 1) return t('time.justNow', 'Just now');
   if (diffMins < 60) return t('time.minsAgo', { n: diffMins }) || `${diffMins}m ago`;
   if (diffHours < 24) return t('time.hoursAgo', { n: diffHours }) || `${diffHours}h ago`;
   if (diffDays < 7) return t('time.daysAgo', { n: diffDays }) || `${diffDays}d ago`;

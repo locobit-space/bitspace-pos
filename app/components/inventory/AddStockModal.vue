@@ -188,7 +188,7 @@ const expiryWarningColor = computed(() => {
                       size="xs"
                       variant="subtle"
                     >
-                      {{ t("inventory.hasExpiry") || "Expiry" }}
+                      {{ t("inventory.hasExpiry", "Expiry") }}
                     </UBadge>
                   </div>
                   <span class="text-xs text-gray-500"
@@ -222,7 +222,7 @@ const expiryWarningColor = computed(() => {
               />
             </UFormField>
 
-            <UFormField :label="t('inventory.unitCost') || 'Unit Cost'">
+            <UFormField :label="t('inventory.unitCost', 'Unit Cost')">
               <UInput
                 v-model.number="addStockForm.unitCost"
                 type="number"
@@ -241,7 +241,7 @@ const expiryWarningColor = computed(() => {
                 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
               >
                 <UIcon name="i-heroicons-qr-code" class="w-4 h-4" />
-                {{ t("inventory.lotTracking") || "Lot Tracking" }}
+                {{ t("inventory.lotTracking", "Lot Tracking") }}
               </h4>
               <UButton
                 size="xs"

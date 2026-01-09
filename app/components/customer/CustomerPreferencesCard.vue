@@ -22,7 +22,7 @@ const { t } = useI18n();
   <UCard>
     <template #header>
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-        {{ t("customers.preferences") || "Preferences" }}
+        {{ t("customers.preferences", "Preferences") }}
       </h3>
     </template>
 
@@ -30,7 +30,7 @@ const { t } = useI18n();
       <!-- Payment Preference -->
       <div>
         <p class="text-gray-500 dark:text-gray-400">
-          {{ t("customers.paymentPreference") || "Payment Preference" }}
+          {{ t("customers.paymentPreference", "Payment Preference") }}
         </p>
         <p
           class="font-medium text-gray-900 dark:text-white flex items-center gap-1"
@@ -47,7 +47,7 @@ const { t } = useI18n();
       <!-- Favorite Products -->
       <div v-if="preferences?.favoriteProducts?.length">
         <p class="text-gray-500 dark:text-gray-400">
-          {{ t("customers.favoriteProducts") || "Favorite Products" }}
+          {{ t("customers.favoriteProducts", "Favorite Products") }}
         </p>
         <div class="flex flex-wrap gap-1 mt-1">
           <span
@@ -68,7 +68,7 @@ const { t } = useI18n();
         "
         class="text-gray-400 dark:text-gray-500 italic"
       >
-        {{ t("customers.noPreferences") || "No preferences set" }}
+        {{ t("customers.noPreferences", "No preferences set") }}
       </div>
     </div>
   </UCard>

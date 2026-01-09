@@ -73,12 +73,12 @@ const isEditing = computed(() => !!props.editingPO);
 
 const modalTitle = computed(() =>
   isEditing.value
-    ? t("inventory.editPO") || "Edit Purchase Order"
+    ? t("inventory.editPO", "Edit Purchase Order")
     : t("inventory.createPO")
 );
 
 const saveButtonLabel = computed(() =>
-  isEditing.value ? t("common.save") || "Save" : t("inventory.createPO")
+  isEditing.value ? t("common.save", "Save") : t("inventory.createPO")
 );
 
 // Reset or populate form when modal opens
@@ -214,7 +214,7 @@ const formatCurrency = (amount: number): string => {
                 :items="branchOptions"
                 value-key="id"
                 label-key="name"
-                :placeholder="t('common.selectBranch') || 'Select branch'"
+                :placeholder="t('common.selectBranch', 'Select branch')"
                 class="w-full"
               />
             </UFormField>

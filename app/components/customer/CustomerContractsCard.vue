@@ -45,10 +45,10 @@ const statusColors: Record<string, string> = {
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ t("customers.contracts") || "Contracts" }}
+          {{ t("customers.contracts", "Contracts") }}
         </h3>
         <UButton size="sm" icon="i-heroicons-plus" @click="emit('addContract')">
-          {{ t("customers.addContract") || "Add Contract" }}
+          {{ t("customers.addContract", "Add Contract") }}
         </UButton>
       </div>
     </template>
@@ -62,7 +62,7 @@ const statusColors: Record<string, string> = {
         name="i-heroicons-document-duplicate"
         class="w-12 h-12 mx-auto mb-2 opacity-50"
       />
-      <p>{{ t("customers.noContracts") || "No contracts yet" }}</p>
+      <p>{{ t("customers.noContracts", "No contracts yet") }}</p>
     </div>
 
     <!-- Contracts List -->
@@ -100,10 +100,10 @@ const statusColors: Record<string, string> = {
           class="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400"
         >
           <span>
-            {{ t("customers.startDate") || "Start" }}: {{ contract.startDate }}
+            {{ t("customers.startDate", "Start") }}: {{ contract.startDate }}
           </span>
           <span>
-            {{ t("customers.endDate") || "End" }}: {{ contract.endDate }}
+            {{ t("customers.endDate", "End") }}: {{ contract.endDate }}
           </span>
         </div>
 
@@ -114,7 +114,7 @@ const statusColors: Record<string, string> = {
             icon="i-heroicons-eye"
             @click="emit('viewContract', contract.id)"
           >
-            {{ t("common.view") || "View" }}
+            {{ t("common.view", "View") }}
           </UButton>
           <UButton
             size="xs"
@@ -122,7 +122,7 @@ const statusColors: Record<string, string> = {
             icon="i-heroicons-document-arrow-down"
             @click="emit('downloadContract', contract.id)"
           >
-            {{ t("common.download") || "Download" }}
+            {{ t("common.download", "Download") }}
           </UButton>
         </div>
       </div>

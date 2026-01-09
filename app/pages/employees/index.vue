@@ -79,7 +79,7 @@ function copyToClipboard(text: string) {
   if (import.meta.client) {
     window.navigator.clipboard.writeText(text);
     toast.add({
-      title: t("common.copied") || "Copied!",
+      title: t("common.copied", "Copied!"),
       icon: "i-heroicons-clipboard-document-check",
       color: "success",
     });
@@ -123,10 +123,10 @@ function getAccessStatusColor(status: "active" | "expired" | "revoked" | "none")
 
 function getAccessStatusLabel(status: "active" | "expired" | "revoked" | "none"): string {
   switch (status) {
-    case "active": return t("employees.access.active") || "Access Active";
-    case "revoked": return t("employees.access.revoked") || "Access Revoked";
-    case "expired": return t("employees.access.expired") || "Access Expired";
-    default: return t("employees.access.none") || "No Access";
+    case "active": return t("employees.access.active", "Access Active");
+    case "revoked": return t("employees.access.revoked", "Access Revoked");
+    case "expired": return t("employees.access.expired", "Access Expired");
+    default: return t("employees.access.none", "No Access");
   }
 }
 
@@ -150,10 +150,10 @@ async function grantAccess() {
     });
     
     toast.add({
-      title: t("employees.access.granted") || "Access Granted",
+      title: t("employees.access.granted", "Access Granted"),
       description: accessForm.expiresAt 
-        ? `${t("employees.access.expiresOn") || "Expires on"}: ${new Date(accessForm.expiresAt).toLocaleDateString()}`
-        : t("employees.access.noExpiry") || "No expiry set",
+        ? `${t("employees.access.expiresOn", "Expires on")}: ${new Date(accessForm.expiresAt).toLocaleDateString()}`
+        : t("employees.access.noExpiry", "No expiry set"),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -181,7 +181,7 @@ async function revokeAccess() {
     });
     
     toast.add({
-      title: t("employees.access.revokedSuccess") || "Access Revoked",
+      title: t("employees.access.revokedSuccess", "Access Revoked"),
       description: selectedEmployee.value.firstName + " " + selectedEmployee.value.lastName,
       icon: "i-heroicons-no-symbol",
       color: "warning",
@@ -210,7 +210,7 @@ async function restoreAccess() {
     });
     
     toast.add({
-      title: t("employees.access.restored") || "Access Restored",
+      title: t("employees.access.restored", "Access Restored"),
       description: selectedEmployee.value.firstName + " " + selectedEmployee.value.lastName,
       icon: "i-heroicons-check-circle",
       color: "green",
@@ -311,13 +311,13 @@ function getActionItems(employee: Employee) {
     ],
     [
       {
-        label: t("employees.actions.manageAccess") || "Manage Access",
+        label: t("employees.actions.manageAccess", "Manage Access"),
         icon: "i-heroicons-key",
         onClick: () => openAccessModal(employee),
       },
       accessStatus === "revoked" || accessStatus === "expired"
         ? {
-            label: t("employees.actions.restoreAccess") || "Restore Access",
+            label: t("employees.actions.restoreAccess", "Restore Access"),
             icon: "i-heroicons-arrow-path",
             color: "success" as const,
             onClick: async () => {
@@ -326,7 +326,7 @@ function getActionItems(employee: Employee) {
             },
           }
         : {
-            label: t("employees.actions.revokeAccess") || "Revoke Access",
+            label: t("employees.actions.revokeAccess", "Revoke Access"),
             icon: "i-heroicons-no-symbol",
             color: "warning" as const,
             onClick: () => openAccessModal(employee),
@@ -371,21 +371,21 @@ const isSyncing = ref(false);
 const syncActions = computed(() => [
   [
     {
-      label: t("employees.actions.syncToNostr") || "Sync All to Nostr",
+      label: t("employees.actions.syncToNostr", "Sync All to Nostr"),
       icon: "i-heroicons-cloud-arrow-up",
       onClick: async () => {
         isSyncing.value = true;
         try {
           const result = await employeesStore.syncAllToNostr();
           toast.add({
-            title: t("employees.sync.complete") || "Sync Complete",
-            description: `${result.success} ${t("employees.sync.synced") || "synced"}, ${result.failed} ${t("employees.sync.failed") || "failed"}`,
+            title: t("employees.sync.complete", "Sync Complete"),
+            description: `${result.success} ${t("employees.sync.synced", "synced")}, ${result.failed} ${t("employees.sync.failed", "failed")}`,
             icon: "i-heroicons-check-circle",
             color: "green",
           });
         } catch (e) {
           toast.add({
-            title: t("employees.sync.failed") || "Sync Failed",
+            title: t("employees.sync.failed", "Sync Failed"),
             description: String(e),
             icon: "i-heroicons-exclamation-triangle",
             color: "red",
@@ -396,21 +396,21 @@ const syncActions = computed(() => [
       },
     },
     {
-      label: t("employees.actions.pullFromNostr") || "Pull from Nostr",
+      label: t("employees.actions.pullFromNostr", "Pull from Nostr"),
       icon: "i-heroicons-arrow-down-tray",
       onClick: async () => {
         isSyncing.value = true;
         try {
           const result = await employeesStore.pullFromNostr();
           toast.add({
-            title: t("employees.sync.pullComplete") || "Pull Complete",
-            description: `${result.imported} ${t("employees.sync.imported") || "imported"}, ${result.updated} ${t("employees.sync.updated") || "updated"}`,
+            title: t("employees.sync.pullComplete", "Pull Complete"),
+            description: `${result.imported} ${t("employees.sync.imported", "imported")}, ${result.updated} ${t("employees.sync.updated", "updated")}`,
             icon: "i-heroicons-check-circle",
             color: "green",
           });
         } catch (e) {
           toast.add({
-            title: t("employees.sync.pullFailed") || "Pull Failed",
+            title: t("employees.sync.pullFailed", "Pull Failed"),
             description: String(e),
             icon: "i-heroicons-exclamation-triangle",
             color: "red",
@@ -462,7 +462,7 @@ function handleDetailRefresh() {
             </UButton>
             <UDropdownMenu :items="syncActions">
               <UButton color="neutral" variant="ghost" icon="i-heroicons-cloud-arrow-up">
-                {{ t("employees.actions.nostrSync") || "Nostr Sync" }}
+                {{ t("employees.actions.nostrSync", "Nostr Sync") }}
               </UButton>
             </UDropdownMenu>
             <UButton color="primary" icon="i-heroicons-plus" @click="showCreateModal = true">

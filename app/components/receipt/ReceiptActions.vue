@@ -184,7 +184,7 @@ const paymentMethodDisplay = computed(() => {
     case "qr_static":
       return { icon: "📱", name: t("payment.methods.staticQR") };
     default:
-      return { icon: "💰", name: t("payment.title") || "Payment" };
+      return { icon: "💰", name: t("payment.title", "Payment") };
   }
 });
 </script>

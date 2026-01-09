@@ -23,7 +23,7 @@
             <UIcon :name="deviceIcon" class="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h3 class="font-semibold">{{ t("auth.deviceSync.currentDevice") || "Current Device" }}</h3>
+            <h3 class="font-semibold">{{ t("auth.deviceSync.currentDevice", "Current Device") }}</h3>
             <p class="text-sm text-gray-500">
               {{ deviceInfo.name }} • {{ deviceInfo.browser }}
             </p>
@@ -36,7 +36,7 @@
         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
           <div>
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {{ t("auth.deviceSync.deviceId") || "Device ID" }}
+              {{ t("auth.deviceSync.deviceId", "Device ID") }}
             </p>
             <p class="font-mono text-sm">{{ deviceInfo.id }}</p>
           </div>
@@ -50,7 +50,7 @@
             {{ t("auth.deviceSync.lastSynced") }}: {{ formattedLastSync }}
           </span>
           <span v-else>
-            {{ t("auth.deviceSync.neverSynced") || "Never synced" }}
+            {{ t("auth.deviceSync.neverSynced", "Never synced") }}
           </span>
         </div>
       </div>
@@ -64,9 +64,9 @@
             <UIcon name="i-heroicons-building-office-2" class="w-6 h-6 text-green-600" />
           </div>
           <div>
-            <h3 class="font-semibold">{{ t("auth.company.connectTitle") || "Connect to Company" }}</h3>
+            <h3 class="font-semibold">{{ t("auth.company.connectTitle", "Connect to Company") }}</h3>
             <p class="text-sm text-gray-500">
-              {{ t("auth.company.connectDescription") || "Enter company code to sync data" }}
+              {{ t("auth.company.connectDescription", "Enter company code to sync data") }}
             </p>
           </div>
         </div>
@@ -79,7 +79,7 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-green-700 dark:text-green-300">
-                {{ t("auth.company.connected") || "Connected to company" }}
+                {{ t("auth.company.connected", "Connected to company") }}
               </p>
               <p class="font-mono text-2xl font-bold tracking-widest text-green-800 dark:text-green-200">
                 {{ companyCode }}
@@ -97,7 +97,7 @@
           <UButton block size="lg" color="green" :loading="isConnecting" :disabled="!isValidCompanyCode"
             @click="handleConnectCompany">
             <UIcon name="i-heroicons-link" class="w-5 h-5 mr-2" />
-            {{ t("auth.company.connect") || "Connect" }}
+            {{ t("auth.company.connect", "Connect") }}
           </UButton>
         </div>
       </div>
@@ -111,9 +111,9 @@
             <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h3 class="font-semibold">{{ t("auth.deviceSync.syncActions") || "Sync Actions" }}</h3>
+            <h3 class="font-semibold">{{ t("auth.deviceSync.syncActions", "Sync Actions") }}</h3>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.syncDescription") || "Manage your data synchronization" }}
+              {{ t("auth.deviceSync.syncDescription", "Manage your data synchronization") }}
             </p>
           </div>
         </div>
@@ -123,12 +123,12 @@
         <!-- Nsec Input for Sync -->
         <div class="space-y-2">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ t("auth.deviceSync.enterNsecToSync") || "Enter your nsec to sync" }}
+            {{ t("auth.deviceSync.enterNsecToSync", "Enter your nsec to sync") }}
           </label>
           <UInput v-model="syncNsec" type="password" :placeholder="'nsec1...'" icon="i-heroicons-key" size="lg"
             class="w-full" />
           <p class="text-xs text-gray-500">
-            {{ t("auth.deviceSync.nsecNote") || "Your nsec is used only for this sync and is never stored permanently."
+            {{ t("auth.deviceSync.nsecNote", "Your nsec is used only for this sync and is never stored permanently.")
             }}
           </p>
         </div>
@@ -158,7 +158,7 @@
     <!-- How It Works Card -->
     <UCard>
       <template #header>
-        <h3 class="font-semibold">{{ t("auth.deviceSync.howItWorks") || "How It Works" }}</h3>
+        <h3 class="font-semibold">{{ t("auth.deviceSync.howItWorks", "How It Works") }}</h3>
       </template>
 
       <div class="space-y-4">
@@ -168,9 +168,9 @@
             1
           </div>
           <div>
-            <p class="font-medium">{{ t("auth.deviceSync.step1Title") || "Login with Nostr" }}</p>
+            <p class="font-medium">{{ t("auth.deviceSync.step1Title", "Login with Nostr") }}</p>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.step1Desc") || "Use your nsec or Nostr extension to authenticate" }}
+              {{ t("auth.deviceSync.step1Desc", "Use your nsec or Nostr extension to authenticate") }}
             </p>
           </div>
         </div>
@@ -181,9 +181,9 @@
             2
           </div>
           <div>
-            <p class="font-medium">{{ t("auth.deviceSync.step2Title") || "Data Syncs via Relays" }}</p>
+            <p class="font-medium">{{ t("auth.deviceSync.step2Title", "Data Syncs via Relays") }}</p>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.step2Desc") || "Your encrypted data is stored on Nostr relays" }}
+              {{ t("auth.deviceSync.step2Desc", "Your encrypted data is stored on Nostr relays") }}
             </p>
           </div>
         </div>
@@ -194,9 +194,9 @@
             3
           </div>
           <div>
-            <p class="font-medium">{{ t("auth.deviceSync.step3Title") || "Access on Any Device" }}</p>
+            <p class="font-medium">{{ t("auth.deviceSync.step3Title", "Access on Any Device") }}</p>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.step3Desc") || "Login on a new device and your data syncs automatically" }}
+              {{ t("auth.deviceSync.step3Desc", "Login on a new device and your data syncs automatically") }}
             </p>
           </div>
         </div>
@@ -321,7 +321,7 @@ function copyDeviceId() {
   if (import.meta.client) {
     navigator.clipboard.writeText(deviceInfo.value.id);
     toast.add({
-      title: t("common.copied") || "Copied!",
+      title: t("common.copied", "Copied!"),
       icon: "i-heroicons-check",
       color: "success",
     });
@@ -383,8 +383,8 @@ async function handleConnectCompany() {
     // Show appropriate toast based on whether owner was found
     if (ownerPubkey) {
       toast.add({
-        title: t("auth.company.connectSuccess") || "Connected!",
-        description: t("auth.company.syncingData") || "Syncing company data...",
+        title: t("auth.company.connectSuccess", "Connected!"),
+        description: t("auth.company.syncingData", "Syncing company data..."),
         icon: "i-heroicons-check-circle",
         color: "success",
       });
@@ -407,7 +407,7 @@ async function handleConnectCompany() {
     }, 1000);
   } catch (error) {
     toast.add({
-      title: t("auth.company.connectError") || "Failed to connect",
+      title: t("auth.company.connectError", "Failed to connect"),
       icon: "i-heroicons-exclamation-circle",
       color: "error",
     });
@@ -419,8 +419,8 @@ async function handleConnectCompany() {
 async function handleSyncNow() {
   if (!syncNsec.value) {
     toast.add({
-      title: t("auth.deviceSync.noNsec") || "No private key",
-      description: t("auth.deviceSync.enterNsecToSync") || "Please enter your nsec to sync",
+      title: t("auth.deviceSync.noNsec", "No private key"),
+      description: t("auth.deviceSync.enterNsecToSync", "Please enter your nsec to sync"),
       icon: "i-heroicons-exclamation-circle",
       color: "warning",
     });
@@ -432,7 +432,7 @@ async function handleSyncNow() {
   const privateKeyHex = nostrKey.decodePrivateKey(syncNsec.value);
   if (!privateKeyHex) {
     toast.add({
-      title: t("auth.errors.invalidNsec") || "Invalid nsec",
+      title: t("auth.errors.invalidNsec", "Invalid nsec"),
       icon: "i-heroicons-exclamation-circle",
       color: "error",
     });

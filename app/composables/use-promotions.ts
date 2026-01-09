@@ -386,7 +386,7 @@ export function usePromotionsStore() {
     }
 
     toast.add({
-      title: t("promotions.updateSuccess") || "Promotion updated",
+      title: t("promotions.updateSuccess", "Promotion updated"),
       icon: "i-heroicons-check-circle",
       color: "success",
     });
@@ -420,7 +420,7 @@ export function usePromotionsStore() {
     }
 
     toast.add({
-      title: t("promotions.deleteSuccess") || "Promotion deleted",
+      title: t("promotions.deleteSuccess", "Promotion deleted"),
       icon: "i-heroicons-check-circle",
       color: "success",
     });

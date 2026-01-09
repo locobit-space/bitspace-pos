@@ -171,20 +171,20 @@ const canProceed = computed(() => currentStepData.value?.isValid() ?? false);
 
 // ============ Shop Types ============
 const shopTypes = computed(() => [
-  { id: 'cafe' as ShopType, label: t('shop.types.cafe') || 'Cafe', description: t('shop.types.cafeDesc') || 'Coffee & beverages', icon: 'i-heroicons-beaker', gradient: 'from-amber-400 to-orange-500', emoji: '☕' },
-  { id: 'restaurant' as ShopType, label: t('shop.types.restaurant') || 'Restaurant', description: t('shop.types.restaurantDesc') || 'Full service dining', icon: 'i-heroicons-cake', gradient: 'from-red-400 to-pink-500', emoji: '🍽️' },
-  { id: 'retail' as ShopType, label: t('shop.types.retail') || 'Retail', description: t('shop.types.retailDesc') || 'General store', icon: 'i-heroicons-shopping-bag', gradient: 'from-blue-400 to-indigo-500', emoji: '🛍️' },
-  { id: 'grocery' as ShopType, label: t('shop.types.grocery') || 'Grocery', description: t('shop.types.groceryDesc') || 'Food & essentials', icon: 'i-heroicons-shopping-cart', gradient: 'from-green-400 to-emerald-500', emoji: '🥬' },
-  { id: 'noodles' as ShopType, label: t('shop.types.noodles') || 'Noodles', description: t('shop.types.noodlesDesc') || 'Noodle shop', icon: 'i-heroicons-fire', gradient: 'from-orange-400 to-red-500', emoji: '🍜' },
-  { id: 'service' as ShopType, label: t('shop.types.service') || 'Service', description: t('shop.types.serviceDesc') || 'Service business', icon: 'i-heroicons-wrench-screwdriver', gradient: 'from-gray-400 to-slate-500', emoji: '🔧' },
-  { id: 'pharmacy' as ShopType, label: t('shop.types.pharmacy') || 'Pharmacy', description: t('shop.types.pharmacyDesc') || 'Health & medicine', icon: 'i-heroicons-heart', gradient: 'from-teal-400 to-cyan-500', emoji: '💊' },
-  { id: 'gym' as ShopType, label: t('shop.types.gym') || 'Gym', description: t('shop.types.gymDesc') || 'Fitness center', icon: 'i-heroicons-trophy', gradient: 'from-purple-400 to-violet-500', emoji: '🏋️' },
-  { id: 'karaoke' as ShopType, label: t('shop.types.karaoke') || 'Karaoke', description: t('shop.types.karaokeDesc') || 'Entertainment', icon: 'i-heroicons-microphone', gradient: 'from-pink-400 to-rose-500', emoji: '🎤' },
-  { id: 'garage' as ShopType, label: t('shop.types.garage') || 'Garage', description: t('shop.types.garageDesc') || 'Auto repair', icon: 'i-heroicons-wrench', gradient: 'from-zinc-400 to-stone-500', emoji: '🔩' },
-  { id: 'dry_clean' as ShopType, label: t('shop.types.dry_clean') || 'Dry Clean', description: t('shop.types.dry_cleanDesc') || 'Laundry services', icon: 'i-heroicons-sparkles', gradient: 'from-sky-400 to-blue-500', emoji: '👔' },
-  { id: 'car_care' as ShopType, label: t('shop.types.car_care') || 'Car Care', description: t('shop.types.car_careDesc') || 'Vehicle services', icon: 'i-heroicons-paint-brush', gradient: 'from-cyan-400 to-teal-500', emoji: '🚗' },
-  { id: 'enterprise' as ShopType, label: t('shop.types.enterprise') || 'Enterprise', description: t('shop.types.enterpriseDesc') || 'Large business', icon: 'i-heroicons-building-office-2', gradient: 'from-indigo-400 to-purple-500', emoji: '🏢' },
-  { id: 'other' as ShopType, label: t('shop.types.other') || 'Other', description: t('shop.types.otherDesc') || 'Custom business', icon: 'i-heroicons-squares-2x2', gradient: 'from-slate-400 to-gray-500', emoji: '📦' },
+  { id: 'cafe' as ShopType, label: t('shop.types.cafe', 'Cafe'), description: t('shop.types.cafeDesc', 'Coffee & beverages'), icon: 'i-heroicons-beaker', gradient: 'from-amber-400 to-orange-500', emoji: '☕' },
+  { id: 'restaurant' as ShopType, label: t('shop.types.restaurant', 'Restaurant'), description: t('shop.types.restaurantDesc', 'Full service dining'), icon: 'i-heroicons-cake', gradient: 'from-red-400 to-pink-500', emoji: '🍽️' },
+  { id: 'retail' as ShopType, label: t('shop.types.retail', 'Retail'), description: t('shop.types.retailDesc', 'General store'), icon: 'i-heroicons-shopping-bag', gradient: 'from-blue-400 to-indigo-500', emoji: '🛍️' },
+  { id: 'grocery' as ShopType, label: t('shop.types.grocery', 'Grocery'), description: t('shop.types.groceryDesc', 'Food & essentials'), icon: 'i-heroicons-shopping-cart', gradient: 'from-green-400 to-emerald-500', emoji: '🥬' },
+  { id: 'noodles' as ShopType, label: t('shop.types.noodles', 'Noodles'), description: t('shop.types.noodlesDesc', 'Noodle shop'), icon: 'i-heroicons-fire', gradient: 'from-orange-400 to-red-500', emoji: '🍜' },
+  { id: 'service' as ShopType, label: t('shop.types.service', 'Service'), description: t('shop.types.serviceDesc', 'Service business'), icon: 'i-heroicons-wrench-screwdriver', gradient: 'from-gray-400 to-slate-500', emoji: '🔧' },
+  { id: 'pharmacy' as ShopType, label: t('shop.types.pharmacy', 'Pharmacy'), description: t('shop.types.pharmacyDesc', 'Health & medicine'), icon: 'i-heroicons-heart', gradient: 'from-teal-400 to-cyan-500', emoji: '💊' },
+  { id: 'gym' as ShopType, label: t('shop.types.gym', 'Gym'), description: t('shop.types.gymDesc', 'Fitness center'), icon: 'i-heroicons-trophy', gradient: 'from-purple-400 to-violet-500', emoji: '🏋️' },
+  { id: 'karaoke' as ShopType, label: t('shop.types.karaoke', 'Karaoke'), description: t('shop.types.karaokeDesc', 'Entertainment'), icon: 'i-heroicons-microphone', gradient: 'from-pink-400 to-rose-500', emoji: '🎤' },
+  { id: 'garage' as ShopType, label: t('shop.types.garage', 'Garage'), description: t('shop.types.garageDesc', 'Auto repair'), icon: 'i-heroicons-wrench', gradient: 'from-zinc-400 to-stone-500', emoji: '🔩' },
+  { id: 'dry_clean' as ShopType, label: t('shop.types.dry_clean', 'Dry Clean'), description: t('shop.types.dry_cleanDesc', 'Laundry services'), icon: 'i-heroicons-sparkles', gradient: 'from-sky-400 to-blue-500', emoji: '👔' },
+  { id: 'car_care' as ShopType, label: t('shop.types.car_care', 'Car Care'), description: t('shop.types.car_careDesc', 'Vehicle services'), icon: 'i-heroicons-paint-brush', gradient: 'from-cyan-400 to-teal-500', emoji: '🚗' },
+  { id: 'enterprise' as ShopType, label: t('shop.types.enterprise', 'Enterprise'), description: t('shop.types.enterpriseDesc', 'Large business'), icon: 'i-heroicons-building-office-2', gradient: 'from-indigo-400 to-purple-500', emoji: '🏢' },
+  { id: 'other' as ShopType, label: t('shop.types.other', 'Other'), description: t('shop.types.otherDesc', 'Custom business'), icon: 'i-heroicons-squares-2x2', gradient: 'from-slate-400 to-gray-500', emoji: '📦' },
 ]);
 
 const selectedShopType = computed(() => shopTypes.value.find(s => s.id === shopType.value));
@@ -439,8 +439,8 @@ const completeSetup = async () => {
     }
 
     toast.add({
-      title: t('shop.setup.success') || 'Setup Complete!',
-      description: t('shop.setup.successDescription') || 'Your shop is ready to use.',
+      title: t('shop.setup.success', 'Setup Complete!'),
+      description: t('shop.setup.successDescription', 'Your shop is ready to use.'),
       icon: 'i-heroicons-check-circle',
       color: 'success',
     });
@@ -449,7 +449,7 @@ const completeSetup = async () => {
   } catch (error) {
     console.error('Setup error:', error);
     toast.add({
-      title: t('common.error') || 'Error',
+      title: t('common.error', 'Error'),
       description: String(error),
       icon: 'i-heroicons-exclamation-circle',
       color: 'error',

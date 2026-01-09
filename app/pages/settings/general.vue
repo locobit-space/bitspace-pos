@@ -197,20 +197,19 @@
               <div>
                 <h3 class="text-lg font-semibold mb-4">
                   {{
-                    $t("settings.general.shop_tags") || "Shop Tags & Analytics"
+                    $t("settings.general.shop_tags", "Shop Tags & Analytics")
                   }}
                 </h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                   {{
-                    $t("settings.general.shop_tags_desc") ||
-                    "Add tags to categorize your shop and help with analytics."
+                    $t("settings.general.shop_tags_desc", "Add tags to categorize your shop and help with analytics.")
                   }}
                 </p>
 
                 <div class="space-y-4">
                   <!-- Tags Input -->
                   <UFormField
-                    :label="$t('settings.general.tags') || 'Tags'"
+                    :label="$t('settings.general.tags', 'Tags')"
                     name="tags"
                   >
                     <div class="space-y-2">
@@ -234,8 +233,7 @@
                         <UInput
                           v-model="newTag"
                           :placeholder="
-                            $t('settings.general.tag_placeholder') ||
-                            'e.g. coffee, thai-food, retail'
+                            $t('settings.general.tag_placeholder', 'e.g. coffee, thai-food, retail')
                           "
                           class="flex-1"
                           @keyup.enter="addTag"
@@ -250,8 +248,7 @@
                     <template #hint>
                       <span class="text-xs text-gray-500">
                         {{
-                          $t("settings.general.tags_hint") ||
-                          "Press Enter or click + to add tags"
+                          $t("settings.general.tags_hint", "Press Enter or click + to add tags")
                         }}
                       </span>
                     </template>
@@ -259,7 +256,7 @@
 
                   <!-- Platform Tag (Read-only) -->
                   <UFormField
-                    :label="$t('settings.general.platform_tag') || 'Platform'"
+                    :label="$t('settings.general.platform_tag', 'Platform')"
                     name="platformTag"
                   >
                     <div class="flex items-center gap-2">
@@ -269,8 +266,7 @@
                       </UBadge>
                       <span class="text-xs text-gray-500">
                         {{
-                          $t("settings.general.platform_tag_hint") ||
-                          "Powered by bnos.space"
+                          $t("settings.general.platform_tag_hint", "Powered by bnos.space")
                         }}
                       </span>
                     </div>
@@ -312,12 +308,11 @@
                   class="w-12 h-12 text-gray-300 mx-auto"
                 />
                 <p class="mt-2 text-gray-500">
-                  {{ $t("settings.branches.noBranches") || "No branches yet" }}
+                  {{ $t("settings.branches.noBranches", "No branches yet") }}
                 </p>
                 <p class="text-sm text-gray-400">
                   {{
-                    $t("settings.branches.addFirst") ||
-                    "Add your first branch to get started"
+                    $t("settings.branches.addFirst", "Add your first branch to get started")
                   }}
                 </p>
               </div>
@@ -339,7 +334,7 @@
                       <th
                         class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
                       >
-                        {{ $t("settings.branches.address") || "Address" }}
+                        {{ $t("settings.branches.address", "Address") }}
                       </th>
                       <th
                         class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
@@ -578,8 +573,7 @@
                         class="w-4 h-4 mr-2"
                       />
                       {{
-                        $t("settings.security.disableEncryption") ||
-                        "Disable Encryption"
+                        $t("settings.security.disableEncryption", "Disable Encryption")
                       }}
                     </UButton>
                   </div>
@@ -600,12 +594,11 @@
                     name="i-heroicons-key"
                     class="w-5 h-5 text-primary-500"
                   />
-                  {{ $t("settings.sync.company_code") || "Company Code" }}
+                  {{ $t("settings.sync.company_code", "Company Code") }}
                 </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {{
-                    $t("settings.sync.company_code_desc") ||
-                    "Share this code with staff to sync settings across devices."
+                    $t("settings.sync.company_code_desc", "Share this code with staff to sync settings across devices.")
                   }}
                 </p>
 
@@ -625,7 +618,7 @@
                         name="i-heroicons-clipboard-document"
                         class="w-3 h-3 inline-block mr-1"
                       />
-                      {{ $t("settings.sync.tap_to_copy") || "Tap to copy" }}
+                      {{ $t("settings.sync.tap_to_copy", "Tap to copy") }}
                     </p>
                   </div>
                   <!-- Action Buttons - Stack on mobile -->
@@ -647,7 +640,7 @@
                       class="min-h-[44px]"
                       @click="regenerateCompanyCode"
                     >
-                      {{ $t("settings.sync.regenerate") || "Regenerate" }}
+                      {{ $t("settings.sync.regenerate", "Regenerate") }}
                     </UButton>
                   </div>
                 </div>
@@ -662,15 +655,14 @@
                   />
                   <p class="text-gray-500 mb-4">
                     {{
-                      $t("settings.sync.no_code") ||
-                      "No company code generated yet"
+                      $t("settings.sync.no_code", "No company code generated yet")
                     }}
                   </p>
                   <UButton
                     icon="i-heroicons-plus"
                     @click="generateNewCompanyCode"
                   >
-                    {{ $t("settings.sync.generate") || "Generate Code" }}
+                    {{ $t("settings.sync.generate", "Generate Code") }}
                   </UButton>
                 </div>
               </div>
@@ -682,12 +674,11 @@
                     name="i-heroicons-cloud-arrow-up"
                     class="w-5 h-5 text-green-500"
                   />
-                  {{ $t("settings.sync.cloud_sync") || "Cloud Sync" }}
+                  {{ $t("settings.sync.cloud_sync", "Cloud Sync") }}
                 </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {{
-                    $t("settings.sync.cloud_sync_desc") ||
-                    "Sync Lightning, Receipt, and Tax settings to the cloud. Staff can access these with the company code."
+                    $t("settings.sync.cloud_sync_desc", "Sync Lightning, Receipt, and Tax settings to the cloud. Staff can access these with the company code.")
                   }}
                 </p>
 
@@ -712,14 +703,14 @@
                         <p class="font-medium text-gray-900 dark:text-white">
                           <span
                             v-if="settingsSync.syncStatus.value === 'synced'"
-                            >{{ $t("settings.sync.synced") || "Synced" }}</span
+                            >{{ $t("settings.sync.synced", "Synced") }}</span
                           >
                           <span
                             v-else-if="
                               settingsSync.syncStatus.value === 'syncing'
                             "
                             >{{
-                              $t("settings.sync.syncing") || "Syncing..."
+                              $t("settings.sync.syncing", "Syncing...")
                             }}</span
                           >
                           <span
@@ -727,18 +718,18 @@
                               settingsSync.syncStatus.value === 'error'
                             "
                             >{{
-                              $t("settings.sync.error") || "Sync Error"
+                              $t("settings.sync.error", "Sync Error")
                             }}</span
                           >
                           <span v-else>{{
-                            $t("settings.sync.not_synced") || "Not Synced"
+                            $t("settings.sync.not_synced", "Not Synced")
                           }}</span>
                         </p>
                         <p
                           v-if="settingsSync.lastSyncAt.value"
                           class="text-xs text-gray-500"
                         >
-                          {{ $t("settings.sync.last_sync") || "Last sync" }}:
+                          {{ $t("settings.sync.last_sync", "Last sync") }}:
                           {{ formatSyncTime(settingsSync.lastSyncAt.value) }}
                         </p>
                       </div>
@@ -749,7 +740,7 @@
                       :disabled="!companyCodeData.code"
                       @click="syncSettings"
                     >
-                      {{ $t("settings.sync.sync_now") || "Sync Now" }}
+                      {{ $t("settings.sync.sync_now", "Sync Now") }}
                     </UButton>
                   </div>
                 </div>
@@ -759,7 +750,7 @@
                   <p
                     class="text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    {{ $t("settings.sync.what_syncs") || "What gets synced:" }}
+                    {{ $t("settings.sync.what_syncs", "What gets synced:") }}
                   </p>
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div
@@ -769,7 +760,7 @@
                         name="i-heroicons-bolt"
                         class="w-4 h-4 text-yellow-500"
                       />
-                      {{ $t("settings.lightning.title") || "Lightning" }}
+                      {{ $t("settings.lightning.title", "Lightning") }}
                     </div>
                     <div
                       class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
@@ -778,7 +769,7 @@
                         name="i-heroicons-document-text"
                         class="w-4 h-4 text-blue-500"
                       />
-                      {{ $t("settings.receipt.title") || "Receipt" }}
+                      {{ $t("settings.receipt.title", "Receipt") }}
                     </div>
                     <div
                       class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
@@ -787,7 +778,7 @@
                         name="i-heroicons-calculator"
                         class="w-4 h-4 text-green-500"
                       />
-                      {{ $t("settings.tax.title") || "Tax" }}
+                      {{ $t("settings.tax.title", "Tax") }}
                     </div>
                   </div>
                 </div>
@@ -798,10 +789,9 @@
                 icon="i-heroicons-shield-check"
                 color="blue"
                 variant="subtle"
-                :title="$t('settings.sync.encrypted') || 'Encrypted'"
+                :title="$t('settings.sync.encrypted', 'Encrypted')"
                 :description="
-                  $t('settings.sync.encrypted_desc') ||
-                  'All settings are encrypted with your company code before syncing. Only devices with the code can decrypt.'
+                  $t('settings.sync.encrypted_desc', 'All settings are encrypted with your company code before syncing. Only devices with the code can decrypt.')
                 "
               />
             </div>
@@ -853,7 +843,7 @@
               </UFormField>
 
               <UFormField
-                :label="$t('settings.branches.address') || 'Address'"
+                :label="$t('settings.branches.address', 'Address')"
                 name="address"
               >
                 <UTextarea
@@ -865,7 +855,7 @@
               </UFormField>
 
               <UFormField
-                :label="$t('settings.branches.bolt12') || 'BOLT12 Offer'"
+                :label="$t('settings.branches.bolt12', 'BOLT12 Offer')"
                 name="bolt12Offer"
               >
                 <UInput
@@ -875,8 +865,7 @@
                 />
                 <template #hint>
                   <span class="text-xs text-gray-500">{{
-                    $t("settings.branches.bolt12Hint") ||
-                    "Lightning BOLT12 offer for this branch"
+                    $t("settings.branches.bolt12Hint", "Lightning BOLT12 offer for this branch")
                   }}</span>
                 </template>
               </UFormField>
@@ -908,8 +897,7 @@
               <UIcon name="i-heroicons-shield-exclamation" class="w-5 h-5" />
               <h3 class="text-lg font-semibold">
                 {{
-                  $t("settings.security.disableEncryption") ||
-                  "Disable Encryption"
+                  $t("settings.security.disableEncryption", "Disable Encryption")
                 }}
               </h3>
             </div>
@@ -920,24 +908,22 @@
               icon="i-heroicons-exclamation-triangle"
               color="red"
               variant="subtle"
-              :title="$t('settings.security.disableWarning') || 'Warning'"
+              :title="$t('settings.security.disableWarning', 'Warning')"
               :description="
-                $t('settings.security.disableWarningDesc') ||
-                'Disabling encryption will remove all encrypted data. You will need to re-enter your API keys after this action.'
+                $t('settings.security.disableWarningDesc', 'Disabling encryption will remove all encrypted data. You will need to re-enter your API keys after this action.')
               "
             />
 
             <UFormField
               :label="
-                $t('settings.security.confirmWithPassword') ||
-                'Confirm with your password'
+                $t('settings.security.confirmWithPassword', 'Confirm with your password')
               "
             >
               <UInput
                 v-model="disableEncryptionPassword"
                 type="password"
                 :placeholder="
-                  $t('settings.security.enterPassword') || 'Enter password'
+                  $t('settings.security.enterPassword', 'Enter password')
                 "
                 class="w-full"
                 @keyup.enter="handleDisableEncryption"
@@ -962,8 +948,7 @@
                 @click="handleDisableEncryption"
               >
                 {{
-                  $t("settings.security.disableEncryption") ||
-                  "Disable Encryption"
+                  $t("settings.security.disableEncryption", "Disable Encryption")
                 }}
               </UButton>
             </div>
@@ -1027,9 +1012,9 @@ const copyCompanyCode = async () => {
   if (companyCodeData.code) {
     await navigator.clipboard.writeText(companyCodeData.code);
     toast.add({
-      title: t("common.copied") || "Copied!",
+      title: t("common.copied", "Copied!"),
       description:
-        t("settings.sync.code_copied") || "Company code copied to clipboard",
+        t("settings.sync.code_copied", "Company code copied to clipboard"),
       color: "green",
     });
   }
@@ -1042,7 +1027,7 @@ const regenerateCompanyCode = async () => {
   toast.add({
     title: t("common.success"),
     description:
-      t("settings.sync.code_regenerated") || "New company code generated",
+      t("settings.sync.code_regenerated", "New company code generated"),
     color: "green",
   });
 };
@@ -1055,7 +1040,7 @@ const generateNewCompanyCode = async () => {
   companyCodeData.code = newCode;
   toast.add({
     title: t("common.success"),
-    description: t("settings.sync.code_generated") || "Company code generated",
+    description: t("settings.sync.code_generated", "Company code generated"),
     color: "green",
   });
 };
@@ -1066,7 +1051,7 @@ const syncSettings = async () => {
     toast.add({
       title: t("common.success"),
       description:
-        t("settings.sync.sync_success") || "Settings synced successfully",
+        t("settings.sync.sync_success", "Settings synced successfully"),
       color: "green",
     });
   } else {
@@ -1074,8 +1059,7 @@ const syncSettings = async () => {
       title: t("common.error"),
       description:
         settingsSync.syncError.value ||
-        t("settings.sync.sync_failed") ||
-        "Sync failed",
+        t("settings.sync.sync_failed", "Sync failed"),
       color: "red",
     });
   }
@@ -1157,7 +1141,7 @@ const handleDisableEncryption = async () => {
     toast.add({
       title: t("common.error"),
       description:
-        t("settings.security.passwordRequired") || "Password required",
+        t("settings.security.passwordRequired", "Password required"),
       color: "red",
     });
     return;
@@ -1175,8 +1159,7 @@ const handleDisableEncryption = async () => {
       toast.add({
         title: t("common.success"),
         description:
-          t("settings.security.encryptionDisabled") ||
-          "Encryption has been disabled. Please re-enter your API keys.",
+          t("settings.security.encryptionDisabled", "Encryption has been disabled. Please re-enter your API keys."),
         color: "green",
       });
     } else {
@@ -1277,7 +1260,7 @@ const tabs = [
   },
   {
     slot: "sync",
-    label: t("settings.sync.tab") || "Cloud Sync",
+    label: t("settings.sync.tab", "Cloud Sync"),
     icon: "i-heroicons-cloud-arrow-up",
   },
   {

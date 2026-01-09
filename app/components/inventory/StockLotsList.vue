@@ -9,7 +9,7 @@
           class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
         >
           <span class="text-lg">📦</span>
-          {{ $t("inventory.stockLots") || "Stock Lots" }}
+          {{ $t("inventory.stockLots", "Stock Lots") }}
           <UBadge color="primary" variant="subtle">
             {{ filteredLots.length }}
           </UBadge>
@@ -28,7 +28,7 @@
         <!-- Search -->
         <UInput
           v-model="searchQuery"
-          :placeholder="$t('common.search') || 'Search...'"
+          :placeholder="$t('common.search', 'Search...')"
           icon="i-heroicons-magnifying-glass"
           size="sm"
           class="w-48"
@@ -47,37 +47,37 @@
               <th
                 class="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
-                {{ $t("inventory.lotInfo") || "Lot Info" }}
+                {{ $t("inventory.lotInfo", "Lot Info") }}
               </th>
               <th
                 class="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
-                {{ $t("products.name") || "Product" }}
+                {{ $t("products.name", "Product") }}
               </th>
               <th
                 class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
-                {{ $t("inventory.quantity") || "Qty" }}
+                {{ $t("inventory.quantity", "Qty") }}
               </th>
               <th
                 class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
-                {{ $t("inventory.expiryDate") || "Expiry" }}
+                {{ $t("inventory.expiryDate", "Expiry") }}
               </th>
               <th
                 class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
-                {{ $t("inventory.position") || "Position" }}
+                {{ $t("inventory.position", "Position") }}
               </th>
               <th
                 class="text-center py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
-                {{ $t("common.status") || "Status" }}
+                {{ $t("common.status", "Status") }}
               </th>
               <th
                 class="text-right py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
               >
-                {{ $t("common.actions") || "Actions" }}
+                {{ $t("common.actions", "Actions") }}
               </th>
             </tr>
           </thead>
@@ -94,7 +94,7 @@
                   <div
                     v-if="index === 0 && lot.expiryDate"
                     class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
-                    :title="$t('inventory.fefoNext') || 'Next to pick (FEFO)'"
+                    :title="$t('inventory.fefoNext', 'Next to pick (FEFO)')"
                   >
                     <span class="text-sm">1️⃣</span>
                   </div>
@@ -167,9 +167,9 @@
                   >
                     {{
                       lot.daysUntilExpiry && lot.daysUntilExpiry <= 0
-                        ? $t("inventory.expired") || "Expired"
+                        ? $t("inventory.expired", "Expired")
                         : `${lot.daysUntilExpiry} ${
-                            $t("common.days") || "days"
+                            $t("common.days", "days")
                           }`
                     }}
                   </p>
@@ -244,12 +244,11 @@
       >
         <span class="text-4xl mb-3">📦</span>
         <p class="font-medium">
-          {{ $t("inventory.noLots") || "No stock lots found" }}
+          {{ $t("inventory.noLots", "No stock lots found") }}
         </p>
         <p class="text-sm">
           {{
-            $t("inventory.receiveStockToCreate") ||
-            "Receive stock to create lots"
+            $t("inventory.receiveStockToCreate","Receive stock to create lots")
           }}
         </p>
       </div>
@@ -260,10 +259,10 @@
         class="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          {{ $t("common.showing") || "Showing" }} {{ startIndex + 1 }}-{{
+          {{ $t("common.showing", "Showing") }} {{ startIndex + 1 }}-{{
             endIndex
           }}
-          {{ $t("common.of") || "of" }} {{ filteredLots.length }}
+          {{ $t("common.of", "of") }} {{ filteredLots.length }}
         </p>
         <div class="flex gap-2">
           <UButton
@@ -422,12 +421,12 @@ function getStatusColor(
 
 function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    available: t("inventory.available") || "Available",
-    low: t("inventory.low") || "Low",
-    expiring: t("inventory.expiring") || "Expiring",
-    expired: t("inventory.expired") || "Expired",
-    quarantine: t("inventory.quarantine") || "Quarantine",
-    depleted: t("inventory.depleted") || "Depleted",
+    available: t("inventory.available", "Available"),
+    low: t("inventory.low", "Low"),
+    expiring: t("inventory.expiring", "Expiring"),
+    expired: t("inventory.expired", "Expired"),
+    quarantine: t("inventory.quarantine", "Quarantine"),
+    depleted: t("inventory.depleted", "Depleted"),
   };
   return labels[status] || status;
 }

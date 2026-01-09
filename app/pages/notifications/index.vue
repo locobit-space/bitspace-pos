@@ -483,8 +483,8 @@ function getTypeLabel(type: POSNotification["type"]): string {
     stock: t("notifications.types.stock"),
     loyalty: t("notifications.types.loyalty"),
     ai_insight: t("notifications.types.ai"),
-    alert: t("notifications.types.alert") || "Alert",
-    system: t("notifications.types.system") || "System",
+    alert: t("notifications.types.alert", "Alert"),
+    system: t("notifications.types.system", "System"),
   };
   return labels[type] || type;
 }

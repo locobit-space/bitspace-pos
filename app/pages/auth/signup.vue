@@ -283,7 +283,7 @@ onMounted(() => {
 
           <!-- Or connect with extension -->
           <USeparator
-            :label="t('auth.signup.connectExisting') || 'or connect existing'"
+            :label="t('auth.signup.connectExisting', 'or connect existing')"
             class="my-4"
           />
 

@@ -136,10 +136,9 @@ export function useFeedback() {
   }): Promise<boolean> {
     if (!developerNpub.value) {
       toast.add({
-        title: t("common.feedback.noDeveloperNpub") || "Configuration Error",
+        title: t("common.feedback.noDeveloperNpub", "Configuration Error"),
         description:
-          t("common.feedback.noDeveloperNpubDesc") ||
-          "Developer contact not configured",
+          t("common.feedback.noDeveloperNpubDesc", "Developer contact not configured"),
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
@@ -228,10 +227,10 @@ ${submission.description}
         toast.add({
           title:
             submission.type === "bug"
-              ? t("common.feedback.bugReported") || "Bug Reported"
-              : t("common.feedback.featureRequested") || "Feature Requested",
+              ? t("common.feedback.bugReported", "Bug Reported")
+              : t("common.feedback.featureRequested", "Feature Requested"),
           description:
-            t("common.feedback.thankYou") || "Thank you for your feedback!",
+            t("common.feedback.thankYou", "Thank you for your feedback!"),
           icon: "i-heroicons-check-circle",
           color: "green",
         });
@@ -241,9 +240,9 @@ ${submission.description}
         submission.status = "pending";
 
         toast.add({
-          title: t("common.feedback.savedLocally") || "Saved Locally",
+          title: t("common.feedback.savedLocally", "Saved Locally"),
           description:
-            t("common.feedback.willSendLater") || "Will send when connected",
+            t("common.feedback.willSendLater", "Will send when connected"),
           icon: "i-heroicons-cloud-arrow-up",
           color: "blue",
         });
@@ -262,9 +261,9 @@ ${submission.description}
       saveHistory();
 
       toast.add({
-        title: t("common.feedback.submitFailed") || "Submission Failed",
+        title: t("common.feedback.submitFailed", "Submission Failed"),
         description:
-          t("common.feedback.tryAgainLater") || "Please try again later",
+          t("common.feedback.tryAgainLater", "Please try again later"),
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });

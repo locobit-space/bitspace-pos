@@ -8,7 +8,7 @@
       <div class="flex items-center justify-between">
         <h3 class="text-xl font-bold flex items-center gap-2">
           <span>📊</span>
-          {{ $t("products.import.title") || "Import Products" }}
+          {{ $t("products.import.title", "Import Products") }}
         </h3>
         <UButton
           color="gray"
@@ -32,12 +32,11 @@
           </div>
           <div>
             <h4 class="font-semibold text-blue-900 dark:text-blue-100">
-              {{ $t("products.import.step1") || "1. Download Template" }}
+              {{ $t("products.import.step1", "1. Download Template") }}
             </h4>
             <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
               {{
-                $t("products.import.step1Desc") ||
-                "Use our pre-formatted Excel template to avoid errors."
+                $t("products.import.step1Desc", "Use our pre-formatted Excel template to avoid errors.")
               }}
             </p>
             <UButton
@@ -46,8 +45,7 @@
               color="blue"
               variant="soft"
               :label="
-                $t('products.import.downloadTemplate') ||
-                'Download Excel Template'
+                $t('products.import.downloadTemplate', 'Download Excel Template')
               "
               icon="i-heroicons-arrow-down-tray"
               @click="downloadTemplate"
@@ -79,12 +77,11 @@
             />
           </div>
           <h4 class="font-semibold text-lg text-gray-900 dark:text-white">
-            {{ $t("products.import.uploadTitle") || "Click or Drop File Here" }}
+            {{ $t("products.import.uploadTitle", "Click or Drop File Here") }}
           </h4>
           <p class="text-gray-500 mt-2">
             {{
-              $t("products.import.uploadDesc") ||
-              "Supports .xlsx and .xls files"
+              $t("products.import.uploadDesc", "Supports .xlsx and .xls files")
             }}
           </p>
         </div>
@@ -93,7 +90,7 @@
         <div v-else class="space-y-4">
           <div class="flex justify-between items-center">
             <h4 class="font-semibold text-lg">
-              {{ $t("products.import.preview") || "Data Preview" }}
+              {{ $t("products.import.preview", "Data Preview") }}
               <span class="text-sm font-normal text-gray-500"
                 >({{ previewData.length }} rows)</span
               >
@@ -159,8 +156,7 @@
           color="primary"
           :loading="importing"
           :label="
-            $t('products.import.confirm') ||
-            'Import ' + previewData.length + ' Products'
+            $t('products.import.confirm', 'Import ') + previewData.length + ' Products'
           "
           @click="confirmImport"
         />

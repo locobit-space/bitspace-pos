@@ -40,17 +40,17 @@ const categories = computed(() => productsStore.categories.value || []);
 const modeOptions = [
   {
     value: "all",
-    label: t("employees.allProducts") || "All Products",
+    label: t("employees.allProducts", "All Products"),
     icon: "i-heroicons-squares-2x2",
   },
   {
     value: "assigned",
-    label: t("employees.assignedOnly") || "Assigned Products Only",
+    label: t("employees.assignedOnly", "Assigned Products Only"),
     icon: "i-heroicons-check-circle",
   },
   {
     value: "category",
-    label: t("employees.byCategory") || "By Category",
+    label: t("employees.byCategory", "By Category"),
     icon: "i-heroicons-tag",
   },
 ];
@@ -85,8 +85,8 @@ async function saveAssignments() {
     });
 
     toast.add({
-      title: t("common.success") || "Success",
-      description: t("employees.assignmentSaved") || "Product assignment saved",
+      title: t("common.success", "Success"),
+      description: t("employees.assignmentSaved", "Product assignment saved"),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -94,7 +94,7 @@ async function saveAssignments() {
     emit("updated");
   } catch (e) {
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -126,18 +126,18 @@ watch(
 const assignmentSummary = computed(() => {
   if (mode.value === "all") {
     return (
-      t("employees.noAssignment") || "No restrictions - all products visible"
+      t("employees.noAssignment", "No restrictions - all products visible")
     );
   }
   if (mode.value === "assigned") {
     return `${selectedProductIds.value.length} ${
-      t("common.products") || "products"
-    } ${t("employees.assigned") || "assigned"}`;
+      t("common.products", "products")
+    } ${t("employees.assigned", "assigned")}`;
   }
   if (mode.value === "category") {
     return `${selectedCategoryIds.value.length} ${
-      t("common.categories") || "categories"
-    } ${t("employees.assigned") || "assigned"}`;
+      t("common.categories", "categories")
+    } ${t("employees.assigned", "assigned")}`;
   }
   return "";
 });
@@ -149,12 +149,11 @@ const assignmentSummary = computed(() => {
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-          {{ t("employees.productAssignment") || "Product Assignment" }}
+          {{ t("employees.productAssignment", "Product Assignment") }}
         </h3>
         <p class="text-sm text-gray-500 dark:text-gray-400">
           {{
-            t("employees.productAssignmentDesc") ||
-            "Control which products this staff can view and sell"
+            t("employees.productAssignmentDesc", "Control which products this staff can view and sell")
           }}
         </p>
       </div>
@@ -170,7 +169,7 @@ const assignmentSummary = computed(() => {
       <label
         class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
       >
-        {{ t("employees.assignmentMode") || "Assignment Mode" }}
+        {{ t("employees.assignmentMode", "Assignment Mode") }}
       </label>
       <div class="flex flex-wrap gap-2">
         <UButton
@@ -188,7 +187,7 @@ const assignmentSummary = computed(() => {
 
     <!-- Product Selection (when mode = assigned) -->
     <div v-if="mode === 'assigned'" class="space-y-2">
-      <UFormField :label="t('employees.selectProducts') || 'Select Products'">
+      <UFormField :label="t('employees.selectProducts', 'Select Products')">
         <USelectMenu
           v-model="selectedProductIds"
           :items="productOptions"
@@ -197,7 +196,7 @@ const assignmentSummary = computed(() => {
           value-key="value"
           label-key="label"
           :placeholder="
-            t('employees.selectProductsPlaceholder') || 'Choose products...'
+            t('employees.selectProductsPlaceholder', 'Choose products...')
           "
           class="w-full"
         />
@@ -226,7 +225,7 @@ const assignmentSummary = computed(() => {
     <!-- Category Selection (when mode = category) -->
     <div v-if="mode === 'category'" class="space-y-2">
       <UFormField
-        :label="t('employees.selectCategories') || 'Select Categories'"
+        :label="t('employees.selectCategories', 'Select Categories')"
       >
         <USelectMenu
           v-model="selectedCategoryIds"
@@ -235,7 +234,7 @@ const assignmentSummary = computed(() => {
           value-key="value"
           label-key="label"
           :placeholder="
-            t('employees.selectCategoriesPlaceholder') || 'Choose categories...'
+            t('employees.selectCategoriesPlaceholder', 'Choose categories...')
           "
           class="w-full"
         />
@@ -271,7 +270,7 @@ const assignmentSummary = computed(() => {
         :disabled="isLoading"
         @click="clearAssignments"
       >
-        {{ t("common.clear") || "Clear" }}
+        {{ t("common.clear", "Clear") }}
       </UButton>
       <UButton
         color="primary"
@@ -279,7 +278,7 @@ const assignmentSummary = computed(() => {
         :loading="isLoading"
         @click="saveAssignments"
       >
-        {{ t("common.save") || "Save" }}
+        {{ t("common.save", "Save") }}
       </UButton>
     </div>
   </div>

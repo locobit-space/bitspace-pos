@@ -299,7 +299,7 @@
               icon="i-heroicons-clock"
               @click="openCheckoutModal(selectedTable)"
             >
-              {{ $t("pos.tables.checkout") || "Room Checkout" }}
+              {{ $t("pos.tables.checkout", "Room Checkout") }}
             </UButton>
 
             <UButton
@@ -424,7 +424,7 @@
                 showDetailModal = false;
               "
             >
-              {{ $t("pos.tables.printQR") || "Print QR" }}
+              {{ $t("pos.tables.printQR", "Print QR") }}
             </UButton>
           </div>
           <UButton variant="ghost" @click="showDetailModal = false">
@@ -481,7 +481,7 @@
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <UFormField :label="$t('pos.tables.billingType') || 'Billing Type'">
+            <UFormField :label="$t('pos.tables.billingType', 'Billing Type')">
               <USelect
                 v-model="tableForm.billingType"
                 :items="billingTypeOptions"
@@ -492,7 +492,7 @@
 
             <UFormField
               v-if="tableForm.billingType === 'per_hour'"
-              :label="$t('pos.tables.hourlyRate') || 'Hourly Rate'"
+              :label="$t('pos.tables.hourlyRate', 'Hourly Rate')"
             >
               <UInput
                 v-model.number="tableForm.hourlyRate"
@@ -680,12 +680,12 @@
             {{ selectedTable.name || selectedTable.number }}
           </p>
           <p class="text-sm text-gray-500 mb-4">
-            {{ $t("tables.scanToOrder") || "Scan to view menu & order" }}
+            {{ $t("tables.scanToOrder", "Scan to view menu & order") }}
           </p>
 
           <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
             <p class="text-xs text-gray-500 mb-1">
-              {{ $t("tables.orderingUrl") || "Menu URL" }}
+              {{ $t("tables.orderingUrl", "Menu URL") }}
             </p>
             <p
               class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all"
@@ -705,7 +705,7 @@
             icon="i-heroicons-clipboard-document"
             @click="copyQRUrl"
           >
-            {{ $t("common.copyLink") || "Copy Link" }}
+            {{ $t("common.copyLink", "Copy Link") }}
           </UButton>
           <UButton
             color="primary"
@@ -713,7 +713,7 @@
             icon="i-heroicons-printer"
             @click="printQR"
           >
-            {{ $t("common.print") || "Print" }}
+            {{ $t("common.print", "Print") }}
           </UButton>
         </div>
       </template>
@@ -776,7 +776,7 @@ const onRoomCheckout = async ({
     if (orderId && roomCharge > 0) {
       await ordersStore.addOrderItem(orderId, {
         productId: "room_charge", // Special product ID for room charge
-        name: t("pos.tables.roomCharge") || "Room Charge",
+        name: t("pos.tables.roomCharge", "Room Charge"),
         price: roomCharge,
         quantity: 1,
         type: "service",
@@ -891,15 +891,15 @@ const reservationForm = reactive({
 });
 
 const shapeOptions = [
-  { value: "square", label: t("tables.shapes.square") || "Square" },
-  { value: "round", label: t("tables.shapes.round") || "Round" },
-  { value: "rectangle", label: t("tables.shapes.rectangle") || "Rectangle" },
-  { value: "oval", label: t("tables.shapes.oval") || "Oval" },
+  { value: "square", label: t("tables.shapes.square", "Square") },
+  { value: "round", label: t("tables.shapes.round", "Round") },
+  { value: "rectangle", label: t("tables.shapes.rectangle", "Rectangle") },
+  { value: "oval", label: t("tables.shapes.oval", "Oval") },
 ];
 
 const billingTypeOptions = [
-  { value: "per_order", label: t("pos.tables.perOrder") || "Per Order" },
-  { value: "per_hour", label: t("pos.tables.perHour") || "Per Hour" },
+  { value: "per_order", label: t("pos.tables.perOrder", "Per Order") },
+  { value: "per_hour", label: t("pos.tables.perHour", "Per Hour") },
 ];
 
 // Computed
@@ -1096,14 +1096,14 @@ const saveTable = async () => {
       await tablesStore.updateTable(editingTable.value.id, data);
       toast.add({
         title: t("common.success"),
-        description: t("pos.tables.updated") || "Table updated",
+        description: t("pos.tables.updated", "Table updated"),
         color: "green",
       });
     } else {
       await tablesStore.createTable(data);
       toast.add({
         title: t("common.success"),
-        description: t("pos.tables.created") || "Table created",
+        description: t("pos.tables.created", "Table created"),
         color: "green",
       });
     }
@@ -1120,11 +1120,11 @@ const saveTable = async () => {
 };
 
 const deleteTable = async (table: any) => {
-  if (!confirm(t("tables.confirmDelete") || "Delete this table?")) return;
+  if (!confirm(t("tables.confirmDelete", "Delete this table?"))) return;
   await tablesStore.deleteTable(table.id);
   toast.add({
     title: t("common.success"),
-    description: t("tables.deleted") || "Table deleted",
+    description: t("tables.deleted", "Table deleted"),
     color: "green",
   });
 };
@@ -1405,12 +1405,12 @@ function getTableActions(table: any) {
     ]);
     actions.push([
       {
-        label: t("pos.tables.moveTable") || "Move Table",
+        label: t("pos.tables.moveTable", "Move Table"),
         icon: "i-heroicons-arrow-right-circle",
         onSelect: () => initiateMoveTable(table),
       },
       {
-        label: t("pos.tables.mergeBill") || "Merge Bill",
+        label: t("pos.tables.mergeBill", "Merge Bill"),
         icon: "i-heroicons-arrows-pointing-in",
         onSelect: () => initiateMergeBill(table),
       },
@@ -1418,14 +1418,14 @@ function getTableActions(table: any) {
     // Complete / Free table action
     actions.push([
       {
-        label: t("pos.tables.completeOrder") || "Complete Order",
+        label: t("pos.tables.completeOrder", "Complete Order"),
         icon: "i-heroicons-check-circle",
         color: "success" as const,
         onSelect: async () => {
           await tablesStore.freeTable(table.id);
           toast.add({
             title: t("common.success"),
-            description: t("pos.tables.tableFreed") || "Table is now available",
+            description: t("pos.tables.tableFreed", "Table is now available"),
             color: "green",
           });
         },

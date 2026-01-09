@@ -41,7 +41,7 @@
           <p
             class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-2"
           >
-            {{ $t("account.switchAccount") || "Switch Account" }}
+            {{ $t("account.switchAccount", "Switch Account") }}
           </p>
           <div class="space-y-1 max-h-32 overflow-y-auto">
             <button
@@ -81,7 +81,7 @@
           >
             <UIcon name="i-heroicons-plus-circle" class="w-5 h-5" />
             <span class="text-sm">{{
-              $t("account.addAccount") || "Add Account"
+              $t("account.addAccount", "Add Account")
             }}</span>
           </NuxtLinkLocale>
         </div>

@@ -76,14 +76,14 @@ function handleScan(result: ScanResult) {
 
   if (product) {
     toast.add({
-      title: t("inventory.productFound") || "Product Found",
+      title: t("inventory.productFound", "Product Found"),
       description: product.productName,
       icon: "i-heroicons-check-circle",
       color: "success",
     });
   } else {
     toast.add({
-      title: t("inventory.productNotFound") || "Product Not Found",
+      title: t("inventory.productNotFound", "Product Not Found"),
       description: result.code,
       icon: "i-heroicons-exclamation-triangle",
       color: "warning",
@@ -174,10 +174,10 @@ watch(open, async (isOpen) => {
             </div>
             <div>
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ t('inventory.scanBarcode') || 'Scan Barcode' }}
+                {{ t('inventory.scanBarcode', 'Scan Barcode') }}
               </h3>
               <p class="text-xs text-gray-500">
-                {{ t('inventory.scanOrEnterCode') || 'Use camera or enter code manually' }}
+                {{ t('inventory.scanOrEnterCode', 'Use camera or enter code manually') }}
               </p>
             </div>
           </div>
@@ -200,7 +200,7 @@ watch(open, async (isOpen) => {
               class="flex-1"
               @click="scanMode = 'camera'; startCamera()"
             >
-              {{ t('inventory.camera') || 'Camera' }}
+              {{ t('inventory.camera', 'Camera') }}
             </UButton>
             <UButton
               :color="scanMode === 'manual' ? 'primary' : 'neutral'"
@@ -209,7 +209,7 @@ watch(open, async (isOpen) => {
               class="flex-1"
               @click="scanMode = 'manual'; stopCameraScanner()"
             >
-              {{ t('inventory.manualEntry') || 'Manual' }}
+              {{ t('inventory.manualEntry', 'Manual') }}
             </UButton>
           </div>
 
@@ -252,8 +252,8 @@ watch(open, async (isOpen) => {
                 />
                 <span class="text-sm">
                   {{ isScanning 
-                    ? (t('inventory.scanning') || 'Scanning...')
-                    : (t('inventory.startingCamera') || 'Starting camera...')
+                    ? (t('inventory.scanning', 'Scanning...'))
+                    : (t('inventory.startingCamera', 'Starting camera...'))
                   }}
                 </span>
               </div>
@@ -267,17 +267,17 @@ watch(open, async (isOpen) => {
               <UIcon name="i-heroicons-exclamation-triangle" class="w-12 h-12 text-yellow-500 mb-3" />
               <p class="font-medium">{{ scannerError }}</p>
               <UButton class="mt-4" color="primary" @click="startCamera">
-                {{ t('common.retry') || 'Retry' }}
+                {{ t('common.retry', 'Retry') }}
               </UButton>
             </div>
           </div>
 
           <!-- Manual Entry -->
           <div v-if="scanMode === 'manual'" class="space-y-3">
-            <UFormField :label="t('inventory.enterBarcode') || 'Enter Barcode/SKU'">
+            <UFormField :label="t('inventory.enterBarcode', 'Enter Barcode/SKU')">
               <UInput
                 v-model="manualCode"
-                :placeholder="t('inventory.barcodePlaceholder') || 'Scan or type barcode...'"
+                :placeholder="t('inventory.barcodePlaceholder', 'Scan or type barcode...')"
                 size="lg"
                 autofocus
                 @keyup.enter="handleManualSubmit"
@@ -295,7 +295,7 @@ watch(open, async (isOpen) => {
               </UInput>
             </UFormField>
             <p class="text-xs text-gray-500 text-center">
-              {{ t('inventory.physicalScannerHint') || 'Physical scanners will auto-detect input' }}
+              {{ t('inventory.physicalScannerHint', 'Physical scanners will auto-detect input') }}
             </p>
           </div>
 
@@ -324,7 +324,7 @@ watch(open, async (isOpen) => {
                     ? 'text-green-800 dark:text-green-200'
                     : 'text-yellow-800 dark:text-yellow-200'"
                 >
-                  {{ lastScannedProduct?.productName || t('inventory.unknownProduct') || 'Unknown Product' }}
+                  {{ lastScannedProduct?.productName || t('inventory.unknownProduct', 'Unknown Product') }}
                 </p>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   {{ lastScan?.code }}
@@ -345,7 +345,7 @@ watch(open, async (isOpen) => {
                 class="flex-1"
                 @click="emit('scan', lastScan!, lastScannedProduct); closeModal()"
               >
-                {{ t('inventory.addStock') || 'Add Stock' }}
+                {{ t('inventory.addStock', 'Add Stock') }}
               </UButton>
               <UButton
                 color="blue"
@@ -355,7 +355,7 @@ watch(open, async (isOpen) => {
                 class="flex-1"
                 @click="navigateTo(`/products/${lastScannedProduct.productId}`)"
               >
-                {{ t('common.view') || 'View' }}
+                {{ t('common.view', 'View') }}
               </UButton>
             </div>
           </div>
@@ -366,7 +366,7 @@ watch(open, async (isOpen) => {
           <div class="flex items-center justify-between text-xs text-gray-500">
             <div class="flex items-center gap-2">
               <UIcon name="i-heroicons-information-circle" />
-              <span>{{ t('inventory.supportedFormats') || 'EAN-13, UPC-A, Code128, QR' }}</span>
+              <span>{{ t('inventory.supportedFormats', 'EAN-13, UPC-A, Code128, QR') }}</span>
             </div>
             <UButton
               color="neutral"
@@ -374,7 +374,7 @@ watch(open, async (isOpen) => {
               size="xs"
               @click="closeModal"
             >
-              {{ t('common.close') || 'Close' }}
+              {{ t('common.close', 'Close') }}
             </UButton>
           </div>
         </div>

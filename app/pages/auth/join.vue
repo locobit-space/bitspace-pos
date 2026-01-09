@@ -13,10 +13,10 @@
         />
       </div>
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-        {{ t("auth.join.processing") || "Processing Invite..." }}
+        {{ t("auth.join.processing", "Processing Invite...") }}
       </h1>
       <p class="text-gray-500">
-        {{ t("auth.join.pleaseWait") || "Please wait" }}
+        {{ t("auth.join.pleaseWait", "Please wait") }}
       </p>
     </div>
 
@@ -32,13 +32,13 @@
           />
         </div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          {{ t("auth.join.invalidInvite") || "Invalid Invite" }}
+          {{ t("auth.join.invalidInvite", "Invalid Invite") }}
         </h1>
         <p class="text-gray-500 mb-6">
           {{ error }}
         </p>
         <UButton color="primary" size="lg" to="/auth/signin">
-          {{ t("auth.join.goToSignin") || "Go to Sign In" }}
+          {{ t("auth.join.goToSignin", "Go to Sign In") }}
         </UButton>
       </div>
     </UCard>
@@ -55,10 +55,10 @@
           />
         </div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          {{ t("auth.join.welcome") || "Welcome!" }}
+          {{ t("auth.join.welcome", "Welcome!") }}
         </h1>
         <p class="text-gray-500 mb-6">
-          {{ t("auth.join.accountReady") || "Your account has been set up" }}
+          {{ t("auth.join.accountReady", "Your account has been set up") }}
         </p>
 
         <!-- User Info -->
@@ -84,7 +84,7 @@
         </div>
 
         <UButton color="primary" size="lg" block @click="proceedToLogin">
-          {{ t("auth.join.proceedToLogin") || "Proceed to Login" }}
+          {{ t("auth.join.proceedToLogin", "Proceed to Login") }}
         </UButton>
       </div>
     </UCard>
@@ -114,7 +114,7 @@ onMounted(async () => {
   const dataParam = route.query.d as string;
 
   if (!dataParam) {
-    error.value = t("auth.join.noInviteData") || "No invite data provided";
+    error.value = t("auth.join.noInviteData", "No invite data provided");
     isLoading.value = false;
     return;
   }
@@ -132,7 +132,7 @@ onMounted(async () => {
   const imported = await invite.importFromInvite(result.data);
 
   if (!imported) {
-    error.value = t("auth.join.importFailed") || "Failed to set up account";
+    error.value = t("auth.join.importFailed", "Failed to set up account");
     isLoading.value = false;
     return;
   }

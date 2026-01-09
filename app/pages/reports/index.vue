@@ -92,7 +92,7 @@ const isInitialized = ref(false);
 const branches = computed(() => {
   const allBranches = shopStore.branches.value || [];
   return [
-    { id: "all", name: t("common.allBranches") || "All Branches" },
+    { id: "all", name: t("common.allBranches", "All Branches") },
     ...allBranches.map((b) => ({ id: b.id, name: b.name })),
   ];
 });
@@ -122,7 +122,7 @@ onMounted(async () => {
     console.error("Failed to initialize stores:", error);
     toast.add({
       title: t("common.error"),
-      description: t("reports.initError") || "Failed to load report data",
+      description: t("reports.initError", "Failed to load report data"),
       color: "error",
     });
   } finally {
@@ -420,7 +420,7 @@ const generateReport = async () => {
     await Promise.all([ordersStore.init(), customersStore.init()]);
     toast.add({
       title: t("common.success"),
-      description: t("reports.dataRefreshed") || "Report data refreshed",
+      description: t("reports.dataRefreshed", "Report data refreshed"),
       color: "success",
     });
   } catch (error) {
@@ -457,14 +457,14 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
 
       toast.add({
         title: t("common.success"),
-        description: t("reports.exported") || "Report exported",
+        description: t("reports.exported", "Report exported"),
         color: "success",
       });
     } else {
       toast.add({
         title: t("common.info"),
         description:
-          t("reports.exportComingSoon") || "PDF and Excel export coming soon",
+          t("reports.exportComingSoon", "PDF and Excel export coming soon"),
         color: "info",
       });
     }

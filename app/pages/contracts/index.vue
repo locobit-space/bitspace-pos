@@ -415,10 +415,10 @@ function getDaysUntil(date: string): number {
     <div class="flex justify-between items-center px-4">
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          📋 {{ t('contracts.title') || 'Contracts & Rentals' }}
+          📋 {{ t('contracts.title', 'Contracts & Rentals') }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ t('contracts.description') || 'Manage contracts, assets, and bookings' }}
+          {{ t('contracts.description', 'Manage contracts, assets, and bookings') }}
         </p>
       </div>
       <div class="flex gap-2">
@@ -426,21 +426,21 @@ function getDaysUntil(date: string): number {
           v-if="activeTab === 'contracts'"
           color="primary"
           icon="i-heroicons-plus"
-          :label="t('contracts.newContract') || 'New Contract'"
+          :label="t('contracts.newContract', 'New Contract')"
           @click="openContractModal()"
         />
         <UButton
           v-if="activeTab === 'assets'"
           color="primary"
           icon="i-heroicons-plus"
-          :label="t('contracts.addAsset') || 'Add Asset'"
+          :label="t('contracts.addAsset', 'Add Asset')"
           @click="openAssetModal()"
         />
         <UButton
           v-if="activeTab === 'bookings'"
           color="primary"
           icon="i-heroicons-plus"
-          :label="t('contracts.newBooking') || 'New Booking'"
+          :label="t('contracts.newBooking', 'New Booking')"
           @click="openBookingModal()"
         />
       </div>
@@ -505,21 +505,21 @@ function getDaysUntil(date: string): number {
         :color="activeTab === 'contracts' ? 'primary' : 'neutral'"
         :variant="activeTab === 'contracts' ? 'solid' : 'ghost'"
         icon="i-heroicons-document-text"
-        :label="t('contracts.contracts') || 'Contracts'"
+        :label="t('contracts.contracts', 'Contracts')"
         @click="activeTab = 'contracts'"
       />
       <UButton
         :color="activeTab === 'assets' ? 'primary' : 'neutral'"
         :variant="activeTab === 'assets' ? 'solid' : 'ghost'"
         icon="i-heroicons-cube"
-        :label="t('contracts.assets') || 'Assets'"
+        :label="t('contracts.assets', 'Assets')"
         @click="activeTab = 'assets'"
       />
       <UButton
         :color="activeTab === 'bookings' ? 'primary' : 'neutral'"
         :variant="activeTab === 'bookings' ? 'solid' : 'ghost'"
         icon="i-heroicons-calendar"
-        :label="t('contracts.bookings') || 'Bookings'"
+        :label="t('contracts.bookings', 'Bookings')"
         @click="activeTab = 'bookings'"
       />
     </div>

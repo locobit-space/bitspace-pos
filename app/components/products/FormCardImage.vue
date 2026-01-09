@@ -160,12 +160,11 @@ function handleDragLeave() {
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t("products.image") || "Product Image" }}
+            {{ t("products.image", "Product Image") }}
           </h3>
           <p class="text-xs text-gray-500">
             {{
-              t("products.imageHint") ||
-              "Upload image, enter URL, or select emoji"
+              t("products.imageHint", "Upload image, enter URL, or select emoji")
             }}
           </p>
         </div>
@@ -241,7 +240,7 @@ function handleDragLeave() {
         :loading="cloudinary.isUploading.value"
         @click="triggerFileInput"
       >
-        {{ t("products.uploadImage") || "Upload Image" }}
+        {{ t("products.uploadImage", "Upload Image") }}
       </UButton>
 
       <!-- Error message -->
@@ -253,19 +252,18 @@ function handleDragLeave() {
       <div v-if="!isCloudinaryConfigured" class="text-center">
         <p class="text-xs text-gray-500 mb-2">
           {{
-            t("products.cloudinaryNotConfigured") ||
-            "Configure Cloudinary in Settings → Integrations for image uploads"
+            t("products.cloudinaryNotConfigured", "Configure Cloudinary in Settings → Integrations for image uploads")
           }}
         </p>
       </div>
 
       <!-- Image URL -->
-      <UFormField :label="t('products.imageUrl') || 'Image URL'" name="image">
+      <UFormField :label="t('products.imageUrl', 'Image URL')" name="image">
         <UInput
           v-model="imageUrlInput"
           type="url"
           :placeholder="
-            t('products.imageUrlPlaceholder') || 'https://example.com/image.jpg'
+            t('products.imageUrlPlaceholder', 'https://example.com/image.jpg')
           "
           icon="i-heroicons-link"
           class="w-full"
@@ -278,7 +276,7 @@ function handleDragLeave() {
         <label
           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
         >
-          {{ t("products.orSelectEmoji") || "Or select an emoji" }}
+          {{ t("products.orSelectEmoji", "Or select an emoji") }}
         </label>
         <div
           class="h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2"

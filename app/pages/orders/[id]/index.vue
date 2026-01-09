@@ -42,27 +42,27 @@ const activeSidebarTab = ref<"payments" | "notes">("payments");
 const statusOptions = [
   {
     value: "pending",
-    label: t("orders.status.pending") || "Pending",
+    label: t("orders.status.pending", "Pending"),
     color: "amber",
   },
   {
     value: "processing",
-    label: t("orders.status.processing") || "Processing",
+    label: t("orders.status.processing", "Processing"),
     color: "blue",
   },
   {
     value: "completed",
-    label: t("orders.status.completed") || "Completed",
+    label: t("orders.status.completed", "Completed"),
     color: "green",
   },
   {
     value: "cancelled",
-    label: t("orders.status.cancelled") || "Cancelled",
+    label: t("orders.status.cancelled", "Cancelled"),
     color: "gray",
   },
   {
     value: "refunded",
-    label: t("orders.status.refunded") || "Refunded",
+    label: t("orders.status.refunded", "Refunded"),
     color: "red",
   },
 ];
@@ -191,7 +191,7 @@ const saveChanges = async () => {
 
     toast.add({
       title: t("common.success"),
-      description: t("orders.saved") || "Order saved",
+      description: t("orders.saved", "Order saved"),
       color: "green",
     });
   } catch (e) {
@@ -238,8 +238,7 @@ const cancelOrder = async () => {
   if (!order.value) return;
   if (
     !confirm(
-      t("orders.cancelConfirmation") ||
-        "Are you sure you want to cancel this order?"
+      t("orders.cancelConfirmation", "Are you sure you want to cancel this order?")
     )
   )
     return;
@@ -250,7 +249,7 @@ const cancelOrder = async () => {
 
   toast.add({
     title: t("common.success"),
-    description: t("orders.cancelled") || "Order cancelled",
+    description: t("orders.cancelled", "Order cancelled"),
     color: "green",
   });
 };
@@ -354,7 +353,7 @@ onMounted(async () => {
     >
       <div class="text-6xl mb-4">🔍</div>
       <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
-        {{ t("orders.notFound") || "Order Not Found" }}
+        {{ t("orders.notFound", "Order Not Found") }}
       </h2>
       <p class="text-gray-500 mb-6">
         {{
@@ -363,7 +362,7 @@ onMounted(async () => {
         }}
       </p>
       <UButton to="/orders" color="primary" icon="i-heroicons-arrow-left">
-        {{ t("orders.backToOrders") || "Back to Orders" }}
+        {{ t("orders.backToOrders", "Back to Orders") }}
       </UButton>
     </div>
 
@@ -1006,8 +1005,7 @@ onMounted(async () => {
                     <p class="font-medium text-gray-900 dark:text-white">
                       {{
                         item.product?.name ||
-                        t("orders.unknownProduct") ||
-                        "Unknown Product"
+                        t("orders.unknownProduct", "Unknown Product")
                       }}
                     </p>
                     <p class="text-sm text-gray-500">
@@ -1044,28 +1042,28 @@ onMounted(async () => {
               <div class="bg-gray-50 dark:bg-gray-800/50 px-5 py-4 space-y-2">
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-500">{{
-                    t("pos.subtotal") || "Subtotal"
+                    t("pos.subtotal", "Subtotal")
                   }}</span>
                   <span class="text-gray-900 dark:text-white">{{
                     formatCurrency(subtotal)
                   }}</span>
                 </div>
                 <div v-if="totalTax" class="flex justify-between text-sm">
-                  <span class="text-gray-500">{{ t("pos.tax") || "Tax" }}</span>
+                  <span class="text-gray-500">{{ t("pos.tax", "Tax") }}</span>
                   <span class="text-gray-900 dark:text-white">{{
                     formatCurrency(totalTax)
                   }}</span>
                 </div>
                 <div v-if="totalDiscount" class="flex justify-between text-sm">
                   <span class="text-gray-500">{{
-                    t("pos.discount") || "Discount"
+                    t("pos.discount", "Discount")
                   }}</span>
                   <span class="text-green-600"
                     >-{{ formatCurrency(totalDiscount) }}</span
                   >
                 </div>
                 <div v-if="totalTip" class="flex justify-between text-sm">
-                  <span class="text-gray-500">{{ t("pos.tip") || "Tip" }}</span>
+                  <span class="text-gray-500">{{ t("pos.tip", "Tip") }}</span>
                   <span class="text-gray-900 dark:text-white">{{
                     formatCurrency(totalTip)
                   }}</span>
@@ -1074,7 +1072,7 @@ onMounted(async () => {
                   class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200 dark:border-gray-700"
                 >
                   <span class="text-gray-900 dark:text-white">{{
-                    t("pos.total") || "Total"
+                    t("pos.total", "Total")
                   }}</span>
                   <span class="text-primary-600 dark:text-primary-400">{{
                     formatCurrency(order.total)
@@ -1094,14 +1092,13 @@ onMounted(async () => {
               class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5"
             >
               <h3 class="font-semibold text-gray-900 dark:text-white mb-3">
-                {{ t("orders.notes") || "Order Notes" }}
+                {{ t("orders.notes", "Order Notes") }}
               </h3>
               <UTextarea
                 v-model="editableNotes"
                 :rows="3"
                 :placeholder="
-                  t('orders.notesPlaceholder') ||
-                  'Add notes about this order...'
+                  t('orders.notesPlaceholder', 'Add notes about this order...')
                 "
                 class="w-full"
               />

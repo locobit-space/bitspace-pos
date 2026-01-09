@@ -19,12 +19,11 @@
 
       <div class="flex-1">
         <h3 class="font-semibold text-lg">
-          {{ t("auth.company.connectTitle") || "Connect to Company" }}
+          {{ t("auth.company.connectTitle", "Connect to Company") }}
         </h3>
         <p class="text-sm text-gray-500 mb-4">
           {{
-            t("auth.company.connectDescription") ||
-            "Enter your company code to sync data"
+            t("auth.company.connectDescription", "Enter your company code to sync data")
           }}
         </p>
 
@@ -43,7 +42,7 @@
             @click="handleConnect"
           >
             <UIcon name="i-heroicons-link" class="w-5 h-5 mr-2" />
-            {{ t("auth.company.connect") || "Connect" }}
+            {{ t("auth.company.connect", "Connect") }}
           </UButton>
         </div>
 
@@ -145,8 +144,8 @@ async function handleConnect() {
     company.toggleCompanyCode(true);
 
     toast.add({
-      title: t("auth.company.connectSuccess") || "Connected!",
-      description: t("auth.company.syncingData") || "Syncing company data...",
+      title: t("auth.company.connectSuccess", "Connected!"),
+      description: t("auth.company.syncingData", "Syncing company data..."),
       icon: "i-heroicons-check-circle",
       color: "success",
     });
@@ -167,8 +166,7 @@ async function handleConnect() {
     }, 1500);
   } catch (error) {
     errorMsg.value =
-      t("auth.company.connectError") ||
-      "Failed to connect. Please check the code.";
+      t("auth.company.connectError", "Failed to connect. Please check the code.");
   } finally {
     isConnecting.value = false;
   }

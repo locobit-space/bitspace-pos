@@ -17,36 +17,36 @@ const formData = reactive({
 const typeOptions = computed(() => [
   {
     value: "bug",
-    label: t("common.feedback.bugReport") || "Bug Report",
+    label: t("common.feedback.bugReport", "Bug Report"),
     icon: "i-heroicons-bug-ant",
   },
   {
     value: "feature",
-    label: t("common.feedback.featureRequest") || "Feature Request",
+    label: t("common.feedback.featureRequest", "Feature Request"),
     icon: "i-heroicons-light-bulb",
   },
   {
     value: "question",
-    label: t("common.feedback.question") || "Question",
+    label: t("common.feedback.question", "Question"),
     icon: "i-heroicons-question-mark-circle",
   },
 ]);
 
 const priorityOptions = computed(() => [
-  { value: "low", label: t("common.feedback.priorityLow") || "Low", color: "gray" },
+  { value: "low", label: t("common.feedback.priorityLow", "Low"), color: "gray" },
   {
     value: "medium",
-    label: t("common.feedback.priorityMedium") || "Medium",
+    label: t("common.feedback.priorityMedium", "Medium"),
     color: "yellow",
   },
   {
     value: "high",
-    label: t("common.feedback.priorityHigh") || "High",
+    label: t("common.feedback.priorityHigh", "High"),
     color: "orange",
   },
   {
     value: "critical",
-    label: t("common.feedback.priorityCritical") || "Critical",
+    label: t("common.feedback.priorityCritical", "Critical"),
     color: "red",
   },
 ]);
@@ -59,10 +59,10 @@ const isFormValid = computed(() => {
 
 const modalTitle = computed(() => {
   const type = feedback.feedbackType.value;
-  if (type === "bug") return t("common.feedback.reportBug") || "Report a Bug";
+  if (type === "bug") return t("common.feedback.reportBug", "Report a Bug");
   if (type === "feature")
-    return t("common.feedback.requestFeature") || "Request a Feature";
-  return t("common.feedback.askQuestion") || "Ask a Question";
+    return t("common.feedback.requestFeature", "Request a Feature");
+  return t("common.feedback.askQuestion", "Ask a Question");
 });
 
 const modalIcon = computed(() => {
@@ -133,8 +133,7 @@ watch(
               </h3>
               <p class="text-sm text-gray-500">
                 {{
-                  t("common.feedback.sendToDevTeam") ||
-                  "Send directly to development team"
+                  t("common.feedback.sendToDevTeam", "Send directly to development team")
                 }}
               </p>
             </div>
@@ -143,7 +142,7 @@ watch(
 
         <div class="space-y-4">
           <!-- Type Selector -->
-          <UFormField :label="t('common.feedback.type') || 'Type'">
+          <UFormField :label="t('common.feedback.type', 'Type')">
             <div class="flex gap-2">
               <UButton
                 v-for="opt in typeOptions"
@@ -166,15 +165,13 @@ watch(
           </UFormField>
 
           <!-- Title -->
-          <UFormField :label="t('common.feedback.title') || 'Title'" required>
+          <UFormField :label="t('common.feedback.title', 'Title')" required>
             <UInput
               v-model="formData.title"
               :placeholder="
                 feedback.feedbackType.value === 'bug'
-                  ? t('common.feedback.bugTitlePlaceholder') ||
-                    'Briefly describe the issue'
-                  : t('common.feedback.featureTitlePlaceholder') ||
-                    'Briefly describe your idea'
+                  ? t('common.feedback.bugTitlePlaceholder', 'Briefly describe the issue')
+                  : t('common.feedback.featureTitlePlaceholder', 'Briefly describe your idea')
               "
               class="w-full"
             />
@@ -182,17 +179,15 @@ watch(
 
           <!-- Description -->
           <UFormField
-            :label="t('common.feedback.description') || 'Description'"
+            :label="t('common.feedback.description', 'Description')"
             required
           >
             <UTextarea
               v-model="formData.description"
               :placeholder="
                 feedback.feedbackType.value === 'bug'
-                  ? t('common.feedback.bugDescPlaceholder') ||
-                    'What happened? What did you expect?'
-                  : t('common.feedback.featureDescPlaceholder') ||
-                    'Describe your idea in detail'
+                  ? t('common.feedback.bugDescPlaceholder', 'What happened? What did you expect?')
+                  : t('common.feedback.featureDescPlaceholder', 'Describe your idea in detail')
               "
               class="w-full"
               :rows="4"
@@ -202,7 +197,7 @@ watch(
           <!-- Priority (only for bugs) -->
           <UFormField
             v-if="feedback.feedbackType.value === 'bug'"
-            :label="t('common.feedback.priority') || 'Priority'"
+            :label="t('common.feedback.priority', 'Priority')"
           >
             <div class="flex gap-2">
               <UButton
@@ -221,7 +216,7 @@ watch(
           <!-- Context Info -->
           <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
             <p class="text-gray-500 mb-2">
-              {{ t("common.feedback.autoAttached") || "Auto-attached information:" }}
+              {{ t("common.feedback.autoAttached", "Auto-attached information:") }}
             </p>
             <div class="flex flex-wrap gap-2">
               <UBadge color="gray" size="xs">
@@ -237,14 +232,14 @@ watch(
             <UButton
               color="gray"
               variant="outline"
-              :label="t('common.cancel') || 'Cancel'"
+              :label="t('common.cancel', 'Cancel')"
               @click="feedback.closeFeedback()"
             />
             <UButton
               color="primary"
               :loading="feedback.isSubmitting.value"
               :disabled="!isFormValid"
-              :label="t('common.feedback.submit') || 'Submit'"
+              :label="t('common.feedback.submit', 'Submit')"
               icon="i-heroicons-paper-airplane"
               @click="handleSubmit"
             />

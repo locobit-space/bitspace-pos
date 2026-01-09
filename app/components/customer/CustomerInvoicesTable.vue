@@ -45,7 +45,7 @@ const statusColors: Record<string, string> = {
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ t("accounting.tabs.invoices") || "Invoices" }}
+          {{ t("accounting.tabs.invoices", "Invoices") }}
         </h3>
         <UButton
           size="sm"
@@ -66,7 +66,7 @@ const statusColors: Record<string, string> = {
         name="i-heroicons-document-text"
         class="w-12 h-12 mx-auto mb-2 opacity-50"
       />
-      <p>{{ t("accounting.noInvoices") || "No invoices yet" }}</p>
+      <p>{{ t("accounting.noInvoices", "No invoices yet") }}</p>
     </div>
 
     <!-- Invoices Table -->
