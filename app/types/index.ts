@@ -35,7 +35,7 @@ export type ShopType =
   | "cafe"
   | "restaurant"
   | "retail"
-  | "grocery" 
+  | "grocery"
   | "noodles"
   | "service"
   | "pharmacy"
@@ -2899,6 +2899,91 @@ export interface RentalBooking {
   returnedAt?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+// ============================================
+// 📋 CONTRACT HISTORY TYPES
+// Audit logging for contracts, assets, bookings
+// ============================================
+
+/**
+ * Contract/Asset/Booking change history action types
+ */
+export type ContractHistoryAction =
+  | "created"
+  | "updated"
+  | "activated"
+  | "terminated"
+  | "renewed"
+  | "deleted"
+  | "deposit_collected"
+  | "deposit_returned"
+  | "checked_out"
+  | "returned";
+
+/**
+ * Contract/Asset/Booking change history entry
+ * Used for audit logging and versioning
+ */
+export interface ContractHistoryEntry {
+  id: string;
+  /** Type of entity: contract, asset, or booking */
+  entityType: "contract" | "asset" | "booking";
+  /** ID of the contract/asset/booking */
+  entityId: string;
+  /** Action performed */
+  action: ContractHistoryAction;
+  /** ISO timestamp */
+  timestamp: string;
+  /** User who made the change (npub or staff ID) */
+  userId: string;
+  /** Display name of user */
+  userName: string;
+  /** Previous state (for updates) */
+  previousData?: Record<string, unknown>;
+  /** New state (for creates/updates) */
+  newData?: Record<string, unknown>;
+  /** Human-readable description */
+  details: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Payment method for contract payments
+ */
+export type ContractPaymentMethod = "cash" | "card" | "bank" | "qr" | "crypto";
+
+/**
+ * Contract payment record
+ * Tracks payments made against a contract
+ */
+export interface ContractPayment {
+  id: string;
+  /** Contract this payment belongs to */
+  contractId: string;
+  /** Payment amount */
+  amount: number;
+  /** Currency code */
+  currency: CurrencyCode;
+  /** How the payment was made */
+  paymentMethod: ContractPaymentMethod;
+  /** Date payment was received */
+  paymentDate: string;
+  /** For recurring payments - period start */
+  periodStart?: string;
+  /** For recurring payments - period end */
+  periodEnd?: string;
+  /** Payment reference number */
+  reference?: string;
+  /** Additional notes */
+  notes?: string;
+  /** User who recorded the payment */
+  recordedBy: string;
+  /** User name who recorded */
+  recordedByName?: string;
+  /** Creation timestamp */
+  createdAt: string;
 }
 
 // ============================================

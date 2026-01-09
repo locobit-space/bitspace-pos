@@ -28,32 +28,37 @@
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="lo_LA" />
     <meta property="og:locale:alternate" content="th_TH" />
-    <meta property="og:site_name" content="BNOS - Bitcoin Nostr Operating System" />
-    
+    <meta
+      property="og:site_name"
+      content="BNOS - Bitcoin Nostr Operating System"
+    />
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="BNOS - Bitcoin Nostr Operating System" />
-    <meta name="twitter:description" content="Lightning-Powered Point of Sale built on Nostr Protocol. Decentralized, sovereign, and privacy-first." />
+    <meta
+      name="twitter:title"
+      content="BNOS - Bitcoin Nostr Operating System"
+    />
+    <meta
+      name="twitter:description"
+      content="Lightning-Powered Point of Sale built on Nostr Protocol. Decentralized, sovereign, and privacy-first."
+    />
     <meta name="twitter:image" content="https://bnos.space/og-image.png" />
     <meta name="twitter:site" content="@bnos_space" />
-    
+
     <!-- Language Alternates -->
     <link rel="canonical" href="https://bnos.space/en/" />
     <link rel="alternate" hreflang="en" href="https://bnos.space/en/" />
     <link rel="alternate" hreflang="lo" href="https://bnos.space/lo/" />
     <link rel="alternate" hreflang="th" href="https://bnos.space/th/" />
     <link rel="alternate" hreflang="x-default" href="https://bnos.space/en/" />
-    
+
     <!-- Additional SEO -->
     <meta name="robots" content="index, follow" />
     <meta name="author" content="BNOS Team" />
     <meta name="theme-color" content="#f59e0b" />
-    
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="../favicon.ico"
-    />
+
+    <link rel="icon" type="image/x-icon" href="../favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -68,38 +73,95 @@
           Roboto, sans-serif;
       }
     </style>
-    
+
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "BNOS",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web, PWA",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "description": "Lightning-Powered Point of Sale System built on Nostr Protocol. Decentralized, sovereign, and privacy-first for modern businesses.",
-      "url": "https://bnos.space",
-      "screenshot": "https://bnos.space/screenshot.png",
-      "featureList": [
-        "Lightning Network Payments",
-        "Non-Custodial Wallet",
-        "Nostr Protocol Integration",
-        "Offline-First Architecture",
-        "Real-time Analytics",
-        "Team Management"
-      ],
-      "inLanguage": ["en", "lo", "th"],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "5",
-        "ratingCount": "1"
-      }
-    }
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "BNOS",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web, PWA",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "Lightning-Powered Point of Sale System built on Nostr Protocol. Decentralized, sovereign, and privacy-first for modern businesses.",
+          "url": "https://bnos.space",
+          "screenshot": "https://bnos.space/screenshot.png",
+          "featureList": [
+            "Lightning Network Payments",
+            "Non-Custodial Wallet",
+            "Nostr Protocol Integration",
+            "Offline-First Architecture",
+            "Real-time Analytics",
+            "Team Management"
+          ],
+          "inLanguage": ["en", "lo", "th"],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "5",
+            "ratingCount": "1"
+          },
+          "author": {
+            "@type": "Organization",
+            "name": "BNOS Team",
+            "url": "https://bnos.space"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "BNOS",
+          "url": "https://bnos.space",
+          "logo": "https://bnos.space/icon-192.png",
+          "sameAs": [
+            "https://github.com/locobit-space",
+            "https://twitter.com/bnos_space",
+            "https://yakihonne.com/profile/bnos@nostrcheck.me"
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is BNOS?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "BNOS (Bitcoin Nostr Operating System) is a decentralized, lightning-powered Point of Sale (POS) and business operating system. It allows businesses to accept Bitcoin payments, manage inventory, and track sales without relying on centralized servers."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is BNOS free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, BNOS is open-source software. You can use the basic features for free. We do not charge transaction fees on your payments as they go directly to your wallet."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I need a bank account to use BNOS?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No, you do not need a traditional bank account. BNOS operates on the Bitcoin Lightning Network, allowing you to be your own bank and have full control over your funds."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does offline mode work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "BNOS is built with a 'Local-First' architecture. This means all your data is stored locally on your device. You can continue to process sales and manage your shop without an internet connection. Data will sync with Nostr relays once you are back online."
+              }
+            }
+          ]
+        }
+      ]
     </script>
   </head>
   <body>
@@ -128,10 +190,23 @@
         </div>
         <div class="nav-right">
           <ul class="nav-links">
-            <li><a href="#features" onclick="closeMobileMenu()">Features</a></li>
-            <li><a href="#how-it-works" onclick="closeMobileMenu()">How It Works</a></li>
-            <li><a href="#technology" onclick="closeMobileMenu()">Technology</a></li>
-            <li><a href="manual.html" onclick="closeMobileMenu()">Documentation</a></li>
+            <li>
+              <a href="#features" onclick="closeMobileMenu()">Features</a>
+            </li>
+            <li>
+              <a href="#how-it-works" onclick="closeMobileMenu()"
+                >How It Works</a
+              >
+            </li>
+            <li>
+              <a href="#technology" onclick="closeMobileMenu()">Technology</a>
+            </li>
+            <li><a href="#faq" onclick="closeMobileMenu()">FAQ</a></li>
+            <li>
+              <a href="manual.html" onclick="closeMobileMenu()"
+                >Documentation</a
+              >
+            </li>
           </ul>
           <a href="https://app.bnos.space" class="nav-cta post-launch"
             >Get Started</a
@@ -222,7 +297,7 @@
     <!-- Features Section -->
     <section class="features" id="features">
       <div class="container">
-        <div class="section-header">
+        <div class="section-header reveal">
           <span class="section-tag">Features</span>
           <h2 class="section-title">Everything You Need</h2>
           <p class="section-subtitle">
@@ -231,7 +306,7 @@
           </p>
         </div>
         <div class="features-grid">
-          <div class="feature-card">
+          <div class="feature-card reveal reveal-delay-1">
             <div class="feature-icon">⚡</div>
             <h3 class="feature-title">Lightning Payments</h3>
             <p class="feature-desc">
@@ -239,7 +314,7 @@
               Near-zero fees and instant settlement.
             </p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card reveal reveal-delay-2">
             <div class="feature-icon">🔐</div>
             <h3 class="feature-title">Non-Custodial</h3>
             <p class="feature-desc">
@@ -247,7 +322,7 @@
               financial sovereignty.
             </p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card reveal reveal-delay-3">
             <div class="feature-icon">🌐</div>
             <h3 class="feature-title">Fully Decentralized</h3>
             <p class="feature-desc">
@@ -255,7 +330,7 @@
               you.
             </p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card reveal reveal-delay-1">
             <div class="feature-icon">📱</div>
             <h3 class="feature-title">Offline First</h3>
             <p class="feature-desc">
@@ -263,7 +338,7 @@
               Never miss a sale.
             </p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card reveal reveal-delay-2">
             <div class="feature-icon">📊</div>
             <h3 class="feature-title">Real-time Analytics</h3>
             <p class="feature-desc">
@@ -271,7 +346,7 @@
               customer behavior in real-time.
             </p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card reveal reveal-delay-3">
             <div class="feature-icon">👥</div>
             <h3 class="feature-title">Team Management</h3>
             <p class="feature-desc">
@@ -286,7 +361,7 @@
     <!-- How It Works -->
     <section class="how-it-works" id="how-it-works">
       <div class="container">
-        <div class="section-header">
+        <div class="section-header reveal">
           <span class="section-tag">How It Works</span>
           <h2 class="section-title">Get Started in Minutes</h2>
           <p class="section-subtitle">
@@ -294,7 +369,7 @@
           </p>
         </div>
         <div class="steps">
-          <div class="step">
+          <div class="step reveal reveal-delay-1">
             <div class="step-number">1</div>
             <h3 class="step-title">Create Account</h3>
             <p class="step-desc">
@@ -302,7 +377,7 @@
               personal info required.
             </p>
           </div>
-          <div class="step">
+          <div class="step reveal reveal-delay-2">
             <div class="step-number">2</div>
             <h3 class="step-title">Setup Your Shop</h3>
             <p class="step-desc">
@@ -310,7 +385,7 @@
               Lightning wallet.
             </p>
           </div>
-          <div class="step">
+          <div class="step reveal reveal-delay-3">
             <div class="step-number">3</div>
             <h3 class="step-title">Start Selling</h3>
             <p class="step-desc">
@@ -325,7 +400,7 @@
     <!-- Technology Stack -->
     <section class="tech-stack" id="technology">
       <div class="container">
-        <div class="section-header">
+        <div class="section-header reveal">
           <span class="section-tag">Technology</span>
           <h2 class="section-title">Powered By</h2>
           <p class="section-subtitle">
@@ -333,21 +408,66 @@
           </p>
         </div>
         <div class="tech-grid">
-          <div class="tech-item">
+          <div class="tech-item reveal reveal-delay-1">
             <div class="tech-icon">₿</div>
             <span class="tech-name">Bitcoin</span>
           </div>
-          <div class="tech-item">
+          <div class="tech-item reveal reveal-delay-2">
             <div class="tech-icon">⚡</div>
             <span class="tech-name">Lightning Network</span>
           </div>
-          <div class="tech-item">
+          <div class="tech-item reveal reveal-delay-3">
             <div class="tech-icon">🟣</div>
             <span class="tech-name">Nostr Protocol</span>
           </div>
-          <div class="tech-item">
+          <div class="tech-item reveal reveal-delay-4">
             <div class="tech-icon">💾</div>
             <span class="tech-name">Local-First</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq" id="faq">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">FAQ</span>
+          <h2 class="section-title">Frequently Asked Questions</h2>
+          <p class="section-subtitle">Common questions about BNOS.</p>
+        </div>
+        <div class="faq-grid">
+          <div class="faq-item reveal reveal-delay-1">
+            <h3 class="faq-question">What is BNOS?</h3>
+            <p class="faq-answer">
+              BNOS (Bitcoin Nostr Operating System) is a decentralized,
+              lightning-powered Point of Sale (POS) and business operating
+              system. It allows businesses to accept Bitcoin payments and manage
+              their operations without intermediaries.
+            </p>
+          </div>
+          <div class="faq-item reveal reveal-delay-2">
+            <h3 class="faq-question">Is BNOS free to use?</h3>
+            <p class="faq-answer">
+              Yes, BNOS is open-source software. You can use the basic features
+              for free. We do not charge transaction fees on your payments.
+            </p>
+          </div>
+          <div class="faq-item reveal reveal-delay-3">
+            <h3 class="faq-question">Do I need a bank account?</h3>
+            <p class="faq-answer">
+              No, you do not need a traditional bank account. BNOS operates on
+              the Bitcoin Lightning Network, allowing you to have full control
+              over your funds.
+            </p>
+          </div>
+          <div class="faq-item reveal reveal-delay-4">
+            <h3 class="faq-question">How does offline mode work?</h3>
+            <p class="faq-answer">
+              BNOS uses a 'Local-First' architecture. Data is stored on your
+              device first. You can process sales offline, and data will sync
+              with Nostr relays when you reconnect.
+            </p>
           </div>
         </div>
       </div>
@@ -356,7 +476,7 @@
     <!-- CTA Section -->
     <section class="cta" id="cta">
       <div class="cta-orb"></div>
-      <div class="cta-content">
+      <div class="cta-content reveal">
         <h2 class="cta-title">Ready to Get Started?</h2>
         <p class="cta-subtitle">
           Join the waitlist and be among the first to experience the future of
@@ -498,27 +618,29 @@
     <script>
       // Mobile Menu Toggle
       function toggleMobileMenu() {
-        const navRight = document.querySelector('.nav-right');
-        const mobileToggle = document.querySelector('.nav-mobile-toggle');
-        navRight.classList.toggle('active');
-        mobileToggle.classList.toggle('active');
+        const navRight = document.querySelector(".nav-right");
+        const mobileToggle = document.querySelector(".nav-mobile-toggle");
+        navRight.classList.toggle("active");
+        mobileToggle.classList.toggle("active");
       }
 
       function closeMobileMenu() {
-        const navRight = document.querySelector('.nav-right');
-        const mobileToggle = document.querySelector('.nav-mobile-toggle');
-        navRight.classList.remove('active');
-        mobileToggle.classList.remove('active');
+        const navRight = document.querySelector(".nav-right");
+        const mobileToggle = document.querySelector(".nav-mobile-toggle");
+        navRight.classList.remove("active");
+        mobileToggle.classList.remove("active");
       }
 
       // Close mobile menu when clicking outside
-      document.addEventListener('click', function(event) {
-        const navRight = document.querySelector('.nav-right');
-        const mobileToggle = document.querySelector('.nav-mobile-toggle');
-        const nav = document.querySelector('.nav');
-        
-        if (navRight.classList.contains('active') && 
-            !nav.contains(event.target)) {
+      document.addEventListener("click", function (event) {
+        const navRight = document.querySelector(".nav-right");
+        const mobileToggle = document.querySelector(".nav-mobile-toggle");
+        const nav = document.querySelector(".nav");
+
+        if (
+          navRight.classList.contains("active") &&
+          !nav.contains(event.target)
+        ) {
           closeMobileMenu();
         }
       });
@@ -587,6 +709,27 @@
         checkLaunchStatus();
         updateCountdown();
       }, 1000);
+
+      // Scroll Reveal Animation
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px",
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("active");
+            observer.unobserve(entry.target); // Only animate once
+          }
+        });
+      }, observerOptions);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        document
+          .querySelectorAll(".reveal")
+          .forEach((el) => observer.observe(el));
+      });
     </script>
   </body>
 </html>

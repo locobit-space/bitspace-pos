@@ -16,14 +16,6 @@ const stockLots = useStockLots();
 const loading = ref(true);
 const activeTab = ref("valuation");
 
-// Date range for analysis
-const dateRange = ref({
-  start: new Date(new Date().setMonth(new Date().getMonth() - 3))
-    .toISOString()
-    .split("T")[0],
-  end: new Date().toISOString().split("T")[0],
-});
-
 // Valuation method
 const valuationMethod = ref<"fifo" | "lifo" | "weighted_avg">("fifo");
 
@@ -83,14 +75,13 @@ const valuationByCategory = computed(() => {
   const categoryMap: Record<string, { name: string; value: number; qty: number }> = {};
 
   inventoryItems.value.forEach((item) => {
-    const catId = item.categoryId || "uncategorized";
-    const catName = item.categoryName || t("common.uncategorized");
+    const catName = item.categoryName || t("common.uncategorized", "Uncategorized");
 
-    if (!categoryMap[catId]) {
-      categoryMap[catId] = { name: catName, value: 0, qty: 0 };
+    if (!categoryMap[catName]) {
+      categoryMap[catName] = { name: catName, value: 0, qty: 0 };
     }
-    categoryMap[catId].value += item.value;
-    categoryMap[catId].qty += item.currentStock;
+    categoryMap[catName].value += item.value;
+    categoryMap[catName].qty += item.currentStock;
   });
 
   return Object.values(categoryMap).sort((a, b) => b.value - a.value);
@@ -226,31 +217,99 @@ const agingChartCategories = computed(() =>
   stockAging.value.map((b) => b.label)
 );
 
-// ABC Pie chart data
-const abcPieData = computed(() => [
-  {
-    name: t("inventoryReports.abcPie", "ABC Distribution"),
-    type: "pie" as const,
-    radius: ["40%", "70%"],
-    data: [
-      {
-        name: "A - " + t("inventoryReports.highValue"),
-        value: abcClassification.value.values.A,
-        itemStyle: { color: "#22c55e" },
-      },
-      {
-        name: "B - " + t("inventoryReports.mediumValue"),
-        value: abcClassification.value.values.B,
-        itemStyle: { color: "#eab308" },
-      },
-      {
-        name: "C - " + t("inventoryReports.lowValue"),
-        value: abcClassification.value.values.C,
-        itemStyle: { color: "#94a3b8" },
-      },
-    ],
+// Category Valuation Pie Chart
+const categoryPieData = computed(() => ({
+  tooltip: {
+    trigger: 'item' as const,
+    formatter: '{b}: {c} ({d}%)',
   },
-]);
+  legend: {
+    orient: 'vertical' as const,
+    left: 'right' as const,
+    top: 'center' as const,
+  },
+  series: [
+    {
+      name: t("inventoryReports.categoryValue", "Category Value"),
+      type: "pie" as const,
+      radius: ["40%", "70%"],
+      center: ['40%', '50%'],
+      avoidLabelOverlap: true,
+      label: {
+        show: true,
+        formatter: '{b}: {d}%',
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 16,
+          fontWeight: 'bold' as const,
+        },
+      },
+      data: valuationByCategory.value.slice(0, 8).map((cat, index) => {
+        const colors = [
+          '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', 
+          '#10b981', '#06b6d4', '#6366f1', '#14b8a6'
+        ];
+        return {
+          name: cat.name,
+          value: cat.value,
+          itemStyle: { color: colors[index] || '#6b7280' },
+        };
+      }),
+    },
+  ],
+}));
+
+// ABC Pie chart data
+const abcPieData = computed(() => ({
+  tooltip: {
+    trigger: 'item' as const,
+    formatter: '{b}: {c} ({d}%)',
+  },
+  legend: {
+    orient: 'vertical' as const,
+    left: 'right' as const,
+    top: 'center' as const,
+  },
+  series: [
+    {
+      name: t("inventoryReports.abcPie", "ABC Distribution"),
+      type: "pie" as const,
+      radius: ["40%", "70%"],
+      center: ['40%', '50%'],
+      avoidLabelOverlap: true,
+      label: {
+        show: true,
+        formatter: '{b}: {d}%',
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 16,
+          fontWeight: 'bold' as const,
+        },
+      },
+      data: [
+        {
+          name: "A - " + t("inventoryReports.highValue", "High Value"),
+          value: abcClassification.value.values.A,
+          itemStyle: { color: "#22c55e" },
+        },
+        {
+          name: "B - " + t("inventoryReports.mediumValue", "Medium Value"),
+          value: abcClassification.value.values.B,
+          itemStyle: { color: "#eab308" },
+        },
+        {
+          name: "C - " + t("inventoryReports.lowValue", "Low Value"),
+          value: abcClassification.value.values.C,
+          itemStyle: { color: "#94a3b8" },
+        },
+      ],
+    },
+  ],
+}));
 
 // ============================================
 // 📝 FORMATTERS
@@ -375,7 +434,7 @@ const exportReport = async (format: "csv" | "excel") => {
       <template v-if="activeTab === 'valuation'">
         <!-- Valuation Method Selector -->
         <div class="px-4">
-          <div class="bg-gradient-to-r from-primary-500/10 to-blue-500/10 rounded-2xl p-6 border border-primary-500/20">
+          <div class="bg-linear-to-r from-primary-500/10 to-blue-500/10 rounded-2xl p-6 border border-primary-500/20">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -439,7 +498,8 @@ const exportReport = async (format: "csv" | "excel") => {
         </div>
 
         <!-- Valuation by Category -->
-        <div class="px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4">
+          <!-- Category List -->
           <UCard>
             <template #header>
               <h3 class="font-semibold flex items-center gap-2">
@@ -465,7 +525,7 @@ const exportReport = async (format: "csv" | "excel") => {
                   </div>
                   <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
-                      class="h-full bg-gradient-to-r from-primary-500 to-blue-500 rounded-full transition-all"
+                      class="h-full bg-linear-to-r from-primary-500 to-blue-500 rounded-full transition-all"
                       :style="{
                         width: `${
                           valuationByCategory[0]?.value
@@ -480,6 +540,19 @@ const exportReport = async (format: "csv" | "excel") => {
                   {{ formatNumber(cat.qty) }} {{ t('common.units') }}
                 </span>
               </div>
+            </div>
+          </UCard>
+
+          <!-- Category Pie Chart -->
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold flex items-center gap-2">
+                <UIcon name="i-heroicons-chart-pie" class="text-primary-500" />
+                {{ t('inventoryReports.categoryDistribution', 'Category Distribution') }}
+              </h3>
+            </template>
+            <div class="h-80">
+              <ChartPie :chart-data="categoryPieData" />
             </div>
           </UCard>
         </div>
@@ -521,7 +594,7 @@ const exportReport = async (format: "csv" | "excel") => {
             <div class="h-80">
               <ChartBar
                 :series="agingChartSeries"
-                :categories="agingChartCategories"
+                :x-axis-data="agingChartCategories"
               />
             </div>
           </UCard>
@@ -557,7 +630,7 @@ const exportReport = async (format: "csv" | "excel") => {
         <!-- ABC Summary -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
           <!-- A Class -->
-          <div class="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
+          <div class="p-6 rounded-2xl bg-linear-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
             <div class="flex items-center gap-3 mb-4">
               <div class="w-12 h-12 rounded-xl bg-green-500 text-white flex items-center justify-center text-xl font-black">
                 A
@@ -580,7 +653,7 @@ const exportReport = async (format: "csv" | "excel") => {
           </div>
 
           <!-- B Class -->
-          <div class="p-6 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border border-yellow-500/20">
+          <div class="p-6 rounded-2xl bg-linear-to-br from-yellow-500/10 to-amber-500/10 border border-yellow-500/20">
             <div class="flex items-center gap-3 mb-4">
               <div class="w-12 h-12 rounded-xl bg-yellow-500 text-white flex items-center justify-center text-xl font-black">
                 B
@@ -603,7 +676,7 @@ const exportReport = async (format: "csv" | "excel") => {
           </div>
 
           <!-- C Class -->
-          <div class="p-6 rounded-2xl bg-gradient-to-br from-gray-500/10 to-slate-500/10 border border-gray-500/20">
+          <div class="p-6 rounded-2xl bg-linear-to-br from-gray-500/10 to-slate-500/10 border border-gray-500/20">
             <div class="flex items-center gap-3 mb-4">
               <div class="w-12 h-12 rounded-xl bg-gray-500 text-white flex items-center justify-center text-xl font-black">
                 C
@@ -636,7 +709,7 @@ const exportReport = async (format: "csv" | "excel") => {
               </h3>
             </template>
             <div class="h-80">
-              <ChartPie :series="abcPieData" />
+              <ChartPie :chart-data="abcPieData" />
             </div>
           </UCard>
 
