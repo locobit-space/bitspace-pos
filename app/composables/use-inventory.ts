@@ -45,6 +45,17 @@ export interface InventoryItem {
   requiresExpiryDate?: boolean;
 }
 
+export interface InventoryReservation {
+  id: string;
+  productId: string;
+  quantity: number;
+  customerId?: string;
+  orderId: string;
+  expiresAt: Date;
+  createdAt: Date;
+  status: 'active' | 'expired' | 'released' | 'converted';
+}
+
 export interface StockMovement {
   id: string;
   productId: string;
@@ -1552,5 +1563,120 @@ export function useInventory() {
 
     // Export
     exportInventory,
+    
+    // Reservations
+    reserveStock,
+    releaseReservation,
+    getInventoryReservations,
+    cleanupExpiredReservations,
   };
+  
+  // ============================================
+  // 🔒 INVENTORY RESERVATION FUNCTIONS
+  // ============================================
+  
+  const reservations = ref<InventoryReservation[]>([]);
+  
+  // Load reservations from localStorage
+  function loadReservations() {
+    try {
+      const stored = localStorage.getItem('inventory_reservations');
+      if (stored) {
+        const data = JSON.parse(stored);
+        reservations.value = data.map((r: any) => ({
+          ...r,
+          expiresAt: new Date(r.expiresAt),
+          createdAt: new Date(r.createdAt),
+        }));
+      }
+      cleanupExpiredReservations();
+    } catch (error) {
+      console.error('Failed to load reservations:', error);
+    }
+  }
+  
+  // Save reservations
+  function saveReservations() {
+    try {
+      localStorage.setItem('inventory_reservations', JSON.stringify(reservations.value));
+    } catch (error) {
+      console.error('Failed to save reservations:', error);
+    }
+  }
+  
+  // Reserve stock for order
+  async function reserveStock(params: {
+    items: Array<{ productId: string; quantity: number }>;
+    customerId?: string;
+    orderId: string;
+    expiresIn: number;
+  }) {
+    const baseId = `RES-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const reservationGroup: InventoryReservation[] = [];
+    
+    for (const item of params.items) {
+      const reservation: InventoryReservation = {
+        id: `${baseId}-${item.productId}`,
+        productId: item.productId,
+        quantity: item.quantity,
+        customerId: params.customerId,
+        orderId: params.orderId,
+        expiresAt: new Date(Date.now() + params.expiresIn),
+        createdAt: new Date(),
+        status: 'active',
+      };
+      reservations.value.push(reservation);
+      reservationGroup.push(reservation);
+    }
+    
+    saveReservations();
+    
+    return {
+      id: baseId,
+      expiresAt: reservationGroup[0].expiresAt,
+      items: reservationGroup,
+    };
+  }
+  
+  // Release reservation
+  async function releaseReservation(reservationId: string) {
+    reservations.value.forEach(r => {
+      if (r.id.startsWith(reservationId) || r.id === reservationId) {
+        r.status = 'released';
+      }
+    });
+    saveReservations();
+  }
+  
+  // Get active reservations for product
+  function getInventoryReservations(productId: string): InventoryReservation[] {
+    const now = new Date();
+    return reservations.value.filter(
+      r => r.productId === productId && 
+      r.status === 'active' && 
+      r.expiresAt > now
+    );
+  }
+  
+  // Clean up expired reservations
+  function cleanupExpiredReservations() {
+    const now = new Date();
+    reservations.value.forEach(r => {
+      if (r.expiresAt < now && r.status === 'active') {
+        r.status = 'expired';
+      }
+    });
+    // Remove old expired reservations (older than 24 hours)
+    reservations.value = reservations.value.filter(
+      r => r.status !== 'expired' || 
+      (Date.now() - r.createdAt.getTime()) < 24 * 60 * 60 * 1000
+    );
+    saveReservations();
+  }
+  
+  // Initialize reservations
+  if (process.client) {
+    loadReservations();
+    setInterval(cleanupExpiredReservations, 60000); // Cleanup every minute
+  }
 }

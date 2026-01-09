@@ -7,13 +7,17 @@ interface CloudinaryConfig {
   cloudName: string;
   uploadPreset: string;
   apiKey?: string;
+  folder?: string;
 }
 
 interface UploadResult {
   url: string;
   publicId: string;
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
+  duration?: number; // For videos
+  format?: string;
+  resourceType?: "image" | "video" | "raw";
 }
 
 // Settings storage key
@@ -53,6 +57,7 @@ export function useCloudinary() {
       return {
         cloudName: systemCloudName,
         uploadPreset: systemPreset,
+        apiKey: config.public?.cloudinaryApiKey as string | undefined,
       };
     }
 
@@ -87,7 +92,31 @@ export function useCloudinary() {
   /**
    * Upload image to Cloudinary
    */
-  async function uploadImage(file: File): Promise<UploadResult | null> {
+  async function uploadImage(
+    file: File,
+    options?: { folder?: string }
+  ): Promise<UploadResult | null> {
+    return uploadFile(file, "image", options);
+  }
+
+  /**
+   * Upload video to Cloudinary
+   */
+  async function uploadVideo(
+    file: File,
+    options?: { folder?: string }
+  ): Promise<UploadResult | null> {
+    return uploadFile(file, "video", options);
+  }
+
+  /**
+   * Generic file upload to Cloudinary
+   */
+  async function uploadFile(
+    file: File,
+    resourceType: "image" | "video" | "auto" = "auto",
+    options?: { folder?: string }
+  ): Promise<UploadResult | null> {
     const cloudConfig = getConfig();
 
     if (!cloudConfig) {
@@ -104,7 +133,14 @@ export function useCloudinary() {
       formData.append("file", file);
       formData.append("upload_preset", cloudConfig.uploadPreset);
 
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudConfig.cloudName}/image/upload`;
+      // Add folder if specified (priority: options → config)
+      const folder = options?.folder || cloudConfig.folder || "bnos.space";
+      if (folder) {
+        formData.append("folder", folder);
+      }
+
+      // Use auto resource type to support both images and videos
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudConfig.cloudName}/${resourceType}/upload`;
 
       const response = await fetch(uploadUrl, {
         method: "POST",
@@ -112,7 +148,10 @@ export function useCloudinary() {
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        // Get detailed error from Cloudinary
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error?.message || response.statusText;
+        throw new Error(`Upload failed: ${errorMsg}`);
       }
 
       const data = await response.json();
@@ -122,6 +161,9 @@ export function useCloudinary() {
         publicId: data.public_id,
         width: data.width,
         height: data.height,
+        duration: data.duration,
+        format: data.format,
+        resourceType: data.resource_type,
       };
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Upload failed";
@@ -136,7 +178,10 @@ export function useCloudinary() {
   /**
    * Upload from data URL (base64)
    */
-  async function uploadDataUrl(dataUrl: string): Promise<UploadResult | null> {
+  async function uploadDataUrl(
+    dataUrl: string,
+    options?: { folder?: string; resourceType?: "image" | "video" | "auto" }
+  ): Promise<UploadResult | null> {
     const cloudConfig = getConfig();
 
     if (!cloudConfig) {
@@ -152,7 +197,14 @@ export function useCloudinary() {
       formData.append("file", dataUrl);
       formData.append("upload_preset", cloudConfig.uploadPreset);
 
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudConfig.cloudName}/image/upload`;
+      // Add folder if specified
+      const folder = options?.folder || cloudConfig.folder;
+      if (folder) {
+        formData.append("folder", folder);
+      }
+
+      const resourceType = options?.resourceType || "auto";
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudConfig.cloudName}/${resourceType}/upload`;
 
       const response = await fetch(uploadUrl, {
         method: "POST",
@@ -160,7 +212,10 @@ export function useCloudinary() {
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        // Get detailed error from Cloudinary
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error?.message || response.statusText;
+        throw new Error(`Upload failed: ${errorMsg}`);
       }
 
       const data = await response.json();
@@ -170,6 +225,9 @@ export function useCloudinary() {
         publicId: data.public_id,
         width: data.width,
         height: data.height,
+        duration: data.duration,
+        format: data.format,
+        resourceType: data.resource_type,
       };
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Upload failed";
@@ -193,6 +251,8 @@ export function useCloudinary() {
 
     // Upload
     uploadImage,
+    uploadVideo,
+    uploadFile,
     uploadDataUrl,
   };
 }

@@ -1810,6 +1810,36 @@ export interface Order {
   kitchenNotes?: string;
   preparedAt?: string;
   servedAt?: string;
+  // Enterprise features
+  priority?: "low" | "normal" | "high" | "urgent";
+  tags?: string[];
+  assignedStaff?: string[]; // Array of employee IDs
+  shippingInfo?: {
+    senderName?: string;
+    senderPhone?: string;
+    recipientName?: string;
+    recipientPhone?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    deliveryNotes?: string;
+    shippingMethod?: string;
+    carrier?: string;
+    trackingNumber?: string;
+    requiresSignature?: boolean;
+    insurance?: number;
+  };
+  customFields?: Array<{
+    id: string;
+    label: string;
+    value: any;
+    type: string;
+  }>;
+  fulfillment?: {
+    scheduledDate?: string;
+    scheduledTime?: string;
+    notes?: string;
+  };
 }
 
 export interface OrderItem {

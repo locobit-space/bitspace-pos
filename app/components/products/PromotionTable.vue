@@ -19,6 +19,60 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { getProductName } = usePromotionHelpers();
+
+// Get trigger description for mobile view
+function getTriggerDescription(promotion: Promotion): string {
+  switch (promotion.type) {
+    case "bogo":
+    case "freebie":
+      const productName = getProductName(promotion.triggerProductIds[0] || "");
+      const extra =
+        promotion.triggerProductIds.length > 1
+          ? ` +${promotion.triggerProductIds.length - 1}`
+          : "";
+      return `${t("common.buy", "Buy")} ${promotion.triggerQuantity}× ${productName}${extra}`;
+    case "discount":
+      if (promotion.triggerProductIds.length > 0) {
+        return `${promotion.triggerProductIds.length} ${t("products.title", "products")}`;
+      }
+      return t("promotions.allProducts", "All products");
+    case "tiered":
+      return `${promotion.tiers?.length || 0} ${t("promotions.tiers", "tiers")}`;
+    case "bundle":
+      return `${promotion.triggerProductIds.length} ${t("products.title", "products")}`;
+    default:
+      return "-";
+  }
+}
+
+// Get reward description for mobile view
+function getRewardDescription(promotion: Promotion): string {
+  switch (promotion.type) {
+    case "bogo":
+    case "freebie":
+      const productName = getProductName(promotion.rewardProductIds[0] || "");
+      return `${t("promotions.getFree", "Get")} ${promotion.rewardQuantity}× ${productName} ${t("promotions.free", "FREE")}`;
+    case "discount":
+      if (promotion.discountType === "percentage") {
+        return `${promotion.discountValue}% ${t("common.off", "off")}`;
+      }
+      return `฿${promotion.discountValue} ${t("common.off", "off")}`;
+    case "tiered":
+      if (promotion.tiers && promotion.tiers.length > 0) {
+        const firstTier = promotion.tiers[0];
+        const lastTier = promotion.tiers[promotion.tiers.length - 1];
+        if (firstTier && lastTier) {
+          return `${firstTier.discountValue}% → ${lastTier.discountValue}%`;
+        }
+      }
+      return "-";
+    case "bundle":
+      return `${promotion.discountValue || 0}% ${t("common.off", "off")}`;
+    default:
+      return "-";
+  }
+}
 
 // Event handlers
 function handleToggleStatus(promotion: Promotion) {
@@ -204,28 +258,26 @@ function handleViewDetails(promotion: Promotion) {
           <div>
             <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.trigger', 'Trigger') }}:</span>
             <p class="font-medium text-gray-900 dark:text-white mt-1">
-              {{ t(`promotions.${promotion.triggerType}`, promotion.triggerType) }}
-              ({{ promotion.triggerQuantity }})
+              {{ getTriggerDescription(promotion) }}
             </p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.reward', 'Reward') }}:</span>
             <p class="font-medium text-gray-900 dark:text-white mt-1">
-              {{ t(`promotions.${promotion.rewardType}`, promotion.rewardType) }}
-              ({{ promotion.rewardQuantity }})
+              {{ getRewardDescription(promotion) }}
             </p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.uses', 'Uses') }}:</span>
             <p class="font-medium text-gray-900 dark:text-white mt-1">
               {{ promotion.usageCount }}
-              <span v-if="promotion.maxUses" class="text-gray-500">/ {{ promotion.maxUses }}</span>
+              <span v-if="promotion.maxUsesTotal" class="text-gray-500">/ {{ promotion.maxUsesTotal }}</span>
             </p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.scope', 'Scope') }}:</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.type', 'Type') }}:</span>
             <p class="font-medium text-gray-900 dark:text-white mt-1 capitalize">
-              {{ promotion.scope }}
+              {{ promotion.type }}
             </p>
           </div>
         </div>
