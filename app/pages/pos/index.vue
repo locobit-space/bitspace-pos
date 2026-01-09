@@ -48,6 +48,7 @@ const tablesStore = useTables();
 const lightning = useLightning();
 const currency = useCurrency();
 const promotionsStore = usePromotionsStore();
+const couponsStore = useCoupons();
 const posSettings = usePOSSettings(); // POS settings for auto-close kitchen
 
 const offline = useOffline();
@@ -942,6 +943,33 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
           await productsStore.decreaseStock(item.productId, item.quantity);
         }
       }
+    }
+
+    // ✅ LOG PROMOTION USAGE: Track and sync promotion usage to Nostr
+    if (order.appliedPromotions && order.appliedPromotions.length > 0) {
+      for (const appliedPromo of order.appliedPromotions) {
+        await promotionsStore.logPromotionUsage(
+          appliedPromo.promotionId,
+          order.id,
+          appliedPromo.discountAmount,
+          appliedPromo.timesApplied,
+          {
+            customerId: order.customer,
+            customerPubkey: order.customerPubkey,
+            branch: order.branch,
+          }
+        );
+      }
+    }
+
+    // ✅ LOG COUPON USAGE: Track coupon usage if applied
+    if (appliedCoupon.value) {
+      await couponsStore.applyCoupon(
+        appliedCoupon.value.coupon.id,
+        order.id,
+        appliedCoupon.value.discountAmount,
+        order.customer
+      );
     }
 
     // Update POS session totals

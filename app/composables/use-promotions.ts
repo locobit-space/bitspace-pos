@@ -10,12 +10,14 @@ import type {
   PromotionScope,
   DiscountType,
   Product,
+  PromotionUsage,
 } from "~/types";
 import { db, type PromotionRecord } from "~/db/db";
 import { generateUUIDv7 } from "~/utils/id";
 
 // Singleton state
 const promotions = ref<Promotion[]>([]);
+const promotionUsages = ref<PromotionUsage[]>([]); // NEW: Usage log
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const isInitialized = ref(false);
@@ -555,6 +557,126 @@ export function usePromotionsStore() {
   }
 
   /**
+   * 📝 Log promotion usage with Nostr sync
+   * Records promotion usage and syncs to Nostr relay
+   */
+  async function logPromotionUsage(
+    promotionId: string,
+    orderId: string,
+    discountAmount: number,
+    timesApplied: number = 1,
+    options?: {
+      customerId?: string;
+      customerPubkey?: string;
+      branch?: string;
+    }
+  ): Promise<void> {
+    const promotion = getPromotion(promotionId);
+    if (!promotion) {
+      console.warn(`[Promotions] Cannot log usage - promotion not found: ${promotionId}`);
+      return;
+    }
+
+    try {
+      // Create usage log entry
+      const usage: PromotionUsage = {
+        id: generateUUIDv7(),
+        promotionId,
+        promotionName: promotion.name,
+        orderId,
+        customerId: options?.customerId,
+        customerPubkey: options?.customerPubkey,
+        usedAt: new Date().toISOString(),
+        discountAmount,
+        timesApplied,
+        branch: options?.branch,
+      };
+
+      // Add to local state
+      promotionUsages.value.push(usage);
+
+      // Increment usage count
+      await incrementUsage(promotionId, timesApplied);
+
+      // Sync usage log to Nostr
+      if (offline.isOnline.value) {
+        await syncPromotionUsageToNostr(usage);
+      }
+
+      console.log(`[Promotions] Logged usage for "${promotion.name}" in order ${orderId.slice(-8)}`);
+    } catch (e) {
+      console.error("[Promotions] Failed to log usage:", e);
+    }
+  }
+
+  /**
+   * 📡 Sync promotion usage log to Nostr
+   */
+  async function syncPromotionUsageToNostr(usage: PromotionUsage): Promise<boolean> {
+    try {
+      const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+      
+      const event = await nostrData.publishEvent(
+        NOSTR_KINDS.PROMOTION_USAGE || 30314, // New kind for promotion usage logs
+        usage,
+        [
+          ["d", usage.id],
+          ["promotion_id", usage.promotionId],
+          ["order_id", usage.orderId],
+          ["company", company.companyCodeHash.value || ""],
+        ]
+      );
+
+      return !!event;
+    } catch (e) {
+      console.error("[Promotions] Failed to sync usage to Nostr:", e);
+      return false;
+    }
+  }
+
+  /**
+   * 📊 Get promotion usage statistics
+   */
+  const promotionUsageStats = computed(() => {
+    const stats: Record<string, { count: number; totalDiscount: number; lastUsed: string }> = {};
+    
+    for (const usage of promotionUsages.value) {
+      if (!stats[usage.promotionId]) {
+        stats[usage.promotionId] = { 
+          count: 0, 
+          totalDiscount: 0,
+          lastUsed: usage.usedAt
+        };
+      }
+      const stat = stats[usage.promotionId];
+      if (stat) {
+        stat.count += usage.timesApplied;
+        stat.totalDiscount += usage.discountAmount;
+        // Update last used if this usage is more recent
+        if (usage.usedAt > stat.lastUsed) {
+          stat.lastUsed = usage.usedAt;
+        }
+      }
+    }
+    
+    return stats;
+  });
+
+  /**
+   * Get usage logs for a specific promotion
+   */
+  function getPromotionUsageHistory(promotionId: string): PromotionUsage[] {
+    return promotionUsages.value.filter(u => u.promotionId === promotionId);
+  }
+
+  /**
+   * Get usage logs for a specific customer
+   */
+  function getCustomerPromotionUsage(customerId: string): PromotionUsage[] {
+    return promotionUsages.value.filter(u => u.customerId === customerId);
+  }
+
+  /**
    * Calculate discount for a promotion based on its type
    * @param promotion - The promotion to apply
    * @param itemTotal - Total price of applicable items
@@ -623,6 +745,7 @@ export function usePromotionsStore() {
   return {
     // State
     promotions: readonly(promotions),
+    promotionUsages: readonly(promotionUsages),
     isLoading: readonly(isLoading),
     error: readonly(error),
     isInitialized: readonly(isInitialized),
@@ -633,6 +756,7 @@ export function usePromotionsStore() {
     discountPromotions,
     tieredPromotions,
     bundlePromotions,
+    promotionUsageStats,
 
     // Methods
     init,
@@ -648,10 +772,14 @@ export function usePromotionsStore() {
     applyBOGO,
     calculateDiscount,
     incrementUsage,
+    logPromotionUsage,
+    getPromotionUsageHistory,
+    getCustomerPromotionUsage,
 
     // Nostr Sync
     syncPromotionToNostr,
     loadPromotionsFromNostr,
     syncAllToNostr,
+    syncPromotionUsageToNostr,
   };
 }

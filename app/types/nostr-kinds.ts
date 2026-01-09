@@ -118,6 +118,8 @@ export const NOSTR_KINDS = {
   COUPON: 30310,
   /** Promotion (BOGO, discounts, bundles) */
   PROMOTION: 30313,
+  /** Promotion usage log */
+  PROMOTION_USAGE: 30314,
   /** Membership tier/plan */
   MEMBERSHIP: 30311,
   /** Membership subscription */

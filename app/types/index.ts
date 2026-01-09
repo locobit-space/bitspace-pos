@@ -2995,3 +2995,19 @@ export interface AppliedPromotion {
   timesApplied: number; // How many times applied in this order
   description?: string; // Human readable description of what was applied
 }
+
+/**
+ * Promotion usage log entry
+ */
+export interface PromotionUsage {
+  id: string;
+  promotionId: string;
+  promotionName: string;
+  orderId: string;
+  customerId?: string;
+  customerPubkey?: string;
+  usedAt: string;
+  discountAmount: number;
+  timesApplied: number;
+  branch?: string;
+}
