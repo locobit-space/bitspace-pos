@@ -104,6 +104,14 @@ export const NOSTR_KINDS = {
   INVOICE_PAYMENT: 30204,
   /** Contract/rental agreement */
   CONTRACT: 30205,
+  /** Rental asset (room, equipment, vehicle) */
+  RENTAL_ASSET: 30206,
+  /** Rental booking/reservation */
+  RENTAL_BOOKING: 30207,
+  /** Contract/asset/booking change history log */
+  CONTRACT_HISTORY: 30208,
+  /** Contract payment record */
+  CONTRACT_PAYMENT: 30209,
 
   // ─────────────────────────────────────────
   // 👥 CUSTOMERS & LOYALTY (30300-30399)

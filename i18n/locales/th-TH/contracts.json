@@ -8,6 +8,7 @@
     "startDate": "วันเริ่มต้น",
     "endDate": "วันสิ้นสุด",
     "value": "มูลค่า",
+    "contractType": "ประเภทสัญญา",
     "status": {
       "active": "ใช้งาน",
       "expired": "หมดอายุ",
