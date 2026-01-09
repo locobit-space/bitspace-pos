@@ -37,6 +37,7 @@ const company = useCompany();
 const productsStore = useProductsStore();
 const marketplace = useMarketplace();
 const nostrUser = useNostrUser();
+const offline = useOffline();
 
 // ============ State ============
 const currentStep = ref(0);
@@ -283,6 +284,13 @@ const completeSetup = async () => {
       const shopManager = useShopManager();
       await shopManager.clearShopData();
       console.log('[ShopSetup] Data cleared successfully');
+      
+      // Seed template products if user wants them
+      if (applyTemplates.value) {
+        console.log('[ShopSetup] Seeding template products...');
+        await shopManager.seedTemplatesAfterClear(shopType.value, false);
+        console.log('[ShopSetup] Templates seeded successfully');
+      }
     }
 
     const autoTags = [shopType.value.toLowerCase().replace(/_/g, '-')];
@@ -412,6 +420,20 @@ const completeSetup = async () => {
           await marketplace.publishStoreToMarketplace();
         } catch (e) {
           console.warn('[ShopSetup] Failed to publish to marketplace:', e);
+        }
+      }
+    }
+
+    // Sync products to Nostr if templates were applied
+    if (applyTemplates.value && props.mode !== 'workspace') {
+      const offline = useOffline();
+      if (offline.isOnline.value) {
+        try {
+          console.log('[ShopSetup] Syncing products to Nostr...');
+          await productsStore.syncToNostr();
+          console.log('[ShopSetup] Products synced to Nostr');
+        } catch (e) {
+          console.warn('[ShopSetup] Failed to sync products to Nostr:', e);
         }
       }
     }
