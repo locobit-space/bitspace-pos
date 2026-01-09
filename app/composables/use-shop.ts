@@ -211,6 +211,8 @@ export function useShop() {
       platformTag: mp?.platformTag || "bnos.space",
       geolocation: mp?.geolocation,
       businessHours: mp?.businessHours,
+      // Chat settings from Nostr
+      chatSettings: settings.chatSettings || { enabled: false },
     };
   }
 
@@ -378,6 +380,8 @@ export function useShop() {
           geolocation: newConfig.geolocation,
           businessHours: newConfig.businessHours,
         },
+        // Chat settings (synced across devices for all staff)
+        chatSettings: newConfig.chatSettings || { enabled: false },
         updatedAt: new Date().toISOString(),
       };
 
@@ -448,6 +452,16 @@ export function useShop() {
         setCurrentBranch(storedBranchId);
       } else if (branches.value.length > 0) {
         currentBranch.value = branches.value[0] || null;
+      }
+    }
+
+    // Register shop as workspace for multi-shop support
+    if (import.meta.client && shopConfig.value?.name) {
+      try {
+        const shopManager = useShopManager();
+        shopManager.registerCurrentShop();
+      } catch (e) {
+        console.warn("[Shop] Failed to register workspace:", e);
       }
     }
   }

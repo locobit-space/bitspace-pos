@@ -4,8 +4,11 @@
 import type { Order, PaymentStatus, PaymentMethod } from "~/types";
 
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
+});
+
+useHead({
+  title: "Order Details - Enterprise Order System",
 });
 
 const { t } = useI18n();
@@ -14,6 +17,7 @@ const router = useRouter();
 const toast = useToast();
 const { format: formatCurrency } = useCurrency();
 const ordersStore = useOrders();
+const employeesStore = useEmployeesStore();
 
 const orderId = computed(() => route.params.id as string);
 const isLoading = ref(true);
@@ -287,9 +291,35 @@ const formatShortDate = (date: string | Date) => {
   });
 };
 
+// Priority options
+const priorityOptions = [
+  { value: "low", label: "Low", color: "gray", icon: "⬇️" },
+  { value: "normal", label: "Normal", color: "blue", icon: "➡️" },
+  { value: "high", label: "High", color: "orange", icon: "⬆️" },
+  { value: "urgent", label: "Urgent", color: "red", icon: "🔥" },
+];
+
+// Staff members
+const assignedStaffDetails = computed(() => {
+  if (!order.value?.assignedStaff?.length) return [];
+  return order.value.assignedStaff
+    .map((staffId) => {
+      const emp = employeesStore.employees.value.find((e) => e.id === staffId);
+      if (!emp) return null;
+      return {
+        id: emp.id,
+        name: `${emp.firstName} ${emp.lastName}`,
+        role: emp.position || emp.department || "Staff",
+        avatar: emp.avatar || "👤",
+      };
+    })
+    .filter(Boolean);
+});
+
 // Initialize
 onMounted(async () => {
   await ordersStore.init();
+  await employeesStore.init();
 
   // Use async getOrderById which tries: memory → local DB → Nostr relay
   const foundOrder = await ordersStore.getOrderById(orderId.value);
@@ -823,6 +853,114 @@ onMounted(async () => {
               </div>
             </div>
 
+            <!-- Priority, Tags & Staff Assignment Section -->
+            <div
+              v-if="order.priority || order.tags?.length || order.assignedStaff?.length"
+              class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5"
+            >
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <UIcon name="i-heroicons-folder" class="w-5 h-5" />
+                Additional Information
+              </h3>
+
+              <div class="space-y-4">
+                <!-- Priority -->
+                <div v-if="order.priority">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Priority
+                  </p>
+                  <UBadge
+                    :color="priorityOptions.find((p) => p.value === order.priority)?.color"
+                    variant="subtle"
+                    size="md"
+                  >
+                    {{ priorityOptions.find((p) => p.value === order.priority)?.icon }}
+                    {{ priorityOptions.find((p) => p.value === order.priority)?.label }}
+                  </UBadge>
+                </div>
+
+                <!-- Tags -->
+                <div v-if="order.tags?.length">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Tags & Labels
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    <UBadge
+                      v-for="tag in order.tags"
+                      :key="tag"
+                      color="primary"
+                      variant="soft"
+                      size="sm"
+                    >
+                      {{ tag }}
+                    </UBadge>
+                  </div>
+                </div>
+
+                <!-- Assigned Staff -->
+                <div v-if="assignedStaffDetails.length">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Assigned Staff
+                  </p>
+                  <div class="space-y-2">
+                    <div
+                      v-for="staff in assignedStaffDetails"
+                      :key="staff.id"
+                      class="flex items-center gap-2 text-sm"
+                    >
+                      <span class="text-lg">{{ staff.avatar }}</span>
+                      <div>
+                        <p class="font-medium text-gray-900 dark:text-white">
+                          {{ staff.name }}
+                        </p>
+                        <p class="text-xs text-gray-500">{{ staff.role }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shipping Info -->
+                <div v-if="order.shippingInfo?.trackingNumber">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Shipping Information
+                  </p>
+                  <div class="space-y-2 text-sm">
+                    <div v-if="order.shippingInfo.carrier" class="flex items-center gap-2">
+                      <span class="text-gray-500">Carrier:</span>
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ order.shippingInfo.carrier }}
+                      </span>
+                    </div>
+                    <div v-if="order.shippingInfo.trackingNumber" class="flex items-center gap-2">
+                      <span class="text-gray-500">Tracking:</span>
+                      <span class="font-mono text-xs text-primary-600">
+                        {{ order.shippingInfo.trackingNumber }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Custom Fields -->
+                <div v-if="order.customFields?.length">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Custom Fields
+                  </p>
+                  <div class="space-y-2">
+                    <div
+                      v-for="field in order.customFields"
+                      :key="field.id"
+                      class="flex justify-between text-sm"
+                    >
+                      <span class="text-gray-500">{{ field.label }}:</span>
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ field.value }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Order Items Table -->
             <div
               class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
@@ -944,6 +1082,12 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
+
+            <!-- Discount Breakdown Component -->
+            <OrdersOrderDiscountBreakdown
+              v-if="order && (order.appliedPromotions?.length || order.discount)"
+              :order="order"
+            />
 
             <!-- Order Notes (Editable) -->
             <div

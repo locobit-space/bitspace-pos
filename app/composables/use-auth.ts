@@ -627,8 +627,15 @@ export const useAuth = () => {
 
   /**
    * Sign out - clears ALL application data for a clean slate
+   * @param options.keepWorkspaces - If true, preserves workspace list for quick re-login
+   * @param options.redirectTo - Custom redirect path after logout
    */
-  const signOut = async () => {
+  const signOut = async (options?: { 
+    keepWorkspaces?: boolean;
+    redirectTo?: string;
+  }) => {
+    const { keepWorkspaces = false, redirectTo = "/auth/signin" } = options || {};
+
     // Log logout before clearing data
     try {
       const { logActivity } = useAuditLog();
@@ -656,88 +663,26 @@ export const useAuth = () => {
     accessToken.value = null;
     refreshToken.value = null;
 
-    // Clear ALL localStorage data (comprehensive cleanup)
-    const keysToRemove = [
-      // Auth & User
-      AUTH_STORAGE_KEY,
-      "bitspace_current_user",
-      "bitspace_users",
-      
-      // Company
-      "bitspace_company_code",
-      "bitspace_company_code_hash",
-      "bitspace_company_code_enabled",
-      "bitspace_company_owner_pubkey",
-      
-      // Shop settings
-      "bitspace_shop_config",
-      "bitspace_shop_setup_complete",
-      "bitspace_current_branch",
-      
-      // Nostr
-      "nostrUser",
-      "nostr_user_profile",
-      "nostr-pubkey",
-      "nostr_pubkey",
-      "nostr_owner_pubkey",
-      "bitspace_relays",
-      
-      // POS & Sessions
-      "pos_session",
-      "pos_settings",
-      "pos_receipt_settings",
-      "bitspace_sessions",
-      "bitspace_device_id",
-      
-      // Business data
-      "bitspace_invoices",
-      "bitspace_invoice_counter",
-      "bitspace_deliveries",
-      "bitspace_drivers",
-      "bitspace_order_sequence",
-      "pos_bank_accounts",
-      
-      // Tax & Settings
-      "taxSettings",
-      "taxRates",
-      
-      // Security & Encryption
-      "bitspace_security",
-      "bitspace_master_hash",
-      "bitspace_audit_logs",
-      "bitspace_session_unlocked",
-      "bitspace_crypto_settings",
-      "bitspace_crypto_keys",
-      
-      // Permissions
-      "bitspace_permission_grants",
-      "bitspace_permission_revocations",
-      
-      // Other
-      "bitspace_cloudinary_config",
-      "bitspace_feedback_history",
-      "bitspace_developer_npub",
-      "nostr_help_articles",
-      "company_banner_dismissed",
-      
-      // Invites
-      "bitspace_invites",
+    // Keys to preserve (only theme/locale preferences if not keeping workspaces)
+    const keysToPreserve = [
+      "locale",
+      "theme-color",
+      "colorMode",
     ];
 
-    // Remove all specific keys
-    keysToRemove.forEach((key) => {
-      localStorage.removeItem(key);
-    });
+    // If keeping workspaces, preserve those too
+    if (keepWorkspaces) {
+      keysToPreserve.push(
+        "bitspace_workspaces",
+        "bitspace_current_workspace",
+        "userList" // Account list for quick switch
+      );
+    }
 
-    // Also remove any keys that start with "bitspace_", "pos_", or "ebill_" that we might have missed
+    // Clear ALL localStorage data except preserved keys
     const allKeys = Object.keys(localStorage);
     allKeys.forEach((key) => {
-      if (
-        key.startsWith("bitspace_") ||
-        key.startsWith("pos_") ||
-        key.startsWith("ebill_") ||
-        key.startsWith("nostr")
-      ) {
+      if (!keysToPreserve.includes(key)) {
         localStorage.removeItem(key);
       }
     });
@@ -750,11 +695,20 @@ export const useAuth = () => {
       console.warn("[Auth] Failed to clear sessionStorage:", e);
     }
 
-    // Clear all cookies
-    const cookiesToClear = ["nostr-pubkey", "staff-user-id"];
+    // Clear all auth cookies
+    const cookiesToClear = [
+      "nostr-pubkey",
+      "staff-user-id",
+      "auth-token",
+      "refresh-token",
+    ];
     cookiesToClear.forEach((cookieName) => {
-      const cookie = useCookie(cookieName);
-      cookie.value = null;
+      try {
+        const cookie = useCookie(cookieName);
+        cookie.value = null;
+      } catch {
+        // Cookie may not exist
+      }
     });
 
     // Clear IndexedDB (Dexie database) for complete data cleanup
@@ -766,10 +720,21 @@ export const useAuth = () => {
       console.warn("[Auth] Failed to clear IndexedDB:", e);
     }
 
+    // Clear shop manager workspaces if not keeping them
+    if (!keepWorkspaces) {
+      try {
+        const { clearAllWorkspaces } = useShopManager();
+        clearAllWorkspaces();
+      } catch {
+        // Shop manager may not be initialized
+      }
+    }
+
     console.log("[Auth] Signed out - all data, cookies, and storage cleared");
+    console.log("[Auth] Preserved keys:", keysToPreserve);
 
     // Redirect to login
-    navigateTo("/auth/signin");
+    navigateTo(redirectTo);
   };
 
   /**

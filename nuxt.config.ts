@@ -17,6 +17,10 @@ export default defineNuxtConfig({
       version: process.env.npm_package_version || "0.0.1",
       buildTime: new Date().toISOString(),
       devRelayUrl: process.env.PUBLIC_DEV_RELAY_URL,
+      // Cloudinary system default configuration (fallback when user doesn't set their own)
+      cloudinaryCloudName: process.env.NUXT_CLOUDINARY_CLOUD_NAME,
+      cloudinaryUploadPreset: process.env.NUXT_CLOUDINARY_UPLOAD_PRESET,
+      cloudinaryApiKey: process.env.NUXT_CLOUDINARY_API_KEY,
     },
   },
 

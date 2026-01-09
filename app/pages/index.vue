@@ -416,11 +416,11 @@ onMounted(async () => {
       <!-- Dashboard Content -->
       <template v-else>
         <!-- Onboarding Checklist (shown after setup) -->
-        <div v-if="showOnboardingChecklist" class="mb-6 max-w-2xl mx-auto">
+        <div v-if="showOnboardingChecklist" class="mb-6 max-w-2xl">
           <DashboardOnboardingChecklist @dismiss="handleChecklistDismiss" />
         </div>
         <!-- Marketplace Setup Notification -->
-        <div class="mb-6 max-w-2xl mx-auto">
+        <div class="mb-6 max-w-2xl">
           <DashboardMarketplaceSetup />
         </div>
 

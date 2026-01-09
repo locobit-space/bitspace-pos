@@ -90,6 +90,14 @@ const rewardProducts = computed(() => {
     .map((id) => productsStore.getProduct(id))
     .filter((p) => p !== undefined);
 });
+
+// Active tab for details vs usage history
+const activeTab = ref<"details" | "usage">("details");
+
+const tabs = [
+  { key: "details", label: "Details", icon: "i-heroicons-information-circle" },
+  { key: "usage", label: "Usage History", icon: "i-heroicons-chart-bar" },
+];
 </script>
 
 <template>
@@ -115,7 +123,28 @@ const rewardProducts = computed(() => {
     </template>
 
     <template #body>
-      <div v-if="promotion" class="space-y-6">
+      <!-- Tabs -->
+      <div class="border-b border-gray-200 dark:border-gray-800 mb-6">
+        <nav class="flex space-x-8 px-1" aria-label="Tabs">
+          <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            :class="[
+              activeTab == tab.key
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
+              'group inline-flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+            ]"
+            @click="activeTab = tab.key"
+          >
+            <UIcon :name="tab.icon" class="w-5 h-5" />
+            {{ tab.label }}
+          </button>
+        </nav>
+      </div>
+
+      <!-- Details Tab -->
+      <div v-if="promotion && activeTab == 'details'" class="space-y-6">
         <!-- Status & Priority -->
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -361,9 +390,9 @@ const rewardProducts = computed(() => {
           >
             {{ t("common.description", "Description") }}
           </label>
-          <p class="text-gray-700 dark:text-gray-300">
+          <div class="text-gray-700 dark:text-gray-300">
             {{ promotion.description }}
-          </p>
+          </div>
         </div>
 
         <!-- Metadata -->
@@ -383,6 +412,11 @@ const rewardProducts = computed(() => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Usage History Tab -->
+      <div v-if="promotion && activeTab === 'usage'">
+        <ProductsPromotionUsageHistory :promotion="promotion" />
       </div>
     </template>
 

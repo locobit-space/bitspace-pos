@@ -17,6 +17,7 @@ export function useSetupCheck() {
 
     const companyCode = localStorage.getItem("bitspace_company_code");
     const shopConfigStr = localStorage.getItem("shopConfig");
+    const workspacesStr = localStorage.getItem("bitspace_workspaces");
 
     // Shop is setup if we have a company code OR a shop config with name
     if (companyCode) {
@@ -25,6 +26,14 @@ export function useSetupCheck() {
       try {
         const shopConfig = JSON.parse(shopConfigStr);
         hasCompletedSetup.value = !!shopConfig?.name;
+      } catch {
+        hasCompletedSetup.value = false;
+      }
+    } else if (workspacesStr) {
+      // Fallback: Check if we have registered workspaces (during shop switch)
+      try {
+        const workspaces = JSON.parse(workspacesStr);
+        hasCompletedSetup.value = Array.isArray(workspaces) && workspaces.length > 0;
       } catch {
         hasCompletedSetup.value = false;
       }

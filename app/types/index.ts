@@ -16,7 +16,7 @@
 // Fields: createdBy, updatedBy, userId, etc.
 // ============================================
 
-import { NOSTR_KINDS } from "./nostr-kinds";
+import type { NOSTR_KINDS } from "./nostr-kinds";
 
 // ============================================
 // 🏪 SHOP CONFIGURATION TYPES
@@ -1810,6 +1810,36 @@ export interface Order {
   kitchenNotes?: string;
   preparedAt?: string;
   servedAt?: string;
+  // Enterprise features
+  priority?: "low" | "normal" | "high" | "urgent";
+  tags?: string[];
+  assignedStaff?: string[]; // Array of employee IDs
+  shippingInfo?: {
+    senderName?: string;
+    senderPhone?: string;
+    recipientName?: string;
+    recipientPhone?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    deliveryNotes?: string;
+    shippingMethod?: string;
+    carrier?: string;
+    trackingNumber?: string;
+    requiresSignature?: boolean;
+    insurance?: number;
+  };
+  customFields?: Array<{
+    id: string;
+    label: string;
+    value: any;
+    type: string;
+  }>;
+  fulfillment?: {
+    scheduledDate?: string;
+    scheduledTime?: string;
+    notes?: string;
+  };
 }
 
 export interface OrderItem {
@@ -2300,6 +2330,11 @@ export interface StoreSettings {
     vatRate: number; // VAT rate (0.10 = 10%)
     autoPostJournals: boolean; // Auto-post or require approval
     fiscalYearStart: string; // "01-01" format
+  };
+
+  // Chat settings (synced across devices)
+  chatSettings?: {
+    enabled: boolean;
   };
 
   updatedAt?: string;
@@ -2989,4 +3024,20 @@ export interface AppliedPromotion {
   discountType?: DiscountType;
   timesApplied: number; // How many times applied in this order
   description?: string; // Human readable description of what was applied
+}
+
+/**
+ * Promotion usage log entry
+ */
+export interface PromotionUsage {
+  id: string;
+  promotionId: string;
+  promotionName: string;
+  orderId: string;
+  customerId?: string;
+  customerPubkey?: string;
+  usedAt: string;
+  discountAmount: number;
+  timesApplied: number;
+  branch?: string;
 }

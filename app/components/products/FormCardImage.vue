@@ -268,6 +268,7 @@ function handleDragLeave() {
             t('products.imageUrlPlaceholder') || 'https://example.com/image.jpg'
           "
           icon="i-heroicons-link"
+          class="w-full"
           @update:model-value="(val: string) => { if (val) form.image = val }"
         />
       </UFormField>

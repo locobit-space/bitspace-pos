@@ -735,6 +735,7 @@ export interface ChatMessageRecord {
   nostrEventId?: string;
   isEncrypted: boolean;
   synced: boolean;
+  reactions?: string; // JSON serialized Map<string, MessageReaction[]>
 }
 
 // Chat Conversation Record
@@ -761,6 +762,13 @@ export interface ChatConversationRecord {
   memberPubkeys?: string; // JSON array of member pubkeys
   createdAt: number;
   updatedAt: number;
+  deletedAt?: number; // Soft delete timestamp
+}
+
+// Deleted Conversations (to remember what was deleted)
+export interface DeletedConversationRecord {
+  id: string; // conversation ID
+  deletedAt: number;
 }
 
 // ============================================
@@ -1548,7 +1556,8 @@ export class POSDatabase extends Dexie {
       chatMessages:
         "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, nostrEventId, synced",
       chatConversations:
-        "id, type, lastMessageTime, unreadCount, isPinned, isPrivate, updatedAt",
+        "id, type, lastMessageTime, unreadCount, isPinned, isPrivate, updatedAt, deletedAt",
+      deletedConversations: "id, deletedAt",
       promotions:
         "id, name, type, status, startDate, endDate, priority, usageCount, synced, updatedAt",
       // NEW: Membership tables

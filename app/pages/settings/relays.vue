@@ -350,14 +350,12 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
 });
 
 const { t } = useI18n();
 const toast = useToast();
 const nostrRelay = useNostrRelay();
-const nostrData = useNostrData();
 
 // Relay Info Type
 interface RelayInfo {
@@ -384,6 +382,7 @@ const relayInfoList = ref<RelayInfo[]>([]);
 
 // Popular relays for quick add
 const popularRelays = [
+  'wss://relay.bnos.space',
   "wss://relay.damus.io",
   "wss://nos.lol",
   "wss://relay.nostr.band",

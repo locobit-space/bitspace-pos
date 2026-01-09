@@ -16,6 +16,7 @@ const router = useRouter();
 const toast = useToast();
 const nostrUser = useNostrUser();
 const usersComposable = useUsers();
+const shopManager = useShopManager();
 const { syncNostrOwner } = usersComposable;
 
 // UI state
@@ -95,6 +96,9 @@ const handleNostrSignIn = async () => {
         await syncNostrOwner();
       }
 
+      // Try to load workspaces from Nostr (for new device login)
+      await shopManager.loadWorkspacesFromNostr();
+
       router.push("/");
     }
   } catch (e) {
@@ -166,6 +170,8 @@ const triggerNos2xPopup = async () => {
 
       const success = await auth.signInWithNpub(pubkey);
       if (success) {
+        // Try to load workspaces from Nostr (for new device login)
+        await shopManager.loadWorkspacesFromNostr();
         router.push("/");
       }
     } else {
@@ -264,6 +270,10 @@ const handleNsecSignIn = async () => {
         color: "green",
       });
     }
+
+    // Try to load workspaces from Nostr (for new device login)
+    // This restores workspace list synced from other devices
+    await shopManager.loadWorkspacesFromNostr();
 
     manualNsec.value = "";
     router.push("/");

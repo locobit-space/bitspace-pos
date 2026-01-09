@@ -29,6 +29,8 @@ export const NOSTR_KINDS = {
   CONTACT_LIST: 3,
   /** Encrypted direct message (NIP-04) */
   ENCRYPTED_DM: 4,
+  /** Event deletion (NIP-09) */
+  DELETION: 5,
   /** Reaction to an event (NIP-25) */
   REACTION: 7,
 
@@ -116,6 +118,8 @@ export const NOSTR_KINDS = {
   COUPON: 30310,
   /** Promotion (BOGO, discounts, bundles) */
   PROMOTION: 30313,
+  /** Promotion usage log */
+  PROMOTION_USAGE: 30314,
   /** Membership tier/plan */
   MEMBERSHIP: 30311,
   /** Membership subscription */
@@ -148,6 +152,8 @@ export const NOSTR_KINDS = {
   PERMISSION_REVOKE: 30511,
   /** Staff sync data (cross-device synchronization) */
   STAFF_SYNC: 30590,
+  /** User workspace list (encrypted, synced across devices with same nsec) */
+  USER_WORKSPACES: 30591,
 
   // ─────────────────────────────────────────
   // 🏢 BRANCH MANAGEMENT (30600-30699)

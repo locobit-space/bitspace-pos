@@ -263,8 +263,8 @@ export function useNostrData() {
             company.companyCode.value
           );
           return decrypted;
-        } catch (e) {
-          console.warn("[NostrData] Company code decrypt failed:", e);
+        } catch {
+          // Expected when switching shops or data from different company
           // Fall through to other methods
         }
       }
@@ -1042,14 +1042,20 @@ export function useNostrData() {
     const company = useCompany();
 
     // Build tags for conversation
+    // Using BOTH standard #t tag (NIP-12) AND custom #c tag for maximum relay compatibility
+    const companyHash = company.companyCodeHash.value;
+    const teamTag = companyHash ? `team:${companyHash}` : null;
+
     const tags: string[][] = [
       ["type", conversation.type],
       conversation.scope ? ["scope", conversation.scope] : [],
       conversation.shopId ? ["shop", conversation.shopId] : [],
       conversation.groupName ? ["name", conversation.groupName] : [],
       conversation.isReadOnly ? ["read-only", "true"] : [],
-      // Add company code hash for team sync
-      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+      // Add standard #t tag for team sync (better relay support - NIP-12)
+      teamTag ? ["t", teamTag] : [],
+      // Add custom #c tag for backward compatibility
+      companyHash ? ["c", companyHash] : [],
       // Add custom tags
       ...(conversation.tags || []).map((t) => ["t", t]),
       // Add member pubkeys for private channels
@@ -1095,13 +1101,15 @@ export function useNostrData() {
     }>
   > {
     try {
-      // Build filter
+      // Build filter - using standard #t tag for better relay support
       const filter: Record<string, unknown> = {
         kinds: [NOSTR_KINDS.CHAT_CHANNEL],
       };
 
       if (options.companyCodeHash) {
-        filter["#c"] = [options.companyCodeHash];
+        // Use standard #t tag format (NIP-12) for better relay support
+        const teamTag = `team:${options.companyCodeHash}`;
+        filter["#t"] = [teamTag];
       }
 
       if (options.scope) {
@@ -1112,9 +1120,21 @@ export function useNostrData() {
         filter["#shop"] = [options.shopId];
       }
 
-      const events = await relay.queryEvents(
+      // Query with #t tag first
+      let events = await relay.queryEvents(
         filter as Parameters<typeof relay.queryEvents>[0]
       );
+
+      // Fallback: also query with #c tag for backward compatibility
+      if (options.companyCodeHash && events.length === 0) {
+        const fallbackFilter: Record<string, unknown> = {
+          kinds: [NOSTR_KINDS.CHAT_CHANNEL],
+          "#c": [options.companyCodeHash],
+        };
+        events = await relay.queryEvents(
+          fallbackFilter as Parameters<typeof relay.queryEvents>[0]
+        );
+      }
 
       const conversations: Array<{
         id: string;

@@ -14,6 +14,8 @@ const cloudinary = useCloudinary();
 const cloudinaryForm = ref({
   cloudName: "",
   uploadPreset: "",
+  apiKey: "",
+  folder: "",
   useOwnKey: false,
 });
 
@@ -23,7 +25,11 @@ onMounted(() => {
   if (config) {
     cloudinaryForm.value.cloudName = config.cloudName;
     cloudinaryForm.value.uploadPreset = config.uploadPreset;
-    cloudinaryForm.value.useOwnKey = true;
+    cloudinaryForm.value.apiKey = config.apiKey || "";
+    cloudinaryForm.value.folder = config.folder || "";
+    // Check if user has custom config (not using system default)
+    const saved = localStorage.getItem("bitspace_cloudinary_config");
+    cloudinaryForm.value.useOwnKey = !!saved;
   }
 });
 
@@ -53,6 +59,8 @@ function saveCloudinaryConfig() {
     cloudinary.saveConfig({
       cloudName: cloudinaryForm.value.cloudName,
       uploadPreset: cloudinaryForm.value.uploadPreset,
+      apiKey: cloudinaryForm.value.apiKey || undefined,
+      folder: cloudinaryForm.value.folder || undefined,
     });
 
     toast.add({
@@ -169,7 +177,7 @@ useHead({
             <p class="text-sm text-gray-500">
               {{
                 t("settings.integrations.useOwnKeyDesc") ||
-                "Configure your own Cloudinary account"
+                "Configure your own Cloudinary account, or use system default"
               }}
             </p>
           </div>
@@ -178,43 +186,91 @@ useHead({
 
         <!-- Custom Configuration -->
         <div v-if="cloudinaryForm.useOwnKey" class="space-y-4">
+          <!-- Instructions Banner -->
+          <div
+            class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon
+                name="i-heroicons-information-circle"
+                class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+              />
+              <div class="space-y-2 text-sm">
+                <p class="font-medium text-blue-900 dark:text-blue-100">
+                  Setup Instructions:
+                </p>
+                <ol class="list-decimal list-inside space-y-1 text-blue-700 dark:text-blue-300">
+                  <li>Go to <a href="https://console.cloudinary.com/settings/upload" target="_blank" class="underline hover:text-blue-800">Cloudinary Console → Settings → Upload</a></li>
+                  <li>Click "Add upload preset" at the bottom</li>
+                  <li>Set Signing Mode to <strong>"Unsigned"</strong></li>
+                  <li>Set a Preset name (e.g., "bitspace_preset")</li>
+                  <li>Save and copy the preset name below</li>
+                  <li>Get your Cloud Name from <a href="https://console.cloudinary.com/settings/account" target="_blank" class="underline hover:text-blue-800">Settings → Account</a></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
           <UFormField label="Cloud Name" required>
             <UInput
               v-model="cloudinaryForm.cloudName"
-              placeholder="your-cloud-name"
+              placeholder="doqyvdhvo"
               icon="i-heroicons-cloud"
+              class="w-full"
             />
+            <template #hint>
+              <p class="text-xs text-gray-500">
+                Found in your Cloudinary dashboard under Settings → Account
+              </p>
+            </template>
           </UFormField>
 
           <UFormField label="Upload Preset" required>
             <UInput
               v-model="cloudinaryForm.uploadPreset"
-              placeholder="unsigned-preset"
+              placeholder="bitspace_preset"
               icon="i-heroicons-cog-6-tooth"
+              class="w-full"
             />
             <template #hint>
               <p class="text-xs text-gray-500">
-                {{
-                  t("settings.integrations.uploadPresetHint") ||
-                  "Create an unsigned upload preset in your Cloudinary dashboard"
-                }}
+                Must be an <strong>unsigned</strong> upload preset. Create one in Settings → Upload → Add upload preset
               </p>
             </template>
+          </UFormField>
+
+          <UFormField label="API Key (Optional)">
+            <UInput
+              v-model="cloudinaryForm.apiKey"
+              placeholder="123456789012345"
+              icon="i-heroicons-key"
+              type="password"
+              class="w-full"
+            />
+            <template #hint>
+              <p class="text-xs text-gray-500">
+                Only needed for advanced features like deleting images
+              </p>
+            </template>
+
+          <UFormField label="Default Folder (Optional)">
+            <UInput
+              v-model="cloudinaryForm.folder"
+              placeholder="products"
+              icon="i-heroicons-folder"
+              class="w-full"
+            />
+            <template #hint>
+              <p class="text-xs text-gray-500">
+                Organize uploads into folders. E.g., "products", "avatars", "banners"
+              </p>
+            </template>
+          </UFormField>
           </UFormField>
 
           <div
             class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
           >
-            <UIcon
-              name="i-heroicons-information-circle"
-              class="w-5 h-5 text-blue-600 dark:text-blue-400"
-            />
-            <p class="text-sm text-blue-700 dark:text-blue-300">
-              {{
-                t("settings.integrations.cloudinaryHelp") ||
-                "Get your Cloud Name from cloudinary.com → Settings → Account"
-              }}
-            </p>
           </div>
         </div>
 

@@ -85,12 +85,18 @@ const conversations = ref<ChatConversation[]>([]);
 const messages = ref<Map<string, ChatMessage[]>>(new Map());
 const activeConversationId = ref<string | null>(null);
 const isLoading = ref(false);
-const isSending = ref(false);
-const isOpen = ref(false);
-const searchQuery = ref("");
-const typingUsers = ref<Map<string, { name: string; timestamp: number }>>(
-  new Map()
-);
+const _isSending = ref(false);
+const _isOpen = ref(false);
+const _searchQuery = ref("");
+// Nested Map: conversationId -> pubkey -> { name, timestamp }
+const typingUsers = ref<
+  Map<string, Map<string, { name: string; timestamp: number }>>
+>(new Map());
+
+// Pagination state: track oldest message timestamp per conversation
+const oldestMessageTimestamp = ref<Map<string, number>>(new Map());
+const hasMoreMessages = ref<Map<string, boolean>>(new Map());
+const isLoadingMore = ref(false);
 
 // Real-time subscription reference
 let chatSubscription: { close: () => void } | null = null;
@@ -240,35 +246,42 @@ export function useChat() {
 
   async function loadConversationsFromLocal(): Promise<void> {
     try {
+      // Load deleted conversation IDs
+      const deletedIds = new Set(
+        (await db.deletedConversations.toArray()).map((d) => d.id)
+      );
+
       const records = await db.chatConversations.toArray();
-      conversations.value = records.map((r) => ({
-        id: r.id,
-        type: r.type,
-        participants: JSON.parse(r.participantPubkeys).map(
-          (pubkey: string, i: number) => ({
-            pubkey,
-            name: JSON.parse(r.participantNames)[i] || "Unknown",
-          })
-        ),
-        groupName: r.groupName,
-        groupAvatar: r.groupAvatar,
-        lastMessage: {
-          content: r.lastMessageContent,
-          timestamp: r.lastMessageTime,
-          senderName: r.lastMessageSenderName,
-        },
-        unreadCount: r.unreadCount,
-        isPinned: r.isPinned,
-        isMuted: r.isMuted,
-        isPrivate: r.isPrivate,
-        key: r.key,
-        // NEW: Shop/Team Context
-        shopId: r.shopId,
-        scope: r.scope as "shop" | "company" | "department" | undefined,
-        tags: r.tags ? JSON.parse(r.tags) : [],
-        isReadOnly: r.isReadOnly,
-        memberPubkeys: r.memberPubkeys ? JSON.parse(r.memberPubkeys) : [],
-      }));
+      conversations.value = records
+        .filter((r) => !deletedIds.has(r.id)) // Filter out deleted conversations
+        .map((r) => ({
+          id: r.id,
+          type: r.type,
+          participants: JSON.parse(r.participantPubkeys).map(
+            (pubkey: string, i: number) => ({
+              pubkey,
+              name: JSON.parse(r.participantNames)[i] || "Unknown",
+            })
+          ),
+          groupName: r.groupName,
+          groupAvatar: r.groupAvatar,
+          lastMessage: {
+            content: r.lastMessageContent,
+            timestamp: r.lastMessageTime,
+            senderName: r.lastMessageSenderName,
+          },
+          unreadCount: r.unreadCount,
+          isPinned: r.isPinned,
+          isMuted: r.isMuted,
+          isPrivate: r.isPrivate,
+          key: r.key,
+          // NEW: Shop/Team Context
+          shopId: r.shopId,
+          scope: r.scope as "shop" | "company" | "department" | undefined,
+          tags: r.tags ? JSON.parse(r.tags) : [],
+          isReadOnly: r.isReadOnly,
+          memberPubkeys: r.memberPubkeys ? JSON.parse(r.memberPubkeys) : [],
+        }));
     } catch (e) {
       console.error("[Chat] Failed to load conversations:", e);
     }
@@ -279,7 +292,10 @@ export function useChat() {
   ): Promise<void> {
     // Validate required fields before saving
     if (!conversation.id || typeof conversation.id !== "string") {
-      console.error("[Chat] Cannot save conversation without valid ID:", conversation);
+      console.error(
+        "[Chat] Cannot save conversation without valid ID:",
+        conversation
+      );
       throw new Error("Invalid conversation ID");
     }
 
@@ -324,26 +340,364 @@ export function useChat() {
         .where("conversationId")
         .equals(conversationId)
         .sortBy("timestamp");
-      return records.map((r) => ({
-        id: r.id,
-        conversationId: r.conversationId,
-        senderPubkey: r.senderPubkey,
-        senderName: r.senderName,
-        senderAvatar: r.senderAvatar,
-        recipientPubkey: r.recipientPubkey,
-        content: r.content,
-        timestamp: r.timestamp,
-        status: r.status,
-        replyToId: r.replyToId,
-        nostrEventId: r.nostrEventId,
-      }));
+      return records.map((r) => {
+        // Deserialize reactions from JSON
+        let reactions: Map<string, MessageReaction[]> | undefined;
+        if (r.reactions) {
+          try {
+            const parsed = JSON.parse(r.reactions);
+            reactions = new Map(Object.entries(parsed));
+          } catch {
+            reactions = undefined;
+          }
+        }
+
+        return {
+          id: r.id,
+          conversationId: r.conversationId,
+          senderPubkey: r.senderPubkey,
+          senderName: r.senderName,
+          senderAvatar: r.senderAvatar,
+          recipientPubkey: r.recipientPubkey,
+          content: r.content,
+          timestamp: r.timestamp,
+          status: r.status,
+          replyToId: r.replyToId,
+          nostrEventId: r.nostrEventId,
+          reactions,
+        };
+      });
     } catch (e) {
       console.error("[Chat] Failed to load messages:", e);
       return [];
     }
   }
 
+  /**
+   * Fetch reactions for a list of message event IDs
+   * Returns a Map of eventId -> Map of emoji -> MessageReaction[]
+   */
+  async function fetchReactionsForMessages(
+    messageEventIds: string[]
+  ): Promise<Map<string, Map<string, MessageReaction[]>>> {
+    const reactionsMap = new Map<string, Map<string, MessageReaction[]>>();
+    
+    if (!$nostr?.pool || messageEventIds.length === 0) {
+      return reactionsMap;
+    }
+
+    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+
+    try {
+      // Query for reactions (kind 7) that reference these messages
+      const reactionFilter = {
+        kinds: [NOSTR_KINDS.REACTION],
+        "#e": messageEventIds,
+        limit: 500, // Allow multiple reactions per message
+      };
+
+      const reactionEvents = await $nostr.pool.querySync(relayUrls, reactionFilter);
+
+      // Process each reaction
+      for (const reactionEvent of reactionEvents) {
+        const messageId = reactionEvent.tags.find((t: string[]) => t[0] === "e")?.[1];
+        const emoji = reactionEvent.content;
+
+        if (!messageId || !emoji) continue;
+
+        // Find reactor info
+        const reactor = usersStore.users.value.find(
+          (u) => u.pubkeyHex === reactionEvent.pubkey
+        );
+        const reactorName = reactor?.name || `User ${reactionEvent.pubkey.slice(0, 8)}`;
+
+        const reaction: MessageReaction = {
+          emoji,
+          pubkey: reactionEvent.pubkey,
+          name: reactorName,
+          timestamp: reactionEvent.created_at * 1000,
+          eventId: reactionEvent.id,
+        };
+
+        // Initialize nested maps if needed
+        if (!reactionsMap.has(messageId)) {
+          reactionsMap.set(messageId, new Map());
+        }
+        const messageReactions = reactionsMap.get(messageId)!;
+        if (!messageReactions.has(emoji)) {
+          messageReactions.set(emoji, []);
+        }
+        messageReactions.get(emoji)!.push(reaction);
+      }
+    } catch (e) {
+      console.error("[Chat] Failed to fetch reactions:", e);
+    }
+
+    return reactionsMap;
+  }
+
+  /**
+   * Fetch historical messages from Nostr relays for a channel
+   * This supplements local messages with remote ones
+   */
+  async function fetchChannelMessagesFromRelay(
+    channelId: string,
+    limit: number = 50
+  ): Promise<void> {
+    if (!$nostr?.pool) {
+      return;
+    }
+
+    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+
+    try {
+      // Collect all events from different filter queries
+      // Use NostrEvent type from import
+      let allEvents: NostrEvent[] = [];
+
+      // Query 1: Filter by channel ID using #h tag (NIP-29 style)
+      const filterH = {
+        kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
+        "#h": [channelId],
+        limit,
+      };
+      const eventsH = await $nostr.pool.querySync(relayUrls, filterH);
+      allEvents = [...allEvents, ...eventsH];
+
+      // Query 2: Filter by channel ID using #e tag (backward compatibility)
+      const filterE = {
+        kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
+        "#e": [channelId],
+        limit,
+      };
+      const eventsE = await $nostr.pool.querySync(relayUrls, filterE);
+      allEvents = [...allEvents, ...eventsE];
+
+      // Query 3: If team mode, also query by team tag
+      if (company.companyCodeHash.value) {
+        const teamTag = `team:${company.companyCodeHash.value}`;
+        const filterT = {
+          kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
+          "#t": [teamTag],
+          limit,
+        };
+        const eventsT = await $nostr.pool.querySync(relayUrls, filterT);
+        allEvents = [...allEvents, ...eventsT];
+      }
+
+      // Deduplicate by event ID
+      const uniqueEvents = new Map<string, NostrEvent>();
+      allEvents.forEach((e: NostrEvent) => {
+        if (!uniqueEvents.has(e.id)) {
+          uniqueEvents.set(e.id, e);
+        }
+      });
+      const events = Array.from(uniqueEvents.values());
+
+      // Fetch reactions for all these messages
+      const messageEventIds = events.map((e) => e.id);
+      const reactionsMap = await fetchReactionsForMessages(messageEventIds);
+
+      // Process and save each event
+      for (const event of events) {
+        // Check if message belongs to this channel
+        const eventChannelId =
+          event.tags.find((t: string[]) => t[0] === "h")?.[1] ||
+          event.tags.find((t: string[]) => t[0] === "e")?.[1];
+
+        if (eventChannelId !== channelId) continue;
+
+        // Check if we already have this message
+        const existing = await db.chatMessages
+          .where("nostrEventId")
+          .equals(event.id)
+          .first();
+        if (existing) continue;
+
+        // Verify company code if in team mode
+        if (
+          company.isCompanyCodeEnabled.value &&
+          company.companyCodeHash.value
+        ) {
+          const expectedTeamTag = `team:${company.companyCodeHash.value}`;
+          const messageTeamTag = event.tags.find(
+            (t: string[]) => t[0] === "t"
+          )?.[1];
+          const messageCompanyCode = event.tags.find(
+            (t: string[]) => t[0] === "c"
+          )?.[1];
+
+          if (
+            messageTeamTag !== expectedTeamTag &&
+            messageCompanyCode !== company.companyCodeHash.value
+          ) {
+            continue; // Skip messages from other teams
+          }
+        }
+
+        // Find sender info
+        const sender = usersStore.users.value.find(
+          (u) => u.pubkeyHex === event.pubkey
+        );
+        const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
+
+        // Find the conversation to check if it's private and needs decryption
+        const conv = conversations.value.find((c) => c.id === channelId);
+        let messageContent = event.content;
+
+        // Decrypt if private channel with key
+        if (conv?.isPrivate && conv.key) {
+          try {
+            messageContent = decryptChannelMessage(event.content, conv.key);
+          } catch (decryptError) {
+            messageContent = "[Encrypted - unable to decrypt]";
+          }
+        } else if (conv?.isPrivate && !conv.key) {
+          messageContent = "[Encrypted - no key]";
+        }
+
+        const message: ChatMessage = {
+          id: `msg_${event.id.slice(0, 12)}`,
+          conversationId: channelId,
+          senderPubkey: event.pubkey,
+          senderName,
+          senderAvatar: sender?.avatar,
+          recipientPubkey: "",
+          content: messageContent,
+          timestamp: event.created_at * 1000,
+          status: "delivered",
+          nostrEventId: event.id,
+          reactions: reactionsMap.get(event.id), // Add reactions from Nostr
+        };
+
+        await saveMessageToLocal(message);
+      }
+
+      // Reload messages from local DB to get the updated list
+      const msgs = await loadMessagesForConversation(channelId);
+      messages.value.set(channelId, msgs);
+    } catch (e) {
+      console.error("[Chat] Failed to fetch channel messages from relay:", e);
+    }
+  }
+
+  /**
+   * Fetch DM history from Nostr relays for a specific conversation
+   */
+  async function fetchDMsFromRelay(
+    otherPubkey: string,
+    limit: number = 50
+  ): Promise<void> {
+    const keys = getUserKeys();
+    if (!keys?.pubkey || !keys?.privkey || !$nostr?.pool) {
+      return;
+    }
+
+    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const conversationId = generateConversationId(keys.pubkey, otherPubkey);
+
+    try {
+      // Query 1: DMs TO me FROM the other person
+      const filterToMe = {
+        kinds: [NOSTR_KINDS.ENCRYPTED_DM],
+        authors: [otherPubkey],
+        "#p": [keys.pubkey],
+        limit,
+      };
+      const eventsToMe = await $nostr.pool.querySync(relayUrls, filterToMe);
+
+      // Query 2: DMs FROM me TO the other person
+      const filterFromMe = {
+        kinds: [NOSTR_KINDS.ENCRYPTED_DM],
+        authors: [keys.pubkey],
+        "#p": [otherPubkey],
+        limit,
+      };
+      const eventsFromMe = await $nostr.pool.querySync(relayUrls, filterFromMe);
+
+      // Combine and deduplicate
+      const allEvents = [...eventsToMe, ...eventsFromMe];
+      const uniqueEvents = new Map<string, (typeof allEvents)[0]>();
+      allEvents.forEach((e) => {
+        if (!uniqueEvents.has(e.id)) uniqueEvents.set(e.id, e);
+      });
+      const events = Array.from(uniqueEvents.values());
+
+      // Fetch reactions for all these messages
+      const messageEventIds = events.map((e) => e.id);
+      const reactionsMap = await fetchReactionsForMessages(messageEventIds);
+
+      // Process each DM
+      for (const event of events) {
+        // Check if we already have this message
+        const existing = await db.chatMessages
+          .where("nostrEventId")
+          .equals(event.id)
+          .first();
+        if (existing) continue;
+
+        try {
+          // Determine if this is incoming or outgoing
+          const isIncoming = event.pubkey !== keys.pubkey;
+          const senderPubkey = event.pubkey;
+
+          // Decrypt the message
+          const decryptPubkey = isIncoming ? senderPubkey : otherPubkey;
+          const content = await decryptMessage(event.content, decryptPubkey);
+
+          // Find sender info
+          const sender = usersStore.users.value.find(
+            (u) => u.pubkeyHex === senderPubkey
+          );
+          const currentUser = usersStore.currentUser.value;
+          const senderName = isIncoming
+            ? sender?.name || `User ${senderPubkey.slice(0, 8)}`
+            : currentUser?.name || "Me";
+
+          const message: ChatMessage = {
+            id: `msg_${event.id.slice(0, 12)}`,
+            conversationId,
+            senderPubkey,
+            senderName,
+            senderAvatar: isIncoming ? sender?.avatar : currentUser?.avatar,
+            recipientPubkey: isIncoming ? keys.pubkey : otherPubkey,
+            content,
+            timestamp: event.created_at * 1000,
+            status: "delivered",
+            nostrEventId: event.id,
+            reactions: reactionsMap.get(event.id), // Add reactions from Nostr
+          };
+
+          await saveMessageToLocal(message);
+        } catch (e) {
+          console.error(
+            "[Chat] Failed to decrypt DM:",
+            event.id.slice(0, 8),
+            e
+          );
+        }
+      }
+
+      // Reload messages from local DB
+      const msgs = await loadMessagesForConversation(conversationId);
+      messages.value.set(conversationId, msgs);
+      console.log("[Chat] 🌐 Conversation now has", msgs.length, "messages");
+    } catch (e) {
+      console.error("[Chat] Failed to fetch DMs from relay:", e);
+    }
+  }
+
   async function saveMessageToLocal(message: ChatMessage): Promise<void> {
+    // Serialize reactions Map to JSON for storage
+    let reactionsJson: string | undefined;
+    if (message.reactions && message.reactions.size > 0) {
+      const reactionsObj: Record<string, MessageReaction[]> = {};
+      message.reactions.forEach((value, key) => {
+        reactionsObj[key] = value;
+      });
+      reactionsJson = JSON.stringify(reactionsObj);
+    }
+
     const record: ChatMessageRecord = {
       id: message.id,
       conversationId: message.conversationId,
@@ -358,6 +712,7 @@ export function useChat() {
       nostrEventId: message.nostrEventId,
       isEncrypted: true,
       synced: !!message.nostrEventId,
+      reactions: reactionsJson,
     };
     await db.chatMessages.put(record);
   }
@@ -686,7 +1041,8 @@ export function useChat() {
     isPrivate: boolean = false,
     shopId?: string,
     scope: "shop" | "company" | "department" = "company",
-    tags: string[] = []
+    tags: string[] = [],
+    memberPubkeys: string[] = [] // NEW: Members to auto-invite to private channel
   ): Promise<string | null> {
     const keys = getUserKeys();
     if (!keys?.privkey) {
@@ -710,11 +1066,19 @@ export function useChat() {
         tags, // NEW: Categorization tags
       };
 
+      // Build event tags - use standard #t tag for team filtering (NIP-12)
+      const eventTags: string[][] = [];
+      if (company.companyCodeHash.value) {
+        const teamTag = `team:${company.companyCodeHash.value}`;
+        eventTags.push(["t", teamTag]); // Standard #t tag - better relay support
+        eventTags.push(["c", company.companyCodeHash.value]); // Custom #c - backward compatibility
+      }
+
       const eventTemplate = {
         kind: NOSTR_KINDS.CHANNEL_CREATE,
         content: JSON.stringify(content),
         created_at: Math.floor(Date.now() / 1000),
-        tags: [],
+        tags: eventTags,
       };
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
@@ -747,10 +1111,36 @@ export function useChat() {
           scope,
           tags,
           isReadOnly: false,
-          memberPubkeys: isPrivate && currentPubkey ? [currentPubkey] : [], // Add creator to private channel
+          memberPubkeys: isPrivate && currentPubkey 
+            ? [currentPubkey, ...memberPubkeys.filter(pk => pk !== currentPubkey)] 
+            : [], // Add creator and invited members to private channel
         };
         conversations.value.unshift(newConversation);
         await saveConversationToLocal(newConversation);
+
+        // Auto-invite members to private channel
+        if (isPrivate && secretKey && memberPubkeys.length > 0) {
+          console.log(`[Chat] 🔐 Auto-inviting ${memberPubkeys.length} members to private channel`);
+          
+          for (const memberPubkey of memberPubkeys) {
+            if (memberPubkey === currentPubkey) continue; // Skip self
+            
+            try {
+              // Send encryption key via DM
+              const inviteContent = JSON.stringify({
+                type: "channel_invite",
+                channelId: conversationId,
+                channelName: name,
+                key: secretKey,
+              });
+              
+              await sendMessage(memberPubkey, inviteContent, "User");
+              console.log(`[Chat] ✅ Invited ${memberPubkey.slice(0, 8)} to private channel`);
+            } catch (err) {
+              console.error(`[Chat] Failed to invite ${memberPubkey.slice(0, 8)}:`, err);
+            }
+          }
+        }
 
         // NEW: Sync to Nostr if team mode and not a DM
         if (
@@ -796,6 +1186,15 @@ export function useChat() {
       return false;
     }
 
+    // Add to member list
+    if (!conv.memberPubkeys) {
+      conv.memberPubkeys = [];
+    }
+    if (!conv.memberPubkeys.includes(pubkey)) {
+      conv.memberPubkeys.push(pubkey);
+      await saveConversationToLocal(conv);
+    }
+
     // We send the key securely via DM (Kind 4)
     const inviteContent = JSON.stringify({
       type: "channel_invite",
@@ -805,6 +1204,52 @@ export function useChat() {
     });
 
     return await sendMessage(pubkey, inviteContent, "User"); // This sends Kind 4
+  }
+
+  /**
+   * Request access to a private channel
+   * Sends a request to the channel creator
+   */
+  async function requestChannelAccess(channelId: string): Promise<boolean> {
+    const conv = conversations.value.find((c) => c.id === channelId);
+    if (!conv || !conv.isPrivate) {
+      return false;
+    }
+
+    try {
+      const keys = getUserKeys();
+      if (!keys?.privkey || !$nostr?.pool) return false;
+
+      // Query for the channel creator (who created the channel)
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const channelCreationEvents = await $nostr.pool.querySync(relayUrls, {
+        kinds: [NOSTR_KINDS.CHANNEL_CREATE],
+        ids: [channelId],
+        limit: 1,
+      });
+
+      if (channelCreationEvents.length === 0) {
+        console.error("[Chat] Cannot find channel creator");
+        return false;
+      }
+
+      const creatorPubkey = channelCreationEvents[0].pubkey;
+
+      // Send access request via DM
+      const requestContent = JSON.stringify({
+        type: "channel_access_request",
+        channelId: conv.id,
+        channelName: conv.groupName,
+        requestedBy: keys.pubkey,
+      });
+
+      await sendMessage(creatorPubkey, requestContent, "User");
+      console.log("[Chat] 🔑 Access request sent to channel creator");
+      return true;
+    } catch (e) {
+      console.error("[Chat] Failed to request channel access:", e);
+      return false;
+    }
   }
 
   async function sendChannelMessage(
@@ -877,8 +1322,11 @@ export function useChat() {
       }
 
       // Add company code hash for team filtering (CRITICAL!)
+      // Using BOTH #t (standard - NIP-12) AND #c (custom) for maximum relay compatibility
       if (company.companyCodeHash.value) {
-        tags.push(["c", company.companyCodeHash.value]);
+        const teamTag = `team:${company.companyCodeHash.value}`;
+        tags.push(["t", teamTag]); // Standard #t tag - better relay support (NIP-12)
+        tags.push(["c", company.companyCodeHash.value]); // Custom #c tag - backward compatibility
       } else {
         console.warn("[Chat] No company code hash - message may not sync!");
       }
@@ -892,8 +1340,16 @@ export function useChat() {
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
       const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+
       const pubs = $nostr.pool.publish(relayUrls, signedEvent);
-      await Promise.race(pubs).catch(() => null);
+
+      // Wait for publish confirmation from at least one relay
+      try {
+        await Promise.any(pubs);
+        console.log("[Chat] ✅ Message published to at least one relay");
+      } catch (pubError) {
+        console.warn("[Chat] ⚠️ Publish may have failed:", pubError);
+      }
 
       if (signedEvent) {
         message.status = "sent";
@@ -999,7 +1455,9 @@ export function useChat() {
     if (now - lastTypingTime < 3000) return;
     lastTypingTime = now;
 
-    const conversation = conversations.value.find((c) => c.id === conversationId);
+    const conversation = conversations.value.find(
+      (c) => c.id === conversationId
+    );
     if (!conversation) return;
 
     try {
@@ -1014,9 +1472,14 @@ export function useChat() {
       // Add conversation reference
       if (conversation.type === "channel" || conversation.type === "group") {
         tags.push(["h", conversationId]); // Channel ID
-        // Add company code for team channels
-        if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
-          tags.push(["c", company.companyCodeHash.value]);
+        // Add company code for team channels (BOTH standard #t and custom #c)
+        if (
+          company.isCompanyCodeEnabled.value &&
+          company.companyCodeHash.value
+        ) {
+          const teamTag = `team:${company.companyCodeHash.value}`;
+          tags.push(["t", teamTag]); // Standard #t tag - better relay support
+          tags.push(["c", company.companyCodeHash.value]); // Custom #c - backward compatibility
         }
       } else if (conversation.type === "direct") {
         // For DMs, tag the other participant
@@ -1071,22 +1534,22 @@ export function useChat() {
    * Get typing users for a conversation
    */
   const getTypingUsers = computed(() => (conversationId: string) => {
-    const typing = typingUsers.value.get(conversationId);
-    if (!typing) return [];
+    const conversationTyping = typingUsers.value.get(conversationId);
+    if (!conversationTyping) return [];
 
-    // Clean up old typing indicators (> 5 seconds old)
+    // Filter to only show active typing indicators (< 4 seconds old)
+    // Don't mutate state inside computed - just filter
     const now = Date.now();
-    const activeTyping: Array<{ name: string; timestamp: number }> = [];
+    const activeTyping: string[] = [];
 
-    typing.forEach((value, key) => {
-      if (now - value.timestamp < 5000) {
-        activeTyping.push(value);
-      } else {
-        typing.delete(key);
+    conversationTyping.forEach((value, _pubkey) => {
+      if (now - value.timestamp < 4000) {
+        activeTyping.push(value.name);
       }
+      // Don't delete here - let setTimeout handle cleanup
     });
 
-    return activeTyping.map((t) => t.name);
+    return activeTyping;
   });
 
   // ============================================
@@ -1126,6 +1589,16 @@ export function useChat() {
         ["p", message.senderPubkey], // Tag the message author
       ];
 
+      // Add team tag for channel reactions (BOTH standard #t and custom #c)
+      const conversation = conversations.value.find(
+        (c) => c.id === conversationId
+      );
+      if (conversation?.type !== "direct" && company.companyCodeHash.value) {
+        const teamTag = `team:${company.companyCodeHash.value}`;
+        tags.push(["t", teamTag]); // Standard #t tag - better relay support
+        tags.push(["c", company.companyCodeHash.value]); // Custom #c - backward compatibility
+      }
+
       const eventTemplate = {
         kind: NOSTR_KINDS.REACTION,
         content: emoji,
@@ -1157,6 +1630,9 @@ export function useChat() {
           eventId: signedEvent.id,
         });
         message.reactions.set(emoji, emojiReactions);
+
+        // Save to database to persist reactions
+        await saveMessageToLocal(message);
       }
 
       return true;
@@ -1168,6 +1644,7 @@ export function useChat() {
 
   /**
    * Remove reaction from a message
+   * Publishes a NIP-09 deletion event to sync across devices
    */
   async function removeReaction(
     messageId: string,
@@ -1175,25 +1652,75 @@ export function useChat() {
     conversationId: string
   ): Promise<boolean> {
     const currentUser = usersStore.currentUser.value;
-    if (!currentUser?.pubkeyHex) return false;
+    if (!currentUser?.pubkeyHex || !$nostr?.pool) return false;
 
     try {
-      // Remove from local state
+      // Find the reaction event ID to delete
       const conversationMessages = messages.value.get(conversationId);
       const message = conversationMessages?.find((m) => m.id === messageId);
-      if (message?.reactions) {
-        const emojiReactions = message.reactions.get(emoji);
-        if (emojiReactions) {
-          const filtered = emojiReactions.filter(
-            (r) => r.pubkey !== currentUser.pubkeyHex
-          );
-          if (filtered.length === 0) {
-            message.reactions.delete(emoji);
-          } else {
-            message.reactions.set(emoji, filtered);
-          }
-        }
+      if (!message?.reactions) return false;
+
+      const emojiReactions = message.reactions.get(emoji);
+      if (!emojiReactions) return false;
+
+      const myReaction = emojiReactions.find(
+        (r) => r.pubkey === currentUser.pubkeyHex
+      );
+      if (!myReaction?.eventId) {
+        console.warn("[Chat] Cannot remove reaction - no event ID found");
+        return false;
       }
+
+      // Publish NIP-09 deletion event
+      const keys = getUserKeys();
+      if (!keys?.privkey) {
+        console.error("[Chat] Cannot remove reaction - no private key");
+        return false;
+      }
+
+      const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey);
+      const privateKey = hexToBytes(privateKeyHex);
+
+      const tags: string[][] = [
+        ["e", myReaction.eventId], // Reference to the reaction event to delete
+      ];
+
+      // Add team tag for sync
+      if (company.companyCodeHash.value) {
+        const teamTag = `team:${company.companyCodeHash.value}`;
+        tags.push(["t", teamTag]);
+        tags.push(["c", company.companyCodeHash.value]);
+      }
+
+      const eventTemplate = {
+        kind: 5, // NIP-09 deletion
+        content: "Removed reaction",
+        created_at: Math.floor(Date.now() / 1000),
+        tags,
+      };
+
+      const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const pubs = $nostr.pool.publish(relayUrls, signedEvent);
+      await Promise.race(pubs).catch(() => null);
+
+      console.log(
+        "[Chat] 🗑️ Reaction deletion event published:",
+        signedEvent.id.slice(0, 8)
+      );
+
+      // Remove from local state
+      const filtered = emojiReactions.filter(
+        (r) => r.pubkey !== currentUser.pubkeyHex
+      );
+      if (filtered.length === 0) {
+        message.reactions.delete(emoji);
+      } else {
+        message.reactions.set(emoji, filtered);
+      }
+
+      // Save to database to persist reaction removal
+      await saveMessageToLocal(message);
 
       return true;
     } catch (e) {
@@ -1205,7 +1732,10 @@ export function useChat() {
   /**
    * Get reactions for a message
    */
-  function getMessageReactions(messageId: string, conversationId: string): Map<string, MessageReaction[]> {
+  function getMessageReactions(
+    messageId: string,
+    conversationId: string
+  ): Map<string, MessageReaction[]> {
     const conversationMessages = messages.value.get(conversationId);
     const message = conversationMessages?.find((m) => m.id === messageId);
     return message?.reactions || new Map();
@@ -1229,8 +1759,10 @@ export function useChat() {
       const allMessages = await db.chatMessages.toArray();
 
       for (const record of allMessages) {
-        if (record.content.toLowerCase().includes(lowerQuery) ||
-            record.senderName.toLowerCase().includes(lowerQuery)) {
+        if (
+          record.content.toLowerCase().includes(lowerQuery) ||
+          record.senderName.toLowerCase().includes(lowerQuery)
+        ) {
           results.push({
             id: record.id,
             conversationId: record.conversationId,
@@ -1260,7 +1792,10 @@ export function useChat() {
   /**
    * Search in active conversation
    */
-  async function searchInConversation(conversationId: string, query: string): Promise<ChatMessage[]> {
+  async function searchInConversation(
+    conversationId: string,
+    query: string
+  ): Promise<ChatMessage[]> {
     if (!query.trim()) return [];
 
     try {
@@ -1285,6 +1820,15 @@ export function useChat() {
   // ============================================
 
   async function subscribeToMessages(): Promise<void> {
+    // Close any existing subscription before creating a new one
+    if (chatSubscription) {
+      console.log(
+        "[Chat] 🔄 Closing existing subscription before re-subscribing"
+      );
+      chatSubscription.close();
+      chatSubscription = null;
+    }
+
     const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
     if (!currentPubkey || !$nostr?.pool) {
       console.warn("[Chat] Cannot subscribe - no pubkey or nostr pool");
@@ -1293,15 +1837,32 @@ export function useChat() {
 
     const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
 
-    // Filter 1: DMs to me
-    const dmFilter = {
+    // Get known contact pubkeys for DM subscription
+    const contactPubkeys = availableContacts.value
+      .map((c) => c.pubkey)
+      .filter(Boolean);
+
+    // Filter 1: DMs TO me (tagged with my pubkey)
+    const dmToMeFilter = {
       kinds: [NOSTR_KINDS.ENCRYPTED_DM],
       "#p": [currentPubkey],
       since: Math.floor(Date.now() / 1000) - 86400,
     };
 
-    //Filter 2: Team Channels (with company code hash)
-    const filters: any[] = [dmFilter];
+    // Filter 2: DMs FROM my contacts (authored by contacts, to catch their messages)
+    // This ensures we receive messages even if relay doesn't properly index #p tags
+    // Using Record type to allow dynamic filter keys
+    const filters: Record<string, unknown>[] = [dmToMeFilter];
+
+    if (contactPubkeys.length > 0) {
+      const dmFromContactsFilter = {
+        kinds: [NOSTR_KINDS.ENCRYPTED_DM],
+        authors: contactPubkeys,
+        "#p": [currentPubkey], // Still filter by #p to only get DMs to me
+        since: Math.floor(Date.now() / 1000) - 86400,
+      };
+      filters.push(dmFromContactsFilter);
+    }
 
     // Reactions on my messages (DMs and channels)
     const dmReactionsFilter = {
@@ -1312,33 +1873,52 @@ export function useChat() {
     filters.push(dmReactionsFilter);
 
     // If team mode, subscribe to team channel messages
+    // Using BOTH #t (standard tag - NIP-12) AND #c (custom tag) for maximum compatibility
     if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
-      // Primary filter: by company code tag (for relays that support #c)
-      const teamChannelFilter = {
-        kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE, NOSTR_KINDS.CHANNEL_CREATE, NOSTR_KINDS.CHANNEL_MESSAGE],
-        "#c": [company.companyCodeHash.value], // Filter by company code
+      const teamTag = `team:${company.companyCodeHash.value}`;
+
+      // Primary filter: by standard #t tag (better relay support per NIP-12)
+      const teamChannelFilterT = {
+        kinds: [
+          NOSTR_KINDS.GROUP_CHAT_MESSAGE,
+          NOSTR_KINDS.CHANNEL_CREATE,
+          NOSTR_KINDS.CHANNEL_MESSAGE,
+        ],
+        "#t": [teamTag], // Standard tag filter - better relay support
         since: Math.floor(Date.now() / 1000) - 86400,
       };
-      filters.push(teamChannelFilter);
+      filters.push(teamChannelFilterT);
 
-      // Typing indicators for team channels
-      const typingFilter = {
+      // Secondary filter: by custom #c tag (for backward compatibility)
+      const teamChannelFilterC = {
+        kinds: [
+          NOSTR_KINDS.GROUP_CHAT_MESSAGE,
+          NOSTR_KINDS.CHANNEL_CREATE,
+          NOSTR_KINDS.CHANNEL_MESSAGE,
+        ],
+        "#c": [company.companyCodeHash.value], // Custom tag - may not work on all relays
+        since: Math.floor(Date.now() / 1000) - 86400,
+      };
+      filters.push(teamChannelFilterC);
+
+      // Typing indicators for team channels (using both tags)
+      const typingFilterT = {
         kinds: [NOSTR_KINDS.TYPING_INDICATOR],
-        "#c": [company.companyCodeHash.value],
+        "#t": [teamTag],
         since: Math.floor(Date.now() / 1000),
       };
-      filters.push(typingFilter);
+      filters.push(typingFilterT);
 
       // Reactions for team messages
-      const reactionsFilter = {
+      const reactionsFilterT = {
         kinds: [NOSTR_KINDS.REACTION],
-        "#c": [company.companyCodeHash.value],
+        "#t": [teamTag],
         since: Math.floor(Date.now() / 1000) - 86400,
       };
-      filters.push(reactionsFilter);
+      filters.push(reactionsFilterT);
 
-      // Fallback filter: subscribe to all group messages (for relays that don't support #c)
-      // This catches all group messages and we filter by company code in handleIncomingMessage
+      // Fallback filter: subscribe to all group messages (for relays that don't support tag filters)
+      // We filter by company code in handleIncomingMessage
       const fallbackChannelFilter = {
         kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
         since: Math.floor(Date.now() / 1000) - 86400,
@@ -1347,20 +1927,177 @@ export function useChat() {
     } else {
       // Solo mode: subscribe to all public channels
       const channelFilter = {
-        kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE, NOSTR_KINDS.CHANNEL_CREATE, NOSTR_KINDS.CHANNEL_MESSAGE],
+        kinds: [
+          NOSTR_KINDS.GROUP_CHAT_MESSAGE,
+          NOSTR_KINDS.CHANNEL_CREATE,
+          NOSTR_KINDS.CHANNEL_MESSAGE,
+        ],
         since: Math.floor(Date.now() / 1000) - 86400,
       };
       filters.push(channelFilter);
     }
 
-    chatSubscription = $nostr.pool.subscribeMany(relayUrls, filters, {
-      async onevent(event: NostrEvent) {
-        await handleIncomingMessage(event);
-      },
-      oneose() {
-        // Subscription established
-      },
-    });
+    // Cast filters to satisfy nostr-tools type requirements
+    // nostr-tools expects Filter[], but our dynamic filters need explicit cast
+    chatSubscription = $nostr.pool.subscribeMany(
+      relayUrls,
+      filters as unknown as Parameters<typeof $nostr.pool.subscribeMany>[1],
+      {
+        async onevent(event: NostrEvent) {
+          console.log(
+            "[Chat] 📨 Received event kind:",
+            event.kind,
+            "id:",
+            event.id.slice(0, 8) + "...",
+            "from:",
+            event.pubkey.slice(0, 8) + "..."
+          );
+          console.log(
+            "[Chat] 📨 Event tags:",
+            JSON.stringify(event.tags.slice(0, 3))
+          );
+          await handleIncomingMessage(event);
+        },
+        oneose() {
+          console.log(
+            "[Chat] ✅ Subscription established, EOSE received - now listening for real-time events"
+          );
+        },
+        onclose(reasons: string[]) {
+          console.warn("[Chat] ❌ Subscription closed:", reasons);
+          // Attempt to reconnect after 5 seconds
+          setTimeout(() => {
+            console.log("[Chat] 🔄 Attempting to reconnect subscription...");
+            subscribeToMessages();
+          }, 5000);
+        },
+      }
+    );
+
+    // Log subscription status
+    console.log("[Chat] 📡 Subscription created, waiting for events...");
+
+    // Also set up a periodic check to ensure subscription is alive
+    // and manually poll for new messages if needed
+    setupRealtimePolling();
+  }
+
+  // Fallback polling mechanism when websocket subscriptions don't deliver events
+  let pollingInterval: NodeJS.Timeout | null = null;
+  let lastPolledTimestamp = Math.floor(Date.now() / 1000);
+
+  function setupRealtimePolling(): void {
+    // Clear any existing polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+
+    // Poll every 5 seconds as a fallback for real-time
+    pollingInterval = setInterval(async () => {
+      await pollForNewMessages();
+    }, 5000);
+
+    console.log("[Chat] ⏰ Polling fallback enabled (every 5s)");
+  }
+
+  async function pollForNewMessages(): Promise<void> {
+    if (!$nostr?.pool) return;
+
+    const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+    if (!currentPubkey) return;
+
+    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const now = Math.floor(Date.now() / 1000);
+
+    try {
+      // Poll for new channel messages since last check
+      const filters: Record<string, unknown>[] = [];
+
+      if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
+        const teamTag = `team:${company.companyCodeHash.value}`;
+
+        // Query for new team messages
+        filters.push({
+          kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
+          "#t": [teamTag],
+          since: lastPolledTimestamp,
+        });
+
+        // Also try the fallback without tag filter
+        filters.push({
+          kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
+          since: lastPolledTimestamp,
+          limit: 20,
+        });
+      }
+
+      // Query for DMs to me
+      filters.push({
+        kinds: [NOSTR_KINDS.ENCRYPTED_DM],
+        "#p": [currentPubkey],
+        since: lastPolledTimestamp,
+      });
+
+      // Query for reactions on my messages
+      filters.push({
+        kinds: [NOSTR_KINDS.REACTION],
+        "#p": [currentPubkey],
+        since: lastPolledTimestamp,
+      });
+
+      // Query for typing indicators (team mode)
+      if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
+        const teamTag = `team:${company.companyCodeHash.value}`;
+        filters.push({
+          kinds: [NOSTR_KINDS.TYPING_INDICATOR],
+          "#t": [teamTag],
+          since: lastPolledTimestamp - 10, // Look back 10 seconds for typing
+        });
+
+        // Also query reactions for team messages
+        filters.push({
+          kinds: [NOSTR_KINDS.REACTION],
+          "#t": [teamTag],
+          since: lastPolledTimestamp,
+        });
+
+        // Query for deletion events (NIP-09) - for unreacting
+        filters.push({
+          kinds: [5], // NIP-09 deletion
+          "#t": [teamTag],
+          since: lastPolledTimestamp,
+        });
+      }
+
+      // Run queries in parallel
+      for (const filter of filters) {
+        try {
+          const events = await $nostr.pool.querySync(
+            relayUrls,
+            filter as Parameters<typeof $nostr.pool.querySync>[1]
+          );
+          if (events.length > 0) {
+            console.log("[Chat] ⏰ Poll found", events.length, "new events");
+            for (const event of events) {
+              await handleIncomingMessage(event);
+            }
+          }
+        } catch {
+          // Silently ignore query errors during polling
+        }
+      }
+
+      lastPolledTimestamp = now;
+    } catch {
+      // Silently ignore polling errors
+    }
+  }
+
+  function stopPolling(): void {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
   }
 
   async function handleIncomingMessage(event: NostrEvent): Promise<void> {
@@ -1375,6 +2112,7 @@ export function useChat() {
       (await db.chatMessages.where("nostrEventId").equals(event.id).first()) ||
       (await db.chatConversations.where("id").equals(event.id).first()); // Check conv ID for kind 40 too
     if (existingMsg) {
+      console.log("[Chat] ⏭️ Skipping duplicate event:", event.id.slice(0, 8));
       return;
     }
 
@@ -1383,16 +2121,30 @@ export function useChat() {
       if (event.kind === NOSTR_KINDS.GROUP_CHAT_MESSAGE) {
         // Skip if it's my own message
         if (event.pubkey === currentUser.pubkeyHex) {
+          console.log("[Chat] Skipping own message");
           return;
         }
 
         // Verify company code if in team mode (fallback filter may include unwanted messages)
+        // Check BOTH #t (standard) and #c (custom) tags for compatibility
         if (
           company.isCompanyCodeEnabled.value &&
           company.companyCodeHash.value
         ) {
+          const expectedTeamTag = `team:${company.companyCodeHash.value}`;
+          const messageTeamTag = event.tags.find((t) => t[0] === "t")?.[1];
           const messageCompanyCode = event.tags.find((t) => t[0] === "c")?.[1];
-          if (messageCompanyCode !== company.companyCodeHash.value) {
+
+          // Accept if EITHER tag matches
+          const teamTagMatches = messageTeamTag === expectedTeamTag;
+          const companyCodeMatches =
+            messageCompanyCode === company.companyCodeHash.value;
+
+          if (!teamTagMatches && !companyCodeMatches) {
+            console.log(
+              "[Chat] Ignoring message from different team:",
+              messageTeamTag || messageCompanyCode
+            );
             return; // Silently ignore messages from different companies
           }
         }
@@ -1406,38 +2158,135 @@ export function useChat() {
           return;
         }
 
-        let conversation = conversations.value.find(
-          (c) => c.id === channelId
-        );
+        let conversation = conversations.value.find((c) => c.id === channelId);
 
         if (!conversation) {
-          console.warn("[Chat] Channel not found, auto-creating:", channelId.slice(0, 16));
+          // Check if this conversation was deleted
+          const wasDeleted = await db.deletedConversations.get(channelId);
+          if (wasDeleted) {
+            console.log(
+              "[Chat] Ignoring message for deleted channel:",
+              channelId.slice(0, 16)
+            );
+            return;
+          }
 
-          // Auto-create channel placeholder when receiving a message for unknown channel
-          // This ensures messages aren't lost when channels aren't synced properly
-          conversation = {
-            id: channelId,
-            type: "channel",
-            participants: [],
-            groupName: "Team Channel", // Placeholder name, will be updated by sync
-            lastMessage: {
-              content: "",
-              timestamp: 0,
-              senderName: "",
-            },
-            unreadCount: 0,
-            isPinned: false,
-            isMuted: false,
-          };
+          console.warn(
+            "[Chat] Channel not found, fetching metadata:",
+            channelId.slice(0, 16)
+          );
+
+          // Fetch channel metadata BEFORE creating to get isPrivate and key
+          if ($nostr?.pool) {
+            try {
+              const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+              const channelMetadata = await $nostr.pool.querySync(relayUrls, {
+                kinds: [NOSTR_KINDS.CHANNEL_CREATE],
+                ids: [channelId],
+                limit: 1,
+              });
+
+              if (channelMetadata.length > 0) {
+                const metadata = channelMetadata[0];
+                let channelData: any = {};
+                
+                try {
+                  channelData = JSON.parse(metadata.content);
+                } catch (e) {
+                  console.warn("[Chat] Failed to parse channel metadata");
+                }
+
+                // If private channel, try to get the key from Nostr data sync
+                let channelKey: string | undefined;
+                if (channelData.isPrivate && company.isCompanyCodeEnabled.value) {
+                  try {
+                    const syncedConv = await nostrData.getConversation(channelId);
+                    channelKey = syncedConv?.key;
+                    console.log("[Chat] 🔑 Retrieved channel key from sync:", !!channelKey);
+                  } catch (e) {
+                    console.warn("[Chat] Failed to get channel key from sync");
+                  }
+                }
+
+                conversation = {
+                  id: channelId,
+                  type: "channel",
+                  participants: [],
+                  groupName: channelData.name || "Team Channel",
+                  groupAvatar: channelData.picture,
+                  lastMessage: {
+                    content: "",
+                    timestamp: 0,
+                    senderName: "",
+                  },
+                  unreadCount: 0,
+                  isPinned: false,
+                  isMuted: false,
+                  isPrivate: channelData.isPrivate || false,
+                  key: channelKey,
+                  shopId: channelData.shopId,
+                  scope: channelData.scope,
+                  tags: channelData.tags,
+                  isReadOnly: channelData.isReadOnly,
+                  memberPubkeys: [],
+                };
+                
+                console.log("[Chat] ✅ Channel metadata fetched, isPrivate:", conversation.isPrivate, "hasKey:", !!conversation.key);
+              } else {
+                // No metadata found, create placeholder
+                conversation = {
+                  id: channelId,
+                  type: "channel",
+                  participants: [],
+                  groupName: "Team Channel",
+                  lastMessage: {
+                    content: "",
+                    timestamp: 0,
+                    senderName: "",
+                  },
+                  unreadCount: 0,
+                  isPinned: false,
+                  isMuted: false,
+                };
+              }
+            } catch (e) {
+              console.error("[Chat] Failed to fetch channel metadata:", e);
+              // Create placeholder on error
+              conversation = {
+                id: channelId,
+                type: "channel",
+                participants: [],
+                groupName: "Team Channel",
+                lastMessage: {
+                  content: "",
+                  timestamp: 0,
+                  senderName: "",
+                },
+                unreadCount: 0,
+                isPinned: false,
+                isMuted: false,
+              };
+            }
+          } else {
+            // No nostr pool, create placeholder
+            conversation = {
+              id: channelId,
+              type: "channel",
+              participants: [],
+              groupName: "Team Channel",
+              lastMessage: {
+                content: "",
+                timestamp: 0,
+                senderName: "",
+              },
+              unreadCount: 0,
+              isPinned: false,
+              isMuted: false,
+            };
+          }
+
           conversations.value.unshift(conversation);
           await saveConversationToLocal(conversation);
-
-          // Trigger a sync to get the proper channel metadata
-          if (company.isCompanyCodeEnabled.value) {
-            syncConversations().catch((e) =>
-              console.error("[Chat] Failed to sync after auto-create:", e)
-            );
-          }
         }
 
         // Parse message content
@@ -1447,14 +2296,21 @@ export function useChat() {
         if (conversation.isPrivate && conversation.key) {
           content = decryptChannelMessage(event.content, conversation.key);
         } else if (conversation.isPrivate && !conversation.key) {
-          console.warn("[Chat] Private channel message but no key available yet");
-          // Try to sync to get the key
-          if (company.isCompanyCodeEnabled.value) {
-            syncConversations().catch((e) =>
-              console.error("[Chat] Failed to sync for key:", e)
+          // No key available - request access
+          console.warn(
+            "[Chat] 🔒 Private channel message but no key available"
+          );
+          
+          // Auto-request access once
+          const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+          if (currentPubkey && !conversation.memberPubkeys?.includes(currentPubkey)) {
+            console.log("[Chat] 🔑 Auto-requesting channel access...");
+            requestChannelAccess(channelId).catch((e) =>
+              console.error("[Chat] Failed to request access:", e)
             );
           }
-          content = "🔒 [Encrypted - waiting for key sync...]";
+          
+          content = "🔒 [Private Channel - Requesting Access...]";
         } else {
           // Try to parse as JSON for non-private channels
           try {
@@ -1470,6 +2326,27 @@ export function useChat() {
           (u) => u.pubkeyHex === event.pubkey
         );
 
+        // Extract reply context from tags (NIP-10)
+        const replyTag = event.tags.find(
+          (t) => t[0] === "e" && t[3] === "reply"
+        );
+        let replyToId: string | undefined;
+        let replyToContent: string | undefined;
+        let replyToSender: string | undefined;
+
+        if (replyTag) {
+          replyToId = replyTag[1];
+          // Try to find the original message in current messages
+          const channelMessages = messages.value.get(channelId) || [];
+          const originalMsg = channelMessages.find(
+            (m) => m.nostrEventId === replyToId || m.id === replyToId
+          );
+          if (originalMsg) {
+            replyToContent = originalMsg.content.slice(0, 100);
+            replyToSender = originalMsg.senderName;
+          }
+        }
+
         const newMessage: ChatMessage = {
           id: event.id,
           conversationId: channelId,
@@ -1481,6 +2358,9 @@ export function useChat() {
           timestamp: event.created_at * 1000,
           status: "delivered",
           nostrEventId: event.id,
+          replyToId,
+          replyToContent,
+          replyToSender,
         };
 
         // Add to messages
@@ -1504,30 +2384,57 @@ export function useChat() {
           conversations.value.unshift(movedConv);
         }
 
-        // Play sound
+        // Play sound and show notification
         sound.playNotification();
+
+        // Show push notification if not currently viewing this conversation
+        if (activeConversationId.value !== channelId && !conversation.isMuted) {
+          showPushNotification(
+            conversation.groupName || "Team Chat",
+            `${newMessage.senderName}: ${content.slice(0, 100)}`,
+            channelId,
+            conversation.groupAvatar
+          );
+        }
+
+        console.log(
+          "[Chat] 🔔 New message notification triggered for channel:",
+          channelId.slice(0, 8) + "..."
+        );
         return;
       }
 
       // HANDLE DIRECT MESSAGE (NIP-04)
       if (event.kind === NOSTR_KINDS.ENCRYPTED_DM) {
+        console.log(
+          "[Chat] 💬 Processing DM from:",
+          event.pubkey.slice(0, 8) + "..."
+        );
+
         // Skip if it's my own message
         if (event.pubkey === currentUser.pubkeyHex) {
+          console.log("[Chat] ⏭️ Skipping own DM");
           return;
         }
 
         // Decrypt message
+        console.log("[Chat] 🔓 Decrypting DM...");
         const content = await decryptMessage(event.content, event.pubkey);
+        console.log("[Chat] ✅ DM decrypted, length:", content.length);
 
-        // CHECK FOR INVITE
+        // CHECK FOR INVITE OR ACCESS REQUEST
         try {
           const parsed = JSON.parse(content);
+          
+          // Handle channel invite
           if (
             parsed.type === "channel_invite" &&
             parsed.channelId &&
             parsed.key
           ) {
             // It's a channel invite!
+            console.log("[Chat] 🔑 Received channel invite:", parsed.channelName);
+            
             // Check if we already have this channel
             let existingConv = conversations.value.find(
               (c) => c.id === parsed.channelId
@@ -1537,10 +2444,24 @@ export function useChat() {
               if (!existingConv.key) {
                 existingConv.key = parsed.key;
                 existingConv.isPrivate = true;
+                
+                // Add self to member list
+                const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
+                if (currentPubkey) {
+                  if (!existingConv.memberPubkeys) {
+                    existingConv.memberPubkeys = [];
+                  }
+                  if (!existingConv.memberPubkeys.includes(currentPubkey)) {
+                    existingConv.memberPubkeys.push(currentPubkey);
+                  }
+                }
+                
                 await saveConversationToLocal(existingConv);
+                console.log("[Chat] ✅ Channel key updated, can now decrypt messages");
               }
             } else {
               // Create new channel placeholder with key
+              const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
               const newConv: ChatConversation = {
                 id: parsed.channelId,
                 type: "channel",
@@ -1556,10 +2477,34 @@ export function useChat() {
                 isMuted: false,
                 isPrivate: true,
                 key: parsed.key,
+                memberPubkeys: currentPubkey ? [currentPubkey] : [],
               };
               conversations.value.unshift(newConv);
               await saveConversationToLocal(newConv);
               sound.playSuccess();
+              console.log("[Chat] ✅ Private channel created from invite");
+            }
+            return; // Stop processing as normal DM
+          }
+          
+          // Handle channel access request
+          if (
+            parsed.type === "channel_access_request" &&
+            parsed.channelId &&
+            parsed.requestedBy
+          ) {
+            console.log("[Chat] 🔐 Received access request for channel:", parsed.channelName);
+            
+            // Check if we have this channel and own it
+            const channel = conversations.value.find((c) => c.id === parsed.channelId);
+            if (channel && channel.key) {
+              // We have the channel - auto-invite the requester
+              try {
+                await inviteToChannel(parsed.channelId, parsed.requestedBy);
+                console.log("[Chat] ✅ Auto-invited requester to private channel");
+              } catch (err) {
+                console.error("[Chat] Failed to auto-invite:", err);
+              }
             }
             return; // Stop processing as normal DM
           }
@@ -1642,7 +2587,9 @@ export function useChat() {
         }
 
         // Move conversation to top (like WhatsApp/Telegram)
-        const index = conversations.value.findIndex((c) => c.id === conversationId);
+        const index = conversations.value.findIndex(
+          (c) => c.id === conversationId
+        );
         if (index > 0) {
           const [movedConv] = conversations.value.splice(index, 1);
           conversations.value.unshift(movedConv);
@@ -1790,8 +2737,16 @@ export function useChat() {
 
       // HANDLE TYPING INDICATOR (Ephemeral)
       else if (event.kind === NOSTR_KINDS.TYPING_INDICATOR) {
-        // Skip own typing indicators
-        if (event.pubkey === currentUser.pubkeyHex) return;
+        // Skip typing indicators from our own pubkey - only show OTHER users typing
+        if (event.pubkey === currentUser.pubkeyHex) {
+          return;
+        }
+
+        // Skip old typing events (> 5 seconds old) for performance
+        const eventAge = Math.floor(Date.now() / 1000) - event.created_at;
+        if (eventAge > 5) {
+          return;
+        }
 
         try {
           const data = JSON.parse(event.content);
@@ -1799,30 +2754,46 @@ export function useChat() {
 
           if (!conversationId) return;
 
+          // Check if we already have a recent typing indicator for this user
+          const existingConvTyping = typingUsers.value.get(conversationId);
+          const existingTyping = existingConvTyping?.get(event.pubkey);
+
+          // Only update if no existing typing or it's been > 2 seconds (debounce)
+          if (existingTyping && Date.now() - existingTyping.timestamp < 2000) {
+            return; // Skip duplicate typing events
+          }
+
           // Get sender info
           const sender = usersStore.users.value.find(
             (u) => u.pubkeyHex === event.pubkey
           );
           const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
 
-          // Update typing state
-          if (!typingUsers.value.has(conversationId)) {
-            typingUsers.value.set(conversationId, new Map());
+          // Update typing state - need to trigger reactivity by creating new Map
+          const newTypingUsers = new Map(typingUsers.value);
+          if (!newTypingUsers.has(conversationId)) {
+            newTypingUsers.set(conversationId, new Map());
           }
 
-          const convTyping = typingUsers.value.get(conversationId)!;
+          const convTyping = newTypingUsers.get(conversationId)!;
           convTyping.set(event.pubkey, {
             name: senderName,
             timestamp: Date.now(),
           });
 
-          // Auto-remove after 5 seconds
+          // Reassign to trigger Vue reactivity
+          typingUsers.value = newTypingUsers;
+
+          // Auto-remove after 4 seconds
           setTimeout(() => {
-            const convTyping = typingUsers.value.get(conversationId);
+            const newTypingUsers = new Map(typingUsers.value);
+            const convTyping = newTypingUsers.get(conversationId);
             if (convTyping) {
               convTyping.delete(event.pubkey);
+              // Reassign to trigger Vue reactivity
+              typingUsers.value = newTypingUsers;
             }
-          }, 5000);
+          }, 4000);
         } catch (e) {
           console.error("[Chat] Failed to parse typing indicator:", e);
         }
@@ -1831,6 +2802,13 @@ export function useChat() {
 
       // HANDLE REACTION (NIP-25)
       else if (event.kind === NOSTR_KINDS.REACTION) {
+        console.log(
+          "[Chat] 😀 Received reaction:",
+          event.content,
+          "from:",
+          event.pubkey.slice(0, 8) + "..."
+        );
+
         try {
           const emoji = event.content;
           const messageId = event.tags.find((t) => t[0] === "e")?.[1];
@@ -1845,7 +2823,9 @@ export function useChat() {
           let targetConversationId: string | undefined;
 
           for (const [conversationId, msgs] of messages.value) {
-            const msg = msgs.find((m) => m.id === messageId || m.nostrEventId === messageId);
+            const msg = msgs.find(
+              (m) => m.id === messageId || m.nostrEventId === messageId
+            );
             if (msg) {
               targetMessage = msg;
               targetConversationId = conversationId;
@@ -1885,9 +2865,56 @@ export function useChat() {
               eventId: event.id,
             });
             targetMessage.reactions.set(emoji, emojiReactions);
+            console.log("[Chat] 😀 Reaction added to message");
+
+            // Save to database to persist
+            await saveMessageToLocal(targetMessage);
           }
         } catch (e) {
           console.error("[Chat] Failed to process reaction:", e);
+        }
+        return;
+      }
+
+      // HANDLE DELETION EVENT (NIP-09) - for unreacting
+      else if (event.kind === 5) {
+        console.log(
+          "[Chat] 🗑️ Received deletion event from:",
+          event.pubkey.slice(0, 8) + "..."
+        );
+
+        try {
+          // Find the event ID being deleted
+          const deletedEventId = event.tags.find((t) => t[0] === "e")?.[1];
+          if (!deletedEventId) return;
+
+          // Search for this event ID in reactions and remove it
+          for (const [_conversationId, msgs] of messages.value) {
+            for (const msg of msgs) {
+              if (!msg.reactions) continue;
+
+              // Check each emoji's reactions
+              for (const [emoji, reactions] of msg.reactions) {
+                const reactionIndex = reactions.findIndex(
+                  (r) =>
+                    r.eventId === deletedEventId && r.pubkey === event.pubkey
+                );
+                if (reactionIndex !== -1) {
+                  reactions.splice(reactionIndex, 1);
+                  if (reactions.length === 0) {
+                    msg.reactions.delete(emoji);
+                  }
+                  console.log("[Chat] 🗑️ Removed reaction via deletion event");
+
+                  // Save to database to persist
+                  await saveMessageToLocal(msg);
+                  return;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error("[Chat] Failed to process deletion event:", e);
         }
         return;
       }
@@ -1896,7 +2923,227 @@ export function useChat() {
     }
   }
 
+  /**
+   * Load older messages when user scrolls up (pagination)
+   * Returns true if more messages were loaded, false if no more
+   */
+  async function loadOlderMessages(conversationId: string): Promise<boolean> {
+    if (isLoadingMore.value) return false;
+
+    const conv = conversations.value.find((c) => c.id === conversationId);
+    if (!conv) return false;
+
+    // Check if we know there are no more messages
+    if (hasMoreMessages.value.get(conversationId) === false) {
+      return false;
+    }
+
+    isLoadingMore.value = true;
+    const limit = 30;
+
+    try {
+      // Get oldest message timestamp for this conversation
+      const currentMessages = messages.value.get(conversationId) || [];
+      const oldestTimestamp =
+        currentMessages.length > 0
+          ? Math.min(...currentMessages.map((m) => m.timestamp))
+          : Date.now();
+
+      // Convert to unix timestamp (seconds)
+      const untilTimestamp = Math.floor(oldestTimestamp / 1000) - 1;
+
+      if (!$nostr?.pool) {
+        isLoadingMore.value = false;
+        return false;
+      }
+
+      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      let newEventsCount = 0;
+
+      if (conv.type === "channel" || conv.type === "group") {
+        // Fetch older channel messages
+        const filters: Record<string, unknown>[] = [
+          {
+            kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
+            "#h": [conversationId],
+            until: untilTimestamp,
+            limit,
+          },
+        ];
+
+        // Add team filter if in team mode
+        if (company.companyCodeHash.value) {
+          const teamTag = `team:${company.companyCodeHash.value}`;
+          filters.push({
+            kinds: [NOSTR_KINDS.GROUP_CHAT_MESSAGE],
+            "#t": [teamTag],
+            until: untilTimestamp,
+            limit,
+          });
+        }
+
+        for (const filter of filters) {
+          const events = await $nostr.pool.querySync(
+            relayUrls,
+            filter as Parameters<typeof $nostr.pool.querySync>[1]
+          );
+
+          for (const event of events) {
+            // Check if we already have this message
+            const existing = await db.chatMessages
+              .where("nostrEventId")
+              .equals(event.id)
+              .first();
+            if (existing) continue;
+
+            // Verify channel ID
+            const eventChannelId =
+              event.tags.find((t: string[]) => t[0] === "h")?.[1] ||
+              event.tags.find((t: string[]) => t[0] === "e")?.[1];
+            if (eventChannelId !== conversationId) continue;
+
+            // Find sender info
+            const sender = usersStore.users.value.find(
+              (u) => u.pubkeyHex === event.pubkey
+            );
+            const senderName =
+              sender?.name || `User ${event.pubkey.slice(0, 8)}`;
+
+            let messageContent = event.content;
+            if (conv.isPrivate && conv.key) {
+              try {
+                messageContent = decryptChannelMessage(event.content, conv.key);
+              } catch {
+                messageContent = "[Encrypted]";
+              }
+            }
+
+            const message: ChatMessage = {
+              id: `msg_${event.id.slice(0, 12)}`,
+              conversationId,
+              senderPubkey: event.pubkey,
+              senderName,
+              senderAvatar: sender?.avatar,
+              recipientPubkey: "",
+              content: messageContent,
+              timestamp: event.created_at * 1000,
+              status: "delivered",
+              nostrEventId: event.id,
+            };
+
+            await saveMessageToLocal(message);
+            newEventsCount++;
+          }
+        }
+      } else if (conv.type === "direct") {
+        // Fetch older DMs
+        const keys = getUserKeys();
+        if (!keys?.pubkey || !keys?.privkey) {
+          isLoadingMore.value = false;
+          return false;
+        }
+
+        const otherPubkey = conv.participants.find(
+          (p) => p.pubkey !== keys.pubkey
+        )?.pubkey;
+        if (!otherPubkey) {
+          isLoadingMore.value = false;
+          return false;
+        }
+
+        const filters = [
+          {
+            kinds: [NOSTR_KINDS.ENCRYPTED_DM],
+            authors: [otherPubkey],
+            "#p": [keys.pubkey],
+            until: untilTimestamp,
+            limit,
+          },
+          {
+            kinds: [NOSTR_KINDS.ENCRYPTED_DM],
+            authors: [keys.pubkey],
+            "#p": [otherPubkey],
+            until: untilTimestamp,
+            limit,
+          },
+        ];
+
+        for (const filter of filters) {
+          const events = await $nostr.pool.querySync(
+            relayUrls,
+            filter as Parameters<typeof $nostr.pool.querySync>[1]
+          );
+
+          for (const event of events) {
+            const existing = await db.chatMessages
+              .where("nostrEventId")
+              .equals(event.id)
+              .first();
+            if (existing) continue;
+
+            try {
+              const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey!);
+              const privateKey = hexToBytes(privateKeyHex);
+              const otherPartyPubkey =
+                event.pubkey === keys.pubkey ? otherPubkey : event.pubkey;
+              const decryptedContent = await nip04.decrypt(
+                privateKey,
+                otherPartyPubkey,
+                event.content
+              );
+
+              const sender = usersStore.users.value.find(
+                (u) => u.pubkeyHex === event.pubkey
+              );
+
+              const message: ChatMessage = {
+                id: `msg_${event.id.slice(0, 12)}`,
+                conversationId,
+                senderPubkey: event.pubkey,
+                senderName: sender?.name || `User ${event.pubkey.slice(0, 8)}`,
+                senderAvatar: sender?.avatar,
+                recipientPubkey:
+                  event.pubkey === keys.pubkey ? otherPubkey : keys.pubkey,
+                content: decryptedContent,
+                timestamp: event.created_at * 1000,
+                status: "delivered",
+                nostrEventId: event.id,
+              };
+
+              await saveMessageToLocal(message);
+              newEventsCount++;
+            } catch {
+              // Skip messages we can't decrypt
+            }
+          }
+        }
+      }
+
+      // Reload messages from local DB
+      const msgs = await loadMessagesForConversation(conversationId);
+      messages.value.set(conversationId, msgs);
+
+      // Update pagination state
+      if (newEventsCount < limit / 2) {
+        // If we got less than half the limit, probably no more messages
+        hasMoreMessages.value.set(conversationId, false);
+      }
+
+      console.log("[Chat] 📜 Loaded", newEventsCount, "older messages");
+      isLoadingMore.value = false;
+      return newEventsCount > 0;
+    } catch (e) {
+      console.error("[Chat] Failed to load older messages:", e);
+      isLoadingMore.value = false;
+      return false;
+    }
+  }
+
   async function selectConversation(conversationId: string): Promise<void> {
+    console.log(
+      "[Chat] 📂 Selecting conversation:",
+      conversationId.slice(0, 16) + "..."
+    );
     activeConversationId.value = conversationId;
 
     // Load messages if not cached
@@ -1905,8 +3152,66 @@ export function useChat() {
       messages.value.set(conversationId, msgs);
     }
 
-    // Mark as read
+    // Sync reactions for existing messages when opening conversation
+    const msgs = messages.value.get(conversationId) || [];
+    if (msgs.length > 0) {
+      const messageEventIds = msgs
+        .filter((m) => m.nostrEventId)
+        .map((m) => m.nostrEventId!);
+      
+      if (messageEventIds.length > 0) {
+        // Fetch latest reactions in background
+        fetchReactionsForMessages(messageEventIds).then(async (reactionsMap) => {
+          let updated = false;
+          for (const msg of msgs) {
+            if (msg.nostrEventId && reactionsMap.has(msg.nostrEventId)) {
+              msg.reactions = reactionsMap.get(msg.nostrEventId);
+              await saveMessageToLocal(msg);
+              updated = true;
+            }
+          }
+          
+          // Reload if any reactions were updated
+          if (updated) {
+            const updatedMsgs = await loadMessagesForConversation(conversationId);
+            messages.value.set(conversationId, updatedMsgs);
+          }
+        }).catch((e) => {
+          console.error("[Chat] Failed to sync reactions:", e);
+        });
+      }
+    }
+
+    // Find the conversation to determine type
     const conv = conversations.value.find((c) => c.id === conversationId);
+
+    if (conv) {
+      // For channels/groups, fetch from relays to get historical messages
+      if (conv.type === "channel" || conv.type === "group") {
+        console.log("[Chat] 🌐 Fetching channel messages in background...");
+        fetchChannelMessagesFromRelay(conversationId).catch((e) => {
+          console.error("[Chat] Background channel fetch failed:", e);
+        });
+      }
+      // For DMs, fetch from relays to get historical messages
+      else if (conv.type === "direct") {
+        const keys = getUserKeys();
+        if (keys?.pubkey) {
+          // Find the other participant's pubkey
+          const otherParticipant = conv.participants.find(
+            (p) => p.pubkey !== keys.pubkey
+          );
+          if (otherParticipant?.pubkey) {
+            console.log("[Chat] 🌐 Fetching DM messages in background...");
+            fetchDMsFromRelay(otherParticipant.pubkey).catch((e) => {
+              console.error("[Chat] Background DM fetch failed:", e);
+            });
+          }
+        }
+      }
+    }
+
+    // Mark as read
     if (conv && conv.unreadCount > 0) {
       conv.unreadCount = 0;
       await saveConversationToLocal(conv);
@@ -1973,7 +3278,77 @@ export function useChat() {
   }
 
   async function deleteConversation(conversationId: string): Promise<void> {
-    // Delete from DB
+    const keys = getUserKeys();
+    const conv = conversations.value.find((c) => c.id === conversationId);
+    
+    // Get all messages in this conversation
+    const msgs = await db.chatMessages
+      .where("conversationId")
+      .equals(conversationId)
+      .toArray();
+
+    // Publish deletion events to Nostr
+    if (keys?.pubkey && keys?.privkey && $nostr?.pool) {
+      try {
+        const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+        const privateKey = hexToBytes(nostrKey.decodePrivateKey(keys.privkey));
+
+        // If it's a channel and user is the creator, delete the channel itself
+        if (conv?.type === "channel" || conv?.type === "group") {
+          // Check if this user created the channel (conversation ID is the channel event ID)
+          // Try to find the channel creation event
+          const channelCreationEvents = await $nostr.pool.querySync(relayUrls, {
+            kinds: [NOSTR_KINDS.CHANNEL_CREATE],
+            ids: [conversationId],
+            authors: [keys.pubkey], // Only if we created it
+            limit: 1,
+          });
+
+          if (channelCreationEvents.length > 0) {
+            // We created this channel, publish deletion for the channel itself
+            const channelDeletionEvent = {
+              kind: NOSTR_KINDS.DELETION,
+              content: "Channel deleted by creator",
+              tags: [["e", conversationId], ["k", String(NOSTR_KINDS.CHANNEL_CREATE)]],
+              created_at: Math.floor(Date.now() / 1000),
+            };
+
+            const signedChannelDeletion = $nostr.finalizeEvent(channelDeletionEvent, privateKey);
+            await $nostr.pool.publish(relayUrls, signedChannelDeletion);
+            console.log("[Chat] 🗑️ Channel deleted on Nostr");
+          }
+        }
+
+        // Delete our own messages in the conversation
+        const myMessages = msgs.filter(
+          (m) => m.senderPubkey === keys.pubkey && m.nostrEventId
+        );
+
+        if (myMessages.length > 0) {
+          const deletionEvent = {
+            kind: NOSTR_KINDS.DELETION,
+            content: "Messages deleted by user",
+            tags: myMessages.map((m) => ["e", m.nostrEventId!]),
+            created_at: Math.floor(Date.now() / 1000),
+          };
+
+          const signedEvent = $nostr.finalizeEvent(deletionEvent, privateKey);
+          await $nostr.pool.publish(relayUrls, signedEvent);
+          console.log("[Chat] 🗑️ Messages deleted on Nostr");
+        }
+      } catch (e) {
+        console.error("[Chat] Failed to publish deletion events to Nostr:", e);
+        // Continue with local deletion even if Nostr publish fails
+      }
+    }
+
+    // Mark as deleted (so it doesn't reappear after refresh)
+    await db.deletedConversations.put({
+      id: conversationId,
+      deletedAt: Date.now(),
+    });
+
+    // Delete from local DB
     await db.chatConversations.delete(conversationId);
     await db.chatMessages
       .where("conversationId")
@@ -2006,6 +3381,11 @@ export function useChat() {
     }
 
     try {
+      // Load deleted conversation IDs to filter them out
+      const deletedIds = new Set(
+        (await db.deletedConversations.toArray()).map((d) => d.id)
+      );
+
       // Query team conversations by company code hash
       const teamConversations = await nostrData.getAllConversations({
         companyCodeHash: company.companyCodeHash.value,
@@ -2013,6 +3393,15 @@ export function useChat() {
 
       // Merge with local conversations
       for (const conv of teamConversations) {
+        // Skip if this conversation was deleted locally
+        if (deletedIds.has(conv.id)) {
+          console.log(
+            "[Chat] Skipping deleted conversation:",
+            conv.id.slice(0, 16)
+          );
+          continue;
+        }
+
         const existingIndex = conversations.value.findIndex(
           (c) => c.id === conv.id
         );
@@ -2081,22 +3470,41 @@ export function useChat() {
     }
 
     const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const teamTag = `team:${company.companyCodeHash.value}`;
 
-    // Subscribe to team channel updates
-    const conversationFilter = {
-      kinds: [NOSTR_KINDS.CHAT_CHANNEL],
-      "#c": [company.companyCodeHash.value],
-      since: Math.floor(Date.now() / 1000),
-    };
+    console.log(
+      "[Chat] 📢 Subscribing to conversation updates for team:",
+      teamTag.slice(0, 32) + "..."
+    );
 
+    // Subscribe to team channel updates (BOTH standard #t and custom #c tags)
+    const conversationFilters = [
+      {
+        kinds: [NOSTR_KINDS.CHAT_CHANNEL],
+        "#t": [teamTag], // Standard #t tag - better relay support
+        since: Math.floor(Date.now() / 1000),
+      },
+      {
+        kinds: [NOSTR_KINDS.CHAT_CHANNEL],
+        "#c": [company.companyCodeHash.value], // Custom #c - backward compatibility
+        since: Math.floor(Date.now() / 1000),
+      },
+    ];
+
+    // Cast to satisfy nostr-tools type requirements
+    // nostr-tools expects Filter[], but our dynamic filters need explicit cast
     conversationSubscription = $nostr.pool.subscribeMany(
       relayUrls,
-      [conversationFilter],
+      conversationFilters as unknown as Parameters<
+        typeof $nostr.pool.subscribeMany
+      >[1],
       {
         async onevent(event: NostrEvent) {
           try {
             // Check if content is encrypted
-            const isEncrypted = event.tags.find((t) => t[0] === "encrypted" && t[1] === "true");
+            const isEncrypted = event.tags.find(
+              (t) => t[0] === "encrypted" && t[1] === "true"
+            );
 
             // Parse conversation from event
             let data;
@@ -2113,7 +3521,10 @@ export function useChat() {
 
             // Validate required fields
             if (!data.id || typeof data.id !== "string") {
-              console.warn("[Chat] Invalid conversation data - missing or invalid ID:", data);
+              console.warn(
+                "[Chat] Invalid conversation data - missing or invalid ID:",
+                data
+              );
               return;
             }
 
@@ -2172,6 +3583,8 @@ export function useChat() {
   async function init(): Promise<void> {
     isLoading.value = true;
     try {
+      console.log("[Chat] 🚀 Initializing chat...");
+
       // Request notification permission on first init
       await requestNotificationPermission();
 
@@ -2184,13 +3597,27 @@ export function useChat() {
       }
 
       await subscribeToMessages();
+      console.log("[Chat] ✅ Chat initialized successfully");
     } catch (e) {
       console.error("[Chat] Failed to initialize:", e);
     }
     isLoading.value = false;
   }
 
+  /**
+   * Refresh subscriptions (useful when user changes or contacts are updated)
+   */
+  async function refreshSubscriptions(): Promise<void> {
+    console.log("[Chat] 🔄 Refreshing subscriptions...");
+    cleanup();
+    await subscribeToMessages();
+    if (company.isCompanyCodeEnabled.value) {
+      await subscribeToConversations();
+    }
+  }
+
   function cleanup(): void {
+    console.log("[Chat] 🧹 Cleaning up subscriptions...");
     if (chatSubscription) {
       chatSubscription.close();
       chatSubscription = null;
@@ -2198,6 +3625,33 @@ export function useChat() {
     if (conversationSubscription) {
       conversationSubscription.close();
       conversationSubscription = null;
+    }
+    stopPolling();
+  }
+
+  /**
+   * Debug function to test subscription connectivity
+   * Call this from browser console: useChat().testSubscription()
+   */
+  async function testSubscription(): Promise<void> {
+    console.log("[Chat] 🧪 Testing subscription...");
+    console.log("[Chat] 🧪 chatSubscription exists:", !!chatSubscription);
+
+    if (!$nostr?.pool) {
+      console.error("[Chat] 🧪 No Nostr pool available!");
+      return;
+    }
+
+    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+
+    // Check relay connection status
+    for (const url of relayUrls) {
+      try {
+        const relay = await $nostr.pool.ensureRelay(url);
+        console.log("[Chat] 🧪 Relay", url, "connected:", relay.connected);
+      } catch (e) {
+        console.error("[Chat] 🧪 Failed to check relay:", url, e);
+      }
     }
   }
 
@@ -2227,6 +3681,7 @@ export function useChat() {
     // Functions
     init,
     cleanup,
+    refreshSubscriptions, // NEW: For re-subscribing when user/contacts change
     openChat,
     closeChat,
     toggleChat,
@@ -2235,6 +3690,7 @@ export function useChat() {
     createChannel,
     sendChannelMessage,
     inviteToChannel,
+    requestChannelAccess,
     selectConversation,
     deleteConversation,
     togglePinConversation,
@@ -2266,7 +3722,17 @@ export function useChat() {
     searchMessages,
     searchInConversation,
 
+    // Fetch historical messages
+    fetchChannelMessagesFromRelay,
+    fetchDMsFromRelay,
+    loadOlderMessages,
+    isLoadingMore,
+    hasMoreMessages,
+
     // Utilities
     generateConversationId,
+
+    // Debug
+    testSubscription,
   };
 }

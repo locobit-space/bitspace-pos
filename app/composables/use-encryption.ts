@@ -475,6 +475,73 @@ export function useEncryption() {
   }
 
   // ============================================
+  // Self-Encryption (User's own keys)
+  // For syncing private user data across devices
+  // ============================================
+
+  /**
+   * Get user's Nostr keys from localStorage
+   * Helper for self-encryption functions
+   */
+  function getNostrKeys(): { privkey: string; pubkey: string } | null {
+    try {
+      const nostrUser = localStorage.getItem("nostrUser");
+      if (nostrUser) {
+        const parsed = JSON.parse(nostrUser);
+        const privkey = parsed.privkey || parsed.privateKey || parsed.seckey;
+        const pubkey = parsed.pubkey || parsed.publicKey;
+        if (privkey && pubkey) {
+          return { privkey, pubkey };
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Encrypt data to self (using user's own Nostr keys)
+   * Used for syncing private data like workspace list across devices
+   */
+  async function encryptToSelf(plaintext: string): Promise<string | null> {
+    try {
+      const keys = getNostrKeys();
+      if (!keys) {
+        console.debug('[Encryption] No keys available for self-encryption');
+        return null;
+      }
+
+      // Use NIP-04 for self-encryption (simpler, widely supported)
+      const ciphertext = await nip04.encrypt(keys.privkey, keys.pubkey, plaintext);
+      return ciphertext;
+    } catch (err) {
+      console.debug('[Encryption] Self-encryption failed:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Decrypt data from self (using user's own Nostr keys)
+   */
+  async function decryptFromSelf(ciphertext: string): Promise<string | null> {
+    try {
+      const keys = getNostrKeys();
+      if (!keys) {
+        console.debug('[Encryption] No keys available for self-decryption');
+        return null;
+      }
+
+      // Decrypt NIP-04 self-encrypted content
+      const plaintext = await nip04.decrypt(keys.privkey, keys.pubkey, ciphertext);
+      return plaintext;
+    } catch (err) {
+      console.debug('[Encryption] Self-decryption failed:', err);
+      return null;
+    }
+  }
+
+  // ============================================
   // Field-Level Encryption for Sensitive Data
   // ============================================
 
@@ -742,6 +809,10 @@ export function useEncryption() {
     // High-Level API
     encrypt,
     decrypt,
+
+    // Self-Encryption (for cross-device sync)
+    encryptToSelf,
+    decryptFromSelf,
 
     // Algorithm-Specific
     encryptAES,

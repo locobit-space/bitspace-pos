@@ -31,3 +31,5 @@ output.zip
 # Docker volumes
 nostr_data/
 pg_data/
+
+docs/test-md/

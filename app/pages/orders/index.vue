@@ -2,17 +2,20 @@
 <!-- 🧾 Orders Management - Enterprise UI with Bulk Actions -->
 <script setup lang="ts">
 import type { Order } from "~/types";
-
+import * as XLSX from "xlsx";
 definePageMeta({
-  layout: "default",
   middleware: ["auth"],
+});
+
+useHead({
+  title: "Orders - Enterprise Order System",
 });
 
 const { t } = useI18n();
 const router = useRouter();
 const toast = useToast();
 const currency = useCurrency();
-import * as XLSX from "xlsx";
+
 
 // Use real orders store with Nostr sync
 const ordersStore = useOrders();

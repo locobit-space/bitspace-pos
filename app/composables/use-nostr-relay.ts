@@ -178,7 +178,10 @@ export const useNostrRelay = () => {
     try {
       // Step 1: Load from localStorage first (fast startup)
       const storedRelays = loadFromStorage();
-      relayConfigs.value = [...storedRelays, ...DEFAULT_RELAYS]
+      // unix url
+      relayConfigs.value = [...storedRelays, ...DEFAULT_RELAYS].filter(
+        (v, i, a) => a.findIndex((t) => t.url === v.url) === i
+      )
 
       // Step 2: Connect to relays immediately (don't wait for Nostr settings)
       await connect();
