@@ -564,60 +564,19 @@
     <UModal v-model:open="showPaymentModal">
       <template #content>
         <div class="p-6">
-          <h3 class="text-lg font-semibold mb-6">
-            {{ t("contracts.payment.title") }}
-          </h3>
-
-          <div class="space-y-4">
-            <UFormField :label="t('contracts.payment.amount')" required>
-              <UInput
-                v-model.number="paymentForm.amount"
-                type="number"
-                :placeholder="contract?.amount?.toString()"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField :label="t('contracts.payment.method')" required>
-              <USelect
-                v-model="paymentForm.method"
-                :items="paymentMethods"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField :label="t('contracts.payment.date')">
-              <UInput v-model="paymentForm.date" type="date" class="w-full" />
-            </UFormField>
-
-            <UFormField :label="t('contracts.payment.reference')">
-              <UInput
-                v-model="paymentForm.reference"
-                :placeholder="t('contracts.payment.reference')"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField :label="t('contracts.payment.notes')">
-              <UTextarea v-model="paymentForm.notes" :rows="2" class="w-full" />
-            </UFormField>
-          </div>
-
-          <div class="flex justify-end gap-3 mt-6">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              :label="t('common.cancel')"
-              @click="showPaymentModal = false"
-            />
-            <UButton
-              color="primary"
-              :label="t('contracts.payment.save')"
-              :loading="savingPayment"
-              :disabled="!paymentForm.amount || !paymentForm.method"
-              @click="savePayment"
-            />
-          </div>
+          <PaymentSelector
+            :amount="balance > 0 ? balance : 0"
+            :sats-amount="
+              currency.toSats(
+                balance > 0 ? balance : 0,
+                contract?.currency || 'LAK'
+              )
+            "
+            :currency="contract?.currency || 'LAK'"
+            :order-id="`CTR-${contract?.contractNumber}-${Date.now()}`"
+            @paid="handlePaymentComplete"
+            @cancel="showPaymentModal = false"
+          />
         </div>
       </template>
     </UModal>
@@ -625,7 +584,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ContractPaymentMethod } from "~/types";
+import type { ContractPaymentMethod, PaymentMethod } from "~/types";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -641,7 +600,35 @@ await contractsStore.init();
 const isLoading = computed(() => contractsStore.isLoading.value);
 
 // Get contract
-const contract = computed(() => contractsStore.getContract(contractId.value));
+// Get contract
+const contract = computed(() => {
+  const allContracts = contractsStore.contracts.value;
+  const idOrNumber = contractId.value;
+  return (
+    allContracts.find((c) => c.id === idOrNumber) ||
+    allContracts.find((c) => c.contractNumber === idOrNumber)
+  );
+});
+
+// Refresh data on mount or when ID changes
+watch(
+  contractId,
+  async (id) => {
+    if (id) {
+      // If we found the contract locally, use its ID for refresh
+      // If not found, use the ID from route (which might be the UUID or Number)
+      // Ideally we need the UUID for Nostr refresh.
+      // If we only have Contract Number, we can't easily refresh specific ID unless we query by tag?
+      // Actually `refreshContract` expects UUID.
+      const uuid = contract.value?.id || id;
+      // If it looks like a UUID (not starting with CTR-), try refresh
+      if (!uuid.startsWith("CTR-")) {
+        await contractsStore.refreshContract(uuid);
+      }
+    }
+  },
+  { immediate: true }
+);
 
 // Tabs
 const activeTab = ref("overview");
@@ -652,37 +639,100 @@ const tabs = computed(() => [
   { value: "history", label: t("contracts.detail.history") },
 ]);
 
+const currency = useCurrency(); // Use global currency helper
+
 // Payment modal
 const showPaymentModal = ref(false);
 const savingPayment = ref(false);
-const paymentForm = ref({
-  amount: 0,
-  method: "cash" as ContractPaymentMethod,
-  date: new Date().toISOString().split("T")[0],
-  reference: "",
-  notes: "",
-});
 
-const paymentMethods = computed(() => [
-  { value: "cash", label: t("contracts.payment.methods.cash") },
-  { value: "card", label: t("contracts.payment.methods.card") },
-  { value: "bank", label: t("contracts.payment.methods.bank") },
-  { value: "qr", label: t("contracts.payment.methods.qr") },
-  { value: "crypto", label: t("contracts.payment.methods.crypto") },
-]);
+const handlePaymentComplete = async (method: PaymentMethod, proof: any) => {
+  savingPayment.value = true;
+  try {
+    let paymentMethod: ContractPaymentMethod = "cash";
+    let notes = `Paid via ${method}`;
+    let reference = "";
+
+    // Map methods and extract proof details
+    switch (method) {
+      case "lightning":
+      case "bitcoin":
+      case "usdt":
+        paymentMethod = "crypto";
+        reference = proof.preimage || proof.txid || proof.txHash || "";
+        if (reference) notes += `\nRef: ${reference}`;
+        break;
+      case "bank_transfer":
+        paymentMethod = "bank";
+        reference = proof.reference || "";
+        if (proof.bankAccount) notes += `\nBank: ${proof.bankAccount}`;
+        break;
+      case "qr_static":
+        paymentMethod = "qr";
+        notes += "\nVerified manually via static QR";
+        break;
+      case "external":
+        paymentMethod = "card";
+        reference = proof.reference || "";
+        if (proof.provider) notes += `\nProvider: ${proof.provider}`;
+        break;
+      case "cash":
+      default:
+        paymentMethod = "cash";
+        if (proof.amountTendered) {
+          notes += `\nTendered: ${currency.format(
+            proof.amountTendered,
+            contract.value?.currency || "LAK"
+          )}`;
+          notes += `\nChange: ${currency.format(
+            proof.change,
+            contract.value?.currency || "LAK"
+          )}`;
+        }
+        break;
+    }
+
+    await contractsStore.recordPayment({
+      contractId: contract.value?.id || contractId.value,
+      amount: balance.value > 0 ? balance.value : 0, // Default to full balance
+      paymentMethod,
+      reference,
+      notes,
+    });
+
+    toast.add({
+      title: t("common.success"),
+      description: t("contracts.payment.recorded"),
+      color: "green",
+    });
+
+    showPaymentModal.value = false;
+  } catch (error) {
+    console.error("Payment failed:", error);
+    toast.add({
+      title: t("common.error"),
+      description: "Failed to record payment",
+      color: "red",
+    });
+  } finally {
+    savingPayment.value = false;
+  }
+};
 
 // Computed data
-const contractPayments = computed(() =>
-  contractsStore.getPaymentsByContract(contractId.value)
-);
+const contractPayments = computed(() => {
+  if (!contract.value) return [];
+  return contractsStore.getPaymentsByContract(contract.value.id);
+});
 
-const totalPaid = computed(() =>
-  contractsStore.getTotalPaymentsByContract(contractId.value)
-);
+const totalPaid = computed(() => {
+  if (!contract.value) return 0;
+  return contractsStore.getTotalPaymentsByContract(contract.value.id);
+});
 
-const balance = computed(() =>
-  contractsStore.getContractBalance(contractId.value)
-);
+const balance = computed(() => {
+  if (!contract.value) return 0;
+  return contractsStore.getContractBalance(contract.value.id);
+});
 
 const daysRemaining = computed(() => {
   if (!contract.value) return 0;
@@ -691,9 +741,10 @@ const daysRemaining = computed(() => {
   return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 });
 
-const contractHistory = computed(() =>
-  contractsStore.getHistoryByEntity("contract", contractId.value)
-);
+const contractHistory = computed(() => {
+  if (!contract.value) return [];
+  return contractsStore.getHistoryByEntity("contract", contract.value.id);
+});
 
 const renewalHistory = computed(() =>
   contractHistory.value.filter((h) => h.action === "renewed")
@@ -717,7 +768,7 @@ function formatDateTime(dateStr: string): string {
   return new Date(dateStr).toLocaleString();
 }
 
-function getStatusColor(status: string): string {
+function getStatusColor(status: string): any {
   const colors: Record<string, string> = {
     draft: "gray",
     active: "green",
@@ -787,7 +838,7 @@ function getHistoryIconClass(action: string): string {
   return classes[action] || "bg-gray-100 dark:bg-gray-800 text-gray-600";
 }
 
-function getHistoryColor(action: string): string {
+function getHistoryColor(action: string): any {
   const colors: Record<string, string> = {
     created: "blue",
     updated: "yellow",
@@ -813,45 +864,6 @@ async function handleRenew() {
 
 function handlePrint() {
   window.print();
-}
-
-async function savePayment() {
-  if (!contract.value || !paymentForm.value.amount || !paymentForm.value.method)
-    return;
-
-  savingPayment.value = true;
-  try {
-    await contractsStore.recordPayment({
-      contractId: contract.value.id,
-      amount: paymentForm.value.amount,
-      paymentMethod: paymentForm.value.method,
-      paymentDate: paymentForm.value.date,
-      reference: paymentForm.value.reference,
-      notes: paymentForm.value.notes,
-    });
-
-    toast.add({
-      title: t("common.saved"),
-      color: "green",
-    });
-
-    showPaymentModal.value = false;
-    paymentForm.value = {
-      amount: 0,
-      method: "cash",
-      date: new Date().toISOString().split("T")[0],
-      reference: "",
-      notes: "",
-    };
-  } catch (e) {
-    toast.add({
-      title: t("common.error"),
-      description: String(e),
-      color: "red",
-    });
-  } finally {
-    savingPayment.value = false;
-  }
 }
 
 // Page meta

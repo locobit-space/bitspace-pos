@@ -154,6 +154,10 @@ export function useContracts() {
       JSON.stringify(history.value.slice(0, 100))
     );
     localStorage.setItem(
+      "bitspace_contract_payments",
+      JSON.stringify(payments.value)
+    );
+    localStorage.setItem(
       "bitspace_contract_counters",
       JSON.stringify({
         contract: contractCounter,
@@ -168,12 +172,14 @@ export function useContracts() {
       const storedAssets = localStorage.getItem("bitspace_rental_assets");
       const storedBookings = localStorage.getItem("bitspace_rental_bookings");
       const storedHistory = localStorage.getItem("bitspace_contract_history");
+      const storedPayments = localStorage.getItem("bitspace_contract_payments");
       const storedCounters = localStorage.getItem("bitspace_contract_counters");
 
       if (storedContracts) contracts.value = JSON.parse(storedContracts);
       if (storedAssets) assets.value = JSON.parse(storedAssets);
       if (storedBookings) bookings.value = JSON.parse(storedBookings);
       if (storedHistory) history.value = JSON.parse(storedHistory);
+      if (storedPayments) payments.value = JSON.parse(storedPayments);
       if (storedCounters) {
         const counters = JSON.parse(storedCounters);
         contractCounter = counters.contract || 1;
@@ -481,13 +487,19 @@ export function useContracts() {
     syncError.value = null;
 
     try {
-      const [nostrContracts, nostrAssets, nostrBookings, nostrHistory] =
-        await Promise.all([
-          fetchContractsFromNostr(),
-          fetchAssetsFromNostr(),
-          fetchBookingsFromNostr(),
-          fetchHistoryFromNostr(),
-        ]);
+      const [
+        nostrContracts,
+        nostrAssets,
+        nostrBookings,
+        nostrHistory,
+        nostrPayments,
+      ] = await Promise.all([
+        fetchContractsFromNostr(),
+        fetchAssetsFromNostr(),
+        fetchBookingsFromNostr(),
+        fetchHistoryFromNostr(),
+        fetchPaymentsFromNostr(),
+      ]);
 
       // Merge with local data (Nostr takes precedence for same IDs)
       const contractMap = new Map(contracts.value.map((c) => [c.id, c]));
@@ -510,6 +522,12 @@ export function useContracts() {
 
       history.value = nostrHistory;
 
+      const paymentMap = new Map(payments.value.map((p) => [p.id, p]));
+      for (const payment of nostrPayments) {
+        paymentMap.set(payment.id, payment);
+      }
+      payments.value = Array.from(paymentMap.values());
+
       saveToStorage();
       lastSyncAt.value = new Date().toISOString();
     } catch (e) {
@@ -517,6 +535,121 @@ export function useContracts() {
       syncError.value = String(e);
     } finally {
       isSyncing.value = false;
+    }
+  }
+
+  async function refreshContract(id: string): Promise<void> {
+    const keys = nostrData.getUserKeys();
+    if (!keys) return;
+
+    isLoading.value = true;
+    try {
+      // 1. Fetch Contract by 'd' tag
+      const contractFilter: Filter = {
+        kinds: [NOSTR_KINDS.CONTRACT],
+        "#d": [id],
+        limit: 1,
+      };
+
+      // 2. Fetch Payments by 'contract' tag
+      const paymentFilter: Filter = {
+        kinds: [NOSTR_KINDS.CONTRACT_PAYMENT],
+        "#contract": [id],
+        limit: 500,
+      };
+
+      // 3. Fetch History by 'entityId' tag
+      const historyFilter: Filter = {
+        kinds: [NOSTR_KINDS.CONTRACT_HISTORY],
+        "#entityId": [id],
+        limit: 500,
+      };
+
+      if (company.companyCodeHash.value && company.isCompanyCodeEnabled.value) {
+        const c = company.companyCodeHash.value;
+        contractFilter["#c"] = [c];
+        paymentFilter["#c"] = [c];
+        historyFilter["#c"] = [c];
+      } else {
+        const p = keys.pubkey;
+        contractFilter.authors = [p];
+        paymentFilter.authors = [p];
+        historyFilter.authors = [p];
+      }
+
+      const [contractEvents, paymentEvents, historyEvents] = await Promise.all([
+        relay.queryEvents(contractFilter),
+        relay.queryEvents(paymentFilter),
+        relay.queryEvents(historyFilter),
+      ]);
+
+      // Process Contract
+      for (const event of contractEvents) {
+        try {
+          const isEncrypted =
+            event.tags.find((t: string[]) => t[0] === "encrypted")?.[1] ===
+            "true";
+          const data = isEncrypted
+            ? await nostrData.decryptData<Contract>(event.content)
+            : JSON.parse(event.content);
+
+          if (data?.id) {
+            const idx = contracts.value.findIndex((c) => c.id === data.id);
+            if (idx >= 0) contracts.value[idx] = data;
+            else contracts.value.unshift(data);
+          }
+        } catch (e) {
+          console.warn("Failed to parse contract", e);
+        }
+      }
+
+      // Process Payments
+      const paymentMap = new Map(payments.value.map((p) => [p.id, p]));
+      for (const event of paymentEvents) {
+        try {
+          const isEncrypted =
+            event.tags.find((t: string[]) => t[0] === "encrypted")?.[1] ===
+            "true";
+          const data = isEncrypted
+            ? await nostrData.decryptData<ContractPayment>(event.content)
+            : JSON.parse(event.content);
+
+          if (data?.id) paymentMap.set(data.id, data);
+        } catch (e) {
+          console.warn("Failed to parse payment", e);
+        }
+      }
+      payments.value = Array.from(paymentMap.values()).sort(
+        (a, b) =>
+          new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
+      );
+
+      // Process History
+      const historyMap = new Map(history.value.map((h) => [h.id, h]));
+      for (const event of historyEvents) {
+        try {
+          const isEncrypted =
+            event.tags.find((t: string[]) => t[0] === "encrypted")?.[1] ===
+            "true";
+          const data = isEncrypted
+            ? await nostrData.decryptData<ContractHistoryEntry>(event.content)
+            : JSON.parse(event.content);
+
+          if (data?.id) historyMap.set(data.id, data);
+        } catch (e) {
+          console.warn("Failed to parse history", e);
+        }
+      }
+      history.value = Array.from(historyMap.values()).sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      saveToStorage();
+    } catch (e) {
+      console.error("[Contracts] Refresh failed:", e);
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -574,10 +707,18 @@ export function useContracts() {
       // Check for expired contracts
       await checkExpirations();
 
-      // Sync from Nostr in background
-      syncFromNostr().catch((e) =>
-        console.warn("[Contracts] Background sync failed:", e)
-      );
+      // Sync from Nostr
+      const syncPromise = syncFromNostr();
+
+      // If no local data, wait for sync to avoid "empty" flash
+      if (contracts.value.length === 0) {
+        await syncPromise;
+      } else {
+        // Otherwise sync in background
+        syncPromise.catch((e) =>
+          console.warn("[Contracts] Background sync failed:", e)
+        );
+      }
 
       isInitialized.value = true;
     } catch (e) {
@@ -593,7 +734,7 @@ export function useContracts() {
   // ============================================
 
   function generateContractId(): string {
-    return `con_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return generateId();
   }
 
   function generateContractNumber(): string {
@@ -1441,6 +1582,7 @@ export function useContracts() {
     // Methods
     init,
     syncFromNostr,
+    refreshContract,
     // Contract
     createContract,
     updateContract,
