@@ -1,13 +1,13 @@
 {
   "accounting": {
     "title": "ບັນຊີ",
-    "subtitle": "ການຈັດການການເງິນ ແລະ ບົດລາຍງານ",
+    "subtitle": "ການຈັດການການເງິນ ແລະ ລາຍງານ",
     "tabs": {
       "overview": "ພາບລວມ",
       "invoices": "ໃບແຈ້ງໜີ້",
       "expenses": "ລາຍຈ່າຍ",
       "journal": "ບັນຊີລາຍວັນ",
-      "reports": "ບົດລາຍງານ",
+      "reports": "ລາຍງານ",
       "settings": "ການຕັ້ງຄ່າ"
     },
     "ledger": {

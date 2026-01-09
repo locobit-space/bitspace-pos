@@ -30,10 +30,17 @@ const props = withDefaults(defineProps<Props>(), {
   ],
 });
 
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === 'dark');
+
 const chartRef = ref<ECOption>() as Ref<ECOption>;
 const { domRef: lineChart } = useEcharts(chartRef);
 
 function renderChart() {
+  const textColor = isDark.value ? '#9ca3af' : '#6b7280';
+  const lineColor = isDark.value ? '#374151' : '#e5e7eb';
+  const axisLineColor = isDark.value ? '#4b5563' : '#d1d5db';
+
   chartRef.value = {
     tooltip: {
       trigger: 'axis',
@@ -42,6 +49,11 @@ function renderChart() {
         label: {
           backgroundColor: '#6a7985',
         },
+      },
+      backgroundColor: isDark.value ? '#1f2937' : '#ffffff',
+      borderColor: isDark.value ? '#374151' : '#e5e7eb',
+      textStyle: {
+        color: textColor,
       },
     },
     grid: {
@@ -52,20 +64,22 @@ function renderChart() {
       containLabel: true,
     },
     legend: {
-      textStyle: {},
+      textStyle: {
+        color: textColor,
+      },
     },
     xAxis: [
       {
         type: 'category',
         axisLine: {
           lineStyle: {
-            color: '#FCFCFC',
+            color: axisLineColor,
             cap: 'round',
             dashOffset: 5,
           },
         },
         axisLabel: {
-          color: '#BDBBBB',
+          color: textColor,
         },
         data: props.xAxisData.length
           ? props.xAxisData
@@ -77,18 +91,18 @@ function renderChart() {
         type: 'value',
         splitLine: {
           lineStyle: {
-            color: '#FCFCFC',
+            color: lineColor,
           },
         },
         axisLine: {
           lineStyle: {
-            color: '#FCFCFC',
+            color: axisLineColor,
             cap: 'round',
             dashOffset: 5,
           },
         },
         axisLabel: {
-          color: '#BDBBBB',
+          color: textColor,
         },
       },
     ],
@@ -98,6 +112,13 @@ function renderChart() {
 
 watch(
   () => props.series,
+  () => {
+    renderChart();
+  }
+);
+
+watch(
+  () => colorMode.value,
   () => {
     renderChart();
   }

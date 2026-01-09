@@ -55,15 +55,63 @@ const props = withDefaults(defineProps<Props>(), {
   }),
 });
 
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === 'dark');
+
 const chartRef = ref<ECOption>() as Ref<ECOption>;
 const { domRef: pieChart } = useEcharts(chartRef);
 
 function renderChart() {
-  chartRef.value = props.chartData!;
+  const textColor = isDark.value ? '#9ca3af' : '#6b7280';
+  const chartData = props.chartData!;
+  
+  // Apply theme-aware text colors
+  if (chartData.legend) {
+    chartData.legend.textStyle = {
+      color: textColor,
+    };
+  }
+  
+  if (chartData.tooltip) {
+    chartData.tooltip = {
+      ...chartData.tooltip,
+      backgroundColor: isDark.value ? '#1f2937' : '#ffffff',
+      borderColor: isDark.value ? '#374151' : '#e5e7eb',
+      textStyle: {
+        color: textColor,
+      },
+    };
+  }
+  
+  // Update label colors in series
+  if (chartData.series && Array.isArray(chartData.series)) {
+    chartData.series = chartData.series.map((s: any) => {
+      if (s.label) {
+        return {
+          ...s,
+          label: {
+            ...s.label,
+            color: textColor,
+          },
+        };
+      }
+      return s;
+    });
+  }
+  
+  chartRef.value = chartData;
 }
 
 watch(
   () => props.chartData,
+  () => {
+    renderChart();
+  },
+  { deep: true }
+);
+
+watch(
+  () => colorMode.value,
   () => {
     renderChart();
   }
