@@ -21,8 +21,19 @@ const { t } = useI18n();
 const pos = usePOS();
 
 // State
-const amountTendered = ref(0);
+// State
+const amountTendered = ref(props.amount);
 const step = ref<"input" | "confirm" | "complete">("input");
+
+// Update amountTendered if props.amount changes and user hasn't typed anything
+watch(
+  () => props.amount,
+  (newAmount) => {
+    if (numpadValue.value === "") {
+      amountTendered.value = newAmount;
+    }
+  }
+);
 const isProcessing = ref(false);
 
 // Quick amount buttons based on currency
@@ -68,6 +79,20 @@ const quickAmounts = computed(() => {
   }
 });
 
+// Additive amounts (single bills/coins)
+const addValues = computed(() => {
+  switch (props.currency) {
+    case "LAK":
+      return [1000, 2000, 5000, 10000, 20000, 50000, 100000];
+    case "THB":
+      return [10, 20, 50, 100, 500, 1000];
+    case "USD":
+      return [1, 5, 10, 20, 50, 100];
+    default:
+      return [1, 5, 10, 20, 50, 100];
+  }
+});
+
 // Change calculation
 const change = computed(() => {
   return Math.max(0, amountTendered.value - props.amount);
@@ -107,6 +132,11 @@ const setExactAmount = () => {
   numpadValue.value = props.amount.toString();
 };
 
+const addToAmount = (value: number) => {
+  amountTendered.value += value;
+  numpadValue.value = amountTendered.value.toString();
+};
+
 const confirmPayment = () => {
   if (!isValidPayment.value) return;
   step.value = "confirm";
@@ -138,6 +168,43 @@ const processPayment = () => {
 const goBack = () => {
   step.value = "input";
 };
+
+// Keyboard support
+const handleKeyboardInput = (e: KeyboardEvent) => {
+  if (step.value === "input") {
+    if (e.key >= "0" && e.key <= "9") {
+      handleNumpad(e.key);
+    } else if (e.key === ".") {
+      handleNumpad(".");
+    } else if (e.key === "Backspace") {
+      handleNumpad("backspace");
+    } else if (e.key === "Delete") {
+      handleNumpad("clear");
+    } else if (e.key === "Enter") {
+      if (isValidPayment.value) confirmPayment();
+    } else if (e.key === "Escape") {
+      if (numpadValue.value) {
+        handleNumpad("clear");
+      } else {
+        emit("cancel");
+      }
+    }
+  } else if (step.value === "confirm") {
+    if (e.key === "Enter") {
+      processPayment();
+    } else if (e.key === "Escape") {
+      goBack();
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeyboardInput);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeyboardInput);
+});
 </script>
 
 <template>
@@ -191,66 +258,99 @@ const goBack = () => {
         </div>
       </div>
 
-      <!-- Quick Amount Buttons -->
-      <div class="grid grid-cols-3 gap-2">
-        <UButton
-          v-for="quickAmt in quickAmounts"
-          :key="quickAmt"
-          color="neutral"
-          variant="soft"
-          size="lg"
-          class="font-mono"
-          @click="setQuickAmount(quickAmt)"
+      <div>
+        <!-- Actions at Top -->
+        <div
+          class="flex gap-3 sticky top-0 bg-white dark:bg-gray-900 py-2 z-10"
         >
-          {{ currencyHelper.format(quickAmt, currency) }}
+          <!-- Clear Button -->
+          <UButton
+            v-if="amountTendered > 0"
+            color="red"
+            variant="soft"
+            class="w-full"
+            icon="i-heroicons-x-mark"
+            block
+            @click="handleNumpad('clear')"
+          >
+            {{ t("common.clear") }}
+          </UButton>
+          <!-- Exact Amount Button -->
+          <UButton
+            color="primary"
+            variant="outline"
+            class="w-full"
+            block
+            @click="setExactAmount"
+          >
+            {{ t("payment.cash.exactAmount") }}
+          </UButton>
+          <UButton
+            color="primary"
+            size="lg"
+            class="flex-1 text-nowrap"
+            :disabled="!isValidPayment"
+            block
+            @click="confirmPayment"
+          >
+            {{ t("payment.cash.confirm") }}
+          </UButton>
+        </div>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="lg"
+          class="flex-1"
+          block
+          @click="emit('cancel')"
+        >
+          {{ t("common.cancel") }}
         </UButton>
       </div>
 
-      <!-- Actions at Top -->
-      <div class="flex gap-3 sticky top-0 bg-white dark:bg-gray-900 py-2 z-10">
-        <!-- Clear Button -->
-        <UButton
-          v-if="amountTendered > 0"
-          color="red"
-          variant="soft"
-          class="w-full"
-          icon="i-heroicons-x-mark"
-          block
-          @click="handleNumpad('clear')"
-        >
-          {{ t("common.clear") }}
-        </UButton>
-        <!-- Exact Amount Button -->
-        <UButton
-          color="primary"
-          variant="outline"
-          class="w-full"
-          block
-          @click="setExactAmount"
-        >
-          {{ t("payment.cash.exactAmount") }}
-        </UButton>
-        <UButton
-          color="primary"
-          size="lg"
-          class="flex-1 text-nowrap"
-          :disabled="!isValidPayment"
-          block
-          @click="confirmPayment"
-        >
-          {{ t("payment.cash.confirm") }}
-        </UButton>
+      <!-- Quick Amount Buttons (Presets) -->
+      <div v-if="quickAmounts.length > 0" class="space-y-2">
+        <label class="text-xs font-bold text-gray-500 uppercase">{{
+          t("payment.cash.presets")
+        }}</label>
+        <div class="grid grid-cols-3 mt-1 gap-2">
+          <UButton
+            v-for="quickAmt in quickAmounts"
+            :key="quickAmt"
+            color="neutral"
+            variant="soft"
+            size="md"
+            class="font-mono"
+            block
+            @click="setQuickAmount(quickAmt)"
+          >
+            {{ currencyHelper.format(quickAmt, currency) }}
+          </UButton>
+        </div>
       </div>
-      <UButton
-        color="neutral"
-        variant="outline"
-        size="lg"
-        class="flex-1"
-        block
-        @click="emit('cancel')"
-      >
-        {{ t("common.cancel") }}
-      </UButton>
+
+      <!-- Add Bill Buttons -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-gray-500 uppercase">{{
+          t("payment.cash.add")
+        }}</label>
+        <div class="grid grid-cols-4 gap-2">
+          <UButton
+            v-for="val in addValues"
+            :key="val"
+            color="primary"
+            variant="ghost"
+            size="md"
+            class="font-mono text-xs px-1"
+            block
+            @click="addToAmount(val)"
+          >
+            +{{
+              currencyHelper.format(val, currency).replace(currency, "").trim()
+            }}
+          </UButton>
+        </div>
+      </div>
 
       <!-- Numpad -->
       <div class="grid grid-cols-3 gap-2 mt-4">
@@ -274,6 +374,7 @@ const goBack = () => {
           variant="outline"
           size="xl"
           class="h-14 text-xl font-mono"
+          block
           @click="handleNumpad(num === '⌫' ? 'backspace' : num)"
         >
           {{ num }}

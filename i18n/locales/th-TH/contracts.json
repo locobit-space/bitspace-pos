@@ -13,6 +13,10 @@
       "active": "ใช้งาน",
       "expired": "หมดอายุ",
       "pending": "รอดำเนินการ"
+    },
+    "payment": {
+      "enterAmount": "ใส่จำนวนเงิน",
+      "fullBalance": "จ่ายทั้งหมด"
     }
   }
 }

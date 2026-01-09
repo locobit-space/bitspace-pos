@@ -564,13 +564,37 @@
     <UModal v-model:open="showPaymentModal">
       <template #content>
         <div class="p-6">
+          <div class="mb-6 space-y-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-200"
+            >
+              {{ t("contracts.payment.enterAmount") }}
+            </label>
+            <div class="flex gap-2">
+              <UInput
+                v-model="paymentAmount"
+                type="number"
+                icon="i-heroicons-banknotes"
+                :placeholder="t('contracts.payment.amount')"
+                class="flex-1"
+                min="0"
+                step="any"
+              />
+              <UButton
+                v-if="balance > 0"
+                color="gray"
+                variant="soft"
+                size="sm"
+                :label="t('contracts.payment.fullBalance')"
+                @click="paymentAmount = balance"
+              />
+            </div>
+          </div>
+
           <PaymentSelector
-            :amount="balance > 0 ? balance : 0"
+            :amount="paymentAmount"
             :sats-amount="
-              currency.toSats(
-                balance > 0 ? balance : 0,
-                contract?.currency || 'LAK'
-              )
+              currency.toSats(paymentAmount, contract?.currency || 'LAK')
             "
             :currency="contract?.currency || 'LAK'"
             :order-id="`CTR-${contract?.contractNumber}-${Date.now()}`"
@@ -644,6 +668,16 @@ const currency = useCurrency(); // Use global currency helper
 // Payment modal
 const showPaymentModal = ref(false);
 const savingPayment = ref(false);
+const paymentAmount = ref(0);
+
+// Reset amount when modal opens
+watch(showPaymentModal, (open) => {
+  if (open && contract.value) {
+    // Default to full balance if positive, otherwise 0
+    const bal = contractsStore.getContractBalance(contract.value.id);
+    paymentAmount.value = bal > 0 ? bal : 0;
+  }
+});
 
 const handlePaymentComplete = async (method: PaymentMethod, proof: any) => {
   savingPayment.value = true;
@@ -693,7 +727,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: any) => {
 
     await contractsStore.recordPayment({
       contractId: contract.value?.id || contractId.value,
-      amount: balance.value > 0 ? balance.value : 0, // Default to full balance
+      amount: paymentAmount.value,
       paymentMethod,
       reference,
       notes,
@@ -701,7 +735,10 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: any) => {
 
     toast.add({
       title: t("common.success"),
-      description: t("contracts.payment.recorded"),
+      description: t(
+        "contracts.payment.recorded",
+        "Payment recorded successfully"
+      ),
       color: "green",
     });
 

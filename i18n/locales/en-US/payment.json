@@ -63,6 +63,8 @@
     },
     "cash": {
       "title": "Cash Payment",
+      "presets": "Presets",
+      "add": "Add",
       "amountDue": "Amount Due",
       "amountTendered": "Amount Tendered",
       "change": "Change",

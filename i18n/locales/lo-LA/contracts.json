@@ -222,6 +222,8 @@
     "payment": {
       "title": "ບັນທຶກການຊຳລະ",
       "amount": "ຈຳນວນເງິນ",
+      "enterAmount": "ໃສ່ຈຳນວນເງິນ",
+      "fullBalance": "ຈ່າຍທັງໝົດ",
       "method": "ວິທີການຊຳລະ",
       "date": "ວັນທີຊຳລະ",
       "reference": "ອ້າງອີງ",

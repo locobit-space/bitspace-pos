@@ -222,6 +222,8 @@
     "payment": {
       "title": "Record Payment",
       "amount": "Amount",
+      "enterAmount": "Enter Amount",
+      "fullBalance": "Full Balance",
       "method": "Payment Method",
       "date": "Payment Date",
       "reference": "Reference",
