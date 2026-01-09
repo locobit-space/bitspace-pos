@@ -45,7 +45,7 @@
         <Icon name="i-heroicons-squares-2x2" size="22" />
       </div>
       <span class="text-xs mt-0.5 font-medium">{{
-        $t("navigation.more") || "More"
+        $t("navigation.more", "More")
       }}</span>
     </button>
   </nav>
@@ -61,23 +61,23 @@ defineEmits(["open-menu"]);
 // Core navigation items for bottom bar
 const navItems = computed(() => [
   {
-    label: t("navigation.dashboard") || "Home",
+    label: t("navigation.dashboard", "Home"),
     to: "/",
     icon: "i-heroicons-home",
   },
   {
-    label: t("navigation.pos") || "POS",
+    label: t("navigation.pos", "POS"),
     to: "/pos",
     icon: "i-heroicons-bolt",
   },
   {
-    label: t("navigation.orders") || "Orders",
+    label: t("navigation.orders", "Orders"),
     to: "/orders",
     icon: "i-heroicons-shopping-bag",
     badge: ordersStore.pendingOrders.value?.length || 0,
   },
   {
-    label: t("navigation.products") || "Products",
+    label: t("navigation.products", "Products"),
     to: "/products",
     icon: "i-heroicons-cube",
   },

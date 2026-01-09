@@ -67,7 +67,7 @@ const statusColors: Record<string, string> = {
         name="i-heroicons-shopping-bag"
         class="w-12 h-12 mx-auto mb-2 opacity-50"
       />
-      <p>{{ t("orders.noOrders") || "No orders yet" }}</p>
+      <p>{{ t("orders.noOrders", "No orders yet") }}</p>
     </div>
 
     <!-- Orders Table -->

@@ -11,6 +11,8 @@ import { hexToBytes } from "@noble/hashes/utils";
 import type { ShopConfig } from "./use-shop";
 import type { Event } from "nostr-tools";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
+import type { ShopType } from "~/types";
+import { getShopTypeConfig, shouldTrackStockByDefault } from "~/data/shop-templates";
 
 // ============================================
 // 📦 TYPES
@@ -449,13 +451,106 @@ export function useShopManager() {
   // ============================================
 
   /**
+   * Seed template products based on shop type after clearing data
+   * Also syncs with Nostr to save templates to cloud
+   */
+  async function seedTemplatesAfterClear(shopType?: ShopType, syncToNostr = true): Promise<void> {
+    if (!import.meta.client) return;
+
+    try {
+      const productsStore = useProductsStore();
+      const offline = useOffline();
+      const nostrData = useNostrData();
+
+      // Determine shop type from current config or default to 'cafe'
+      const currentShopType = shopType || useShop().config.value?.shopType || 'cafe';
+      console.log(`[ShopManager] 🌱 Seeding templates for shop type: ${currentShopType}`);
+
+      const config = getShopTypeConfig(currentShopType);
+      if (!config) {
+        console.warn(`[ShopManager] No template config found for ${currentShopType}`);
+        return;
+      }
+
+      const trackStock = shouldTrackStockByDefault(currentShopType);
+
+      // Create categories
+      console.log(`[ShopManager] Creating ${config.categories.length} categories...`);
+      for (const cat of config.categories) {
+        await productsStore.addCategory({
+          name: cat.name,
+          description: cat.nameLao,
+          icon: cat.icon,
+          sortOrder: cat.sortOrder,
+        });
+      }
+
+      // Wait a bit for categories to be created
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Create products
+      console.log(`[ShopManager] Creating ${config.products.length} products...`);
+      for (const prod of config.products) {
+        const categoryId = productsStore.categories.value.find(
+          c => c.name === config.categories.find(tc => tc.id === prod.categoryId)?.name
+        )?.id;
+
+        if (categoryId) {
+          await productsStore.addProduct({
+            name: prod.name,
+            description: prod.nameLao,
+            sku: prod.id.toUpperCase(),
+            categoryId,
+            unitId: 'default',
+            price: prod.price,
+            stock: 0,
+            minStock: 0,
+            branchId: '',
+            status: 'active',
+            image: prod.image,
+            trackStock,
+          });
+        }
+      }
+
+      console.log(`[ShopManager] ✅ Templates seeded successfully`);
+
+      // Sync to Nostr if online and requested
+      if (syncToNostr && offline.isOnline.value) {
+        console.log('[ShopManager] 🔄 Syncing templates to Nostr...');
+        try {
+          await productsStore.syncToNostr();
+          console.log('[ShopManager] ✅ Templates synced to Nostr');
+        } catch (e) {
+          console.warn('[ShopManager] Failed to sync templates to Nostr:', e);
+        }
+      }
+    } catch (e) {
+      console.error('[ShopManager] Failed to seed templates:', e);
+    }
+  }
+
+  /**
    * Clear all local data for shop switch
    * Preserves workspace list and user authentication
+   * Clears: Products, Categories, Orders, Customers, Inventory, Accounting, etc.
    */
   async function clearShopData(): Promise<void> {
     if (!import.meta.client) return;
 
-    console.log("[ShopManager] 🧹 Clearing shop data for switch...");
+    console.log("[ShopManager] 🧹 Clearing all shop data for switch...");
+    console.log("[ShopManager] 📋 Data to be cleared:");
+    console.log("  - Products, Categories, Units");
+    console.log("  - Orders (local & pending)");
+    console.log("  - Customers & Loyalty");
+    console.log("  - Branches & Staff");
+    console.log("  - Inventory (stock, lots, receipts)");
+    console.log("  - Recipes & Ingredients");
+    console.log("  - Accounting (accounts, expenses, journal entries)");
+    console.log("  - Employees & Payroll");
+    console.log("  - Chat Messages & Conversations");
+    console.log("  - Promotions & Memberships");
+    console.log("  - POS Sessions & Payments");
 
     // Keys to preserve (workspace & auth related)
     const keysToPreserve = [
@@ -471,7 +566,7 @@ export function useShopManager() {
       "colorMode",
     ];
 
-    // Collect keys to remove
+    // Collect keys to remove from localStorage
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -480,7 +575,7 @@ export function useShopManager() {
       }
     }
 
-    // Remove non-preserved keys
+    console.log(`[ShopManager] Removing ${keysToRemove.length} localStorage keys...`);
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);
     });
@@ -488,20 +583,33 @@ export function useShopManager() {
     // Clear sessionStorage
     try {
       sessionStorage.clear();
+      console.log("[ShopManager] ✅ SessionStorage cleared");
     } catch (e) {
       console.warn("[ShopManager] Failed to clear sessionStorage:", e);
     }
 
-    // Clear IndexedDB
+    // Clear entire IndexedDB (all tables)
+    // This includes: products, categories, orders, customers, inventory,
+    // accounting, employees, chat, promotions, memberships, and all other data
     try {
       const { db } = await import("~/db/db");
+      
+      console.log("[ShopManager] 🗄️ Deleting entire IndexedDB database...");
       await db.delete();
-      console.log("[ShopManager] Cleared IndexedDB");
+      console.log("[ShopManager] ✅ IndexedDB deleted (all tables cleared)");
+      
+      // Reopen the database after deletion
+      // This recreates an empty database with the schema
+      console.log("[ShopManager] 🔄 Reopening database...");
+      await db.open();
+      console.log("[ShopManager] ✅ Database reopened (ready for fresh data)");
     } catch (e) {
-      console.warn("[ShopManager] Failed to clear IndexedDB:", e);
+      console.error("[ShopManager] ❌ Failed to clear IndexedDB:", e);
+      throw e; // Re-throw to prevent incomplete clearing
     }
 
-    console.log("[ShopManager] ✅ Shop data cleared");
+    console.log("[ShopManager] ✅ All shop data cleared successfully");
+    console.log("[ShopManager] 📝 Preserved: Workspace list & user auth");
   }
 
   /**
@@ -526,6 +634,12 @@ export function useShopManager() {
 
       // Step 1: Clear current shop data
       await clearShopData();
+
+      // Step 1.5: Seed template products for the workspace's shop type
+      // This ensures users have starter data when switching workspaces
+      if (workspace.shopType) {
+        await seedTemplatesAfterClear(workspace.shopType as ShopType, false);
+      }
 
       // Step 2: Set new current workspace
       state.value.currentWorkspaceId = workspaceId;
@@ -822,6 +936,7 @@ export function useShopManager() {
     switchWorkspace,
     clearShopData,
     syncCurrentWorkspace,
+    seedTemplatesAfterClear,
 
     // Nostr Sync
     syncWorkspacesToNostr,

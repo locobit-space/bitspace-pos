@@ -27,7 +27,7 @@ const { t } = useI18n();
     <!-- View Mode -->
     <div v-if="!isEditing">
       <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-        {{ notes || t("customers.noNotes") || "No notes" }}
+        {{ notes || t("customers.noNotes", "No notes") }}
       </p>
     </div>
 
@@ -36,7 +36,7 @@ const { t } = useI18n();
       <UTextarea
         v-model="editNotes"
         :rows="4"
-        :placeholder="t('customers.notesPlaceholder') || 'Add notes...'"
+        :placeholder="t('customers.notesPlaceholder', 'Add notes...')"
       />
     </div>
   </UCard>

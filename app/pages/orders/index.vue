@@ -50,11 +50,11 @@ const toggleSort = (key: string) => {
 
 // Status options
 const statusOptions = [
-  { value: "all", label: t("orders.status.all") || "All Status" },
-  { value: "pending", label: t("orders.status.pending") || "Pending" },
-  { value: "processing", label: t("orders.status.processing") || "Processing" },
-  { value: "completed", label: t("orders.status.completed") || "Completed" },
-  { value: "cancelled", label: t("orders.status.cancelled") || "Cancelled" },
+  { value: "all", label: t("orders.status.all", "All Status") },
+  { value: "pending", label: t("orders.status.pending", "Pending") },
+  { value: "processing", label: t("orders.status.processing", "Processing") },
+  { value: "completed", label: t("orders.status.completed", "Completed") },
+  { value: "cancelled", label: t("orders.status.cancelled", "Cancelled") },
 ];
 
 const dateFilterOptions = [
@@ -350,7 +350,7 @@ const exportAllOrders = () => {
 
 // Delete order
 const deleteOrder = async (id: string) => {
-  if (confirm(t("orders.confirmDelete") || "Delete this order?")) {
+  if (confirm(t("orders.confirmDelete", "Delete this order?"))) {
     await ordersStore.deleteOrder(id);
     toast.add({
       title: "Order Deleted",
@@ -387,10 +387,10 @@ onMounted(async () => {
         >
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ t("orders.title") || "Orders" }}
+              {{ t("orders.title", "Orders") }}
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {{ t("orders.description") || "Manage all your orders" }}
+              {{ t("orders.description", "Manage all your orders") }}
             </p>
           </div>
 
@@ -415,7 +415,7 @@ onMounted(async () => {
               color="gray"
               @click="exportAllOrders"
             >
-              {{ t("common.export") || "Export" }}
+              {{ t("common.export", "Export") }}
             </UButton>
 
             <!-- Create Order Button -->
@@ -425,7 +425,7 @@ onMounted(async () => {
               color="primary"
               to="/orders/create"
             >
-              {{ t("orders.newOrder") || "New Order" }}
+              {{ t("orders.newOrder", "New Order") }}
             </UButton>
           </div>
         </div>
@@ -531,7 +531,7 @@ onMounted(async () => {
               <UInput
                 v-model="searchQuery"
                 icon="i-heroicons-magnifying-glass"
-                :placeholder="t('common.search') || 'Search orders...'"
+                :placeholder="t('common.search', 'Search orders...')"
                 size="lg"
               />
             </div>

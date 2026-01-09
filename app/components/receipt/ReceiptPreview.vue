@@ -108,7 +108,7 @@ const close = () => {
             class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
           >
             <span class="text-2xl">🧾</span>
-            {{ t("receipt.title") || "Receipt" }}
+            {{ t("receipt.title", "Receipt") }}
           </h2>
           <UButton
             icon="i-heroicons-x-mark"
@@ -399,7 +399,7 @@ const close = () => {
               block
               @click="handlePrint"
             >
-              {{ t("receipt.print") || "Print Receipt" }}
+              {{ t("receipt.print", "Print Receipt") }}
             </UButton>
 
             <UButton

@@ -107,7 +107,7 @@
           class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
         >
           <UIcon name="i-heroicons-clock" class="w-5 h-5 text-amber-500" />
-          {{ $t("inventory.expiryAlerts") || "Expiry Alerts" }}
+          {{ $t("inventory.expiryAlerts", "Expiry Alerts") }}
           <UBadge
             v-if="filteredAlerts.length > 0"
             :color="getBadgeColor"
@@ -534,8 +534,8 @@ async function refresh() {
 async function acknowledge(alertId: string) {
   await stockLots.acknowledgeAlert(alertId);
   toast.add({
-    title: t("common.success") || "Success",
-    description: t("inventory.alertAcknowledged") || "Alert acknowledged",
+    title: t("common.success", "Success"),
+    description: t("inventory.alertAcknowledged", "Alert acknowledged"),
     icon: "i-heroicons-check-circle",
     color: "green",
   });
@@ -546,9 +546,9 @@ async function acknowledgeAll() {
     await stockLots.acknowledgeAlert(alert.id);
   }
   toast.add({
-    title: t("common.success") || "Success",
+    title: t("common.success", "Success"),
     description:
-      t("inventory.allAlertsAcknowledged") || "All alerts acknowledged",
+      t("inventory.allAlertsAcknowledged", "All alerts acknowledged"),
     icon: "i-heroicons-check-circle",
     color: "green",
   });
@@ -565,8 +565,8 @@ async function quarantineLot() {
 
   if (success) {
     toast.add({
-      title: t("common.success") || "Success",
-      description: t("inventory.lotQuarantined") || "Lot quarantined",
+      title: t("common.success", "Success"),
+      description: t("inventory.lotQuarantined", "Lot quarantined"),
       icon: "i-heroicons-shield-check",
       color: "amber",
     });

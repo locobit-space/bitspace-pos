@@ -266,12 +266,11 @@ const clearAllVariants = () => {
         </div>
         <div>
           <h4 class="font-semibold text-gray-900 dark:text-white">
-            {{ t("products.enableVariants") || "Enable Size Variants" }}
+            {{ t("products.enableVariants", "Enable Size Variants") }}
           </h4>
           <p class="text-sm text-gray-500">
             {{
-              t("products.variantsDescription") ||
-              "Add sizes like S, M, L with different prices"
+              t("products.variantsDescription", "Add sizes like S, M, L with different prices")
             }}
           </p>
         </div>
@@ -284,7 +283,7 @@ const clearAllVariants = () => {
       <!-- Quick Presets -->
       <div v-if="variants.length === 0" class="space-y-3">
         <p class="text-sm text-gray-500 font-medium">
-          {{ t("products.quickPresets") || "Quick presets:" }}
+          {{ t("products.quickPresets", "Quick presets:") }}
         </p>
         <div class="flex flex-wrap gap-2">
           <UButton
@@ -304,7 +303,7 @@ const clearAllVariants = () => {
       <div v-if="variants.length > 0" class="space-y-2">
         <div class="flex items-center justify-between">
           <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            {{ t("products.variantsList") || "Variants" }} ({{
+            {{ t("products.variantsList", "Variants") }} ({{
               variants.length
             }})
           </p>
@@ -314,7 +313,7 @@ const clearAllVariants = () => {
             size="xs"
             @click="clearAllVariants"
           >
-            {{ t("common.clearAll") || "Clear All" }}
+            {{ t("common.clearAll", "Clear All") }}
           </UButton>
         </div>
 
@@ -352,19 +351,19 @@ const clearAllVariants = () => {
               <div class="flex-1 grid grid-cols-4 gap-2">
                 <UInput
                   v-model="editingVariant.shortName"
-                  :placeholder="t('products.shortName') || 'S'"
+                  :placeholder="t('products.shortName', 'S')"
                   size="sm"
                 />
                 <UInput
                   v-model="editingVariant.name"
-                  :placeholder="t('products.variantName') || 'Small'"
+                  :placeholder="t('products.variantName', 'Small')"
                   size="sm"
                   class="col-span-2"
                 />
                 <UInput
                   v-model.number="editingVariant.priceModifier"
                   type="number"
-                  :placeholder="t('products.priceModifier') || '+0'"
+                  :placeholder="t('products.priceModifier', '+0')"
                   size="sm"
                 />
               </div>
@@ -402,12 +401,12 @@ const clearAllVariants = () => {
                       size="xs"
                       class="ml-2"
                     >
-                      {{ t("common.default") || "Default" }}
+                      {{ t("common.default", "Default") }}
                     </UBadge>
                   </p>
                   <p class="text-sm text-gray-500">
                     <template v-if="variant.priceModifier === 0">
-                      {{ t("products.basePrice") || "Base price" }}
+                      {{ t("products.basePrice", "Base price") }}
                     </template>
                     <template v-else>
                       {{ variant.priceModifier > 0 ? "+" : "" }}
@@ -429,7 +428,7 @@ const clearAllVariants = () => {
                 size="xs"
                 @click="setDefault(variant.id)"
               >
-                {{ t("common.setDefault") || "Set Default" }}
+                {{ t("common.setDefault", "Set Default") }}
               </UButton>
               <UButton
                 color="neutral"
@@ -456,32 +455,32 @@ const clearAllVariants = () => {
         class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3"
       >
         <h5 class="font-semibold text-gray-900 dark:text-white text-sm">
-          {{ t("products.addVariant") || "Add Custom Variant" }}
+          {{ t("products.addVariant", "Add Custom Variant") }}
         </h5>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <UInput
             v-model="newVariant.shortName"
-            :placeholder="t('products.shortName') || 'S, M, L...'"
+            :placeholder="t('products.shortName', 'S, M, L...')"
             label="Short Name"
           />
           <UInput
             v-model="newVariant.name"
-            :placeholder="t('products.variantName') || 'Small, Medium...'"
+            :placeholder="t('products.variantName', 'Small, Medium...')"
             label="Full Name"
           />
           <UInput
             v-model.number="newVariant.priceModifier"
             type="number"
-            :placeholder="t('products.priceModifier') || '0'"
+            :placeholder="t('products.priceModifier', '0')"
             label="Price +/-"
           />
           <USelect
             v-model="newVariant.priceModifierType"
             :items="[
-              { value: 'fixed', label: t('products.fixed') || 'Fixed' },
+              { value: 'fixed', label: t('products.fixed', 'Fixed') },
               {
                 value: 'percentage',
-                label: t('products.percentage') || 'Percentage',
+                label: t('products.percentage', 'Percentage'),
               },
             ]"
             label="Type"
@@ -495,10 +494,10 @@ const clearAllVariants = () => {
             @click="addVariant"
           >
             <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
-            {{ t("common.add") || "Add" }}
+            {{ t("common.add", "Add") }}
           </UButton>
           <UButton color="neutral" variant="ghost" size="sm" @click="resetForm">
-            {{ t("common.cancel") || "Cancel" }}
+            {{ t("common.cancel", "Cancel") }}
           </UButton>
         </div>
       </div>
@@ -513,7 +512,7 @@ const clearAllVariants = () => {
         @click="showAddForm = true"
       >
         <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
-        {{ t("products.addCustomVariant") || "Add Custom Variant" }}
+        {{ t("products.addCustomVariant", "Add Custom Variant") }}
       </UButton>
     </template>
   </div>

@@ -20,21 +20,21 @@ const sortBy = ref<"recent" | "title">("recent");
 
 // Page options for filtering
 const pageOptions = [
-  { value: "all", label: t("help.allPages") || "All Pages" },
+  { value: "all", label: t("help.allPages", "All Pages") },
   { value: "dashboard", label: "Dashboard" },
   { value: "pos", label: "Point of Sale" },
-  { value: "products", label: t("products.title") || "Products" },
-  { value: "inventory", label: t("inventory.title") || "Inventory" },
-  { value: "orders", label: t("orders.title") || "Orders" },
-  { value: "customers", label: t("customers.title") || "Customers" },
-  { value: "reports", label: t("reports.title") || "Reports" },
-  { value: "settings", label: t("settings.title") || "Settings" },
-  { value: "accounting", label: t("accounting.title") || "Accounting" },
-  { value: "kitchen", label: t("kitchen.title") || "Kitchen" },
+  { value: "products", label: t("products.title", "Products") },
+  { value: "inventory", label: t("inventory.title", "Inventory") },
+  { value: "orders", label: t("orders.title", "Orders") },
+  { value: "customers", label: t("customers.title", "Customers") },
+  { value: "reports", label: t("reports.title", "Reports") },
+  { value: "settings", label: t("settings.title", "Settings") },
+  { value: "accounting", label: t("accounting.title", "Accounting") },
+  { value: "kitchen", label: t("kitchen.title", "Kitchen") },
 ];
 
 const localeOptions = [
-  { value: "all", label: t("help.allLanguages") || "All Languages" },
+  { value: "all", label: t("help.allLanguages", "All Languages") },
   { value: "en-US", label: "🇺🇸 English" },
   { value: "lo-LA", label: "🇱🇦 ລາວ" },
 ];
@@ -135,8 +135,8 @@ function createNew() {
 async function handleSync() {
   await nostrHelp.syncFromNostr();
   toast.add({
-    title: t("help.syncComplete") || "Sync Complete",
-    description: t("help.syncedFromNostr") || "Articles synced from Nostr",
+    title: t("help.syncComplete", "Sync Complete"),
+    description: t("help.syncedFromNostr", "Articles synced from Nostr"),
     color: "green",
     icon: "i-heroicons-check-circle",
   });
@@ -158,12 +158,11 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-              📚 {{ t("help.communityDocs") || "Community Documentation" }}
+              📚 {{ t("help.communityDocs", "Community Documentation") }}
             </h1>
             <p class="mt-1 text-gray-500 dark:text-gray-400">
               {{
-                t("help.communityDocsDesc") ||
-                "Browse and contribute documentation written by the community"
+                t("help.communityDocsDesc", "Browse and contribute documentation written by the community")
               }}
             </p>
           </div>
@@ -175,7 +174,7 @@ onMounted(() => {
               :loading="nostrHelp.isSyncing.value"
               @click="handleSync"
             >
-              {{ t("common.sync") || "Sync" }}
+              {{ t("common.sync", "Sync") }}
             </UButton>
             <UButton
               v-if="canWrite"
@@ -183,7 +182,7 @@ onMounted(() => {
               icon="i-heroicons-plus"
               @click="createNew"
             >
-              {{ t("help.writeArticle") || "Write Article" }}
+              {{ t("help.writeArticle", "Write Article") }}
             </UButton>
           </div>
         </div>
@@ -197,7 +196,7 @@ onMounted(() => {
               {{ stats.total }}
             </p>
             <p class="text-sm text-gray-500">
-              {{ t("help.totalArticles") || "Total Articles" }}
+              {{ t("help.totalArticles", "Total Articles") }}
             </p>
           </div>
           <div
@@ -229,7 +228,7 @@ onMounted(() => {
           <div class="flex-1">
             <UInput
               v-model="searchQuery"
-              :placeholder="t('help.searchArticles') || 'Search articles...'"
+              :placeholder="t('help.searchArticles', 'Search articles...')"
               icon="i-heroicons-magnifying-glass"
               size="lg"
               class="w-full"
@@ -264,7 +263,7 @@ onMounted(() => {
           class="w-10 h-10 animate-spin text-gray-400 mb-4"
         />
         <p class="text-gray-500">
-          {{ t("common.loading") || "Loading..." }}
+          {{ t("common.loading", "Loading...") }}
         </p>
       </div>
 
@@ -277,16 +276,15 @@ onMounted(() => {
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           {{
             searchQuery
-              ? t("help.noResults") || "No results found"
-              : t("help.noArticlesYet") || "No articles yet"
+              ? t("help.noResults", "No results found")
+              : t("help.noArticlesYet", "No articles yet")
           }}
         </h3>
         <p class="text-gray-500 mb-6 max-w-md mx-auto">
           {{
             searchQuery
-              ? t("help.tryDifferentSearch") || "Try a different search term"
-              : t("help.beFirstToWrite") ||
-                "Be the first to write a help article for the community!"
+              ? t("help.tryDifferentSearch", "Try a different search term")
+              : t("help.beFirstToWrite", "Be the first to write a help article for the community!")
           }}
         </p>
         <UButton
@@ -295,7 +293,7 @@ onMounted(() => {
           icon="i-heroicons-pencil-square"
           @click="createNew"
         >
-          {{ t("help.writeFirst") || "Write First Article" }}
+          {{ t("help.writeFirst", "Write First Article") }}
         </UButton>
       </div>
 
@@ -372,12 +370,11 @@ onMounted(() => {
         class="mt-8 bg-linear-to-r from-primary-500 to-purple-500 rounded-xl p-6 text-center text-white"
       >
         <h3 class="text-xl font-bold mb-2">
-          {{ t("help.contributeTitle") || "Help the Community!" }}
+          {{ t("help.contributeTitle", "Help the Community!") }}
         </h3>
         <p class="opacity-90 mb-4 max-w-lg mx-auto">
           {{
-            t("help.contributeDesc") ||
-            "Your knowledge can help other users. Write documentation in your language and share it via Nostr."
+            t("help.contributeDesc", "Your knowledge can help other users. Write documentation in your language and share it via Nostr.")
           }}
         </p>
         <UButton
@@ -385,7 +382,7 @@ onMounted(() => {
           icon="i-heroicons-pencil-square"
           @click="createNew"
         >
-          {{ t("help.writeNew") || "Write New Article" }}
+          {{ t("help.writeNew", "Write New Article") }}
         </UButton>
       </div>
 
@@ -394,8 +391,7 @@ onMounted(() => {
         <p class="flex items-center justify-center gap-2">
           <UIcon name="i-heroicons-cloud" class="w-4 h-4" />
           {{
-            t("help.poweredByNostr") ||
-            "Powered by Nostr - Decentralized & Censorship-Resistant"
+            t("help.poweredByNostr", "Powered by Nostr - Decentralized & Censorship-Resistant")
           }}
         </p>
       </div>

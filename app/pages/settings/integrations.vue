@@ -38,19 +38,17 @@ function saveCloudinaryConfig() {
   if (!cloudinaryForm.value.useOwnKey) {
     cloudinary.clearConfig();
     toast.add({
-      title: t("settings.integrations.saved") || "Saved",
+      title: t("settings.integrations.saved", "Saved"),
       description:
-        t("settings.integrations.usingSystemDefault") ||
-        "Using system default configuration",
+        t("settings.integrations.usingSystemDefault", "Using system default configuration"),
       color: "success",
     });
   } else {
     if (!cloudinaryForm.value.cloudName || !cloudinaryForm.value.uploadPreset) {
       toast.add({
-        title: t("common.error") || "Error",
+        title: t("common.error", "Error"),
         description:
-          t("settings.integrations.fillRequired") ||
-          "Please fill in Cloud Name and Upload Preset",
+          t("settings.integrations.fillRequired", "Please fill in Cloud Name and Upload Preset"),
         color: "error",
       });
       return;
@@ -64,10 +62,9 @@ function saveCloudinaryConfig() {
     });
 
     toast.add({
-      title: t("settings.integrations.saved") || "Saved",
+      title: t("settings.integrations.saved", "Saved"),
       description:
-        t("settings.integrations.cloudinarySaved") ||
-        "Cloudinary configuration saved",
+        t("settings.integrations.cloudinarySaved", "Cloudinary configuration saved"),
       color: "success",
     });
   }
@@ -96,15 +93,14 @@ async function testCloudinaryConnection() {
   if (result) {
     toast.add({
       title:
-        t("settings.integrations.connectionSuccess") || "Connection Successful",
+        t("settings.integrations.connectionSuccess", "Connection Successful"),
       description:
-        t("settings.integrations.cloudinaryWorking") ||
-        "Cloudinary is configured correctly",
+        t("settings.integrations.cloudinaryWorking", "Cloudinary is configured correctly"),
       color: "success",
     });
   } else {
     toast.add({
-      title: t("settings.integrations.connectionFailed") || "Connection Failed",
+      title: t("settings.integrations.connectionFailed", "Connection Failed"),
       description: cloudinary.error.value || "Could not connect to Cloudinary",
       color: "error",
     });
@@ -112,7 +108,7 @@ async function testCloudinaryConnection() {
 }
 
 useHead({
-  title: t("settings.integrations.title") || "Integrations",
+  title: t("settings.integrations.title", "Integrations"),
 });
 </script>
 
@@ -128,11 +124,11 @@ useHead({
       />
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ t("settings.integrations.title") || "Integrations" }}
+          {{ t("settings.integrations.title", "Integrations") }}
         </h1>
         <p class="text-sm text-gray-500">
           {{
-            t("settings.integrations.subtitle") || "Configure external services"
+            t("settings.integrations.subtitle", "Configure external services")
           }}
         </p>
       </div>
@@ -157,8 +153,7 @@ useHead({
             </h3>
             <p class="text-xs text-gray-500">
               {{
-                t("settings.integrations.cloudinaryDesc") ||
-                "Image hosting and optimization"
+                t("settings.integrations.cloudinaryDesc", "Image hosting and optimization")
               }}
             </p>
           </div>
@@ -172,12 +167,11 @@ useHead({
         >
           <div>
             <p class="font-medium text-gray-900 dark:text-white">
-              {{ t("settings.integrations.useOwnKey") || "Use My Own API Key" }}
+              {{ t("settings.integrations.useOwnKey", "Use My Own API Key") }}
             </p>
             <p class="text-sm text-gray-500">
               {{
-                t("settings.integrations.useOwnKeyDesc") ||
-                "Configure your own Cloudinary account, or use system default"
+                t("settings.integrations.useOwnKeyDesc", "Configure your own Cloudinary account, or use system default")
               }}
             </p>
           </div>
@@ -277,7 +271,7 @@ useHead({
         <!-- Actions -->
         <div class="flex gap-3 pt-4">
           <UButton color="primary" @click="saveCloudinaryConfig">
-            {{ t("common.save") || "Save" }}
+            {{ t("common.save", "Save") }}
           </UButton>
           <UButton
             v-if="cloudinaryForm.useOwnKey"
@@ -286,7 +280,7 @@ useHead({
             :loading="testing"
             @click="testCloudinaryConnection"
           >
-            {{ t("settings.integrations.testConnection") || "Test Connection" }}
+            {{ t("settings.integrations.testConnection", "Test Connection") }}
           </UButton>
         </div>
       </div>

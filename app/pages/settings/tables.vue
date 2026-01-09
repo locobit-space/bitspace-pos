@@ -38,10 +38,10 @@ const tableForm = reactive({
 });
 
 const shapeOptions = [
-  { value: "square", label: t("tables.shapes.square") || "Square" },
-  { value: "round", label: t("tables.shapes.round") || "Round" },
-  { value: "rectangle", label: t("tables.shapes.rectangle") || "Rectangle" },
-  { value: "oval", label: t("tables.shapes.oval") || "Oval" },
+  { value: "square", label: t("tables.shapes.square", "Square") },
+  { value: "round", label: t("tables.shapes.round", "Round") },
+  { value: "rectangle", label: t("tables.shapes.rectangle", "Rectangle") },
+  { value: "oval", label: t("tables.shapes.oval", "Oval") },
 ];
 
 // Initialize
@@ -80,7 +80,7 @@ const saveTable = async () => {
   if (!tableForm.number) {
     toast.add({
       title: t("common.error"),
-      description: t("tables.numberRequired") || "Table number is required",
+      description: t("tables.numberRequired", "Table number is required"),
       color: "red",
     });
     return;
@@ -101,7 +101,7 @@ const saveTable = async () => {
       });
       toast.add({
         title: t("common.success"),
-        description: t("tables.updated") || "Table updated",
+        description: t("tables.updated", "Table updated"),
         color: "green",
       });
     } else {
@@ -117,7 +117,7 @@ const saveTable = async () => {
       });
       toast.add({
         title: t("common.success"),
-        description: t("tables.created") || "Table created",
+        description: t("tables.created", "Table created"),
         color: "green",
       });
     }
@@ -135,12 +135,12 @@ const saveTable = async () => {
 
 // Delete table
 const deleteTable = async (table: (typeof tables.tables.value)[number]) => {
-  if (!confirm(t("tables.confirmDelete") || "Delete this table?")) return;
+  if (!confirm(t("tables.confirmDelete", "Delete this table?"))) return;
 
   await tables.deleteTable(table.id);
   toast.add({
     title: t("common.success"),
-    description: t("tables.deleted") || "Table deleted",
+    description: t("tables.deleted", "Table deleted"),
     color: "green",
   });
 };
@@ -160,7 +160,7 @@ const copyQRUrl = async () => {
   await navigator.clipboard.writeText(url);
   toast.add({
     title: t("common.success"),
-    description: t("common.copied") || "Copied to clipboard",
+    description: t("common.copied", "Copied to clipboard"),
     color: "green",
   });
 };
@@ -212,7 +212,7 @@ const printQR = async () => {
         <div class="qr-container">
           <img class="qr-code" src="${qrUrl}" alt="Table QR Code" />
           <div class="table-name">${tableName}</div>
-          <div class="instructions">${t("tables.scanToOrder") || "Scan to view menu & order"
+          <div class="instructions">${t("tables.scanToOrder", "Scan to view menu & order")
       }</div>
         </div>
       </body>
@@ -235,7 +235,7 @@ const createDemoTables = async () => {
   await tables.createDemoData();
   toast.add({
     title: t("common.success"),
-    description: t("tables.demoCreated") || "Demo tables created",
+    description: t("tables.demoCreated", "Demo tables created"),
     color: "green",
   });
 };
@@ -280,19 +280,19 @@ const removeZone = async (zoneId: string) => {
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <CommonPageHeader :title="t('tables.title') || 'Table Management'" :description="t('tables.description') || 'Manage tables and QR code ordering'
+    <CommonPageHeader :title="t('tables.title', 'Table Management')" :description="t('tables.description', 'Manage tables and QR code ordering')
       ">
       <template #right>
         <div class="flex gap-2">
           <UButton v-if="!tables.tables.value.length" color="neutral" variant="outline" icon="i-heroicons-sparkles"
             @click="createDemoTables">
-            {{ t("tables.createDemo") || "Create Demo Tables" }}
+            {{ t("tables.createDemo", "Create Demo Tables") }}
           </UButton>
           <UButton color="neutral" variant="outline" icon="i-heroicons-map" @click="showZoneModal = true">
-            {{ t("tables.manageZones") || "Manage Zones" }}
+            {{ t("tables.manageZones", "Manage Zones") }}
           </UButton>
           <UButton color="primary" icon="i-heroicons-plus" @click="openTableModal()">
-            {{ t("tables.addTable") || "Add Table" }}
+            {{ t("tables.addTable", "Add Table") }}
           </UButton>
         </div>
       </template>
@@ -301,12 +301,12 @@ const removeZone = async (zoneId: string) => {
     <!-- Stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4">
       <CommonStatCard icon="i-heroicons-table-cells" icon-color="blue"
-        :label="t('tables.totalTables') || 'Total Tables'" :value="tables.activeTables.value.length" />
-      <CommonStatCard icon="i-heroicons-users" icon-color="green" :label="t('tables.totalCapacity') || 'Total Capacity'"
+        :label="t('tables.totalTables', 'Total Tables')" :value="tables.activeTables.value.length" />
+      <CommonStatCard icon="i-heroicons-users" icon-color="green" :label="t('tables.totalCapacity', 'Total Capacity')"
         :value="tables.totalCapacity.value" />
-      <CommonStatCard icon="i-heroicons-qr-code" icon-color="purple" :label="t('tables.qrEnabled') || 'QR Enabled'"
+      <CommonStatCard icon="i-heroicons-qr-code" icon-color="purple" :label="t('tables.qrEnabled', 'QR Enabled')"
         :value="tables.tables.value.filter((t) => t.qrOrderingEnabled).length" />
-      <CommonStatCard icon="i-heroicons-chart-bar" icon-color="yellow" :label="t('tables.occupancy') || 'Occupancy'"
+      <CommonStatCard icon="i-heroicons-chart-bar" icon-color="yellow" :label="t('tables.occupancy', 'Occupancy')"
         :value="`${tables.occupancyRate.value}%`" />
     </div>
 
@@ -330,23 +330,23 @@ const removeZone = async (zoneId: string) => {
           <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
             <div class="flex items-center gap-2">
               <Icon name="i-heroicons-users" class="w-4 h-4" />
-              <span>{{ t("tables.capacity") || "Capacity" }}:
+              <span>{{ t("tables.capacity", "Capacity") }}:
                 {{ table.capacity }}</span>
             </div>
             <div class="flex items-center gap-2">
               <Icon name="i-heroicons-square-3-stack-3d" class="w-4 h-4" />
-              <span>{{ t("tables.shape") || "Shape" }}:
+              <span>{{ t("tables.shape", "Shape") }}:
                 {{ t(`tables.shapes.${table.shape}`) || table.shape }}</span>
             </div>
             <div class="flex items-center gap-2">
               <Icon name="i-heroicons-qr-code" class="w-4 h-4" />
-              <span>{{ t("tables.qrOrdering") || "QR Ordering" }}:
+              <span>{{ t("tables.qrOrdering", "QR Ordering") }}:
                 <span :class="table.qrOrderingEnabled ? 'text-green-500' : 'text-gray-400'
                   ">
                   {{
                     table.qrOrderingEnabled
-                      ? t("common.enabled") || "Enabled"
-                      : t("common.disabled") || "Disabled"
+                      ? t("common.enabled", "Enabled")
+                      : t("common.disabled", "Disabled")
                   }}
                 </span>
               </span>
@@ -368,20 +368,19 @@ const removeZone = async (zoneId: string) => {
       <div v-else class="text-center py-12">
         <div class="text-6xl mb-4">🍽️</div>
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          {{ t("tables.noTables") || "No tables yet" }}
+          {{ t("tables.noTables", "No tables yet") }}
         </h3>
         <p class="text-gray-500 dark:text-gray-400 mb-4">
           {{
-            t("tables.noTablesDesc") ||
-            "Create tables to enable QR code ordering"
+            t("tables.noTablesDesc", "Create tables to enable QR code ordering")
           }}
         </p>
         <div class="flex gap-2 justify-center">
           <UButton color="primary" @click="openTableModal()">
-            {{ t("tables.addTable") || "Add Table" }}
+            {{ t("tables.addTable", "Add Table") }}
           </UButton>
           <UButton color="neutral" variant="outline" @click="createDemoTables">
-            {{ t("tables.createDemo") || "Create Demo Tables" }}
+            {{ t("tables.createDemo", "Create Demo Tables") }}
           </UButton>
         </div>
       </div>
@@ -395,38 +394,38 @@ const removeZone = async (zoneId: string) => {
             <h3 class="text-lg font-bold text-gray-900 dark:text-white">
               {{
                 selectedTable
-                  ? t("tables.editTable") || "Edit Table"
-                  : t("tables.addTable") || "Add Table"
+                  ? t("tables.editTable", "Edit Table")
+                  : t("tables.addTable", "Add Table")
               }}
             </h3>
           </template>
 
           <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="t('tables.tableNumber') || 'Table Number'" required>
+              <UFormField :label="t('tables.tableNumber', 'Table Number')" required>
                 <UInput v-model="tableForm.number" placeholder="T1" />
               </UFormField>
-              <UFormField :label="t('tables.tableName') || 'Name (optional)'">
-                <UInput v-model="tableForm.name" :placeholder="t('tables.namePlaceholder') || 'e.g. Window Seat'
+              <UFormField :label="t('tables.tableName', 'Name (optional)')">
+                <UInput v-model="tableForm.name" :placeholder="t('tables.namePlaceholder', 'e.g. Window Seat')
                   " />
               </UFormField>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="t('tables.capacity') || 'Capacity'">
+              <UFormField :label="t('tables.capacity', 'Capacity')">
                 <UInput v-model.number="tableForm.capacity" type="number" min="1" max="50" />
               </UFormField>
-              <UFormField :label="t('tables.minCapacity') || 'Min Capacity'">
+              <UFormField :label="t('tables.minCapacity', 'Min Capacity')">
                 <UInput v-model.number="tableForm.minCapacity" type="number" min="1" :max="tableForm.capacity" />
               </UFormField>
             </div>
 
-            <UFormField :label="t('tables.shape') || 'Shape'">
+            <UFormField :label="t('tables.shape', 'Shape')">
               <USelect v-model="tableForm.shape" :items="shapeOptions" value-key="value" label-key="label" />
             </UFormField>
-            <UFormField :label="t('tables.zone') || 'Zone'">
+            <UFormField :label="t('tables.zone', 'Zone')">
               <USelect v-model="tableForm.zone" :items="[
-                { id: '-', name: t('common.none') || 'None' },
+                { id: '-', name: t('common.none', 'None') },
                 ...tables.activeZones.value,
               ]" value-key="id" label-key="name" class="w-full" />
             </UFormField>
@@ -434,12 +433,11 @@ const removeZone = async (zoneId: string) => {
             <div class="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-500/10 rounded-lg">
               <div>
                 <div class="font-medium text-gray-900 dark:text-white">
-                  {{ t("tables.qrOrdering") || "QR Code Ordering" }}
+                  {{ t("tables.qrOrdering", "QR Code Ordering") }}
                 </div>
                 <div class="text-sm text-gray-500">
                   {{
-                    t("tables.qrOrderingDesc") ||
-                    "Allow customers to order by scanning QR"
+                    t("tables.qrOrderingDesc", "Allow customers to order by scanning QR")
                   }}
                 </div>
               </div>
@@ -449,12 +447,11 @@ const removeZone = async (zoneId: string) => {
             <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div>
                 <div class="font-medium text-gray-900 dark:text-white">
-                  {{ t("tables.active") || "Active" }}
+                  {{ t("tables.active", "Active") }}
                 </div>
                 <div class="text-sm text-gray-500">
                   {{
-                    t("tables.activeDesc") ||
-                    "Inactive tables are hidden from floor plan"
+                    t("tables.activeDesc", "Inactive tables are hidden from floor plan")
                   }}
                 </div>
               </div>
@@ -496,12 +493,12 @@ const removeZone = async (zoneId: string) => {
               {{ selectedQRTable.name || selectedQRTable.number }}
             </p>
             <p class="text-sm text-gray-500 mb-4">
-              {{ t("tables.scanToOrder") || "Scan to view menu & order" }}
+              {{ t("tables.scanToOrder", "Scan to view menu & order") }}
             </p>
 
             <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
               <p class="text-xs text-gray-500 mb-1">
-                {{ t("tables.orderingUrl") || "Menu URL" }}
+                {{ t("tables.orderingUrl", "Menu URL") }}
               </p>
               <p class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all">
                 {{ tables.getTableOrderingUrl(selectedQRTable.id) }}
@@ -528,13 +525,13 @@ const removeZone = async (zoneId: string) => {
     <UModal v-model:open="showZoneModal">
       <template #header>
         <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-          {{ t("tables.floorSettings") || "Zone Settings" }}
+          {{ t("tables.floorSettings", "Zone Settings") }}
         </h3>
       </template>
       <template #body>
         <div class="space-y-4">
           <h4 class="font-medium">
-            {{ t("pos.tables.manageFloors") || "Manage Zones" }}
+            {{ t("pos.tables.manageFloors", "Manage Zones") }}
           </h4>
           <div v-if="tables.activeZones.value.length === 0" class="text-gray-500 text-sm italic">
             No zones created yet.
@@ -545,7 +542,7 @@ const removeZone = async (zoneId: string) => {
           </div>
 
           <UButton variant="outline" icon="i-heroicons-plus" size="sm" @click="addZone">
-            {{ t("pos.tables.addFloor") || "Add Zone" }}
+            {{ t("pos.tables.addFloor", "Add Zone") }}
           </UButton>
         </div>
       </template>

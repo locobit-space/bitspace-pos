@@ -37,7 +37,7 @@
       <button
         v-if="chatSettings.enabled && showHeaderFeatures"
         class="relative p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        :title="$t('chat.title') || 'Team Chat'"
+        :title="$t('chat.title', 'Team Chat')"
         @click="chatStore.toggleChat()"
       >
         <Icon
@@ -71,7 +71,7 @@
       >
         <button
           class="p-2 rounded-xl size-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          :title="$t('help.title') || 'Help & Support'"
+          :title="$t('help.title', 'Help & Support')"
         >
           <Icon
             name="i-heroicons-question-mark-circle"

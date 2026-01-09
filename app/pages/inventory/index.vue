@@ -48,15 +48,15 @@ const activeTab = ref("inventory");
 
 // Dynamic branches from DB (with "All Branches" option)
 const branches = computed(() => [
-  { id: "all", name: t("common.allBranches") || "All Branches" },
+  { id: "all", name: t("common.allBranches", "All Branches") },
   ...inventory.branches.value.map((b) => ({ id: b.id, name: b.name })),
 ]);
 
 const statusOptions = computed(() => [
-  { value: "all", label: t("common.all") || "All" },
-  { value: "in-stock", label: t("inventory.inStock") || "In Stock" },
-  { value: "low-stock", label: t("inventory.lowStock") || "Low Stock" },
-  { value: "out-of-stock", label: t("inventory.outOfStock") || "Out of Stock" },
+  { value: "all", label: t("common.all", "All") },
+  { value: "in-stock", label: t("inventory.inStock", "In Stock") },
+  { value: "low-stock", label: t("inventory.lowStock", "Low Stock") },
+  { value: "out-of-stock", label: t("inventory.outOfStock", "Out of Stock") },
 ]);
 
 // Computed
@@ -164,7 +164,7 @@ const handleAdjustment = async (data: {
 
     if (success) {
       toast.add({
-        title: t("inventory.stockAdjusted") || "Stock Adjusted",
+        title: t("inventory.stockAdjusted", "Stock Adjusted"),
         description: `${selectedItem.value.productName} stock updated`,
         icon: "i-heroicons-check-circle",
         color: "green",
@@ -172,7 +172,7 @@ const handleAdjustment = async (data: {
       showAdjustModal.value = false;
     } else {
       toast.add({
-        title: t("common.error") || "Error",
+        title: t("common.error", "Error"),
         description: inventory.error.value || "Failed to adjust stock",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
@@ -202,7 +202,7 @@ const handleTransfer = async (data: {
 
     if (success) {
       toast.add({
-        title: t("inventory.stockTransferred") || "Stock Transferred",
+        title: t("inventory.stockTransferred", "Stock Transferred"),
         description: `${data.quantity} units transferred`,
         icon: "i-heroicons-check-circle",
         color: "green",
@@ -210,7 +210,7 @@ const handleTransfer = async (data: {
       showTransferModal.value = false;
     } else {
       toast.add({
-        title: t("common.error") || "Error",
+        title: t("common.error", "Error"),
         description: inventory.error.value || "Failed to transfer stock",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
@@ -224,10 +224,9 @@ const handleTransfer = async (data: {
 const handleAddStock = async (data: AddStockFormData) => {
   if (!data.productId || data.quantity <= 0) {
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description:
-        t("inventory.selectProductAndQuantity") ||
-        "Please select a product and enter quantity",
+        t("inventory.selectProductAndQuantity", "Please select a product and enter quantity"),
       icon: "i-heroicons-exclamation-circle",
       color: "red",
     });
@@ -265,7 +264,7 @@ const handleAddStock = async (data: AddStockFormData) => {
       }
 
       toast.add({
-        title: t("inventory.stockAdded") || "Stock Added",
+        title: t("inventory.stockAdded", "Stock Added"),
         description: data.lotNumber
           ? `Added ${data.quantity} units (Lot: ${data.lotNumber})`
           : `Added ${data.quantity} units`,
@@ -275,7 +274,7 @@ const handleAddStock = async (data: AddStockFormData) => {
       showAddStockModal.value = false;
     } else {
       toast.add({
-        title: t("common.error") || "Error",
+        title: t("common.error", "Error"),
         description: inventory.error.value || "Failed to add stock",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
@@ -289,9 +288,9 @@ const handleAddStock = async (data: AddStockFormData) => {
 const handleSaveSupplier = async (data: SupplierFormData, isEdit: boolean) => {
   if (!data.name) {
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description:
-        t("inventory.supplierNameRequired") || "Supplier name is required",
+        t("inventory.supplierNameRequired", "Supplier name is required"),
       icon: "i-heroicons-exclamation-circle",
       color: "red",
     });
@@ -328,7 +327,7 @@ const handleSaveSupplier = async (data: SupplierFormData, isEdit: boolean) => {
       showSupplierModal.value = false;
     } else {
       toast.add({
-        title: t("common.error") || "Error",
+        title: t("common.error", "Error"),
         description: inventory.error.value || "Failed to save supplier",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
@@ -369,7 +368,7 @@ const handleSavePurchaseOrder = async (data: POFormData) => {
 
       if (success) {
         toast.add({
-          title: t("inventory.poUpdated") || "Purchase Order Updated",
+          title: t("inventory.poUpdated", "Purchase Order Updated"),
           description: `PO#${editingPO.value.id}`,
           icon: "i-heroicons-check-circle",
           color: "green",
@@ -418,7 +417,7 @@ const handleEditPO = (po: (typeof purchaseOrders.value)[number]) => {
 };
 
 const handleDeletePO = async (id: string) => {
-  if (!confirm(t("inventory.confirmDeletePO") || "Delete this purchase order?"))
+  if (!confirm(t("inventory.confirmDeletePO", "Delete this purchase order?")))
     return;
 
   adjusting.value = true;
@@ -426,7 +425,7 @@ const handleDeletePO = async (id: string) => {
     const success = await inventory.deletePurchaseOrder(id);
     if (success) {
       toast.add({
-        title: t("inventory.poDeleted") || "Purchase Order Deleted",
+        title: t("inventory.poDeleted", "Purchase Order Deleted"),
         icon: "i-heroicons-check-circle",
         color: "green",
       });
@@ -450,8 +449,8 @@ const handleApprovePO = async (id: string) => {
     const success = await inventory.updatePurchaseOrderStatus(id, "pending");
     if (success) {
       toast.add({
-        title: t("inventory.poApproved") || "Purchase Order Approved",
-        description: t("inventory.poNowPending") || "Status changed to pending",
+        title: t("inventory.poApproved", "Purchase Order Approved"),
+        description: t("inventory.poNowPending", "Status changed to pending"),
         icon: "i-heroicons-check-circle",
         color: "green",
       });
@@ -467,9 +466,9 @@ const handleMarkOrdered = async (id: string) => {
     const success = await inventory.updatePurchaseOrderStatus(id, "ordered");
     if (success) {
       toast.add({
-        title: t("inventory.poOrdered") || "Marked as Ordered",
+        title: t("inventory.poOrdered", "Marked as Ordered"),
         description:
-          t("inventory.poNowOrdered") || "Order has been placed with supplier",
+          t("inventory.poNowOrdered", "Order has been placed with supplier"),
         icon: "i-heroicons-truck",
         color: "blue",
       });
@@ -485,7 +484,7 @@ const handleReceivePO = (po: (typeof purchaseOrders.value)[number]) => {
 };
 
 const handleCancelPO = async (id: string) => {
-  if (!confirm(t("inventory.confirmCancelPO") || "Cancel this purchase order?"))
+  if (!confirm(t("inventory.confirmCancelPO", "Cancel this purchase order?")))
     return;
 
   adjusting.value = true;
@@ -493,7 +492,7 @@ const handleCancelPO = async (id: string) => {
     const success = await inventory.updatePurchaseOrderStatus(id, "cancelled");
     if (success) {
       toast.add({
-        title: t("inventory.poCancelled") || "Purchase Order Cancelled",
+        title: t("inventory.poCancelled", "Purchase Order Cancelled"),
         icon: "i-heroicons-x-circle",
         color: "red",
       });
@@ -514,7 +513,7 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
       // Always show view
       [
         {
-          label: t("common.view") || "View Details",
+          label: t("common.view", "View Details"),
           icon: "i-heroicons-eye",
           onClick: () => navigateTo(`/inventory/po/${po.id}`),
         },
@@ -524,7 +523,7 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
   // Edit action for draft/pending
   if (canEditPO(po.status)) {
     items[0].push({
-      label: t("common.edit") || "Edit",
+      label: t("common.edit", "Edit"),
       icon: "i-heroicons-pencil-square",
       onClick: () => handleEditPO(po),
     });
@@ -540,7 +539,7 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
 
   if (po.status === "draft") {
     statusActions.push({
-      label: t("inventory.approvePO") || "Approve",
+      label: t("inventory.approvePO", "Approve"),
       icon: "i-heroicons-check",
       onClick: () => handleApprovePO(po.id),
     });
@@ -548,7 +547,7 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
 
   if (po.status === "pending") {
     statusActions.push({
-      label: t("inventory.markAsOrdered") || "Mark as Ordered",
+      label: t("inventory.markAsOrdered", "Mark as Ordered"),
       icon: "i-heroicons-truck",
       onClick: () => handleMarkOrdered(po.id),
     });
@@ -556,7 +555,7 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
 
   if (po.status === "ordered" || po.status === "partial") {
     statusActions.push({
-      label: t("inventory.receivePO") || "Receive Stock",
+      label: t("inventory.receivePO", "Receive Stock"),
       icon: "i-heroicons-archive-box-arrow-down",
       onClick: () => handleReceivePO(po),
     });
@@ -576,7 +575,7 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
 
   if (po.status !== "received" && po.status !== "cancelled") {
     destructiveActions.push({
-      label: t("inventory.cancelPO") || "Cancel",
+      label: t("inventory.cancelPO", "Cancel"),
       icon: "i-heroicons-x-circle",
       color: "red",
       onClick: () => handleCancelPO(po.id),
@@ -585,7 +584,7 @@ const getPOActions = (po: (typeof purchaseOrders.value)[number]) => {
 
   if (canDeletePO(po.status)) {
     destructiveActions.push({
-      label: t("common.delete") || "Delete",
+      label: t("common.delete", "Delete"),
       icon: "i-heroicons-trash",
       color: "red",
       onClick: () => handleDeletePO(po.id),
@@ -650,15 +649,15 @@ const exportInventory = async () => {
     URL.revokeObjectURL(url);
 
     toast.add({
-      title: t("common.exported") || "Exported",
+      title: t("common.exported", "Exported"),
       description:
-        t("inventory.exportSuccess") || "Inventory data exported successfully",
+        t("inventory.exportSuccess", "Inventory data exported successfully"),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
   } catch {
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: "Failed to export inventory",
       icon: "i-heroicons-exclamation-circle",
       color: "red",
@@ -676,9 +675,9 @@ const handleReceiveStockSuccess = async (_receipt: unknown) => {
   await stockLots.loadStockLots();
 
   toast.add({
-    title: t("inventory.stockReceived") || "Stock Received",
+    title: t("inventory.stockReceived", "Stock Received"),
     description:
-      t("inventory.stockLotsCreated") || "Stock lots created successfully",
+      t("inventory.stockLotsCreated", "Stock lots created successfully"),
     icon: "i-heroicons-check-circle",
     color: "green",
   });
@@ -697,10 +696,9 @@ const handleLotAdjust = (lot: StockLot) => {
 const handleLotMove = async (_lot: StockLot) => {
   // TODO: Implement position transfer modal
   toast.add({
-    title: t("common.info") || "Info",
+    title: t("common.info", "Info"),
     description:
-      t("inventory.positionTransferComingSoon") ||
-      "Position transfer coming soon",
+      t("inventory.positionTransferComingSoon", "Position transfer coming soon"),
     icon: "i-heroicons-information-circle",
     color: "blue",
   });
@@ -709,9 +707,8 @@ const handleLotMove = async (_lot: StockLot) => {
 const handleLotQuarantine = async (lot: StockLot) => {
   const confirmed = confirm(
     lot.status === "quarantine"
-      ? t("inventory.confirmReleaseQuarantine") ||
-      "Release this lot from quarantine?"
-      : t("inventory.confirmQuarantine") || "Quarantine this lot?"
+      ? t("inventory.confirmReleaseQuarantine", "Release this lot from quarantine?")
+      : t("inventory.confirmQuarantine", "Quarantine this lot?")
   );
 
   if (!confirmed) return;
@@ -725,7 +722,7 @@ const handleLotQuarantine = async (lot: StockLot) => {
 
     if (success) {
       toast.add({
-        title: t("inventory.lotQuarantined") || "Lot Quarantined",
+        title: t("inventory.lotQuarantined", "Lot Quarantined"),
         description: lot.lotNumber,
         icon: "i-heroicons-shield-exclamation",
         color: "amber",

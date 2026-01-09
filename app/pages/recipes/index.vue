@@ -75,9 +75,9 @@ const recipeForm = ref({
 // Options
 const difficultyOptions = computed(() => [
   { value: "all", label: t("common.all") },
-  { value: "easy", label: t("recipes.easy") || "Easy" },
-  { value: "medium", label: t("recipes.medium") || "Medium" },
-  { value: "hard", label: t("recipes.hard") || "Hard" },
+  { value: "easy", label: t("recipes.easy", "Easy") },
+  { value: "medium", label: t("recipes.medium", "Medium") },
+  { value: "hard", label: t("recipes.hard", "Hard") },
 ]);
 
 const servingUnitOptions = computed(() => [
@@ -264,7 +264,7 @@ async function saveRecipe() {
     toast.add({
       title: t("common.error"),
       description:
-        t("recipes.validation.nameRequired") || "Recipe name is required",
+        t("recipes.validation.nameRequired", "Recipe name is required"),
       color: "red",
       icon: "i-heroicons-exclamation-circle",
     });
@@ -305,7 +305,7 @@ async function saveRecipe() {
       toast.add({
         title: t("common.success"),
         description:
-          t("recipes.messages.updated") || "Recipe updated successfully",
+          t("recipes.messages.updated", "Recipe updated successfully"),
         color: "green",
         icon: "i-heroicons-check-circle",
       });
@@ -343,7 +343,7 @@ async function saveRecipe() {
       toast.add({
         title: t("common.success"),
         description:
-          t("recipes.messages.created") || "Recipe created successfully",
+          t("recipes.messages.created", "Recipe created successfully"),
         color: "green",
         icon: "i-heroicons-check-circle",
       });
@@ -371,7 +371,7 @@ async function executeDeleteRecipe() {
     toast.add({
       title: t("common.success"),
       description:
-        t("recipes.messages.deleted") || "Recipe deleted successfully",
+        t("recipes.messages.deleted", "Recipe deleted successfully"),
       color: "green",
       icon: "i-heroicons-trash",
     });
@@ -381,7 +381,7 @@ async function executeDeleteRecipe() {
     toast.add({
       title: t("common.error"),
       description:
-        t("recipes.messages.deleteFailed") || "Failed to delete recipe",
+        t("recipes.messages.deleteFailed", "Failed to delete recipe"),
       color: "red",
       icon: "i-heroicons-exclamation-circle",
     });
@@ -819,7 +819,7 @@ watch([searchQuery, selectedDifficulty], () => {
                 <span class="text-sm text-gray-500 ml-2">
                   {{ t("recipes.profit") }}:
                   {{ formatCurrency(recipe.profitPerServing) }}
-                  {{ t("common.perServing") || "per serving" }}
+                  {{ t("common.perServing", "per serving") }}
                 </span>
               </div>
               <UBadge
@@ -1221,7 +1221,7 @@ watch([searchQuery, selectedDifficulty], () => {
               >
                 <span
                   >{{ t("recipes.profit") }}
-                  {{ t("common.perServing") || "per Serving" }}:</span
+                  {{ t("common.perServing", "per Serving") }}:</span
                 >
                 <span>{{
                   formatCurrency(selectedRecipe.profitPerServing)

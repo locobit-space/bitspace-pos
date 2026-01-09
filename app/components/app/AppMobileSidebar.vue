@@ -13,7 +13,7 @@
         <div>
           <h2 class="font-bold text-gray-900 dark:text-white">bnos.space</h2>
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            {{ $t("navigation.menu") || "Menu" }}
+            {{ $t("navigation.menu", "Menu") }}
           </p>
         </div>
       </div>
@@ -26,7 +26,7 @@
         <p
           class="px-3 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
         >
-          {{ $t("navigation.main") || "Main" }}
+          {{ $t("navigation.main", "Main") }}
         </p>
         <ul class="space-y-1">
           <li v-for="item in mainItems" :key="item.to">
@@ -67,7 +67,7 @@
         <p
           class="px-3 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
         >
-          {{ $t("navigation.business") || "Business" }}
+          {{ $t("navigation.business", "Business") }}
         </p>
         <ul class="space-y-1">
           <li v-for="item in businessItems" :key="item.to">
@@ -108,7 +108,7 @@
         <p
           class="px-3 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
         >
-          {{ $t("navigation.management") || "Management" }}
+          {{ $t("navigation.management", "Management") }}
         </p>
         <ul class="space-y-1">
           <li v-for="item in managementItems" :key="item.to">
@@ -168,7 +168,7 @@
           <Icon name="i-heroicons-cog-6-tooth" size="20" />
         </div>
         <span class="font-medium text-sm">{{
-          $t("navigation.settings") || "Settings"
+          $t("navigation.settings", "Settings")
         }}</span>
       </NuxtLinkLocale>
     </div>
@@ -249,7 +249,7 @@ const allItems = computed(() => ({
       feature: "accounting",
     },
     {
-      label: t("memberships.title") || "Memberships",
+      label: t("memberships.title", "Memberships"),
       to: "/memberships",
       icon: "i-heroicons-credit-card",
       feature: "memberships",

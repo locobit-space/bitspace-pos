@@ -189,7 +189,7 @@ export function useInvite() {
 
       if (url.includes("?d=")) {
         const urlObj = new URL(url, "http://localhost");
-        encrypted = urlObj.searchParams.get("d") || "";
+        encrypted = urlObj.searchParams.get("d", "");
       } else {
         encrypted = url;
       }

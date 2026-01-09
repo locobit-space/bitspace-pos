@@ -44,10 +44,10 @@ const isPublic = computed({
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t("products.status") || "Status" }}
+            {{ t("products.status", "Status") }}
           </h3>
           <p class="text-xs text-gray-500">
-            {{ t("products.statusHint") || "Product visibility" }}
+            {{ t("products.statusHint", "Product visibility") }}
           </p>
         </div>
       </div>
@@ -84,16 +84,15 @@ const isPublic = computed({
             <p class="font-medium text-gray-900 dark:text-white">
               {{
                 isActive
-                  ? t("products.active") || "Active"
-                  : t("products.inactive") || "Inactive"
+                  ? t("products.active", "Active")
+                  : t("products.inactive", "Inactive")
               }}
             </p>
             <p class="text-sm text-gray-500">
               {{
                 isActive
-                  ? t("products.activeHint") ||
-                    "Product is visible and can be sold"
-                  : t("products.inactiveHint") || "Product is hidden from POS"
+                  ? t("products.activeHint", "Product is visible and can be sold")
+                  : t("products.inactiveHint", "Product is hidden from POS")
               }}
             </p>
           </div>
@@ -134,15 +133,15 @@ const isPublic = computed({
             <p class="font-medium text-gray-900 dark:text-white">
               {{
                 isPublic
-                  ? t("products.public") || "Public"
-                  : t("products.private") || "Private"
+                  ? t("products.public", "Public")
+                  : t("products.private", "Private")
               }}
             </p>
             <p class="text-sm text-gray-500">
               {{
                 isPublic
-                  ? t("products.publicHint") || "Visible on customer QR menu"
-                  : t("products.privateHint") || "Only visible to staff in POS"
+                  ? t("products.publicHint", "Visible on customer QR menu")
+                  : t("products.privateHint", "Only visible to staff in POS")
               }}
             </p>
           </div>

@@ -493,7 +493,7 @@ export function useMemberships() {
     }
 
     toast.add({
-      title: t('memberships.added') || 'Membership Added',
+      title: t('memberships.added', 'Membership Added'),
       icon: 'i-heroicons-check-circle',
       color: 'success',
     });
@@ -545,8 +545,8 @@ export function useMemberships() {
 
     if (membership.status !== 'active') {
       toast.add({
-        title: t('memberships.notActive') || 'Membership Not Active',
-        description: t('memberships.cannotCheckIn') || 'This membership is not active',
+        title: t('memberships.notActive', 'Membership Not Active'),
+        description: t('memberships.cannotCheckIn', 'This membership is not active'),
         icon: 'i-heroicons-exclamation-circle',
         color: 'warning',
       });
@@ -578,7 +578,7 @@ export function useMemberships() {
     await updateMembership(membership.id, { checkInCount: membership.checkInCount });
 
     toast.add({
-      title: t('memberships.checkedIn') || 'Checked In! ✅',
+      title: t('memberships.checkedIn', 'Checked In! ✅'),
       description: membership.customerName || undefined,
       icon: 'i-heroicons-check-circle',
       color: 'success',
@@ -614,7 +614,7 @@ export function useMemberships() {
     saveMemberships();
 
     toast.add({
-      title: t('memberships.renewed') || 'Membership Renewed',
+      title: t('memberships.renewed', 'Membership Renewed'),
       icon: 'i-heroicons-arrow-path',
       color: 'success',
     });
@@ -697,8 +697,8 @@ export function useMemberships() {
     const usedBy = memberships.value.filter((m) => m.planId === id);
     if (usedBy.length > 0) {
       toast.add({
-        title: t('memberships.planInUse') || 'Plan In Use',
-        description: t('memberships.cannotDeletePlan') || 'This plan has active memberships',
+        title: t('memberships.planInUse', 'Plan In Use'),
+        description: t('memberships.cannotDeletePlan', 'This plan has active memberships'),
         icon: 'i-heroicons-exclamation-triangle',
         color: 'warning',
       });

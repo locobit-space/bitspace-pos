@@ -312,15 +312,13 @@
             >
               <h4 class="text-sm font-medium mb-3">
                 {{
-                  $t("settings.receipt.content.dailyOrderNumber") ||
-                  "Daily Order Number Sequence"
+                  $t("settings.receipt.content.dailyOrderNumber", "Daily Order Number Sequence")
                 }}
               </h4>
               <div class="flex items-end gap-3">
                 <UFormField
                   :label="
-                    $t('settings.receipt.content.currentSequence') ||
-                    'Current Sequence'
+                    $t('settings.receipt.content.currentSequence', 'Current Sequence')
                   "
                   name="orderNumber"
                   class="flex-1"
@@ -334,16 +332,14 @@
               </div>
               <p class="text-xs text-gray-500 mt-1">
                 {{
-                  $t("settings.receipt.content.sequenceHint") ||
-                  "Manually reset the daily counter. The next order will be this number + 1."
+                  $t("settings.receipt.content.sequenceHint", "Manually reset the daily counter. The next order will be this number + 1.")
                 }}
               </p>
               <div class="mt-3">
                 <UCheckbox
                   v-model="autoResetDailyLocal"
                   :label="
-                    $t('settings.receipt.content.autoResetDaily') ||
-                    'Auto-reset daily'
+                    $t('settings.receipt.content.autoResetDaily', 'Auto-reset daily')
                   "
                 />
                 <p class="text-xs text-gray-500 mt-1 ml-6">

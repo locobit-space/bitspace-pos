@@ -20,7 +20,7 @@ const hasReceiptFooter = computed(() => !!shop.shopConfig.value?.receiptFooter);
 const coreItems = computed(() => [
   {
     id: "shop-config",
-    label: t("shop.setup.step1.title") || "Shop Information",
+    label: t("shop.setup.step1.title", "Shop Information"),
     icon: "i-heroicons-check-circle",
     completed: true,
     color: "text-green-600 dark:text-green-400",
@@ -28,7 +28,7 @@ const coreItems = computed(() => [
   },
   {
     id: "first-branch",
-    label: t("shop.setup.step3.title") || "First Branch",
+    label: t("shop.setup.step3.title", "First Branch"),
     icon: "i-heroicons-check-circle",
     completed: true,
     color: "text-green-600 dark:text-green-400",
@@ -39,8 +39,8 @@ const coreItems = computed(() => [
 const recommendedItems = computed(() => [
   {
     id: "add-products",
-    label: t("onboarding.addProducts") || "Add your first products",
-    description: t("onboarding.addProductsDesc") || "Start building your product catalog",
+    label: t("onboarding.addProducts", "Add your first products"),
+    description: t("onboarding.addProductsDesc", "Start building your product catalog"),
     icon: "i-heroicons-cube",
     completed: hasProducts.value,
     action: "/products",
@@ -49,8 +49,8 @@ const recommendedItems = computed(() => [
   },
   {
     id: "configure-tax",
-    label: t("onboarding.configureTax") || "Configure tax settings",
-    description: t("onboarding.configureTaxDesc") || "Set up tax rates for your business",
+    label: t("onboarding.configureTax", "Configure tax settings"),
+    description: t("onboarding.configureTaxDesc", "Set up tax rates for your business"),
     icon: "i-heroicons-receipt-percent",
     completed: hasTaxConfigured.value,
     action: "/settings",
@@ -59,8 +59,8 @@ const recommendedItems = computed(() => [
   },
   {
     id: "invite-team",
-    label: t("onboarding.inviteTeam") || "Invite team members",
-    description: t("onboarding.inviteTeamDesc") || "Share your company code with staff",
+    label: t("onboarding.inviteTeam", "Invite team members"),
+    description: t("onboarding.inviteTeamDesc", "Share your company code with staff"),
     icon: "i-heroicons-users",
     completed: hasCompanyCode.value,
     action: "/settings/company",
@@ -69,8 +69,8 @@ const recommendedItems = computed(() => [
   },
   {
     id: "receipt-template",
-    label: t("onboarding.customizeReceipt") || "Customize receipt template",
-    description: t("onboarding.customizeReceiptDesc") || "Add your branding to receipts",
+    label: t("onboarding.customizeReceipt", "Customize receipt template"),
+    description: t("onboarding.customizeReceiptDesc", "Add your branding to receipts"),
     icon: "i-heroicons-document-text",
     completed: hasReceiptFooter.value,
     action: "/settings",
@@ -121,12 +121,11 @@ const handleAction = (actionPath: string) => {
           </div>
           <div>
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-              {{ t("onboarding.getStarted") || "Get Started with Your Shop" }}
+              {{ t("onboarding.getStarted", "Get Started with Your Shop") }}
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{
-                t("onboarding.completeSetup") ||
-                "Complete these steps to get the most out of Bitspace POS"
+                t("onboarding.completeSetup", "Complete these steps to get the most out of Bitspace POS")
               }}
             </p>
           </div>
@@ -135,7 +134,7 @@ const handleAction = (actionPath: string) => {
         <!-- Dismiss button -->
         <button
           class="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
-          :title="t('common.dismiss') || 'Dismiss'"
+          :title="t('common.dismiss', 'Dismiss')"
           @click="handleDismiss"
         >
           <UIcon
@@ -149,7 +148,7 @@ const handleAction = (actionPath: string) => {
       <div class="mb-6">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ t("onboarding.progress") || "Setup Progress" }}
+            {{ t("onboarding.progress", "Setup Progress") }}
           </span>
           <span
             class="text-sm font-bold text-primary-600 dark:text-primary-400"
@@ -176,7 +175,7 @@ const handleAction = (actionPath: string) => {
             name="i-heroicons-check-badge"
             class="w-5 h-5 text-green-600 dark:text-green-400"
           />
-          {{ t("onboarding.coreSetup") || "Core Setup Complete" }}
+          {{ t("onboarding.coreSetup", "Core Setup Complete") }}
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div
@@ -203,7 +202,7 @@ const handleAction = (actionPath: string) => {
             name="i-heroicons-sparkles"
             class="w-5 h-5 text-amber-600 dark:text-amber-400"
           />
-          {{ t("onboarding.recommendedSteps") || "Recommended Next Steps" }}
+          {{ t("onboarding.recommendedSteps", "Recommended Next Steps") }}
         </h3>
         <div class="space-y-2">
           <button
@@ -261,8 +260,7 @@ const handleAction = (actionPath: string) => {
             </p>
             <p class="text-xs text-green-700 dark:text-green-300">
               {{
-                t("onboarding.readyToSell") ||
-                "Your shop is ready to start making sales."
+                t("onboarding.readyToSell", "Your shop is ready to start making sales.")
               }}
             </p>
           </div>

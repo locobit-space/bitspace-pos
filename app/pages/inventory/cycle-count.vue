@@ -114,7 +114,7 @@ async function handleCreateCount() {
     toast.add({
       title: t("common.error"),
       description:
-        t("cycleCount.fillRequired") || "Please fill all required fields",
+        t("cycleCount.fillRequired", "Please fill all required fields"),
       color: "error",
     });
     return;
@@ -143,7 +143,7 @@ async function handleCreateCount() {
   if (result) {
     toast.add({
       title: t("common.success"),
-      description: t("cycleCount.created") || "Cycle count created",
+      description: t("cycleCount.created", "Cycle count created"),
       color: "success",
     });
     showCreateModal.value = false;
@@ -167,7 +167,7 @@ async function handleStartCount(count: CycleCount) {
     selectedCount.value = cycleCountStore.getCycleCount(count.id) || null;
     toast.add({
       title: t("common.success"),
-      description: t("cycleCount.started") || "Counting started",
+      description: t("cycleCount.started", "Counting started"),
       color: "success",
     });
   }
@@ -213,7 +213,7 @@ async function handleSubmitForReview() {
       cycleCountStore.getCycleCount(selectedCount.value.id) || null;
     toast.add({
       title: t("common.success"),
-      description: t("cycleCount.submitted") || "Submitted for review",
+      description: t("cycleCount.submitted", "Submitted for review"),
       color: "success",
     });
   }
@@ -233,7 +233,7 @@ async function handleApprove() {
     toast.add({
       title: t("common.success"),
       description:
-        t("cycleCount.approved") || "Count approved and stock adjusted",
+        t("cycleCount.approved", "Count approved and stock adjusted"),
       color: "success",
     });
   }
@@ -260,8 +260,8 @@ function formatCurrency(amount: number): string {
   <div class="min-h-screen">
     <!-- Header -->
     <CommonPageHeader
-      :title="t('cycleCount.title') || 'Cycle Counting'"
-      :description="t('cycleCount.description') || 'Physical inventory verification'"
+      :title="t('cycleCount.title', 'Cycle Counting')"
+      :description="t('cycleCount.description', 'Physical inventory verification')"
     >
       <template #left>
         <UButton
@@ -275,7 +275,7 @@ function formatCurrency(amount: number): string {
         <UButton
           color="primary"
           icon="i-heroicons-plus"
-          :label="t('cycleCount.newCount') || 'New Count'"
+          :label="t('cycleCount.newCount', 'New Count')"
           @click="showCreateModal = true"
         />
       </template>
@@ -285,12 +285,12 @@ function formatCurrency(amount: number): string {
           variant="link"
           :items="[
             {
-              label: t('cycleCount.pending') || 'Pending',
+              label: t('cycleCount.pending', 'Pending'),
               value: 'pending',
               icon: 'i-heroicons-clock',
             },
             {
-              label: t('cycleCount.completed') || 'Completed',
+              label: t('cycleCount.completed', 'Completed'),
               value: 'completed',
               icon: 'i-heroicons-check-circle',
             },
@@ -340,7 +340,7 @@ function formatCurrency(amount: number): string {
           <div class="mt-4">
             <div class="flex justify-between text-sm mb-1">
               <span class="text-gray-600 dark:text-gray-400">
-                {{ t("cycleCount.progress") || "Progress" }}
+                {{ t("cycleCount.progress", "Progress") }}
               </span>
               <span class="font-medium">
                 {{ selectedCount.countedItems }} / {{ selectedCount.totalItems }}
@@ -368,7 +368,7 @@ function formatCurrency(amount: number): string {
             <div class="flex items-center gap-2">
               <UIcon name="i-heroicons-exclamation-triangle" class="text-yellow-500" />
               <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                {{ selectedCount.varianceCount }} {{ t("cycleCount.itemsWithVariance") || "items with variance" }}
+                {{ selectedCount.varianceCount }} {{ t("cycleCount.itemsWithVariance", "items with variance") }}
               </span>
               <span class="ml-auto font-bold text-yellow-600 dark:text-yellow-400">
                 {{ formatCurrency(Math.abs(selectedCount.varianceValue)) }}
@@ -385,7 +385,7 @@ function formatCurrency(amount: number): string {
               @click="handleStartCount(selectedCount)"
             >
               <UIcon name="i-heroicons-play" class="mr-1" />
-              {{ t("cycleCount.startCounting") || "Start Counting" }}
+              {{ t("cycleCount.startCounting", "Start Counting") }}
             </UButton>
             <UButton
               v-if="selectedCount.status === 'in_progress' &&
@@ -395,7 +395,7 @@ function formatCurrency(amount: number): string {
               @click="handleSubmitForReview"
             >
               <UIcon name="i-heroicons-paper-airplane" class="mr-1" />
-              {{ t("cycleCount.submitReview") || "Submit for Review" }}
+              {{ t("cycleCount.submitReview", "Submit for Review") }}
             </UButton>
             <UButton
               v-if="selectedCount.status === 'pending_review'"
@@ -404,7 +404,7 @@ function formatCurrency(amount: number): string {
               @click="handleApprove"
             >
               <UIcon name="i-heroicons-check" class="mr-1" />
-              {{ t("cycleCount.approve") || "Approve & Adjust Stock" }}
+              {{ t("cycleCount.approve", "Approve & Adjust Stock") }}
             </UButton>
           </div>
         </div>
@@ -458,7 +458,7 @@ function formatCurrency(amount: number): string {
               <div class="text-right">
                 <div class="flex items-center gap-2">
                   <span class="text-sm text-gray-500">
-                    {{ t("cycleCount.expected") || "Expected" }}: {{ item.expectedQty }}
+                    {{ t("cycleCount.expected", "Expected") }}: {{ item.expectedQty }}
                   </span>
                   <span
                     v-if="item.countedQty !== undefined"
@@ -500,14 +500,14 @@ function formatCurrency(amount: number): string {
           <div v-if="pendingCounts.length === 0" class="text-center py-12">
             <UIcon name="i-heroicons-clipboard-document-list" class="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p class="text-gray-500">
-              {{ t("cycleCount.noPending") || "No pending counts" }}
+              {{ t("cycleCount.noPending", "No pending counts") }}
             </p>
             <UButton
               class="mt-4"
               color="primary"
               @click="showCreateModal = true"
             >
-              {{ t("cycleCount.createFirst") || "Create First Count" }}
+              {{ t("cycleCount.createFirst", "Create First Count") }}
             </UButton>
           </div>
 
@@ -548,7 +548,7 @@ function formatCurrency(amount: number): string {
           <div v-if="completedCounts.length === 0" class="text-center py-12">
             <UIcon name="i-heroicons-check-circle" class="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p class="text-gray-500">
-              {{ t("cycleCount.noCompleted") || "No completed counts" }}
+              {{ t("cycleCount.noCompleted", "No completed counts") }}
             </p>
           </div>
 
@@ -596,7 +596,7 @@ function formatCurrency(amount: number): string {
             <div class="flex items-center justify-between">
               <h3 class="font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-clipboard-document-list" class="text-primary-500" />
-                {{ t("cycleCount.newCount") || "New Cycle Count" }}
+                {{ t("cycleCount.newCount", "New Cycle Count") }}
               </h3>
               <UButton
                 icon="i-heroicons-x-mark"
@@ -609,26 +609,26 @@ function formatCurrency(amount: number): string {
           </template>
 
           <div class="space-y-4">
-            <UFormField :label="t('cycleCount.countName') || 'Count Name'" required>
+            <UFormField :label="t('cycleCount.countName', 'Count Name')" required>
               <UInput
                 v-model="createForm.name"
-                :placeholder="t('cycleCount.countNamePlaceholder') || 'e.g. Q1 2024 Count'"
+                :placeholder="t('cycleCount.countNamePlaceholder', 'e.g. Q1 2024 Count')"
               />
             </UFormField>
 
-            <UFormField :label="t('common.branch') || 'Branch'" required>
+            <UFormField :label="t('common.branch', 'Branch')" required>
               <USelect
                 v-model="createForm.branchId"
                 :items="branches.map((b) => ({ value: b.id, label: b.name }))"
-                :placeholder="t('common.selectBranch') || 'Select branch'"
+                :placeholder="t('common.selectBranch', 'Select branch')"
               />
             </UFormField>
 
-            <UFormField :label="t('cycleCount.scheduledDate') || 'Scheduled Date'">
+            <UFormField :label="t('cycleCount.scheduledDate', 'Scheduled Date')">
               <UInput v-model="createForm.scheduledDate" type="date" />
             </UFormField>
 
-            <UFormField :label="t('cycleCount.selectProducts') || 'Select Products'" required>
+            <UFormField :label="t('cycleCount.selectProducts', 'Select Products')" required>
               <div class="max-h-48 overflow-y-auto space-y-2 p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <label
                   v-for="item in inventoryItems"
@@ -650,10 +650,10 @@ function formatCurrency(amount: number): string {
               </p>
             </UFormField>
 
-            <UFormField :label="t('common.notes') || 'Notes'">
+            <UFormField :label="t('common.notes', 'Notes')">
               <UTextarea
                 v-model="createForm.notes"
-                :placeholder="t('cycleCount.notesPlaceholder') || 'Additional notes...'"
+                :placeholder="t('cycleCount.notesPlaceholder', 'Additional notes...')"
                 :rows="2"
               />
             </UFormField>
@@ -694,14 +694,14 @@ function formatCurrency(amount: number): string {
           <div class="space-y-4">
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
               <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                {{ t("cycleCount.expected") || "Expected Quantity" }}
+                {{ t("cycleCount.expected", "Expected Quantity") }}
               </p>
               <p class="text-3xl font-bold text-gray-900 dark:text-white">
                 {{ countItem.expectedQty }}
               </p>
             </div>
 
-            <UFormField :label="t('cycleCount.actualCount') || 'Actual Count'" required>
+            <UFormField :label="t('cycleCount.actualCount', 'Actual Count')" required>
               <UInput
                 v-model.number="countedQty"
                 type="number"
@@ -730,7 +730,7 @@ function formatCurrency(amount: number): string {
                       : 'text-red-700 dark:text-red-300'
                   "
                 >
-                  {{ t("cycleCount.variance") || "Variance" }}
+                  {{ t("cycleCount.variance", "Variance") }}
                 </span>
                 <span
                   class="font-bold"
@@ -747,10 +747,10 @@ function formatCurrency(amount: number): string {
               </div>
             </div>
 
-            <UFormField :label="t('common.notes') || 'Notes'">
+            <UFormField :label="t('common.notes', 'Notes')">
               <UTextarea
                 v-model="countNotes"
-                :placeholder="t('cycleCount.countNotesPlaceholder') || 'Reason for variance...'"
+                :placeholder="t('cycleCount.countNotesPlaceholder', 'Reason for variance...')"
                 :rows="2"
               />
             </UFormField>

@@ -14,11 +14,11 @@
           </NuxtLinkLocale>
           <div>
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-              {{ $t("products.settings") || "Product Settings" }}
+              {{ $t("products.settings", "Product Settings") }}
             </h1>
             <p class="text-gray-600 dark:text-gray-400 mt-1">
               {{
-                $t("products.manageMetadata") || "Manage categories and units"
+                $t("products.manageMetadata", "Manage categories and units")
               }}
             </p>
           </div>
@@ -38,7 +38,7 @@
           ]"
           @click="activeTab = 'categories'"
         >
-          📁 {{ $t("products.categories.title") || "Categories" }}
+          📁 {{ $t("products.categories.title", "Categories") }}
         </button>
         <button
           :class="[
@@ -49,7 +49,7 @@
           ]"
           @click="activeTab = 'units'"
         >
-          📐 {{ $t("products.units.title") || "Units" }}
+          📐 {{ $t("products.units.title", "Units") }}
         </button>
       </div>
     </div>
@@ -58,7 +58,7 @@
     <div v-if="activeTab === 'categories'" class="px-4 space-y-4">
       <div class="flex justify-between items-center">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-          {{ $t("products.categories.title") || "Categories" }} ({{
+          {{ $t("products.categories.title", "Categories") }} ({{
             productsStore.categories.value.length
           }})
         </h2>
@@ -67,7 +67,7 @@
           icon="i-heroicons-plus"
           @click="openCategoryModal()"
         >
-          {{ $t("common.add") || "Add" }}
+          {{ $t("common.add", "Add") }}
         </UButton>
       </div>
 
@@ -119,7 +119,7 @@
     <div v-if="activeTab === 'units'" class="px-4 space-y-4">
       <div class="flex justify-between items-center">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-          {{ $t("products.units.title") || "Units" }} ({{
+          {{ $t("products.units.title", "Units") }} ({{
             productsStore.units.value.length
           }})
         </h2>
@@ -128,7 +128,7 @@
           icon="i-heroicons-plus"
           @click="openUnitModal()"
         >
-          {{ $t("common.add") || "Add" }}
+          {{ $t("common.add", "Add") }}
         </UButton>
       </div>
 
@@ -151,7 +151,7 @@
                 {{ unit.name }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ $t("products.units.symbol") || "Symbol" }}: {{ unit.symbol }}
+                {{ $t("products.units.symbol", "Symbol") }}: {{ unit.symbol }}
               </p>
             </div>
           </div>
@@ -175,10 +175,10 @@
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {{
               editingCategory
-                ? $t("common.edit") || "Edit"
-                : $t("common.add") || "Add"
+                ? $t("common.edit", "Edit")
+                : $t("common.add", "Add")
             }}
-            {{ $t("products.categories.single") || "Category" }}
+            {{ $t("products.categories.single", "Category") }}
           </h3>
 
           <div class="space-y-4">
@@ -187,7 +187,7 @@
               <label
                 class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
               >
-                {{ $t("common.icon") || "Icon" }}
+                {{ $t("common.icon", "Icon") }}
               </label>
               <div class="flex flex-wrap gap-2">
                 <button
@@ -208,21 +208,20 @@
             </div>
 
             <!-- Name -->
-            <UFormField :label="$t('common.name') || 'Name'" required>
+            <UFormField :label="$t('common.name', 'Name')" required>
               <UInput
                 v-model="categoryForm.name"
                 :placeholder="
-                  $t('products.categories.namePlaceholder') ||
-                  'e.g., Drinks, Food, Snacks'
+                  $t('products.categories.namePlaceholder', 'e.g., Drinks, Food, Snacks')
                 "
               />
             </UFormField>
 
             <!-- Description -->
-            <UFormField :label="$t('common.description') || 'Description'">
+            <UFormField :label="$t('common.description', 'Description')">
               <UInput
                 v-model="categoryForm.description"
-                :placeholder="$t('common.optional') || 'Optional description'"
+                :placeholder="$t('common.optional', 'Optional description')"
               />
             </UFormField>
 
@@ -233,7 +232,7 @@
                 class="flex-1"
                 @click="showCategoryModal = false"
               >
-                {{ $t("common.cancel") || "Cancel" }}
+                {{ $t("common.cancel", "Cancel") }}
               </UButton>
               <UButton
                 color="primary"
@@ -243,8 +242,8 @@
               >
                 {{
                   editingCategory
-                    ? $t("common.update") || "Update"
-                    : $t("common.create") || "Create"
+                    ? $t("common.update", "Update")
+                    : $t("common.create", "Create")
                 }}
               </UButton>
             </div>
@@ -260,33 +259,32 @@
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {{
               editingUnit
-                ? $t("common.edit") || "Edit"
-                : $t("common.add") || "Add"
+                ? $t("common.edit", "Edit")
+                : $t("common.add", "Add")
             }}
-            {{ $t("products.units.single") || "Unit" }}
+            {{ $t("products.units.single", "Unit") }}
           </h3>
 
           <div class="space-y-4">
             <!-- Name -->
-            <UFormField :label="$t('common.name') || 'Name'" required>
+            <UFormField :label="$t('common.name', 'Name')" required>
               <UInput
                 v-model="unitForm.name"
                 :placeholder="
-                  $t('products.units.namePlaceholder') ||
-                  'e.g., Piece, Kilogram, Liter'
+                  $t('products.units.namePlaceholder', 'e.g., Piece, Kilogram, Liter')
                 "
               />
             </UFormField>
 
             <!-- Symbol -->
             <UFormField
-              :label="$t('products.units.symbol') || 'Symbol'"
+              :label="$t('products.units.symbol', 'Symbol')"
               required
             >
               <UInput
                 v-model="unitForm.symbol"
                 :placeholder="
-                  $t('products.units.symbolPlaceholder') || 'e.g., pc, kg, L'
+                  $t('products.units.symbolPlaceholder', 'e.g., pc, kg, L')
                 "
               />
             </UFormField>
@@ -298,7 +296,7 @@
                 class="flex-1"
                 @click="showUnitModal = false"
               >
-                {{ $t("common.cancel") || "Cancel" }}
+                {{ $t("common.cancel", "Cancel") }}
               </UButton>
               <UButton
                 color="primary"
@@ -308,8 +306,8 @@
               >
                 {{
                   editingUnit
-                    ? $t("common.update") || "Update"
-                    : $t("common.create") || "Create"
+                    ? $t("common.update", "Update")
+                    : $t("common.create", "Create")
                 }}
               </UButton>
             </div>
@@ -323,18 +321,17 @@
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900">
           <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
-            {{ $t("common.confirmDelete") || "Confirm Delete" }}
+            {{ $t("common.confirmDelete", "Confirm Delete") }}
           </h3>
 
           <p class="text-gray-600 dark:text-gray-400 mb-6">
             {{
-              $t("common.deleteConfirmMessage") ||
-              "Are you sure you want to delete"
+              $t("common.deleteConfirmMessage", "Are you sure you want to delete")
             }}
             <strong class="text-gray-900 dark:text-white">
               "{{ deleteTarget?.item.name }}" </strong
             >?
-            {{ $t("common.cannotUndo") || "This action cannot be undone." }}
+            {{ $t("common.cannotUndo", "This action cannot be undone.") }}
           </p>
 
           <div class="flex gap-2">
@@ -344,7 +341,7 @@
               class="flex-1"
               @click="showDeleteModal = false"
             >
-              {{ $t("common.cancel") || "Cancel" }}
+              {{ $t("common.cancel", "Cancel") }}
             </UButton>
             <UButton
               color="red"
@@ -352,7 +349,7 @@
               :loading="deleting"
               @click="executeDelete"
             >
-              {{ $t("common.delete") || "Delete" }}
+              {{ $t("common.delete", "Delete") }}
             </UButton>
           </div>
         </div>

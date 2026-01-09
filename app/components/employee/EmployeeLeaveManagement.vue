@@ -106,7 +106,7 @@ const monthlyPay = computed(() => {
     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
         <UIcon name="i-heroicons-calendar-days" class="w-5 h-5 text-primary-500" />
-        {{ t("employees.leaveBalances") || "Leave Balances" }}
+        {{ t("employees.leaveBalances", "Leave Balances") }}
       </h3>
 
       <div class="grid grid-cols-3 gap-4">
@@ -142,7 +142,7 @@ const monthlyPay = computed(() => {
     <!-- Adjust Leave Balance -->
     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-        {{ t("employees.adjustLeave") || "Adjust Leave Balance" }}
+        {{ t("employees.adjustLeave", "Adjust Leave Balance") }}
       </h3>
 
       <div class="space-y-4">
@@ -175,7 +175,7 @@ const monthlyPay = computed(() => {
             :disabled="adjustmentAmount === 0"
             @click="adjustLeave"
           >
-            {{ t("common.apply") || "Apply" }}
+            {{ t("common.apply", "Apply") }}
           </UButton>
         </div>
       </div>
@@ -185,7 +185,7 @@ const monthlyPay = computed(() => {
     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
         <UIcon name="i-heroicons-banknotes" class="w-5 h-5 text-success-500" />
-        {{ t("employees.payrollInfo") || "Payroll Information" }}
+        {{ t("employees.payrollInfo", "Payroll Information") }}
       </h3>
 
       <div class="grid grid-cols-2 gap-4">
@@ -237,7 +237,7 @@ const monthlyPay = computed(() => {
     <!-- Employment Details -->
     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-        {{ t("employees.employmentDetails") || "Employment Details" }}
+        {{ t("employees.employmentDetails", "Employment Details") }}
       </h3>
 
       <div class="grid grid-cols-2 gap-4 text-sm">

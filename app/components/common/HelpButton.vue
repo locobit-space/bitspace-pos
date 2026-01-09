@@ -65,7 +65,7 @@ onUnmounted(() => {
       size="lg"
       icon="i-heroicons-question-mark-circle"
       class="rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-      :aria-label="t('help.openHelp') || 'Open Help'"
+      :aria-label="t('help.openHelp', 'Open Help')"
       @click="handleClick"
     />
 
@@ -76,7 +76,7 @@ onUnmounted(() => {
       <div
         class="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap"
       >
-        {{ t("help.pressQuestion") || "Press ? for help" }}
+        {{ t("help.pressQuestion", "Press ? for help") }}
       </div>
     </div>
   </div>

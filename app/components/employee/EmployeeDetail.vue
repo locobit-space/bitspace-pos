@@ -22,20 +22,20 @@ const employeesStore = useEmployeesStore();
 const activeTab = ref(0);
 const tabs = computed(() => [
   {
-    label: t("employees.tabs.overview") || "Overview",
+    label: t("employees.tabs.overview", "Overview"),
     icon: "i-heroicons-user-circle",
   },
   {
-    label: t("employees.tabs.productAssignment") || "Product Assignment",
+    label: t("employees.tabs.productAssignment", "Product Assignment"),
     icon: "i-heroicons-shopping-bag",
     disabled: !props.employee.canAccessPOS,
   },
   {
-    label: t("employees.tabs.posAccess") || "POS Access",
+    label: t("employees.tabs.posAccess", "POS Access"),
     icon: "i-heroicons-device-tablet",
   },
   {
-    label: t("employees.tabs.leave") || "Leave & Payroll",
+    label: t("employees.tabs.leave", "Leave & Payroll"),
     icon: "i-heroicons-calendar-days",
   },
 ]);

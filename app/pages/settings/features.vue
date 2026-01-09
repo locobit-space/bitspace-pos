@@ -47,11 +47,10 @@ const isSaving = ref(false);
 // Feature definitions with metadata - using Heroicons instead of emojis
 const featureGroups = computed(() => [
   {
-    title: t("settings.features.core") || "Core Features",
+    title: t("settings.features.core", "Core Features"),
     titleLao: "ຄຸນສົມບັດຫຼັກ",
     description:
-      t("settings.features.coreDesc") ||
-      "Essential features that are always available",
+      t("settings.features.coreDesc", "Essential features that are always available"),
     features: [
       {
         key: "products",
@@ -91,11 +90,10 @@ const featureGroups = computed(() => [
     ],
   },
   {
-    title: t("settings.features.business") || "Business Features",
+    title: t("settings.features.business", "Business Features"),
     titleLao: "ຄຸນສົມບັດທຸລະກິດ",
     description:
-      t("settings.features.businessDesc") ||
-      "Optional modules for your business needs",
+      t("settings.features.businessDesc", "Optional modules for your business needs"),
     features: [
       {
         key: "customers",
@@ -128,11 +126,10 @@ const featureGroups = computed(() => [
     ],
   },
   {
-    title: t("settings.features.restaurant") || "Restaurant Features",
+    title: t("settings.features.restaurant", "Restaurant Features"),
     titleLao: "ຄຸນສົມບັດຮ້ານອາຫານ",
     description:
-      t("settings.features.restaurantDesc") ||
-      "Features for food service businesses",
+      t("settings.features.restaurantDesc", "Features for food service businesses"),
     features: [
       {
         key: "kitchen",
@@ -165,10 +162,10 @@ const featureGroups = computed(() => [
     ],
   },
   {
-    title: t("settings.features.finance") || "Finance Features",
+    title: t("settings.features.finance", "Finance Features"),
     titleLao: "ຄຸນສົມບັດການເງິນ",
     description:
-      t("settings.features.financeDesc") || "Advanced financial management",
+      t("settings.features.financeDesc", "Advanced financial management"),
     features: [
       {
         key: "accounting",
@@ -212,7 +209,7 @@ function resetToDefaults() {
   const shopType = shop.shopConfig.value?.shopType || "other";
   features.value = getDefaultFeatures(shopType);
   toast.add({
-    title: t("settings.features.resetSuccess") || "Reset to defaults",
+    title: t("settings.features.resetSuccess", "Reset to defaults"),
     icon: "i-heroicons-arrow-path",
     color: "info",
   });
@@ -222,10 +219,9 @@ function resetToDefaults() {
 function enableEnterprise() {
   features.value = getDefaultFeatures("enterprise");
   toast.add({
-    title: t("settings.features.enterpriseEnabled") || "Enterprise Mode",
+    title: t("settings.features.enterpriseEnabled", "Enterprise Mode"),
     description:
-      t("settings.features.enterpriseEnabledDesc") ||
-      "All production-ready features enabled",
+      t("settings.features.enterpriseEnabledDesc", "All production-ready features enabled"),
     icon: "i-heroicons-building-office-2",
     color: "success",
   });
@@ -237,9 +233,9 @@ async function saveFeatures() {
   try {
     await shop.saveShopConfig({ enabledFeatures: features.value });
     toast.add({
-      title: t("common.saved") || "Saved",
+      title: t("common.saved", "Saved"),
       description:
-        t("settings.features.savedDesc") || "Feature settings updated",
+        t("settings.features.savedDesc", "Feature settings updated"),
       icon: "i-heroicons-check-circle",
       color: "success",
     });
@@ -269,24 +265,23 @@ function toggleFeature(key: string) {
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Icon name="streamline-ultimate:coding-apps-website-detect-virus-monitor-search" />
-          {{ t("settings.features.title") || "Shop Features" }}
+          {{ t("settings.features.title", "Shop Features") }}
         </h1>
         <p class="text-gray-500 dark:text-gray-400">
           {{
-            t("settings.features.subtitle") ||
-            "Enable or disable features for your shop"
+            t("settings.features.subtitle", "Enable or disable features for your shop")
           }}
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
         <UButton variant="soft" color="violet" icon="i-heroicons-building-office-2" @click="enableEnterprise">
-          {{ t("settings.features.enterprise") || "Enterprise" }}
+          {{ t("settings.features.enterprise", "Enterprise") }}
         </UButton>
         <UButton variant="soft" color="neutral" icon="i-heroicons-arrow-path" @click="resetToDefaults">
-          {{ t("common.reset") || "Reset to Defaults" }}
+          {{ t("common.reset", "Reset to Defaults") }}
         </UButton>
         <UButton color="primary" icon="i-heroicons-check" :loading="isSaving" @click="saveFeatures">
-          {{ t("common.save") || "Save" }}
+          {{ t("common.save", "Save") }}
         </UButton>
       </div>
     </div>
@@ -299,7 +294,7 @@ function toggleFeature(key: string) {
         </div>
         <div>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ t("settings.features.shopType") || "Shop Type" }}
+            {{ t("settings.features.shopType", "Shop Type") }}
           </p>
           <p class="font-semibold text-gray-900 dark:text-white capitalize">
             {{
@@ -346,7 +341,7 @@ function toggleFeature(key: string) {
                 {{ isLaoLocale ? feature.labelLao : feature.label }}
               </p>
               <p v-if="feature.locked" class="text-xs text-gray-500 dark:text-gray-400">
-                {{ t("settings.features.alwaysOn") || "Always enabled" }}
+                {{ t("settings.features.alwaysOn", "Always enabled") }}
               </p>
             </div>
           </div>
@@ -364,8 +359,7 @@ function toggleFeature(key: string) {
         <div>
           <p class="text-sm text-blue-800 dark:text-blue-200">
             {{
-              t("settings.features.helpText") ||
-              "Disabled features will be hidden from the navigation menu. You can enable them anytime."
+              t("settings.features.helpText", "Disabled features will be hidden from the navigation menu. You can enable them anytime.")
             }}
           </p>
         </div>

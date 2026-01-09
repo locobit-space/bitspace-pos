@@ -34,35 +34,35 @@ const saving = ref(false);
 const kanbanColumns = computed(() => [
   {
     id: "pending",
-    title: t("delivery.status.pending") || "Pending",
+    title: t("delivery.status.pending", "Pending"),
     icon: "📦",
     color: "yellow",
     items: delivery.deliveries.value.filter((d) => d.status === "pending"),
   },
   {
     id: "assigned",
-    title: t("delivery.status.assigned") || "Assigned",
+    title: t("delivery.status.assigned", "Assigned"),
     icon: "👤",
     color: "blue",
     items: delivery.deliveries.value.filter((d) => d.status === "assigned"),
   },
   {
     id: "picked_up",
-    title: t("delivery.status.pickedUp") || "Picked Up",
+    title: t("delivery.status.pickedUp", "Picked Up"),
     icon: "📤",
     color: "indigo",
     items: delivery.deliveries.value.filter((d) => d.status === "picked_up"),
   },
   {
     id: "in_transit",
-    title: t("delivery.status.inTransit") || "In Transit",
+    title: t("delivery.status.inTransit", "In Transit"),
     icon: "🚚",
     color: "purple",
     items: delivery.deliveries.value.filter((d) => d.status === "in_transit"),
   },
   {
     id: "delivered",
-    title: t("delivery.status.delivered") || "Delivered",
+    title: t("delivery.status.delivered", "Delivered"),
     icon: "✅",
     color: "green",
     items: delivery.deliveries.value
@@ -120,7 +120,7 @@ async function assignDriverToDelivery(deliveryId: string, driverId: string) {
     toast.add({
       title: t("common.success"),
       description:
-        t("delivery.driverAssigned") || "Driver assigned successfully",
+        t("delivery.driverAssigned", "Driver assigned successfully"),
       color: "success",
       icon: "i-heroicons-check-circle",
     });
@@ -136,12 +136,12 @@ async function assignDriverToDelivery(deliveryId: string, driverId: string) {
 }
 
 async function cancelDeliveryAction(item: Delivery) {
-  if (!confirm(t("delivery.confirmCancel") || "Cancel this delivery?")) return;
+  if (!confirm(t("delivery.confirmCancel", "Cancel this delivery?"))) return;
 
   await delivery.cancelDelivery(item.id, "Cancelled by user");
   toast.add({
     title: t("common.success"),
-    description: t("delivery.cancelled") || "Delivery cancelled",
+    description: t("delivery.cancelled", "Delivery cancelled"),
     color: "warning",
     icon: "i-heroicons-x-circle",
   });
@@ -174,9 +174,7 @@ async function saveDriver() {
   if (!driverForm.value.name || !driverForm.value.phone) {
     toast.add({
       title: t("common.error"),
-      description:
-        t("delivery.validation.namePhoneRequired") ||
-        "Name and phone are required",
+      description: t("delivery.validation.namePhoneRequired", "Name and phone are required"),
       color: "error",
     });
     return;
@@ -188,7 +186,7 @@ async function saveDriver() {
       await delivery.updateDriver(selectedDriver.value.id, driverForm.value);
       toast.add({
         title: t("common.success"),
-        description: t("delivery.driverUpdated") || "Driver updated",
+        description: t("delivery.driverUpdated", "Driver updated"),
         color: "success",
         icon: "i-heroicons-check-circle",
       });
@@ -196,7 +194,7 @@ async function saveDriver() {
       await delivery.addDriver(driverForm.value);
       toast.add({
         title: t("common.success"),
-        description: t("delivery.driverAdded") || "Driver added",
+        description: t("delivery.driverAdded", "Driver added"),
         color: "success",
         icon: "i-heroicons-check-circle",
       });
@@ -214,13 +212,13 @@ async function saveDriver() {
 }
 
 async function deleteDriverAction(driver: Driver) {
-  if (!confirm(t("delivery.confirmDeleteDriver") || "Delete this driver?"))
+  if (!confirm(t("delivery.confirmDeleteDriver", "Delete this driver?")))
     return;
 
   await delivery.deleteDriver(driver.id);
   toast.add({
     title: t("common.success"),
-    description: t("delivery.driverDeleted") || "Driver removed",
+    description: t("delivery.driverDeleted", "Driver removed"),
     color: "warning",
   });
 }
@@ -289,10 +287,10 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
     <div class="flex justify-between items-center px-4">
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          🚚 {{ t("delivery.title") || "Delivery" }}
+          🚚 {{ t("delivery.title", "Delivery") }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ t("delivery.description") || "Track and manage deliveries" }}
+          {{ t("delivery.description", "Track and manage deliveries") }}
         </p>
       </div>
     </div>
@@ -302,31 +300,31 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
       <CommonStatCard
         icon="i-heroicons-inbox-stack"
         icon-color="yellow"
-        :label="t('delivery.pending') || 'Pending'"
+        :label="t('delivery.pending', 'Pending')"
         :value="delivery.stats.value.pending"
       />
       <CommonStatCard
         icon="i-heroicons-truck"
         icon-color="purple"
-        :label="t('delivery.inTransit') || 'In Transit'"
+        :label="t('delivery.inTransit', 'In Transit')"
         :value="delivery.stats.value.inTransit"
       />
       <CommonStatCard
         icon="i-heroicons-check-circle"
         icon-color="green"
-        :label="t('delivery.delivered') || 'Delivered'"
+        :label="t('delivery.delivered', 'Delivered')"
         :value="delivery.stats.value.completed"
       />
       <CommonStatCard
         icon="i-heroicons-user-group"
         icon-color="blue"
-        :label="t('delivery.drivers') || 'Drivers'"
+        :label="t('delivery.drivers', 'Drivers')"
         :value="delivery.stats.value.totalDrivers"
       />
       <CommonStatCard
         icon="i-heroicons-user-plus"
         icon-color="green"
-        :label="t('delivery.available') || 'Available'"
+        :label="t('delivery.available', 'Available')"
         :value="delivery.stats.value.availableDrivers"
       />
     </div>
@@ -337,21 +335,21 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
         :color="activeTab === 'board' ? 'primary' : 'neutral'"
         :variant="activeTab === 'board' ? 'solid' : 'ghost'"
         icon="i-heroicons-view-columns"
-        :label="t('delivery.board') || 'Board'"
+        :label="t('delivery.board', 'Board')"
         @click="activeTab = 'board'"
       />
       <UButton
         :color="activeTab === 'list' ? 'primary' : 'neutral'"
         :variant="activeTab === 'list' ? 'solid' : 'ghost'"
         icon="i-heroicons-list-bullet"
-        :label="t('delivery.list') || 'List'"
+        :label="t('delivery.list', 'List')"
         @click="activeTab = 'list'"
       />
       <UButton
         :color="activeTab === 'drivers' ? 'primary' : 'neutral'"
         :variant="activeTab === 'drivers' ? 'solid' : 'ghost'"
         icon="i-heroicons-user-group"
-        :label="t('delivery.drivers') || 'Drivers'"
+        :label="t('delivery.drivers', 'Drivers')"
         @click="activeTab = 'drivers'"
       />
     </div>
@@ -562,12 +560,11 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
           >
             <div class="text-6xl mb-4">🚚</div>
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {{ t("delivery.noDeliveries") || "No deliveries yet" }}
+              {{ t("delivery.noDeliveries", "No deliveries yet") }}
             </h3>
             <p class="text-gray-500 dark:text-gray-400">
               {{
-                t("delivery.noDeliveriesDesc") ||
-                "Deliveries will appear when orders are placed for delivery"
+                t("delivery.noDeliveriesDesc", "Deliveries will appear when orders are placed for delivery")
               }}
             </p>
           </div>
@@ -580,12 +577,12 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
       <div class="overflow-x-auto">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-            {{ t("delivery.manageDrivers") || "Manage Drivers" }}
+            {{ t("delivery.manageDrivers", "Manage Drivers") }}
           </h2>
           <UButton
             color="primary"
             icon="i-heroicons-plus"
-            :label="t('delivery.addDriver') || 'Add Driver'"
+            :label="t('delivery.addDriver', 'Add Driver')"
             @click="openDriverModal()"
           />
         </div>
@@ -649,16 +646,16 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
           >
             <div class="text-6xl mb-4">👤</div>
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {{ t("delivery.noDrivers") || "No drivers yet" }}
+              {{ t("delivery.noDrivers", "No drivers yet") }}
             </h3>
             <p class="text-gray-500 dark:text-gray-400 mb-4">
               {{
-                t("delivery.addFirstDriver") || "Add your first delivery driver"
+                t("delivery.addFirstDriver", "Add your first delivery driver")
               }}
             </p>
             <UButton
               color="primary"
-              :label="t('delivery.addDriver') || 'Add Driver'"
+              :label="t('delivery.addDriver', 'Add Driver')"
               @click="openDriverModal()"
             />
           </div>
@@ -677,22 +674,22 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
                 {{
                   selectedDriver
                     ? t("delivery.editDriver")
-                    : t("delivery.addDriver") || "Add Driver"
+                    : t("delivery.addDriver", "Add Driver")
                 }}
               </h3>
             </div>
           </template>
 
           <div class="space-y-4">
-            <UFormField :label="t('common.name') || 'Name'" required>
+            <UFormField :label="t('common.name', 'Name')" required>
               <UInput v-model="driverForm.name" placeholder="Driver name" />
             </UFormField>
 
-            <UFormField :label="t('common.phone') || 'Phone'" required>
+            <UFormField :label="t('common.phone', 'Phone')" required>
               <UInput v-model="driverForm.phone" placeholder="Phone number" />
             </UFormField>
 
-            <UFormField :label="t('common.email') || 'Email'">
+            <UFormField :label="t('common.email', 'Email')">
               <UInput
                 v-model="driverForm.email"
                 type="email"
@@ -701,7 +698,7 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
             </UFormField>
 
             <div class="grid grid-cols-2 gap-4">
-              <UFormField :label="t('delivery.vehicleType') || 'Vehicle'">
+              <UFormField :label="t('delivery.vehicleType', 'Vehicle')">
                 <USelect
                   v-model="driverForm.vehicleType"
                   :items="[
@@ -715,7 +712,7 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
                 />
               </UFormField>
 
-              <UFormField :label="t('delivery.vehiclePlate') || 'Plate'">
+              <UFormField :label="t('delivery.vehiclePlate', 'Plate')">
                 <UInput
                   v-model="driverForm.vehiclePlate"
                   placeholder="License plate"
@@ -752,7 +749,7 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
             <div class="flex items-center gap-3">
               <span class="text-2xl">👤</span>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("delivery.assignDriver") || "Assign Driver" }}
+                {{ t("delivery.assignDriver", "Assign Driver") }}
               </h3>
             </div>
           </template>
@@ -787,7 +784,7 @@ function getStatusColor(status: DeliveryStatus): BadgeColor {
               v-if="delivery.availableDrivers.value.length === 0"
               class="text-center py-8 text-gray-500"
             >
-              {{ t("delivery.noAvailableDrivers") || "No available drivers" }}
+              {{ t("delivery.noAvailableDrivers", "No available drivers") }}
             </div>
           </div>
 

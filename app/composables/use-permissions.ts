@@ -78,8 +78,8 @@ export function usePermissions() {
     
     if (!hasPermission && showToast) {
       toast.add({
-        title: t('common.accessDenied') || 'Access Denied',
-        description: t('common.noPermission') || 'You do not have permission to perform this action',
+        title: t('common.accessDenied', 'Access Denied'),
+        description: t('common.noPermission', 'You do not have permission to perform this action'),
         icon: 'i-heroicons-shield-exclamation',
         color: 'red',
       });
@@ -96,8 +96,8 @@ export function usePermissions() {
     
     if (!hasAny) {
       toast.add({
-        title: t('common.accessDenied') || 'Access Denied',
-        description: t('common.noPermission') || 'You do not have permission to perform this action',
+        title: t('common.accessDenied', 'Access Denied'),
+        description: t('common.noPermission', 'You do not have permission to perform this action'),
         icon: 'i-heroicons-shield-exclamation',
         color: 'red',
       });

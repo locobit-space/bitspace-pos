@@ -61,7 +61,7 @@ const getColor = (type: string) => {
   <UCard>
     <template #header>
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-        {{ t("customers.tabs.activity") || "Activity" }}
+        {{ t("customers.tabs.activity", "Activity") }}
       </h3>
     </template>
 
@@ -74,7 +74,7 @@ const getColor = (type: string) => {
         name="i-heroicons-clock"
         class="w-12 h-12 mx-auto mb-2 opacity-50"
       />
-      <p>{{ t("customers.noActivity") || "No activity yet" }}</p>
+      <p>{{ t("customers.noActivity", "No activity yet") }}</p>
     </div>
 
     <!-- Activity Timeline -->
@@ -107,7 +107,7 @@ const getColor = (type: string) => {
     <!-- Load More -->
     <div v-if="activities.length >= 10" class="mt-4 text-center">
       <UButton variant="ghost" size="sm">
-        {{ t("common.loadMore") || "Load more" }}
+        {{ t("common.loadMore", "Load more") }}
       </UButton>
     </div>
   </UCard>

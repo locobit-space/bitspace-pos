@@ -115,12 +115,12 @@
                 class="w-6 h-6 text-primary-500"
               />
               <span class="font-semibold text-gray-900 dark:text-white">
-                {{ $t("settings.users.companyCode") || "Company Code" }}
+                {{ $t("settings.users.companyCode", "Company Code") }}
               </span>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-500 dark:text-gray-400">
-                {{ $t("common.enabled") || "Enabled" }}
+                {{ $t("common.enabled", "Enabled") }}
               </span>
               <USwitch v-model="isCompanyCodeEnabled" size="md" />
             </div>
@@ -129,8 +129,7 @@
           <div v-if="isCompanyCodeEnabled" class="text-center py-4">
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {{
-                $t("settings.users.companyCodeDescription") ||
-                "Share this code with staff to connect from other devices"
+                $t("settings.users.companyCodeDescription", "Share this code with staff to connect from other devices")
               }}
             </p>
 
@@ -171,7 +170,7 @@
                   size="sm"
                   @click="startEditingCode"
                 >
-                  {{ $t("settings.users.editCode") || "Edit Code" }}
+                  {{ $t("settings.users.editCode", "Edit Code") }}
                 </UButton>
                 <span class="text-gray-300 dark:text-gray-700">|</span>
                 <UButton
@@ -181,7 +180,7 @@
                   @click="regenerateCompanyCode"
                 >
                   {{
-                    $t("settings.users.regenerateCode") || "Generate New Code"
+                    $t("settings.users.regenerateCode", "Generate New Code")
                   }}
                 </UButton>
               </template>
@@ -223,7 +222,7 @@
               <div class="flex items-center gap-4">
                 <UCheckbox
                   v-model="showDeleted"
-                  :label="$t('settings.users.showDeleted') || 'Show Deleted'"
+                  :label="$t('settings.users.showDeleted', 'Show Deleted')"
                 />
                 <UBadge color="gray" variant="subtle">
                   {{ filteredUsers.length }} {{ $t("settings.users.users") }}
@@ -376,8 +375,7 @@
                   <UTooltip
                     v-if="user.id !== currentUser?.id && user.isActive"
                     :text="
-                      $t('settings.users.generateInvite') ||
-                      'Generate Invite Link'
+                      $t('settings.users.generateInvite', 'Generate Invite Link')
                     "
                   >
                     <UButton
@@ -458,7 +456,7 @@
               <div class="bg-purple-100 dark:bg-purple-900/40 rounded-lg p-3">
                 <p class="text-xs text-purple-700 dark:text-purple-300">
                   <UIcon name="i-heroicons-information-circle" class="w-4 h-4 inline mr-1" />
-                  {{ $t("settings.users.nostrBenefits") || "Staff can login from any device using their nsec key. Owner can also use browser extensions (Alby, nos2x)." }}
+                  {{ $t("settings.users.nostrBenefits", "Staff can login from any device using their nsec key. Owner can also use browser extensions (Alby, nos2x).") }}
                 </p>
               </div>
             </div>
@@ -467,32 +465,32 @@
             <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <h4 class="font-medium text-gray-900 dark:text-white mb-3">
                 <UIcon name="i-heroicons-question-mark-circle" class="w-5 h-5 inline mr-1" />
-                {{ $t("settings.users.howItWorks") || "How Authentication Works" }}
+                {{ $t("settings.users.howItWorks", "How Authentication Works") }}
               </h4>
               <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
                 <div class="flex items-start gap-3">
                   <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span class="text-xs font-bold text-purple-600 dark:text-purple-400">1</span>
                   </div>
-                  <p>{{ $t("settings.users.step1") || "Owner creates staff accounts with roles and permissions" }}</p>
+                  <p>{{ $t("settings.users.step1", "Owner creates staff accounts with roles and permissions") }}</p>
                 </div>
                 <div class="flex items-start gap-3">
                   <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span class="text-xs font-bold text-purple-600 dark:text-purple-400">2</span>
                   </div>
-                  <p>{{ $t("settings.users.step2") || "Staff receives their nsec key or generates one via invite link" }}</p>
+                  <p>{{ $t("settings.users.step2", "Staff receives their nsec key or generates one via invite link") }}</p>
                 </div>
                 <div class="flex items-start gap-3">
                   <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span class="text-xs font-bold text-purple-600 dark:text-purple-400">3</span>
                   </div>
-                  <p>{{ $t("settings.users.step3") || "Staff enters company code + their nsec to login from any device" }}</p>
+                  <p>{{ $t("settings.users.step3", "Staff enters company code + their nsec to login from any device") }}</p>
                 </div>
                 <div class="flex items-start gap-3">
                   <div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span class="text-xs font-bold text-purple-600 dark:text-purple-400">4</span>
                   </div>
-                  <p>{{ $t("settings.users.step4") || "All data syncs automatically via Nostr relays" }}</p>
+                  <p>{{ $t("settings.users.step4", "All data syncs automatically via Nostr relays") }}</p>
                 </div>
               </div>
             </div>
@@ -588,7 +586,7 @@
                         <UBadge color="purple" variant="subtle" size="xs">{{ $t("settings.users.recommended") }}</UBadge>
                       </div>
                       <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {{ $t("settings.users.nostrAuthDesc") || "Secure, decentralized login from any device" }}
+                        {{ $t("settings.users.nostrAuthDesc", "Secure, decentralized login from any device") }}
                       </p>
                     </div>
                     <UIcon 
@@ -613,7 +611,7 @@
                     class="font-mono w-full"
                   />
                   <template #hint>
-                    {{ $t("settings.users.npubHintOptional") || "Optional - can be set when staff first logs in with their nsec" }}
+                    {{ $t("settings.users.npubHintOptional", "Optional - can be set when staff first logs in with their nsec") }}
                   </template>
                 </UFormField>
               </div>
@@ -817,7 +815,7 @@
                   class="w-6 h-6 text-primary-500"
                 />
                 <span class="font-semibold text-gray-900 dark:text-white">
-                  {{ $t("settings.users.inviteLink") || "Invite Link" }}
+                  {{ $t("settings.users.inviteLink", "Invite Link") }}
                 </span>
               </div>
             </template>
@@ -834,8 +832,7 @@
                 </p>
                 <p class="text-sm text-gray-500">
                   {{
-                    $t("settings.users.inviteDescription") ||
-                    "Share this link to let them join"
+                    $t("settings.users.inviteDescription", "Share this link to let them join")
                   }}
                 </p>
               </div>
@@ -853,8 +850,7 @@
                 </div>
                 <p class="text-xs text-gray-500 mt-2">
                   {{
-                    $t("settings.users.scanQrCode") ||
-                    "Scan with camera to join"
+                    $t("settings.users.scanQrCode", "Scan with camera to join")
                   }}
                 </p>
               </div>
@@ -873,17 +869,17 @@
                     name="i-heroicons-clipboard-document"
                     class="w-4 h-4 mr-2"
                   />
-                  {{ $t("common.copy") || "Copy" }}
+                  {{ $t("common.copy", "Copy") }}
                 </UButton>
                 <UButton variant="outline" @click="shareInviteLink">
                   <UIcon name="i-heroicons-share" class="w-4 h-4 mr-2" />
-                  {{ $t("common.share") || "Share" }}
+                  {{ $t("common.share", "Share") }}
                 </UButton>
               </div>
 
               <p class="text-xs text-gray-400 mt-4">
                 {{
-                  $t("settings.users.inviteExpiry") || "Link expires in 7 days"
+                  $t("settings.users.inviteExpiry", "Link expires in 7 days")
                 }}
               </p>
             </div>
@@ -901,14 +897,13 @@
           <div class="flex items-center gap-3 text-green-600">
             <UIcon name="i-heroicons-arrow-path" class="w-6 h-6" />
             <h3 class="text-lg font-semibold">
-              {{ $t("settings.users.restoreUser") || "Restore User" }}
+              {{ $t("settings.users.restoreUser", "Restore User") }}
             </h3>
           </div>
         </template>
         <p class="text-gray-600 dark:text-gray-300">
           {{
-            $t("settings.users.restoreUserConfirm") ||
-            "Are you sure you want to restore this user account?"
+            $t("settings.users.restoreUserConfirm", "Are you sure you want to restore this user account?")
           }}
           <br />
           <span class="font-bold text-gray-900 dark:text-white">{{
@@ -994,8 +989,8 @@ const saveCompanyCode = async () => {
 
     isEditingCode.value = false;
     toast.add({
-      title: t("common.saved") || "Saved",
-      description: t("settings.users.codeUpdated") || "Company code updated",
+      title: t("common.saved", "Saved"),
+      description: t("settings.users.codeUpdated", "Company code updated"),
       color: "green",
     });
   }
@@ -1005,7 +1000,7 @@ const saveCompanyCode = async () => {
 const copyCompanyCode = () => {
   if (companyCode.value) {
     navigator.clipboard.writeText(companyCode.value);
-    toast.add({ title: t("common.copied") || "Copied!", color: "green" });
+    toast.add({ title: t("common.copied", "Copied!"), color: "green" });
   }
 };
 
@@ -1018,7 +1013,7 @@ const regenerateCompanyCode = async () => {
     // Re-save all users to update the company tag
     await usersComposable.refreshFromNostr();
     toast.add({
-      title: t("settings.users.codeRegenerated") || "New code generated",
+      title: t("settings.users.codeRegenerated", "New code generated"),
       color: "green",
     });
   }
@@ -1057,7 +1052,7 @@ const generateInviteLink = async (user: StoreUser) => {
     showInviteModal.value = true;
   } catch (_error) {
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: "Failed to generate invite link",
       color: "red",
     });
@@ -1069,9 +1064,9 @@ const generateInviteLink = async (user: StoreUser) => {
 const copyInviteLink = () => {
   navigator.clipboard.writeText(inviteLink.value);
   toast.add({
-    title: t("common.copied") || "Copied!",
+    title: t("common.copied", "Copied!"),
     description:
-      t("settings.users.inviteLinkCopied") || "Invite link copied to clipboard",
+      t("settings.users.inviteLinkCopied", "Invite link copied to clipboard"),
     color: "green",
   });
 };
@@ -1080,7 +1075,7 @@ const shareInviteLink = async () => {
   if (navigator.share) {
     try {
       await navigator.share({
-        title: t("settings.users.inviteTitle") || "Join our team!",
+        title: t("settings.users.inviteTitle", "Join our team!"),
         text:
           t("settings.users.inviteText") ||
           `Click this link to join as ${inviteUser.value?.name}`,
@@ -1496,7 +1491,7 @@ const restoreDeletedUserConfirmed = async () => {
       // @ts-ignore
       await usersComposable.restoreDeletedUser(userToRestore.value.id);
       toast.add({
-        title: t("settings.users.restoreSuccess") || "User restored",
+        title: t("settings.users.restoreSuccess", "User restored"),
         color: "green",
       });
     } else {

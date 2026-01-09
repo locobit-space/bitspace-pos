@@ -117,8 +117,7 @@ async function handleAddMembership() {
     toast.add({
       title: t("common.error"),
       description:
-        t("memberships.selectCustomerAndPlan") ||
-        "Please select customer and plan",
+        t("memberships.selectCustomerAndPlan", "Please select customer and plan"),
       color: "warning",
     });
     return;
@@ -238,8 +237,8 @@ async function processPayment(method: "cash" | "lightning" | "bank_transfer") {
     toast.add({
       title: t("common.success"),
       description: isRenewal
-        ? t("memberships.renewed") || "Membership renewed!"
-        : t("memberships.added") || "Membership created!",
+        ? t("memberships.renewed", "Membership renewed!")
+        : t("memberships.added", "Membership created!"),
       color: "success",
     });
 
@@ -398,12 +397,11 @@ async function deletePlan(planId: string) {
         <h1
           class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
         >
-          💳 {{ t("memberships.title") || "Memberships" }}
+          💳 {{ t("memberships.title", "Memberships") }}
         </h1>
         <p class="text-gray-500 dark:text-gray-400">
           {{
-            t("memberships.subtitle") ||
-            "Manage member subscriptions and check-ins"
+            t("memberships.subtitle", "Manage member subscriptions and check-ins")
           }}
         </p>
       </div>
@@ -415,7 +413,7 @@ async function deletePlan(planId: string) {
           icon="i-heroicons-qr-code"
           @click="openCheckIn"
         >
-          {{ t("memberships.quickCheckIn") || "Quick Check-in" }}
+          {{ t("memberships.quickCheckIn", "Quick Check-in") }}
         </UButton>
         <UButton
           size="lg"
@@ -423,7 +421,7 @@ async function deletePlan(planId: string) {
           icon="i-heroicons-plus"
           @click="showAddModal = true"
         >
-          {{ t("memberships.addMember") || "Add Member" }}
+          {{ t("memberships.addMember", "Add Member") }}
         </UButton>
       </div>
     </div>
@@ -433,25 +431,25 @@ async function deletePlan(planId: string) {
       <CommonStatCard
         icon="i-heroicons-check-circle"
         icon-color="green"
-        :label="t('memberships.active') || 'Active'"
+        :label="t('memberships.active', 'Active')"
         :value="membershipsStore.activeMemberships.value.length"
       />
       <CommonStatCard
         icon="i-heroicons-clock"
         icon-color="yellow"
-        :label="t('memberships.expiringSoon') || 'Expiring Soon'"
+        :label="t('memberships.expiringSoon', 'Expiring Soon')"
         :value="membershipsStore.expiringSoon.value.length"
       />
       <CommonStatCard
         icon="i-heroicons-x-circle"
         icon-color="red"
-        :label="t('memberships.expired') || 'Expired'"
+        :label="t('memberships.expired', 'Expired')"
         :value="membershipsStore.expiredMemberships.value.length"
       />
       <CommonStatCard
         icon="i-heroicons-user-group"
         icon-color="gray"
-        :label="t('memberships.total') || 'Total'"
+        :label="t('memberships.total', 'Total')"
         :value="membershipsStore.memberships.value.length"
       />
     </div>
@@ -463,12 +461,12 @@ async function deletePlan(planId: string) {
           v-for="tab in [
             {
               id: 'members',
-              label: t('memberships.members') || 'Members',
+              label: t('memberships.members', 'Members'),
               icon: '👥',
             },
             {
               id: 'plans',
-              label: t('memberships.plans') || 'Plans',
+              label: t('memberships.plans', 'Plans'),
               icon: '📋',
             },
           ]"
@@ -491,7 +489,7 @@ async function deletePlan(planId: string) {
       <!-- Search -->
       <UInput
         v-model="searchQuery"
-        :placeholder="t('memberships.searchPlaceholder') || 'Search by name...'"
+        :placeholder="t('memberships.searchPlaceholder', 'Search by name...')"
         icon="i-heroicons-magnifying-glass"
         size="lg"
         @keyup.enter="quickCheckIn"
@@ -522,7 +520,7 @@ async function deletePlan(planId: string) {
             </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               {{ member.planName }} • {{ member.checkInCount }}
-              {{ t("memberships.checkIns") || "check-ins" }}
+              {{ t("memberships.checkIns", "check-ins") }}
             </p>
             <div class="flex items-center gap-2 mt-1">
               <span
@@ -541,7 +539,7 @@ async function deletePlan(planId: string) {
                 "
               >
                 {{ getDaysLeft(member.endDate) }}
-                {{ t("memberships.daysLeft") || "days left" }}
+                {{ t("memberships.daysLeft", "days left") }}
               </span>
             </div>
           </div>
@@ -556,7 +554,7 @@ async function deletePlan(planId: string) {
               variant="soft"
               @click="handleCheckIn(member)"
             >
-              {{ t("memberships.checkIn") || "Check In" }}
+              {{ t("memberships.checkIn", "Check In") }}
             </UButton>
             <UButton
               v-if="member.status === 'expired'"
@@ -566,7 +564,7 @@ async function deletePlan(planId: string) {
               variant="soft"
               @click="handleRenew(member)"
             >
-              {{ t("memberships.renew") || "Renew" }}
+              {{ t("memberships.renew", "Renew") }}
             </UButton>
           </div>
         </div>
@@ -576,10 +574,10 @@ async function deletePlan(planId: string) {
       <div v-else class="text-center py-12">
         <div class="text-6xl mb-4">💳</div>
         <p class="text-gray-500 dark:text-gray-400">
-          {{ t("memberships.noMembers") || "No members yet" }}
+          {{ t("memberships.noMembers", "No members yet") }}
         </p>
         <UButton class="mt-4" color="primary" @click="showAddModal = true">
-          {{ t("memberships.addFirstMember") || "Add Your First Member" }}
+          {{ t("memberships.addFirstMember", "Add Your First Member") }}
         </UButton>
       </div>
     </div>
@@ -593,7 +591,7 @@ async function deletePlan(planId: string) {
           icon="i-heroicons-plus"
           @click="openPlanModal()"
         >
-          {{ t("common.add") || "Add" }} {{ t("memberships.plan") || "Plan" }}
+          {{ t("common.add", "Add") }} {{ t("memberships.plan", "Plan") }}
         </UButton>
       </div>
 
@@ -632,7 +630,7 @@ async function deletePlan(planId: string) {
               {{ formatCurrency(plan.price) }}
             </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ plan.duration }} {{ t("common.days") || "days" }}
+              {{ plan.duration }} {{ t("common.days", "days") }}
             </p>
             <ul class="text-sm text-left space-y-1">
               <li
@@ -660,21 +658,21 @@ async function deletePlan(planId: string) {
       <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           {{
-            selectedPlan ? t("common.edit") || "Edit" : t("common.add") || "Add"
+            selectedPlan ? t("common.edit", "Edit") : t("common.add", "Add")
           }}
-          {{ t("memberships.plan") || "Plan" }}
+          {{ t("memberships.plan", "Plan") }}
         </h3>
       </template>
       <template #body>
         <div class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField
-              :label="(t('products.name') || 'Name') + ' (EN)'"
+              :label="(t('products.name', 'Name')) + ' (EN)'"
               required
             >
               <UInput v-model="planForm.name" placeholder="e.g. Monthly Pass" />
             </UFormField>
-            <UFormField :label="(t('products.name') || 'Name') + ' (ລາວ)'">
+            <UFormField :label="(t('products.name', 'Name')) + ' (ລາວ)'">
               <UInput
                 v-model="planForm.nameLao"
                 placeholder="ເຊັ່ນ: ບັດເດືອນ"
@@ -683,7 +681,7 @@ async function deletePlan(planId: string) {
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormField :label="t('products.price') || 'Price'" required>
+            <UFormField :label="t('products.price', 'Price')" required>
               <UInput
                 v-model.number="planForm.price"
                 type="number"
@@ -696,9 +694,9 @@ async function deletePlan(planId: string) {
             </UFormField>
             <UFormField
               :label="
-                (t('products.duration') || 'Duration') +
+                (t('products.duration', 'Duration')) +
                 ' (' +
-                (t('common.days') || 'days') +
+                (t('common.days', 'days')) +
                 ')'
               "
               required
@@ -711,7 +709,7 @@ async function deletePlan(planId: string) {
             </UFormField>
           </div>
 
-          <UFormField :label="t('products.description') || 'Description'">
+          <UFormField :label="t('products.description', 'Description')">
             <UTextarea
               v-model="planForm.description"
               placeholder="Optional description..."
@@ -769,32 +767,32 @@ async function deletePlan(planId: string) {
     <UModal v-model:open="showAddModal">
       <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ t("memberships.addMember") || "Add Member" }}
+          {{ t("memberships.addMember", "Add Member") }}
         </h3>
       </template>
       <template #body>
         <div class="space-y-4">
-          <UFormField :label="t('customers.customer') || 'Customer'">
+          <UFormField :label="t('customers.customer', 'Customer')">
             <USelect
               v-model="memberForm.customerId"
               :items="customers"
               :placeholder="
-                t('memberships.selectCustomer') || 'Select customer'
+                t('memberships.selectCustomer', 'Select customer')
               "
             />
           </UFormField>
-          <UFormField :label="t('memberships.plan') || 'Plan'">
+          <UFormField :label="t('memberships.plan', 'Plan')">
             <USelect
               v-model="memberForm.planId"
               :items="planOptions"
-              :placeholder="t('memberships.selectPlan') || 'Select plan'"
+              :placeholder="t('memberships.selectPlan', 'Select plan')"
             />
           </UFormField>
-          <UFormField :label="t('orders.notes') || 'Notes'">
+          <UFormField :label="t('orders.notes', 'Notes')">
             <UTextarea
               v-model="memberForm.notes"
               :placeholder="
-                t('memberships.notesPlaceholder') || 'Optional notes...'
+                t('memberships.notesPlaceholder', 'Optional notes...')
               "
               :rows="2"
             />
@@ -807,7 +805,7 @@ async function deletePlan(planId: string) {
             {{ t("common.cancel") }}
           </UButton>
           <UButton color="primary" @click="handleAddMembership">
-            {{ t("memberships.addMember") || "Add Member" }}
+            {{ t("memberships.addMember", "Add Member") }}
           </UButton>
         </div>
       </template>
@@ -817,7 +815,7 @@ async function deletePlan(planId: string) {
     <UModal v-model:open="showCheckInModal">
       <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          ✅ {{ t("memberships.quickCheckIn") || "Quick Check-in" }}
+          ✅ {{ t("memberships.quickCheckIn", "Quick Check-in") }}
         </h3>
       </template>
       <template #body>
@@ -825,7 +823,7 @@ async function deletePlan(planId: string) {
           <UInput
             v-model="searchQuery"
             :placeholder="
-              t('memberships.searchToCheckIn') || 'Search member name...'
+              t('memberships.searchToCheckIn', 'Search member name...')
             "
             icon="i-heroicons-magnifying-glass"
             size="lg"
@@ -875,7 +873,7 @@ async function deletePlan(planId: string) {
     <UModal v-model:open="showPaymentModal">
       <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          💳 {{ t("payment.selectMethod") || "Select Payment Method" }}
+          💳 {{ t("payment.selectMethod", "Select Payment Method") }}
         </h3>
       </template>
       <template #body>
@@ -892,7 +890,7 @@ async function deletePlan(planId: string) {
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-600 dark:text-gray-400">{{
-                t("customers.name") || "Customer"
+                t("customers.name", "Customer")
               }}</span>
               <span class="font-medium text-gray-900 dark:text-white">{{
                 pendingMembershipData.customer.name
@@ -900,11 +898,11 @@ async function deletePlan(planId: string) {
             </div>
             <div class="flex justify-between items-center mt-2">
               <span class="text-gray-600 dark:text-gray-400">{{
-                t("products.duration") || "Duration"
+                t("products.duration", "Duration")
               }}</span>
               <span class="font-medium text-gray-900 dark:text-white"
                 >{{ pendingMembershipData.plan.duration }}
-                {{ t("common.days") || "days" }}</span
+                {{ t("common.days", "days") }}</span
               >
             </div>
             <div
@@ -913,7 +911,7 @@ async function deletePlan(planId: string) {
               <div class="flex justify-between items-center">
                 <span
                   class="text-lg font-semibold text-gray-900 dark:text-white"
-                  >{{ t("pos.total") || "Total" }}</span
+                  >{{ t("pos.total", "Total") }}</span
                 >
                 <span
                   class="text-2xl font-bold text-primary-600 dark:text-primary-400"
@@ -926,7 +924,7 @@ async function deletePlan(planId: string) {
           <!-- Payment Methods -->
           <div class="space-y-3">
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t("payment.selectMethod") || "Choose payment method" }}:
+              {{ t("payment.selectMethod", "Choose payment method") }}:
             </p>
 
             <button
@@ -941,10 +939,10 @@ async function deletePlan(planId: string) {
               </div>
               <div class="flex-1 text-left">
                 <p class="font-semibold text-gray-900 dark:text-white">
-                  {{ t("payment.methods.cash") || "Cash" }}
+                  {{ t("payment.methods.cash", "Cash") }}
                 </p>
                 <p class="text-sm text-gray-500">
-                  {{ t("payment.methods.cashDesc") || "Pay with cash" }}
+                  {{ t("payment.methods.cashDesc", "Pay with cash") }}
                 </p>
               </div>
               <UIcon
@@ -965,12 +963,11 @@ async function deletePlan(planId: string) {
               </div>
               <div class="flex-1 text-left">
                 <p class="font-semibold text-gray-900 dark:text-white">
-                  {{ t("payment.methods.lightning") || "Lightning" }}
+                  {{ t("payment.methods.lightning", "Lightning") }}
                 </p>
                 <p class="text-sm text-gray-500">
                   {{
-                    t("payment.methods.lightningDesc") ||
-                    "Pay with Bitcoin Lightning"
+                    t("payment.methods.lightningDesc", "Pay with Bitcoin Lightning")
                   }}
                 </p>
               </div>
@@ -992,12 +989,11 @@ async function deletePlan(planId: string) {
               </div>
               <div class="flex-1 text-left">
                 <p class="font-semibold text-gray-900 dark:text-white">
-                  {{ t("payment.methods.bankTransfer") || "Bank Transfer" }}
+                  {{ t("payment.methods.bankTransfer", "Bank Transfer") }}
                 </p>
                 <p class="text-sm text-gray-500">
                   {{
-                    t("payment.methods.bankTransferDesc") ||
-                    "Pay via bank account"
+                    t("payment.methods.bankTransferDesc", "Pay via bank account")
                   }}
                 </p>
               </div>
@@ -1018,7 +1014,7 @@ async function deletePlan(planId: string) {
               class="w-6 h-6 animate-spin text-primary-500"
             />
             <span class="text-gray-600 dark:text-gray-400">{{
-              t("pos.processing") || "Processing..."
+              t("pos.processing", "Processing...")
             }}</span>
           </div>
         </div>

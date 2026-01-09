@@ -52,10 +52,10 @@
         class="text-green-500 flex items-center justify-center gap-1"
       >
         <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
-        {{ $t("common.valid") || "Valid" }}
+        {{ $t("common.valid", "Valid") }}
       </span>
       <span v-else-if="fullCode.length > 0" class="text-gray-400">
-        {{ remainingChars }} {{ $t("common.characters") || "characters" }}
+        {{ remainingChars }} {{ $t("common.characters", "characters") }}
       </span>
     </div>
   </div>

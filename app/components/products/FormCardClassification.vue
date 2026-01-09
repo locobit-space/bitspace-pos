@@ -58,12 +58,11 @@ function onTypeChange(value: string) {
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t("products.classification") || "Classification" }}
+            {{ t("products.classification", "Classification") }}
           </h3>
           <p class="text-xs text-gray-500">
             {{
-              t("products.classificationHint") ||
-              "Product type, category, and unit"
+              t("products.classificationHint", "Product type, category, and unit")
             }}
           </p>
         </div>
@@ -75,7 +74,7 @@ function onTypeChange(value: string) {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Product Type -->
         <UFormField
-          :label="t('products.productType') || 'Product Type'"
+          :label="t('products.productType', 'Product Type')"
           name="productType"
         >
           <USelect
@@ -84,7 +83,7 @@ function onTypeChange(value: string) {
             label-key="label"
             value-key="value"
             class="w-full"
-            :placeholder="t('products.selectProductType') || 'Select type'"
+            :placeholder="t('products.selectProductType', 'Select type')"
             @update:model-value="onTypeChange"
           />
         </UFormField>

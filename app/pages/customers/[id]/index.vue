@@ -138,12 +138,12 @@ const tierColors: Record<string, string> = {
 
 // Tab items
 const tabs = computed(() => [
-  { value: "overview", label: t("customers.tabs.overview") || "Overview" },
-  { value: "orders", label: t("customers.tabs.orders") || "Orders" },
-  { value: "invoices", label: t("customers.tabs.invoices") || "Invoices" },
-  { value: "contracts", label: t("customers.tabs.contracts") || "Contracts" },
-  { value: "loyalty", label: t("customers.tabs.loyalty") || "Loyalty" },
-  { value: "activity", label: t("customers.tabs.activity") || "Activity" },
+  { value: "overview", label: t("customers.tabs.overview", "Overview") },
+  { value: "orders", label: t("customers.tabs.orders", "Orders") },
+  { value: "invoices", label: t("customers.tabs.invoices", "Invoices") },
+  { value: "contracts", label: t("customers.tabs.contracts", "Contracts") },
+  { value: "loyalty", label: t("customers.tabs.loyalty", "Loyalty") },
+  { value: "activity", label: t("customers.tabs.activity", "Activity") },
 ]);
 
 // Load customer orders
@@ -179,7 +179,7 @@ const saveCustomer = async () => {
       isEditing.value = false;
       toast.add({
         title: t("common.success"),
-        description: t("customers.saved") || "Customer saved",
+        description: t("customers.saved", "Customer saved"),
         color: "green",
       });
     }
@@ -228,7 +228,7 @@ const deleteCustomer = async () => {
   ) {
     toast.add({
       title: t("common.success"),
-      description: t("customers.deleted") || "Customer deleted",
+      description: t("customers.deleted", "Customer deleted"),
       color: "green",
     });
     router.push(localePath("/customers"));
@@ -251,7 +251,7 @@ onMounted(async () => {
     console.error("Failed to load customer:", e);
     toast.add({
       title: t("common.error"),
-      description: t("customers.loadError") || "Failed to load customer",
+      description: t("customers.loadError", "Failed to load customer"),
       color: "red",
     });
   } finally {
@@ -269,7 +269,7 @@ onMounted(async () => {
           name="i-heroicons-arrow-path"
           class="w-10 h-10 animate-spin text-primary-500 mb-4"
         />
-        <p class="text-gray-500">{{ t("common.loading") || "Loading..." }}</p>
+        <p class="text-gray-500">{{ t("common.loading", "Loading...") }}</p>
       </div>
     </div>
 
@@ -280,7 +280,7 @@ onMounted(async () => {
     >
       <div class="text-6xl mb-4">👤</div>
       <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
-        {{ t("customers.notFound") || "Customer Not Found" }}
+        {{ t("customers.notFound", "Customer Not Found") }}
       </h2>
       <p class="text-gray-500 mb-6">
         {{
@@ -293,7 +293,7 @@ onMounted(async () => {
         color="primary"
         icon="i-heroicons-arrow-left"
       >
-        {{ t("customers.backToList") || "Back to Customers" }}
+        {{ t("customers.backToList", "Back to Customers") }}
       </UButton>
     </div>
 
@@ -321,14 +321,14 @@ onMounted(async () => {
               variant="outline"
               @click="showSendMessageModal = true"
             >
-              {{ t("common.message") || "Message" }}
+              {{ t("common.message", "Message") }}
             </UButton>
             <UButton
               icon="i-heroicons-gift"
               variant="outline"
               @click="showRewardModal = true"
             >
-              {{ t("loyalty.reward") || "Reward" }}
+              {{ t("loyalty.reward", "Reward") }}
             </UButton>
             <UButton icon="i-heroicons-pencil" @click="isEditing = true">
               {{ t("common.edit") }}
@@ -453,7 +453,7 @@ onMounted(async () => {
         <UCard class="lg:col-span-2">
           <template #header>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("loyalty.rewards") || "Points History" }}
+              {{ t("loyalty.rewards", "Points History") }}
             </h3>
           </template>
 
@@ -461,7 +461,7 @@ onMounted(async () => {
             v-if="loyaltyRewards.length === 0"
             class="text-center py-8 text-gray-500"
           >
-            {{ t("loyalty.noRewards") || "No rewards yet" }}
+            {{ t("loyalty.noRewards", "No rewards yet") }}
           </div>
 
           <div v-else class="overflow-x-auto">
@@ -535,15 +535,15 @@ onMounted(async () => {
         <UCard>
           <template #header>
             <h3 class="text-lg font-semibold">
-              {{ t("customers.sendMessage") || "Send Message" }}
+              {{ t("customers.sendMessage", "Send Message") }}
             </h3>
           </template>
 
           <div class="space-y-4">
-            <UFormField :label="t('common.subject') || 'Subject'">
+            <UFormField :label="t('common.subject', 'Subject')">
               <UInput v-model="messageForm.subject" />
             </UFormField>
-            <UFormField :label="t('common.message') || 'Message'">
+            <UFormField :label="t('common.message', 'Message')">
               <UTextarea v-model="messageForm.content" :rows="4" />
             </UFormField>
           </div>
@@ -554,7 +554,7 @@ onMounted(async () => {
                 {{ t("common.cancel") }}
               </UButton>
               <UButton @click="sendMessage">{{
-                t("common.send") || "Send"
+                t("common.send", "Send")
               }}</UButton>
             </div>
           </template>
@@ -568,7 +568,7 @@ onMounted(async () => {
         <UCard>
           <template #header>
             <h3 class="text-lg font-semibold">
-              {{ t("loyalty.sendReward") || "Send Reward" }}
+              {{ t("loyalty.sendReward", "Send Reward") }}
             </h3>
           </template>
 
@@ -576,7 +576,7 @@ onMounted(async () => {
             <UFormField :label="t('loyalty.points')">
               <UInput v-model.number="rewardForm.points" type="number" />
             </UFormField>
-            <UFormField :label="t('common.reason') || 'Reason'">
+            <UFormField :label="t('common.reason', 'Reason')">
               <UInput v-model="rewardForm.reason" />
             </UFormField>
           </div>
@@ -587,7 +587,7 @@ onMounted(async () => {
                 {{ t("common.cancel") }}
               </UButton>
               <UButton @click="sendReward">{{
-                t("common.send") || "Send"
+                t("common.send", "Send")
               }}</UButton>
             </div>
           </template>

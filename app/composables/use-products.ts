@@ -745,6 +745,59 @@ export function useProductsStore() {
     return true;
   }
 
+  /**
+   * Delete all products (useful for clearing old/template products)
+   * @param syncToNostr - Whether to sync deletions to Nostr (default: true)
+   */
+  async function deleteAllProducts(syncToNostr = true): Promise<number> {
+    const deletedCount = products.value.length;
+    const productIds = products.value.map(p => p.id);
+
+    console.log(`[Products] Deleting ${deletedCount} products...`);
+
+    // Clear local DB
+    await db.products.clear();
+    
+    // Clear in-memory array
+    products.value = [];
+
+    console.log(`[Products] ✅ Deleted ${deletedCount} products from local DB`);
+
+    // Sync to Nostr
+    if (syncToNostr && offline.isOnline.value) {
+      try {
+        console.log('[Products] Syncing deletions to Nostr...');
+        for (const id of productIds) {
+          await nostrData.deleteProduct(id);
+        }
+        console.log('[Products] ✅ Deletions synced to Nostr');
+      } catch (e) {
+        console.warn('[Products] Failed to sync deletions to Nostr:', e);
+      }
+    }
+
+    return deletedCount;
+  }
+
+  /**
+   * Delete multiple products by IDs
+   * @param ids - Array of product IDs to delete
+   * @param syncToNostr - Whether to sync deletions to Nostr (default: true)
+   */
+  async function bulkDeleteProducts(ids: string[], syncToNostr = true): Promise<number> {
+    let deletedCount = 0;
+
+    console.log(`[Products] Bulk deleting ${ids.length} products...`);
+
+    for (const id of ids) {
+      const success = await deleteProduct(id);
+      if (success) deletedCount++;
+    }
+
+    console.log(`[Products] ✅ Deleted ${deletedCount} products`);
+    return deletedCount;
+  }
+
   function getProduct(id: string): Product | undefined {
     return products.value.find((p) => p.id === id);
   }
@@ -1442,6 +1495,8 @@ export function useProductsStore() {
     addProduct,
     updateProduct,
     deleteProduct,
+    bulkDeleteProducts,
+    deleteAllProducts,
     getProduct,
     getProductById,
     getProductBySku,

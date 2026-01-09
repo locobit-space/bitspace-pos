@@ -1,9 +1,13 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 px-4">
+    <div
+      class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 px-4"
+    >
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+        <h1
+          class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white"
+        >
           {{ $t("products.title") }}
           ({{ filteredProducts.length }})
         </h1>
@@ -21,7 +25,9 @@
             :loading="isSyncing"
             @click="handleSyncFromNostr"
           >
-            <span class="hidden sm:inline">{{ $t('common.syncNow', 'Sync') }}</span>
+            <span class="hidden sm:inline">{{
+              $t("common.syncNow", "Sync")
+            }}</span>
           </UButton>
           <UDropdownMenu
             :items="[
@@ -49,6 +55,14 @@
                   onClick: importProducts,
                 },
               ],
+              [
+                {
+                  label: $t('products.clearAll', 'Clear All Products'),
+                  icon: 'i-heroicons-trash',
+                  onClick: confirmClearAllProducts,
+                  disabled: !canDeleteProducts || filteredProducts.length === 0,
+                },
+              ],
             ]"
           >
             <UButton
@@ -57,7 +71,9 @@
               icon="i-heroicons-table-cells"
               trailing-icon="i-heroicons-chevron-down-20-solid"
             >
-              <span class="hidden sm:inline">{{ $t('common.data') || 'Data' }}</span>
+              <span class="hidden sm:inline">{{
+                $t("common.data", "Data")
+              }}</span>
             </UButton>
           </UDropdownMenu>
         </div>
@@ -65,7 +81,7 @@
         <template v-if="canEditProducts">
           <UTooltip
             :text="
-              $t('products.settings.manageCategories') || 'Manage Categories'
+              $t('products.settings.manageCategories', 'Manage Categories')
             "
           >
             <UButton
@@ -81,7 +97,7 @@
             </UButton>
           </UTooltip>
           <UTooltip
-            :text="$t('products.settings.manageUnits') || 'Manage Units'"
+            :text="$t('products.settings.manageUnits', 'Manage Units')"
           >
             <UButton
               color="neutral"
@@ -102,7 +118,9 @@
           icon="i-heroicons-magnifying-glass-circle"
           @click="showLookupModal = true"
         >
-          <span class="hidden sm:inline">{{ $t('products.lookup.discover') }}</span>
+          <span class="hidden sm:inline">{{
+            $t("products.lookup.discover")
+          }}</span>
         </UButton>
         <UButton
           color="amber"
@@ -112,7 +130,9 @@
           :badge="activePromotionsCount > 0 ? activePromotionsCount : undefined"
           @click="navigateTo('/products/promotions')"
         >
-          <span class="hidden sm:inline">{{ $t('promotions.title', 'Promotions') }}</span>
+          <span class="hidden sm:inline">{{
+            $t("promotions.title", "Promotions")
+          }}</span>
         </UButton>
         <UButton
           v-if="canEditProducts"
@@ -121,7 +141,7 @@
           icon="i-heroicons-plus"
           @click="openProductModal()"
         >
-          <span class="hidden sm:inline">{{ $t('common.add') }}</span>
+          <span class="hidden sm:inline">{{ $t("common.add") }}</span>
         </UButton>
       </div>
     </div>
@@ -169,9 +189,133 @@
       </div>
     </div>
 
+    <!-- Selection Banner -->
+    <div v-if="hasSelection" class="px-4">
+      <div
+        class="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+      >
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg"
+            >
+              <UIcon
+                name="i-heroicons-check-circle"
+                class="w-5 h-5 text-blue-600 dark:text-blue-400"
+              />
+            </div>
+            <div>
+              <p class="font-semibold text-blue-900 dark:text-blue-100">
+                {{ selectedCount }}
+                {{ selectedCount === 1 ? "product" : "products" }} selected
+              </p>
+              <p class="text-xs text-blue-700 dark:text-blue-300">
+                Choose an action below or click to deselect
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <!-- Quick Actions -->
+            <UButton
+              v-if="canDeleteProducts"
+              color="red"
+              variant="soft"
+              size="sm"
+              icon="i-heroicons-trash"
+              :loading="isBulkActionProcessing"
+              @click="bulkDeleteSelected"
+            >
+              {{ $t("common.delete") }}
+            </UButton>
+            <UButton
+              v-if="canEditProducts"
+              color="green"
+              variant="soft"
+              size="sm"
+              icon="i-heroicons-check-circle"
+              :loading="isBulkActionProcessing"
+              @click="bulkActivateSelected"
+            >
+              Activate
+            </UButton>
+            <UButton
+              v-if="canEditProducts"
+              color="orange"
+              variant="soft"
+              size="sm"
+              icon="i-heroicons-eye-slash"
+              :loading="isBulkActionProcessing"
+              @click="bulkDeactivateSelected"
+            >
+              Deactivate
+            </UButton>
+            <UButton
+              color="blue"
+              variant="soft"
+              size="sm"
+              icon="i-heroicons-arrow-down-tray"
+              @click="exportSelectedProducts"
+            >
+              Export
+            </UButton>
+
+            <!-- More Actions Dropdown -->
+            <UDropdownMenu
+              v-if="canEditProducts"
+              :items="[
+                [
+                  {
+                    label: 'Select All Filtered',
+                    icon: 'i-heroicons-check',
+                    onClick: selectAllFiltered,
+                  },
+                  {
+                    label: 'Clear Selection',
+                    icon: 'i-heroicons-x-mark',
+                    onClick: clearSelection,
+                  },
+                ],
+                [
+                  {
+                    label: 'Move to Category',
+                    icon: 'i-heroicons-folder',
+                    children: categories.map((cat) => ({
+                      label: cat.name,
+                      onClick: () => bulkUpdateCategory(cat.id),
+                    })),
+                  },
+                ],
+              ]"
+            >
+              <UButton
+                color="gray"
+                variant="soft"
+                size="sm"
+                trailing-icon="i-heroicons-chevron-down-20-solid"
+              >
+                More
+              </UButton>
+            </UDropdownMenu>
+
+            <UButton
+              color="gray"
+              variant="ghost"
+              size="sm"
+              icon="i-heroicons-x-mark"
+              @click="clearSelection"
+            >
+              Clear
+            </UButton>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Filters -->
     <div class="px-4">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+      >
         <!-- Branch Filter -->
         <UFormField :label="$t('common.branch')" class="w-full">
           <USelect
@@ -220,7 +364,10 @@
         </UFormField>
 
         <!-- Search -->
-        <UFormField :label="$t('common.search')" class="w-full sm:col-span-2 lg:col-span-1">
+        <UFormField
+          :label="$t('common.search')"
+          class="w-full sm:col-span-2 lg:col-span-1"
+        >
           <UInput
             v-model="searchQuery"
             :placeholder="$t('products.searchPlaceholder')"
@@ -238,7 +385,7 @@
             @click="resetFilters"
             block
           >
-            <span class="sm:inline">{{ $t('common.reset') }}</span>
+            <span class="sm:inline">{{ $t("common.reset") }}</span>
           </UButton>
         </div>
       </div>
@@ -250,6 +397,12 @@
         <!-- ... existing table header ... -->
         <thead>
           <tr class="border-b border-gray-200 dark:border-gray-700">
+            <th class="text-left py-3 px-4 w-12">
+              <UCheckbox
+                v-model="isSelectAllChecked"
+                @change="toggleSelectAll"
+              />
+            </th>
             <th
               class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
             >
@@ -405,8 +558,17 @@
             v-for="product in paginatedProducts"
             :key="product.id"
             class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+            :class="{
+              'bg-blue-50 dark:bg-blue-950/10': isProductSelected(product.id),
+            }"
             @click="viewProduct(product)"
           >
+            <td class="py-3 px-4" @click.stop>
+              <UCheckbox
+                :model-value="isProductSelected(product.id)"
+                @update:model-value="toggleProductSelection(product.id)"
+              />
+            </td>
             <td class="py-3 px-4">
               <div
                 class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden"
@@ -507,8 +669,8 @@
                   </template>
                   {{
                     product.isPublic !== false
-                      ? $t("products.public") || "Public"
-                      : $t("products.private") || "Private"
+                      ? $t("products.public", "Public")
+                      : $t("products.private", "Private")
                   }}
                 </UBadge>
                 <!-- Promotion indicator -->
@@ -601,7 +763,7 @@
               {{ product.name }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ product.description || 'No description' }}
+              {{ product.description || "No description" }}
             </p>
             <div class="flex flex-wrap gap-2 mt-2">
               <UBadge
@@ -609,16 +771,24 @@
                 :label="$t(`common.${product.status}`)"
                 size="xs"
               />
-              <UBadge
-                color="gray"
-                variant="subtle"
-                size="xs"
-              >
-                {{ product.productType === 'good' ? '📦 Good' : product.productType === 'service' ? '⚙️ Service' : product.productType === 'digital' ? '💾 Digital' : product.productType === 'subscription' ? '🔄 Subscription' : '📦 Bundle' }}
+              <UBadge color="gray" variant="subtle" size="xs">
+                {{
+                  product.productType === "good"
+                    ? "📦 Good"
+                    : product.productType === "service"
+                    ? "⚙️ Service"
+                    : product.productType === "digital"
+                    ? "💾 Digital"
+                    : product.productType === "subscription"
+                    ? "🔄 Subscription"
+                    : "📦 Bundle"
+                }}
               </UBadge>
               <UTooltip
                 v-if="hasActivePromotion(product.id)"
-                :text="`${getProductPromotions(product.id).length} active promotion(s)`"
+                :text="`${
+                  getProductPromotions(product.id).length
+                } active promotion(s)`"
               >
                 <UBadge color="amber" size="xs">
                   <UIcon name="i-heroicons-gift" class="w-3 h-3" />
@@ -633,24 +803,32 @@
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div>
             <span class="text-gray-500 dark:text-gray-400">SKU:</span>
-            <code class="block text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded mt-1">
+            <code
+              class="block text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded mt-1"
+            >
               {{ product.sku }}
             </code>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ $t('products.category') }}:</span>
+            <span class="text-gray-500 dark:text-gray-400"
+              >{{ $t("products.category") }}:</span
+            >
             <p class="font-medium text-gray-900 dark:text-white mt-1">
               {{ getCategoryName(product.categoryId) }}
             </p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ $t('products.price') }}:</span>
+            <span class="text-gray-500 dark:text-gray-400"
+              >{{ $t("products.price") }}:</span
+            >
             <p class="font-bold text-lg text-gray-900 dark:text-white mt-1">
               {{ formatCurrency(product.price) }}
             </p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ $t('products.stock') }}:</span>
+            <span class="text-gray-500 dark:text-gray-400"
+              >{{ $t("products.stock") }}:</span
+            >
             <p class="mt-1">
               <span
                 :class="[
@@ -670,7 +848,10 @@
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700" @click.stop>
+        <div
+          class="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700"
+          @click.stop
+        >
           <UButton
             color="primary"
             variant="soft"
@@ -679,7 +860,7 @@
             @click="viewProduct(product)"
             block
           >
-            {{ $t('common.view') }}
+            {{ $t("common.view") }}
           </UButton>
           <UButton
             v-if="canEditProducts"
@@ -690,7 +871,7 @@
             @click="editProduct(product)"
             block
           >
-            {{ $t('common.edit') }}
+            {{ $t("common.edit") }}
           </UButton>
           <UButton
             v-if="canEditProducts"
@@ -716,8 +897,11 @@
         v-if="paginatedProducts.length === 0"
         class="text-center py-12 text-gray-400"
       >
-        <UIcon name="i-heroicons-inbox" class="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p>{{ $t('common.noData') }}</p>
+        <UIcon
+          name="i-heroicons-inbox"
+          class="w-12 h-12 mx-auto mb-3 opacity-50"
+        />
+        <p>{{ $t("common.noData") }}</p>
       </div>
     </div>
 
@@ -808,6 +992,72 @@
             :loading="deleting"
             :label="$t('common.delete')"
             @click="confirmDelete"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Clear All Products Confirmation Modal -->
+    <UModal v-model:open="showClearAllModal">
+      <template #header>
+        <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">
+          {{ $t("products.clearAllConfirmTitle", "Clear All Products?") }}
+        </h3>
+      </template>
+
+      <template #body>
+        <div class="space-y-4">
+          <div
+            class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800"
+          >
+            <UIcon
+              name="i-heroicons-exclamation-triangle"
+              class="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5"
+            />
+            <div>
+              <p class="font-semibold text-red-900 dark:text-red-100 mb-1">
+                {{
+                  $t(
+                    "products.clearAllWarning",
+                    "Warning: This action cannot be undone!"
+                  )
+                }}
+              </p>
+              <p class="text-sm text-red-700 dark:text-red-300">
+                {{
+                  $t(
+                    "products.clearAllDescription",
+                    { count: filteredProducts.length },
+                    `This will permanently delete all ${filteredProducts.length} products from your inventory.`
+                  )
+                }}
+              </p>
+            </div>
+          </div>
+          <p class="text-gray-600 dark:text-gray-400 text-sm">
+            {{
+              $t(
+                "products.clearAllNote",
+                "Note: This is useful when starting fresh or removing template products."
+              )
+            }}
+          </p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton
+            color="gray"
+            variant="outline"
+            :label="$t('common.cancel')"
+            @click="showClearAllModal = false"
+          />
+          <UButton
+            color="red"
+            :loading="isClearing"
+            :label="$t('products.clearAll', 'Clear All Products')"
+            @click="clearAllProducts"
           />
         </div>
       </template>
@@ -933,18 +1183,15 @@
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                   {{
                     settingsPanelTab === "categories"
-                      ? $t("products.settings.manageCategories") ||
-                        "Manage Categories"
-                      : $t("products.settings.manageUnits") || "Manage Units"
+                      ? $t("products.settings.manageCategories", "Manage Categories")
+                      : $t("products.settings.manageUnits", "Manage Units")
                   }}
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{
                     settingsPanelTab === "categories"
-                      ? $t("products.settings.manageCategoriesDesc") ||
-                        "Add, edit or delete product categories"
-                      : $t("products.settings.manageUnitsDesc") ||
-                        "Manage product measurement units"
+                      ? $t("products.settings.manageCategoriesDesc", "Add, edit or delete product categories")
+                      : $t("products.settings.manageUnitsDesc", "Manage product measurement units")
                   }}
                 </p>
               </div>
@@ -970,7 +1217,7 @@
             >
               <span class="flex items-center justify-center gap-2">
                 <span>📁</span>
-                <span>{{ $t("products.category") || "Categories" }}</span>
+                <span>{{ $t("products.category", "Categories") }}</span>
                 <UBadge color="neutral" variant="subtle" size="sm">
                   {{ categories.length }}
                 </UBadge>
@@ -991,7 +1238,7 @@
             >
               <span class="flex items-center justify-center gap-2">
                 <span>📐</span>
-                <span>{{ $t("products.unit") || "Units" }}</span>
+                <span>{{ $t("products.unit", "Units") }}</span>
                 <UBadge color="neutral" variant="subtle" size="sm">
                   {{ units.length }}
                 </UBadge>
@@ -1052,7 +1299,7 @@
                 class="text-center py-8 text-gray-400"
               >
                 <span class="text-4xl block mb-2">📁</span>
-                <p>{{ $t("products.noCategories") || "No categories yet" }}</p>
+                <p>{{ $t("products.noCategories", "No categories yet") }}</p>
               </div>
             </div>
 
@@ -1074,7 +1321,7 @@
                       {{ unit.name }}
                     </h3>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                      {{ $t("products.units.symbol") || "Symbol" }}:
+                      {{ $t("products.units.symbol", "Symbol") }}:
                       {{ unit.symbol }}
                     </p>
                   </div>
@@ -1096,7 +1343,7 @@
                 class="text-center py-8 text-gray-400"
               >
                 <span class="text-4xl block mb-2">📐</span>
-                <p>{{ $t("products.noUnits") || "No units yet" }}</p>
+                <p>{{ $t("products.noUnits", "No units yet") }}</p>
               </div>
             </div>
           </div>
@@ -1115,8 +1362,8 @@
             >
               {{
                 settingsPanelTab === "categories"
-                  ? $t("products.addCategory") || "Add Category"
-                  : $t("products.addUnit") || "Add Unit"
+                  ? $t("products.addCategory", "Add Category")
+                  : $t("products.addUnit", "Add Unit")
               }}
             </UButton>
           </div>
@@ -1140,10 +1387,10 @@
             <span>📁</span>
             {{
               editingCategory
-                ? $t("common.edit") || "Edit"
-                : $t("common.add") || "Add"
+                ? $t("common.edit", "Edit")
+                : $t("common.add", "Add")
             }}
-            {{ $t("products.category") || "Category" }}
+            {{ $t("products.category", "Category") }}
           </h3>
 
           <div class="space-y-4">
@@ -1152,7 +1399,7 @@
               <label
                 class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
               >
-                {{ $t("common.icon") || "Icon" }}
+                {{ $t("common.icon", "Icon") }}
               </label>
               <div class="flex flex-wrap gap-2">
                 <button
@@ -1173,21 +1420,20 @@
             </div>
 
             <!-- Name -->
-            <UFormField :label="$t('common.name') || 'Name'" required>
+            <UFormField :label="$t('common.name', 'Name')" required>
               <UInput
                 v-model="categoryForm.name"
                 :placeholder="
-                  $t('products.categories.namePlaceholder') ||
-                  'e.g., Drinks, Food, Snacks'
+                  $t('products.categories.namePlaceholder', 'e.g., Drinks, Food, Snacks')
                 "
               />
             </UFormField>
 
             <!-- Description -->
-            <UFormField :label="$t('common.description') || 'Description'">
+            <UFormField :label="$t('common.description', 'Description')">
               <UInput
                 v-model="categoryForm.description"
-                :placeholder="$t('common.optional') || 'Optional description'"
+                :placeholder="$t('common.optional', 'Optional description')"
               />
             </UFormField>
 
@@ -1198,7 +1444,7 @@
                 class="flex-1"
                 @click="showCategoryModal = false"
               >
-                {{ $t("common.cancel") || "Cancel" }}
+                {{ $t("common.cancel", "Cancel") }}
               </UButton>
               <UButton
                 color="primary"
@@ -1208,8 +1454,8 @@
               >
                 {{
                   editingCategory
-                    ? $t("common.update") || "Update"
-                    : $t("common.create") || "Create"
+                    ? $t("common.update", "Update")
+                    : $t("common.create", "Create")
                 }}
               </UButton>
             </div>
@@ -1234,10 +1480,10 @@
             <span>📐</span>
             {{
               editingUnit
-                ? $t("common.edit") || "Edit"
-                : $t("common.add") || "Add"
+                ? $t("common.edit", "Edit")
+                : $t("common.add", "Add")
             }}
-            {{ $t("products.unit") || "Unit" }}
+            {{ $t("products.unit", "Unit") }}
           </h3>
 
           <div class="space-y-4">
@@ -1246,7 +1492,7 @@
               <label
                 class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
               >
-                {{ $t("common.quickSelect") || "Quick Select" }}
+                {{ $t("common.quickSelect", "Quick Select") }}
               </label>
               <div class="flex flex-wrap gap-2">
                 <button
@@ -1270,25 +1516,24 @@
             </div>
 
             <!-- Name -->
-            <UFormField :label="$t('common.name') || 'Name'" required>
+            <UFormField :label="$t('common.name', 'Name')" required>
               <UInput
                 v-model="unitForm.name"
                 :placeholder="
-                  $t('products.units.namePlaceholder') ||
-                  'e.g., Piece, Kilogram, Liter'
+                  $t('products.units.namePlaceholder', 'e.g., Piece, Kilogram, Liter')
                 "
               />
             </UFormField>
 
             <!-- Symbol -->
             <UFormField
-              :label="$t('products.units.symbol') || 'Symbol'"
+              :label="$t('products.units.symbol', 'Symbol')"
               required
             >
               <UInput
                 v-model="unitForm.symbol"
                 :placeholder="
-                  $t('products.units.symbolPlaceholder') || 'e.g., pc, kg, L'
+                  $t('products.units.symbolPlaceholder', 'e.g., pc, kg, L')
                 "
               />
             </UFormField>
@@ -1301,7 +1546,7 @@
                 block
                 @click="showUnitModal = false"
               >
-                {{ $t("common.cancel") || "Cancel" }}
+                {{ $t("common.cancel", "Cancel") }}
               </UButton>
               <UButton
                 color="primary"
@@ -1312,8 +1557,8 @@
               >
                 {{
                   editingUnit
-                    ? $t("common.update") || "Update"
-                    : $t("common.create") || "Create"
+                    ? $t("common.update", "Update")
+                    : $t("common.create", "Create")
                 }}
               </UButton>
             </div>
@@ -1336,18 +1581,17 @@
             class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2"
           >
             <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
-            {{ $t("common.confirmDelete") || "Confirm Delete" }}
+            {{ $t("common.confirmDelete", "Confirm Delete") }}
           </h3>
 
           <p class="text-gray-600 dark:text-gray-400 mb-6">
             {{
-              $t("common.deleteConfirmMessage") ||
-              "Are you sure you want to delete"
+              $t("common.deleteConfirmMessage", "Are you sure you want to delete")
             }}
             <strong class="text-gray-900 dark:text-white">
               "{{ categoryToDelete?.name }}" </strong
             >?
-            {{ $t("common.cannotUndo") || "This action cannot be undone." }}
+            {{ $t("common.cannotUndo", "This action cannot be undone.") }}
           </p>
 
           <div class="flex gap-2">
@@ -1358,7 +1602,7 @@
               block
               @click="showDeleteCategoryModal = false"
             >
-              {{ $t("common.cancel") || "Cancel" }}
+              {{ $t("common.cancel", "Cancel") }}
             </UButton>
             <UButton
               color="red"
@@ -1367,7 +1611,7 @@
               block
               @click="executeDeleteCategory"
             >
-              {{ $t("common.delete") || "Delete" }}
+              {{ $t("common.delete", "Delete") }}
             </UButton>
           </div>
         </div>
@@ -1487,8 +1731,16 @@ const toggleSort = (key: string) => {
 // Modals
 const showProductModal = ref<boolean>(false);
 const showDeleteModal = ref<boolean>(false);
+const showClearAllModal = ref<boolean>(false);
 const showViewModal = ref<boolean>(false);
 const showLookupModal = ref<boolean>(false);
+
+// ============================================
+// Selection & Bulk Actions
+// ============================================
+const selectedProductIds = ref<Set<string>>(new Set());
+const isSelectAllChecked = ref(false);
+const isBulkActionProcessing = ref(false);
 
 // ============================================
 // Settings Panel State (Categories/Units)
@@ -2123,6 +2375,274 @@ const confirmDelete = async () => {
     });
   } finally {
     deleting.value = false;
+  }
+};
+
+// ============================================
+// Clear All Products
+// ============================================
+const isClearing = ref(false);
+
+const confirmClearAllProducts = () => {
+  showClearAllModal.value = true;
+};
+
+const clearAllProducts = async () => {
+  try {
+    isClearing.value = true;
+
+    const count = await productsStore.deleteAllProducts(true);
+
+    toast.add({
+      title: t("products.allCleared", "All Products Cleared"),
+      description: t(
+        "products.clearedCount",
+        { count },
+        `${count} products deleted`
+      ),
+      icon: "i-heroicons-trash",
+      color: "success",
+    });
+
+    showClearAllModal.value = false;
+  } catch (error) {
+    console.error("Error clearing products:", error);
+    toast.add({
+      title: t("common.error"),
+      description: t("products.clearError", "Failed to clear products"),
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  } finally {
+    isClearing.value = false;
+  }
+};
+
+// ============================================
+// Bulk Selection & Actions
+// ============================================
+const selectedCount = computed(() => selectedProductIds.value.size);
+
+const hasSelection = computed(() => selectedCount.value > 0);
+
+const toggleSelectAll = () => {
+  if (isSelectAllChecked.value) {
+    // Select all visible products
+    const newSet = new Set<string>();
+    paginatedProducts.value.forEach((product) => {
+      newSet.add(product.id);
+    });
+    selectedProductIds.value = newSet;
+  } else {
+    selectedProductIds.value = new Set();
+  }
+};
+
+const toggleProductSelection = (productId: string) => {
+  const newSet = new Set(selectedProductIds.value);
+  if (newSet.has(productId)) {
+    newSet.delete(productId);
+  } else {
+    newSet.add(productId);
+  }
+  selectedProductIds.value = newSet;
+
+  // Update select all checkbox state
+  isSelectAllChecked.value = paginatedProducts.value.every((p) =>
+    selectedProductIds.value.has(p.id)
+  );
+};
+
+const isProductSelected = (productId: string) => {
+  return selectedProductIds.value.has(productId);
+};
+
+const clearSelection = () => {
+  selectedProductIds.value = new Set();
+  isSelectAllChecked.value = false;
+};
+
+const selectAllFiltered = () => {
+  const newSet = new Set<string>();
+  filteredProducts.value.forEach((product) => {
+    newSet.add(product.id);
+  });
+  selectedProductIds.value = newSet;
+  isSelectAllChecked.value = true;
+  toast.add({
+    title: t("common.success"),
+    description: `Selected ${filteredProducts.value.length} products`,
+    icon: "i-heroicons-check-circle",
+    color: "success",
+  });
+};
+
+// Bulk Actions
+const bulkDeleteSelected = async () => {
+  if (!hasSelection.value) return;
+
+  const confirmDelete = confirm(
+    `Are you sure you want to delete ${selectedCount.value} selected product(s)? This action cannot be undone.`
+  );
+
+  if (!confirmDelete) return;
+
+  isBulkActionProcessing.value = true;
+  try {
+    const ids = Array.from(selectedProductIds.value);
+    const deleted = await productsStore.bulkDeleteProducts(ids, true);
+
+    toast.add({
+      title: t("common.success"),
+      description: `Deleted ${deleted} product(s)`,
+      icon: "i-heroicons-trash",
+      color: "success",
+    });
+
+    clearSelection();
+  } catch (error) {
+    console.error("Bulk delete error:", error);
+    toast.add({
+      title: t("common.error"),
+      description: "Failed to delete selected products",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  } finally {
+    isBulkActionProcessing.value = false;
+  }
+};
+
+const bulkActivateSelected = async () => {
+  if (!hasSelection.value) return;
+
+  isBulkActionProcessing.value = true;
+  try {
+    let updated = 0;
+    for (const id of selectedProductIds.value) {
+      await productsStore.updateProduct(id, { status: "active" });
+      updated++;
+    }
+
+    toast.add({
+      title: t("common.success"),
+      description: `Activated ${updated} product(s)`,
+      icon: "i-heroicons-check-circle",
+      color: "success",
+    });
+
+    clearSelection();
+  } catch (error) {
+    console.error("Bulk activate error:", error);
+    toast.add({
+      title: t("common.error"),
+      description: "Failed to activate products",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  } finally {
+    isBulkActionProcessing.value = false;
+  }
+};
+
+const bulkDeactivateSelected = async () => {
+  if (!hasSelection.value) return;
+
+  isBulkActionProcessing.value = true;
+  try {
+    let updated = 0;
+    for (const id of selectedProductIds.value) {
+      await productsStore.updateProduct(id, { status: "inactive" });
+      updated++;
+    }
+
+    toast.add({
+      title: t("common.success"),
+      description: `Deactivated ${updated} product(s)`,
+      icon: "i-heroicons-eye-slash",
+      color: "success",
+    });
+
+    clearSelection();
+  } catch (error) {
+    console.error("Bulk deactivate error:", error);
+    toast.add({
+      title: t("common.error"),
+      description: "Failed to deactivate products",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  } finally {
+    isBulkActionProcessing.value = false;
+  }
+};
+
+const exportSelectedProducts = () => {
+  if (!hasSelection.value) return;
+
+  const selectedProducts = products.value.filter((p) =>
+    selectedProductIds.value.has(p.id)
+  );
+
+  const data = selectedProducts.map((p) => ({
+    Name: p.name,
+    Category: getCategoryName(p.categoryId),
+    Price: p.price,
+    Stock: p.stock,
+    Unit: getUnitSymbol(p.unitId),
+    SKU: p.sku,
+    Barcode: p.barcode,
+    Description: p.description,
+    Image: p.image,
+    Status: p.status,
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Selected Products");
+  XLSX.writeFile(
+    wb,
+    `Selected_Products_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+
+  toast.add({
+    title: t("common.success"),
+    description: `Exported ${selectedCount.value} product(s)`,
+    icon: "i-heroicons-arrow-down-tray",
+    color: "success",
+  });
+};
+
+const bulkUpdateCategory = async (categoryId: string) => {
+  if (!hasSelection.value) return;
+
+  isBulkActionProcessing.value = true;
+  try {
+    let updated = 0;
+    for (const id of selectedProductIds.value) {
+      await productsStore.updateProduct(id, { categoryId });
+      updated++;
+    }
+
+    const categoryName = getCategoryName(categoryId);
+    toast.add({
+      title: t("common.success"),
+      description: `Moved ${updated} product(s) to ${categoryName}`,
+      icon: "i-heroicons-folder",
+      color: "success",
+    });
+
+    clearSelection();
+  } catch (error) {
+    console.error("Bulk category update error:", error);
+    toast.add({
+      title: t("common.error"),
+      description: "Failed to update category",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  } finally {
+    isBulkActionProcessing.value = false;
   }
 };
 

@@ -184,7 +184,7 @@ watch(
         <div class="flex-1">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
             <UIcon name="i-heroicons-device-tablet" class="w-5 h-5 text-primary-500" />
-            {{ t("employees.posAccess") || "POS Access" }}
+            {{ t("employees.posAccess", "POS Access") }}
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {{ t('employees.posAccessDesc', 'Allow this employee to access the POS system and create orders') }}
@@ -230,7 +230,7 @@ watch(
     <!-- POS Credentials -->
     <div v-if="canAccessPOS" class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 space-y-4">
       <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-        {{ t("employees.posCredentials") || "POS Credentials" }}
+        {{ t("employees.posCredentials", "POS Credentials") }}
       </h3>
 
       <UFormField :label="t('employees.pin', 'PIN (4-6 digits)')" :help="t('employees.pinHelp', 'Staff can login with PIN')">
@@ -270,7 +270,7 @@ watch(
         <div>
           <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
             <UIcon name="i-heroicons-cloud-arrow-up" class="w-5 h-5 text-primary-500" />
-            {{ t("employees.nostrSync") || "Nostr Sync" }}
+            {{ t("employees.nostrSync", "Nostr Sync") }}
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {{ t('employees.nostrSyncDesc', 'Sync employee data to Nostr relays for cross-device access') }}

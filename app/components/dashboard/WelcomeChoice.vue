@@ -174,15 +174,13 @@
             <div class="space-y-4">
               <h4 class="font-semibold text-gray-900 dark:text-white">
                 {{
-                  t("shop.welcome.readyToCreate") ||
-                  "Ready to set up your shop?"
+                  t("shop.welcome.readyToCreate", "Ready to set up your shop?")
                 }}
               </h4>
 
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{
-                  t("shop.welcome.createHint") ||
-                  "Setup your shop and get a unique code to share"
+                  t("shop.welcome.createHint", "Setup your shop and get a unique code to share")
                 }}
               </p>
 
@@ -193,7 +191,7 @@
                 @click="handleCreateCompany"
               >
                 <UIcon name="i-heroicons-rocket-launch" class="w-5 h-5 mr-2" />
-                {{ t("shop.welcome.startSetup") || "Start Setup" }}
+                {{ t("shop.welcome.startSetup", "Start Setup") }}
               </UButton>
             </div>
           </UCard>
@@ -300,8 +298,8 @@ async function handleJoinCompany() {
     company.toggleCompanyCode(true);
 
     toast.add({
-      title: t("auth.company.connectSuccess") || "Connected!",
-      description: t("auth.company.syncingData") || "Syncing company data...",
+      title: t("auth.company.connectSuccess", "Connected!"),
+      description: t("auth.company.syncingData", "Syncing company data..."),
       icon: "i-heroicons-check-circle",
       color: "success",
     });
@@ -321,8 +319,7 @@ async function handleJoinCompany() {
     }, 1500);
   } catch (error) {
     errorMsg.value =
-      t("auth.company.connectError") ||
-      "Failed to connect. Please check the code.";
+      t("auth.company.connectError", "Failed to connect. Please check the code.");
   } finally {
     isConnecting.value = false;
   }

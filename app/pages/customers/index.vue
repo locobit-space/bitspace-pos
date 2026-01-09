@@ -63,7 +63,7 @@ const loadPaymentTerms = async () => {
 };
 
 const paymentTermOptions = computed(() => [
-  { value: "none", label: t("common.none") || "None" },
+  { value: "none", label: t("common.none", "None") },
   ...paymentTerms.value.map((term) => ({
     value: term.id,
     label: `${term.name} (${term.days} days)`,
@@ -82,20 +82,20 @@ const selectedTag = ref("all");
 const selectedTab = ref("all"); // Controls top tabs: all, members, vip
 
 const tierOptions = [
-  { value: "all", label: t("common.all") || "All" },
-  { value: "bronze", label: t("loyalty.bronze") || "Bronze" },
-  { value: "silver", label: t("loyalty.silver") || "Silver" },
-  { value: "gold", label: t("loyalty.gold") || "Gold" },
-  { value: "platinum", label: t("loyalty.platinum") || "Platinum" },
+  { value: "all", label: t("common.all", "All") },
+  { value: "bronze", label: t("loyalty.bronze", "Bronze") },
+  { value: "silver", label: t("loyalty.silver", "Silver") },
+  { value: "gold", label: t("loyalty.gold", "Gold") },
+  { value: "platinum", label: t("loyalty.platinum", "Platinum") },
 ];
 
 const tagOptions = [
-  { value: "all", label: t("common.allTags") || "All Tags" },
+  { value: "all", label: t("common.allTags", "All Tags") },
   { value: "vip", label: "VIP" },
-  { value: "regular", label: t("customers.regular") || "Regular" },
+  { value: "regular", label: t("customers.regular", "Regular") },
   { value: "lightning", label: "Lightning" },
   { value: "bitcoin", label: "Bitcoin" },
-  { value: "new", label: t("customers.new") || "New" },
+  { value: "new", label: t("customers.new", "New") },
 ];
 
 const filteredCustomers = computed(() => {
@@ -163,10 +163,10 @@ const customerForm = ref({
 
 // Tier options for form selector (without 'all')
 const formTierOptions = [
-  { value: "bronze", label: t("loyalty.bronze") || "Bronze" },
-  { value: "silver", label: t("loyalty.silver") || "Silver" },
-  { value: "gold", label: t("loyalty.gold") || "Gold" },
-  { value: "platinum", label: t("loyalty.platinum") || "Platinum" },
+  { value: "bronze", label: t("loyalty.bronze", "Bronze") },
+  { value: "silver", label: t("loyalty.silver", "Silver") },
+  { value: "gold", label: t("loyalty.gold", "Gold") },
+  { value: "platinum", label: t("loyalty.platinum", "Platinum") },
 ];
 
 const formatCurrency = (amount: number): string => {
@@ -256,7 +256,7 @@ const saveCustomer = async () => {
       });
       toast.add({
         title: t("common.success"),
-        description: t("customers.updated") || "Customer updated",
+        description: t("customers.updated", "Customer updated"),
         color: "success",
       });
     } else {
@@ -280,7 +280,7 @@ const saveCustomer = async () => {
       });
       toast.add({
         title: t("common.success"),
-        description: t("customers.created") || "Customer created",
+        description: t("customers.created", "Customer created"),
         color: "success",
       });
     }
@@ -351,7 +351,7 @@ const handleFileUpload = async (event: Event) => {
 
     if (result.errors.length > 0) {
       toast.add({
-        title: t("common.warning") || "Warning",
+        title: t("common.warning", "Warning"),
         description: result.errors.slice(0, 3).join(", "),
         color: "warning",
       });
@@ -445,12 +445,12 @@ const handleFileUpload = async (event: Event) => {
             :items="[
               [
                 {
-                  label: t('customers.downloadTemplate') || 'Download Template',
+                  label: t('customers.downloadTemplate', 'Download Template'),
                   icon: 'i-heroicons-document-arrow-down',
                   onSelect: () => customersStore.downloadImportTemplate(),
                 },
                 {
-                  label: t('customers.importFromCSV') || 'Import from CSV',
+                  label: t('customers.importFromCSV', 'Import from CSV'),
                   icon: 'i-heroicons-arrow-up-tray',
                   onSelect: () => triggerFileUpload(),
                 },
@@ -803,11 +803,11 @@ const handleFileUpload = async (event: Event) => {
                 <p
                   class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"
                 >
-                  {{ t("customers.creditSettings") || "Credit Settings" }}
+                  {{ t("customers.creditSettings", "Credit Settings") }}
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <UFormField
-                    :label="t('settings.terms.title') || 'Payment Terms'"
+                    :label="t('settings.terms.title', 'Payment Terms')"
                   >
                     <USelect
                       v-model="customerForm.defaultPaymentTermId"
@@ -820,7 +820,7 @@ const handleFileUpload = async (event: Event) => {
                   </UFormField>
 
                   <UFormField
-                    :label="t('customers.creditLimit') || 'Credit Limit'"
+                    :label="t('customers.creditLimit', 'Credit Limit')"
                   >
                     <UInput
                       v-model.number="customerForm.creditLimit"

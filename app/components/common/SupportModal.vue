@@ -108,17 +108,16 @@ const copyAddress = async () => {
   try {
     await navigator.clipboard.writeText(lightningAddress.value);
     toast.add({
-      title: t("common.support.copied") || "Copied!",
+      title: t("common.support.copied", "Copied!"),
       description:
-        t("common.support.addressCopied") ||
-        "Lightning address copied to clipboard",
+        t("common.support.addressCopied", "Lightning address copied to clipboard"),
       icon: "i-heroicons-clipboard-document-check",
       color: "green",
     });
   } catch {
     toast.add({
-      title: t("common.error") || "Error",
-      description: t("common.support.copyFailed") || "Failed to copy",
+      title: t("common.error", "Error"),
+      description: t("common.support.copyFailed", "Failed to copy"),
       icon: "i-heroicons-exclamation-circle",
       color: "red",
     });
@@ -167,10 +166,9 @@ async function postDonationToNostr() {
 
     if (event) {
       toast.add({
-        title: t("common.support.postedToNostr") || "Posted to Nostr!",
+        title: t("common.support.postedToNostr", "Posted to Nostr!"),
         description:
-          t("common.support.thankYouShared") ||
-          "Your support message was shared",
+          t("common.support.thankYouShared", "Your support message was shared"),
         icon: "i-heroicons-megaphone",
         color: "green",
       });
@@ -306,15 +304,15 @@ async function copyLightningUri() {
   try {
     await navigator.clipboard.writeText(lightningUri.value);
     toast.add({
-      title: t("common.support.copied") || "Copied!",
+      title: t("common.support.copied", "Copied!"),
       description: "Lightning link copied to clipboard",
       icon: "i-heroicons-clipboard-document-check",
       color: "green",
     });
   } catch {
     toast.add({
-      title: t("common.error") || "Error",
-      description: t("common.support.copyFailed") || "Failed to copy",
+      title: t("common.error", "Error"),
+      description: t("common.support.copyFailed", "Failed to copy"),
       color: "red",
     });
   }
@@ -355,7 +353,7 @@ watch(open, (isOpen) => {
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ t("common.support.title") || "Support Development" }}
+                {{ t("common.support.title", "Support Development") }}
               </h3>
               <p class="text-sm text-gray-500">
                 {{ developerName }}
@@ -378,8 +376,7 @@ watch(open, (isOpen) => {
             <div class="text-center">
               <p class="text-gray-600 dark:text-gray-400 text-sm">
                 {{
-                  t("common.support.message") ||
-                  "Thank you for using bnos.space! Your support helps us build better software."
+                  t("common.support.message", "Thank you for using bnos.space! Your support helps us build better software.")
                 }}
               </p>
             </div>
@@ -511,7 +508,7 @@ watch(open, (isOpen) => {
               <div v-if="lightningAddress" class="space-y-3">
                 <p class="text-sm text-gray-500 text-center">
                   {{
-                    t("common.support.orSendDirectly") || "Or send directly to:"
+                    t("common.support.orSendDirectly", "Or send directly to:")
                   }}
                 </p>
                 <div
@@ -544,8 +541,7 @@ watch(open, (isOpen) => {
                 />
                 <p class="text-sm text-gray-500">
                   {{
-                    t("common.support.noAddressConfigured") ||
-                    "Lightning address not configured"
+                    t("common.support.noAddressConfigured", "Lightning address not configured")
                   }}
                 </p>
               </div>
@@ -565,8 +561,7 @@ watch(open, (isOpen) => {
                 </div>
                 <p class="text-sm text-gray-500 mt-3">
                   {{
-                    t("common.support.bankDesc") ||
-                    "Scan with BCEL One or any Lao banking app"
+                    t("common.support.bankDesc", "Scan with BCEL One or any Lao banking app")
                   }}
                 </p>
               </div>
@@ -581,13 +576,11 @@ watch(open, (isOpen) => {
                   class="text-sm text-gray-600 dark:text-gray-400 cursor-pointer"
                 >
                   {{
-                    t("common.support.postToNostr") ||
-                    "Share my support on Nostr"
+                    t("common.support.postToNostr", "Share my support on Nostr")
                   }}
                   <span class="text-gray-400"
                     >({{
-                      t("common.support.notifyDeveloper") ||
-                      "notifies developer"
+                      t("common.support.notifyDeveloper", "notifies developer")
                     }})</span
                   >
                 </label>
@@ -598,8 +591,7 @@ watch(open, (isOpen) => {
                 <UInput
                   v-model="donateMessage"
                   :placeholder="
-                    t('common.support.messagePlaceholder') ||
-                    'Add a message (optional)'
+                    t('common.support.messagePlaceholder', 'Add a message (optional)')
                   "
                   size="sm"
                   class="w-full"
@@ -614,8 +606,7 @@ watch(open, (isOpen) => {
             <p class="text-xs text-gray-500">
               ⚡
               {{
-                t("common.support.lightningTip") ||
-                "Powered by Lightning Network"
+                t("common.support.lightningTip", "Powered by Lightning Network")
               }}
             </p>
             <div class="flex gap-2">
@@ -626,12 +617,12 @@ watch(open, (isOpen) => {
                 :loading="isPosting"
                 @click="openWallet"
               >
-                {{ t("common.support.openWallet") || "Open Wallet" }}
+                {{ t("common.support.openWallet", "Open Wallet") }}
               </UButton>
               <UButton
                 color="gray"
                 variant="outline"
-                :label="t('common.close') || 'Close'"
+                :label="t('common.close', 'Close')"
                 @click="open = false"
               />
             </div>

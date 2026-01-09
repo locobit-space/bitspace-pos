@@ -7,7 +7,7 @@
           <!-- Header -->
           <div class="flex items-center justify-between p-4 bg-black/50">
             <h3 class="text-white font-semibold">
-              {{ $t("auth.signin.scanQrCode") || "Scan QR Code" }}
+              {{ $t("auth.signin.scanQrCode", "Scan QR Code") }}
             </h3>
             <UButton
               color="white"
@@ -62,7 +62,7 @@
           <div class="p-4 bg-black/50">
             <p class="text-white/80 text-sm text-center mb-4">
               {{
-                $t("auth.signin.pointCameraAtQr") || "Point camera at QR code"
+                $t("auth.signin.pointCameraAtQr", "Point camera at QR code")
               }}
             </p>
 
@@ -71,7 +71,7 @@
               <UInput
                 v-model="manualLink"
                 :placeholder="
-                  $t('auth.signin.pasteInviteLink') || 'Or paste invite link...'
+                  $t('auth.signin.pasteInviteLink', 'Or paste invite link...')
                 "
                 class="flex-1"
               />
@@ -80,7 +80,7 @@
                 :disabled="!manualLink"
                 @click="handleManualLink"
               >
-                {{ $t("common.submit") || "Submit" }}
+                {{ $t("common.submit", "Submit") }}
               </UButton>
             </div>
           </div>
@@ -92,7 +92,7 @@
     <slot name="trigger" :startScanning="startScanning">
       <UButton variant="outline" class="w-full" @click="startScanning">
         <UIcon name="i-heroicons-qr-code" class="w-5 h-5 mr-2" />
-        {{ $t("auth.signin.scanQrToJoin") || "Scan QR to Join" }}
+        {{ $t("auth.signin.scanQrToJoin", "Scan QR to Join") }}
       </UButton>
     </slot>
   </div>
@@ -132,8 +132,7 @@ const startScanning = async () => {
     console.error("Camera access error:", error);
     emit(
       "error",
-      t("auth.signin.cameraAccessDenied") ||
-        "Camera access denied. Please paste the invite link instead."
+      t("auth.signin.cameraAccessDenied", "Camera access denied. Please paste the invite link instead.")
     );
     // Keep modal open for manual link entry
   }

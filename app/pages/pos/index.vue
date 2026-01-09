@@ -477,7 +477,7 @@ const handleBarcodeScan = (code: string) => {
     // Success toast
     const toast = useToast();
     toast.add({
-      title: t("pos.scanner.productFound") || "Product Found",
+      title: t("pos.scanner.productFound", "Product Found"),
       description: product.name,
       icon: "i-heroicons-check-circle",
       color: "green",
@@ -489,7 +489,7 @@ const handleBarcodeScan = (code: string) => {
 
     const toast = useToast();
     toast.add({
-      title: t("pos.scanner.notFound") || "Product Not Found",
+      title: t("pos.scanner.notFound", "Product Not Found"),
       description:
         t("pos.scanner.searchingFor", { code }) || `Searching for: ${code}`,
       icon: "i-heroicons-magnifying-glass",
@@ -649,11 +649,11 @@ const sendToKitchen = async () => {
     // Show success toast
     const toast = useToast();
     toast.add({
-      title: t("pos.orderSentToKitchen") || "Order Sent to Kitchen!",
+      title: t("pos.orderSentToKitchen", "Order Sent to Kitchen!"),
       description: `${
         order.orderNumber ? "#" + order.orderNumber + " - " : ""
       }${order.code || order.id} - ${
-        t("pos.payLater") || "Pay when ready to leave"
+        t("pos.payLater", "Pay when ready to leave")
       }`,
       icon: "i-heroicons-check-circle",
       color: "green",
@@ -662,7 +662,7 @@ const sendToKitchen = async () => {
     console.error("Failed to send order to kitchen:", e);
     const toast = useToast();
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -762,9 +762,9 @@ const loadOrderForEditing = (order: Order) => {
   // Show feedback
   const toast = useToast();
   toast.add({
-    title: t("pos.editingOrder") || "Editing Order",
+    title: t("pos.editingOrder", "Editing Order"),
     description: `${
-      t("pos.addMoreItems") || "Add items and click Update Order"
+      t("pos.addMoreItems", "Add items and click Update Order")
     } - #${order.code || order.id}`,
     color: "blue",
   });
@@ -1370,7 +1370,7 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     console.error("Failed to process pending order payment:", e);
     const toast = useToast();
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -1405,8 +1405,8 @@ const paySplitPortion = async () => {
   if (splitPaidCount.value >= splitCount.value) {
     const toast = useToast();
     toast.add({
-      title: t("pos.splitComplete") || "Already Paid",
-      description: t("pos.allPortionsPaid") || "All portions have been paid",
+      title: t("pos.splitComplete", "Already Paid"),
+      description: t("pos.allPortionsPaid", "All portions have been paid"),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -1477,11 +1477,11 @@ const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown)
 
       const toast = useToast();
       toast.add({
-        title: t("pos.splitComplete") || "Split Bill Complete!",
-        description: `${splitCount.value} ${t("pos.people") || "people"} paid ${currency.format(
+        title: t("pos.splitComplete", "Split Bill Complete!"),
+        description: `${splitCount.value} ${t("pos.people", "people")} paid ${currency.format(
           splitAmountPerPerson.value,
           splitOrder.value.currency || "LAK"
-        )} ${t("pos.each") || "each"}`,
+        )} ${t("pos.each", "each")}`,
         icon: "i-heroicons-check-circle",
         color: "green",
       });
@@ -1511,11 +1511,11 @@ const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown)
       // More portions to pay
       const toast = useToast();
       toast.add({
-        title: t("pos.portionPaid") || "Portion Paid!",
-        description: `${splitRemainingSplits.value} ${t("pos.moreToGo") || "more to go"} - ${currency.format(
+        title: t("pos.portionPaid", "Portion Paid!"),
+        description: `${splitRemainingSplits.value} ${t("pos.moreToGo", "more to go")} - ${currency.format(
           splitRemainingAmount.value,
           splitOrder.value.currency || "LAK"
-        )} ${t("pos.remaining") || "remaining"}`,
+        )} ${t("pos.remaining", "remaining")}`,
         icon: "i-heroicons-check",
         color: "blue",
       });
@@ -1535,7 +1535,7 @@ const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown)
 
     const toast = useToast();
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description: String(e),
       icon: "i-heroicons-exclamation-triangle",
       color: "red",
@@ -1738,7 +1738,7 @@ watch(
         // Success feedback
         const toast = useToast();
         toast.add({
-          title: t("pos.scanner.productFound") || "Product Found",
+          title: t("pos.scanner.productFound", "Product Found"),
           description: exactMatch.name,
           color: "success",
           icon: "i-heroicons-check-circle",
@@ -2064,11 +2064,11 @@ onMounted(async () => {
         // Show toast notification
         const toast = useToast();
         toast.add({
-          title: t("pos.newCustomerOrder") || "🔔 New Customer Order!",
+          title: t("pos.newCustomerOrder", "🔔 New Customer Order!"),
           description: `#${order.id.slice(-6).toUpperCase()} - ${
             order.tableNumber
               ? t("orders.table") + " " + order.tableNumber
-              : t("orders.walkInCustomer") || "Walk-in"
+              : t("orders.walkInCustomer", "Walk-in")
           }`,
           icon: "i-heroicons-bell-alert",
           color: "blue",
@@ -2387,7 +2387,7 @@ onUnmounted(() => {
               <template #trailing>
                 <UTooltip
                   :text="
-                    t('pos.scanner.scanBarcode') || 'Scan with Camera (F2)'
+                    t('pos.scanner.scanBarcode', 'Scan with Camera (F2)')
                   "
                 >
                   <UButton
@@ -2449,7 +2449,7 @@ onUnmounted(() => {
               <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
               <span
                 >{{ pendingOrdersList.length }}
-                {{ t("pos.pendingBills") || "Bills" }}</span
+                {{ t("pos.pendingBills", "Bills") }}</span
               >
             </UButton>
 
@@ -3321,13 +3321,13 @@ onUnmounted(() => {
                 <span>{{
                   isEditingOrder
                     ? "Update Order"
-                    : t("pos.sendToKitchen") || "Send to Kitchen"
+                    : t("pos.sendToKitchen", "Send to Kitchen")
                 }}</span>
                 <span class="text-xs opacity-75"
                   >({{
                     isEditingOrder
                       ? "Save Changes"
-                      : t("pos.payLater") || "Pay Later"
+                      : t("pos.payLater", "Pay Later")
                   }})</span
                 >
               </span>
@@ -3650,13 +3650,13 @@ onUnmounted(() => {
                   <span>{{
                     isEditingOrder
                       ? "Update Order"
-                      : t("pos.sendToKitchen") || "Send to Kitchen"
+                      : t("pos.sendToKitchen", "Send to Kitchen")
                   }}</span>
                   <span class="text-xs opacity-75"
                     >({{
                       isEditingOrder
                         ? "Save"
-                        : t("pos.payLater") || "Pay Later"
+                        : t("pos.payLater", "Pay Later")
                     }})</span
                   >
                 </span>
@@ -3942,9 +3942,9 @@ onUnmounted(() => {
             <h3
               class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"
             >
-              <span>💳</span> {{ t("pos.pendingBills") || "Pending Bills" }}
+              <span>💳</span> {{ t("pos.pendingBills", "Pending Bills") }}
               <span class="text-sm font-normal text-gray-500"
-                >({{ t("pos.awaitingPayment") || "Awaiting Payment" }})</span
+                >({{ t("pos.awaitingPayment", "Awaiting Payment") }})</span
               >
             </h3>
 
@@ -3958,7 +3958,7 @@ onUnmounted(() => {
                 @click="isMergeMode = true"
               >
                 <UIcon name="i-heroicons-squares-plus" class="w-4 h-4" />
-                {{ t("pos.mergeOrders") || "Merge" }}
+                {{ t("pos.mergeOrders", "Merge") }}
               </UButton>
               <template v-else>
                 <UButton
@@ -3970,7 +3970,7 @@ onUnmounted(() => {
                     ordersToMerge = [];
                   "
                 >
-                  {{ t("common.cancel") || "Cancel" }}
+                  {{ t("common.cancel", "Cancel") }}
                 </UButton>
                 <UButton
                   size="xs"
@@ -3979,7 +3979,7 @@ onUnmounted(() => {
                   @click="mergeSelectedOrders"
                 >
                   <UIcon name="i-heroicons-check" class="w-4 h-4" />
-                  {{ t("pos.mergeSelected") || "Merge" }} ({{
+                  {{ t("pos.mergeSelected", "Merge") }} ({{
                     ordersToMerge.length
                   }})
                 </UButton>
@@ -4052,7 +4052,7 @@ onUnmounted(() => {
                     }}
                   </p>
                   <p class="text-xs text-gray-500">
-                    {{ order.items.length }} {{ t("common.items") || "items" }}
+                    {{ order.items.length }} {{ t("common.items", "items") }}
                   </p>
                 </div>
               </div>
@@ -4136,7 +4136,7 @@ onUnmounted(() => {
           <h3
             class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
           >
-            <span>✂️</span> {{ t("pos.splitBill") || "Split Bill" }}
+            <span>✂️</span> {{ t("pos.splitBill", "Split Bill") }}
           </h3>
 
           <!-- Order Info -->
@@ -4168,7 +4168,7 @@ onUnmounted(() => {
             <label
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
-              {{ t("pos.numberOfPeople") || "Number of People" }}
+              {{ t("pos.numberOfPeople", "Number of People") }}
             </label>
             <div class="flex items-center gap-3">
               <UButton
@@ -4184,7 +4184,7 @@ onUnmounted(() => {
                   >{{ splitCount }}</span
                 >
                 <span class="text-sm text-gray-500 ml-2">{{
-                  t("pos.people") || "people"
+                  t("pos.people", "people")
                 }}</span>
               </div>
               <UButton
@@ -4202,7 +4202,7 @@ onUnmounted(() => {
             class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-4 text-center"
           >
             <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
-              {{ t("pos.amountPerPerson") || "Amount per person" }}
+              {{ t("pos.amountPerPerson", "Amount per person") }}
             </div>
             <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">
               {{
@@ -4220,11 +4220,11 @@ onUnmounted(() => {
               <span
                 class="text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                {{ t("pos.paymentProgress") || "Payment Progress" }}
+                {{ t("pos.paymentProgress", "Payment Progress") }}
               </span>
               <span class="text-sm text-gray-500">
                 {{ splitPaidCount }}/{{ splitCount }}
-                {{ t("pos.paid") || "paid" }}
+                {{ t("pos.paid", "paid") }}
               </span>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
@@ -4240,14 +4240,14 @@ onUnmounted(() => {
                   splitOrder?.currency || "LAK"
                 )
               }}
-              {{ t("pos.remaining") || "remaining" }}
+              {{ t("pos.remaining", "remaining") }}
             </div>
           </div>
 
           <!-- Payment History -->
           <div v-if="splitPayments.length > 0" class="mb-4">
             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {{ t("pos.paymentHistory") || "Payment History" }}
+              {{ t("pos.paymentHistory", "Payment History") }}
             </h4>
             <div class="space-y-2">
               <div
@@ -4259,7 +4259,7 @@ onUnmounted(() => {
                   <span class="text-green-600 dark:text-green-400">✓</span>
                   <div>
                     <div class="text-sm font-medium text-gray-900 dark:text-white">
-                      {{ t("pos.portion") || "Portion" }} {{ payment.portionNumber }}
+                      {{ t("pos.portion", "Portion") }} {{ payment.portionNumber }}
                     </div>
                     <div class="text-xs text-gray-500">
                       {{ payment.method.toUpperCase() }} • {{ new Date(payment.paidAt).toLocaleTimeString() }}
@@ -4281,7 +4281,7 @@ onUnmounted(() => {
               variant="soft"
               @click="closeSplitBill"
             >
-              {{ t("common.cancel") || "Cancel" }}
+              {{ t("common.cancel", "Cancel") }}
             </UButton>
             <UButton
               block
@@ -4294,7 +4294,7 @@ onUnmounted(() => {
                 splitPaidCount > 0
                   ? t("pos.payNextPortion") ||
                     `Pay Portion ${splitPaidCount + 1}`
-                  : t("pos.startSplitPayment") || "Start Payment"
+                  : t("pos.startSplitPayment", "Start Payment")
               }}
             </UButton>
           </div>
@@ -4817,7 +4817,7 @@ onUnmounted(() => {
         <div class="p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("pos.scanner.title") || "Scan Barcode" }}
+              {{ t("pos.scanner.title", "Scan Barcode") }}
             </h3>
             <UButton
               icon="i-heroicons-x-mark"

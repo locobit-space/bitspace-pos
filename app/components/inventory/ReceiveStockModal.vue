@@ -182,7 +182,7 @@
                 <!-- Row 1: Product & Quantities -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <UFormField
-                    :label="$t('products.name') || 'Product'"
+                    :label="$t('products.name', 'Product')"
                     class="md:col-span-2"
                   >
                     <USelect
@@ -686,8 +686,8 @@ function resetForm() {
 async function saveDraft() {
   // TODO: Implement draft saving
   toast.add({
-    title: t("common.saved") || "Saved",
-    description: t("inventory.draftSaved") || "Draft saved locally",
+    title: t("common.saved", "Saved"),
+    description: t("inventory.draftSaved", "Draft saved locally"),
     icon: "i-heroicons-bookmark",
     color: "blue",
   });
@@ -728,8 +728,8 @@ async function submit() {
 
     if (receipt) {
       toast.add({
-        title: t("common.success") || "Success",
-        description: `${t("inventory.stockReceived") || "Stock received"}: ${
+        title: t("common.success", "Success"),
+        description: `${t("inventory.stockReceived", "Stock received")}: ${
           receipt.receiptNumber
         }`,
         icon: "i-heroicons-check-circle",
@@ -744,7 +744,7 @@ async function submit() {
   } catch (err) {
     console.error("Submit error:", err);
     toast.add({
-      title: t("common.error") || "Error",
+      title: t("common.error", "Error"),
       description:
         err instanceof Error ? err.message : "Failed to receive stock",
       icon: "i-heroicons-exclamation-circle",

@@ -78,8 +78,7 @@ const handleNostrSignIn = async () => {
         // Check if user is blocked or expired
         if (existingUser.revokedAt) {
           nostrError.value =
-            t("auth.signin.accessRevoked") ||
-            "🚫 Access has been revoked. Contact your manager.";
+            t("auth.signin.accessRevoked", "🚫 Access has been revoked. Contact your manager.");
           return;
         }
         if (
@@ -87,8 +86,7 @@ const handleNostrSignIn = async () => {
           new Date(existingUser.expiresAt) < new Date()
         ) {
           nostrError.value =
-            t("auth.signin.accessExpired") ||
-            "⏰ Access has expired. Contact your manager.";
+            t("auth.signin.accessExpired", "⏰ Access has expired. Contact your manager.");
           return;
         }
         usersComposable.setCurrentUser(existingUser);
@@ -153,8 +151,7 @@ const triggerNos2xPopup = async () => {
       if (existingUser) {
         if (existingUser.revokedAt) {
           nostrError.value =
-            t("auth.signin.accessRevoked") ||
-            "🚫 Access has been revoked. Contact your manager.";
+            t("auth.signin.accessRevoked", "🚫 Access has been revoked. Contact your manager.");
           return;
         }
         if (
@@ -162,8 +159,7 @@ const triggerNos2xPopup = async () => {
           new Date(existingUser.expiresAt) < new Date()
         ) {
           nostrError.value =
-            t("auth.signin.accessExpired") ||
-            "⏰ Access has expired. Contact your manager.";
+            t("auth.signin.accessExpired", "⏰ Access has expired. Contact your manager.");
           return;
         }
       }
@@ -233,8 +229,7 @@ const handleNsecSignIn = async () => {
       // Check access status
       if (existingUser.revokedAt) {
         nostrError.value =
-          t("auth.signin.accessRevoked") ||
-          "🚫 Access has been revoked. Contact your manager.";
+          t("auth.signin.accessRevoked", "🚫 Access has been revoked. Contact your manager.");
         manualNsec.value = "";
         return;
       }
@@ -243,15 +238,14 @@ const handleNsecSignIn = async () => {
         new Date(existingUser.expiresAt) < new Date()
       ) {
         nostrError.value =
-          t("auth.signin.accessExpired") ||
-          "⏰ Access has expired. Contact your manager.";
+          t("auth.signin.accessExpired", "⏰ Access has expired. Contact your manager.");
         manualNsec.value = "";
         return;
       }
 
       usersComposable.setCurrentUser(existingUser);
       toast.add({
-        title: t("auth.signin.welcomeBack") || "Welcome back!",
+        title: t("auth.signin.welcomeBack", "Welcome back!"),
         description: existingUser.name,
         icon: "i-heroicons-check-circle",
         color: "green",
@@ -264,8 +258,8 @@ const handleNsecSignIn = async () => {
       await nostrData.publishCompanyIndex(codeHash);
 
       toast.add({
-        title: t("auth.signin.accountCreated") || "Account created!",
-        description: t("auth.signin.ownerSetup") || "You are now the owner",
+        title: t("auth.signin.accountCreated", "Account created!"),
+        description: t("auth.signin.ownerSetup", "You are now the owner"),
         icon: "i-heroicons-sparkles",
         color: "green",
       });
@@ -303,8 +297,7 @@ const handleCompanyCodeSubmit = async () => {
       );
       if (!ownerPubkey) {
         companyCodeError.value =
-          t("auth.signin.invalidCode") ||
-          "Invalid code. Check with your manager.";
+          t("auth.signin.invalidCode", "Invalid code. Check with your manager.");
         return;
       }
     }
@@ -316,7 +309,7 @@ const handleCompanyCodeSubmit = async () => {
 
     if (staff.length === 0) {
       companyCodeError.value =
-        t("auth.signin.noStaffFound") || "Invalid code or no staff found.";
+        t("auth.signin.noStaffFound", "Invalid code or no staff found.");
       return;
     }
 
@@ -344,9 +337,9 @@ const handleCompanyCodeSubmit = async () => {
     }
 
     toast.add({
-      title: t("auth.signin.syncSuccess") || "Synced!",
+      title: t("auth.signin.syncSuccess", "Synced!"),
       description: `${staff.length} ${
-        t("auth.signin.staffSynced") || "staff members synced"
+        t("auth.signin.staffSynced", "staff members synced")
       }`,
       icon: "i-heroicons-check-circle",
       color: "green",
@@ -356,8 +349,7 @@ const handleCompanyCodeSubmit = async () => {
     showCompanyCode.value = false;
   } catch (e) {
     companyCodeError.value =
-      t("auth.signin.syncFailed") ||
-      "Failed to connect. Check code and try again.";
+      t("auth.signin.syncFailed", "Failed to connect. Check code and try again.");
   } finally {
     isLoadingCompanyCode.value = false;
   }
@@ -562,7 +554,7 @@ onMounted(async () => {
                 <template #leading>
                   <UIcon name="i-heroicons-key" class="w-5 h-5" />
                 </template>
-                {{ t("auth.signin.loginWithKey") || "Login with Private Key" }}
+                {{ t("auth.signin.loginWithKey", "Login with Private Key") }}
               </UButton>
 
               <UButton
@@ -576,7 +568,7 @@ onMounted(async () => {
                   <UIcon name="i-heroicons-building-office" class="w-4 h-4" />
                 </template>
                 {{
-                  t("auth.signin.syncFromCompany") || "Sync from Company Code"
+                  t("auth.signin.syncFromCompany", "Sync from Company Code")
                 }}
               </UButton>
             </div>
@@ -597,8 +589,7 @@ onMounted(async () => {
               </h3>
               <p class="text-gray-600 dark:text-gray-400 text-sm">
                 {{
-                  t("auth.signin.enterKeyDesc") ||
-                  "Enter your private key to sign in"
+                  t("auth.signin.enterKeyDesc", "Enter your private key to sign in")
                 }}
               </p>
             </div>
@@ -609,8 +600,7 @@ onMounted(async () => {
                 v-model="manualNsec"
                 type="password"
                 :placeholder="
-                  t('auth.signin.nsecPlaceholder') ||
-                  'nsec1... or hex private key'
+                  t('auth.signin.nsecPlaceholder', 'nsec1... or hex private key')
                 "
                 size="lg"
                 class="w-full"
@@ -647,8 +637,7 @@ onMounted(async () => {
                   />
                   <span>
                     {{
-                      t("auth.signin.keyInfo") ||
-                      "Your key is stored locally and never sent to servers. Use the same key on all devices."
+                      t("auth.signin.keyInfo", "Your key is stored locally and never sent to servers. Use the same key on all devices.")
                     }}
                   </span>
                 </p>
@@ -667,7 +656,7 @@ onMounted(async () => {
                 <template #leading>
                   <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
                 </template>
-                {{ t("auth.signin.useExtension") || "Use Browser Extension" }}
+                {{ t("auth.signin.useExtension", "Use Browser Extension") }}
               </UButton>
             </div>
 
@@ -686,7 +675,7 @@ onMounted(async () => {
                   <UIcon name="i-heroicons-building-office" class="w-4 h-4" />
                 </template>
                 {{
-                  t("auth.signin.syncFromCompany") || "Sync from Company Code"
+                  t("auth.signin.syncFromCompany", "Sync from Company Code")
                 }}
               </UButton>
             </div>
@@ -743,12 +732,11 @@ onMounted(async () => {
               <h3
                 class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
               >
-                {{ t("auth.signin.syncTitle") || "Sync Staff Data" }}
+                {{ t("auth.signin.syncTitle", "Sync Staff Data") }}
               </h3>
               <p class="text-gray-600 dark:text-gray-400 text-sm">
                 {{
-                  t("auth.signin.syncDesc") ||
-                  "Enter your company code to sync staff data"
+                  t("auth.signin.syncDesc", "Enter your company code to sync staff data")
                 }}
               </p>
             </div>
@@ -780,7 +768,7 @@ onMounted(async () => {
                 <template #leading>
                   <UIcon name="i-heroicons-cloud-arrow-down" class="w-5 h-5" />
                 </template>
-                {{ t("auth.signin.syncNow") || "Sync Now" }}
+                {{ t("auth.signin.syncNow", "Sync Now") }}
               </UButton>
 
               <UButton
@@ -806,8 +794,7 @@ onMounted(async () => {
                 />
                 <span>
                   {{
-                    t("auth.signin.syncInfo") ||
-                    "Get the company code from your manager. This will sync all staff data to your device."
+                    t("auth.signin.syncInfo", "Get the company code from your manager. This will sync all staff data to your device.")
                   }}
                 </span>
               </p>
@@ -841,24 +828,24 @@ onMounted(async () => {
         <h4
           class="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3 text-center"
         >
-          {{ t("auth.signin.whyNostr") || "Why Nostr?" }}
+          {{ t("auth.signin.whyNostr", "Why Nostr?") }}
         </h4>
         <ul class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
           <li class="flex items-center gap-2">
             <span class="text-green-500">✓</span>
-            {{ t("auth.signin.benefit1") || "No email or password required" }}
+            {{ t("auth.signin.benefit1", "No email or password required") }}
           </li>
           <li class="flex items-center gap-2">
             <span class="text-green-500">✓</span>
-            {{ t("auth.signin.benefit2") || "You control your identity" }}
+            {{ t("auth.signin.benefit2", "You control your identity") }}
           </li>
           <li class="flex items-center gap-2">
             <span class="text-green-500">✓</span>
-            {{ t("auth.signin.benefit3") || "Works with Lightning payments" }}
+            {{ t("auth.signin.benefit3", "Works with Lightning payments") }}
           </li>
           <li class="flex items-center gap-2">
             <span class="text-green-500">✓</span>
-            {{ t("auth.signin.benefit4") || "Same key for all devices" }}
+            {{ t("auth.signin.benefit4", "Same key for all devices") }}
           </li>
         </ul>
       </div>

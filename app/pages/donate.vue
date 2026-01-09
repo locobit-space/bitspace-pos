@@ -6,11 +6,11 @@
       <!-- Header -->
       <div class="text-center mb-10">
         <h1 class="text-3xl font-bold text-white mb-2">
-          {{ t("donate.title") || "Support the Developer" }}
+          {{ t("donate.title", "Support the Developer") }}
         </h1>
         <p class="text-gray-400">
           {{
-            t("donate.subtitle") || "Help keep bnos.space free and open source"
+            t("donate.subtitle", "Help keep bnos.space free and open source")
           }}
         </p>
       </div>
@@ -96,7 +96,7 @@
           <div class="flex items-center justify-center gap-2 mb-4">
             <Icon name="i-heroicons-bolt" class="text-2xl text-amber-400" />
             <h3 class="text-lg font-semibold text-white">
-              {{ t("donate.lightning") || "Bitcoin Lightning" }}
+              {{ t("donate.lightning", "Bitcoin Lightning") }}
             </h3>
           </div>
 
@@ -112,7 +112,7 @@
               v-else
               class="w-[200px] h-[200px] flex items-center justify-center text-gray-400"
             >
-              {{ t("donate.noLightning") || "No Lightning address" }}
+              {{ t("donate.noLightning", "No Lightning address") }}
             </div>
           </div>
 
@@ -134,8 +134,7 @@
 
           <p class="text-gray-400 text-sm">
             {{
-              t("donate.lightningDesc") ||
-              "Scan with any Lightning wallet or click to copy"
+              t("donate.lightningDesc", "Scan with any Lightning wallet or click to copy")
             }}
           </p>
         </div>
@@ -153,7 +152,7 @@
               class="text-2xl text-blue-400"
             />
             <h3 class="text-lg font-semibold text-white">
-              {{ t("donate.bank") || "Bank Transfer (BCEL)" }}
+              {{ t("donate.bank", "Bank Transfer (BCEL)") }}
             </h3>
           </div>
 
@@ -175,14 +174,13 @@
           <div class="space-y-2 text-sm">
             <p class="text-gray-300">
               <span class="text-gray-500"
-                >{{ t("donate.bankName") || "Bank" }}:</span
+                >{{ t("donate.bankName", "Bank") }}:</span
               >
               BCEL (Banque pour le Commerce Extérieur Lao)
             </p>
             <p class="text-gray-400">
               {{
-                t("donate.bankDesc") ||
-                "Scan with BCEL One or any Lao banking app"
+                t("donate.bankDesc", "Scan with BCEL One or any Lao banking app")
               }}
             </p>
           </div>
@@ -193,8 +191,7 @@
       <div class="mt-8 text-center">
         <p class="text-gray-500 text-sm">
           {{
-            t("donate.thanks") ||
-            "Thank you for supporting open source software! ❤️"
+            t("donate.thanks", "Thank you for supporting open source software! ❤️")
           }}
         </p>
       </div>
@@ -207,7 +204,7 @@
           icon="i-heroicons-arrow-left"
           to="/"
         >
-          {{ t("common.back") || "Back" }}
+          {{ t("common.back", "Back") }}
         </UButton>
       </div>
     </div>
@@ -303,13 +300,13 @@ async function copyToClipboard(text: string | null) {
   try {
     await navigator.clipboard.writeText(text);
     toast.add({
-      title: t("common.copied") || "Copied!",
+      title: t("common.copied", "Copied!"),
       icon: "i-heroicons-clipboard-document-check",
       color: "green",
     });
   } catch {
     toast.add({
-      title: t("common.error") || "Failed to copy",
+      title: t("common.error", "Failed to copy"),
       color: "red",
     });
   }

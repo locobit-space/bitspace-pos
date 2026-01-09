@@ -347,17 +347,17 @@ function getStatusLabel(status: InvoiceStatus): string {
     <div class="flex justify-between items-center px-4">
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          🧾 {{ t('invoicing.title') || 'Invoicing' }}
+          🧾 {{ t('invoicing.title', 'Invoicing') }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ t('invoicing.description') || 'Create and manage invoices' }}
+          {{ t('invoicing.description', 'Create and manage invoices') }}
         </p>
       </div>
       <UButton
         color="primary"
         size="lg"
         icon="i-heroicons-plus"
-        :label="t('invoicing.createInvoice') || 'Create Invoice'"
+        :label="t('invoicing.createInvoice', 'Create Invoice')"
         @click="openInvoiceModal()"
       />
     </div>
@@ -561,14 +561,14 @@ function getStatusLabel(status: InvoiceStatus): string {
         <div v-if="filteredInvoices.length === 0" class="text-center py-12">
           <div class="text-6xl mb-4">🧾</div>
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {{ t('invoicing.noInvoices') || 'No invoices yet' }}
+            {{ t('invoicing.noInvoices', 'No invoices yet') }}
           </h3>
           <p class="text-gray-500 dark:text-gray-400 mb-4">
-            {{ t('invoicing.createFirst') || 'Create your first invoice' }}
+            {{ t('invoicing.createFirst', 'Create your first invoice') }}
           </p>
           <UButton
             color="primary"
-            :label="t('invoicing.createInvoice') || 'Create Invoice'"
+            :label="t('invoicing.createInvoice', 'Create Invoice')"
             @click="openInvoiceModal()"
           />
         </div>

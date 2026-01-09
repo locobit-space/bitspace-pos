@@ -87,12 +87,11 @@ function handleScan(code: string) {
         </div>
         <div>
           <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ t("products.basicInfo") || "Basic Information" }}
+            {{ t("products.basicInfo", "Basic Information") }}
           </h3>
           <p class="text-xs text-gray-500">
             {{
-              t("products.basicInfoHint") ||
-              "Product name, price, and identification"
+              t("products.basicInfoHint", "Product name, price, and identification")
             }}
           </p>
         </div>
@@ -134,7 +133,7 @@ function handleScan(code: string) {
             <UInput
               v-model="form.sku"
               :placeholder="
-                t('products.skuPlaceholder') || 'Auto-generated if empty'
+                t('products.skuPlaceholder', 'Auto-generated if empty')
               "
               size="lg"
               class="text-lg flex-1"
@@ -153,7 +152,7 @@ function handleScan(code: string) {
               icon="i-heroicons-sparkles"
               @click="handleGenerateSku"
             >
-              {{ t("common.generate") || "Gen" }}
+              {{ t("common.generate", "Gen") }}
             </UButton>
           </div>
         </UFormField>
@@ -167,7 +166,7 @@ function handleScan(code: string) {
               <UInput
                 v-model="form.barcode"
                 :placeholder="
-                  t('products.barcodePlaceholder') || 'Scan or enter barcode'
+                  t('products.barcodePlaceholder', 'Scan or enter barcode')
                 "
                 size="lg"
                 class="w-full"
@@ -179,7 +178,7 @@ function handleScan(code: string) {
                   />
                 </template>
               </UInput>
-              <UTooltip :text="t('pos.scanner.scanBarcode') || 'Scan'">
+              <UTooltip :text="t('pos.scanner.scanBarcode', 'Scan')">
                 <UButton
                   color="neutral"
                   variant="soft"
@@ -213,7 +212,7 @@ function handleScan(code: string) {
             block
             @click="handleGenerateBarcode"
           >
-            {{ t("products.generateBarcode") || "Generate" }}
+            {{ t("products.generateBarcode", "Generate") }}
           </UButton>
         </div>
       </div>
@@ -235,7 +234,7 @@ function handleScan(code: string) {
         <div class="p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t("pos.scanner.title") || "Scan Barcode" }}
+              {{ t("pos.scanner.title", "Scan Barcode") }}
             </h3>
             <UButton
               icon="i-heroicons-x-mark"

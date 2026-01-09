@@ -117,7 +117,7 @@ const nextTierName = computed(() => {
       <div v-if="currentTier !== 'platinum'">
         <div class="flex justify-between text-sm mb-1">
           <span class="text-gray-500 dark:text-gray-400">
-            {{ t("loyalty.progressToNext") || "Progress to next tier" }}
+            {{ t("loyalty.progressToNext", "Progress to next tier") }}
           </span>
           <span class="font-medium text-gray-900 dark:text-white">
             {{ nextTierProgress }}%
@@ -131,7 +131,7 @@ const nextTierName = computed(() => {
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
           {{ pointsToNextTier.toLocaleString() }}
-          {{ t("loyalty.pointsToReach") || "points to reach" }}
+          {{ t("loyalty.pointsToReach", "points to reach") }}
           <span class="capitalize font-medium">{{ nextTierName }}</span>
         </p>
       </div>
@@ -149,7 +149,7 @@ const nextTierName = computed(() => {
         </p>
         <p v-if="joinedAt">
           <span class="text-gray-700 dark:text-gray-300"
-            >{{ t("customers.joinedAt") || "Joined" }}:</span
+            >{{ t("customers.joinedAt", "Joined") }}:</span
           >
           {{ joinedAt }}
         </p>

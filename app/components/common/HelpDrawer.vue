@@ -63,7 +63,7 @@ function handleWriteNew() {
               <h2
                 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white"
               >
-                {{ t("help.title") || "Help" }}
+                {{ t("help.title", "Help") }}
               </h2>
             </div>
             <div class="flex items-center gap-1 sm:gap-2">
@@ -90,7 +90,7 @@ function handleWriteNew() {
                 disabled
                 class="hidden sm:flex"
               >
-                {{ t("help.syncing") || "Syncing..." }}
+                {{ t("help.syncing", "Syncing...") }}
               </UButton>
               <UButton
                 color="gray"
@@ -105,7 +105,7 @@ function handleWriteNew() {
           <!-- Search -->
           <UInput
             v-model="searchQuery"
-            :placeholder="t('help.searchPlaceholder') || 'Search help...'"
+            :placeholder="t('help.searchPlaceholder', 'Search help...')"
             icon="i-heroicons-magnifying-glass"
             class="w-full"
             size="lg"
@@ -129,7 +129,7 @@ function handleWriteNew() {
           <div v-else-if="showSearch" class="space-y-3">
             <p class="text-sm text-gray-500">
               {{ searchResults.length }}
-              {{ t("help.resultsFound") || "results found" }}
+              {{ t("help.resultsFound", "results found") }}
             </p>
             <div
               v-for="result in searchResults"
@@ -158,7 +158,7 @@ function handleWriteNew() {
                 class="text-4xl text-gray-400 mb-2"
               />
               <p class="text-gray-500">
-                {{ t("help.noResults") || "No results found" }}
+                {{ t("help.noResults", "No results found") }}
               </p>
             </div>
           </div>
@@ -175,7 +175,7 @@ function handleWriteNew() {
                 size="xs"
                 @click="handleEdit"
               >
-                {{ t("help.edit") || "Edit" }}
+                {{ t("help.edit", "Edit") }}
               </UButton>
             </div>
 
@@ -194,7 +194,7 @@ function handleWriteNew() {
               class="text-xs text-gray-400 flex items-center gap-1"
             >
               <Icon name="i-heroicons-cloud" class="text-sm" />
-              {{ t("help.fromNostr") || "Synced from Nostr" }}
+              {{ t("help.fromNostr", "Synced from Nostr") }}
               · v{{ currentHelp.version }}
             </div>
           </div>
@@ -206,12 +206,11 @@ function handleWriteNew() {
               class="text-5xl text-gray-400 mb-4"
             />
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">
-              {{ t("help.noHelpAvailable") || "No help available" }}
+              {{ t("help.noHelpAvailable", "No help available") }}
             </h3>
             <p class="text-sm text-gray-500 mb-4">
               {{
-                t("help.noHelpDesc") ||
-                "Help content for this page is coming soon."
+                t("help.noHelpDesc", "Help content for this page is coming soon.")
               }}
             </p>
             <UButton
@@ -221,7 +220,7 @@ function handleWriteNew() {
               icon="i-heroicons-pencil-square"
               @click="handleWriteNew"
             >
-              {{ t("help.writeHelp") || "Write Help Article" }}
+              {{ t("help.writeHelp", "Write Help Article") }}
             </UButton>
           </div>
         </div>
@@ -240,12 +239,12 @@ function handleWriteNew() {
               block
               class="mb-3 min-h-[44px]"
             >
-              {{ t("help.browseCommunityDocs") || "Browse All Community Docs" }}
+              {{ t("help.browseCommunityDocs", "Browse All Community Docs") }}
             </UButton>
           </NuxtLinkLocale>
 
           <p class="text-xs text-gray-500 mb-3 text-center">
-            {{ t("help.needMoreHelp") || "Need more help?" }}
+            {{ t("help.needMoreHelp", "Need more help?") }}
           </p>
           <div class="grid grid-cols-2 gap-2">
             <UButton
@@ -260,7 +259,7 @@ function handleWriteNew() {
                 help.closeHelp();
               "
             >
-              {{ t("help.reportBug") || "Report Bug" }}
+              {{ t("help.reportBug", "Report Bug") }}
             </UButton>
             <UButton
               color="primary"
@@ -274,7 +273,7 @@ function handleWriteNew() {
                 help.closeHelp();
               "
             >
-              {{ t("help.requestFeature") || "Request Feature" }}
+              {{ t("help.requestFeature", "Request Feature") }}
             </UButton>
           </div>
         </div>
