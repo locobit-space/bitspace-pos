@@ -71,6 +71,7 @@ const form = defineModel<FormData>({ required: true });
 
 const emojiOptions = computed(() => props.emojis);
 const imageUrlInput = ref("");
+const customEmojiInput = ref("");
 const isDragging = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -82,10 +83,21 @@ watch(
   (newVal) => {
     if (newVal?.startsWith("http")) {
       imageUrlInput.value = newVal;
+      customEmojiInput.value = "";
+    } else if (newVal) {
+      customEmojiInput.value = newVal;
+      imageUrlInput.value = "";
     }
   },
   { immediate: true }
 );
+
+function handleCustomEmojiUpdate(val: string) {
+  if (val) {
+    form.value.image = val;
+    imageUrlInput.value = "";
+  }
+}
 
 function selectEmoji(emoji: string) {
   form.value.image = emoji;
@@ -164,7 +176,10 @@ function handleDragLeave() {
           </h3>
           <p class="text-xs text-gray-500">
             {{
-              t("products.imageHint", "Upload image, enter URL, or select emoji")
+              t(
+                "products.imageHint",
+                "Upload image, enter URL, or select emoji"
+              )
             }}
           </p>
         </div>
@@ -252,7 +267,10 @@ function handleDragLeave() {
       <div v-if="!isCloudinaryConfigured" class="text-center">
         <p class="text-xs text-gray-500 mb-2">
           {{
-            t("products.cloudinaryNotConfigured", "Configure Cloudinary in Settings → Integrations for image uploads")
+            t(
+              "products.cloudinaryNotConfigured",
+              "Configure Cloudinary in Settings → Integrations for image uploads"
+            )
           }}
         </p>
       </div>
@@ -271,13 +289,77 @@ function handleDragLeave() {
         />
       </UFormField>
 
-      <!-- Emoji Selector -->
-      <div>
+      <!-- Custom Emoji Input -->
+      <UFormField :label="t('products.customEmoji', 'Custom Emoji')">
+        <UInput
+          v-model="customEmojiInput"
+          :placeholder="
+            t(
+              'products.customEmojiPlaceholder',
+              'Type or paste an emoji (e.g. 🚀)'
+            )
+          "
+          icon="i-heroicons-face-smile"
+          class="w-full"
+          @update:model-value="handleCustomEmojiUpdate"
+        />
+      </UFormField>
+
+      <!-- Web Search & System Picker Hint -->
+      <div class="space-y-3">
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          {{ t("products.orSelectEmoji", "Or select an emoji") }}
+          {{ t("products.orSelectEmoji", "Or select from list") }}
         </label>
+
+        <!-- Helper Links -->
+        <div
+          class="flex flex-wrap items-center gap-2 text-xs text-gray-500 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800"
+        >
+          <UIcon name="i-heroicons-globe-alt" class="w-4 h-4" />
+          <span>{{ t("products.findEmojiOn", "Find on:") }}</span>
+          <a
+            href="https://emojipedia.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+          >
+            Emojipedia
+            <UIcon
+              name="i-heroicons-arrow-top-right-on-square"
+              class="w-3 h-3"
+            />
+          </a>
+          <span class="text-gray-300 dark:text-gray-700">|</span>
+          <a
+            href="https://emojiterra.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+          >
+            Emojiterra
+            <UIcon
+              name="i-heroicons-arrow-top-right-on-square"
+              class="w-3 h-3"
+            />
+          </a>
+
+          <div class="w-full h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+
+          <UIcon name="i-heroicons-command-line" class="w-4 h-4" />
+          <span>
+            {{ t("products.systemEmojiHint", "Shortcut:") }}
+            <span class="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded"
+              >Win + .</span
+            >
+            /
+            <span class="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded"
+              >Cmd + Ctrl + Space</span
+            >
+          </span>
+        </div>
+
         <div
           class="h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2"
         >
