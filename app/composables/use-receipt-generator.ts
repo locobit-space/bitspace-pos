@@ -70,7 +70,7 @@ export const useReceiptGenerator = () => {
       orderCode: order.code || order.id,
       orderNumber: order.orderNumber,
       merchantName:
-        shop.shopConfig?.value?.shopName ||
+        shop.shopConfig?.value?.name ||
         receiptSettings.settings?.value?.header?.businessName ||
         "bnos.space",
       merchantAddress:
@@ -93,7 +93,7 @@ export const useReceiptGenerator = () => {
       // Financial summary
       subtotal: order.total - (order.tax || 0) - (order.tip || 0),
       discount: order.discount || 0,
-      appliedPromotions: order.appliedPromotions?.map(promo => ({
+      appliedPromotions: order.appliedPromotions?.map((promo) => ({
         promotionId: promo.promotionId,
         promotionName: promo.promotionName,
         discountAmount: promo.discountAmount,
@@ -116,9 +116,7 @@ export const useReceiptGenerator = () => {
 
       // Timestamps
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(
-        Date.now() + 90 * 24 * 60 * 60 * 1000
-      ).toISOString(), // 90 days
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days
     };
 
     // 3. Save receipt locally (for offline access)
@@ -135,7 +133,7 @@ export const useReceiptGenerator = () => {
         }
 
         const tags = [
-          ["d", receiptCode], // Unique identifier
+          ["d", receiptId], // Receipt ID (UUID) - primary lookup key
           ["t", "receipt"],
           ["t", "public"],
           ["order", order.code || order.id],
@@ -172,8 +170,7 @@ export const useReceiptGenerator = () => {
     }
 
     // 5. Generate receipt URL with verification code
-    const baseUrl =
-      typeof window !== "undefined" ? window.location.origin : "";
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
 
     // 6. Generate QR code
@@ -192,21 +189,21 @@ export const useReceiptGenerator = () => {
   };
 
   /**
-   * Fetch public receipt from Nostr by code
-   * Used by receipt page to load receipts
+   * Fetch public receipt from Nostr by ID
+   * Code is used for verification only (checked after fetch)
    */
-  const fetchReceiptByCode = async (
-    code: string
+  const fetchReceiptById = async (
+    receiptId: string
   ): Promise<EReceipt | null> => {
     if (!relay.isInitialized?.value) {
       return null;
     }
 
     try {
-      // Query events using relay
+      // Query by receipt ID (d tag)
       const events = await relay.queryEvents({
         kinds: [NOSTR_KINDS.RECEIPT],
-        "#d": [code], // Find by receipt code
+        "#d": [receiptId],
         limit: 1,
       });
 
@@ -223,23 +220,6 @@ export const useReceiptGenerator = () => {
       console.error("[ReceiptGenerator] Failed to fetch receipt:", error);
     }
 
-    return null;
-  };
-
-  /**
-   * Fetch public receipt from Nostr by ID
-   * Fallback method if code is not available
-   */
-  const fetchReceiptById = async (id: string): Promise<EReceipt | null> => {
-    // Try localStorage first
-    const cached = receiptComposable.retrieveEBill(id);
-    if (cached) return cached;
-
-    // If not found locally, would need to search Nostr
-    // This is less efficient without the code, so we rely on code-based lookup
-    console.warn(
-      "[ReceiptGenerator] Receipt not found locally, use code for Nostr lookup"
-    );
     return null;
   };
 
@@ -310,7 +290,7 @@ export const useReceiptGenerator = () => {
       orderCode: `SESSION-${sessionInfo.tableNumber}`,
       orderNumber: orders.length,
       merchantName:
-        shop.shopConfig?.value?.shopName ||
+        shop.shopConfig?.value?.name ||
         receiptSettings.settings?.value?.header?.businessName ||
         "bnos.space",
       merchantAddress:
@@ -338,9 +318,7 @@ export const useReceiptGenerator = () => {
         : undefined,
 
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(
-        Date.now() + 90 * 24 * 60 * 60 * 1000
-      ).toISOString(),
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
     // 4. Save locally
@@ -394,8 +372,7 @@ export const useReceiptGenerator = () => {
     }
 
     // 6. Generate URL and QR code
-    const baseUrl =
-      typeof window !== "undefined" ? window.location.origin : "";
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
 
     const QRCode = await import("qrcode");
@@ -415,7 +392,6 @@ export const useReceiptGenerator = () => {
   return {
     createReceiptFromOrder,
     createConsolidatedReceipt,
-    fetchReceiptByCode,
     fetchReceiptById,
   };
 };

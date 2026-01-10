@@ -112,7 +112,6 @@
     "synced": "Synced",
     "loadMore": "Load More",
     "refresh": "Refresh",
-    "select": "Select {name}",
     "other": "Other",
     "custom": "Custom",
     "qty": "Qty",
@@ -329,5 +328,10 @@
     "search": "Search announcements...",
     "markAllRead": "Mark all read",
     "verifiedOnNostr": "Verified on Nostr"
+  },
+  "validation": {
+    "required": "This field is required",
+    "min_length": "Must be at least {length} characters",
+    "passwords_dont_match": "Passwords do not match"
   }
 }

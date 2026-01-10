@@ -12,7 +12,10 @@ import type { ShopConfig } from "./use-shop";
 import type { Event } from "nostr-tools";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 import type { ShopType } from "~/types";
-import { getShopTypeConfig, shouldTrackStockByDefault } from "~/data/shop-templates";
+import {
+  getShopTypeConfig,
+  shouldTrackStockByDefault,
+} from "~/data/shop-templates";
 
 // ============================================
 // 📦 TYPES
@@ -76,11 +79,12 @@ export function useShopManager() {
   // ============================================
 
   const workspaces = computed(() => state.value.workspaces);
-  
-  const currentWorkspace = computed(() =>
-    state.value.workspaces.find(
-      (w) => w.id === state.value.currentWorkspaceId
-    ) || null
+
+  const currentWorkspace = computed(
+    () =>
+      state.value.workspaces.find(
+        (w) => w.id === state.value.currentWorkspaceId
+      ) || null
   );
 
   const hasMultipleWorkspaces = computed(
@@ -112,11 +116,6 @@ export function useShopManager() {
       }
 
       isInitialized.value = true;
-      console.log(
-        "[ShopManager] Loaded",
-        state.value.workspaces.length,
-        "workspaces"
-      );
     } catch (e) {
       console.error("[ShopManager] Failed to load workspaces:", e);
     }
@@ -133,14 +132,14 @@ export function useShopManager() {
         STORAGE_KEYS.WORKSPACES,
         JSON.stringify(state.value.workspaces)
       );
-      
+
       if (state.value.currentWorkspaceId) {
         localStorage.setItem(
           STORAGE_KEYS.CURRENT_WORKSPACE,
           state.value.currentWorkspaceId
         );
       }
-      
+
       // Sync to Nostr in background (don't await)
       syncWorkspacesToNostr().catch((e) => {
         console.debug("[ShopManager] Background sync failed:", e);
@@ -167,11 +166,11 @@ export function useShopManager() {
         console.debug("[ShopManager] No nostrUser, skipping Nostr sync");
         return false;
       }
-      
+
       const parsed = JSON.parse(nostrUser);
       const privkey = parsed.privkey || parsed.privateKey || parsed.seckey;
       const pubkey = parsed.pubkey || parsed.publicKey;
-      
+
       if (!privkey || !pubkey) {
         console.debug("[ShopManager] No user keys, skipping Nostr sync");
         return false;
@@ -250,16 +249,14 @@ export function useShopManager() {
         console.debug("[ShopManager] No nostrUser, skipping Nostr load");
         return false;
       }
-      
+
       const parsed = JSON.parse(nostrUser);
       const pubkey = parsed.pubkey || parsed.publicKey;
-      
+
       if (!pubkey) {
         console.debug("[ShopManager] No user pubkey, skipping Nostr load");
         return false;
       }
-
-      console.log("[ShopManager] 📥 Loading workspaces from Nostr...");
 
       // Fetch from Nostr using queryEvents
       const events = await nostrRelay.queryEvents({
@@ -269,18 +266,18 @@ export function useShopManager() {
       });
 
       if (!events || events.length === 0) {
-        console.log("[ShopManager] No workspace data found on Nostr");
         return false;
       }
 
       // Get most recent event
-      const latestEvent = events.sort((a: Event, b: Event) => b.created_at - a.created_at)[0];
+      const latestEvent = events.sort(
+        (a: Event, b: Event) => b.created_at - a.created_at
+      )[0];
       if (!latestEvent) return false;
 
       // Decrypt content
       const decrypted = await encryption.decryptFromSelf(latestEvent.content);
       if (!decrypted) {
-        console.debug("[ShopManager] Failed to decrypt workspace data");
         return false;
       }
 
@@ -293,15 +290,13 @@ export function useShopManager() {
         );
 
         if (newWorkspaces.length > 0) {
-          state.value.workspaces = [...state.value.workspaces, ...newWorkspaces];
+          state.value.workspaces = [
+            ...state.value.workspaces,
+            ...newWorkspaces,
+          ];
           localStorage.setItem(
             STORAGE_KEYS.WORKSPACES,
             JSON.stringify(state.value.workspaces)
-          );
-          console.log(
-            "[ShopManager] ✅ Loaded",
-            newWorkspaces.length,
-            "workspaces from Nostr"
           );
         }
 
@@ -337,13 +332,17 @@ export function useShopManager() {
    * Generate unique workspace ID
    */
   function generateWorkspaceId(): string {
-    return `ws_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    return `ws_${Date.now().toString(36)}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
   }
 
   /**
    * Add a new workspace (shop)
    */
-  function addWorkspace(workspace: Omit<ShopWorkspace, "id" | "createdAt" | "lastAccessedAt">): ShopWorkspace {
+  function addWorkspace(
+    workspace: Omit<ShopWorkspace, "id" | "createdAt" | "lastAccessedAt">
+  ): ShopWorkspace {
     const newWorkspace: ShopWorkspace = {
       ...workspace,
       id: generateWorkspaceId(),
@@ -364,14 +363,19 @@ export function useShopManager() {
     state.value.workspaces.push(newWorkspace);
     saveWorkspaces();
 
-    console.log("[ShopManager] Added workspace:", newWorkspace.name);
     return newWorkspace;
   }
 
   /**
    * Create workspace from current shop config
    */
-  function createWorkspaceFromShop(shopConfig: ShopConfig, ownerPubkey: string, companyCodeHash?: string, companyCode?: string, shopConfigJson?: string): ShopWorkspace {
+  function createWorkspaceFromShop(
+    shopConfig: ShopConfig,
+    ownerPubkey: string,
+    companyCodeHash?: string,
+    companyCode?: string,
+    shopConfigJson?: string
+  ): ShopWorkspace {
     return addWorkspace({
       name: shopConfig.name,
       logo: shopConfig.logo,
@@ -389,7 +393,10 @@ export function useShopManager() {
   /**
    * Update workspace
    */
-  function updateWorkspace(workspaceId: string, updates: Partial<ShopWorkspace>): boolean {
+  function updateWorkspace(
+    workspaceId: string,
+    updates: Partial<ShopWorkspace>
+  ): boolean {
     const index = state.value.workspaces.findIndex((w) => w.id === workspaceId);
     if (index === -1) return false;
 
@@ -454,7 +461,10 @@ export function useShopManager() {
    * Seed template products based on shop type after clearing data
    * Also syncs with Nostr to save templates to cloud
    */
-  async function seedTemplatesAfterClear(shopType?: ShopType, syncToNostr = true): Promise<void> {
+  async function seedTemplatesAfterClear(
+    shopType?: ShopType,
+    syncToNostr = true
+  ): Promise<void> {
     if (!import.meta.client) return;
 
     try {
@@ -463,19 +473,20 @@ export function useShopManager() {
       const nostrData = useNostrData();
 
       // Determine shop type from current config or default to 'cafe'
-      const currentShopType = shopType || useShop().config.value?.shopType || 'cafe';
-      console.log(`[ShopManager] 🌱 Seeding templates for shop type: ${currentShopType}`);
+      const currentShopType =
+        shopType || useShop().config.value?.shopType || "cafe";
 
       const config = getShopTypeConfig(currentShopType);
       if (!config) {
-        console.warn(`[ShopManager] No template config found for ${currentShopType}`);
+        console.warn(
+          `[ShopManager] No template config found for ${currentShopType}`
+        );
         return;
       }
 
       const trackStock = shouldTrackStockByDefault(currentShopType);
 
       // Create categories
-      console.log(`[ShopManager] Creating ${config.categories.length} categories...`);
       for (const cat of config.categories) {
         await productsStore.addCategory({
           name: cat.name,
@@ -486,13 +497,14 @@ export function useShopManager() {
       }
 
       // Wait a bit for categories to be created
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Create products
-      console.log(`[ShopManager] Creating ${config.products.length} products...`);
       for (const prod of config.products) {
         const categoryId = productsStore.categories.value.find(
-          c => c.name === config.categories.find(tc => tc.id === prod.categoryId)?.name
+          (c) =>
+            c.name ===
+            config.categories.find((tc) => tc.id === prod.categoryId)?.name
         )?.id;
 
         if (categoryId) {
@@ -501,12 +513,12 @@ export function useShopManager() {
             description: prod.nameLao,
             sku: prod.id.toUpperCase(),
             categoryId,
-            unitId: 'default',
+            unitId: "default",
             price: prod.price,
             stock: 0,
             minStock: 0,
-            branchId: '',
-            status: 'active',
+            branchId: "",
+            status: "active",
             image: prod.image,
             trackStock,
           });
@@ -517,16 +529,16 @@ export function useShopManager() {
 
       // Sync to Nostr if online and requested
       if (syncToNostr && offline.isOnline.value) {
-        console.log('[ShopManager] 🔄 Syncing templates to Nostr...');
+        console.log("[ShopManager] 🔄 Syncing templates to Nostr...");
         try {
           await productsStore.syncToNostr();
-          console.log('[ShopManager] ✅ Templates synced to Nostr');
+          console.log("[ShopManager] ✅ Templates synced to Nostr");
         } catch (e) {
-          console.warn('[ShopManager] Failed to sync templates to Nostr:', e);
+          console.warn("[ShopManager] Failed to sync templates to Nostr:", e);
         }
       }
     } catch (e) {
-      console.error('[ShopManager] Failed to seed templates:', e);
+      console.error("[ShopManager] Failed to seed templates:", e);
     }
   }
 
@@ -575,7 +587,9 @@ export function useShopManager() {
       }
     }
 
-    console.log(`[ShopManager] Removing ${keysToRemove.length} localStorage keys...`);
+    console.log(
+      `[ShopManager] Removing ${keysToRemove.length} localStorage keys...`
+    );
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);
     });
@@ -593,11 +607,11 @@ export function useShopManager() {
     // accounting, employees, chat, promotions, memberships, and all other data
     try {
       const { db } = await import("~/db/db");
-      
+
       console.log("[ShopManager] 🗄️ Deleting entire IndexedDB database...");
       await db.delete();
       console.log("[ShopManager] ✅ IndexedDB deleted (all tables cleared)");
-      
+
       // Reopen the database after deletion
       // This recreates an empty database with the schema
       console.log("[ShopManager] 🔄 Reopening database...");
@@ -653,7 +667,6 @@ export function useShopManager() {
       if (workspace.companyCode) {
         localStorage.setItem("bitspace_company_code", workspace.companyCode);
         localStorage.setItem("bitspace_company_code_enabled", "true");
-        console.log("[ShopManager] Restored company code for workspace:", workspace.companyCode);
       }
       if (workspace.companyCodeHash) {
         localStorage.setItem(
@@ -662,7 +675,10 @@ export function useShopManager() {
         );
       }
       if (workspace.ownerPubkey) {
-        localStorage.setItem("bitspace_company_owner_pubkey", workspace.ownerPubkey);
+        localStorage.setItem(
+          "bitspace_company_owner_pubkey",
+          workspace.ownerPubkey
+        );
       }
 
       // Step 5: Restore shopConfig if stored
@@ -676,8 +692,6 @@ export function useShopManager() {
       // Step 6: Mark setup as complete so navigation shows after reload
       const setupCheck = useSetupCheck();
       setupCheck.setSetupComplete(true);
-
-      console.log("[ShopManager] ✅ Switched to:", workspace.name, "with company code:", workspace.companyCode);
 
       // Reload to sync new shop data from Nostr
       window.location.href = "/";
@@ -763,9 +777,11 @@ export function useShopManager() {
 
       if (existingWorkspace) {
         // Get current company code if available
-        const companyCode = localStorage.getItem("bitspace_company_code") || undefined;
-        const companyCodeHash = localStorage.getItem("bitspace_company_code_hash") || undefined;
-        
+        const companyCode =
+          localStorage.getItem("bitspace_company_code") || undefined;
+        const companyCodeHash =
+          localStorage.getItem("bitspace_company_code_hash") || undefined;
+
         // Update and set as current
         updateWorkspace(existingWorkspace.id, {
           lastAccessedAt: new Date().toISOString(),
@@ -783,8 +799,10 @@ export function useShopManager() {
       }
 
       // Get company code and hash
-      const companyCode = localStorage.getItem("bitspace_company_code") || undefined;
-      const companyCodeHash = localStorage.getItem("bitspace_company_code_hash") || undefined;
+      const companyCode =
+        localStorage.getItem("bitspace_company_code") || undefined;
+      const companyCodeHash =
+        localStorage.getItem("bitspace_company_code_hash") || undefined;
 
       // Create new workspace with full shop config
       const workspace = createWorkspaceFromShop(
@@ -798,7 +816,6 @@ export function useShopManager() {
       state.value.currentWorkspaceId = workspace.id;
       saveWorkspaces();
 
-      console.log("[ShopManager] Registered shop as workspace:", workspace.name);
       return workspace;
     } catch (e) {
       console.error("[ShopManager] Failed to register shop:", e);
@@ -846,7 +863,7 @@ export function useShopManager() {
 
       // Get owner pubkey from various sources
       let ownerPubkey: string | null = null;
-      
+
       // Try nostrUser first
       const nostrUser = localStorage.getItem("nostrUser");
       if (nostrUser) {
@@ -857,12 +874,12 @@ export function useShopManager() {
           // Ignore parse errors
         }
       }
-      
+
       // Try nostr-pubkey
       if (!ownerPubkey) {
         ownerPubkey = localStorage.getItem("nostr-pubkey");
       }
-      
+
       // Try company owner pubkey
       if (!ownerPubkey) {
         ownerPubkey = localStorage.getItem("bitspace_company_owner_pubkey");
@@ -874,11 +891,14 @@ export function useShopManager() {
       }
 
       // Get company code if exists
-      const companyCode = localStorage.getItem("bitspace_company_code") || undefined;
-      const companyCodeHash = localStorage.getItem("bitspace_company_code_hash") || undefined;
+      const companyCode =
+        localStorage.getItem("bitspace_company_code") || undefined;
+      const companyCodeHash =
+        localStorage.getItem("bitspace_company_code_hash") || undefined;
 
-      console.log("[ShopManager] 🔄 AUTO-MIGRATION: Creating workspace from existing shop data");
-      console.log("[ShopManager] Shop:", shopConfig.name, "| Type:", shopConfig.shopType);
+      console.log(
+        "[ShopManager] 🔄 AUTO-MIGRATION: Creating workspace from existing shop data"
+      );
 
       // Create workspace from existing shop config
       const workspace = createWorkspaceFromShop(
@@ -899,8 +919,6 @@ export function useShopManager() {
       state.value.currentWorkspaceId = workspace.id;
       saveWorkspaces();
 
-      console.log("[ShopManager] ✅ Migration complete! Created workspace:", workspace.name, "ID:", workspace.id);
-      
       return workspace;
     } catch (e) {
       console.error("[ShopManager] Migration failed:", e);
@@ -911,7 +929,7 @@ export function useShopManager() {
   // Auto-initialize
   if (import.meta.client) {
     init();
-    
+
     // Run auto-migration for existing users after init
     migrateExistingShopToWorkspace();
   }

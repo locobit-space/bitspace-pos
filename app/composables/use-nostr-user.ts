@@ -14,7 +14,7 @@ export const useNostrUser = () => {
     useNostrKey();
   const { saveUser, loadUser, accounts, loadCurrentUser, loadAllAccounts } =
     useNostrStorage();
-  const { queryEvents } = useNostrRelay();
+  const { queryEvents, publishEvent } = useNostrRelay();
 
   const { $nostr } = useNuxtApp();
   const { generateKeys } = $nostr;
@@ -270,6 +270,116 @@ export const useNostrUser = () => {
     }
   };
 
+  /**
+   * Update user profile (Kind 0)
+   */
+  const updateUserProfile = async (
+    profileData: Partial<UserInfo>
+  ): Promise<boolean> => {
+    isLoading.value = true;
+    try {
+      // Get current user keys
+      const { userInfo, user: storedUser } = loadCurrentUser();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hasNip07 = typeof window !== "undefined" && (window as any).nostr;
+
+      if (!userInfo?.userKeys?.nsec && !storedUser?.nsec && !hasNip07) {
+        throw new Error("No signing keys available");
+      }
+
+      const pubkey = userInfo?.pubkey || storedUser?.publicKey || "";
+      if (!pubkey) throw new Error("No public key found");
+
+      // Construct profile content
+      const content = JSON.stringify({
+        name: profileData.name,
+        display_name: profileData.displayName,
+        about: profileData.about,
+        picture: profileData.picture,
+        banner: profileData.banner,
+        nip05: profileData.nip05,
+        lud16: profileData.lud16,
+        website: profileData.website,
+      });
+
+      const event = {
+        kind: NOSTR_KINDS.PROFILE,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [],
+        content,
+        pubkey,
+      };
+
+      let signedEvent;
+
+      // Try NIP-07 extension first
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const windowNostr = (window as any).nostr;
+      if (hasNip07 && windowNostr?.signEvent) {
+        try {
+          signedEvent = await windowNostr.signEvent(event);
+        } catch (e) {
+          console.warn("NIP-07 signing failed or rejected", e);
+        }
+      }
+
+      // Fallback to stored private key if NIP-07 unavailable or failed
+      if (!signedEvent) {
+        const nsecKey = userInfo?.userKeys?.nsec || storedUser?.nsec;
+        if (nsecKey) {
+          const decoded = nip19.decode(nsecKey);
+          if (decoded.type === "nsec") {
+            const secKey = decoded.data as Uint8Array;
+            signedEvent = $nostr.finalizeEvent(event, secKey);
+          }
+        }
+      }
+
+      if (!signedEvent) {
+        throw new Error("Failed to sign event");
+      }
+
+      // Publish to relays
+      const published = await publishEvent(signedEvent);
+
+      if (!published) {
+        throw new Error("Failed to publish to relays");
+      }
+
+      // Update local storage
+      const userKeys = userInfo?.userKeys
+        ? userInfo.userKeys
+        : storedUser
+        ? {
+            pub: storedUser.publicKey,
+            sec: storedUser.privateKey,
+            npub: storedUser.npub,
+            nsec: storedUser.nsec,
+            publicKey: storedUser.publicKey,
+            privateKey: storedUser.privateKey,
+          }
+        : undefined;
+
+      const updatedUserInfo: UserInfo = {
+        ...userInfo,
+        ...profileData,
+        pubkey,
+        userKeys,
+      };
+
+      saveUser(updatedUserInfo);
+      currentUserInfo.value = updatedUserInfo;
+
+      return true;
+    } catch (e) {
+      console.error("Failed to update profile:", e);
+      error.value = e;
+      throw e; // Re-throw to let component handle specific error messages if needed
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   // Load user data on mount
   onMounted(() => {
     initializeUser();
@@ -286,5 +396,6 @@ export const useNostrUser = () => {
     getUserInfoBatch,
     fetchFollowList,
     initializeUser,
+    updateUserProfile,
   };
 };

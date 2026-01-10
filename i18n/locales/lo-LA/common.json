@@ -322,5 +322,10 @@
     "search": "ຄົ້ນຫາປະກາດ...",
     "markAllRead": "ໝາຍທັງໝົດວ່າອ່ານແລ້ວ",
     "verifiedOnNostr": "ຢືນຢັນຢູ່ເທິງ Nostr"
+  },
+  "validation": {
+    "required": "ກະລຸນາໃສ່ຂໍ້ມູນ",
+    "min_length": "ຕ້ອງມີຢ່າງໜ້ອຍ {length} ຕົວອັກສອນ",
+    "passwords_dont_match": "ລະຫັດຜ່ານບໍ່ກົງກັນ"
   }
 }

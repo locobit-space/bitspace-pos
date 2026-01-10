@@ -652,6 +652,81 @@ onUnmounted(() => {
       </div>
     </header>
 
+    <!-- Mobile Status Tabs (visible on mobile only) -->
+    <div
+      class="md:hidden overflow-x-auto bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-2"
+    >
+      <div class="flex items-center gap-2 min-w-max">
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap"
+          :class="
+            filterStatus === 'all'
+              ? 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white'
+              : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+          "
+          @click="filterStatus = 'all'"
+        >
+          {{ t("common.all") }}
+          <span
+            class="text-xs bg-gray-300 dark:bg-gray-700 px-1.5 py-0.5 rounded-full"
+          >
+            {{ kitchenOrders.length }}
+          </span>
+        </button>
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap"
+          :class="
+            filterStatus === 'new'
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+              : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+          "
+          @click="filterStatus = 'new'"
+        >
+          <span class="w-2 h-2 rounded-full bg-blue-500" />
+          {{ t("kitchen.new") }}
+          <span
+            class="text-xs bg-blue-200 dark:bg-blue-800 px-1.5 py-0.5 rounded-full"
+          >
+            {{ newOrdersCount }}
+          </span>
+        </button>
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap"
+          :class="
+            filterStatus === 'preparing'
+              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+              : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+          "
+          @click="filterStatus = 'preparing'"
+        >
+          <span class="w-2 h-2 rounded-full bg-amber-500" />
+          {{ t("kitchen.preparing") }}
+          <span
+            class="text-xs bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded-full"
+          >
+            {{ preparingOrdersCount }}
+          </span>
+        </button>
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap"
+          :class="
+            filterStatus === 'ready'
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+              : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+          "
+          @click="filterStatus = 'ready'"
+        >
+          <span class="w-2 h-2 rounded-full bg-green-500" />
+          {{ t("kitchen.ready") }}
+          <span
+            class="text-xs bg-green-200 dark:bg-green-800 px-1.5 py-0.5 rounded-full"
+          >
+            {{ readyOrdersCount }}
+          </span>
+        </button>
+      </div>
+    </div>
+
     <!-- Orders Grid -->
     <div class="flex-1 overflow-auto p-4">
       <!-- Empty State -->
@@ -891,40 +966,51 @@ onUnmounted(() => {
     <!-- Batch Action Bar -->
     <div
       v-if="isSelectionMode && selectedOrderIds.size > 0"
-      class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 shadow-lg z-20 flex items-center justify-between gap-4"
+      class="fixed bottom-0 inset-x-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 shadow-lg z-20"
     >
-      <div class="flex items-center gap-2">
-        <span class="font-bold text-lg">{{ selectedOrderIds.size }}</span>
-        <span class="text-gray-500">{{
-          t("common.selected", "selected")
-        }}</span>
-      </div>
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span
+            class="font-bold text-xl text-primary-600 dark:text-primary-400"
+            >{{ selectedOrderIds.size }}</span
+          >
+          <span class="text-gray-500">{{
+            t("common.selected", "selected")
+          }}</span>
+        </div>
 
-      <div class="flex items-center gap-2">
-        <UButton
-          color="amber"
-          variant="soft"
-          icon="i-heroicons-fire"
-          @click="batchUpdateStatus('preparing')"
-        >
-          {{ t("kitchen.start", "Start") }}
-        </UButton>
-        <UButton
-          color="green"
-          variant="soft"
-          icon="i-heroicons-check"
-          @click="batchUpdateStatus('ready')"
-        >
-          {{ t("kitchen.ready", "Ready") }}
-        </UButton>
-        <UButton
-          color="gray"
-          variant="soft"
-          icon="i-heroicons-check-circle"
-          @click="batchUpdateStatus('served')"
-        >
-          {{ t("kitchen.served", "Served") }}
-        </UButton>
+        <div class="flex items-center gap-2">
+          <UButton
+            color="amber"
+            size="lg"
+            icon="i-heroicons-fire"
+            @click="batchUpdateStatus('preparing')"
+          >
+            <span class="hidden sm:inline">{{
+              t("kitchen.start", "Start")
+            }}</span>
+          </UButton>
+          <UButton
+            color="green"
+            size="lg"
+            icon="i-heroicons-check"
+            @click="batchUpdateStatus('ready')"
+          >
+            <span class="hidden sm:inline">{{
+              t("kitchen.ready", "Ready")
+            }}</span>
+          </UButton>
+          <UButton
+            color="gray"
+            size="lg"
+            icon="i-heroicons-check-circle"
+            @click="batchUpdateStatus('served')"
+          >
+            <span class="hidden sm:inline">{{
+              t("kitchen.served", "Served")
+            }}</span>
+          </UButton>
+        </div>
       </div>
     </div>
 

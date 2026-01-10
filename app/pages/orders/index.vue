@@ -16,7 +16,6 @@ const router = useRouter();
 const toast = useToast();
 const currency = useCurrency();
 
-
 // Use real orders store with Nostr sync
 const ordersStore = useOrders();
 
@@ -37,6 +36,9 @@ const selectAll = ref(false);
 // Sorting
 const sortKey = ref<string>("date");
 const sortOrder = ref<"asc" | "desc">("desc");
+
+// Mobile UI
+const showFilters = ref(false);
 
 const toggleSort = (key: string) => {
   if (sortKey.value === key) {
@@ -525,8 +527,8 @@ onMounted(async () => {
         <div
           class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4"
         >
-          <div class="flex flex-col lg:flex-row gap-4">
-            <!-- Search -->
+          <!-- Search + Mobile Filter Toggle -->
+          <div class="flex gap-3">
             <div class="flex-1">
               <UInput
                 v-model="searchQuery"
@@ -535,33 +537,48 @@ onMounted(async () => {
                 size="lg"
               />
             </div>
+            <!-- Mobile Filter Toggle -->
+            <UButton
+              class="lg:hidden"
+              :icon="
+                showFilters ? 'i-heroicons-funnel-solid' : 'i-heroicons-funnel'
+              "
+              :color="showFilters ? 'primary' : 'gray'"
+              variant="soft"
+              size="lg"
+              @click="showFilters = !showFilters"
+            />
+          </div>
 
-            <!-- Filters -->
-            <div class="flex gap-3 flex-wrap">
-              <USelect
-                v-model="dateFilter"
-                :items="dateFilterOptions"
-                value-key="value"
-                label-key="label"
-                class="w-36"
-              />
-              <USelect
-                v-model="statusFilter"
-                :items="statusOptions"
-                value-key="value"
-                label-key="label"
-                class="w-36"
-              />
-              <UButton
-                icon="i-heroicons-arrow-path"
-                variant="soft"
-                color="gray"
-                :loading="ordersStore.isLoading.value"
-                @click="ordersStore.init()"
-              >
-                Refresh
-              </UButton>
-            </div>
+          <!-- Filters (collapsible on mobile) -->
+          <div
+            class="lg:flex gap-3 flex-wrap mt-4"
+            :class="{ hidden: !showFilters, flex: showFilters }"
+          >
+            <USelect
+              v-model="dateFilter"
+              :items="dateFilterOptions"
+              value-key="value"
+              label-key="label"
+              class="w-full sm:w-36"
+            />
+            <USelect
+              v-model="statusFilter"
+              :items="statusOptions"
+              value-key="value"
+              label-key="label"
+              class="w-full sm:w-36 mt-3 sm:mt-0"
+            />
+            <UButton
+              icon="i-heroicons-arrow-path"
+              variant="soft"
+              color="gray"
+              :loading="ordersStore.isLoading.value"
+              class="mt-3 sm:mt-0"
+              @click="ordersStore.init()"
+            >
+              Refresh
+            </UButton>
           </div>
         </div>
       </div>
@@ -570,26 +587,34 @@ onMounted(async () => {
       <Transition
         enter-active-class="transition-all duration-200"
         leave-active-class="transition-all duration-200"
-        enter-from-class="opacity-0 -translate-y-2"
+        enter-from-class="opacity-0 translate-y-2"
         enter-to-class="opacity-100 translate-y-0"
         leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 -translate-y-2"
+        leave-to-class="opacity-0 translate-y-2"
       >
-        <div v-if="selectedOrders.size > 0" class="px-4">
+        <div
+          v-if="selectedOrders.size > 0"
+          class="fixed bottom-0 inset-x-0 md:relative md:bottom-auto md:inset-x-auto px-4 pb-4 md:pb-0 z-20"
+        >
           <div
-            class="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex items-center justify-between"
+            class="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl p-4 shadow-lg md:shadow-none flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3"
           >
             <div class="flex items-center gap-3">
-              <span class="font-medium text-primary-700 dark:text-primary-300">
-                {{ selectedOrders.size }} orders selected
+              <span
+                class="font-bold text-lg text-primary-700 dark:text-primary-300"
+              >
+                {{ selectedOrders.size }}
+              </span>
+              <span class="text-primary-600 dark:text-primary-400">
+                orders selected
               </span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <UButton
                 icon="i-heroicons-check-circle"
                 variant="soft"
                 color="green"
-                size="sm"
+                class="flex-1 md:flex-none"
                 @click="bulkMarkAsPaid"
               >
                 Mark Paid
@@ -598,7 +623,7 @@ onMounted(async () => {
                 icon="i-heroicons-arrow-down-tray"
                 variant="soft"
                 color="gray"
-                size="sm"
+                class="flex-1 md:flex-none"
                 @click="bulkExport"
               >
                 Export
@@ -608,7 +633,7 @@ onMounted(async () => {
                 icon="i-heroicons-trash"
                 variant="soft"
                 color="red"
-                size="sm"
+                class="flex-1 md:flex-none"
                 @click="bulkDelete"
               >
                 Delete
@@ -617,7 +642,6 @@ onMounted(async () => {
                 icon="i-heroicons-x-mark"
                 variant="ghost"
                 color="gray"
-                size="sm"
                 @click="
                   selectedOrders = new Set();
                   selectAll = false;
@@ -679,10 +703,84 @@ onMounted(async () => {
         </UButton>
       </div>
 
-      <!-- Orders Table -->
+      <!-- Orders Mobile Card View (visible on mobile/tablet) -->
+      <div v-else class="md:hidden px-4 space-y-3">
+        <div
+          v-for="order in paginatedOrders"
+          :key="order.id"
+          class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 active:scale-[0.99] transition-transform"
+          :class="{
+            'ring-2 ring-primary-500': isSelected(order.id),
+          }"
+          @click="router.push(`/orders/${order.id}`)"
+        >
+          <!-- Header Row -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <UCheckbox
+                :model-value="isSelected(order.id)"
+                @click.stop
+                @update:model-value="toggleOrderSelection(order.id)"
+              />
+              <div>
+                <span
+                  class="font-mono text-sm font-bold text-gray-900 dark:text-white"
+                >
+                  #{{ order?.code || order.id.slice(-6).toUpperCase() }}
+                </span>
+                <p class="text-xs text-gray-500">
+                  {{ formatDate(order.date) }}
+                </p>
+              </div>
+            </div>
+            <span
+              :class="getStatusStyle(order.status)"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+            >
+              {{ t(`orders.status.${order.status}`) || order.status }}
+            </span>
+          </div>
+
+          <!-- Details Row -->
+          <div class="flex items-center justify-between">
+            <div
+              class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+            >
+              <span>{{ getPaymentIcon(order.paymentMethod) }}</span>
+              <span>{{ order.items?.length || 0 }} items</span>
+              <span
+                v-if="order.orderType"
+                class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded"
+              >
+                {{ order.orderType }}
+              </span>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-gray-900 dark:text-white">
+                {{ currency.format(order.total, "LAK") }}
+              </p>
+              <p v-if="order.totalSats" class="text-xs text-amber-600">
+                ⚡ {{ order.totalSats.toLocaleString() }} sats
+              </p>
+            </div>
+          </div>
+
+          <!-- Customer Row -->
+          <div
+            v-if="order.customer"
+            class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800"
+          >
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+              👤 {{ order.customer }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders Table (hidden on mobile, visible on md+) -->
       <div
-        v-else
-        class="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 overflow-hidden"
+        v-if="filteredOrders.length > 0"
+        class="hidden md:block bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 overflow-hidden"
       >
         <div class="overflow-x-auto">
           <table class="w-full">

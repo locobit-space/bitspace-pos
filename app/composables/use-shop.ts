@@ -162,7 +162,7 @@ const error = useState<string | null>("error", () => null);
 export function useShop() {
   const nostrData = useNostrData();
   const productsStore = useProductsStore();
-  
+
   // NOTE: Don't call useMarketplace() here - circular dependency!
   // useMarketplace calls useShop, so we lazy-load it in publishToMarketplace()
 
@@ -178,7 +178,8 @@ export function useShop() {
 
   // Convert StoreSettings to ShopConfig
   function storeSettingsToShopConfig(settings: StoreSettings): ShopConfig {
-    const shopType: ShopType = (settings.marketplace?.shopType as ShopType) || "other";
+    const shopType: ShopType =
+      (settings.marketplace?.shopType as ShopType) || "other";
     const mp = settings.marketplace;
     return {
       name: settings.general?.storeName || "",
@@ -209,8 +210,24 @@ export function useShop() {
       acceptsBitcoin: mp?.acceptsBitcoin ?? false,
       tags: mp?.tags,
       platformTag: mp?.platformTag || "bnos.space",
-      geolocation: mp?.geolocation,
-      businessHours: mp?.businessHours,
+      geolocation: {
+        lat: mp?.geolocation?.lat || 0,
+        lng: mp?.geolocation?.lng || 0,
+        address: mp?.geolocation?.address || "",
+        city: mp?.geolocation?.city || "",
+        country: mp?.geolocation?.country || "",
+      },
+      businessHours: {
+        monday: { open: "08:00", close: "18:00" },
+        tuesday: { open: "08:00", close: "18:00" },
+        wednesday: { open: "08:00", close: "18:00" },
+        thursday: { open: "08:00", close: "18:00" },
+        friday: { open: "08:00", close: "18:00" },
+        saturday: { open: "08:00", close: "18:00" },
+        sunday: { open: "08:00", close: "18:00" },
+        holidays: [],
+        timezone: "Asia/Bangkok",
+      },
       // Chat settings from Nostr
       chatSettings: settings.chatSettings || { enabled: false },
     };
@@ -257,12 +274,35 @@ export function useShop() {
     auditLogging: true,
   };
 
+  function loadShopConfigCache(): ShopConfig | null {
+    if (import.meta.client) {
+      const stored = localStorage.getItem("shopConfig");
+      if (stored) {
+        shopConfig.value = JSON.parse(stored);
+        return shopConfig.value;
+      }
+    }
+    return shopConfig.value;
+  }
+
   // Load shop config from Nostr
   async function loadShopConfig(): Promise<ShopConfig | null> {
     isLoading.value = true;
     error.value = null;
 
     try {
+      // Check localStorage fallback
+      if (import.meta.client) {
+        const stored = localStorage.getItem("shopConfig");
+        if (stored) {
+          shopConfig.value = JSON.parse(stored);
+          isConfigured.value = true;
+          if (!navigator.onLine) {
+            return shopConfig.value;
+          }
+        }
+      }
+
       // Try to get from Nostr (STORE_SETTINGS kind)
       const settings = await nostrData.getSettings();
 
@@ -282,16 +322,6 @@ export function useShop() {
         }
 
         return shopConfig.value;
-      }
-
-      // Check localStorage fallback
-      if (import.meta.client) {
-        const stored = localStorage.getItem("shopConfig");
-        if (stored) {
-          shopConfig.value = JSON.parse(stored);
-          isConfigured.value = true;
-          return shopConfig.value;
-        }
       }
 
       return null;
@@ -350,11 +380,17 @@ export function useShop() {
         geolocation: config.geolocation ?? shopConfig.value?.geolocation,
         businessHours: config.businessHours ?? shopConfig.value?.businessHours,
         services: config.services ?? shopConfig.value?.services,
-        paymentMethods: config.paymentMethods ?? shopConfig.value?.paymentMethods,
-        acceptsLightning: config.acceptsLightning ?? shopConfig.value?.acceptsLightning ?? false,
-        acceptsBitcoin: config.acceptsBitcoin ?? shopConfig.value?.acceptsBitcoin ?? false,
+        paymentMethods:
+          config.paymentMethods ?? shopConfig.value?.paymentMethods,
+        acceptsLightning:
+          config.acceptsLightning ??
+          shopConfig.value?.acceptsLightning ??
+          false,
+        acceptsBitcoin:
+          config.acceptsBitcoin ?? shopConfig.value?.acceptsBitcoin ?? false,
         isListed: config.isListed ?? shopConfig.value?.isListed ?? false,
-        marketplaceJoinedAt: config.marketplaceJoinedAt ?? shopConfig.value?.marketplaceJoinedAt,
+        marketplaceJoinedAt:
+          config.marketplaceJoinedAt ?? shopConfig.value?.marketplaceJoinedAt,
       };
 
       // Get existing settings or create new
@@ -444,15 +480,20 @@ export function useShop() {
 
     // Then load shop config
     await loadShopConfig();
-
+    const storedBranchId = localStorage.getItem("currentBranchId");
     // Try to restore current branch from localStorage
     if (import.meta.client && !currentBranch.value) {
-      const storedBranchId = localStorage.getItem("currentBranchId");
       if (storedBranchId) {
         setCurrentBranch(storedBranchId);
       } else if (branches.value.length > 0) {
         currentBranch.value = branches.value[0] || null;
+        localStorage.setItem("currentBranchId", currentBranch.value?.id || "");
       }
+    }
+
+    if (!storedBranchId && branches.value.length > 0) {
+      currentBranch.value = branches.value[0] || null;
+      localStorage.setItem("currentBranchId", currentBranch.value?.id || "");
     }
 
     // Register shop as workspace for multi-shop support
@@ -487,7 +528,8 @@ export function useShop() {
       await saveShopConfig({
         isListed: true,
         visibility: "public",
-        marketplaceJoinedAt: shopConfig.value.marketplaceJoinedAt || new Date().toISOString(),
+        marketplaceJoinedAt:
+          shopConfig.value.marketplaceJoinedAt || new Date().toISOString(),
       });
 
       // Get pubkey from localStorage (avoid circular dependency with useMarketplace)
@@ -505,7 +547,9 @@ export function useShop() {
       }
 
       if (!pubkey) {
-        console.log("[Shop] No Nostr pubkey found, skipping marketplace publish");
+        console.log(
+          "[Shop] No Nostr pubkey found, skipping marketplace publish"
+        );
         return true; // Don't fail, just skip Nostr publish
       }
 
@@ -621,6 +665,7 @@ export function useShop() {
     // Methods
     init,
     loadShopConfig,
+    loadShopConfigCache,
     saveShopConfig,
     createFirstBranch,
     setCurrentBranch,

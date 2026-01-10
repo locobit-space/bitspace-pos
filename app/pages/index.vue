@@ -398,16 +398,143 @@ onMounted(async () => {
       <!-- Loading Skeletons -->
       <template v-if="isInitialLoad && !hasCachedData">
         <div class="grid grid-cols-12 gap-3">
+          <!-- KPI Cards Skeleton (4 cards) -->
           <div
             v-for="i in 4"
-            :key="i"
+            :key="`kpi-${i}`"
             class="col-span-12 sm:col-span-6 lg:col-span-3"
           >
             <div
               class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
             >
               <USkeleton class="h-3 w-16 mb-2" />
-              <USkeleton class="h-6 w-28" />
+              <USkeleton class="h-7 w-28 mb-1" />
+              <USkeleton class="h-3 w-20" />
+            </div>
+          </div>
+
+          <!-- Sales Chart Skeleton -->
+          <div class="col-span-12 lg:col-span-8">
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-5 w-32 mb-4" />
+              <USkeleton class="h-48 w-full" />
+            </div>
+          </div>
+
+          <!-- Business Health Skeleton -->
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-5 w-32 mb-4" />
+              <USkeleton class="h-24 w-24 rounded-full mx-auto mb-3" />
+              <USkeleton class="h-4 w-20 mx-auto" />
+            </div>
+          </div>
+
+          <!-- Payment Breakdown Skeleton -->
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-5 w-40 mb-4" />
+              <div class="space-y-3">
+                <div
+                  v-for="j in 3"
+                  :key="`payment-${j}`"
+                  class="flex justify-between"
+                >
+                  <USkeleton class="h-4 w-20" />
+                  <USkeleton class="h-4 w-16" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Products Skeleton -->
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-5 w-28 mb-4" />
+              <div class="space-y-3">
+                <div
+                  v-for="j in 5"
+                  :key="`product-${j}`"
+                  class="flex items-center gap-3"
+                >
+                  <USkeleton class="h-8 w-8 rounded" />
+                  <div class="flex-1">
+                    <USkeleton class="h-4 w-24 mb-1" />
+                    <USkeleton class="h-3 w-16" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Orders Skeleton -->
+          <div class="col-span-12 lg:col-span-6">
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-5 w-32 mb-4" />
+              <div class="space-y-3">
+                <div
+                  v-for="j in 4"
+                  :key="`order-${j}`"
+                  class="flex justify-between items-center"
+                >
+                  <div class="flex items-center gap-3">
+                    <USkeleton class="h-8 w-8 rounded-full" />
+                    <div>
+                      <USkeleton class="h-4 w-20 mb-1" />
+                      <USkeleton class="h-3 w-16" />
+                    </div>
+                  </div>
+                  <USkeleton class="h-4 w-16" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Stock Skeleton -->
+          <div class="col-span-12 lg:col-span-6">
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-5 w-24 mb-4" />
+              <div class="space-y-3">
+                <div
+                  v-for="j in 4"
+                  :key="`stock-${j}`"
+                  class="flex justify-between items-center"
+                >
+                  <div class="flex items-center gap-3">
+                    <USkeleton class="h-8 w-8 rounded" />
+                    <USkeleton class="h-4 w-24" />
+                  </div>
+                  <USkeleton class="h-6 w-12 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Skeleton -->
+          <div class="col-span-12">
+            <div
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800"
+            >
+              <USkeleton class="h-5 w-28 mb-4" />
+              <div class="flex gap-3 flex-wrap">
+                <USkeleton
+                  v-for="j in 4"
+                  :key="`action-${j}`"
+                  class="h-10 w-24 rounded-lg"
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 <!-- pages/orders/[id]/index.vue -->
 <!-- 🧾 Enterprise Order Detail - Based on Reference Design -->
 <script setup lang="ts">
-import type { Order, PaymentStatus, PaymentMethod } from "~/types";
+import type { Order, PaymentStatus } from "~/types";
 
 definePageMeta({
   middleware: ["auth"],
@@ -31,41 +31,10 @@ const editableNotes = ref("");
 const editableStatus = ref<PaymentStatus>("pending");
 
 // Payment recording
-const showRecordPaymentModal = ref(false);
 const paymentAmount = ref(0);
-const paymentMethod = ref<PaymentMethod>("cash");
-const paymentReference = ref("");
 
 // Active sidebar tab
 const activeSidebarTab = ref<"payments" | "notes">("payments");
-
-const statusOptions = [
-  {
-    value: "pending",
-    label: t("orders.status.pending", "Pending"),
-    color: "amber",
-  },
-  {
-    value: "processing",
-    label: t("orders.status.processing", "Processing"),
-    color: "blue",
-  },
-  {
-    value: "completed",
-    label: t("orders.status.completed", "Completed"),
-    color: "green",
-  },
-  {
-    value: "cancelled",
-    label: t("orders.status.cancelled", "Cancelled"),
-    color: "gray",
-  },
-  {
-    value: "refunded",
-    label: t("orders.status.refunded", "Refunded"),
-    color: "red",
-  },
-];
 
 // Status badge styling
 const getStatusStyle = (status: string) => {
@@ -84,18 +53,6 @@ const getStatusStyle = (status: string) => {
       "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
   };
   return styles[status] || styles.pending;
-};
-
-const paymentMethodIcons: Record<string, string> = {
-  lightning: "i-heroicons-bolt",
-  bolt12: "i-heroicons-bolt",
-  lnurl: "i-heroicons-bolt",
-  cash: "i-heroicons-banknotes",
-  onchain: "i-heroicons-cube",
-  qr_static: "i-heroicons-qr-code",
-  bank: "i-heroicons-building-library",
-  bank_transfer: "i-heroicons-building-library",
-  split: "i-heroicons-scissors",
 };
 
 // Computed

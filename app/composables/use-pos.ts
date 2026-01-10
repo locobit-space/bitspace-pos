@@ -680,20 +680,30 @@ export const usePOS = () => {
       const newAppliedPromotions: AppliedPromotion[] = [];
 
       // Sort promotions by priority (higher first)
-      const sortedPromotions = [...activePromotions].sort((a, b) => b.priority - a.priority);
+      const sortedPromotions = [...activePromotions].sort(
+        (a, b) => b.priority - a.priority
+      );
 
       for (const promotion of sortedPromotions) {
         let discountAmount = 0;
-        let description = '';
+        let description = "";
         const triggerItemIds: string[] = [];
         const rewardItemIds: string[] = [];
         let timesApplied = 0;
 
         // Check if promotion applies to cart
-        const applicableItems = cartItems.value.filter(item => {
-          if (promotion.scope === 'all') return true;
-          if (promotion.scope === 'products' && promotion.triggerProductIds?.includes(item.product.id)) return true;
-          if (promotion.scope === 'categories' && promotion.triggerCategoryIds?.includes(item.product.categoryId)) return true;
+        const applicableItems = cartItems.value.filter((item) => {
+          if (promotion.scope === "all") return true;
+          if (
+            promotion.scope === "products" &&
+            promotion.triggerProductIds?.includes(item.product.id)
+          )
+            return true;
+          if (
+            promotion.scope === "categories" &&
+            promotion.triggerCategoryIds?.includes(item.product.categoryId)
+          )
+            return true;
           return false;
         });
 
@@ -701,11 +711,11 @@ export const usePOS = () => {
 
         // Calculate discount based on promotion type
         switch (promotion.type) {
-          case 'bogo':
-          case 'freebie': {
+          case "bogo":
+          case "freebie": {
             // Count trigger products
             let triggerCount = 0;
-            applicableItems.forEach(item => {
+            applicableItems.forEach((item) => {
               if (promotion.triggerProductIds?.includes(item.product.id)) {
                 triggerCount += item.quantity;
                 triggerItemIds.push(item.product.id);
@@ -729,10 +739,11 @@ export const usePOS = () => {
 
             if (timesApplied > 0) {
               // Calculate reward value
-              if (promotion.rewardType === 'free_product') {
-                const rewardQty = (promotion.rewardQuantity || 1) * timesApplied;
+              if (promotion.rewardType === "free_product") {
+                const rewardQty =
+                  (promotion.rewardQuantity || 1) * timesApplied;
                 // Find reward product price
-                promotion.rewardProductIds?.forEach(productId => {
+                promotion.rewardProductIds?.forEach((productId) => {
                   const product = productsStore.getProduct(productId);
                   if (product) {
                     discountAmount += product.price * rewardQty;
@@ -740,70 +751,100 @@ export const usePOS = () => {
                   }
                 });
                 description = `Buy ${promotion.triggerQuantity} Get ${promotion.rewardQuantity} Free`;
-              } else if (promotion.rewardType === 'discount') {
+              } else if (promotion.rewardType === "discount") {
                 discountAmount = (promotion.rewardDiscount || 0) * timesApplied;
                 description = `฿${promotion.rewardDiscount} off`;
-              } else if (promotion.rewardType === 'percentage_off') {
-                const itemsTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
-                discountAmount = (itemsTotal * (promotion.rewardDiscount || 0)) / 100;
+              } else if (promotion.rewardType === "percentage_off") {
+                const itemsTotal = applicableItems.reduce(
+                  (sum, item) => sum + item.total,
+                  0
+                );
+                discountAmount =
+                  (itemsTotal * (promotion.rewardDiscount || 0)) / 100;
                 description = `${promotion.rewardDiscount}% off`;
               }
             }
             break;
           }
 
-          case 'discount': {
-            const itemsTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
-            applicableItems.forEach(item => triggerItemIds.push(item.product.id));
+          case "discount": {
+            const itemsTotal = applicableItems.reduce(
+              (sum, item) => sum + item.total,
+              0
+            );
+            applicableItems.forEach((item) =>
+              triggerItemIds.push(item.product.id)
+            );
 
-            if (promotion.discountType === 'percentage') {
-              discountAmount = (itemsTotal * (promotion.discountValue || 0)) / 100;
+            if (promotion.discountType === "percentage") {
+              discountAmount =
+                (itemsTotal * (promotion.discountValue || 0)) / 100;
               description = `${promotion.discountValue}% off`;
-            } else if (promotion.discountType === 'fixed') {
-              discountAmount = Math.min(promotion.discountValue || 0, itemsTotal);
+            } else if (promotion.discountType === "fixed") {
+              discountAmount = Math.min(
+                promotion.discountValue || 0,
+                itemsTotal
+              );
               description = `฿${promotion.discountValue} off`;
             }
             timesApplied = 1;
             break;
           }
 
-          case 'tiered': {
-            const totalQuantity = applicableItems.reduce((sum, item) => sum + item.quantity, 0);
-            const itemsTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
-            applicableItems.forEach(item => triggerItemIds.push(item.product.id));
+          case "tiered": {
+            const totalQuantity = applicableItems.reduce(
+              (sum, item) => sum + item.quantity,
+              0
+            );
+            const itemsTotal = applicableItems.reduce(
+              (sum, item) => sum + item.total,
+              0
+            );
+            applicableItems.forEach((item) =>
+              triggerItemIds.push(item.product.id)
+            );
 
             // Find applicable tier
             if (promotion.tiers && promotion.tiers.length > 0) {
               const applicableTiers = promotion.tiers
-                .filter(tier => totalQuantity >= tier.minQuantity)
+                .filter((tier) => totalQuantity >= tier.minQuantity)
                 .sort((a, b) => b.minQuantity - a.minQuantity);
 
               if (applicableTiers.length > 0) {
                 const tier = applicableTiers[0];
-                if (tier.discountType === 'percentage') {
-                  discountAmount = (itemsTotal * tier.discountValue) / 100;
-                  description = `Buy ${tier.minQuantity}+ get ${tier.discountValue}% off`;
-                } else {
-                  discountAmount = Math.min(tier.discountValue, itemsTotal);
-                  description = `Buy ${tier.minQuantity}+ get ฿${tier.discountValue} off`;
+                if (tier) {
+                  if (tier.discountType === "percentage") {
+                    discountAmount = (itemsTotal * tier.discountValue) / 100;
+                    description = `Buy ${tier.minQuantity}+ get ${tier.discountValue}% off`;
+                  } else {
+                    discountAmount = Math.min(tier.discountValue, itemsTotal);
+                    description = `Buy ${tier.minQuantity}+ get ฿${tier.discountValue} off`;
+                  }
+                  timesApplied = 1;
                 }
-                timesApplied = 1;
               }
             }
             break;
           }
 
-          case 'bundle': {
+          case "bundle": {
             // Check if all required products are in cart
-            const hasAllProducts = promotion.triggerProductIds?.every(productId =>
-              cartItems.value.some(item => item.product.id === productId)
+            const hasAllProducts = promotion.triggerProductIds?.every(
+              (productId) =>
+                cartItems.value.some((item) => item.product.id === productId)
             );
 
             if (hasAllProducts) {
-              const bundleTotal = applicableItems.reduce((sum, item) => sum + item.total, 0);
-              applicableItems.forEach(item => triggerItemIds.push(item.product.id));
+              const bundleTotal = applicableItems.reduce(
+                (sum, item) => sum + item.total,
+                0
+              );
+              applicableItems.forEach((item) =>
+                triggerItemIds.push(item.product.id)
+              );
 
-              discountAmount = (bundleTotal * (promotion.discountValue || 0)) / 100;
+              discountAmount =
+                (bundleTotal * (promotion.discountValue || 0)) / 100;
               description = `${promotion.discountValue}% off bundle`;
               timesApplied = 1;
             }
@@ -855,11 +896,21 @@ export const usePOS = () => {
 
   // Calculate total promotion discount
   const promotionDiscount = computed(() => {
-    return appliedPromotions.value.reduce((sum, promo) => sum + promo.discountAmount, 0);
+    return appliedPromotions.value.reduce(
+      (sum, promo) => sum + promo.discountAmount,
+      0
+    );
   });
 
   const total = computed(() => {
-    return Math.max(0, subtotal.value + tax.value + tipAmount.value - promotionDiscount.value - discountAmount.value);
+    return Math.max(
+      0,
+      subtotal.value +
+        tax.value +
+        tipAmount.value -
+        promotionDiscount.value -
+        discountAmount.value
+    );
   });
 
   const totalSats = computed(() => {
@@ -900,12 +951,30 @@ export const usePOS = () => {
         ? `nostr:${customerPubkey.value.slice(0, 8)}`
         : "Walk-in");
 
+    // Get active branch ID
+    let branchId = currentSession.value?.branchId;
+
+    // If no session branch, try to get from shop config
+    if (!branchId) {
+      if (typeof window !== "undefined") {
+        const storedConfig = localStorage.getItem("bitspace_shop_config");
+        if (storedConfig) {
+          try {
+            const config = JSON.parse(storedConfig);
+            branchId = config.branchId;
+          } catch (e) {
+            /* ignore */
+          }
+        }
+      }
+    }
+
     const order: Order = {
       id: orderId,
       code: orderCode,
       customer: customerDisplay,
       customerPubkey: customerPubkey.value || undefined,
-      branch: currentSession.value?.branchId || "default",
+      branch: branchId || "main", // Use found branchId or default
       date: new Date().toISOString(),
       total: total.value,
       totalSats: totalSats.value,
@@ -915,7 +984,10 @@ export const usePOS = () => {
       notes: customerNote.value || undefined,
       tip: tipAmount.value > 0 ? tipAmount.value : undefined,
       discount: discountAmount.value > 0 ? discountAmount.value : undefined,
-      appliedPromotions: appliedPromotions.value.length > 0 ? appliedPromotions.value : undefined,
+      appliedPromotions:
+        appliedPromotions.value.length > 0
+          ? appliedPromotions.value
+          : undefined,
       kitchenStatus: "new",
       // Order type fields
       orderType: orderType.value,
@@ -1093,11 +1165,6 @@ export const usePOS = () => {
 
   // Initialize on mount
   restoreSession();
-
-  // Watch for currency changes in settings
-  watch(selectedCurrency, () => {
-    // Could auto-convert prices here
-  });
 
   return {
     // Cart State

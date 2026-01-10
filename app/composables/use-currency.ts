@@ -2,9 +2,18 @@
 // 💰 Multi-Currency System - LAK, THB, USD, BTC/SATS
 
 import { ref, computed, watch } from "vue";
+import { useStorage } from "@vueuse/core";
 import type { Currency, CurrencyCode, ExchangeRate, MultiPrice } from "~/types";
+// Import comprehensive currency data from data file
+import {
+  CURRENCIES as ALL_CURRENCIES,
+  getCurrencyInfo,
+  getSupportedCurrencies,
+  getCurrenciesByRegion,
+  type CurrencyInfo,
+} from "~/data/currencies";
 
-// Supported currencies
+// Core currencies for POS operations (must support exchange rates)
 const CURRENCIES: Record<CurrencyCode, Currency> = {
   LAK: { code: "LAK", name: "Lao Kip", symbol: "₭", decimals: 0 },
   THB: { code: "THB", name: "Thai Baht", symbol: "฿", decimals: 2 },
@@ -13,25 +22,108 @@ const CURRENCIES: Record<CurrencyCode, Currency> = {
   SATS: { code: "SATS", name: "Satoshis", symbol: "sats", decimals: 0 },
 };
 
-// Currency codes for simple arrays (POS currency switcher)
-export const CURRENCY_CODES: CurrencyCode[] = ["SATS", "LAK", "THB", "USD"];
+// Re-export data file utilities for convenience
+export { getCurrencyInfo, getSupportedCurrencies, getCurrenciesByRegion };
 
-// Currency options for select dropdowns (with labels)
-export const CURRENCY_OPTIONS = [
-  { value: "LAK", label: "🇱🇦 LAK - Lao Kip" },
-  { value: "USD", label: "🇺🇸 USD - US Dollar" },
-  { value: "THB", label: "🇹🇭 THB - Thai Baht" },
-  { value: "BTC", label: "₿ BTC - Bitcoin" },
-  { value: "SATS", label: "⚡ SATS - Satoshis" },
-];
+// Currency codes for simple arrays (POS currency switcher) - now includes all
+export const CURRENCY_CODES: CurrencyCode[] =
+  getSupportedCurrencies() as CurrencyCode[];
 
-// POS-specific currency options (most used first)
-export const POS_CURRENCY_OPTIONS: CurrencyCode[] = [
+// POS-specific currency options - now includes all
+export const POS_CURRENCY_OPTIONS: CurrencyCode[] =
+  getSupportedCurrencies() as CurrencyCode[];
+
+// Popular currencies for quick access (extended list)
+export const POPULAR_CURRENCY_CODES = [
   "SATS",
+  "BTC",
   "LAK",
   "THB",
   "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "CNY",
+  "SGD",
+  "AUD",
+  "CAD",
+  "KRW",
+  "VND",
+  "IDR",
+  "MYR",
+  "PHP",
+  "INR",
 ];
+
+/**
+ * Get currency info from comprehensive data or core currencies
+ */
+const getCurrencyData = (code: string): CurrencyInfo | Currency | undefined => {
+  // First check comprehensive data
+  const fullInfo = ALL_CURRENCIES[code];
+  if (fullInfo) return fullInfo;
+  // Fallback to core currencies
+  return CURRENCIES[code as CurrencyCode];
+};
+
+/**
+ * Get all currencies as select options (for comprehensive dropdowns)
+ * Uses the full currency data from data/currencies.ts
+ */
+export const getAllCurrencySelectOptions = () => {
+  return Object.values(ALL_CURRENCIES).map((curr) => ({
+    value: curr.code,
+    label: `${curr.symbol} ${curr.code} - ${curr.name}`,
+  }));
+};
+
+/**
+ * Get currency options formatted for USelect/USelectMenu dropdowns
+ * @param codes - Optional array of currency codes to include. If not provided, uses POPULAR_CURRENCY_CODES
+ */
+export const getCurrencySelectOptions = (codes?: string[]) => {
+  const targetCodes = codes || POPULAR_CURRENCY_CODES;
+  return targetCodes.map((code) => {
+    const curr = getCurrencyData(code);
+    if (!curr) {
+      return { value: code, label: code };
+    }
+    return {
+      value: code,
+      label: `${curr.symbol} ${code} - ${curr.name}`,
+    };
+  });
+};
+
+// Currency options for select dropdowns (with labels) - now includes all
+export const CURRENCY_OPTIONS = getAllCurrencySelectOptions();
+
+/**
+ * Get POS currency options with labels (for quick settings)
+ */
+export const getPOSCurrencyOptions = () => {
+  return getAllCurrencySelectOptions();
+};
+
+/**
+ * Get currencies grouped by region for organized dropdowns
+ */
+export const getCurrencyOptionsByRegion = () => {
+  const regions = getCurrenciesByRegion();
+  const result: Record<string, Array<{ value: string; label: string }>> = {};
+
+  for (const [region, codes] of Object.entries(regions)) {
+    result[region] = codes.map((code) => {
+      const curr = ALL_CURRENCIES[code];
+      return {
+        value: code,
+        label: curr ? `${curr.symbol} ${code} - ${curr.name}` : code,
+      };
+    });
+  }
+
+  return result;
+};
 
 // Price API sources
 const PRICE_APIS = {
@@ -48,6 +140,14 @@ const PRICE_APIS = {
 const baseCurrency = ref<CurrencyCode>("LAK");
 const displayCurrency = ref<CurrencyCode>("LAK");
 const exchangeRates = ref<Map<string, ExchangeRate>>(new Map());
+
+// Persistent storage for offline support
+const persistentRates = useStorage<ExchangeRate[]>("pos-exchange-rates", []);
+const persistentLastUpdate = useStorage<string | null>(
+  "pos-rates-last-update",
+  null
+);
+
 const btcPrice = ref<number>(0); // BTC price in USD
 const btcPriceLAK = ref<number>(0); // BTC price in LAK
 const btcPriceTHB = ref<number>(0); // BTC price in THB
@@ -55,11 +155,46 @@ const isLoading = ref(false);
 const lastUpdate = ref<string | null>(null);
 const error = ref<string | null>(null);
 const isInitialized = ref(false);
+const isOffline = ref(false);
 
 // Auto-refresh interval (every 5 minutes)
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useCurrency = () => {
+  /**
+   * Load rates from persistent cache
+   */
+  const loadFromCache = () => {
+    if (persistentRates.value.length > 0) {
+      // Clear current map
+      exchangeRates.value.clear();
+
+      // Load from storage
+      persistentRates.value.forEach((rate) => {
+        const key = `${rate.from}-${rate.to}`;
+        exchangeRates.value.set(key, rate);
+      });
+
+      // Restore last update time
+      lastUpdate.value = persistentLastUpdate.value;
+
+      console.log(
+        `📦 Loaded ${exchangeRates.value.size} exchange rates from cache`
+      );
+      return true;
+    }
+    return false;
+  };
+
+  /**
+   * Save current rates to persistent cache
+   */
+  const saveToCache = () => {
+    // Convert Map values to array for storage
+    persistentRates.value = Array.from(exchangeRates.value.values());
+    persistentLastUpdate.value = lastUpdate.value;
+  };
+
   /**
    * Initialize currency system and fetch rates
    */
@@ -72,9 +207,36 @@ export const useCurrency = () => {
 
     baseCurrency.value = defaultCurrency;
     displayCurrency.value = defaultCurrency;
+
+    // Try to load from cache first
+    const loadedFromCache = loadFromCache();
+
+    // Determine if we should fetch fresh rates
+    // If we have cache, we can initially use it, but still try to refresh in background
+    if (loadedFromCache) {
+      // Recalculate BTC prices from cached rates
+      updateBtcPricesFromRates();
+    }
+
+    // Try to fetch fresh rates (will fallback if offline)
     await refreshRates();
+
     startAutoRefresh();
     isInitialized.value = true;
+  };
+
+  /**
+   * Recalculate component state (BTC prices) from generic rates map
+   * This is needed after loading from cache
+   */
+  const updateBtcPricesFromRates = () => {
+    const btcUsd = exchangeRates.value.get("BTC-USD")?.rate;
+    const btcLak = exchangeRates.value.get("BTC-LAK")?.rate;
+    const btcThb = exchangeRates.value.get("BTC-THB")?.rate;
+
+    if (btcUsd) btcPrice.value = btcUsd;
+    if (btcLak) btcPriceLAK.value = btcLak;
+    if (btcThb) btcPriceTHB.value = btcThb;
   };
 
   /**
@@ -83,6 +245,17 @@ export const useCurrency = () => {
   const refreshRates = async () => {
     isLoading.value = true;
     error.value = null;
+    isOffline.value = !navigator.onLine;
+
+    // If offline, try to rely on cache if available
+    if (isOffline.value) {
+      console.log("💱 Device is offline, using cached rates");
+      if (exchangeRates.value.size === 0) {
+        setFallbackRates();
+      }
+      isLoading.value = false;
+      return;
+    }
 
     try {
       // Fetch BTC prices from blockchain.info (has LAK and THB)
@@ -134,6 +307,8 @@ export const useCurrency = () => {
       setRate("USD", "SATS", usdToSats, "api");
 
       lastUpdate.value = now;
+      saveToCache(); // Save successful update to cache
+
       console.log("💱 Exchange rates updated:", {
         btcUsd: btcPrice.value,
         btcLak: btcPriceLAK.value,
@@ -146,8 +321,13 @@ export const useCurrency = () => {
       error.value = e instanceof Error ? e.message : "Failed to fetch rates";
       console.error("Currency refresh error:", e);
 
-      // Set fallback rates if API fails
-      setFallbackRates();
+      // If API fails, check if we have data in cache/memory
+      if (exchangeRates.value.size > 0) {
+        console.log("Using existing rates due to API failure");
+      } else {
+        // Only set hardcoded fallback if we have ABSOLUTELY NOTHING
+        setFallbackRates();
+      }
     } finally {
       isLoading.value = false;
     }

@@ -91,10 +91,9 @@ export function useNostrData() {
     if (stored) {
       try {
         const user = JSON.parse(stored);
-        const pubkey = user.pubkey || user.publicKey;
+        const pubkey = user.pubkey || user.publicKey || user.npub;
         const privkeyRaw = user.privateKey || user.privkey || user.nsec;
         const privkey = normalizePrivkey(privkeyRaw);
-
         if (pubkey) {
           return { pubkey, privkey };
         }
@@ -358,7 +357,6 @@ export function useNostrData() {
     tags: string[][] = []
   ): Promise<Event | null> {
     const keys = getUserKeys();
-
     if (!keys) {
       error.value = "No Nostr keys available";
       return null;
