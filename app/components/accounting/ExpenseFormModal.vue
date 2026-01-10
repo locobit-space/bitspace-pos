@@ -47,7 +47,7 @@ const form = reactive<{
   receipt: string;
 }>({
   amount: 0,
-  category: '',
+  category: 'other',
   description: '',
   date: new Date().toISOString().split('T')[0]!,
   vendor: '',
@@ -78,7 +78,7 @@ watch(() => props.expense, (expense) => {
 
 function resetForm() {
   form.amount = 0;
-  form.category = '';
+  form.category = 'other';
   form.description = '';
   form.date = new Date().toISOString().split('T')[0]!;
   form.vendor = '';
@@ -122,30 +122,18 @@ function handleSave() {
     <template #body>
       <div class="space-y-4">
         <UFormField :label="t('accounting.expenses.amount')" required>
-          <UInput
-            v-model.number="form.amount"
-            type="number"
-            min="0"
-            step="0.01"
-            :placeholder="t('accounting.expenses.amountPlaceholder')"
-          />
+          <UInput v-model.number="form.amount" type="number" min="0" step="0.01"
+            :placeholder="t('accounting.expenses.amountPlaceholder')" />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.category')" required>
-          <USelect
-            v-model="form.category"
+          <USelect v-model="form.category"
             :items="categories.map(c => ({ value: c.value, label: t(`accounting.expenses.expenseCategories.${c.value}`) }))"
-            value-key="value"
-            label-key="label"
-            :placeholder="t('accounting.expenses.selectCategory')"
-          />
+            value-key="value" label-key="label" :placeholder="t('accounting.expenses.selectCategory')" />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.description')" required>
-          <UInput
-            v-model="form.description"
-            :placeholder="t('accounting.expenses.descriptionPlaceholder')"
-          />
+          <UInput v-model="form.description" :placeholder="t('accounting.expenses.descriptionPlaceholder')" />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.date')" required>
@@ -153,45 +141,26 @@ function handleSave() {
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.vendor')">
-          <UInput
-            v-model="form.vendor"
-            :placeholder="t('accounting.expenses.vendorPlaceholder')"
-          />
+          <UInput v-model="form.vendor" :placeholder="t('accounting.expenses.vendorPlaceholder')" />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.paymentMethod')">
-          <USelect
-            v-model="form.paymentMethod"
+          <USelect v-model="form.paymentMethod"
             :items="paymentMethods.map(p => ({ value: p.value, label: t(`accounting.expenses.paymentMethods.${p.value}`) }))"
-            value-key="value"
-            label-key="label"
-          />
+            value-key="value" label-key="label" />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.reference')">
-          <UInput
-            v-model="form.reference"
-            :placeholder="t('accounting.expenses.referencePlaceholder')"
-          />
+          <UInput v-model="form.reference" :placeholder="t('accounting.expenses.referencePlaceholder')" />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.notes')">
-          <UTextarea
-            v-model="form.notes"
-            :placeholder="t('accounting.expenses.notesPlaceholder')"
-            :rows="2"
-          />
+          <UTextarea v-model="form.notes" :placeholder="t('accounting.expenses.notesPlaceholder')" :rows="2" />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.receipt')">
           <div class="border-2 border-dashed rounded-lg p-4 text-center">
-            <input
-              ref="receiptInputRef"
-              type="file"
-              accept="image/*,.pdf"
-              class="hidden"
-              @change="handleReceiptUpload"
-            >
+            <input ref="receiptInputRef" type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload">
             <div v-if="!form.receipt">
               <UIcon name="i-heroicons-camera" class="text-2xl text-muted mb-2" />
               <p class="text-sm text-muted mb-2">{{ t('accounting.expenses.uploadReceipt') }}</p>
@@ -214,11 +183,7 @@ function handleSave() {
         <UButton variant="ghost" @click="isOpen = false">
           {{ t('common.cancel') }}
         </UButton>
-        <UButton
-          :loading="saving"
-          :disabled="!form.amount || !form.category || !form.description"
-          @click="handleSave"
-        >
+        <UButton :loading="saving" :disabled="!form.amount || !form.category || !form.description" @click="handleSave">
           {{ expense?.id ? t('common.update') : t('common.create') }}
         </UButton>
       </div>

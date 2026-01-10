@@ -1,29 +1,15 @@
 <template>
   <UContainer>
-    <CommonPageHeader
-      :title="$t('accounting.accounts.title')"
-      :description="$t('accounting.accounts.description')"
-    >
+    <CommonPageHeader :title="$t('accounting.accounts.title')" :description="$t('accounting.accounts.description')">
       <template #actions>
         <div class="flex items-center gap-2">
-          <UButton
-            variant="outline"
-            icon="i-heroicons-arrow-up-tray"
-            @click="showImportModal = true"
-          >
+          <UButton variant="outline" icon="i-heroicons-arrow-up-tray" @click="showImportModal = true">
             {{ $t('common.import') }}
           </UButton>
-          <UButton
-            variant="outline"
-            icon="i-heroicons-arrow-down-tray"
-            @click="exportAccounts"
-          >
+          <UButton variant="outline" icon="i-heroicons-arrow-down-tray" @click="exportAccounts">
             {{ $t('common.export') }}
           </UButton>
-          <UButton
-            icon="i-heroicons-plus"
-            @click="openAccountModal()"
-          >
+          <UButton icon="i-heroicons-plus" @click="openAccountModal()">
             {{ $t('accounting.accounts.addAccount') }}
           </UButton>
         </div>
@@ -32,67 +18,34 @@
 
     <!-- Summary Stats -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-      <CommonStatCard
-        icon="i-heroicons-building-library"
-        icon-color="blue"
-        :label="$t('accounting.types.asset')"
-        :value="accountStats.assets"
-      />
-      
-      <CommonStatCard
-        icon="i-heroicons-credit-card"
-        icon-color="red"
-        :label="$t('accounting.types.liability')"
-        :value="accountStats.liabilities"
-      />
-      
-      <CommonStatCard
-        icon="i-heroicons-briefcase"
-        icon-color="purple"
-        :label="$t('accounting.types.equity')"
-        :value="accountStats.equity"
-      />
-      
-      <CommonStatCard
-        icon="i-heroicons-banknotes"
-        icon-color="green"
-        :label="$t('accounting.types.revenue')"
-        :value="accountStats.revenue"
-      />
-      
-      <CommonStatCard
-        icon="i-heroicons-receipt-percent"
-        icon-color="yellow"
-        :label="$t('accounting.types.expense')"
-        :value="accountStats.expenses"
-      />
+      <CommonStatCard icon="i-heroicons-building-library" icon-color="blue" :label="$t('accounting.types.asset')"
+        :value="accountStats.assets" />
+
+      <CommonStatCard icon="i-heroicons-credit-card" icon-color="red" :label="$t('accounting.types.liability')"
+        :value="accountStats.liabilities" />
+
+      <CommonStatCard icon="i-heroicons-briefcase" icon-color="purple" :label="$t('accounting.types.equity')"
+        :value="accountStats.equity" />
+
+      <CommonStatCard icon="i-heroicons-banknotes" icon-color="green" :label="$t('accounting.types.revenue')"
+        :value="accountStats.revenue" />
+
+      <CommonStatCard icon="i-heroicons-receipt-percent" icon-color="yellow" :label="$t('accounting.types.expense')"
+        :value="accountStats.expenses" />
     </div>
 
     <!-- Filters -->
     <UCard class="mb-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <UFormField :label="$t('accounting.accounts.filterType')">
-          <USelect
-            v-model="filters.type"
-            :items="typeOptions"
-            value-key="value"
-            label-key="label"
-          />
+          <USelect v-model="filters.type" :items="typeOptions" value-key="value" label-key="label" class="w-full" />
         </UFormField>
         <UFormField :label="$t('accounting.accounts.filterStatus')">
-          <USelect
-            v-model="filters.status"
-            :items="statusOptions"
-            value-key="value"
-            label-key="label"
-          />
+          <USelect v-model="filters.status" :items="statusOptions" value-key="value" label-key="label" class="w-full" />
         </UFormField>
         <UFormField :label="$t('common.search')">
-          <UInput
-            v-model="filters.search"
-            icon="i-heroicons-magnifying-glass"
-            :placeholder="$t('accounting.accounts.searchPlaceholder')"
-          />
+          <UInput v-model="filters.search" icon="i-heroicons-magnifying-glass"
+            :placeholder="$t('accounting.accounts.searchPlaceholder')" class="w-full" />
         </UFormField>
         <UFormField :label="$t('accounting.accounts.standard')">
           <UBadge :color="accounting.currentStandard.value === 'lao' ? 'primary' : 'info'" size="lg">
@@ -102,76 +55,107 @@
       </div>
     </UCard>
 
-    <!-- Accounts by Type -->
-    <div class="space-y-6">
-      <UCard v-for="accountType in displayedTypes" :key="accountType">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div
-                class="w-3 h-3 rounded-full"
-                :class="getTypeColorClass(accountType)"
-              />
-              <h3 class="font-semibold capitalize">{{ $t(`accounting.types.${accountType}`) }}s</h3>
-              <UBadge variant="subtle" size="xs">
-                {{ getAccountsByType(accountType).length }}
-              </UBadge>
+    <!-- Accounts by Type - Collapsible Sections -->
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">{{ $t('accounting.chartOfAccounts') }}</h2>
+      <UButton variant="ghost" size="sm"
+        :icon="allExpanded ? 'i-heroicons-chevron-double-up' : 'i-heroicons-chevron-double-down'"
+        @click="toggleAllSections">
+        {{ allExpanded ? $t('common.collapseAll') : $t('common.expandAll') }}
+      </UButton>
+    </div>
+    <div class="space-y-4">
+      <div v-for="accountType in displayedTypes" :key="accountType"
+        class="rounded-xl border-2 overflow-hidden transition-all duration-200" :class="getTypeBgClass(accountType)">
+        <!-- Collapsible Header -->
+        <button
+          class="w-full flex items-center justify-between p-4 hover:opacity-90 transition-opacity cursor-pointer text-left"
+          @click="toggleSection(accountType)">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl transition-transform duration-200"
+              :class="[getTypeIconBgClass(accountType), isSectionExpanded(accountType) ? 'scale-100' : 'scale-95']">
+              <UIcon :name="getTypeIcon(accountType)" class="w-5 h-5" :class="getTypeTextColor(accountType)" />
             </div>
-            <p class="font-mono font-bold" :class="getTypeTextColor(accountType)">
+            <div>
+              <h3 class="font-semibold capitalize" :class="getTypeTextColor(accountType)">
+                {{ $t(`accounting.types.${accountType}`) }}
+              </h3>
+              <p class="text-xs text-muted">
+                {{ getAccountsByType(accountType).length }} accounts
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <p class="font-mono font-bold text-lg" :class="getTypeTextColor(accountType)">
               {{ formatCurrency(getTypeTotalBalance(accountType)) }}
             </p>
-          </div>
-        </template>
-
-        <div v-if="getAccountsByType(accountType).length === 0" class="text-center py-4 text-muted">
-          {{ $t('accounting.accounts.noAccounts') }}
-        </div>
-
-        <div v-else class="divide-y">
-          <div
-            v-for="account in getAccountsByType(accountType)"
-            :key="account.code"
-            class="py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 rounded -mx-2 px-2 transition-colors"
-          >
-            <div class="flex items-center gap-4">
-              <div class="w-16 text-center">
-                <span class="font-mono text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                  {{ account.code }}
-                </span>
-              </div>
-              <div>
-                <p class="font-medium">{{ account.name }}</p>
-                <p v-if="account.nameLao" class="text-sm text-muted">{{ account.nameLao }}</p>
-              </div>
-              <UBadge v-if="account.isSystem" variant="subtle" size="xs" color="neutral">
-                {{ $t('accounting.accounts.system') }}
-              </UBadge>
-              <UBadge v-if="!account.isActive" variant="subtle" size="xs" color="error">
-                {{ $t('common.inactive') }}
-              </UBadge>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <div class="text-right">
-                <p class="font-mono font-medium" :class="getBalanceColor(account)">
-                  {{ formatCurrency(accounting.getAccountBalance(account.code)) }}
-                </p>
-                <p class="text-xs text-muted">
-                  {{ account.normalBalance === 'debit' ? 'Dr' : 'Cr' }}
-                </p>
-              </div>
-              
-              <UDropdownMenu :items="getAccountActions(account)">
-                <UButton
-                  variant="ghost"
-                  icon="i-heroicons-ellipsis-vertical"
-                  size="sm"
-                />
-              </UDropdownMenu>
+            <div class="p-1 rounded-full transition-transform duration-300"
+              :class="isSectionExpanded(accountType) ? 'rotate-180' : 'rotate-0'">
+              <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-muted" />
             </div>
           </div>
-        </div>
-      </UCard>
+        </button>
+
+        <!-- Collapsible Content -->
+        <Transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 max-h-0"
+          enter-to-class="opacity-100 max-h-[2000px]" leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="opacity-100 max-h-[2000px]" leave-to-class="opacity-0 max-h-0">
+          <div v-show="isSectionExpanded(accountType)" class="overflow-hidden">
+            <div class="px-4 pb-4 bg-white/50 dark:bg-gray-900/50">
+              <!-- Empty State -->
+              <div v-if="getAccountsByType(accountType).length === 0" class="text-center py-6 text-muted">
+                <UIcon name="i-heroicons-folder-open" class="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p>{{ $t('accounting.accounts.noAccounts') }}</p>
+              </div>
+
+              <!-- Account List -->
+              <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+                <div v-for="account in getAccountsByType(accountType)" :key="account.code"
+                  class="py-3 flex items-center justify-between hover:bg-white/80 dark:hover:bg-gray-800/80 rounded-lg -mx-2 px-2 transition-all duration-150 group">
+                  <div class="flex items-center gap-4">
+                    <div class="w-16 text-center">
+                      <span
+                        class="font-mono text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                        {{ account.code }}
+                      </span>
+                    </div>
+                    <div>
+                      <p class="font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {{ account.name }}
+                      </p>
+                      <p v-if="account.nameLao" class="text-sm text-muted">{{ account.nameLao }}</p>
+                    </div>
+                    <div class="flex gap-1">
+                      <UBadge v-if="account.isSystem" variant="subtle" size="xs" color="neutral">
+                        {{ $t('accounting.accounts.system') }}
+                      </UBadge>
+                      <UBadge v-if="!account.isActive" variant="subtle" size="xs" color="error">
+                        {{ $t('common.inactive') }}
+                      </UBadge>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-4">
+                    <div class="text-right">
+                      <p class="font-mono font-medium" :class="getBalanceColor(account)">
+                        {{ formatCurrency(accounting.getAccountBalance(account.code)) }}
+                      </p>
+                      <p class="text-xs text-muted">
+                        {{ account.normalBalance === 'debit' ? 'Dr' : 'Cr' }}
+                      </p>
+                    </div>
+
+                    <UDropdownMenu :items="getAccountActions(account)">
+                      <UButton variant="ghost" icon="i-heroicons-ellipsis-vertical" size="sm"
+                        class="opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </UDropdownMenu>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
     </div>
 
     <!-- Customer/Vendor Ledger Summary -->
@@ -225,12 +209,7 @@
       <template #body>
         <div class="space-y-4">
           <UFormField :label="$t('accounting.accountCode')" required>
-            <UInput
-              v-model="accountForm.code"
-              :disabled="!!editingAccount"
-              placeholder="e.g., 1100"
-              font-mono
-            />
+            <UInput v-model="accountForm.code" :disabled="!!editingAccount" placeholder="e.g., 1100" font-mono />
           </UFormField>
           <UFormField :label="$t('accounting.accountName')" required>
             <UInput v-model="accountForm.name" placeholder="e.g., Cash" />
@@ -239,21 +218,11 @@
             <UInput v-model="accountForm.nameLao" placeholder="e.g., ເງິນສົດ" />
           </UFormField>
           <UFormField v-if="!editingAccount" :label="$t('accounting.accountType')" required>
-            <USelect
-              v-model="accountForm.type"
-              :items="accountTypeOptions"
-              value-key="value"
-              label-key="label"
-            />
+            <USelect v-model="accountForm.type" :items="accountTypeOptions" value-key="value" label-key="label" />
           </UFormField>
           <UFormField :label="$t('accounting.accounts.parentAccount')">
-            <USelect
-              v-model="accountForm.parentCode"
-              :items="parentAccountOptions"
-              value-key="value"
-              label-key="label"
-              :placeholder="$t('common.none')"
-            />
+            <USelect v-model="accountForm.parentCode" :items="parentAccountOptions" value-key="value" label-key="label"
+              :placeholder="$t('common.none')" />
           </UFormField>
           <UFormField :label="$t('accounting.accounts.description')">
             <UTextarea v-model="accountForm.description" :rows="2" />
@@ -269,11 +238,7 @@
           <UButton variant="ghost" @click="showAccountModal = false">
             {{ $t('common.cancel') }}
           </UButton>
-          <UButton
-            :loading="savingAccount"
-            :disabled="!accountForm.code || !accountForm.name"
-            @click="saveAccount"
-          >
+          <UButton :loading="savingAccount" :disabled="!accountForm.code || !accountForm.name" @click="saveAccount">
             {{ editingAccount ? $t('common.update') : $t('common.create') }}
           </UButton>
         </div>
@@ -288,20 +253,14 @@
       <template #body>
         <div class="space-y-4">
           <div class="border-2 border-dashed rounded-lg p-6 text-center">
-            <input
-              ref="fileInput"
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              class="hidden"
-              @change="handleFileSelect"
-            >
+            <input ref="fileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="handleFileSelect">
             <UIcon name="i-heroicons-document-arrow-up" class="text-4xl text-muted mb-2" />
             <p class="text-muted mb-4">{{ $t('accounting.accounts.dragDrop') }}</p>
             <UButton variant="outline" @click="fileInput?.click()">
               {{ $t('accounting.accounts.selectFile') }}
             </UButton>
           </div>
-          
+
           <div v-if="importFile" class="p-3 bg-gray-50 dark:bg-gray-800 rounded flex items-center gap-3">
             <UIcon name="i-heroicons-document" class="text-xl text-primary" />
             <span class="flex-1">{{ importFile.name }}</span>
@@ -326,11 +285,7 @@
             <UButton variant="ghost" @click="showImportModal = false">
               {{ $t('common.cancel') }}
             </UButton>
-            <UButton
-              :loading="importing"
-              :disabled="!importFile"
-              @click="importAccounts"
-            >
+            <UButton :loading="importing" :disabled="!importFile" @click="importAccounts">
               {{ $t('common.import') }}
             </UButton>
           </div>
@@ -391,6 +346,35 @@ const editingAccount = ref<Account | null>(null)
 const accountToDelete = ref<Account | null>(null)
 const importFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
+
+// Collapsible sections state - all collapsed by default
+const expandedSections = ref<Set<string>>(new Set())
+const allTypes = ['asset', 'liability', 'equity', 'revenue', 'expense']
+
+// Check if all sections are expanded
+const allExpanded = computed(() => allTypes.every(t => expandedSections.value.has(t)))
+
+function toggleSection(type: string) {
+  if (expandedSections.value.has(type)) {
+    expandedSections.value.delete(type)
+  } else {
+    expandedSections.value.add(type)
+  }
+}
+
+function toggleAllSections() {
+  if (allExpanded.value) {
+    // Collapse all
+    expandedSections.value = new Set()
+  } else {
+    // Expand all
+    expandedSections.value = new Set(allTypes)
+  }
+}
+
+function isSectionExpanded(type: string): boolean {
+  return expandedSections.value.has(type)
+}
 
 const filters = reactive({
   type: '',
@@ -471,13 +455,13 @@ const customerLedger = computed(() => {
 // Methods
 function getAccountsByType(type: Account['type']): Account[] {
   let accounts = accounting.accountsByType.value[type] || []
-  
+
   if (filters.status === 'active') {
     accounts = accounts.filter(a => a.isActive)
   } else if (filters.status === 'inactive') {
     accounts = accounts.filter(a => !a.isActive)
   }
-  
+
   if (filters.search) {
     const query = filters.search.toLowerCase()
     accounts = accounts.filter(a =>
@@ -486,7 +470,7 @@ function getAccountsByType(type: Account['type']): Account[] {
       a.nameLao?.toLowerCase().includes(query)
     )
   }
-  
+
   return accounts.sort((a, b) => a.code.localeCompare(b.code))
 }
 
@@ -515,6 +499,39 @@ function getTypeTextColor(type: string): string {
     expense: 'text-orange-600 dark:text-orange-400',
   }
   return colors[type] || 'text-gray-600 dark:text-gray-400'
+}
+
+function getTypeBgClass(type: string): string {
+  const colors: Record<string, string> = {
+    asset: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
+    liability: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+    equity: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800',
+    revenue: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+    expense: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',
+  }
+  return colors[type] || 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+}
+
+function getTypeIcon(type: string): string {
+  const icons: Record<string, string> = {
+    asset: 'i-heroicons-building-library',
+    liability: 'i-heroicons-credit-card',
+    equity: 'i-heroicons-briefcase',
+    revenue: 'i-heroicons-banknotes',
+    expense: 'i-heroicons-receipt-percent',
+  }
+  return icons[type] || 'i-heroicons-folder'
+}
+
+function getTypeIconBgClass(type: string): string {
+  const colors: Record<string, string> = {
+    asset: 'bg-blue-100 dark:bg-blue-800/50',
+    liability: 'bg-red-100 dark:bg-red-800/50',
+    equity: 'bg-purple-100 dark:bg-purple-800/50',
+    revenue: 'bg-green-100 dark:bg-green-800/50',
+    expense: 'bg-orange-100 dark:bg-orange-800/50',
+  }
+  return colors[type] || 'bg-gray-100 dark:bg-gray-800/50'
 }
 
 function getBalanceColor(account: Account): string {
@@ -605,7 +622,7 @@ function getAccountActions(account: Account) {
         icon: account.isActive ? 'i-heroicons-pause' : 'i-heroicons-play',
         onSelect: async () => {
           await accounting.updateAccount(account.code, { isActive: !account.isActive })
-          toast.add({ 
+          toast.add({
             title: account.isActive ? t('accounting.accounts.deactivated') : t('accounting.accounts.activated'),
             color: 'success'
           })
@@ -651,7 +668,7 @@ function exportAccounts() {
     a.isActive ? 'Yes' : 'No',
     accounting.getAccountBalance(a.code)
   ])
-  
+
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
@@ -660,7 +677,7 @@ function exportAccounts() {
   a.download = `chart-of-accounts-${new Date().toISOString().split('T')[0]}.csv`
   a.click()
   URL.revokeObjectURL(url)
-  
+
   toast.add({ title: t('accounting.accounts.exportSuccess'), color: 'success' })
 }
 
@@ -668,7 +685,7 @@ function downloadTemplate() {
   const headers = ['Code', 'Name', 'Name (Lao)', 'Type', 'Parent Code', 'Active']
   const example = ['1100', 'Cash', 'ເງິນສົດ', 'asset', '', 'Yes']
   const csv = [headers.join(','), example.join(',')].join('\n')
-  
+
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -688,16 +705,16 @@ function handleFileSelect(event: Event) {
 async function importAccounts() {
   if (!importFile.value) return
   importing.value = true
-  
+
   try {
     const text = await importFile.value.text()
     const lines = text.split('\n').slice(1) // Skip header
     let imported = 0
-    
+
     for (const line of lines) {
       const [code, name, nameLao, type, parentCode, active] = line.split(',').map(s => s.trim())
       if (!code || !name || !type) continue
-      
+
       try {
         const normalBalance = ['asset', 'expense'].includes(type) ? 'debit' : 'credit'
         await accounting.addAccount({
@@ -715,7 +732,7 @@ async function importAccounts() {
         console.warn(`Failed to import account ${code}:`, e)
       }
     }
-    
+
     toast.add({
       title: t('accounting.accounts.importSuccess', { count: imported }),
       color: 'success'
