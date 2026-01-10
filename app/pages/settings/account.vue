@@ -159,13 +159,19 @@
                         class="text-xs text-gray-500 dark:text-gray-400 italic"
                       >
                         {{
-                          $t("account.no_nsec_available", "No private key available (using NIP-07 extension)")
+                          $t(
+                            "account.no_nsec_available",
+                            "No private key available (using NIP-07 extension)"
+                          )
                         }}
                       </p>
                       <p class="text-xs text-red-500 dark:text-red-400 mt-2">
                         ⚠️
                         {{
-                          $t("account.nsec_warning", "Never share your nsec! Anyone with this key has full control of your account.")
+                          $t(
+                            "account.nsec_warning",
+                            "Never share your nsec! Anyone with this key has full control of your account."
+                          )
                         }}
                       </p>
                     </div>
@@ -713,7 +719,7 @@
               <UButton
                 color="primary"
                 variant="outline"
-                @click="$refs.avatarInput.click()"
+                @click="avatarInput?.click()"
               >
                 {{ $t("account.choose_file") }}
               </UButton>
@@ -762,7 +768,10 @@
                 class="text-sm text-red-700 dark:text-red-300 font-medium mb-2"
               >
                 {{
-                  $t("account.nsec_confirm_warning", "Your private key (nsec) gives FULL ACCESS to your account!")
+                  $t(
+                    "account.nsec_confirm_warning",
+                    "Your private key (nsec) gives FULL ACCESS to your account!"
+                  )
                 }}
               </p>
               <ul
@@ -770,22 +779,34 @@
               >
                 <li>
                   {{
-                    $t("account.nsec_warning_1", "Anyone with this key can sign messages as you")
+                    $t(
+                      "account.nsec_warning_1",
+                      "Anyone with this key can sign messages as you"
+                    )
                   }}
                 </li>
                 <li>
                   {{
-                    $t("account.nsec_warning_2", "They can access all your encrypted data")
+                    $t(
+                      "account.nsec_warning_2",
+                      "They can access all your encrypted data"
+                    )
                   }}
                 </li>
                 <li>
                   {{
-                    $t("account.nsec_warning_3", "You cannot revoke access once shared")
+                    $t(
+                      "account.nsec_warning_3",
+                      "You cannot revoke access once shared"
+                    )
                   }}
                 </li>
                 <li>
                   {{
-                    $t("account.nsec_warning_4", "Never share on screenshots, chats, or emails")
+                    $t(
+                      "account.nsec_warning_4",
+                      "Never share on screenshots, chats, or emails"
+                    )
                   }}
                 </li>
               </ul>
@@ -801,7 +822,10 @@
                 @click="nsecConfirmChecked = !nsecConfirmChecked"
               >
                 {{
-                  $t("account.nsec_confirm_checkbox", "I understand the risks and want to copy my private key")
+                  $t(
+                    "account.nsec_confirm_checkbox",
+                    "I understand the risks and want to copy my private key"
+                  )
                 }}
               </label>
             </div>
@@ -838,9 +862,7 @@
 
 <script setup lang="ts">
 import { z } from "zod";
-import { nip19 } from "nostr-tools";
 import type { UserInfo } from "~/types";
-import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
 const { t } = useI18n();
 const colorMode = useColorMode();
@@ -881,6 +903,7 @@ const isLoadingProfile = ref(false);
 const showNsec = ref(false);
 const showNsecConfirmModal = ref(false);
 const nsecConfirmChecked = ref(false);
+const avatarInput = ref<HTMLInputElement | null>(null);
 
 // Current user info from Nostr
 const currentUserInfo = ref<{
@@ -1075,8 +1098,10 @@ const copyNsec = async () => {
     await navigator.clipboard.writeText(userNsec.value);
     toast.add({
       title: t("account.nsec_copied", "Private key copied!"),
-      description:
-        t("account.nsec_copied_warning", "Keep it safe and never share it!"),
+      description: t(
+        "account.nsec_copied_warning",
+        "Keep it safe and never share it!"
+      ),
       color: "warning",
     });
   } catch (error) {
@@ -1097,8 +1122,10 @@ const confirmAndCopyNsec = async () => {
     await navigator.clipboard.writeText(userNsec.value);
     toast.add({
       title: t("account.nsec_copied", "Private key copied!"),
-      description:
-        t("account.nsec_copied_warning", "Keep it safe and never share it!"),
+      description: t(
+        "account.nsec_copied_warning",
+        "Keep it safe and never share it!"
+      ),
       color: "warning",
     });
     closeNsecConfirmModal();
@@ -1170,124 +1197,21 @@ const loadNostrProfile = async () => {
 const updateProfile = async () => {
   isUpdatingProfile.value = true;
   try {
-    // Build Nostr kind:0 profile content
-    const profileContent = JSON.stringify({
-      name: profileForm.name,
-      display_name: profileForm.displayName,
-      about: profileForm.about,
-      picture: profileForm.picture,
-      banner: profileForm.banner,
-      nip05: profileForm.nip05,
-      lud16: profileForm.lud16,
-      website: profileForm.website,
+    // Call the composable function to update profile
+    await nostrUser.updateUserProfile(profileForm);
+
+    // Sync profile to bitspace_current_user (staff user system)
+    refreshCurrentUserProfile();
+
+    toast.add({
+      title: t("account.profile_published", "Profile published to Nostr"),
+      color: "success",
     });
-
-    // Get current user keys from storage
-    const { userInfo, user } = nostrStorage.loadCurrentUser();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const hasNip07 = typeof window !== "undefined" && (window as any).nostr;
-
-    if (!userInfo?.userKeys?.nsec && !user?.nsec && !hasNip07) {
-      toast.add({
-        title: t("account.no_keys", "No signing keys available"),
-        description:
-          t("account.need_keys_to_publish", "You need a private key or NIP-07 extension to publish"),
-        color: "error",
-      });
-      return;
-    }
-
-    const pubkey = userInfo?.pubkey || user?.publicKey || "";
-
-    // Create unsigned event
-    const event = {
-      kind: NOSTR_KINDS.PROFILE,
-      created_at: Math.floor(Date.now() / 1000),
-      tags: [],
-      content: profileContent,
-      pubkey,
-    };
-
-    let signedEvent;
-
-    // Try NIP-07 extension first
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const windowNostr = (window as any).nostr;
-    if (hasNip07 && windowNostr?.signEvent) {
-      signedEvent = await windowNostr.signEvent(event);
-    } else {
-      // Sign with stored private key
-      const nsecKey = userInfo?.userKeys?.nsec || user?.nsec;
-      if (nsecKey) {
-        const decoded = nip19.decode(nsecKey);
-        if (decoded.type === "nsec") {
-          const secKey = decoded.data as Uint8Array;
-          signedEvent = $nostr.finalizeEvent(event, secKey);
-        }
-      }
-    }
-
-    if (signedEvent) {
-      // Publish to relays
-      const published = await nostrRelay.publishEvent(signedEvent);
-
-      if (!published) {
-        toast.add({
-          title: t("account.publish_failed", "Failed to publish to relays"),
-          color: "error",
-        });
-        return;
-      }
-
-      // Update local storage - preserve userKeys with npub
-      const userKeys = userInfo?.userKeys
-        ? userInfo.userKeys
-        : user
-        ? {
-            pub: user.publicKey,
-            sec: user.privateKey,
-            npub: user.npub,
-            nsec: user.nsec,
-            publicKey: user.publicKey,
-            privateKey: user.privateKey,
-          }
-        : undefined;
-
-      const updatedUserInfo: UserInfo = {
-        pubkey,
-        name: profileForm.name,
-        displayName: profileForm.displayName,
-        display_name: profileForm.displayName,
-        picture: profileForm.picture,
-        about: profileForm.about,
-        nip05: profileForm.nip05,
-        lud16: profileForm.lud16,
-        website: profileForm.website,
-        banner: profileForm.banner,
-        userKeys,
-      };
-      nostrStorage.saveUser(updatedUserInfo);
-
-      // Update current user info reactive state so UI updates immediately
-      currentUserInfo.value = updatedUserInfo;
-
-      // Sync profile to bitspace_current_user (staff user system)
-      refreshCurrentUserProfile();
-
-      toast.add({
-        title: t("account.profile_published", "Profile published to Nostr"),
-        color: "success",
-      });
-    } else {
-      toast.add({
-        title: t("account.sign_failed", "Failed to sign event"),
-        color: "error",
-      });
-    }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to publish profile:", error);
     toast.add({
       title: t("account.publish_failed", "Failed to publish profile"),
+      description: error.message || t("common.error_occurred"),
       color: "error",
     });
   } finally {
@@ -1343,7 +1267,7 @@ const terminateSession = async (sessionId: string) => {
 const changeLanguage = (newLanguage: string) => {
   // Update i18n locale
   const { setLocale } = useI18n();
-  setLocale(newLanguage);
+  setLocale(newLanguage as any);
 };
 
 const toggleDarkMode = (enabled: boolean) => {
@@ -1383,9 +1307,14 @@ const openAvatarModal = () => {
   previewAvatar.value = "";
 };
 
+const cloudinary = useCloudinary();
+const selectedAvatarFile = ref<File | null>(null);
+
 const handleAvatarUpload = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (file) {
+    selectedAvatarFile.value = file;
+    // Show preview locally
     const reader = new FileReader();
     reader.onload = (e) => {
       previewAvatar.value = e.target?.result as string;
@@ -1395,16 +1324,59 @@ const handleAvatarUpload = (event: Event) => {
 };
 
 const uploadAvatar = async () => {
+  if (!selectedAvatarFile.value) {
+    if (previewAvatar.value) {
+      // User just wants to use the preview (maybe pasted url? unlikely here but fallback)
+      userProfile.value.avatar = previewAvatar.value;
+      profileForm.picture = previewAvatar.value;
+      isAvatarModalOpen.value = false;
+    }
+    return;
+  }
+
   isUploadingAvatar.value = true;
   try {
-    // API call to upload avatar
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    // Update user profile avatar
-    userProfile.value.avatar = previewAvatar.value;
-    isAvatarModalOpen.value = false;
-    console.log("Avatar uploaded successfully");
-  } catch (error) {
+    const result = await cloudinary.uploadImage(selectedAvatarFile.value, {
+      folder: "avatars",
+    });
+
+    if (result && result.url) {
+      // Update form
+      profileForm.picture = result.url;
+
+      // key step: update profile on Nostr immediately
+      await nostrUser.updateUserProfile(profileForm);
+      await refreshCurrentUserProfile();
+
+      // Update local state to trigger UI update
+      if (currentUserInfo.value) {
+        currentUserInfo.value.picture = result.url;
+      }
+
+      toast.add({
+        title: t("common.success"),
+        description: t(
+          "account.avatar_updated_nostr",
+          "Avatar updated and published to Nostr"
+        ),
+        color: "success",
+      });
+
+      isAvatarModalOpen.value = false;
+
+      // Clear selection
+      selectedAvatarFile.value = null;
+    } else {
+      throw new Error(cloudinary.error.value || "Upload failed");
+    }
+  } catch (error: any) {
     console.error("Failed to upload avatar:", error);
+    toast.add({
+      title: t("common.error"),
+      description:
+        error.message || t("account.upload_failed", "Failed to upload avatar"),
+      color: "error",
+    });
   } finally {
     isUploadingAvatar.value = false;
   }
@@ -1420,7 +1392,7 @@ const getDeviceIcon = (device: string) => {
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString();
+  return new Date(dateString).toLocaleString();
 };
 
 // Sync dark mode preference on mount and watch for external changes

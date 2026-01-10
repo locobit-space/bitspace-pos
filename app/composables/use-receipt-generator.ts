@@ -70,7 +70,7 @@ export const useReceiptGenerator = () => {
       orderCode: order.code || order.id,
       orderNumber: order.orderNumber,
       merchantName:
-        shop.shopConfig?.value?.shopName ||
+        shop.shopConfig?.value?.name ||
         receiptSettings.settings?.value?.header?.businessName ||
         "bnos.space",
       merchantAddress:
@@ -93,7 +93,7 @@ export const useReceiptGenerator = () => {
       // Financial summary
       subtotal: order.total - (order.tax || 0) - (order.tip || 0),
       discount: order.discount || 0,
-      appliedPromotions: order.appliedPromotions?.map(promo => ({
+      appliedPromotions: order.appliedPromotions?.map((promo) => ({
         promotionId: promo.promotionId,
         promotionName: promo.promotionName,
         discountAmount: promo.discountAmount,
@@ -116,9 +116,7 @@ export const useReceiptGenerator = () => {
 
       // Timestamps
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(
-        Date.now() + 90 * 24 * 60 * 60 * 1000
-      ).toISOString(), // 90 days
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days
     };
 
     // 3. Save receipt locally (for offline access)
@@ -172,8 +170,7 @@ export const useReceiptGenerator = () => {
     }
 
     // 5. Generate receipt URL with verification code
-    const baseUrl =
-      typeof window !== "undefined" ? window.location.origin : "";
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
 
     // 6. Generate QR code
@@ -195,9 +192,7 @@ export const useReceiptGenerator = () => {
    * Fetch public receipt from Nostr by code
    * Used by receipt page to load receipts
    */
-  const fetchReceiptByCode = async (
-    code: string
-  ): Promise<EReceipt | null> => {
+  const fetchReceiptByCode = async (code: string): Promise<EReceipt | null> => {
     if (!relay.isInitialized?.value) {
       return null;
     }
@@ -338,9 +333,7 @@ export const useReceiptGenerator = () => {
         : undefined,
 
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(
-        Date.now() + 90 * 24 * 60 * 60 * 1000
-      ).toISOString(),
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
     // 4. Save locally
@@ -394,8 +387,7 @@ export const useReceiptGenerator = () => {
     }
 
     // 6. Generate URL and QR code
-    const baseUrl =
-      typeof window !== "undefined" ? window.location.origin : "";
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
 
     const QRCode = await import("qrcode");

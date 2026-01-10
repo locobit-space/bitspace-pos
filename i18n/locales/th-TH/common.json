@@ -138,5 +138,10 @@
         "publish": "เผยแพร่ไปยัง Nostr"
       }
     }
+  },
+  "validation": {
+    "required": "จำเป็นต้องระบุข้อมูลนี้",
+    "min_length": "ต้องมีความยาวอย่างน้อย {length} ตัวอักษร",
+    "passwords_dont_match": "รหัสผ่านไม่ตรงกัน"
   }
 }

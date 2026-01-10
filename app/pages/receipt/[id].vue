@@ -46,12 +46,14 @@ onMounted(async () => {
   const storedReceipt = receipt.retrieveEBill(receiptId);
 
   if (storedReceipt) {
+    console.log("storedReceipt", storedReceipt);
     eBill.value = storedReceipt;
   } else if (receiptCode) {
     // Fetch from Nostr using verification code
     const fetchedReceipt = await receiptGenerator.fetchReceiptByCode(
       receiptCode
     );
+    console.log("fetchedReceipt", fetchedReceipt);
 
     if (fetchedReceipt) {
       // Verify receipt ID matches

@@ -10,7 +10,11 @@ import type {
   Order,
   OrderType,
 } from "~/types";
-import { POS_CURRENCY_OPTIONS } from "~/composables/use-currency";
+import {
+  POS_CURRENCY_OPTIONS,
+  getCurrencySelectOptions,
+  CURRENCY_OPTIONS,
+} from "~/composables/use-currency";
 definePageMeta({
   layout: "blank",
   middleware: ["auth"],
@@ -41,6 +45,7 @@ useHead({
 // ============================================
 // Composables
 // ============================================
+const shop = useShop();
 const pos = usePOS();
 const productsStore = useProducts();
 const ordersStore = useOrders();
@@ -50,6 +55,8 @@ const currency = useCurrency();
 const promotionsStore = usePromotionsStore();
 const couponsStore = useCoupons();
 const posSettings = usePOSSettings(); // POS settings for auto-close kitchen
+
+const branches = computed(() => productsStore.branches.value);
 
 const offline = useOffline();
 const sound = useSound();
@@ -83,24 +90,29 @@ const orderToVoid = ref<{ id: string; orderNumber?: string } | null>(null); // O
 const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mode
 const showPaymentOrderDetails = ref(false); // Toggle order details in payment modal
 // Per-order: Auto-close kitchen status when payment completes (defaults to global setting)
-const autoCloseKitchenOnPayment = ref(posSettings.autoCloseKitchenStatusOnPayment.value);
+const autoCloseKitchenOnPayment = ref(
+  posSettings.autoCloseKitchenStatusOnPayment.value
+);
 const splitOrder = ref<Order | null>(null); // Order being split
 
 // Reset checkbox to global setting when payment modal opens
 watch(showPaymentModal, (isOpen) => {
   if (isOpen) {
-    autoCloseKitchenOnPayment.value = posSettings.autoCloseKitchenStatusOnPayment.value;
+    autoCloseKitchenOnPayment.value =
+      posSettings.autoCloseKitchenStatusOnPayment.value;
   }
 });
 const splitCount = ref(2); // Number of people splitting
 const splitPaidCount = ref(0); // Number of portions already paid
-const splitPayments = ref<Array<{
-  portionNumber: number;
-  amount: number;
-  method: PaymentMethod;
-  paidAt: string;
-  proof?: unknown;
-}>>([]); // Track individual split payments
+const splitPayments = ref<
+  Array<{
+    portionNumber: number;
+    amount: number;
+    method: PaymentMethod;
+    paidAt: string;
+    proof?: unknown;
+  }>
+>([]); // Track individual split payments
 const isProcessingSplit = ref(false); // Separate flag for split payment processing
 const isProcessing = ref(false);
 
@@ -387,10 +399,19 @@ const tipOptions = [
 // Check if a product has active promotions
 const hasPromotion = (productId: string): boolean => {
   return promotionsStore.activePromotions.value.some((promo) => {
-    if (promo.scope === 'all') return true;
-    if (promo.scope === 'products' && promo.triggerProductIds?.includes(productId)) return true;
+    if (promo.scope === "all") return true;
+    if (
+      promo.scope === "products" &&
+      promo.triggerProductIds?.includes(productId)
+    )
+      return true;
     const product = productsStore.getProduct(productId);
-    if (promo.scope === 'categories' && product && promo.triggerCategoryIds?.includes(product.categoryId)) return true;
+    if (
+      promo.scope === "categories" &&
+      product &&
+      promo.triggerCategoryIds?.includes(product.categoryId)
+    )
+      return true;
     return false;
   });
 };
@@ -398,10 +419,19 @@ const hasPromotion = (productId: string): boolean => {
 // Get promotion count for a product
 const getProductPromotionCount = (productId: string): number => {
   return promotionsStore.activePromotions.value.filter((promo) => {
-    if (promo.scope === 'all') return true;
-    if (promo.scope === 'products' && promo.triggerProductIds?.includes(productId)) return true;
+    if (promo.scope === "all") return true;
+    if (
+      promo.scope === "products" &&
+      promo.triggerProductIds?.includes(productId)
+    )
+      return true;
     const product = productsStore.getProduct(productId);
-    if (promo.scope === 'categories' && product && promo.triggerCategoryIds?.includes(product.categoryId)) return true;
+    if (
+      promo.scope === "categories" &&
+      product &&
+      promo.triggerCategoryIds?.includes(product.categoryId)
+    )
+      return true;
     return false;
   }).length;
 };
@@ -412,12 +442,14 @@ const displayedProducts = computed(() => {
   if (!filterByPromotions.value) {
     return filtered;
   }
-  return filtered.filter(product => hasPromotion(product.id));
+  return filtered.filter((product) => hasPromotion(product.id));
 });
 
 // Count products with promotions
 const productsWithPromotionsCount = computed(() => {
-  return productsStore.filteredProducts.value.filter(product => hasPromotion(product.id)).length;
+  return productsStore.filteredProducts.value.filter((product) =>
+    hasPromotion(product.id)
+  ).length;
 });
 
 // Auto-calculate promotions when cart changes
@@ -652,9 +684,10 @@ const sendToKitchen = async () => {
       title: t("pos.orderSentToKitchen", "Order Sent to Kitchen!"),
       description: `${
         order.orderNumber ? "#" + order.orderNumber + " - " : ""
-      }${order.code || order.id} - ${
-        t("pos.payLater", "Pay when ready to leave")
-      }`,
+      }${order.code || order.id} - ${t(
+        "pos.payLater",
+        "Pay when ready to leave"
+      )}`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -763,9 +796,10 @@ const loadOrderForEditing = (order: Order) => {
   const toast = useToast();
   toast.add({
     title: t("pos.editingOrder", "Editing Order"),
-    description: `${
-      t("pos.addMoreItems", "Add items and click Update Order")
-    } - #${order.code || order.id}`,
+    description: `${t(
+      "pos.addMoreItems",
+      "Add items and click Update Order"
+    )} - #${order.code || order.id}`,
     color: "blue",
   });
 };
@@ -1192,12 +1226,16 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
 const cancelPayment = () => {
   showPaymentModal.value = false;
   isProcessing.value = false;
-  
+
   // If this was a split payment in progress (and split modal was previously open), restore it
-  if (splitOrder.value && splitPaidCount.value < splitCount.value && !selectedPendingOrder.value) {
+  if (
+    splitOrder.value &&
+    splitPaidCount.value < splitCount.value &&
+    !selectedPendingOrder.value
+  ) {
     showSplitBillModal.value = true;
   }
-  
+
   selectedPendingOrder.value = null;
   pos.setPaymentState({ status: "idle" });
 };
@@ -1401,7 +1439,7 @@ const openSplitBill = (order: Order) => {
  */
 const paySplitPortion = async () => {
   if (!splitOrder.value || isProcessingSplit.value) return;
-  
+
   if (splitPaidCount.value >= splitCount.value) {
     const toast = useToast();
     toast.add({
@@ -1417,7 +1455,10 @@ const paySplitPortion = async () => {
   pos.setPaymentState({
     status: "pending",
     amount: splitAmountPerPerson.value,
-    satsAmount: currency.toSats(splitAmountPerPerson.value, splitOrder.value.currency || "LAK"),
+    satsAmount: currency.toSats(
+      splitAmountPerPerson.value,
+      splitOrder.value.currency || "LAK"
+    ),
   });
 
   // Hide split modal and open payment modal
@@ -1429,7 +1470,10 @@ const paySplitPortion = async () => {
 /**
  * Handle split payment completion (called from payment modal)
  */
-const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown) => {
+const handleSplitPaymentComplete = async (
+  method: PaymentMethod,
+  proof: unknown
+) => {
   if (!splitOrder.value || isProcessingSplit.value) return;
 
   isProcessingSplit.value = true;
@@ -1478,7 +1522,10 @@ const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown)
       const toast = useToast();
       toast.add({
         title: t("pos.splitComplete", "Split Bill Complete!"),
-        description: `${splitCount.value} ${t("pos.people", "people")} paid ${currency.format(
+        description: `${splitCount.value} ${t(
+          "pos.people",
+          "people"
+        )} paid ${currency.format(
           splitAmountPerPerson.value,
           splitOrder.value.currency || "LAK"
         )} ${t("pos.each", "each")}`,
@@ -1491,13 +1538,18 @@ const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown)
       completedPaymentMethod.value = "split" as PaymentMethod;
 
       // Generate receipt
-      const generatedReceipt = receipt.generateReceipt(splitOrder.value, splitOrder.value.paymentProof);
+      const generatedReceipt = receipt.generateReceipt(
+        splitOrder.value,
+        splitOrder.value.paymentProof
+      );
       receipt.storeEBill(generatedReceipt);
 
       // Reset table if applicable
       if (splitOrder.value.tableNumber) {
         const table = tablesStore.tables.value.find(
-          (t) => t.name === splitOrder.value!.tableNumber || t.number === splitOrder.value!.tableNumber
+          (t) =>
+            t.name === splitOrder.value!.tableNumber ||
+            t.number === splitOrder.value!.tableNumber
         );
         if (table) {
           await tablesStore.freeTable(table.id);
@@ -1512,7 +1564,10 @@ const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown)
       const toast = useToast();
       toast.add({
         title: t("pos.portionPaid", "Portion Paid!"),
-        description: `${splitRemainingSplits.value} ${t("pos.moreToGo", "more to go")} - ${currency.format(
+        description: `${splitRemainingSplits.value} ${t(
+          "pos.moreToGo",
+          "more to go"
+        )} - ${currency.format(
           splitRemainingAmount.value,
           splitOrder.value.currency || "LAK"
         )} ${t("pos.remaining", "remaining")}`,
@@ -1526,7 +1581,7 @@ const handleSplitPaymentComplete = async (method: PaymentMethod, proof: unknown)
     }
   } catch (e) {
     console.error("Failed to process split payment:", e);
-    
+
     // Rollback the payment record
     if (splitPayments.value.length > 0) {
       splitPayments.value.pop();
@@ -1855,18 +1910,25 @@ const clearTableSelection = () => {
 // ============================================
 const route = useRoute();
 
+shop.loadShopConfigCache();
+
 onMounted(async () => {
-  await currency.init("LAK");
+  await currency.init(shop.shopConfig.value?.currency || "LAK");
   await offline.init();
   await productsStore.init();
   await ordersStore.init();
   await promotionsStore.init();
 
+  pos.selectedCurrency.value = shop.shopConfig.value?.currency || "LAK";
+
   // Initialize order sync notifications for multi-device updates
   orderSyncNotifications.initOrderSyncNotifications();
 
   if (!pos.isSessionActive.value) {
-    pos.startSession("main", "staff-1", 0);
+    const branchId =
+      shop.currentBranch.value?.id || localStorage.getItem("currentBranchId");
+    console.log("branch", branchId);
+    pos.startSession(branchId || "main", "staff-1", 0);
   }
 
   // Load tables from tablesStore
@@ -2100,7 +2162,6 @@ onMounted(async () => {
                 updatedOrder.orderNumber || updatedOrder.id.slice(-6)
               } paid`,
               color: "green",
-              timeout: 3000,
             });
           }
         }
@@ -2386,9 +2447,7 @@ onUnmounted(() => {
             >
               <template #trailing>
                 <UTooltip
-                  :text="
-                    t('pos.scanner.scanBarcode', 'Scan with Camera (F2)')
-                  "
+                  :text="t('pos.scanner.scanBarcode', 'Scan with Camera (F2)')"
                 >
                   <UButton
                     size="xs"
@@ -2547,7 +2606,9 @@ onUnmounted(() => {
           class="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl shadow-lg"
         >
           <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-2xl animate-bounce">
+            <div
+              class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-2xl animate-bounce"
+            >
               🎁
             </div>
             <div>
@@ -2555,7 +2616,10 @@ onUnmounted(() => {
                 Active Promotions
               </h3>
               <p class="text-sm text-green-600 dark:text-green-400">
-                {{ pos.appliedPromotions.value.length }} promotion{{ pos.appliedPromotions.value.length > 1 ? 's' : '' }} applied
+                {{ pos.appliedPromotions.value.length }} promotion{{
+                  pos.appliedPromotions.value.length > 1 ? "s" : ""
+                }}
+                applied
               </p>
             </div>
             <div class="ml-auto text-right">
@@ -2563,7 +2627,12 @@ onUnmounted(() => {
                 Total Savings
               </p>
               <p class="text-2xl font-bold text-green-700 dark:text-green-300">
-                {{ currency.format(pos.promotionDiscount.value, pos.selectedCurrency.value) }}
+                {{
+                  currency.format(
+                    pos.promotionDiscount.value,
+                    pos.selectedCurrency.value
+                  )
+                }}
               </p>
             </div>
           </div>
@@ -2579,14 +2648,22 @@ onUnmounted(() => {
                   <p class="font-medium text-gray-900 dark:text-white text-sm">
                     {{ promo.promotionName }}
                   </p>
-                  <p v-if="promo.description" class="text-xs text-gray-600 dark:text-gray-400">
+                  <p
+                    v-if="promo.description"
+                    class="text-xs text-gray-600 dark:text-gray-400"
+                  >
                     {{ promo.description }}
                   </p>
                 </div>
               </div>
               <div class="text-right">
                 <p class="font-bold text-green-600 dark:text-green-400">
-                  -{{ currency.format(promo.discountAmount, pos.selectedCurrency.value) }}
+                  -{{
+                    currency.format(
+                      promo.discountAmount,
+                      pos.selectedCurrency.value
+                    )
+                  }}
                 </p>
               </div>
             </div>
@@ -2597,9 +2674,23 @@ onUnmounted(() => {
           v-if="displayedProducts.length === 0"
           class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
         >
-          <span class="text-6xl mb-4">{{ filterByPromotions ? '🎁' : '🔍' }}</span>
-          <p class="text-lg">{{ filterByPromotions ? 'No products with promotions' : 'No products found' }}</p>
-          <p class="text-sm mt-2">{{ filterByPromotions ? 'Try disabling the promotions filter' : 'Try a different search or category' }}</p>
+          <span class="text-6xl mb-4">{{
+            filterByPromotions ? "🎁" : "🔍"
+          }}</span>
+          <p class="text-lg">
+            {{
+              filterByPromotions
+                ? "No products with promotions"
+                : "No products found"
+            }}
+          </p>
+          <p class="text-sm mt-2">
+            {{
+              filterByPromotions
+                ? "Try disabling the promotions filter"
+                : "Try a different search or category"
+            }}
+          </p>
         </div>
 
         <div
@@ -2730,28 +2821,54 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div v-if="pos.cartItems.value.length > 0" class="flex gap-1">
-            <UButton
-              icon="i-heroicons-x-circle"
-              color="red"
-              variant="ghost"
-              size="xs"
-              :title="t('pos.void_order')"
-              @click="openVoidOrderModal"
-            />
-            <UButton
-              icon="i-heroicons-trash"
-              color="gray"
-              variant="ghost"
-              size="xs"
-              :title="t('common.clear')"
-              @click="pos.clearCart"
-            />
-          </div>
+          <article class="flex items-center gap-2">
+            <!-- Branch Selector -->
+            <div v-if="branches.length > 1">
+              <USelectMenu
+                v-model="shop.currentBranch.value"
+                :items="branches"
+                value-key="id"
+                label-key="name"
+                placeholder="Select Branch"
+                icon="i-heroicons-building-storefront"
+                size="sm"
+                @update:model-value="
+                  (branchId) => {
+                    shop.setCurrentBranch(branchId);
+                    if (pos.currentSession.value) {
+                      pos.currentSession.value = {
+                        ...pos.currentSession.value,
+                        branchId,
+                      };
+                    }
+                  }
+                "
+              />
+            </div>
+
+            <div v-if="pos.cartItems.value.length > 0" class="flex gap-1">
+              <UButton
+                icon="i-heroicons-x-circle"
+                color="red"
+                variant="ghost"
+                size="xs"
+                :title="t('pos.void_order')"
+                @click="openVoidOrderModal"
+              />
+              <UButton
+                icon="i-heroicons-trash"
+                color="gray"
+                variant="ghost"
+                size="xs"
+                :title="t('common.clear')"
+                @click="pos.clearCart"
+              />
+            </div>
+          </article>
         </div>
 
         <!-- Order Type Selector -->
-        <div class="mt-3 flex gap-1.5">
+        <div class="mt-3 flex gap-1.5 px-4">
           <button
             v-for="type in orderTypes"
             :key="type.value"
@@ -3654,9 +3771,7 @@ onUnmounted(() => {
                   }}</span>
                   <span class="text-xs opacity-75"
                     >({{
-                      isEditingOrder
-                        ? "Save"
-                        : t("pos.payLater", "Pay Later")
+                      isEditingOrder ? "Save" : t("pos.payLater", "Pay Later")
                     }})</span
                   >
                 </span>
@@ -3688,11 +3803,20 @@ onUnmounted(() => {
             @click="showPaymentOrderDetails = !showPaymentOrderDetails"
           >
             <div class="flex items-center gap-2">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ showPaymentOrderDetails ? 'Hide' : 'Show' }} Order Details
+              <span
+                class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                {{ showPaymentOrderDetails ? "Hide" : "Show" }} Order Details
               </span>
               <span class="text-xs text-gray-500">
-                ({{ pos.cartItems.value.length }} items{{ pos.appliedPromotions.value.length > 0 ? ', ' + pos.appliedPromotions.value.length + ' promotion' + (pos.appliedPromotions.value.length > 1 ? 's' : '') : '' }})
+                ({{ pos.cartItems.value.length }} items{{
+                  pos.appliedPromotions.value.length > 0
+                    ? ", " +
+                      pos.appliedPromotions.value.length +
+                      " promotion" +
+                      (pos.appliedPromotions.value.length > 1 ? "s" : "")
+                    : ""
+                }})
               </span>
             </div>
             <svg
@@ -3702,7 +3826,12 @@ onUnmounted(() => {
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
 
@@ -3710,7 +3839,11 @@ onUnmounted(() => {
           <div v-show="showPaymentOrderDetails" class="mb-6 space-y-3">
             <!-- Cart Items -->
             <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <h3 class="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-3">ORDER ITEMS</h3>
+              <h3
+                class="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-3"
+              >
+                ORDER ITEMS
+              </h3>
               <div class="space-y-2">
                 <div
                   v-for="item in pos.cartItems.value"
@@ -3719,9 +3852,16 @@ onUnmounted(() => {
                 >
                   <span class="text-gray-600 dark:text-gray-400">
                     {{ item.quantity }}× {{ item.product.name }}
-                    <span class="text-xs text-gray-500">@ {{ currency.format(item.price, pos.selectedCurrency.value) }}</span>
+                    <span class="text-xs text-gray-500"
+                      >@
+                      {{
+                        currency.format(item.price, pos.selectedCurrency.value)
+                      }}</span
+                    >
                   </span>
-                  <span class="font-medium">{{ currency.format(item.total, pos.selectedCurrency.value) }}</span>
+                  <span class="font-medium">{{
+                    currency.format(item.total, pos.selectedCurrency.value)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -3731,7 +3871,9 @@ onUnmounted(() => {
               v-if="pos.appliedPromotions.value.length > 0"
               class="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg p-4"
             >
-              <h3 class="font-semibold text-sm text-green-700 dark:text-green-400 mb-3 flex items-center gap-2">
+              <h3
+                class="font-semibold text-sm text-green-700 dark:text-green-400 mb-3 flex items-center gap-2"
+              >
                 <span>🎁</span> PROMOTIONS APPLIED
               </h3>
               <div class="space-y-2">
@@ -3740,15 +3882,27 @@ onUnmounted(() => {
                   :key="promo.promotionId"
                   class="bg-white dark:bg-gray-800 p-2 rounded border border-green-300 dark:border-green-700"
                 >
-                  <div class="font-medium text-green-700 dark:text-green-400 text-sm">
+                  <div
+                    class="font-medium text-green-700 dark:text-green-400 text-sm"
+                  >
                     {{ promo.promotionName }}
                   </div>
-                  <div v-if="promo.description" class="text-xs text-green-600 dark:text-green-500">
+                  <div
+                    v-if="promo.description"
+                    class="text-xs text-green-600 dark:text-green-500"
+                  >
                     {{ promo.description }}
                   </div>
-                  <div class="flex justify-between text-green-700 dark:text-green-400 font-semibold text-sm mt-1">
+                  <div
+                    class="flex justify-between text-green-700 dark:text-green-400 font-semibold text-sm mt-1"
+                  >
                     <span>You Save:</span>
-                    <span>{{ currency.format(promo.discountAmount, pos.selectedCurrency.value) }}</span>
+                    <span>{{
+                      currency.format(
+                        promo.discountAmount,
+                        pos.selectedCurrency.value
+                      )
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -3757,61 +3911,99 @@ onUnmounted(() => {
             <!-- Payment Summary -->
             <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
               <div class="space-y-1 text-sm">
-                <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                <div
+                  class="flex justify-between text-gray-600 dark:text-gray-400"
+                >
                   <span>Subtotal:</span>
-                  <span>{{ currency.format(pos.subtotal.value, pos.selectedCurrency.value) }}</span>
+                  <span>{{
+                    currency.format(
+                      pos.subtotal.value,
+                      pos.selectedCurrency.value
+                    )
+                  }}</span>
                 </div>
                 <div
                   v-if="pos.appliedPromotions.value.length > 0"
                   class="flex justify-between text-green-600 dark:text-green-400 font-medium"
                 >
                   <span>Promotion Savings:</span>
-                  <span>-{{ currency.format(pos.promotionDiscount.value, pos.selectedCurrency.value) }}</span>
+                  <span
+                    >-{{
+                      currency.format(
+                        pos.promotionDiscount.value,
+                        pos.selectedCurrency.value
+                      )
+                    }}</span
+                  >
                 </div>
                 <div
                   v-if="pos.discountAmount.value > 0"
                   class="flex justify-between text-green-600 dark:text-green-400"
                 >
                   <span>Discount:</span>
-                  <span>-{{ currency.format(pos.discountAmount.value, pos.selectedCurrency.value) }}</span>
+                  <span
+                    >-{{
+                      currency.format(
+                        pos.discountAmount.value,
+                        pos.selectedCurrency.value
+                      )
+                    }}</span
+                  >
                 </div>
                 <div
                   v-if="pos.tax.value > 0"
                   class="flex justify-between text-gray-600 dark:text-gray-400"
                 >
                   <span>Tax:</span>
-                  <span>{{ currency.format(pos.tax.value, pos.selectedCurrency.value) }}</span>
+                  <span>{{
+                    currency.format(pos.tax.value, pos.selectedCurrency.value)
+                  }}</span>
                 </div>
                 <div
                   v-if="pos.tipAmount.value > 0"
                   class="flex justify-between text-gray-600 dark:text-gray-400"
                 >
                   <span>Tip:</span>
-                  <span>{{ currency.format(pos.tipAmount.value, pos.selectedCurrency.value) }}</span>
+                  <span>{{
+                    currency.format(
+                      pos.tipAmount.value,
+                      pos.selectedCurrency.value
+                    )
+                  }}</span>
                 </div>
-                <div class="flex justify-between font-bold text-lg pt-2 border-t-2 border-gray-300 dark:border-gray-600 mt-2">
+                <div
+                  class="flex justify-between font-bold text-lg pt-2 border-t-2 border-gray-300 dark:border-gray-600 mt-2"
+                >
                   <span>TOTAL TO PAY:</span>
-                  <span class="text-primary-600">{{ currency.format(totalWithTax, pos.selectedCurrency.value) }}</span>
+                  <span class="text-primary-600">{{
+                    currency.format(totalWithTax, pos.selectedCurrency.value)
+                  }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Kitchen Auto-Close Checkbox -->
-          <div class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <div
+            class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+          >
             <label class="flex items-center gap-3 cursor-pointer">
-              <UCheckbox
-                v-model="autoCloseKitchenOnPayment"
-                size="lg"
-              />
+              <UCheckbox v-model="autoCloseKitchenOnPayment" size="lg" />
               <div class="flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-900 dark:text-white">
+                  <span
+                    class="text-sm font-medium text-gray-900 dark:text-white"
+                  >
                     👨‍🍳 {{ $t("pos.autoCloseKitchen", "Auto-Close Kitchen") }}
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {{ $t("pos.autoCloseKitchenDesc", "Mark order as served when payment completes") }}
+                  {{
+                    $t(
+                      "pos.autoCloseKitchenDesc",
+                      "Mark order as served when payment completes"
+                    )
+                  }}
                 </p>
               </div>
             </label>
@@ -4246,7 +4438,9 @@ onUnmounted(() => {
 
           <!-- Payment History -->
           <div v-if="splitPayments.length > 0" class="mb-4">
-            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <h4
+              class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               {{ t("pos.paymentHistory", "Payment History") }}
             </h4>
             <div class="space-y-2">
@@ -4258,16 +4452,27 @@ onUnmounted(() => {
                 <div class="flex items-center gap-2">
                   <span class="text-green-600 dark:text-green-400">✓</span>
                   <div>
-                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                      {{ t("pos.portion", "Portion") }} {{ payment.portionNumber }}
+                    <div
+                      class="text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      {{ t("pos.portion", "Portion") }}
+                      {{ payment.portionNumber }}
                     </div>
                     <div class="text-xs text-gray-500">
-                      {{ payment.method.toUpperCase() }} • {{ new Date(payment.paidAt).toLocaleTimeString() }}
+                      {{ payment.method.toUpperCase() }} •
+                      {{ new Date(payment.paidAt).toLocaleTimeString() }}
                     </div>
                   </div>
                 </div>
-                <div class="text-sm font-semibold text-green-600 dark:text-green-400">
-                  {{ currency.format(payment.amount, splitOrder?.currency || "LAK") }}
+                <div
+                  class="text-sm font-semibold text-green-600 dark:text-green-400"
+                >
+                  {{
+                    currency.format(
+                      payment.amount,
+                      splitOrder?.currency || "LAK"
+                    )
+                  }}
                 </div>
               </div>
             </div>
@@ -4330,9 +4535,13 @@ onUnmounted(() => {
               <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2"
                 >Default Currency</label
               >
-              <USelect
+              <USelectMenu
                 v-model="pos.selectedCurrency.value"
-                :items="POS_CURRENCY_OPTIONS"
+                :items="getPOSCurrencyOptions()"
+                value-key="value"
+                label-key="label"
+                searchable
+                placeholder="Select currency"
               />
             </div>
 
@@ -4467,7 +4676,9 @@ onUnmounted(() => {
                   </div>
                 </div>
                 <USwitch
-                  v-model="posSettings.settings.value.autoCloseKitchenStatusOnPayment"
+                  v-model="
+                    posSettings.settings.value.autoCloseKitchenStatusOnPayment
+                  "
                   @update:model-value="
                     (val) =>
                       posSettings.updateSettings({

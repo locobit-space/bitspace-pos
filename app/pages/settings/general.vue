@@ -120,12 +120,22 @@
                     :label="$t('settings.general.default_currency')"
                     name="defaultCurrency"
                     required
+                    :description="
+                      $t('settings.general.currency_description') ||
+                      'Supports 100+ currencies including crypto'
+                    "
                   >
-                    <USelect
+                    <USelectMenu
                       v-model="state.defaultCurrency"
-                      :items="currencies"
-                      label-key="name"
+                      :items="currencies.all"
                       value-key="code"
+                      label-key="name"
+                      :placeholder="
+                        $t(
+                          'settings.general.select_currency',
+                          'Select currency...'
+                        )
+                      "
                     />
                   </UFormField>
 
@@ -171,11 +181,18 @@
                     :label="$t('settings.general.timezone')"
                     name="timezone"
                   >
-                    <USelect
+                    <USelectMenu
                       v-model="state.timezone"
                       :items="timezones"
-                      label-key="name"
+                      label-key="label"
                       value-key="value"
+                      searchable
+                      :placeholder="
+                        $t(
+                          'settings.general.select_timezone',
+                          'Select timezone'
+                        )
+                      "
                     />
                   </UFormField>
 
@@ -202,7 +219,10 @@
                 </h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                   {{
-                    $t("settings.general.shop_tags_desc", "Add tags to categorize your shop and help with analytics.")
+                    $t(
+                      "settings.general.shop_tags_desc",
+                      "Add tags to categorize your shop and help with analytics."
+                    )
                   }}
                 </p>
 
@@ -233,7 +253,10 @@
                         <UInput
                           v-model="newTag"
                           :placeholder="
-                            $t('settings.general.tag_placeholder', 'e.g. coffee, thai-food, retail')
+                            $t(
+                              'settings.general.tag_placeholder',
+                              'e.g. coffee, thai-food, retail'
+                            )
                           "
                           class="flex-1"
                           @keyup.enter="addTag"
@@ -248,7 +271,10 @@
                     <template #hint>
                       <span class="text-xs text-gray-500">
                         {{
-                          $t("settings.general.tags_hint", "Press Enter or click + to add tags")
+                          $t(
+                            "settings.general.tags_hint",
+                            "Press Enter or click + to add tags"
+                          )
                         }}
                       </span>
                     </template>
@@ -266,7 +292,10 @@
                       </UBadge>
                       <span class="text-xs text-gray-500">
                         {{
-                          $t("settings.general.platform_tag_hint", "Powered by bnos.space")
+                          $t(
+                            "settings.general.platform_tag_hint",
+                            "Powered by bnos.space"
+                          )
                         }}
                       </span>
                     </div>
@@ -312,7 +341,10 @@
                 </p>
                 <p class="text-sm text-gray-400">
                   {{
-                    $t("settings.branches.addFirst", "Add your first branch to get started")
+                    $t(
+                      "settings.branches.addFirst",
+                      "Add your first branch to get started"
+                    )
                   }}
                 </p>
               </div>
@@ -573,7 +605,10 @@
                         class="w-4 h-4 mr-2"
                       />
                       {{
-                        $t("settings.security.disableEncryption", "Disable Encryption")
+                        $t(
+                          "settings.security.disableEncryption",
+                          "Disable Encryption"
+                        )
                       }}
                     </UButton>
                   </div>
@@ -598,7 +633,10 @@
                 </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {{
-                    $t("settings.sync.company_code_desc", "Share this code with staff to sync settings across devices.")
+                    $t(
+                      "settings.sync.company_code_desc",
+                      "Share this code with staff to sync settings across devices."
+                    )
                   }}
                 </p>
 
@@ -655,7 +693,10 @@
                   />
                   <p class="text-gray-500 mb-4">
                     {{
-                      $t("settings.sync.no_code", "No company code generated yet")
+                      $t(
+                        "settings.sync.no_code",
+                        "No company code generated yet"
+                      )
                     }}
                   </p>
                   <UButton
@@ -678,7 +719,10 @@
                 </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {{
-                    $t("settings.sync.cloud_sync_desc", "Sync Lightning, Receipt, and Tax settings to the cloud. Staff can access these with the company code.")
+                    $t(
+                      "settings.sync.cloud_sync_desc",
+                      "Sync Lightning, Receipt, and Tax settings to the cloud. Staff can access these with the company code."
+                    )
                   }}
                 </p>
 
@@ -717,9 +761,7 @@
                             v-else-if="
                               settingsSync.syncStatus.value === 'error'
                             "
-                            >{{
-                              $t("settings.sync.error", "Sync Error")
-                            }}</span
+                            >{{ $t("settings.sync.error", "Sync Error") }}</span
                           >
                           <span v-else>{{
                             $t("settings.sync.not_synced", "Not Synced")
@@ -791,7 +833,10 @@
                 variant="subtle"
                 :title="$t('settings.sync.encrypted', 'Encrypted')"
                 :description="
-                  $t('settings.sync.encrypted_desc', 'All settings are encrypted with your company code before syncing. Only devices with the code can decrypt.')
+                  $t(
+                    'settings.sync.encrypted_desc',
+                    'All settings are encrypted with your company code before syncing. Only devices with the code can decrypt.'
+                  )
                 "
               />
             </div>
@@ -865,7 +910,10 @@
                 />
                 <template #hint>
                   <span class="text-xs text-gray-500">{{
-                    $t("settings.branches.bolt12Hint", "Lightning BOLT12 offer for this branch")
+                    $t(
+                      "settings.branches.bolt12Hint",
+                      "Lightning BOLT12 offer for this branch"
+                    )
                   }}</span>
                 </template>
               </UFormField>
@@ -897,7 +945,10 @@
               <UIcon name="i-heroicons-shield-exclamation" class="w-5 h-5" />
               <h3 class="text-lg font-semibold">
                 {{
-                  $t("settings.security.disableEncryption", "Disable Encryption")
+                  $t(
+                    "settings.security.disableEncryption",
+                    "Disable Encryption"
+                  )
                 }}
               </h3>
             </div>
@@ -910,13 +961,19 @@
               variant="subtle"
               :title="$t('settings.security.disableWarning', 'Warning')"
               :description="
-                $t('settings.security.disableWarningDesc', 'Disabling encryption will remove all encrypted data. You will need to re-enter your API keys after this action.')
+                $t(
+                  'settings.security.disableWarningDesc',
+                  'Disabling encryption will remove all encrypted data. You will need to re-enter your API keys after this action.'
+                )
               "
             />
 
             <UFormField
               :label="
-                $t('settings.security.confirmWithPassword', 'Confirm with your password')
+                $t(
+                  'settings.security.confirmWithPassword',
+                  'Confirm with your password'
+                )
               "
             >
               <UInput
@@ -948,7 +1005,10 @@
                 @click="handleDisableEncryption"
               >
                 {{
-                  $t("settings.security.disableEncryption", "Disable Encryption")
+                  $t(
+                    "settings.security.disableEncryption",
+                    "Disable Encryption"
+                  )
                 }}
               </UButton>
             </div>
@@ -961,7 +1021,20 @@
 
 <script setup lang="ts">
 import { z } from "zod";
-
+// Branch type definition - using type from ~/types
+import type { Branch } from "~/types";
+// Import currency utilities from data file
+import {
+  CURRENCIES,
+  getCurrenciesByRegion,
+  getCurrencyInfo,
+} from "~/data/currencies";
+// Import timezone utilities from data file
+import {
+  getTimezoneOptions,
+  POPULAR_TIMEZONES,
+  getAllTimezones,
+} from "~/data/timezones";
 const { t, locale } = useI18n();
 const route = useRoute();
 const toast = useToast();
@@ -1013,8 +1086,10 @@ const copyCompanyCode = async () => {
     await navigator.clipboard.writeText(companyCodeData.code);
     toast.add({
       title: t("common.copied", "Copied!"),
-      description:
-        t("settings.sync.code_copied", "Company code copied to clipboard"),
+      description: t(
+        "settings.sync.code_copied",
+        "Company code copied to clipboard"
+      ),
       color: "green",
     });
   }
@@ -1026,8 +1101,10 @@ const regenerateCompanyCode = async () => {
   companyCodeData.code = newCode;
   toast.add({
     title: t("common.success"),
-    description:
-      t("settings.sync.code_regenerated", "New company code generated"),
+    description: t(
+      "settings.sync.code_regenerated",
+      "New company code generated"
+    ),
     color: "green",
   });
 };
@@ -1050,8 +1127,10 @@ const syncSettings = async () => {
   if (success) {
     toast.add({
       title: t("common.success"),
-      description:
-        t("settings.sync.sync_success", "Settings synced successfully"),
+      description: t(
+        "settings.sync.sync_success",
+        "Settings synced successfully"
+      ),
       color: "green",
     });
   } else {
@@ -1140,8 +1219,7 @@ const handleDisableEncryption = async () => {
   if (!disableEncryptionPassword.value) {
     toast.add({
       title: t("common.error"),
-      description:
-        t("settings.security.passwordRequired", "Password required"),
+      description: t("settings.security.passwordRequired", "Password required"),
       color: "red",
     });
     return;
@@ -1158,8 +1236,10 @@ const handleDisableEncryption = async () => {
       disableEncryptionPassword.value = "";
       toast.add({
         title: t("common.success"),
-        description:
-          t("settings.security.encryptionDisabled", "Encryption has been disabled. Please re-enter your API keys."),
+        description: t(
+          "settings.security.encryptionDisabled",
+          "Encryption has been disabled. Please re-enter your API keys."
+        ),
         color: "green",
       });
     } else {
@@ -1207,12 +1287,12 @@ const branchSchema = z.object({
 
 // Form state
 const state = reactive({
-  companyName: "My Company",
-  companyEmail: "info@mycompany.com",
-  companyPhone: "+856 21 123456",
-  taxNumber: "TAX123456",
-  companyAddress: "Vientiane, Laos",
-  defaultCurrency: "LAK",
+  companyName: "",
+  companyEmail: "",
+  companyPhone: "",
+  taxNumber: "",
+  companyAddress: "",
+  defaultCurrency: "",
   defaultLanguage: "en",
   dateFormat: "DD/MM/YYYY",
   timeFormat: "24",
@@ -1270,12 +1350,56 @@ const tabs = [
   },
 ];
 
-// Options data
-const currencies = [
-  { code: "LAK", name: "Lao Kip (LAK)" },
-  { code: "USD", name: "US Dollar (USD)" },
-  { code: "THB", name: "Thai Baht (THB)" },
+// Helper function to get all currencies as array
+const getAllCurrencies = () => {
+  return Object.values(CURRENCIES);
+};
+
+// Options data - Generate from currency data
+const allCurrencies = getAllCurrencies();
+const currencyRegions = getCurrenciesByRegion();
+
+// Popular currencies for quick access
+const popularCurrencies = [
+  "LAK",
+  "THB",
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "CNY",
+  "AUD",
+  "CAD",
+  "SGD",
+  "BTC",
+  "SATS",
 ];
+
+// Generate currency options grouped by region
+const currencies = computed(() => {
+  // Get popular currencies first
+  const popular = allCurrencies
+    .filter((c) => popularCurrencies.includes(c.code))
+    .map((c) => ({
+      code: c.code,
+      name: `${c.symbol} ${c.code} - ${c.name}`,
+      symbol: c.symbol,
+    }));
+
+  // Get all currencies sorted alphabetically
+  const all = allCurrencies
+    .map((c) => ({
+      code: c.code,
+      name: `${c.symbol} ${c.code} - ${c.name}`,
+      symbol: c.symbol,
+    }))
+    .sort((a, b) => a.code.localeCompare(b.code));
+
+  return {
+    popular,
+    all,
+  };
+});
 
 const languages = [
   { code: "lo", name: "ລາວ (Lao)" },
@@ -1294,11 +1418,14 @@ const timeFormats = [
   { value: "12", name: "12 Hour" },
 ];
 
-const timezones = [
-  { value: "Asia/Vientiane", name: "Asia/Vientiane" },
-  { value: "Asia/Bangkok", name: "Asia/Bangkok" },
-  { value: "UTC", name: "UTC" },
-];
+// Generate timezone options from data file
+const timezones = computed(() => {
+  const options = getTimezoneOptions();
+  // Put popular timezones first
+  const popular = options.filter((tz) => POPULAR_TIMEZONES.includes(tz.value));
+  const others = options.filter((tz) => !POPULAR_TIMEZONES.includes(tz.value));
+  return [...popular, ...others];
+});
 
 const decimalOptions = [
   { value: 0, name: "0" },
@@ -1319,9 +1446,6 @@ const statusOptions = [
   { value: "active", name: t("common.active") },
   { value: "inactive", name: t("common.inactive") },
 ];
-
-// Branch type definition - using type from ~/types
-import type { Branch } from "~/types";
 
 // Nostr Data Layer
 const nostrData = useNostrData();
@@ -1363,9 +1487,25 @@ const loadBranches = async () => {
 
 function onLanguageChange() {}
 
-// Load settings from Nostr on mount
+// Load settings from ShopConfig and Nostr on mount
 const loadSettings = async () => {
   try {
+    // First, load from ShopConfig (source of truth for currency)
+    const shopSettings = useShop();
+    await shopSettings.loadShopConfig();
+    const shopCfg = shopSettings.shopConfig.value;
+
+    if (shopCfg) {
+      if (shopCfg.name) state.companyName = shopCfg.name;
+      if (shopCfg.address) state.companyAddress = shopCfg.address;
+      if (shopCfg.phone) state.companyPhone = shopCfg.phone;
+      if (shopCfg.email) state.companyEmail = shopCfg.email;
+      if (shopCfg.currency) state.defaultCurrency = shopCfg.currency;
+      if (shopCfg.timezone) state.timezone = shopCfg.timezone;
+      if (shopCfg.language) state.defaultLanguage = shopCfg.language;
+    }
+
+    // Also load from legacy nostr settings for additional fields
     const settings = await nostrData.getSettings();
     if (settings) {
       // Handle BOTH new flat structure and legacy nested structure
@@ -1422,10 +1562,12 @@ onMounted(() => {
 });
 
 // Methods
+const shop = useShop();
+
 const onSubmit = async () => {
   saving.value = true;
   try {
-    // Save to Nostr relay
+    // Save to Nostr relay (legacy settings)
     await nostrData.saveSettings({
       companyName: state.companyName,
       companyEmail: state.companyEmail,
@@ -1438,6 +1580,18 @@ const onSubmit = async () => {
       timeFormat: state.timeFormat,
       timezone: state.timezone,
       decimalPlaces: state.decimalPlaces,
+    });
+
+    // Also save to ShopConfig for POS integration
+    await shop.saveShopConfig({
+      name: state.companyName,
+      address: state.companyAddress,
+      phone: state.companyPhone,
+      email: state.companyEmail,
+      currency: state.defaultCurrency,
+      timezone: state.timezone,
+      language: state.defaultLanguage,
+      taxRate: shop.shopConfig.value?.taxRate || 0,
     });
 
     // Show success notification

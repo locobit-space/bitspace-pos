@@ -1184,30 +1184,41 @@ export interface IngredientUsageReport {
 // 💰 MULTI-CURRENCY TYPES
 // ============================================
 
-export type CurrencyCode = "LAK" | "THB" | "USD" | "BTC" | "SATS";
+// Support for 100+ world currencies (ISO 4217)
+// Common currencies: "LAK" | "THB" | "USD" | "BTC" | "SATS" | "EUR" | "GBP" | "JPY" | "CNY" | etc.
+export type CurrencyCode = string;
+
+// Legacy type for backward compatibility
+export type LegacyCurrencyCode = "LAK" | "THB" | "USD" | "BTC" | "SATS";
 
 export interface Currency {
-  code: CurrencyCode;
+  code: string;
   name: string;
   symbol: string;
   decimals: number;
   isDefault?: boolean;
+  countries?: string[]; // ISO country codes where currency is used
 }
 
 export interface ExchangeRate {
-  from: CurrencyCode;
-  to: CurrencyCode;
+  from: string;
+  to: string;
   rate: number;
   source: "api" | "manual" | "oracle";
   updatedAt: string;
 }
 
+// Multi-price with extended currency support
 export interface MultiPrice {
+  // Core currencies (backward compatibility)
   LAK?: number;
   THB?: number;
   USD?: number;
   BTC?: number;
   SATS?: number;
+
+  // Additional currencies stored dynamically
+  [currencyCode: string]: number | undefined;
 }
 
 // ============================================
