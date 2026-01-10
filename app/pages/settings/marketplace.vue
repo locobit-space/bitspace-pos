@@ -20,367 +20,404 @@
       </div>
     </div>
 
-    <!-- Current Status Banner -->
-    <div
-      class="p-4 rounded-xl border-2"
-      :class="
-        isPublic
-          ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
-          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-      "
-    >
-      <div class="flex items-center gap-3">
-        <div
-          class="w-12 h-12 rounded-xl flex items-center justify-center"
-          :class="
-            isPublic
-              ? 'bg-green-100 dark:bg-green-800'
-              : 'bg-gray-200 dark:bg-gray-700'
-          "
-        >
-          <UIcon
-            :name="
-              isPublic ? 'i-heroicons-globe-alt' : 'i-heroicons-lock-closed'
-            "
-            class="w-6 h-6"
-            :class="isPublic ? 'text-green-600' : 'text-gray-500'"
-          />
+    <!-- Skeleton Loading State -->
+    <template v-if="isLoading">
+      <!-- Status banner skeleton -->
+      <div class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <USkeleton class="w-12 h-12 rounded-xl" />
+          <div class="flex-1 space-y-2">
+            <USkeleton class="h-5 w-24" />
+            <USkeleton class="h-4 w-48" />
+          </div>
+          <USkeleton class="w-10 h-6 rounded-full" />
         </div>
-        <div class="flex-1">
-          <h3
-            class="font-semibold"
-            :class="
-              isPublic
-                ? 'text-green-800 dark:text-green-200'
-                : 'text-gray-900 dark:text-white'
-            "
-          >
-            {{
-              isPublic
-                ? $t("shop.setup.public", "Public")
-                : $t("shop.setup.private", "Private")
-            }}
-          </h3>
-          <p
-            class="text-sm"
-            :class="
-              isPublic ? 'text-green-600 dark:text-green-400' : 'text-gray-500'
-            "
-          >
-            {{
-              isPublic
-                ? $t("shop.setup.publicDesc")
-                : $t("shop.setup.privateDesc")
-            }}
-          </p>
-        </div>
-        <USwitch
-          :model-value="isPublic"
-          :loading="isSaving"
-          @update:model-value="toggleVisibility"
-        />
       </div>
-    </div>
 
-    <!-- Marketplace Fields (only if public) -->
-    <div v-if="isPublic" class="space-y-4">
-      <!-- Lightning Address -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <span class="text-xl">⚡</span>
-            <span class="font-medium">{{
-              $t("shop.marketplace.lud16", "Lightning Address")
-            }}</span>
+      <!-- Cards skeleton -->
+      <div class="space-y-4">
+        <div
+          v-for="i in 4"
+          :key="i"
+          class="p-4 rounded-xl border border-gray-200 dark:border-gray-700"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <USkeleton class="w-5 h-5" />
+            <USkeleton class="h-5 w-32" />
           </div>
-        </template>
-        <UInput
-          v-model="formData.lud16"
-          placeholder="shop@getalby.com"
-          icon="i-heroicons-bolt"
-          class="w-full"
-        />
-        <p class="text-xs text-gray-500 mt-2">
-          {{ $t("shop.marketplace.lud16Hint") }}
-        </p>
-      </UCard>
-
-      <!-- NIP-05 Verification -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon
-              name="i-heroicons-check-badge"
-              class="w-5 h-5 text-blue-500"
-            />
-            <span class="font-medium">{{
-              $t("shop.marketplace.nip05", "Nostr Verification")
-            }}</span>
-          </div>
-        </template>
-        <UInput
-          v-model="formData.nip05"
-          placeholder="shop@bnos.space"
-          icon="i-heroicons-check-badge"
-          class="w-full"
-        />
-        <p class="text-xs text-gray-500 mt-2">
-          {{ $t("shop.marketplace.nip05Hint") }}
-        </p>
-      </UCard>
-
-      <!-- Description -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon
-              name="i-heroicons-document-text"
-              class="w-5 h-5 text-purple-500"
-            />
-            <span class="font-medium">{{
-              $t("shop.marketplace.description", "Description")
-            }}</span>
-          </div>
-        </template>
-        <UTextarea
-          v-model="formData.marketplaceDescription"
-          :placeholder="$t('shop.marketplace.descriptionPlaceholder')"
-          :rows="3" class="w-full"
-        />
-      </UCard>
-
-      <!-- Services -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon
-              name="i-heroicons-squares-2x2"
-              class="w-5 h-5 text-teal-500"
-            />
-            <span class="font-medium">{{
-              $t("shop.marketplace.services", "Services Offered")
-            }}</span>
-          </div>
-        </template>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="option in serviceOptions"
-            :key="option.value"
-            type="button"
-            class="px-3 py-2 rounded-lg border-2 text-sm transition-all"
-            :class="
-              formData.services?.includes(option.value)
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
-            "
-            @click="toggleService(option.value)"
-          >
-            {{ option.label }}
-          </button>
+          <USkeleton class="h-10 w-full" />
         </div>
-      </UCard>
+      </div>
+    </template>
 
-      <!-- Location -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-map-pin" class="w-5 h-5 text-red-500" />
-            <span class="font-medium">{{
-              $t("marketplace.location.title", "Location")
-            }}</span>
-          </div>
-        </template>
-        <div class="space-y-3">
-          <UInput
-            v-model="formData.address"
-            :placeholder="$t('shop.addressPlaceholder', 'Street address')"
-            icon="i-heroicons-map-pin" class="w-full"
-          />
-          <div class="grid grid-cols-2 gap-3">
-            <UInput
-              v-model="formData.city"
-              :placeholder="$t('marketplace.location.city', 'City')"
-            />
-            <UInput
-              v-model="formData.country"
-              :placeholder="$t('marketplace.location.country', 'Country')"
-            />
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <UInput
-              v-model.number="formData.lat"
-              type="number"
-              step="0.000001"
-              :placeholder="$t('marketplace.location.lat', 'Latitude')"
-            />
-            <UInput
-              v-model.number="formData.lng"
-              type="number"
-              step="0.000001"
-              :placeholder="$t('marketplace.location.lng', 'Longitude')"
-            />
-          </div>
-          <UButton
-            color="gray"
-            variant="soft"
-            icon="i-heroicons-map-pin"
-            size="sm"
-            @click="getCurrentLocation"
-          >
-            {{ $t("marketplace.location.detect", "Detect Current Location") }}
-          </UButton>
-        </div>
-      </UCard>
-
-      <!-- Business Hours -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-clock" class="w-5 h-5 text-indigo-500" />
-            <span class="font-medium">{{
-              $t("marketplace.hours.title", "Business Hours")
-            }}</span>
-          </div>
-        </template>
-        <div class="space-y-3">
+    <!-- Actual Content (when loaded) -->
+    <template v-else>
+      <!-- Current Status Banner -->
+      <div
+        class="p-4 rounded-xl border-2"
+        :class="
+          isPublic
+            ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+            : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+        "
+      >
+        <div class="flex items-center gap-3">
           <div
-            class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+            class="w-12 h-12 rounded-xl flex items-center justify-center"
+            :class="
+              isPublic
+                ? 'bg-green-100 dark:bg-green-800'
+                : 'bg-gray-200 dark:bg-gray-700'
+            "
           >
-            <span class="text-sm text-gray-600 dark:text-gray-400">{{
-              $t("marketplace.hours.applyAll", "Use same hours for all days")
-            }}</span>
+            <UIcon
+              :name="
+                isPublic ? 'i-heroicons-globe-alt' : 'i-heroicons-lock-closed'
+              "
+              class="w-6 h-6"
+              :class="isPublic ? 'text-green-600' : 'text-gray-500'"
+            />
+          </div>
+          <div class="flex-1">
+            <h3
+              class="font-semibold"
+              :class="
+                isPublic
+                  ? 'text-green-800 dark:text-green-200'
+                  : 'text-gray-900 dark:text-white'
+              "
+            >
+              {{
+                isPublic
+                  ? $t("shop.setup.public", "Public")
+                  : $t("shop.setup.private", "Private")
+              }}
+            </h3>
+            <p
+              class="text-sm"
+              :class="
+                isPublic
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-gray-500'
+              "
+            >
+              {{
+                isPublic
+                  ? $t("shop.setup.publicDesc")
+                  : $t("shop.setup.privateDesc")
+              }}
+            </p>
+          </div>
+          <USwitch
+            :model-value="isPublic"
+            :loading="isSaving"
+            @update:model-value="toggleVisibility"
+          />
+        </div>
+      </div>
+
+      <!-- Marketplace Fields (only if public) -->
+      <div v-if="isPublic" class="space-y-4">
+        <!-- Lightning Address -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">⚡</span>
+              <span class="font-medium">{{
+                $t("shop.marketplace.lud16", "Lightning Address")
+              }}</span>
+            </div>
+          </template>
+          <UInput
+            v-model="formData.lud16"
+            placeholder="shop@getalby.com"
+            icon="i-heroicons-bolt"
+            class="w-full"
+          />
+          <p class="text-xs text-gray-500 mt-2">
+            {{ $t("shop.marketplace.lud16Hint") }}
+          </p>
+        </UCard>
+
+        <!-- NIP-05 Verification -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="i-heroicons-check-badge"
+                class="w-5 h-5 text-blue-500"
+              />
+              <span class="font-medium">{{
+                $t("shop.marketplace.nip05", "Nostr Verification")
+              }}</span>
+            </div>
+          </template>
+          <UInput
+            v-model="formData.nip05"
+            placeholder="shop@bnos.space"
+            icon="i-heroicons-check-badge"
+            class="w-full"
+          />
+          <p class="text-xs text-gray-500 mt-2">
+            {{ $t("shop.marketplace.nip05Hint") }}
+          </p>
+        </UCard>
+
+        <!-- Description -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="i-heroicons-document-text"
+                class="w-5 h-5 text-purple-500"
+              />
+              <span class="font-medium">{{
+                $t("shop.marketplace.description", "Description")
+              }}</span>
+            </div>
+          </template>
+          <UTextarea
+            v-model="formData.marketplaceDescription"
+            :placeholder="$t('shop.marketplace.descriptionPlaceholder')"
+            :rows="3"
+            class="w-full"
+          />
+        </UCard>
+
+        <!-- Services -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="i-heroicons-squares-2x2"
+                class="w-5 h-5 text-teal-500"
+              />
+              <span class="font-medium">{{
+                $t("shop.marketplace.services", "Services Offered")
+              }}</span>
+            </div>
+          </template>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="option in serviceOptions"
+              :key="option.value"
+              type="button"
+              class="px-3 py-2 rounded-lg border-2 text-sm transition-all"
+              :class="
+                formData.services?.includes(option.value)
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+              "
+              @click="toggleService(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </UCard>
+
+        <!-- Location -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-map-pin" class="w-5 h-5 text-red-500" />
+              <span class="font-medium">{{
+                $t("marketplace.location.title", "Location")
+              }}</span>
+            </div>
+          </template>
+          <div class="space-y-3">
+            <UInput
+              v-model="formData.address"
+              :placeholder="$t('shop.addressPlaceholder', 'Street address')"
+              icon="i-heroicons-map-pin"
+              class="w-full"
+            />
+            <div class="grid grid-cols-2 gap-3">
+              <UInput
+                v-model="formData.city"
+                :placeholder="$t('marketplace.location.city', 'City')"
+              />
+              <UInput
+                v-model="formData.country"
+                :placeholder="$t('marketplace.location.country', 'Country')"
+              />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <UInput
+                v-model.number="formData.lat"
+                type="number"
+                step="0.000001"
+                :placeholder="$t('marketplace.location.lat', 'Latitude')"
+              />
+              <UInput
+                v-model.number="formData.lng"
+                type="number"
+                step="0.000001"
+                :placeholder="$t('marketplace.location.lng', 'Longitude')"
+              />
+            </div>
             <UButton
               color="gray"
               variant="soft"
-              size="xs"
-              @click="applyToAllDays"
-              >{{ $t("common.apply") }}</UButton
+              icon="i-heroicons-map-pin"
+              size="sm"
+              @click="getCurrentLocation"
             >
+              {{ $t("marketplace.location.detect", "Detect Current Location") }}
+            </UButton>
           </div>
-          <div
-            v-for="day in daysOfWeek"
-            :key="day"
-            class="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-700 rounded-lg"
-          >
-            <USwitch v-model="enabledDays[day]" size="sm" />
-            <div class="flex-1">
-              <p
-                class="text-sm font-medium text-gray-900 dark:text-white capitalize"
+        </UCard>
+
+        <!-- Business Hours -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-clock" class="w-5 h-5 text-indigo-500" />
+              <span class="font-medium">{{
+                $t("marketplace.hours.title", "Business Hours")
+              }}</span>
+            </div>
+          </template>
+          <div class="space-y-3">
+            <div
+              class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+            >
+              <span class="text-sm text-gray-600 dark:text-gray-400">{{
+                $t("marketplace.hours.applyAll", "Use same hours for all days")
+              }}</span>
+              <UButton
+                color="gray"
+                variant="soft"
+                size="xs"
+                @click="applyToAllDays"
+                >{{ $t("common.apply") }}</UButton
               >
-                {{ day }}
-              </p>
             </div>
-            <template v-if="enabledDays[day]">
-              <UInput
-                v-model="formData.businessHours[day]!.open"
-                type="time"
-                size="sm"
-                class="w-28"
-              />
-              <span class="text-gray-400">—</span>
-              <UInput
-                v-model="formData.businessHours[day]!.close"
-                type="time"
-                size="sm"
-                class="w-28"
-              />
-            </template>
-            <span v-else class="text-sm text-gray-400">{{
-              $t("marketplace.hours.closed", "Closed")
-            }}</span>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- Payment Methods -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon
-              name="i-heroicons-credit-card"
-              class="w-5 h-5 text-amber-500"
-            />
-            <span class="font-medium">{{
-              $t("shop.marketplace.payments", "Payment Methods")
-            }}</span>
-          </div>
-        </template>
-        <div class="space-y-3">
-          <div
-            class="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg"
-          >
-            <div class="flex items-center gap-3">
-              <span class="text-xl">⚡</span>
-              <div>
-                <p class="font-medium text-sm">
-                  {{ $t("shop.marketplace.lightning") }}
-                </p>
-                <p class="text-xs text-gray-500">
-                  {{ $t("shop.marketplace.lightningDesc") }}
+            <div
+              v-for="day in daysOfWeek"
+              :key="day"
+              class="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-700 rounded-lg"
+            >
+              <USwitch v-model="enabledDays[day]" size="sm" />
+              <div class="flex-1">
+                <p
+                  class="text-sm font-medium text-gray-900 dark:text-white capitalize"
+                >
+                  {{ day }}
                 </p>
               </div>
+              <template v-if="enabledDays[day]">
+                <UInput
+                  v-model="formData.businessHours[day]!.open"
+                  type="time"
+                  size="sm"
+                  class="w-28"
+                />
+                <span class="text-gray-400">—</span>
+                <UInput
+                  v-model="formData.businessHours[day]!.close"
+                  type="time"
+                  size="sm"
+                  class="w-28"
+                />
+              </template>
+              <span v-else class="text-sm text-gray-400">{{
+                $t("marketplace.hours.closed", "Closed")
+              }}</span>
             </div>
-            <USwitch v-model="formData.acceptsLightning" />
           </div>
+        </UCard>
 
-          <div
-            class="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
-          >
-            <div class="flex items-center gap-3">
-              <span class="text-xl">₿</span>
-              <div>
-                <p class="font-medium text-sm">
-                  {{ $t("shop.marketplace.bitcoin") }}
-                </p>
-                <p class="text-xs text-gray-500">
-                  {{ $t("shop.marketplace.bitcoinDesc") }}
-                </p>
+        <!-- Payment Methods -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="i-heroicons-credit-card"
+                class="w-5 h-5 text-amber-500"
+              />
+              <span class="font-medium">{{
+                $t("shop.marketplace.payments", "Payment Methods")
+              }}</span>
+            </div>
+          </template>
+          <div class="space-y-3">
+            <div
+              class="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg"
+            >
+              <div class="flex items-center gap-3">
+                <span class="text-xl">⚡</span>
+                <div>
+                  <p class="font-medium text-sm">
+                    {{ $t("shop.marketplace.lightning") }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {{ $t("shop.marketplace.lightningDesc") }}
+                  </p>
+                </div>
               </div>
+              <USwitch v-model="formData.acceptsLightning" />
             </div>
-            <USwitch v-model="formData.acceptsBitcoin" />
+
+            <div
+              class="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
+            >
+              <div class="flex items-center gap-3">
+                <span class="text-xl">₿</span>
+                <div>
+                  <p class="font-medium text-sm">
+                    {{ $t("shop.marketplace.bitcoin") }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {{ $t("shop.marketplace.bitcoinDesc") }}
+                  </p>
+                </div>
+              </div>
+              <USwitch v-model="formData.acceptsBitcoin" />
+            </div>
           </div>
-        </div>
-      </UCard>
+        </UCard>
 
-      <!-- Save Button -->
-      <UButton
-        color="primary"
-        size="lg"
-        block
-        icon="i-heroicons-check"
-        :loading="isSaving"
-        @click="saveSettings"
-      >
-        {{ $t("common.save", "Save Changes") }}
-      </UButton>
-    </div>
-
-    <!-- Go Public CTA (if private) -->
-    <div v-else class="text-center py-8">
-      <div
-        class="w-20 h-20 mx-auto mb-4 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center"
-      >
-        <UIcon
-          name="i-heroicons-globe-alt"
-          class="w-10 h-10 text-primary-600"
-        />
+        <!-- Save Button -->
+        <UButton
+          color="primary"
+          size="lg"
+          block
+          icon="i-heroicons-check"
+          :loading="isSaving"
+          @click="saveSettings"
+        >
+          {{ $t("common.save", "Save Changes") }}
+        </UButton>
       </div>
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-        {{ $t("settings.marketplace.goPublic", "Go Public!") }}
-      </h3>
-      <p class="text-gray-500 mb-6 max-w-sm mx-auto">
-        {{ $t("settings.marketplace.goPublicDesc") }}
-      </p>
-      <UButton
-        color="primary"
-        size="lg"
-        icon="i-heroicons-globe-alt"
-        :loading="isSaving"
-        @click="toggleVisibility(true)"
-      >
-        {{ $t("settings.marketplace.publishNow", "Publish to Marketplace") }}
-      </UButton>
-    </div>
+
+      <!-- Go Public CTA (if private) -->
+      <div v-else class="text-center py-8">
+        <div
+          class="w-20 h-20 mx-auto mb-4 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center"
+        >
+          <UIcon
+            name="i-heroicons-globe-alt"
+            class="w-10 h-10 text-primary-600"
+          />
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          {{ $t("settings.marketplace.goPublic", "Go Public!") }}
+        </h3>
+        <p class="text-gray-500 mb-6 max-w-sm mx-auto">
+          {{ $t("settings.marketplace.goPublicDesc") }}
+        </p>
+        <UButton
+          color="primary"
+          size="lg"
+          icon="i-heroicons-globe-alt"
+          :loading="isSaving"
+          @click="toggleVisibility(true)"
+        >
+          {{ $t("settings.marketplace.publishNow", "Publish to Marketplace") }}
+        </UButton>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -394,6 +431,7 @@ const { t } = useI18n();
 const toast = useToast();
 const shop = useShop();
 
+const isLoading = ref(true);
 const isSaving = ref(false);
 
 // Form data
@@ -608,7 +646,7 @@ function applyToAllDays() {
     open: formData.value.businessHours.monday.open,
     close: formData.value.businessHours.monday.close,
   };
-  
+
   // Apply to all days (create new objects to trigger reactivity)
   daysOfWeek.forEach((day) => {
     formData.value.businessHours[day] = {
@@ -618,7 +656,7 @@ function applyToAllDays() {
     // Also enable the day
     enabledDays.value[day] = true;
   });
-  
+
   toast.add({
     title: t("common.success"),
     description: "Applied to all days",
@@ -686,6 +724,7 @@ onMounted(async () => {
   // Ensure shop config is loaded
   await shop.init();
   loadSettings();
+  isLoading.value = false;
 });
 
 useHead({

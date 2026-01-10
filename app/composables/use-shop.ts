@@ -210,8 +210,24 @@ export function useShop() {
       acceptsBitcoin: mp?.acceptsBitcoin ?? false,
       tags: mp?.tags,
       platformTag: mp?.platformTag || "bnos.space",
-      geolocation: mp?.geolocation,
-      businessHours: mp?.businessHours,
+      geolocation: {
+        lat: mp?.geolocation?.lat || 0,
+        lng: mp?.geolocation?.lng || 0,
+        address: mp?.geolocation?.address || "",
+        city: mp?.geolocation?.city || "",
+        country: mp?.geolocation?.country || "",
+      },
+      businessHours: {
+        monday: { open: "08:00", close: "18:00" },
+        tuesday: { open: "08:00", close: "18:00" },
+        wednesday: { open: "08:00", close: "18:00" },
+        thursday: { open: "08:00", close: "18:00" },
+        friday: { open: "08:00", close: "18:00" },
+        saturday: { open: "08:00", close: "18:00" },
+        sunday: { open: "08:00", close: "18:00" },
+        holidays: [],
+        timezone: "Asia/Bangkok",
+      },
       // Chat settings from Nostr
       chatSettings: settings.chatSettings || { enabled: false },
     };

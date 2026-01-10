@@ -19,831 +19,885 @@
       />
     </div>
 
-    <!-- Settings Form -->
-    <UForm
-      ref="formRef"
-      :schema="schema"
-      :state="state"
-      class="w-full"
-      @submit="onSubmit"
-    >
-      <UTabs v-model="activeTab" :items="tabs" class="w-full">
-        <!-- General Tab -->
-        <template #general="{ item }">
-          <UCard class="mt-4">
-            <div class="space-y-6">
-              <!-- Company Information -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4">
-                  {{ $t("settings.general.company_info") }}
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <UFormField
-                    :label="$t('settings.general.company_name')"
-                    name="companyName"
-                    required
-                  >
-                    <UInput
-                      v-model="state.companyName"
-                      :placeholder="
-                        $t('settings.general.company_name_placeholder')
-                      "
-                      class="w-full"
-                    />
-                  </UFormField>
+    <!-- Skeleton Loading State -->
+    <template v-if="isLoading">
+      <!-- Tabs skeleton -->
+      <div
+        class="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-3"
+      >
+        <USkeleton v-for="i in 4" :key="i" class="h-9 w-24 rounded-lg" />
+      </div>
 
-                  <UFormField
-                    :label="$t('settings.general.company_email')"
-                    name="companyEmail"
-                    required
-                  >
-                    <UInput
-                      v-model="state.companyEmail"
-                      type="email"
-                      :placeholder="
-                        $t('settings.general.company_email_placeholder')
-                      "
-                      class="w-full"
-                    />
-                  </UFormField>
+      <!-- Form skeleton -->
+      <div
+        class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 mt-4"
+      >
+        <!-- Section header -->
+        <USkeleton class="h-6 w-40 mb-4" />
 
-                  <UFormField
-                    :label="$t('settings.general.company_phone')"
-                    name="companyPhone"
-                  >
-                    <UInput
-                      v-model="state.companyPhone"
-                      :placeholder="
-                        $t('settings.general.company_phone_placeholder')
-                      "
-                      class="w-full"
-                    />
-                  </UFormField>
+        <!-- Form fields grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-for="i in 4" :key="i" class="space-y-2">
+            <USkeleton class="h-4 w-24" />
+            <USkeleton class="h-10 w-full" />
+          </div>
+        </div>
 
-                  <UFormField
-                    :label="$t('settings.general.tax_number')"
-                    name="taxNumber"
-                  >
-                    <UInput
-                      v-model="state.taxNumber"
-                      :placeholder="
-                        $t('settings.general.tax_number_placeholder')
-                      "
-                      class="w-full"
-                    />
-                  </UFormField>
-                </div>
+        <!-- Second section -->
+        <USkeleton class="h-6 w-36 mt-8 mb-4" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-for="i in 4" :key="i" class="space-y-2">
+            <USkeleton class="h-4 w-24" />
+            <USkeleton class="h-10 w-full" />
+          </div>
+        </div>
+      </div>
+    </template>
 
-                <UFormField
-                  :label="$t('settings.general.company_address')"
-                  name="companyAddress"
-                  class="mt-4"
-                >
-                  <UTextarea
-                    v-model="state.companyAddress"
-                    :placeholder="
-                      $t('settings.general.company_address_placeholder')
-                    "
-                    class="w-full"
-                    :rows="3"
-                  />
-                </UFormField>
-              </div>
-
-              <!-- System Settings -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4">
-                  {{ $t("settings.general.system_settings") }}
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <UFormField
-                    :label="$t('settings.general.default_currency')"
-                    name="defaultCurrency"
-                    required
-                    :description="
-                      $t('settings.general.currency_description') ||
-                      'Supports 100+ currencies including crypto'
-                    "
-                  >
-                    <USelectMenu
-                      v-model="state.defaultCurrency"
-                      :items="currencies.all"
-                      value-key="code"
-                      label-key="name"
-                      :placeholder="
-                        $t(
-                          'settings.general.select_currency',
-                          'Select currency...'
-                        )
-                      "
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    :label="$t('settings.general.default_language')"
-                    name="defaultLanguage"
-                    required
-                  >
-                    <USelect
-                      v-model="state.defaultLanguage"
-                      :items="languages"
-                      label-key="name"
-                      value-key="code"
-                      @update:model-value="onLanguageChange"
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    :label="$t('settings.general.date_format')"
-                    name="dateFormat"
-                  >
-                    <USelect
-                      v-model="state.dateFormat"
-                      :items="dateFormats"
-                      label-key="name"
-                      value-key="value"
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    :label="$t('settings.general.time_format')"
-                    name="timeFormat"
-                  >
-                    <USelect
-                      v-model="state.timeFormat"
-                      :items="timeFormats"
-                      label-key="name"
-                      value-key="value"
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    :label="$t('settings.general.timezone')"
-                    name="timezone"
-                  >
-                    <USelectMenu
-                      v-model="state.timezone"
-                      :items="timezones"
-                      label-key="label"
-                      value-key="value"
-                      searchable
-                      :placeholder="
-                        $t(
-                          'settings.general.select_timezone',
-                          'Select timezone'
-                        )
-                      "
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    :label="$t('settings.general.decimal_places')"
-                    name="decimalPlaces"
-                  >
-                    <USelect
-                      v-model="state.decimalPlaces"
-                      :items="decimalOptions"
-                      label-key="name"
-                      value-key="value"
-                    />
-                  </UFormField>
-                </div>
-              </div>
-
-              <!-- Shop Tags & Analytics -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4">
-                  {{
-                    $t("settings.general.shop_tags", "Shop Tags & Analytics")
-                  }}
-                </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  {{
-                    $t(
-                      "settings.general.shop_tags_desc",
-                      "Add tags to categorize your shop and help with analytics."
-                    )
-                  }}
-                </p>
-
-                <div class="space-y-4">
-                  <!-- Tags Input -->
-                  <UFormField
-                    :label="$t('settings.general.tags', 'Tags')"
-                    name="tags"
-                  >
-                    <div class="space-y-2">
-                      <div class="flex flex-wrap gap-2 mb-2">
-                        <UBadge
-                          v-for="(tag, index) in state.tags"
-                          :key="index"
-                          color="primary"
-                          variant="subtle"
-                          class="cursor-pointer"
-                          @click="removeTag(index)"
-                        >
-                          {{ tag }}
-                          <UIcon
-                            name="i-heroicons-x-mark"
-                            class="w-3 h-3 ml-1"
-                          />
-                        </UBadge>
-                      </div>
-                      <div class="flex gap-2">
-                        <UInput
-                          v-model="newTag"
-                          :placeholder="
-                            $t(
-                              'settings.general.tag_placeholder',
-                              'e.g. coffee, thai-food, retail'
-                            )
-                          "
-                          class="flex-1"
-                          @keyup.enter="addTag"
-                        />
-                        <UButton
-                          icon="i-heroicons-plus"
-                          :disabled="!newTag.trim()"
-                          @click="addTag"
-                        />
-                      </div>
-                    </div>
-                    <template #hint>
-                      <span class="text-xs text-gray-500">
-                        {{
-                          $t(
-                            "settings.general.tags_hint",
-                            "Press Enter or click + to add tags"
-                          )
-                        }}
-                      </span>
-                    </template>
-                  </UFormField>
-
-                  <!-- Platform Tag (Read-only) -->
-                  <UFormField
-                    :label="$t('settings.general.platform_tag', 'Platform')"
-                    name="platformTag"
-                  >
-                    <div class="flex items-center gap-2">
-                      <UBadge color="amber" variant="solid" size="lg">
-                        <UIcon name="i-heroicons-bolt" class="w-4 h-4 mr-1" />
-                        {{ state.platformTag }}
-                      </UBadge>
-                      <span class="text-xs text-gray-500">
-                        {{
-                          $t(
-                            "settings.general.platform_tag_hint",
-                            "Powered by bnos.space"
-                          )
-                        }}
-                      </span>
-                    </div>
-                  </UFormField>
-                </div>
-              </div>
-            </div>
-          </UCard>
-        </template>
-
-        <!-- Branches Tab -->
-        <template #branches="{ item }">
-          <UCard class="mt-4">
-            <div class="space-y-6">
-              <!-- Branch Management Header -->
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold">
-                  {{ $t("settings.branches.title") }}
-                </h3>
-                <UButton
-                  :label="$t('common.add')"
-                  icon="i-heroicons-plus"
-                  @click="openBranchModal"
-                />
-              </div>
-
-              <!-- Branches Table -->
-              <div v-if="loadingBranches" class="text-center py-8">
-                <UIcon
-                  name="i-heroicons-arrow-path"
-                  class="w-6 h-6 animate-spin text-gray-400"
-                />
-                <p class="mt-2 text-gray-500">{{ $t("common.loading") }}</p>
-              </div>
-
-              <div v-else-if="branches.length === 0" class="text-center py-8">
-                <UIcon
-                  name="i-heroicons-building-storefront"
-                  class="w-12 h-12 text-gray-300 mx-auto"
-                />
-                <p class="mt-2 text-gray-500">
-                  {{ $t("settings.branches.noBranches", "No branches yet") }}
-                </p>
-                <p class="text-sm text-gray-400">
-                  {{
-                    $t(
-                      "settings.branches.addFirst",
-                      "Add your first branch to get started"
-                    )
-                  }}
-                </p>
-              </div>
-
-              <div v-else class="overflow-x-auto">
-                <table class="w-full">
-                  <thead>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                      <th
-                        class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                      >
-                        {{ $t("settings.branches.name") }}
-                      </th>
-                      <th
-                        class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                      >
-                        {{ $t("settings.branches.code") }}
-                      </th>
-                      <th
-                        class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                      >
-                        {{ $t("settings.branches.address", "Address") }}
-                      </th>
-                      <th
-                        class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
-                      >
-                        {{ $t("common.actions") }}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="(branch, index) in branches"
-                      :key="branch.id ?? index"
-                      class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
-                      <td class="py-3 px-4">
-                        <div>
-                          <p class="font-medium text-gray-900 dark:text-white">
-                            {{ branch.name }}
-                          </p>
-                        </div>
-                      </td>
-                      <td class="py-3 px-4">
-                        <UBadge color="gray" variant="soft">
-                          {{ branch.code }}
-                        </UBadge>
-                      </td>
-                      <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
-                        {{ branch.address || "-" }}
-                      </td>
-                      <td class="py-3 px-4">
-                        <div class="flex space-x-2">
-                          <UButton
-                            icon="i-heroicons-pencil-square"
-                            size="sm"
-                            variant="ghost"
-                            @click="editBranch(branch)"
-                          />
-                          <UButton
-                            icon="i-heroicons-trash"
-                            size="sm"
-                            variant="ghost"
-                            color="red"
-                            @click="branch.id && deleteBranch(branch.id)"
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </UCard>
-        </template>
-
-        <!-- Security Tab -->
-        <template #security="{ item }">
-          <UCard class="mt-4">
-            <div class="space-y-6">
-              <!-- Password Policy -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4">
-                  {{ $t("settings.security.password_policy") }}
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <UFormField
-                    :label="$t('settings.security.min_password_length')"
-                    name="minPasswordLength"
-                  >
-                    <UInput
-                      v-model="state.minPasswordLength"
-                      type="number"
-                      min="6"
-                      max="20"
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    :label="$t('settings.security.password_expiry_days')"
-                    name="passwordExpiryDays"
-                  >
-                    <UInput
-                      v-model="state.passwordExpiryDays"
-                      type="number"
-                      min="0"
-                      max="365"
-                    />
-                  </UFormField>
-                </div>
-
-                <div class="mt-4 space-y-3">
-                  <UCheckbox
-                    v-model="state.requireUppercase"
-                    :label="$t('settings.security.require_uppercase')"
-                  />
-                  <UCheckbox
-                    v-model="state.requireNumbers"
-                    :label="$t('settings.security.require_numbers')"
-                  />
-                  <UCheckbox
-                    v-model="state.requireSpecialChars"
-                    :label="$t('settings.security.require_special_chars')"
-                  />
-                </div>
-              </div>
-
-              <!-- Session Settings -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4">
-                  {{ $t("settings.security.session_settings") }}
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <UFormField
-                    :label="$t('settings.security.session_timeout')"
-                    name="sessionTimeout"
-                  >
-                    <USelect
-                      v-model="state.sessionTimeout"
-                      :items="sessionTimeouts"
-                      label-key="name"
-                      value-key="value"
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    :label="$t('settings.security.max_login_attempts')"
-                    name="maxLoginAttempts"
-                  >
-                    <UInput
-                      v-model="state.maxLoginAttempts"
-                      type="number"
-                      min="3"
-                      max="10"
-                    />
-                  </UFormField>
-                </div>
-
-                <div class="mt-4">
-                  <UCheckbox
-                    v-model="state.enableTwoFactor"
-                    :label="$t('settings.security.enable_two_factor')"
-                  />
-                </div>
-              </div>
-
-              <!-- Data Encryption -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4">
-                  {{ $t("settings.security.dataEncryption") }}
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {{ $t("settings.security.dataEncryptionDesc") }}
-                </p>
-
-                <div
-                  v-if="!security.isEncryptionEnabled.value"
-                  class="space-y-4"
-                >
-                  <UFormField
-                    :label="$t('settings.security.setupMasterPassword')"
-                  >
-                    <UInput
-                      v-model="masterPassword"
-                      type="password"
-                      :placeholder="$t('settings.security.masterPasswordHint')"
-                    />
-                  </UFormField>
-                  <UFormField :label="$t('settings.security.confirmPassword')">
-                    <UInput
-                      v-model="confirmMasterPassword"
-                      type="password"
-                      :placeholder="$t('settings.security.confirmPasswordHint')"
-                    />
-                  </UFormField>
-                  <UButton
-                    color="primary"
-                    :disabled="
-                      !masterPassword ||
-                      masterPassword !== confirmMasterPassword
-                    "
-                    @click="enableEncryption"
-                  >
-                    {{ $t("settings.security.enableEncryption") }}
-                  </UButton>
-                </div>
-
-                <div v-else class="space-y-4">
-                  <UAlert
-                    :icon="
-                      security.isLocked.value
-                        ? 'i-heroicons-lock-closed'
-                        : 'i-heroicons-lock-open'
-                    "
-                    :color="security.isLocked.value ? 'yellow' : 'green'"
-                    variant="subtle"
-                    :title="
-                      security.isLocked.value
-                        ? $t('settings.security.locked')
-                        : $t('settings.security.unlocked')
-                    "
-                  />
-
-                  <div v-if="security.isLocked.value" class="space-y-3">
+    <!-- Actual Content (when loaded) -->
+    <template v-else>
+      <!-- Settings Form -->
+      <UForm
+        ref="formRef"
+        :schema="schema"
+        :state="state"
+        class="w-full"
+        @submit="onSubmit"
+      >
+        <UTabs v-model="activeTab" :items="tabs" class="w-full">
+          <!-- General Tab -->
+          <template #general="{ item }">
+            <UCard class="mt-4">
+              <div class="space-y-6">
+                <!-- Company Information -->
+                <div>
+                  <h3 class="text-lg font-semibold mb-4">
+                    {{ $t("settings.general.company_info") }}
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <UFormField
-                      :label="$t('settings.security.enterMasterPassword')"
+                      :label="$t('settings.general.company_name')"
+                      name="companyName"
+                      required
                     >
                       <UInput
-                        v-model="unlockPassword"
-                        type="password"
-                        class="w-full"
+                        v-model="state.companyName"
                         :placeholder="
-                          $t('settings.security.masterPasswordHint')
+                          $t('settings.general.company_name_placeholder')
                         "
-                        @keyup.enter="unlockEncryption"
+                        class="w-full"
                       />
                     </UFormField>
-                    <UButton color="primary" @click="unlockEncryption">
-                      {{ $t("settings.security.unlock") }}
-                    </UButton>
-                  </div>
 
-                  <div v-else class="flex gap-2">
-                    <UButton variant="outline" @click="lockEncryption">
-                      <UIcon
-                        name="i-heroicons-lock-closed"
-                        class="w-4 h-4 mr-2"
-                      />
-                      {{ $t("settings.security.lock") }}
-                    </UButton>
-                    <UButton
-                      color="red"
-                      variant="outline"
-                      @click="showDisableEncryptionModal = true"
+                    <UFormField
+                      :label="$t('settings.general.company_email')"
+                      name="companyEmail"
+                      required
                     >
-                      <UIcon
-                        name="i-heroicons-shield-exclamation"
-                        class="w-4 h-4 mr-2"
+                      <UInput
+                        v-model="state.companyEmail"
+                        type="email"
+                        :placeholder="
+                          $t('settings.general.company_email_placeholder')
+                        "
+                        class="w-full"
                       />
-                      {{
-                        $t(
-                          "settings.security.disableEncryption",
-                          "Disable Encryption"
-                        )
-                      }}
-                    </UButton>
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.general.company_phone')"
+                      name="companyPhone"
+                    >
+                      <UInput
+                        v-model="state.companyPhone"
+                        :placeholder="
+                          $t('settings.general.company_phone_placeholder')
+                        "
+                        class="w-full"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.general.tax_number')"
+                      name="taxNumber"
+                    >
+                      <UInput
+                        v-model="state.taxNumber"
+                        :placeholder="
+                          $t('settings.general.tax_number_placeholder')
+                        "
+                        class="w-full"
+                      />
+                    </UFormField>
                   </div>
-                </div>
-              </div>
-            </div>
-          </UCard>
-        </template>
 
-        <!-- Cloud Sync Tab -->
-        <template #sync="{ item }">
-          <UCard class="mt-4">
-            <div class="space-y-6">
-              <!-- Company Code Section -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <UIcon
-                    name="i-heroicons-key"
-                    class="w-5 h-5 text-primary-500"
-                  />
-                  {{ $t("settings.sync.company_code", "Company Code") }}
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {{
-                    $t(
-                      "settings.sync.company_code_desc",
-                      "Share this code with staff to sync settings across devices."
-                    )
-                  }}
-                </p>
-
-                <div v-if="companyCodeData.code" class="space-y-4">
-                  <!-- Code Display - Tap to copy -->
-                  <div
-                    class="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 sm:p-6 text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-98"
-                    @click="copyCompanyCode"
+                  <UFormField
+                    :label="$t('settings.general.company_address')"
+                    name="companyAddress"
+                    class="mt-4"
                   >
-                    <p
-                      class="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-primary-600 dark:text-primary-400 select-all"
+                    <UTextarea
+                      v-model="state.companyAddress"
+                      :placeholder="
+                        $t('settings.general.company_address_placeholder')
+                      "
+                      class="w-full"
+                      :rows="3"
+                    />
+                  </UFormField>
+                </div>
+
+                <!-- System Settings -->
+                <div>
+                  <h3 class="text-lg font-semibold mb-4">
+                    {{ $t("settings.general.system_settings") }}
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <UFormField
+                      :label="$t('settings.general.default_currency')"
+                      name="defaultCurrency"
+                      required
+                      :description="
+                        $t('settings.general.currency_description') ||
+                        'Supports 100+ currencies including crypto'
+                      "
                     >
-                      {{ companyCodeData.code }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      <UIcon
-                        name="i-heroicons-clipboard-document"
-                        class="w-3 h-3 inline-block mr-1"
+                      <USelectMenu
+                        v-model="state.defaultCurrency"
+                        :items="currencies.all"
+                        value-key="code"
+                        label-key="name"
+                        :placeholder="
+                          $t(
+                            'settings.general.select_currency',
+                            'Select currency...'
+                          )
+                        "
                       />
-                      {{ $t("settings.sync.tap_to_copy", "Tap to copy") }}
-                    </p>
-                  </div>
-                  <!-- Action Buttons - Stack on mobile -->
-                  <div class="flex flex-col sm:flex-row justify-center gap-2">
-                    <UButton
-                      icon="i-heroicons-clipboard-document"
-                      variant="soft"
-                      size="lg"
-                      class="min-h-[44px]"
-                      @click="copyCompanyCode"
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.general.default_language')"
+                      name="defaultLanguage"
+                      required
                     >
-                      {{ $t("common.copy") }}
-                    </UButton>
-                    <UButton
-                      icon="i-heroicons-arrow-path"
-                      variant="outline"
-                      size="lg"
-                      color="amber"
-                      class="min-h-[44px]"
-                      @click="regenerateCompanyCode"
+                      <USelect
+                        v-model="state.defaultLanguage"
+                        :items="languages"
+                        label-key="name"
+                        value-key="code"
+                        @update:model-value="onLanguageChange"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.general.date_format')"
+                      name="dateFormat"
                     >
-                      {{ $t("settings.sync.regenerate", "Regenerate") }}
-                    </UButton>
+                      <USelect
+                        v-model="state.dateFormat"
+                        :items="dateFormats"
+                        label-key="name"
+                        value-key="value"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.general.time_format')"
+                      name="timeFormat"
+                    >
+                      <USelect
+                        v-model="state.timeFormat"
+                        :items="timeFormats"
+                        label-key="name"
+                        value-key="value"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.general.timezone')"
+                      name="timezone"
+                    >
+                      <USelectMenu
+                        v-model="state.timezone"
+                        :items="timezones"
+                        label-key="label"
+                        value-key="value"
+                        searchable
+                        :placeholder="
+                          $t(
+                            'settings.general.select_timezone',
+                            'Select timezone'
+                          )
+                        "
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.general.decimal_places')"
+                      name="decimalPlaces"
+                    >
+                      <USelect
+                        v-model="state.decimalPlaces"
+                        :items="decimalOptions"
+                        label-key="name"
+                        value-key="value"
+                      />
+                    </UFormField>
                   </div>
                 </div>
 
-                <div
-                  v-else
-                  class="bg-gray-100 dark:bg-gray-800 rounded-xl p-6 text-center"
-                >
-                  <UIcon
-                    name="i-heroicons-key"
-                    class="w-12 h-12 text-gray-400 mx-auto mb-4"
-                  />
-                  <p class="text-gray-500 mb-4">
+                <!-- Shop Tags & Analytics -->
+                <div>
+                  <h3 class="text-lg font-semibold mb-4">
+                    {{
+                      $t("settings.general.shop_tags", "Shop Tags & Analytics")
+                    }}
+                  </h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                     {{
                       $t(
-                        "settings.sync.no_code",
-                        "No company code generated yet"
+                        "settings.general.shop_tags_desc",
+                        "Add tags to categorize your shop and help with analytics."
                       )
                     }}
                   </p>
-                  <UButton
-                    icon="i-heroicons-plus"
-                    @click="generateNewCompanyCode"
-                  >
-                    {{ $t("settings.sync.generate", "Generate Code") }}
-                  </UButton>
+
+                  <div class="space-y-4">
+                    <!-- Tags Input -->
+                    <UFormField
+                      :label="$t('settings.general.tags', 'Tags')"
+                      name="tags"
+                    >
+                      <div class="space-y-2">
+                        <div class="flex flex-wrap gap-2 mb-2">
+                          <UBadge
+                            v-for="(tag, index) in state.tags"
+                            :key="index"
+                            color="primary"
+                            variant="subtle"
+                            class="cursor-pointer"
+                            @click="removeTag(index)"
+                          >
+                            {{ tag }}
+                            <UIcon
+                              name="i-heroicons-x-mark"
+                              class="w-3 h-3 ml-1"
+                            />
+                          </UBadge>
+                        </div>
+                        <div class="flex gap-2">
+                          <UInput
+                            v-model="newTag"
+                            :placeholder="
+                              $t(
+                                'settings.general.tag_placeholder',
+                                'e.g. coffee, thai-food, retail'
+                              )
+                            "
+                            class="flex-1"
+                            @keyup.enter="addTag"
+                          />
+                          <UButton
+                            icon="i-heroicons-plus"
+                            :disabled="!newTag.trim()"
+                            @click="addTag"
+                          />
+                        </div>
+                      </div>
+                      <template #hint>
+                        <span class="text-xs text-gray-500">
+                          {{
+                            $t(
+                              "settings.general.tags_hint",
+                              "Press Enter or click + to add tags"
+                            )
+                          }}
+                        </span>
+                      </template>
+                    </UFormField>
+
+                    <!-- Platform Tag (Read-only) -->
+                    <UFormField
+                      :label="$t('settings.general.platform_tag', 'Platform')"
+                      name="platformTag"
+                    >
+                      <div class="flex items-center gap-2">
+                        <UBadge color="amber" variant="solid" size="lg">
+                          <UIcon name="i-heroicons-bolt" class="w-4 h-4 mr-1" />
+                          {{ state.platformTag }}
+                        </UBadge>
+                        <span class="text-xs text-gray-500">
+                          {{
+                            $t(
+                              "settings.general.platform_tag_hint",
+                              "Powered by bnos.space"
+                            )
+                          }}
+                        </span>
+                      </div>
+                    </UFormField>
+                  </div>
                 </div>
               </div>
+            </UCard>
+          </template>
 
-              <!-- Sync Settings Section -->
-              <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <UIcon
-                    name="i-heroicons-cloud-arrow-up"
-                    class="w-5 h-5 text-green-500"
+          <!-- Branches Tab -->
+          <template #branches="{ item }">
+            <UCard class="mt-4">
+              <div class="space-y-6">
+                <!-- Branch Management Header -->
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold">
+                    {{ $t("settings.branches.title") }}
+                  </h3>
+                  <UButton
+                    :label="$t('common.add')"
+                    icon="i-heroicons-plus"
+                    @click="openBranchModal"
                   />
-                  {{ $t("settings.sync.cloud_sync", "Cloud Sync") }}
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {{
-                    $t(
-                      "settings.sync.cloud_sync_desc",
-                      "Sync Lightning, Receipt, and Tax settings to the cloud. Staff can access these with the company code."
-                    )
-                  }}
-                </p>
+                </div>
 
-                <!-- Sync Status -->
-                <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                      <div
-                        class="w-3 h-3 rounded-full"
-                        :class="{
-                          'bg-green-500':
-                            settingsSync.syncStatus.value === 'synced',
-                          'bg-yellow-500 animate-pulse':
-                            settingsSync.syncStatus.value === 'syncing',
-                          'bg-red-500':
-                            settingsSync.syncStatus.value === 'error',
-                          'bg-gray-400':
-                            settingsSync.syncStatus.value === 'not_synced',
-                        }"
-                      />
-                      <div>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                          <span
-                            v-if="settingsSync.syncStatus.value === 'synced'"
-                            >{{ $t("settings.sync.synced", "Synced") }}</span
-                          >
-                          <span
-                            v-else-if="
-                              settingsSync.syncStatus.value === 'syncing'
-                            "
-                            >{{
-                              $t("settings.sync.syncing", "Syncing...")
-                            }}</span
-                          >
-                          <span
-                            v-else-if="
-                              settingsSync.syncStatus.value === 'error'
-                            "
-                            >{{ $t("settings.sync.error", "Sync Error") }}</span
-                          >
-                          <span v-else>{{
-                            $t("settings.sync.not_synced", "Not Synced")
-                          }}</span>
-                        </p>
-                        <p
-                          v-if="settingsSync.lastSyncAt.value"
-                          class="text-xs text-gray-500"
+                <!-- Branches Table -->
+                <div v-if="loadingBranches" class="text-center py-8">
+                  <UIcon
+                    name="i-heroicons-arrow-path"
+                    class="w-6 h-6 animate-spin text-gray-400"
+                  />
+                  <p class="mt-2 text-gray-500">{{ $t("common.loading") }}</p>
+                </div>
+
+                <div v-else-if="branches.length === 0" class="text-center py-8">
+                  <UIcon
+                    name="i-heroicons-building-storefront"
+                    class="w-12 h-12 text-gray-300 mx-auto"
+                  />
+                  <p class="mt-2 text-gray-500">
+                    {{ $t("settings.branches.noBranches", "No branches yet") }}
+                  </p>
+                  <p class="text-sm text-gray-400">
+                    {{
+                      $t(
+                        "settings.branches.addFirst",
+                        "Add your first branch to get started"
+                      )
+                    }}
+                  </p>
+                </div>
+
+                <div v-else class="overflow-x-auto">
+                  <table class="w-full">
+                    <thead>
+                      <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <th
+                          class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
                         >
-                          {{ $t("settings.sync.last_sync", "Last sync") }}:
-                          {{ formatSyncTime(settingsSync.lastSyncAt.value) }}
-                        </p>
-                      </div>
-                    </div>
-                    <UButton
-                      icon="i-heroicons-cloud-arrow-up"
-                      :loading="settingsSync.isSyncing.value"
-                      :disabled="!companyCodeData.code"
-                      @click="syncSettings"
+                          {{ $t("settings.branches.name") }}
+                        </th>
+                        <th
+                          class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+                        >
+                          {{ $t("settings.branches.code") }}
+                        </th>
+                        <th
+                          class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+                        >
+                          {{ $t("settings.branches.address", "Address") }}
+                        </th>
+                        <th
+                          class="text-left py-3 px-4 font-medium text-gray-900 dark:text-white"
+                        >
+                          {{ $t("common.actions") }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="(branch, index) in branches"
+                        :key="branch.id ?? index"
+                        class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <td class="py-3 px-4">
+                          <div>
+                            <p
+                              class="font-medium text-gray-900 dark:text-white"
+                            >
+                              {{ branch.name }}
+                            </p>
+                          </div>
+                        </td>
+                        <td class="py-3 px-4">
+                          <UBadge color="gray" variant="soft">
+                            {{ branch.code }}
+                          </UBadge>
+                        </td>
+                        <td class="py-3 px-4 text-gray-600 dark:text-gray-400">
+                          {{ branch.address || "-" }}
+                        </td>
+                        <td class="py-3 px-4">
+                          <div class="flex space-x-2">
+                            <UButton
+                              icon="i-heroicons-pencil-square"
+                              size="sm"
+                              variant="ghost"
+                              @click="editBranch(branch)"
+                            />
+                            <UButton
+                              icon="i-heroicons-trash"
+                              size="sm"
+                              variant="ghost"
+                              color="red"
+                              @click="branch.id && deleteBranch(branch.id)"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </UCard>
+          </template>
+
+          <!-- Security Tab -->
+          <template #security="{ item }">
+            <UCard class="mt-4">
+              <div class="space-y-6">
+                <!-- Password Policy -->
+                <div>
+                  <h3 class="text-lg font-semibold mb-4">
+                    {{ $t("settings.security.password_policy") }}
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <UFormField
+                      :label="$t('settings.security.min_password_length')"
+                      name="minPasswordLength"
                     >
-                      {{ $t("settings.sync.sync_now", "Sync Now") }}
+                      <UInput
+                        v-model="state.minPasswordLength"
+                        type="number"
+                        min="6"
+                        max="20"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.security.password_expiry_days')"
+                      name="passwordExpiryDays"
+                    >
+                      <UInput
+                        v-model="state.passwordExpiryDays"
+                        type="number"
+                        min="0"
+                        max="365"
+                      />
+                    </UFormField>
+                  </div>
+
+                  <div class="mt-4 space-y-3">
+                    <UCheckbox
+                      v-model="state.requireUppercase"
+                      :label="$t('settings.security.require_uppercase')"
+                    />
+                    <UCheckbox
+                      v-model="state.requireNumbers"
+                      :label="$t('settings.security.require_numbers')"
+                    />
+                    <UCheckbox
+                      v-model="state.requireSpecialChars"
+                      :label="$t('settings.security.require_special_chars')"
+                    />
+                  </div>
+                </div>
+
+                <!-- Session Settings -->
+                <div>
+                  <h3 class="text-lg font-semibold mb-4">
+                    {{ $t("settings.security.session_settings") }}
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <UFormField
+                      :label="$t('settings.security.session_timeout')"
+                      name="sessionTimeout"
+                    >
+                      <USelect
+                        v-model="state.sessionTimeout"
+                        :items="sessionTimeouts"
+                        label-key="name"
+                        value-key="value"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      :label="$t('settings.security.max_login_attempts')"
+                      name="maxLoginAttempts"
+                    >
+                      <UInput
+                        v-model="state.maxLoginAttempts"
+                        type="number"
+                        min="3"
+                        max="10"
+                      />
+                    </UFormField>
+                  </div>
+
+                  <div class="mt-4">
+                    <UCheckbox
+                      v-model="state.enableTwoFactor"
+                      :label="$t('settings.security.enable_two_factor')"
+                    />
+                  </div>
+                </div>
+
+                <!-- Data Encryption -->
+                <div>
+                  <h3 class="text-lg font-semibold mb-4">
+                    {{ $t("settings.security.dataEncryption") }}
+                  </h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    {{ $t("settings.security.dataEncryptionDesc") }}
+                  </p>
+
+                  <div
+                    v-if="!security.isEncryptionEnabled.value"
+                    class="space-y-4"
+                  >
+                    <UFormField
+                      :label="$t('settings.security.setupMasterPassword')"
+                    >
+                      <UInput
+                        v-model="masterPassword"
+                        type="password"
+                        :placeholder="
+                          $t('settings.security.masterPasswordHint')
+                        "
+                      />
+                    </UFormField>
+                    <UFormField
+                      :label="$t('settings.security.confirmPassword')"
+                    >
+                      <UInput
+                        v-model="confirmMasterPassword"
+                        type="password"
+                        :placeholder="
+                          $t('settings.security.confirmPasswordHint')
+                        "
+                      />
+                    </UFormField>
+                    <UButton
+                      color="primary"
+                      :disabled="
+                        !masterPassword ||
+                        masterPassword !== confirmMasterPassword
+                      "
+                      @click="enableEncryption"
+                    >
+                      {{ $t("settings.security.enableEncryption") }}
+                    </UButton>
+                  </div>
+
+                  <div v-else class="space-y-4">
+                    <UAlert
+                      :icon="
+                        security.isLocked.value
+                          ? 'i-heroicons-lock-closed'
+                          : 'i-heroicons-lock-open'
+                      "
+                      :color="security.isLocked.value ? 'yellow' : 'green'"
+                      variant="subtle"
+                      :title="
+                        security.isLocked.value
+                          ? $t('settings.security.locked')
+                          : $t('settings.security.unlocked')
+                      "
+                    />
+
+                    <div v-if="security.isLocked.value" class="space-y-3">
+                      <UFormField
+                        :label="$t('settings.security.enterMasterPassword')"
+                      >
+                        <UInput
+                          v-model="unlockPassword"
+                          type="password"
+                          class="w-full"
+                          :placeholder="
+                            $t('settings.security.masterPasswordHint')
+                          "
+                          @keyup.enter="unlockEncryption"
+                        />
+                      </UFormField>
+                      <UButton color="primary" @click="unlockEncryption">
+                        {{ $t("settings.security.unlock") }}
+                      </UButton>
+                    </div>
+
+                    <div v-else class="flex gap-2">
+                      <UButton variant="outline" @click="lockEncryption">
+                        <UIcon
+                          name="i-heroicons-lock-closed"
+                          class="w-4 h-4 mr-2"
+                        />
+                        {{ $t("settings.security.lock") }}
+                      </UButton>
+                      <UButton
+                        color="red"
+                        variant="outline"
+                        @click="showDisableEncryptionModal = true"
+                      >
+                        <UIcon
+                          name="i-heroicons-shield-exclamation"
+                          class="w-4 h-4 mr-2"
+                        />
+                        {{
+                          $t(
+                            "settings.security.disableEncryption",
+                            "Disable Encryption"
+                          )
+                        }}
+                      </UButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </UCard>
+          </template>
+
+          <!-- Cloud Sync Tab -->
+          <template #sync="{ item }">
+            <UCard class="mt-4">
+              <div class="space-y-6">
+                <!-- Company Code Section -->
+                <div>
+                  <h3
+                    class="text-lg font-semibold mb-4 flex items-center gap-2"
+                  >
+                    <UIcon
+                      name="i-heroicons-key"
+                      class="w-5 h-5 text-primary-500"
+                    />
+                    {{ $t("settings.sync.company_code", "Company Code") }}
+                  </h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    {{
+                      $t(
+                        "settings.sync.company_code_desc",
+                        "Share this code with staff to sync settings across devices."
+                      )
+                    }}
+                  </p>
+
+                  <div v-if="companyCodeData.code" class="space-y-4">
+                    <!-- Code Display - Tap to copy -->
+                    <div
+                      class="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 sm:p-6 text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-98"
+                      @click="copyCompanyCode"
+                    >
+                      <p
+                        class="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-primary-600 dark:text-primary-400 select-all"
+                      >
+                        {{ companyCodeData.code }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        <UIcon
+                          name="i-heroicons-clipboard-document"
+                          class="w-3 h-3 inline-block mr-1"
+                        />
+                        {{ $t("settings.sync.tap_to_copy", "Tap to copy") }}
+                      </p>
+                    </div>
+                    <!-- Action Buttons - Stack on mobile -->
+                    <div class="flex flex-col sm:flex-row justify-center gap-2">
+                      <UButton
+                        icon="i-heroicons-clipboard-document"
+                        variant="soft"
+                        size="lg"
+                        class="min-h-[44px]"
+                        @click="copyCompanyCode"
+                      >
+                        {{ $t("common.copy") }}
+                      </UButton>
+                      <UButton
+                        icon="i-heroicons-arrow-path"
+                        variant="outline"
+                        size="lg"
+                        color="amber"
+                        class="min-h-[44px]"
+                        @click="regenerateCompanyCode"
+                      >
+                        {{ $t("settings.sync.regenerate", "Regenerate") }}
+                      </UButton>
+                    </div>
+                  </div>
+
+                  <div
+                    v-else
+                    class="bg-gray-100 dark:bg-gray-800 rounded-xl p-6 text-center"
+                  >
+                    <UIcon
+                      name="i-heroicons-key"
+                      class="w-12 h-12 text-gray-400 mx-auto mb-4"
+                    />
+                    <p class="text-gray-500 mb-4">
+                      {{
+                        $t(
+                          "settings.sync.no_code",
+                          "No company code generated yet"
+                        )
+                      }}
+                    </p>
+                    <UButton
+                      icon="i-heroicons-plus"
+                      @click="generateNewCompanyCode"
+                    >
+                      {{ $t("settings.sync.generate", "Generate Code") }}
                     </UButton>
                   </div>
                 </div>
 
-                <!-- What Gets Synced -->
-                <div class="space-y-2">
-                  <p
-                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                <!-- Sync Settings Section -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h3
+                    class="text-lg font-semibold mb-4 flex items-center gap-2"
                   >
-                    {{ $t("settings.sync.what_syncs", "What gets synced:") }}
+                    <UIcon
+                      name="i-heroicons-cloud-arrow-up"
+                      class="w-5 h-5 text-green-500"
+                    />
+                    {{ $t("settings.sync.cloud_sync", "Cloud Sync") }}
+                  </h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    {{
+                      $t(
+                        "settings.sync.cloud_sync_desc",
+                        "Sync Lightning, Receipt, and Tax settings to the cloud. Staff can access these with the company code."
+                      )
+                    }}
                   </p>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div
-                      class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-                    >
-                      <UIcon
-                        name="i-heroicons-bolt"
-                        class="w-4 h-4 text-yellow-500"
-                      />
-                      {{ $t("settings.lightning.title", "Lightning") }}
+
+                  <!-- Sync Status -->
+                  <div
+                    class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4"
+                  >
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded-full"
+                          :class="{
+                            'bg-green-500':
+                              settingsSync.syncStatus.value === 'synced',
+                            'bg-yellow-500 animate-pulse':
+                              settingsSync.syncStatus.value === 'syncing',
+                            'bg-red-500':
+                              settingsSync.syncStatus.value === 'error',
+                            'bg-gray-400':
+                              settingsSync.syncStatus.value === 'not_synced',
+                          }"
+                        />
+                        <div>
+                          <p class="font-medium text-gray-900 dark:text-white">
+                            <span
+                              v-if="settingsSync.syncStatus.value === 'synced'"
+                              >{{ $t("settings.sync.synced", "Synced") }}</span
+                            >
+                            <span
+                              v-else-if="
+                                settingsSync.syncStatus.value === 'syncing'
+                              "
+                              >{{
+                                $t("settings.sync.syncing", "Syncing...")
+                              }}</span
+                            >
+                            <span
+                              v-else-if="
+                                settingsSync.syncStatus.value === 'error'
+                              "
+                              >{{
+                                $t("settings.sync.error", "Sync Error")
+                              }}</span
+                            >
+                            <span v-else>{{
+                              $t("settings.sync.not_synced", "Not Synced")
+                            }}</span>
+                          </p>
+                          <p
+                            v-if="settingsSync.lastSyncAt.value"
+                            class="text-xs text-gray-500"
+                          >
+                            {{ $t("settings.sync.last_sync", "Last sync") }}:
+                            {{ formatSyncTime(settingsSync.lastSyncAt.value) }}
+                          </p>
+                        </div>
+                      </div>
+                      <UButton
+                        icon="i-heroicons-cloud-arrow-up"
+                        :loading="settingsSync.isSyncing.value"
+                        :disabled="!companyCodeData.code"
+                        @click="syncSettings"
+                      >
+                        {{ $t("settings.sync.sync_now", "Sync Now") }}
+                      </UButton>
                     </div>
-                    <div
-                      class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+                  </div>
+
+                  <!-- What Gets Synced -->
+                  <div class="space-y-2">
+                    <p
+                      class="text-sm font-medium text-gray-700 dark:text-gray-300"
                     >
-                      <UIcon
-                        name="i-heroicons-document-text"
-                        class="w-4 h-4 text-blue-500"
-                      />
-                      {{ $t("settings.receipt.title", "Receipt") }}
-                    </div>
-                    <div
-                      class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-                    >
-                      <UIcon
-                        name="i-heroicons-calculator"
-                        class="w-4 h-4 text-green-500"
-                      />
-                      {{ $t("settings.tax.title", "Tax") }}
+                      {{ $t("settings.sync.what_syncs", "What gets synced:") }}
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div
+                        class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+                      >
+                        <UIcon
+                          name="i-heroicons-bolt"
+                          class="w-4 h-4 text-yellow-500"
+                        />
+                        {{ $t("settings.lightning.title", "Lightning") }}
+                      </div>
+                      <div
+                        class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+                      >
+                        <UIcon
+                          name="i-heroicons-document-text"
+                          class="w-4 h-4 text-blue-500"
+                        />
+                        {{ $t("settings.receipt.title", "Receipt") }}
+                      </div>
+                      <div
+                        class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+                      >
+                        <UIcon
+                          name="i-heroicons-calculator"
+                          class="w-4 h-4 text-green-500"
+                        />
+                        {{ $t("settings.tax.title", "Tax") }}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Security Note -->
-              <UAlert
-                icon="i-heroicons-shield-check"
-                color="blue"
-                variant="subtle"
-                :title="$t('settings.sync.encrypted', 'Encrypted')"
-                :description="
-                  $t(
-                    'settings.sync.encrypted_desc',
-                    'All settings are encrypted with your company code before syncing. Only devices with the code can decrypt.'
-                  )
-                "
-              />
-            </div>
-          </UCard>
-        </template>
-      </UTabs>
-    </UForm>
+                <!-- Security Note -->
+                <UAlert
+                  icon="i-heroicons-shield-check"
+                  color="blue"
+                  variant="subtle"
+                  :title="$t('settings.sync.encrypted', 'Encrypted')"
+                  :description="
+                    $t(
+                      'settings.sync.encrypted_desc',
+                      'All settings are encrypted with your company code before syncing. Only devices with the code can decrypt.'
+                    )
+                  "
+                />
+              </div>
+            </UCard>
+          </template>
+        </UTabs>
+      </UForm>
+    </template>
 
     <!-- Branch Modal -->
     <UModal v-model:open="branchModal.open">
@@ -1056,6 +1110,7 @@ const branchFormRef = ref();
 
 // State
 const saving = ref(false);
+const isLoading = ref(true);
 const activeTab = ref("0");
 const masterPassword = ref("");
 const confirmMasterPassword = ref("");
@@ -1556,9 +1611,10 @@ const loadSettings = async () => {
 };
 
 // Initialize on mount
-onMounted(() => {
+onMounted(async () => {
   loadBranches();
-  loadSettings();
+  await loadSettings();
+  isLoading.value = false;
 });
 
 // Methods

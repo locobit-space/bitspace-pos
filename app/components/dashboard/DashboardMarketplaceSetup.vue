@@ -36,7 +36,7 @@ const missingFields = computed(() => {
   if (!config.services || config.services.length === 0) {
     missing.push({
       key: "services",
-      label: t("marketplace.setup.services", "Services"),
+      label: t("shop.services", "Services"),
       icon: "i-heroicons-cube",
     });
   }
@@ -45,7 +45,7 @@ const missingFields = computed(() => {
   if (!config.marketplaceDescription) {
     missing.push({
       key: "description",
-      label: t("marketplace.setup.description", "Description"),
+      label: t("common.description", "Description"),
       icon: "i-heroicons-document-text",
     });
   }
@@ -54,7 +54,7 @@ const missingFields = computed(() => {
   if (!config.lud16) {
     missing.push({
       key: "lightning",
-      label: t("marketplace.setup.lightning", "Lightning Address"),
+      label: t("setting.lightning", "Lightning Address"),
       icon: "i-heroicons-bolt",
     });
   }
@@ -63,7 +63,7 @@ const missingFields = computed(() => {
   if (!config.phone) {
     missing.push({
       key: "phone",
-      label: t("marketplace.setup.phone", "Phone"),
+      label: t("common.phone", "Phone"),
       icon: "i-heroicons-phone",
     });
   }
@@ -139,10 +139,10 @@ const goToSettings = () => {
           <UIcon name="i-heroicons-globe-alt" class="w-6 h-6 text-white" />
         </div>
         <div class="flex-1">
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-1"
-          >
-            {{ t("marketplace.setup.title", "Complete Your Marketplace Profile") }}
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+            {{
+              t("marketplace.setup.title", "Complete Your Marketplace Profile")
+            }}
           </h3>
           <p class="text-sm text-gray-600 dark:text-gray-400">
             {{

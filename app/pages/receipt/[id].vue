@@ -31,8 +31,6 @@ onMounted(async () => {
   // Initialize Nostr relay (required for fetching receipts)
   await relay.init();
 
-  await currency.init("LAK");
-
   const receiptId = route.params.id as string;
   const receiptCode = route.query.code as string;
 
@@ -46,28 +44,16 @@ onMounted(async () => {
   const storedReceipt = receipt.retrieveEBill(receiptId);
 
   if (storedReceipt) {
-    console.log("storedReceipt", storedReceipt);
     eBill.value = storedReceipt;
-  } else if (receiptCode) {
-    // Fetch from Nostr using verification code
-    const fetchedReceipt = await receiptGenerator.fetchReceiptByCode(
-      receiptCode
-    );
-    console.log("fetchedReceipt", fetchedReceipt);
+  } else {
+    // Fetch from Nostr using receipt ID
+    const fetchedReceipt = await receiptGenerator.fetchReceiptById(receiptId);
 
     if (fetchedReceipt) {
-      // Verify receipt ID matches
-      if (fetchedReceipt.id !== receiptId) {
-        error.value = "Receipt ID mismatch";
-        loading.value = false;
-        return;
-      }
       eBill.value = fetchedReceipt;
     } else {
       error.value = "Receipt not found or expired";
     }
-  } else {
-    error.value = "Receipt code required for verification";
   }
 
   // Verify code matches (security check)
@@ -80,6 +66,11 @@ onMounted(async () => {
   if (eBill.value?.expiresAt && new Date(eBill.value.expiresAt) < new Date()) {
     error.value = "Receipt expired (90 days retention)";
     eBill.value = null;
+  }
+
+  // Initialize currency from the receipt (use currency from event/receipt data)
+  if (eBill.value?.currency) {
+    await currency.init(eBill.value.currency);
   }
 
   loading.value = false;

@@ -133,7 +133,7 @@ export const useReceiptGenerator = () => {
         }
 
         const tags = [
-          ["d", receiptCode], // Unique identifier
+          ["d", receiptId], // Receipt ID (UUID) - primary lookup key
           ["t", "receipt"],
           ["t", "public"],
           ["order", order.code || order.id],
@@ -189,19 +189,21 @@ export const useReceiptGenerator = () => {
   };
 
   /**
-   * Fetch public receipt from Nostr by code
-   * Used by receipt page to load receipts
+   * Fetch public receipt from Nostr by ID
+   * Code is used for verification only (checked after fetch)
    */
-  const fetchReceiptByCode = async (code: string): Promise<EReceipt | null> => {
+  const fetchReceiptById = async (
+    receiptId: string
+  ): Promise<EReceipt | null> => {
     if (!relay.isInitialized?.value) {
       return null;
     }
 
     try {
-      // Query events using relay
+      // Query by receipt ID (d tag)
       const events = await relay.queryEvents({
         kinds: [NOSTR_KINDS.RECEIPT],
-        "#d": [code], // Find by receipt code
+        "#d": [receiptId],
         limit: 1,
       });
 
@@ -218,23 +220,6 @@ export const useReceiptGenerator = () => {
       console.error("[ReceiptGenerator] Failed to fetch receipt:", error);
     }
 
-    return null;
-  };
-
-  /**
-   * Fetch public receipt from Nostr by ID
-   * Fallback method if code is not available
-   */
-  const fetchReceiptById = async (id: string): Promise<EReceipt | null> => {
-    // Try localStorage first
-    const cached = receiptComposable.retrieveEBill(id);
-    if (cached) return cached;
-
-    // If not found locally, would need to search Nostr
-    // This is less efficient without the code, so we rely on code-based lookup
-    console.warn(
-      "[ReceiptGenerator] Receipt not found locally, use code for Nostr lookup"
-    );
     return null;
   };
 
@@ -305,7 +290,7 @@ export const useReceiptGenerator = () => {
       orderCode: `SESSION-${sessionInfo.tableNumber}`,
       orderNumber: orders.length,
       merchantName:
-        shop.shopConfig?.value?.shopName ||
+        shop.shopConfig?.value?.name ||
         receiptSettings.settings?.value?.header?.businessName ||
         "bnos.space",
       merchantAddress:
@@ -407,7 +392,6 @@ export const useReceiptGenerator = () => {
   return {
     createReceiptFromOrder,
     createConsolidatedReceipt,
-    fetchReceiptByCode,
     fetchReceiptById,
   };
 };
