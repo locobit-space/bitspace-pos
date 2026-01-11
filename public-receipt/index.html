@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Receipt - bnos.space</title>
+    <meta
+      name="description"
+      content="Verified digital receipt powered by bnos.space"
+    />
+    <meta name="robots" content="noindex" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <!-- QR Code library (tiny, ~13KB) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Loading State -->
+      <div id="loading" class="state">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <span class="loading-icon">🧾</span>
+        </div>
+        <p class="loading-text">Verifying receipt...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="error" class="state hidden">
+        <div class="error-icon">🔒</div>
+        <h1 class="error-title">Unable to Verify</h1>
+        <p id="error-message" class="error-text"></p>
+        <div class="error-reasons">
+          <p><strong>Possible reasons:</strong></p>
+          <ul>
+            <li>The receipt link is incomplete</li>
+            <li>The verification code is incorrect</li>
+            <li>The receipt has expired (90 days retention)</li>
+          </ul>
+        </div>
+        <p class="error-help">
+          Please contact the merchant if you need assistance.
+        </p>
+      </div>
+
+      <!-- Receipt Content -->
+      <div id="receipt" class="state hidden">
+        <!-- Verified Badge -->
+        <div class="verified-badge">
+          <svg
+            class="shield-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+          <span>Verified Digital Receipt</span>
+        </div>
+
+        <!-- Receipt Card -->
+        <div class="receipt-card">
+          <!-- Header -->
+          <div class="receipt-header">
+            <div class="merchant-logo" id="merchant-logo">☕</div>
+            <h1 class="merchant-name" id="merchant-name">bnos.space</h1>
+            <p class="merchant-address" id="merchant-address"></p>
+            <div class="receipt-date" id="receipt-date"></div>
+          </div>
+
+          <!-- Receipt Number -->
+          <div class="receipt-number-section">
+            <span class="receipt-label">Receipt No.</span>
+            <span class="receipt-code" id="receipt-code"></span>
+          </div>
+
+          <!-- Order Info -->
+          <div class="order-info">
+            <div class="info-row">
+              <span class="info-label">Order</span>
+              <span class="info-value" id="order-code"></span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Items</span>
+              <span class="info-value" id="items-count"></span>
+            </div>
+          </div>
+
+          <!-- Items List -->
+          <div class="items-section">
+            <div id="items-list" class="items-list"></div>
+          </div>
+
+          <!-- Divider -->
+          <div class="divider">
+            <span>Summary</span>
+          </div>
+
+          <!-- Totals -->
+          <div class="totals-section">
+            <div class="total-row">
+              <span>Subtotal</span>
+              <span id="subtotal"></span>
+            </div>
+            <div class="total-row discount hidden" id="discount-row">
+              <span>🎫 Discount</span>
+              <span id="discount"></span>
+            </div>
+            <div class="total-row hidden" id="tax-row">
+              <span>Tax</span>
+              <span id="tax"></span>
+            </div>
+            <div class="total-row hidden" id="tip-row">
+              <span>💝 Tip</span>
+              <span id="tip"></span>
+            </div>
+          </div>
+
+          <!-- Grand Total -->
+          <div class="grand-total">
+            <div class="total-main">
+              <span>Total</span>
+              <span id="total"></span>
+            </div>
+            <div class="total-sats hidden" id="sats-row">
+              <span>⚡ Bitcoin</span>
+              <span id="total-sats"></span>
+            </div>
+          </div>
+
+          <!-- Payment Verified -->
+          <div class="payment-verified">
+            <div class="verified-check">✓</div>
+            <p class="verified-title">Payment Verified</p>
+            <p class="verified-method" id="payment-method"></p>
+            <p class="verified-hash hidden" id="payment-hash"></p>
+          </div>
+
+          <!-- QR Code -->
+          <div class="qr-section">
+            <p class="qr-label">Scan to Verify</p>
+            <div class="qr-container">
+              <canvas id="qr-code"></canvas>
+            </div>
+            <p class="qr-code-text" id="qr-code-text"></p>
+          </div>
+
+          <!-- Footer -->
+          <div class="receipt-footer">
+            <p id="footer-message" class="footer-message"></p>
+            <div class="security-badges">
+              <span>🔒 Encrypted</span>
+              <span>•</span>
+              <span>🛡️ Tamper-proof</span>
+              <span>•</span>
+              <span>🌐 Nostr</span>
+            </div>
+            <p class="powered-by">Powered by <strong>bnos.space</strong> ⚡</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="btn btn-secondary" onclick="window.print()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7,10 12,15 17,10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Save
+          </button>
+          <button
+            class="btn btn-primary"
+            id="share-btn"
+            onclick="shareReceipt()"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Share
+          </button>
+        </div>
+
+        <!-- Branding -->
+        <p class="branding">
+          Digital receipt by
+          <a href="https://bnos.space" target="_blank">bnos.space</a>
+        </p>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

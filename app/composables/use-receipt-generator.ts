@@ -314,6 +314,8 @@ export const useReceiptGenerator = () => {
     // 5. Generate receipt URL with verification code
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
+    // TODO: Enable subdomain when ready:
+    // const receiptUrl = `https://receipt.bnos.space/?id=${receiptId}&code=${receiptCode}`;
 
     // 6. Generate QR code
     const QRCode = await import("qrcode");
@@ -558,6 +560,8 @@ export const useReceiptGenerator = () => {
     // 6. Generate URL and QR code
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
+    // TODO: Enable subdomain when ready:
+    // const receiptUrl = `https://receipt.bnos.space/?id=${receiptId}&code=${receiptCode}`;
 
     const QRCode = await import("qrcode");
     const qrCode = await QRCode.toDataURL(receiptUrl, {
