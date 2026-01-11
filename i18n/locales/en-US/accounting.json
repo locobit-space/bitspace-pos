@@ -179,6 +179,32 @@
     "createFirstEntry": "Create Your First Entry",
     "noInvoices": "No invoices yet",
     "createFirstInvoice": "Create Your First Invoice",
-    "invoices": "Invoices"
+    "invoices": "Invoices",
+    "income": {
+      "addIncome": "Add Income",
+      "amount": "Amount",
+      "amountPlaceholder": "Enter amount",
+      "category": "Category",
+      "description": "Description",
+      "descriptionPlaceholder": "What is this income from?",
+      "date": "Date",
+      "source": "Source",
+      "sourcePlaceholder": "Customer or source name",
+      "paymentMethod": "Payment Method",
+      "reference": "Reference",
+      "referencePlaceholder": "Invoice or receipt number",
+      "notes": "Notes",
+      "notesPlaceholder": "Additional notes...",
+      "categories": {
+        "sales": "Sales",
+        "tips": "Tips",
+        "investment": "Investment",
+        "refund": "Refund Received",
+        "deposit": "Deposit",
+        "other": "Other"
+      },
+      "incomeCreated": "Income recorded successfully",
+      "saveFailed": "Failed to save income"
+    }
   }
 }

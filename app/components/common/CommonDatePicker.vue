@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { DateFormatter, type DateValue, parseDate, CalendarDate } from "@internationalized/date";
+import {
+  DateFormatter,
+  type DateValue,
+  parseDate,
+  CalendarDate,
+} from "@internationalized/date";
 
 interface Props {
   modelValue?: Date | null | number | string | DateValue;
@@ -9,7 +14,27 @@ interface Props {
   disabled?: boolean;
   loading?: boolean;
   clearable?: boolean;
-  color?: "primary" | "neutral" | "gray" | "red" | "orange" | "amber" | "yellow" | "lime" | "green" | "emerald" | "teal" | "cyan" | "sky" | "blue" | "indigo" | "violet" | "purple" | "fuchsia" | "pink" | "rose";
+  color?:
+    | "primary"
+    | "neutral"
+    | "gray"
+    | "red"
+    | "orange"
+    | "amber"
+    | "yellow"
+    | "lime"
+    | "green"
+    | "emerald"
+    | "teal"
+    | "cyan"
+    | "sky"
+    | "blue"
+    | "indigo"
+    | "violet"
+    | "purple"
+    | "fuchsia"
+    | "pink"
+    | "rose";
   variant?: "solid" | "outline" | "soft" | "ghost" | "link" | "subtle";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   icon?: string;
@@ -50,15 +75,22 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 // Date formatter with configurable locale and style
-const df = computed(() => new DateFormatter(props.locale, {
-  dateStyle: props.dateStyle,
-}));
+const df = computed(
+  () =>
+    new DateFormatter(props.locale, {
+      dateStyle: props.dateStyle,
+    })
+);
 
 // Helper: Convert Date to CalendarDate
 const dateToCalendarDate = (date: Date): CalendarDate | null => {
   try {
     if (!date || isNaN(date.getTime())) return null;
-    return new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    return new CalendarDate(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate()
+    );
   } catch {
     return null;
   }
@@ -68,7 +100,11 @@ const dateToCalendarDate = (date: Date): CalendarDate | null => {
 const calendarDateToDate = (calendarDate: DateValue): Date | null => {
   try {
     if (!calendarDate) return null;
-    const date = new Date(calendarDate.year, calendarDate.month - 1, calendarDate.day);
+    const date = new Date(
+      calendarDate.year,
+      calendarDate.month - 1,
+      calendarDate.day
+    );
     return isNaN(date.getTime()) ? null : date;
   } catch {
     return null;
@@ -82,35 +118,40 @@ const calendarValue = computed({
     if (props.modelValue == null || props.modelValue === "") {
       return null;
     }
-    
+
     // Already a CalendarDate/DateValue object
-    if (typeof props.modelValue === 'object' && 'year' in props.modelValue && 'month' in props.modelValue && 'day' in props.modelValue) {
+    if (
+      typeof props.modelValue === "object" &&
+      "year" in props.modelValue &&
+      "month" in props.modelValue &&
+      "day" in props.modelValue
+    ) {
       return props.modelValue as CalendarDate;
     }
-    
+
     // Handle number (timestamp)
     if (typeof props.modelValue === "number") {
       return dateToCalendarDate(new Date(props.modelValue));
     }
-    
+
     // Handle string (ISO date string)
     if (typeof props.modelValue === "string") {
       try {
         // Try ISO format first (YYYY-MM-DD)
         if (/^\d{4}-\d{2}-\d{2}/.test(props.modelValue)) {
-          return parseDate(props.modelValue.split('T')[0]);
+          return parseDate(props.modelValue.split("T")[0]);
         }
         return dateToCalendarDate(new Date(props.modelValue));
       } catch {
         return null;
       }
     }
-    
+
     // Handle Date object
     if (props.modelValue instanceof Date) {
       return dateToCalendarDate(props.modelValue);
     }
-    
+
     return null;
   },
   set(value: CalendarDate | null) {
@@ -132,7 +173,7 @@ const displayValue = computed(() => {
   if (!displayDate.value) {
     return props.placeholder || t("common.select", "Select Date");
   }
-  
+
   try {
     // Validate the date is actually valid before formatting
     if (isNaN(displayDate.value.getTime())) {
@@ -154,7 +195,6 @@ const clearDate = (event: Event) => {
 
 // Validation computed
 const isInvalid = computed(() => !!props.error);
-
 </script>
 
 <template>
@@ -177,7 +217,7 @@ const isInvalid = computed(() => !!props.error);
         :icon="loading ? 'i-lucide-loader-2' : icon"
         :disabled="disabled || loading"
         :class="[
-          'justify-between min-w-[200px]',
+          'justify-between w-full',
           loading && 'animate-spin',
           isInvalid && 'ring-2 ring-red-500 dark:ring-red-400',
         ]"
@@ -186,7 +226,7 @@ const isInvalid = computed(() => !!props.error);
         <span class="flex-1 text-left truncate">
           {{ displayValue }}
         </span>
-        
+
         <!-- Clear button -->
         <button
           v-if="clearable && calendarValue && !disabled && !loading"
@@ -211,10 +251,7 @@ const isInvalid = computed(() => !!props.error);
     </UPopover>
 
     <!-- Hint or Error Message -->
-    <p
-      v-if="hint && !error"
-      class="text-xs text-gray-500 dark:text-gray-400"
-    >
+    <p v-if="hint && !error" class="text-xs text-gray-500 dark:text-gray-400">
       {{ hint }}
     </p>
     <p

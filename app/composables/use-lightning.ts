@@ -49,6 +49,7 @@ export const useLightning = () => {
     apiKey?: string;
     accessToken?: string;
     blinkApiKey?: string;
+    strikeApiKey?: string;
     nwcConnectionString?: string;
   }): Promise<boolean> => {
     try {
@@ -74,6 +75,7 @@ export const useLightning = () => {
     apiKey?: string;
     accessToken?: string;
     blinkApiKey?: string;
+    strikeApiKey?: string;
     nwcConnectionString?: string;
   } | null> => {
     try {
@@ -160,6 +162,7 @@ export const useLightning = () => {
           lightningSettings.value.apiKey = sensitiveKeys.apiKey;
           lightningSettings.value.accessToken = sensitiveKeys.accessToken;
           lightningSettings.value.blinkApiKey = sensitiveKeys.blinkApiKey;
+          lightningSettings.value.strikeApiKey = sensitiveKeys.strikeApiKey;
           lightningSettings.value.nwcConnectionString =
             sensitiveKeys.nwcConnectionString;
         }
@@ -185,6 +188,7 @@ export const useLightning = () => {
         apiKey,
         accessToken,
         blinkApiKey,
+        strikeApiKey,
         nwcConnectionString,
         ...nonSensitiveSettings
       } = lightningSettings.value;
@@ -197,6 +201,7 @@ export const useLightning = () => {
         apiKey,
         accessToken,
         blinkApiKey,
+        strikeApiKey,
         nwcConnectionString,
       });
 
@@ -216,6 +221,7 @@ export const useLightning = () => {
     apiKey?: string;
     accessToken?: string;
     blinkApiKey?: string;
+    strikeApiKey?: string;
     nwcConnectionString?: string;
     lightningAddress?: string;
     bolt12Offer?: string;
@@ -226,6 +232,7 @@ export const useLightning = () => {
       apiKey: config.apiKey,
       accessToken: config.accessToken,
       blinkApiKey: config.blinkApiKey,
+      strikeApiKey: config.strikeApiKey,
       nwcConnectionString: config.nwcConnectionString,
       lightningAddress: config.lightningAddress,
       bolt12Offer: config.bolt12Offer,
@@ -304,6 +311,12 @@ export const useLightning = () => {
             };
           }
           await testNWCConnection(settings.nwcConnectionString);
+          break;
+        case "strike":
+          if (!settings.strikeApiKey) {
+            return { success: false, message: "Strike API Key is required" };
+          }
+          await testStrikeConnection(settings.strikeApiKey);
           break;
         case "lnurl":
           if (!settings.lightningAddress) {
@@ -386,6 +399,12 @@ export const useLightning = () => {
             throw new Error("NWC connection string required");
           }
           await testNWCConnection(settings.nwcConnectionString);
+          break;
+        case "strike":
+          if (!settings.strikeApiKey) {
+            throw new Error("Strike API Key required");
+          }
+          await testStrikeConnection(settings.strikeApiKey);
           break;
         case "lnurl":
           if (!settings.lightningAddress) {
@@ -714,6 +733,27 @@ export const useLightning = () => {
     }
 
     return data;
+  };
+
+  /**
+   * Test Strike API connection
+   * https://docs.strike.me/api/
+   */
+  const testStrikeConnection = async (apiKey: string) => {
+    const response = await fetch("https://api.strike.me/v1/balances", {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Strike API connection failed: ${errorText}`);
+    }
+
+    return response.json();
   };
 
   /**
@@ -1137,6 +1177,74 @@ export const useLightning = () => {
       };
     }
 
+    // Strike provider
+    if (settings.provider === "strike" && settings.strikeApiKey) {
+      // Step 1: Create invoice
+      const createResponse = await fetch("https://api.strike.me/v1/invoices", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${settings.strikeApiKey}`,
+        },
+        body: JSON.stringify({
+          correlationId: crypto.randomUUID(),
+          description,
+          amount: {
+            amount: (amount / 100000000).toFixed(8), // Convert sats to BTC
+            currency: "BTC",
+          },
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        throw new Error(`Failed to create Strike invoice: ${errorText}`);
+      }
+
+      const invoiceData = await createResponse.json();
+      const invoiceId = invoiceData.invoiceId;
+
+      // Step 2: Generate quote to get Lightning invoice
+      const quoteResponse = await fetch(
+        `https://api.strike.me/v1/invoices/${invoiceId}/quote`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${settings.strikeApiKey}`,
+          },
+        }
+      );
+
+      if (!quoteResponse.ok) {
+        const errorText = await quoteResponse.text();
+        throw new Error(`Failed to generate Strike quote: ${errorText}`);
+      }
+
+      const quoteData = await quoteResponse.json();
+
+      return {
+        id: invoiceId,
+        bolt11: quoteData.lnInvoice,
+        paymentHash: invoiceId, // Strike uses invoiceId as reference
+        amount,
+        description,
+        expiresAt: quoteData.expirationInSec
+          ? new Date(
+              Date.now() + quoteData.expirationInSec * 1000
+            ).toISOString()
+          : new Date(Date.now() + 3600000).toISOString(),
+        createdAt: new Date().toISOString(),
+        status: "pending",
+        metadata: {
+          ...metadata,
+          strikeInvoiceId: invoiceId,
+          strikeQuoteId: quoteData.quoteId,
+        },
+      };
+    }
+
     // WebLN (Alby browser extension)
     if (settings.provider === "alby" && typeof window !== "undefined") {
       interface WebLNInvoice {
@@ -1264,6 +1372,27 @@ export const useLightning = () => {
       // Blink returns: PENDING, PAID, EXPIRED
       if (status === "PAID") return "completed";
       if (status === "EXPIRED") return "expired";
+      return "pending";
+    }
+
+    // Strike provider
+    if (settings.provider === "strike" && settings.strikeApiKey) {
+      const response = await fetch(
+        `https://api.strike.me/v1/invoices/${paymentHash}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${settings.strikeApiKey}`,
+          },
+        }
+      );
+
+      if (!response.ok) return "pending";
+
+      const data = await response.json();
+      // Strike returns: UNPAID, PENDING, PAID, CANCELLED
+      if (data.state === "PAID") return "completed";
+      if (data.state === "CANCELLED") return "expired";
       return "pending";
     }
 

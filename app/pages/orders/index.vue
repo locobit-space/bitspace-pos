@@ -25,7 +25,8 @@ const { canCreateOrders, canVoidOrders } = usePermissions();
 // UI State
 const searchQuery = ref("");
 const statusFilter = ref("all");
-const dateFilter = ref<"all" | "today" | "week" | "month">("all");
+const dateRangePreset = ref("month");
+const dateRange = ref({ start: "", end: "" });
 const currentPage = ref(1);
 const itemsPerPage = 20;
 
@@ -50,7 +51,6 @@ const toggleSort = (key: string) => {
   currentPage.value = 1;
 };
 
-// Status options
 const statusOptions = [
   { value: "all", label: t("orders.status.all", "All Status") },
   { value: "pending", label: t("orders.status.pending", "Pending") },
@@ -59,30 +59,25 @@ const statusOptions = [
   { value: "cancelled", label: t("orders.status.cancelled", "Cancelled") },
 ];
 
-const dateFilterOptions = [
-  { value: "all", label: "All Time" },
-  { value: "today", label: "Today" },
-  { value: "week", label: "This Week" },
-  { value: "month", label: "This Month" },
-];
+// Handle date range changes
+const handleDateRangeChange = (range: { start: string; end: string }) => {
+  dateRange.value = range;
+  currentPage.value = 1;
+};
 
-// Date filter logic
+// Date filter logic using date range
 const getDateFilterStart = () => {
-  const now = new Date();
-  switch (dateFilter.value) {
-    case "today":
-      now.setHours(0, 0, 0, 0);
-      return now;
-    case "week":
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      return weekStart;
-    case "month":
-      return new Date(now.getFullYear(), now.getMonth(), 1);
-    default:
-      return null;
-  }
+  if (!dateRange.value.start) return null;
+  const start = new Date(dateRange.value.start);
+  start.setHours(0, 0, 0, 0);
+  return start;
+};
+
+const getDateFilterEnd = () => {
+  if (!dateRange.value.end) return null;
+  const end = new Date(dateRange.value.end);
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
 
 // Filtered orders
@@ -91,8 +86,12 @@ const filteredOrders = computed(() => {
 
   // Date filter
   const dateStart = getDateFilterStart();
+  const dateEnd = getDateFilterEnd();
   if (dateStart) {
     result = result.filter((order) => new Date(order.date) >= dateStart);
+  }
+  if (dateEnd) {
+    result = result.filter((order) => new Date(order.date) <= dateEnd);
   }
 
   // Search filter
@@ -529,12 +528,31 @@ onMounted(async () => {
         >
           <!-- Search + Mobile Filter Toggle -->
           <div class="flex gap-3">
-            <div class="flex-1">
-              <UInput
-                v-model="searchQuery"
-                icon="i-heroicons-magnifying-glass"
-                :placeholder="t('common.search', 'Search orders...')"
-                size="lg"
+            <div class="flex-1 gap-2 flex items-center">
+              <div class="flex-1">
+                <UInput
+                  v-model="searchQuery"
+                  icon="i-heroicons-magnifying-glass"
+                  :placeholder="t('common.search', 'Search orders...')"
+                  class="w-full max-w-md"
+                />
+              </div>
+
+              <div>
+                <USelect
+                  v-model="statusFilter"
+                  :items="statusOptions"
+                  value-key="value"
+                  label-key="label"
+                  class="w-full sm:w-36"
+                />
+              </div>
+              <UButton
+                icon="i-heroicons-arrow-path"
+                variant="soft"
+                color="gray"
+                :loading="ordersStore.isLoading.value"
+                @click="ordersStore.init()"
               />
             </div>
             <!-- Mobile Filter Toggle -->
@@ -545,7 +563,6 @@ onMounted(async () => {
               "
               :color="showFilters ? 'primary' : 'gray'"
               variant="soft"
-              size="lg"
               @click="showFilters = !showFilters"
             />
           </div>
@@ -555,30 +572,14 @@ onMounted(async () => {
             class="lg:flex gap-3 flex-wrap mt-4"
             :class="{ hidden: !showFilters, flex: showFilters }"
           >
-            <USelect
-              v-model="dateFilter"
-              :items="dateFilterOptions"
-              value-key="value"
-              label-key="label"
-              class="w-full sm:w-36"
-            />
-            <USelect
-              v-model="statusFilter"
-              :items="statusOptions"
-              value-key="value"
-              label-key="label"
-              class="w-full sm:w-36 mt-3 sm:mt-0"
-            />
-            <UButton
-              icon="i-heroicons-arrow-path"
-              variant="soft"
-              color="gray"
-              :loading="ordersStore.isLoading.value"
-              class="mt-3 sm:mt-0"
-              @click="ordersStore.init()"
-            >
-              Refresh
-            </UButton>
+            <!-- Date Range Selector -->
+            <div class="w-full mb-3 lg:mb-0">
+              <CommonDateRangeSelector
+                v-model="dateRangePreset"
+                :compact="true"
+                @update:date-range="handleDateRangeChange"
+              />
+            </div>
           </div>
         </div>
       </div>

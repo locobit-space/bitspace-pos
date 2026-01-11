@@ -1,14 +1,8 @@
 <template>
   <UContainer>
-    <CommonPageHeader
-      :title="$t('accounting.expenses.title')"
-      :description="$t('accounting.expenses.description')"
-    >
+    <CommonPageHeader :title="$t('accounting.expenses.title')" :description="$t('accounting.expenses.description')">
       <template #actions>
-        <UButton
-          icon="i-heroicons-plus"
-          @click="openExpenseModal()"
-        >
+        <UButton icon="i-heroicons-plus" @click="openExpenseModal()">
           {{ $t('accounting.expenses.addExpense') }}
         </UButton>
       </template>
@@ -18,44 +12,23 @@
     <AccountingExpenseStats :stats="expensesStore.stats.value" class="mb-6" />
 
     <!-- Filters -->
-    <AccountingExpenseFilters
-      v-model:category="filters.category"
-      v-model:start-date="filters.startDate"
-      v-model:end-date="filters.endDate"
-      v-model:search="filters.search"
-      :categories="expensesStore.EXPENSE_CATEGORIES"
-      class="mb-6"
-    />
+    <AccountingExpenseFilters v-model:category="filters.category" v-model:start-date="filters.startDate"
+      v-model:end-date="filters.endDate" v-model:search="filters.search" :categories="expensesStore.EXPENSE_CATEGORIES"
+      class="mb-6" />
 
     <!-- Expense Chart -->
-    <AccountingExpenseChart
-      :data="expensesStore.expensesByCategory.value"
-      :period="chartPeriod"
-      @update:period="chartPeriod = $event"
-      class="mb-6"
-    />
+    <AccountingExpenseChart :data="expensesStore.expensesByCategory.value" :period="chartPeriod"
+      @update:period="chartPeriod = $event" class="mb-6" />
 
     <!-- Expenses List -->
-    <AccountingExpenseList
-      :expenses="filteredExpenses"
-      :total-count="expensesStore.expenses.value.length"
-      :loading="expensesStore.isLoading.value"
-      @edit="openExpenseModal"
-      @delete="confirmDelete"
-      @duplicate="duplicateExpense"
-      @export="handleExport"
-      @add="openExpenseModal()"
-    />
+    <AccountingExpenseList :expenses="filteredExpenses" :total-count="expensesStore.expenses.value.length"
+      :loading="expensesStore.isLoading.value" @edit="openExpenseModal" @delete="confirmDelete"
+      @duplicate="duplicateExpense" @export="handleExport" @add="openExpenseModal()" />
 
     <!-- Add/Edit Expense Modal -->
-    <AccountingExpenseFormModal
-      v-model:open="showExpenseModal"
-      :expense="editingExpense"
-      :saving="savingExpense"
-      :categories="expensesStore.EXPENSE_CATEGORIES"
-      :payment-methods="expensesStore.PAYMENT_METHODS"
-      @save="saveExpense"
-    />
+    <AccountingExpenseFormModal v-model:open="showExpenseModal" :expense="editingExpense" :saving="savingExpense"
+      :categories="expensesStore.EXPENSE_CATEGORIES" :payment-methods="expensesStore.PAYMENT_METHODS"
+      @save="saveExpense" />
 
     <!-- Delete Confirmation Modal -->
     <UModal v-model:open="showDeleteModal">
@@ -70,11 +43,7 @@
           <UButton variant="ghost" @click="showDeleteModal = false">
             {{ $t('common.cancel') }}
           </UButton>
-          <UButton
-            color="error"
-            :loading="deletingExpense"
-            @click="deleteExpense"
-          >
+          <UButton color="error" :loading="deletingExpense" @click="deleteExpense">
             {{ $t('common.delete') }}
           </UButton>
         </div>
@@ -114,7 +83,7 @@ const filters = reactive({
 })
 
 // Computed
-const filteredExpenses = computed(() => 
+const filteredExpenses = computed(() =>
   expensesStore.filterExpenses(filters)
 )
 
@@ -140,7 +109,7 @@ function confirmDelete(expense: Expense) {
 
 async function saveExpense(data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'synced'>) {
   savingExpense.value = true
-  
+
   try {
     if (editingExpense.value?.id) {
       await expensesStore.updateExpense(editingExpense.value.id, data)
@@ -169,9 +138,9 @@ async function saveExpense(data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' 
 
 async function deleteExpense() {
   if (!expenseToDelete.value) return
-  
+
   deletingExpense.value = true
-  
+
   try {
     await expensesStore.deleteExpense(expenseToDelete.value.id)
     toast.add({
@@ -192,7 +161,7 @@ async function deleteExpense() {
 
 function handleExport() {
   const csv = expensesStore.exportToCSV(filters)
-  
+
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -200,7 +169,7 @@ function handleExport() {
   a.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`
   a.click()
   URL.revokeObjectURL(url)
-  
+
   toast.add({
     title: t('accounting.expenses.exportSuccess'),
     color: 'success'

@@ -238,16 +238,18 @@
                   <UFormField
                     :label="$t('inventory.manufacturingDate', 'Mfg. Date')"
                   >
-                    <UInput v-model="item.manufacturingDate" type="date" />
+                    <CommonDatePicker
+                      v-model="item.manufacturingDate"
+                      class="w-full"
+                    />
                   </UFormField>
 
                   <UFormField
                     :label="$t('inventory.expiryDate', 'Expiry Date')"
                     :required="item.requiresExpiry"
                   >
-                    <UInput
+                    <CommonDatePicker
                       v-model="item.expiryDate"
-                      type="date"
                       :class="{
                         'ring-2 ring-amber-500':
                           item.requiresExpiry && !item.expiryDate,
@@ -289,20 +291,20 @@
                     {{
                       getDaysUntilExpiry(item.expiryDate) <= 0
                         ? $t("inventory.expired", "Product is expired!")
-                        : `${
-                            $t("inventory.expiresIn", "Expires in")
-                          } ${getDaysUntilExpiry(item.expiryDate)} ${
-                            $t("common.days", "days")
-                          }`
+                        : `${$t(
+                            "inventory.expiresIn",
+                            "Expires in"
+                          )} ${getDaysUntilExpiry(item.expiryDate)} ${$t(
+                            "common.days",
+                            "days"
+                          )}`
                     }}
                   </span>
                 </div>
 
                 <!-- Row 3: Quality & Notes -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <UFormField
-                    :label="$t('inventory.qualityGrade', 'Quality')"
-                  >
+                  <UFormField :label="$t('inventory.qualityGrade', 'Quality')">
                     <USelect
                       v-model="item.qualityGrade"
                       :items="qualityOptions"

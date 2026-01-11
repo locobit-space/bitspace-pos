@@ -54,7 +54,10 @@ const needsManualConfirm = computed(
 const hasAutoDetection = computed(() => {
   const provider = lightning.settings.value?.provider;
   return (
-    provider === "lnbits" || provider === "alby-hub" || provider === "blink"
+    provider === "lnbits" ||
+    provider === "alby-hub" ||
+    provider === "blink" ||
+    provider === "strike"
   );
 });
 const lightningAddress = computed(
@@ -73,6 +76,8 @@ const providerName = computed(() => {
       return "Alby Hub";
     case "blink":
       return "Blink";
+    case "strike":
+      return "Strike";
     case "nwc":
       return "NWC";
     default:
@@ -425,7 +430,10 @@ onUnmounted(() => {
       </h3>
       <p class="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
         {{
-          t("payment.lightning.unlockDescription", "Enter your master password to access encrypted API keys.")
+          t(
+            "payment.lightning.unlockDescription",
+            "Enter your master password to access encrypted API keys."
+          )
         }}
       </p>
 
@@ -614,7 +622,10 @@ onUnmounted(() => {
         </div>
         <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
           {{
-            t("payment.lightning.manualApproveHint", "If customer has paid but auto-detection failed (network issue, system error), you can manually approve:")
+            t(
+              "payment.lightning.manualApproveHint",
+              "If customer has paid but auto-detection failed (network issue, system error), you can manually approve:"
+            )
           }}
         </p>
         <UButton
@@ -632,7 +643,10 @@ onUnmounted(() => {
         </UButton>
         <p class="text-xs text-gray-400 mt-2">
           {{
-            t("payment.lightning.manualApproveWarning", "Only use if you have confirmed payment was received.")
+            t(
+              "payment.lightning.manualApproveWarning",
+              "Only use if you have confirmed payment was received."
+            )
           }}
         </p>
       </div>
@@ -648,7 +662,10 @@ onUnmounted(() => {
       >
         <p class="text-xs text-gray-400">
           {{
-            t("payment.lightning.manualApproveAvailableIn", "Manual override available in")
+            t(
+              "payment.lightning.manualApproveAvailableIn",
+              "Manual override available in"
+            )
           }}
           {{ manualApproveTimer }}s
         </p>

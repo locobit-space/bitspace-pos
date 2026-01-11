@@ -49,21 +49,13 @@ const standardOptions = [
               {{ t('accounting.settings.enableAccountingDesc') }}
             </p>
           </div>
-          <USwitch
-            :model-value="accountingEnabled"
-            @update:model-value="emit('update:accountingEnabled', $event)"
-          />
+          <USwitch :model-value="accountingEnabled" @update:model-value="emit('update:accountingEnabled', $event)" />
         </div>
 
         <!-- Accounting Standard -->
         <UFormField :label="t('accounting.settings.standard')">
-          <USelect
-            :model-value="selectedStandard"
-            :items="standardOptions"
-            value-key="value"
-            label-key="label"
-            @update:model-value="emit('update:selectedStandard', $event)"
-          />
+          <USelect :model-value="selectedStandard" :items="standardOptions" value-key="value" label-key="label"
+            @update:model-value="emit('update:selectedStandard', $event)" />
           <template #hint>
             <span v-if="selectedStandard === 'lao'">
               {{ t('accounting.settings.laoHint') }}
@@ -76,14 +68,8 @@ const standardOptions = [
 
         <!-- VAT Rate -->
         <UFormField :label="t('accounting.settings.vatRate')">
-          <UInput
-            :model-value="vatRate"
-            type="number"
-            min="0"
-            max="100"
-            step="0.5"
-            @update:model-value="emit('update:vatRate', Number($event))"
-          >
+          <UInput :model-value="vatRate" type="number" min="0" max="100" step="0.5"
+            @update:model-value="emit('update:vatRate', Number($event))">
             <template #trailing>
               <span class="text-muted">%</span>
             </template>
@@ -98,10 +84,7 @@ const standardOptions = [
               {{ t('accounting.settings.autoPostDesc') }}
             </p>
           </div>
-          <USwitch
-            :model-value="autoPost"
-            @update:model-value="emit('update:autoPost', $event)"
-          />
+          <USwitch :model-value="autoPost" @update:model-value="emit('update:autoPost', $event)" />
         </div>
 
         <!-- Nostr Sync -->
@@ -116,24 +99,20 @@ const standardOptions = [
                   {{ t('accounting.settings.nostrSync') }}
                 </p>
                 <p class="text-sm text-purple-600 dark:text-purple-400">
-                  {{ lastSyncTime ? `${t('common.lastSync')}: ${lastSyncTime.toLocaleString()}` : t('common.notSyncedYet') }}
+                  {{ lastSyncTime ? `${t('common.lastSync')}: ${lastSyncTime.toLocaleString()}` :
+                    t('common.notSyncedYet') }}
                 </p>
               </div>
             </div>
-            <UButton
-              variant="outline"
-              color="purple"
-              :loading="syncingToNostr"
-              icon="i-heroicons-arrow-path"
-              @click="emit('sync')"
-            >
+            <UButton variant="outline" color="purple" :loading="syncingToNostr" icon="i-heroicons-arrow-path"
+              @click="emit('sync')">
               {{ t('common.syncNow') }}
             </UButton>
           </div>
         </div>
 
         <!-- Save Button -->
-        <div class="pt-4 border-t">
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
           <UButton color="primary" icon="i-heroicons-check" @click="emit('save')">
             {{ t('common.saveSettings') }}
           </UButton>

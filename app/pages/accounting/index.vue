@@ -56,6 +56,8 @@ const autoPost = ref(true);
 const showInvoiceModal = ref(false);
 const showExpenseModal = ref(false);
 const showJournalModal = ref(false);
+const showIncomeModal = ref(false);
+const savingIncome = ref(false);
 
 // ============================================
 // 📊 COMPUTED DATA
@@ -86,7 +88,7 @@ const chartOfAccounts = computed(() =>
   }))
 );
 
-const invoices = computed(() => 
+const invoices = computed(() =>
   invoicesStore.invoices.value.map(inv => ({
     id: inv.invoiceNumber || inv.id,
     customer: inv.customerName,
@@ -97,7 +99,7 @@ const invoices = computed(() =>
   }))
 );
 
-const expenses = computed(() => 
+const expenses = computed(() =>
   expensesStore.expenses.value.slice(0, 10).map(exp => ({
     id: exp.id,
     description: exp.description,
@@ -132,7 +134,7 @@ async function saveSettings() {
     vatRate: vatRate.value / 100,
     autoPostJournals: autoPost.value,
   });
-  
+
   if (selectedStandard.value !== accounting.currentStandard.value) {
     await accounting.switchStandard(selectedStandard.value);
   }
@@ -143,11 +145,11 @@ async function syncToNostr() {
   try {
     const journalEntries = accounting.journalEntries.value;
     const accounts = accounting.activeAccounts.value;
-    
+
     localStorage.setItem('accounting_journal_entries', JSON.stringify(journalEntries));
     localStorage.setItem('accounting_accounts', JSON.stringify(accounts));
     localStorage.setItem('accounting_last_sync', new Date().toISOString());
-    
+
     lastSyncTime.value = new Date();
     console.log(`[Accounting] Synced ${journalEntries.length} entries, ${accounts.length} accounts`);
   } catch (e) {
@@ -213,7 +215,7 @@ function exportReport(type: string) {
         `Date: ${now}`,
         '',
         'Account Code,Account Name,Debit,Credit',
-        ...tb.map(a => 
+        ...tb.map(a =>
           `${a.code},"${a.name}",${a.debit > 0 ? a.debit : ''},${a.credit > 0 ? a.credit : ''}`
         ),
         '',
@@ -250,7 +252,7 @@ function exportReport(type: string) {
         '',
         'Date,Description,Inflow,Outflow',
         ...cashEntries.flatMap(entry =>
-          entry.lines.filter(l => l.accountCode === cashAccount).map(line => 
+          entry.lines.filter(l => l.accountCode === cashAccount).map(line =>
             `${entry.date},"${entry.description}",${line.debit || ''},${line.credit || ''}`
           )
         ),
@@ -356,7 +358,7 @@ async function handleCreateJournalEntry() {
   await accounting.createJournalEntry(
     newJournalEntry.value.description,
     newJournalEntry.value.lines.map(l => ({
-      accountCode: l.account, 
+      accountCode: l.account,
       accountName: '', // Will be resolved by account code
       debit: l.debit,
       credit: l.credit,
@@ -385,23 +387,51 @@ function addJournalLine() {
 function payWithLightning(invoiceId: string) {
   console.log("Pay invoice with Lightning:", invoiceId);
 }
+
+const toast = useToast();
+
+async function handleCreateIncome(data: {
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+  source?: string;
+  paymentMethod: string;
+  reference?: string;
+  notes?: string;
+}) {
+  savingIncome.value = true;
+  try {
+    await accounting.createIncomeEntry(
+      data.description,
+      data.amount,
+      data.category,
+      data.paymentMethod
+    );
+    showIncomeModal.value = false;
+    toast.add({
+      title: t('accounting.income.incomeCreated'),
+      color: 'success'
+    });
+  } catch (error) {
+    console.error('Failed to create income entry:', error);
+    toast.add({
+      title: t('accounting.income.saveFailed'),
+      color: 'error'
+    });
+  } finally {
+    savingIncome.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="p-4 lg:p-6 space-y-6">
     <!-- Page Header -->
-    <CommonPageHeader
-      :title="t('accounting.title')"
-      :description="t('accounting.subtitle')"
-    >
+    <CommonPageHeader :title="t('accounting.title')" :description="t('accounting.subtitle')">
       <template #actions>
         <div class="flex items-center gap-2">
-          <UInput
-            v-model="dateRange.start"
-            type="date"
-            size="sm"
-            class="w-36"
-          />
+          <UInput v-model="dateRange.start" type="date" size="sm" class="w-36" />
           <span class="text-muted">-</span>
           <UInput v-model="dateRange.end" type="date" size="sm" class="w-36" />
         </div>
@@ -409,95 +439,60 @@ function payWithLightning(invoiceId: string) {
     </CommonPageHeader>
 
     <!-- Tab Navigation with Nuxt UI UTabs -->
-    <UTabs
-      v-model="activeTab"
-      :items="tabs"
-      variant="pill"
-      class="w-full"
-    >
+    <UTabs v-model="activeTab" :items="tabs" variant="pill" class="w-full">
       <!-- Overview Tab Content -->
       <template #overview>
         <div class="mt-4">
-          <AccountingOverviewTab
-            :financial-overview="financialOverview"
-            :chart-of-accounts="chartOfAccounts"
-          />
+          <AccountingOverviewTab :financial-overview="financialOverview" :chart-of-accounts="chartOfAccounts"
+            @add-income="showIncomeModal = true" />
         </div>
       </template>
 
       <!-- Invoices Tab Content -->
       <template #invoices>
         <div class="mt-4">
-          <AccountingInvoicesTab
-            :invoices="invoices"
-            @add="showInvoiceModal = true"
-            @pay-lightning="payWithLightning"
-          />
+          <AccountingInvoicesTab :invoices="invoices" @add="showInvoiceModal = true"
+            @pay-lightning="payWithLightning" />
         </div>
       </template>
 
       <!-- Expenses Tab Content -->
       <template #expenses>
         <div class="mt-4">
-          <AccountingExpensesTab
-            :expenses="expenses"
-            @add="showExpenseModal = true"
-          />
+          <AccountingExpensesTab :expenses="expenses" @add="showExpenseModal = true" />
         </div>
       </template>
 
       <!-- Journal Tab Content -->
       <template #journal>
         <div class="mt-4">
-          <AccountingJournalTab
-            :entries="journalEntries"
-            @add="showJournalModal = true"
-          />
+          <AccountingJournalTab :entries="journalEntries" @add="showJournalModal = true" />
         </div>
       </template>
 
       <!-- Reports Tab Content -->
       <template #reports>
         <div class="mt-4">
-          <AccountingReportsTab
-            @export="exportReport"
-          />
+          <AccountingReportsTab @export="exportReport" />
         </div>
       </template>
 
       <!-- Settings Tab Content -->
       <template #settings>
         <div class="mt-4">
-          <AccountingSettingsTab
-            v-model:accounting-enabled="accountingEnabled"
-            v-model:selected-standard="selectedStandard"
-            v-model:vat-rate="vatRate"
-            v-model:auto-post="autoPost"
-            :syncing-to-nostr="syncingToNostr"
-            :last-sync-time="lastSyncTime"
-            @save="saveSettings"
-            @sync="syncToNostr"
-          />
+          <AccountingSettingsTab v-model:accounting-enabled="accountingEnabled"
+            v-model:selected-standard="selectedStandard" v-model:vat-rate="vatRate" v-model:auto-post="autoPost"
+            :syncing-to-nostr="syncingToNostr" :last-sync-time="lastSyncTime" @save="saveSettings"
+            @sync="syncToNostr" />
         </div>
       </template>
     </UTabs>
 
     <!-- Modals -->
-    <AccountingInvoiceModal 
-      v-model:open="showInvoiceModal" 
-      v-model:form="newInvoice"
-      @create="handleCreateInvoice"
-    />
-    <AccountingExpenseModal 
-      v-model:open="showExpenseModal" 
-      v-model:form="newExpense"
-      @create="handleCreateExpense"
-    />
-    <AccountingJournalEntryModal 
-      v-model:open="showJournalModal" 
-      v-model:form="newJournalEntry"
-      @create="handleCreateJournalEntry"
-      @add-line="addJournalLine"
-    />
+    <AccountingInvoiceModal v-model:open="showInvoiceModal" v-model:form="newInvoice" @create="handleCreateInvoice" />
+    <AccountingExpenseModal v-model:open="showExpenseModal" v-model:form="newExpense" @create="handleCreateExpense" />
+    <AccountingJournalEntryModal v-model:open="showJournalModal" v-model:form="newJournalEntry"
+      @create="handleCreateJournalEntry" @add-line="addJournalLine" />
+    <AccountingIncomeFormModal v-model:open="showIncomeModal" :saving="savingIncome" @save="handleCreateIncome" />
   </div>
 </template>

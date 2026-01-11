@@ -305,7 +305,12 @@
       "securityLockedDescription": "Your data encryption is enabled but locked. Please unlock to view or modify API keys.",
       "keysNotEncrypted": "API Keys Not Protected",
       "keysNotEncryptedDescription": "Your API keys are stored without encryption. Enable data encryption with a master password for better security.",
-      "enableEncryption": "Enable Encryption"
+      "enableEncryption": "Enable Encryption",
+      "strikeDescription": "Strike - Bitcoin payments made easy",
+      "strikeInfo": "Strike Account",
+      "strikeInfoDescription": "Connect your Strike account to accept Lightning payments. Strike provides easy Bitcoin and Lightning payments with automatic settlement.",
+      "strikeApiKey": "Strike API Key",
+      "strikeApiKeyHint": "Get your API key from dashboard.strike.me"
     },
     "crypto": {
       "title": "Crypto Payments",

@@ -302,7 +302,12 @@
       "securityLockedDescription": "ການເຂົ້າລະຫັດຂໍ້ມູນຂອງທ່ານເປີດໃຊ້ງານແຕ່ຖືກລັອກ. ກະລຸນາປົດລັອກເພື່ອເບິ່ງຫຼືແກ້ໄຂ API keys.",
       "keysNotEncrypted": "API Keys ບໍ່ໄດ້ຮັບການປ້ອງກັນ",
       "keysNotEncryptedDescription": "API keys ຂອງທ່ານຖືກເກັບໂດຍບໍ່ມີການເຂົ້າລະຫັດ. ເປີດໃຊ້ການເຂົ້າລະຫັດຂໍ້ມູນດ້ວຍລະຫັດຜ່ານຫຼັກເພື່ອຄວາມປອດໄພທີ່ດີກວ່າ.",
-      "enableEncryption": "ເປີດໃຊ້ການເຂົ້າລະຫັດ"
+      "enableEncryption": "ເປີດໃຊ້ການເຂົ້າລະຫັດ",
+      "strikeDescription": "Strike - ການຈ່າຍເງິນ Bitcoin ທີ່ງ່າຍດາຍ",
+      "strikeInfo": "ບັນຊີ Strike",
+      "strikeInfoDescription": "ເຊື່ອມຕໍ່ບັນຊີ Strike ຂອງທ່ານເພື່ອຮັບການຈ່າຍເງິນ Lightning. Strike ສະໜອງການຈ່າຍເງິນ Bitcoin ແລະ Lightning ທີ່ງ່າຍດາຍພ້ອມການສຳເລັດອັດຕະໂນມັດ.",
+      "strikeApiKey": "Strike API Key",
+      "strikeApiKeyHint": "ເອົາ API key ຈາກ dashboard.strike.me"
     },
     "crypto": {
       "title": "ການຈ່າຍ Crypto",

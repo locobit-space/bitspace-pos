@@ -7,6 +7,143 @@ import type { EReceipt } from "./use-receipt";
 import { EntityId } from "~/utils/id";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 
+// ============================================
+// 🔐 Receipt Encryption Utilities
+// Uses receiptCode as password for AES-256-GCM encryption
+// ============================================
+
+interface EncryptedReceiptData {
+  ciphertext: string;
+  iv: string;
+  salt: string;
+  version: number;
+}
+
+/**
+ * Derive AES-256 key from receiptCode using PBKDF2
+ */
+async function deriveKeyFromCode(
+  code: string,
+  salt: Uint8Array
+): Promise<CryptoKey> {
+  const encoder = new TextEncoder();
+
+  // Import password as key material
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(code),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+
+  // Derive AES key with high iteration count
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt as BufferSource,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * Convert ArrayBuffer to base64 string
+ */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]!);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Convert base64 string to ArrayBuffer
+ */
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+/**
+ * Encrypt receipt data using receiptCode as password
+ * Uses AES-256-GCM for authenticated encryption
+ */
+async function encryptReceiptData(
+  data: EReceipt,
+  code: string
+): Promise<EncryptedReceiptData> {
+  // Generate random salt and IV
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+
+  // Derive key from code
+  const key = await deriveKeyFromCode(code, salt);
+
+  // Encode and encrypt
+  const encoder = new TextEncoder();
+  const plaintext = encoder.encode(JSON.stringify(data));
+
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv as BufferSource },
+    key,
+    plaintext
+  );
+
+  return {
+    ciphertext: arrayBufferToBase64(ciphertext),
+    iv: arrayBufferToBase64(iv.buffer),
+    salt: arrayBufferToBase64(salt.buffer),
+    version: 1,
+  };
+}
+
+/**
+ * Decrypt receipt data using receiptCode as password
+ * Returns null if decryption fails (wrong code)
+ */
+async function decryptReceiptData(
+  encrypted: EncryptedReceiptData,
+  code: string
+): Promise<EReceipt | null> {
+  try {
+    // Decode base64 values
+    const salt = new Uint8Array(base64ToArrayBuffer(encrypted.salt));
+    const iv = new Uint8Array(base64ToArrayBuffer(encrypted.iv));
+    const ciphertext = new Uint8Array(
+      base64ToArrayBuffer(encrypted.ciphertext)
+    );
+
+    // Derive key from code
+    const key = await deriveKeyFromCode(code, salt);
+
+    // Decrypt
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv as BufferSource },
+      key,
+      ciphertext
+    );
+
+    // Decode and parse
+    const decoder = new TextDecoder();
+    return JSON.parse(decoder.decode(plaintext)) as EReceipt;
+  } catch (error) {
+    console.warn("[ReceiptGenerator] Decryption failed:", error);
+    return null;
+  }
+}
+
 export const useReceiptGenerator = () => {
   const nostrData = useNostrData();
   const relay = useNostrRelay();
@@ -122,7 +259,7 @@ export const useReceiptGenerator = () => {
     // 3. Save receipt locally (for offline access)
     receiptComposable.storeEBill(publicReceipt);
 
-    // 4. Publish public receipt to Nostr (NOT encrypted)
+    // 4. Publish public receipt to Nostr (ENCRYPTED with receiptCode)
     const userPubkey = getUserPubkey();
 
     if (userPubkey) {
@@ -135,7 +272,7 @@ export const useReceiptGenerator = () => {
         const tags = [
           ["d", receiptId], // Receipt ID (UUID) - primary lookup key
           ["t", "receipt"],
-          ["t", "public"],
+          ["t", "encrypted"], // Mark as encrypted
           ["order", order.code || order.id],
           ["amount", order.total.toString()],
           ["currency", order.currency],
@@ -145,7 +282,12 @@ export const useReceiptGenerator = () => {
           ],
         ];
 
-        const content = JSON.stringify(publicReceipt); // Plain JSON, NOT encrypted
+        // 🔐 Encrypt receipt data with receiptCode as password
+        const encryptedData = await encryptReceiptData(
+          publicReceipt,
+          receiptCode
+        );
+        const content = JSON.stringify(encryptedData);
 
         // Create and sign the event
         const signedEvent = await nostrData.createEvent(
@@ -172,6 +314,8 @@ export const useReceiptGenerator = () => {
     // 5. Generate receipt URL with verification code
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
+    // TODO: Enable subdomain when ready:
+    // const receiptUrl = `https://receipt.bnos.space/?id=${receiptId}&code=${receiptCode}`;
 
     // 6. Generate QR code
     const QRCode = await import("qrcode");
@@ -190,10 +334,11 @@ export const useReceiptGenerator = () => {
 
   /**
    * Fetch public receipt from Nostr by ID
-   * Code is used for verification only (checked after fetch)
+   * Code is required to decrypt the receipt data
    */
   const fetchReceiptById = async (
-    receiptId: string
+    receiptId: string,
+    receiptCode?: string
   ): Promise<EReceipt | null> => {
     if (!relay.isInitialized?.value) {
       return null;
@@ -208,7 +353,43 @@ export const useReceiptGenerator = () => {
       });
 
       if (events.length > 0 && events[0]) {
-        const receipt = JSON.parse(events[0].content) as EReceipt;
+        const eventContent = events[0].content;
+        let receipt: EReceipt;
+
+        // Check if content is encrypted (has ciphertext property)
+        const parsedContent = JSON.parse(eventContent);
+
+        if (
+          parsedContent.ciphertext &&
+          parsedContent.iv &&
+          parsedContent.salt
+        ) {
+          // 🔐 Content is encrypted - need receiptCode to decrypt
+          if (!receiptCode) {
+            console.warn(
+              "[ReceiptGenerator] Receipt is encrypted but no code provided"
+            );
+            return null;
+          }
+
+          const decrypted = await decryptReceiptData(
+            parsedContent as EncryptedReceiptData,
+            receiptCode
+          );
+
+          if (!decrypted) {
+            console.warn(
+              "[ReceiptGenerator] Failed to decrypt receipt - invalid code"
+            );
+            return null;
+          }
+
+          receipt = decrypted;
+        } else {
+          // Legacy unencrypted receipt
+          receipt = parsedContent as EReceipt;
+        }
+
         receipt.nostrEventId = events[0].id;
 
         // Save to local storage for future access
@@ -334,9 +515,9 @@ export const useReceiptGenerator = () => {
         }
 
         const tags = [
-          ["d", receiptCode],
+          ["d", receiptId], // Use receiptId as d-tag, not receiptCode
           ["t", "receipt"],
-          ["t", "public"],
+          ["t", "encrypted"], // Mark as encrypted
           ["t", "consolidated"],
           ["session", sessionInfo.sessionId],
           ["table", sessionInfo.tableNumber],
@@ -349,7 +530,12 @@ export const useReceiptGenerator = () => {
           ],
         ];
 
-        const content = JSON.stringify(consolidatedReceipt);
+        // 🔐 Encrypt receipt data with receiptCode as password
+        const encryptedData = await encryptReceiptData(
+          consolidatedReceipt,
+          receiptCode
+        );
+        const content = JSON.stringify(encryptedData);
 
         const signedEvent = await nostrData.createEvent(
           NOSTR_KINDS.RECEIPT,
@@ -374,6 +560,8 @@ export const useReceiptGenerator = () => {
     // 6. Generate URL and QR code
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const receiptUrl = `${baseUrl}/receipt/${receiptId}?code=${receiptCode}`;
+    // TODO: Enable subdomain when ready:
+    // const receiptUrl = `https://receipt.bnos.space/?id=${receiptId}&code=${receiptCode}`;
 
     const QRCode = await import("qrcode");
     const qrCode = await QRCode.toDataURL(receiptUrl, {

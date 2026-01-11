@@ -53,6 +53,14 @@ onMounted(async () => {
   }
 });
 
+// Date range selector state
+const selectedPreset = ref("month");
+
+// Handle date range changes from the selector
+const handleDateRangeChange = (range: { start: string; end: string }) => {
+  dateRange.value = range;
+};
+
 // Generate report (refresh data)
 const generateReport = async () => {
   try {
@@ -187,31 +195,35 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
     </div>
 
     <!-- Filters -->
-    <div class="bg-gray-50 dark:bg-gray-800/50 p-4 mx-4 rounded-xl">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <UFormField :label="t('reports.startDate')">
-          <UInput v-model="dateRange.start" type="date" />
-        </UFormField>
-        <UFormField :label="t('reports.endDate')">
-          <UInput v-model="dateRange.end" type="date" />
-        </UFormField>
+    <div class="bg-gray-50 dark:bg-gray-800/50 p-4 mx-4 rounded-xl space-y-4">
+      <!-- Date Range Selector -->
+      <CommonDateRangeSelector
+        v-model="selectedPreset"
+        @update:date-range="handleDateRangeChange"
+      />
+
+      <!-- Branch Filter -->
+      <div class="flex items-end gap-4">
         <UFormField :label="t('common.branch')">
-          <USelect
+          <USelectMenu
             v-model="selectedBranch"
             :items="branches"
             value-key="id"
             label-key="name"
+            class="w-48"
           />
         </UFormField>
-        <UFormField :label="t('reports.quickSelect', 'Quick Select')">
-          <USelect
-            :items="quickDateRanges"
-            value-key="value"
-            label-key="label"
-            :placeholder="t('reports.selectRange', 'Select Range')"
-            @update:model-value="setQuickDateRange"
-          />
-        </UFormField>
+        <!-- Quick Actions -->
+        <div v-if="selectedReport === 'inventory'" class="">
+          <UButton
+            color="primary"
+            variant="soft"
+            icon="i-heroicons-chart-bar-square"
+            to="/reports/inventory"
+          >
+            {{ t("reports.advancedReports", "Advanced Inventory Reports") }}
+          </UButton>
+        </div>
       </div>
     </div>
 
@@ -474,21 +486,21 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
         <CommonStatCard
           icon="i-heroicons-currency-dollar"
           icon-color="green"
-          :label="t('reports.inventoryValue', 'Inventory Value')"
+          :label="t('ingredients.inventoryValue', 'Inventory Value')"
           :value="formatCurrency(inventoryStats.totalValue)"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
           icon="i-heroicons-exclamation-triangle"
           icon-color="yellow"
-          :label="t('reports.lowStock', 'Low Stock')"
+          :label="t('inventory.lowStock', 'Low Stock')"
           :value="inventoryStats.lowStock.toLocaleString()"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
           icon="i-heroicons-x-circle"
           icon-color="red"
-          :label="t('reports.outOfStock', 'Out of Stock')"
+          :label="t('inventory.outOfStock', 'Out of Stock')"
           :value="inventoryStats.outOfStock.toLocaleString()"
           :loading="loading || !isInitialized"
         />
@@ -496,12 +508,34 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
 
       <UCard class="mx-4">
         <template #header>
-          <h3 class="font-medium">
-            {{ t("reports.lowStockItems", "Low Stock Items") }}
-          </h3>
+          <div class="flex items-center justify-between">
+            <h3 class="font-medium">
+              {{ t("reports.lowStockItems", "Low Stock Items") }}
+            </h3>
+            <UButton
+              variant="ghost"
+              color="primary"
+              size="sm"
+              icon="i-heroicons-arrow-right"
+              to="/reports/inventory"
+            >
+              {{ t("reports.viewDetails", "View Details") }}
+            </UButton>
+          </div>
         </template>
+
+        <!-- Skeleton Loading -->
+        <div v-if="loading || !isInitialized" class="space-y-3">
+          <div v-for="i in 5" :key="i" class="flex items-center gap-4">
+            <USkeleton class="h-4 w-1/3" />
+            <USkeleton class="h-4 w-16" />
+            <USkeleton class="h-4 w-16" />
+            <USkeleton class="h-6 w-20" />
+          </div>
+        </div>
+
         <div
-          v-if="lowStockItems.length === 0"
+          v-else-if="lowStockItems.length === 0"
           class="text-center py-8 text-gray-500"
         >
           {{ t("reports.noLowStockItems", "No low stock items") }}
