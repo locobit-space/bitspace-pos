@@ -259,6 +259,7 @@ const formatCurrency = (amount: number): string => {
                   type="number"
                   min="1"
                   placeholder="Qty"
+                  class="w-full"
                 />
               </div>
               <div class="w-32">
@@ -267,6 +268,7 @@ const formatCurrency = (amount: number): string => {
                   type="number"
                   min="0"
                   placeholder="Price"
+                  class="w-full"
                 />
               </div>
               <div

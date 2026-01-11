@@ -20,9 +20,9 @@ withDefaults(defineProps<Props>(), {
   showMoreFilters: true,
 });
 
-const searchQuery = defineModel<string>('search', { default: '' });
-const selectedBranch = defineModel<string>('branch', { default: 'all' });
-const selectedStatus = defineModel<string>('status', { default: 'all' });
+const searchQuery = defineModel<string>("search", { default: "" });
+const selectedBranch = defineModel<string>("branch", { default: "all" });
+const selectedStatus = defineModel<string>("status", { default: "all" });
 
 const emit = defineEmits<{
   moreFilters: [];
@@ -55,6 +55,7 @@ const { t } = useI18n();
       color="gray"
       variant="ghost"
       icon="i-heroicons-funnel"
+      block
       :label="t('common.moreFilters')"
       @click="emit('moreFilters')"
     />

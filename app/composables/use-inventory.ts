@@ -53,7 +53,7 @@ export interface InventoryReservation {
   orderId: string;
   expiresAt: Date;
   createdAt: Date;
-  status: 'active' | 'expired' | 'released' | 'converted';
+  status: "active" | "expired" | "released" | "converted";
 }
 
 export interface StockMovement {
@@ -1385,6 +1385,249 @@ export function useInventory() {
   }
 
   // ============================================
+  // 📊 INVENTORY REPORT FUNCTIONS
+  // ============================================
+
+  /**
+   * Get stock movements filtered by date range
+   */
+  function getStockMovementsByDateRange(
+    startDate: Date,
+    endDate: Date,
+    branchId?: string
+  ): StockMovement[] {
+    let movements = stockMovements.value.filter((m) => {
+      const movementDate = new Date(m.createdAt);
+      return movementDate >= startDate && movementDate <= endDate;
+    });
+
+    if (branchId && branchId !== "all") {
+      movements = movements.filter((m) => m.branchId === branchId);
+    }
+
+    return movements.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  /**
+   * Get cost report data
+   */
+  function getCostReport(branchId?: string): {
+    totalInventoryValue: number;
+    totalCostValue: number;
+    estimatedMargin: number;
+    byCategory: {
+      categoryId: string;
+      categoryName: string;
+      totalValue: number;
+      totalCost: number;
+      productCount: number;
+    }[];
+    topValueProducts: {
+      productId: string;
+      productName: string;
+      currentStock: number;
+      value: number;
+      costPrice: number;
+    }[];
+  } {
+    let items = inventoryItems.value;
+    if (branchId && branchId !== "all") {
+      items = items.filter((i) => i.branchId === branchId);
+    }
+
+    // Total values
+    const totalInventoryValue = items.reduce((sum, i) => sum + i.value, 0);
+    const totalCostValue = items.reduce(
+      (sum, i) => sum + i.currentStock * i.costPrice,
+      0
+    );
+    const estimatedMargin =
+      totalInventoryValue > 0
+        ? ((totalInventoryValue - totalCostValue) / totalInventoryValue) * 100
+        : 0;
+
+    // By category
+    const categoryMap: Record<
+      string,
+      { name: string; value: number; cost: number; count: number }
+    > = {};
+
+    for (const item of items) {
+      const catId = item.categoryId || "uncategorized";
+      if (!categoryMap[catId]) {
+        categoryMap[catId] = {
+          name: item.categoryName || "Uncategorized",
+          value: 0,
+          cost: 0,
+          count: 0,
+        };
+      }
+      categoryMap[catId].value += item.value;
+      categoryMap[catId].cost += item.currentStock * item.costPrice;
+      categoryMap[catId].count++;
+    }
+
+    const byCategory = Object.entries(categoryMap)
+      .map(([categoryId, data]) => ({
+        categoryId,
+        categoryName: data.name,
+        totalValue: data.value,
+        totalCost: data.cost,
+        productCount: data.count,
+      }))
+      .sort((a, b) => b.totalValue - a.totalValue);
+
+    // Top value products
+    const topValueProducts = [...items]
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10)
+      .map((i) => ({
+        productId: i.productId,
+        productName: i.productName,
+        currentStock: i.currentStock,
+        value: i.value,
+        costPrice: i.costPrice,
+      }));
+
+    return {
+      totalInventoryValue,
+      totalCostValue,
+      estimatedMargin,
+      byCategory,
+      topValueProducts,
+    };
+  }
+
+  /**
+   * Get stock in/out summary for date range
+   */
+  function getStockInOutSummary(
+    startDate: Date,
+    endDate: Date,
+    branchId?: string
+  ): {
+    totalIn: number;
+    totalOut: number;
+    netChange: number;
+    byType: {
+      type: string;
+      count: number;
+      quantity: number;
+    }[];
+    byDay: {
+      date: string;
+      inQty: number;
+      outQty: number;
+    }[];
+    topMovers: {
+      productId: string;
+      productName: string;
+      inQty: number;
+      outQty: number;
+      netChange: number;
+    }[];
+  } {
+    const movements = getStockMovementsByDateRange(
+      startDate,
+      endDate,
+      branchId
+    );
+
+    // Totals
+    let totalIn = 0;
+    let totalOut = 0;
+
+    // By type
+    const typeMap: Record<string, { count: number; quantity: number }> = {};
+
+    // By day
+    const dayMap: Record<string, { inQty: number; outQty: number }> = {};
+
+    // By product
+    const productMap: Record<
+      string,
+      { name: string; inQty: number; outQty: number }
+    > = {};
+
+    for (const m of movements) {
+      // Totals
+      if (m.type === "in" || m.quantity > 0) {
+        totalIn += Math.abs(m.quantity);
+      } else {
+        totalOut += Math.abs(m.quantity);
+      }
+
+      // By type
+      const reason = m.reason || m.type;
+      if (!typeMap[reason]) {
+        typeMap[reason] = { count: 0, quantity: 0 };
+      }
+      typeMap[reason].count++;
+      typeMap[reason].quantity += m.quantity;
+
+      // By day
+      const day = new Date(m.createdAt).toISOString().split("T")[0];
+      if (!dayMap[day]) {
+        dayMap[day] = { inQty: 0, outQty: 0 };
+      }
+      if (m.type === "in" || m.quantity > 0) {
+        dayMap[day].inQty += Math.abs(m.quantity);
+      } else {
+        dayMap[day].outQty += Math.abs(m.quantity);
+      }
+
+      // By product
+      if (!productMap[m.productId]) {
+        productMap[m.productId] = { name: m.productName, inQty: 0, outQty: 0 };
+      }
+      if (m.type === "in" || m.quantity > 0) {
+        productMap[m.productId].inQty += Math.abs(m.quantity);
+      } else {
+        productMap[m.productId].outQty += Math.abs(m.quantity);
+      }
+    }
+
+    const byType = Object.entries(typeMap)
+      .map(([type, data]) => ({
+        type,
+        count: data.count,
+        quantity: data.quantity,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const byDay = Object.entries(dayMap)
+      .map(([date, data]) => ({
+        date,
+        inQty: data.inQty,
+        outQty: data.outQty,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const topMovers = Object.entries(productMap)
+      .map(([productId, data]) => ({
+        productId,
+        productName: data.name,
+        inQty: data.inQty,
+        outQty: data.outQty,
+        netChange: data.inQty - data.outQty,
+      }))
+      .sort((a, b) => b.inQty + b.outQty - (a.inQty + a.outQty))
+      .slice(0, 10);
+
+    return {
+      totalIn,
+      totalOut,
+      netChange: totalIn - totalOut,
+      byType,
+      byDay,
+      topMovers,
+    };
+  }
+
+  // ============================================
   // 🔄 SYNC OPERATIONS
   // ============================================
 
@@ -1558,29 +1801,34 @@ export function useInventory() {
     getInventoryStats,
     getBranchStats,
 
+    // Reports
+    getStockMovementsByDateRange,
+    getCostReport,
+    getStockInOutSummary,
+
     // Sync
     syncPendingData,
 
     // Export
     exportInventory,
-    
+
     // Reservations
     reserveStock,
     releaseReservation,
     getInventoryReservations,
     cleanupExpiredReservations,
   };
-  
+
   // ============================================
   // 🔒 INVENTORY RESERVATION FUNCTIONS
   // ============================================
-  
+
   const reservations = ref<InventoryReservation[]>([]);
-  
+
   // Load reservations from localStorage
   function loadReservations() {
     try {
-      const stored = localStorage.getItem('inventory_reservations');
+      const stored = localStorage.getItem("inventory_reservations");
       if (stored) {
         const data = JSON.parse(stored);
         reservations.value = data.map((r: any) => ({
@@ -1591,19 +1839,22 @@ export function useInventory() {
       }
       cleanupExpiredReservations();
     } catch (error) {
-      console.error('Failed to load reservations:', error);
+      console.error("Failed to load reservations:", error);
     }
   }
-  
+
   // Save reservations
   function saveReservations() {
     try {
-      localStorage.setItem('inventory_reservations', JSON.stringify(reservations.value));
+      localStorage.setItem(
+        "inventory_reservations",
+        JSON.stringify(reservations.value)
+      );
     } catch (error) {
-      console.error('Failed to save reservations:', error);
+      console.error("Failed to save reservations:", error);
     }
   }
-  
+
   // Reserve stock for order
   async function reserveStock(params: {
     items: Array<{ productId: string; quantity: number }>;
@@ -1611,9 +1862,11 @@ export function useInventory() {
     orderId: string;
     expiresIn: number;
   }) {
-    const baseId = `RES-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const baseId = `RES-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}`;
     const reservationGroup: InventoryReservation[] = [];
-    
+
     for (const item of params.items) {
       const reservation: InventoryReservation = {
         id: `${baseId}-${item.productId}`,
@@ -1623,57 +1876,57 @@ export function useInventory() {
         orderId: params.orderId,
         expiresAt: new Date(Date.now() + params.expiresIn),
         createdAt: new Date(),
-        status: 'active',
+        status: "active",
       };
       reservations.value.push(reservation);
       reservationGroup.push(reservation);
     }
-    
+
     saveReservations();
-    
+
     return {
       id: baseId,
       expiresAt: reservationGroup[0].expiresAt,
       items: reservationGroup,
     };
   }
-  
+
   // Release reservation
   async function releaseReservation(reservationId: string) {
-    reservations.value.forEach(r => {
+    reservations.value.forEach((r) => {
       if (r.id.startsWith(reservationId) || r.id === reservationId) {
-        r.status = 'released';
+        r.status = "released";
       }
     });
     saveReservations();
   }
-  
+
   // Get active reservations for product
   function getInventoryReservations(productId: string): InventoryReservation[] {
     const now = new Date();
     return reservations.value.filter(
-      r => r.productId === productId && 
-      r.status === 'active' && 
-      r.expiresAt > now
+      (r) =>
+        r.productId === productId && r.status === "active" && r.expiresAt > now
     );
   }
-  
+
   // Clean up expired reservations
   function cleanupExpiredReservations() {
     const now = new Date();
-    reservations.value.forEach(r => {
-      if (r.expiresAt < now && r.status === 'active') {
-        r.status = 'expired';
+    reservations.value.forEach((r) => {
+      if (r.expiresAt < now && r.status === "active") {
+        r.status = "expired";
       }
     });
     // Remove old expired reservations (older than 24 hours)
     reservations.value = reservations.value.filter(
-      r => r.status !== 'expired' || 
-      (Date.now() - r.createdAt.getTime()) < 24 * 60 * 60 * 1000
+      (r) =>
+        r.status !== "expired" ||
+        Date.now() - r.createdAt.getTime() < 24 * 60 * 60 * 1000
     );
     saveReservations();
   }
-  
+
   // Initialize reservations
   if (process.client) {
     loadReservations();
