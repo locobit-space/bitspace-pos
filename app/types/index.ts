@@ -2227,6 +2227,7 @@ export type LightningProvider =
   | "alby"
   | "alby-hub"
   | "blink"
+  | "strike"
   | "nwc"
   | "lnd"
   | "cln"
@@ -2239,6 +2240,7 @@ export interface LightningSettings {
   accessToken?: string; // Alby Hub access token
   blinkApiKey?: string; // Blink API key
   blinkWalletId?: string; // Blink wallet ID
+  strikeApiKey?: string; // Strike API key
   macaroon?: string; // LND macaroon (hex)
   rune?: string; // CLN rune
   nwcConnectionString?: string; // NWC connection string (nostr+walletconnect://...)

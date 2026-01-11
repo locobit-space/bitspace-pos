@@ -248,6 +248,30 @@
           </div>
         </div>
 
+        <!-- Strike Configuration -->
+        <div v-else-if="selectedProvider === 'strike'" class="space-y-4">
+          <UAlert
+            icon="i-heroicons-bolt"
+            color="yellow"
+            variant="subtle"
+            :title="$t('settings.lightning.strikeInfo')"
+            :description="$t('settings.lightning.strikeInfoDescription')"
+          />
+
+          <UFormField :label="$t('settings.lightning.strikeApiKey')" required>
+            <UInput
+              v-model="form.strikeApiKey"
+              type="password"
+              placeholder="Your Strike API key"
+              icon="i-heroicons-key"
+              class="w-full"
+            />
+            <template #hint>
+              {{ $t("settings.lightning.strikeApiKeyHint") }}
+            </template>
+          </UFormField>
+        </div>
+
         <!-- Alby WebLN Configuration -->
         <div v-else-if="selectedProvider === 'alby'" class="space-y-4">
           <UAlert
@@ -494,6 +518,7 @@ const form = reactive({
   apiKey: "",
   accessToken: "",
   blinkApiKey: "",
+  strikeApiKey: "",
   nwcConnectionString: "",
   lightningAddress: "",
   bolt12Offer: "",
@@ -527,6 +552,12 @@ const providers = [
     name: "Blink",
     icon: "i-heroicons-sparkles",
     description: t("settings.lightning.blinkDescription"),
+  },
+  {
+    id: "strike" as LightningProvider,
+    name: "Strike",
+    icon: "i-heroicons-bolt",
+    description: t("settings.lightning.strikeDescription"),
   },
   {
     id: "alby" as LightningProvider,
@@ -572,6 +603,7 @@ const loadSettings = () => {
     form.apiKey = settings.value.apiKey || "";
     form.accessToken = settings.value.accessToken || "";
     form.blinkApiKey = settings.value.blinkApiKey || "";
+    form.strikeApiKey = settings.value.strikeApiKey || "";
     form.nwcConnectionString = settings.value.nwcConnectionString || "";
     form.lightningAddress = settings.value.lightningAddress || "";
     form.bolt12Offer = settings.value.bolt12Offer || "";
@@ -628,6 +660,7 @@ const testConnection = async () => {
     apiKey: form.apiKey,
     accessToken: form.accessToken,
     blinkApiKey: form.blinkApiKey,
+    strikeApiKey: form.strikeApiKey,
     nwcConnectionString: form.nwcConnectionString,
     lightningAddress: form.lightningAddress,
     bolt12Offer: form.bolt12Offer,
@@ -657,6 +690,7 @@ const saveConfiguration = async () => {
     apiKey: form.apiKey,
     accessToken: form.accessToken,
     blinkApiKey: form.blinkApiKey,
+    strikeApiKey: form.strikeApiKey,
     nwcConnectionString: form.nwcConnectionString,
     lightningAddress: form.lightningAddress,
     bolt12Offer: form.bolt12Offer,
