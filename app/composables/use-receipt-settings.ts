@@ -110,7 +110,7 @@ const defaultSettings: SavedReceiptSettings = {
     showPromotionDetails: false, // Default: hide to save paper
   },
   footer: {
-    thankYouMessage: "🥰 ຂອບມຸກຄອບຫໍ່ 🙏 !",
+    thankYouMessage: "🥰 ຂອບມຸກຄອບຫໍ່ 🙏",
     returnPolicy: "",
     customText: "",
     showQrCode: false,
