@@ -44,22 +44,31 @@ onMounted(async () => {
   const storedReceipt = receipt.retrieveEBill(receiptId);
 
   if (storedReceipt) {
+    // Verify code matches (security check) even for cached receipts
+    if (receiptCode && storedReceipt.code !== receiptCode) {
+      error.value = "Invalid receipt code";
+      loading.value = false;
+      return;
+    }
     eBill.value = storedReceipt;
   } else {
-    // Fetch from Nostr using receipt ID
-    const fetchedReceipt = await receiptGenerator.fetchReceiptById(receiptId);
+    // Fetch from Nostr using receipt ID and code for decryption
+    // 🔐 The receiptCode is required to decrypt encrypted receipts
+    const fetchedReceipt = await receiptGenerator.fetchReceiptById(
+      receiptId,
+      receiptCode
+    );
 
     if (fetchedReceipt) {
       eBill.value = fetchedReceipt;
     } else {
-      error.value = "Receipt not found or expired";
+      // Could be: not found, expired, or invalid/missing code
+      if (!receiptCode) {
+        error.value = "Receipt code required to view this receipt";
+      } else {
+        error.value = "Receipt not found, expired, or invalid code";
+      }
     }
-  }
-
-  // Verify code matches (security check)
-  if (eBill.value && receiptCode && eBill.value.code !== receiptCode) {
-    error.value = "Invalid receipt code";
-    eBill.value = null;
   }
 
   // Check expiration
