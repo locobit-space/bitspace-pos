@@ -22,6 +22,8 @@ const eBill = ref<EReceipt | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const canShare = ref(false);
+const showVerified = ref(false);
+const qrCodeUrl = ref<string | null>(null);
 
 // Load receipt
 onMounted(async () => {
@@ -83,15 +85,55 @@ onMounted(async () => {
   }
 
   loading.value = false;
+
+  // Trigger verified animation after load
+  if (eBill.value) {
+    setTimeout(() => {
+      showVerified.value = true;
+    }, 300);
+
+    // Generate QR code for the receipt URL
+    try {
+      const QRCode = await import("qrcode");
+      qrCodeUrl.value = await QRCode.toDataURL(window.location.href, {
+        width: 200,
+        margin: 2,
+        errorCorrectionLevel: "M",
+        color: {
+          dark: "#1f2937",
+          light: "#ffffff",
+        },
+      });
+    } catch (err) {
+      console.warn("Failed to generate QR code:", err);
+    }
+  }
 });
 
 // Format date
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString("en-US", {
-    weekday: "long",
+    weekday: "short",
     year: "numeric",
-    month: "long",
+    month: "short",
     day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+// Format short date for header
+const formatShortDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+// Format time only
+const formatTime = (dateStr: string) => {
+  return new Date(dateStr).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -124,15 +166,27 @@ const shareReceipt = async () => {
 
 <template>
   <div
-    class="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900"
+    class="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
   >
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <div
-          class="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"
-        />
-        <p class="text-gray-500">Loading receipt...</p>
+        <div class="relative">
+          <div
+            class="w-20 h-20 border-4 border-emerald-200 dark:border-emerald-900 rounded-full"
+          />
+          <div
+            class="absolute inset-0 w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"
+          />
+          <div
+            class="absolute inset-0 flex items-center justify-center text-2xl"
+          >
+            🧾
+          </div>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 mt-4 font-medium">
+          Verifying receipt...
+        </p>
       </div>
     </div>
 
@@ -142,82 +196,158 @@ const shareReceipt = async () => {
       class="flex items-center justify-center min-h-screen p-6"
     >
       <div class="text-center max-w-md">
-        <div class="text-6xl mb-6">📄</div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Receipt Not Found
+        <div
+          class="w-24 h-24 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center"
+        >
+          <UIcon
+            name="i-heroicons-lock-closed"
+            class="w-12 h-12 text-red-500"
+          />
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+          Unable to Verify
         </h1>
-        <p class="text-gray-500 mb-6">{{ error }}</p>
-        <p class="text-sm text-gray-400">
-          This receipt may have expired or the link is invalid. Please contact
-          the merchant for assistance.
+        <p class="text-gray-600 dark:text-gray-400 mb-4">{{ error }}</p>
+        <div
+          class="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 text-left text-sm"
+        >
+          <p class="text-gray-500 dark:text-gray-400 mb-2">
+            <strong>Possible reasons:</strong>
+          </p>
+          <ul class="text-gray-500 dark:text-gray-400 space-y-1 list-disc ml-4">
+            <li>The receipt link is incomplete</li>
+            <li>The verification code is incorrect</li>
+            <li>The receipt has expired (90 days retention)</li>
+          </ul>
+        </div>
+        <p class="text-xs text-gray-400 mt-4">
+          Please contact the merchant if you need assistance.
         </p>
       </div>
     </div>
 
     <!-- E-Bill Content -->
     <div v-else-if="eBill" class="max-w-lg mx-auto p-4 py-8">
+      <!-- Verified Badge - Floating -->
+      <div
+        class="flex justify-center mb-4 print:hidden"
+        :class="{ 'animate-fade-in': showVerified }"
+      >
+        <div
+          class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 rounded-full"
+        >
+          <div class="relative">
+            <UIcon
+              name="i-heroicons-shield-check-solid"
+              class="w-5 h-5 text-emerald-500"
+            />
+            <span
+              class="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full animate-ping"
+            />
+          </div>
+          <span
+            class="text-sm font-medium text-emerald-600 dark:text-emerald-400"
+            >Verified Digital Receipt</span
+          >
+        </div>
+      </div>
+
       <!-- Receipt Card -->
       <div
-        class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden"
+        class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-gray-200/50 dark:shadow-gray-900/50 overflow-hidden border border-gray-100 dark:border-gray-700"
       >
-        <!-- Header -->
+        <!-- Header with gradient -->
         <div
-          class="bg-linear-to-br from-amber-500 to-orange-500 p-6 text-center text-white"
+          class="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 text-center text-white overflow-hidden"
         >
-          <div class="text-5xl mb-3">
+          <!-- Background pattern -->
+          <div
+            class="absolute inset-0 opacity-10"
+            style="
+              background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+            "
+          />
+
+          <!-- Merchant Logo/Emoji -->
+          <div
+            class="relative w-16 h-16 mx-auto mb-3 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center text-4xl shadow-lg"
+          >
             {{ receipt.settings.value.logoEmoji || "☕" }}
           </div>
-          <h1 class="text-2xl font-bold">
+
+          <!-- Merchant Name -->
+          <h1 class="relative text-xl font-mono font-bold tracking-wide">
             {{ eBill.merchantName || "bnos.space" }}
           </h1>
-          <p class="text-amber-100 text-sm mt-1">{{ eBill.merchantAddress }}</p>
-        </div>
-
-        <!-- Receipt Number -->
-        <div class="bg-amber-50 dark:bg-amber-900/20 px-6 py-3 text-center">
-          <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">
-            RECEIPT
-          </p>
-          <p class="font-mono text-sm text-amber-700 dark:text-amber-300">
-            {{ eBill.code || eBill.id }}
-          </p>
-        </div>
-
-        <!-- Order Info -->
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-500">Order</span>
-            <span class="font-semibold text-gray-900 dark:text-white">{{
-              eBill.orderCode || eBill.orderNumber || eBill.orderId
-            }}</span>
-          </div>
-          <div class="flex justify-between text-sm mt-2">
-            <span class="text-gray-500">Date</span>
-            <span class="text-gray-700 dark:text-gray-300">{{
-              formatDate(eBill.createdAt)
-            }}</span>
-          </div>
-        </div>
-
-        <!-- Items -->
-        <div class="px-6 py-4">
-          <h3
-            class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+          <p
+            v-if="eBill.merchantAddress"
+            class="relative text-gray-400 text-sm mt-1"
           >
-            Items
-          </h3>
-          <div class="space-y-3">
+            {{ eBill.merchantAddress }}
+          </p>
+
+          <!-- Date badge -->
+          <div
+            class="relative inline-flex font-mono items-center gap-2 mt-4 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs text-gray-300"
+          >
+            <UIcon name="i-heroicons-calendar" class="w-3.5 h-3.5" />
+            {{ formatShortDate(eBill.createdAt) }} •
+            {{ formatTime(eBill.createdAt) }}
+          </div>
+        </div>
+
+        <!-- Receipt Number - More prominent -->
+        <div
+          class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 px-6 py-4 text-center border-b border-amber-100 dark:border-amber-900/30"
+        >
+          <p
+            class="text-[10px] font-mono uppercase tracking-widest text-amber-600 dark:text-amber-400 font-semibold mb-1"
+          >
+            Receipt No.
+          </p>
+          <p
+            class="font-mono text-lg font-mono font-bold text-amber-700 dark:text-amber-300 tracking-wider"
+          >
+            {{ eBill.code || eBill.id.slice(0, 12).toUpperCase() }}
+          </p>
+        </div>
+
+        <!-- Order Reference -->
+        <div
+          class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center"
+        >
+          <div>
+            <p class="text-xs font-mono text-gray-400 uppercase tracking-wide">
+              Order
+            </p>
+            <p class="font-semibold text-gray-900 dark:text-white">
+              #{{ eBill.orderCode || eBill.orderNumber || eBill.orderId }}
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-mono text-gray-400 uppercase tracking-wide">
+              Items
+            </p>
+            <p class="font-semibold text-gray-900 dark:text-white">
+              {{ eBill.items.length }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Items List -->
+        <div class="px-6 py-5">
+          <div class="space-y-4">
             <div
               v-for="(item, index) in eBill.items"
               :key="index"
-              class="flex justify-between items-start"
+              class="flex justify-between items-start group"
             >
               <div class="flex-1">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-3">
                   <span
-                    class="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-xs flex items-center justify-center font-semibold"
+                    class="w-7 h-7 font-mono rounded-lg bg-gray-100 dark:bg-gray-700 text-xs flex items-center justify-center font-bold text-gray-600 dark:text-gray-300"
                   >
-                    {{ item.quantity }}
+                    {{ item.quantity }}×
                   </span>
                   <span class="font-medium text-gray-900 dark:text-white">{{
                     item.name
@@ -225,133 +355,244 @@ const shareReceipt = async () => {
                 </div>
                 <div
                   v-if="item.variant"
-                  class="text-xs text-amber-600 dark:text-amber-400 ml-8 mt-0.5"
+                  class="text-xs text-amber-600 dark:text-amber-400 ml-10 mt-1 flex items-center gap-1"
                 >
+                  <UIcon name="i-heroicons-tag" class="w-3 h-3" />
                   {{ item.variant }}
                 </div>
                 <div
                   v-if="item.modifiers?.length"
-                  class="text-xs text-gray-500 ml-8 mt-0.5"
+                  class="text-xs text-gray-500 ml-10 mt-0.5"
                 >
                   + {{ item.modifiers.join(", ") }}
                 </div>
                 <div
                   v-if="item.notes"
-                  class="text-xs text-blue-500 ml-8 mt-0.5 italic"
+                  class="text-xs text-blue-500 ml-10 mt-0.5 italic flex items-center gap-1"
                 >
-                  "{{ item.notes }}"
+                  <UIcon name="i-heroicons-chat-bubble-left" class="w-3 h-3" />
+                  {{ item.notes }}
                 </div>
               </div>
-              <span class="font-semibold text-gray-900 dark:text-white">
+              <span
+                class="font-semibold font-mono text-gray-900 dark:text-white tabular-nums"
+              >
                 {{ currency.format(item.total, eBill.currency) }}
               </span>
             </div>
           </div>
         </div>
 
-        <!-- Divider -->
-        <div
-          class="mx-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700"
-        />
+        <!-- Divider - Receipt style -->
+        <div class="relative mx-6">
+          <div class="absolute inset-0 flex items-center">
+            <div
+              class="w-full border-t-2 border-dashed border-gray-200 dark:border-gray-700"
+            />
+          </div>
+          <div class="relative flex justify-center">
+            <span
+              class="bg-white dark:bg-gray-800 font-mono px-3 text-xs text-gray-400 uppercase tracking-widest"
+              >Summary</span
+            >
+          </div>
+        </div>
 
         <!-- Totals -->
-        <div class="px-6 py-4 space-y-2">
-          <div class="flex justify-between text-gray-500">
+        <div class="px-6 py-5 space-y-3">
+          <div
+            class="flex justify-between font-mono text-gray-500 dark:text-gray-400"
+          >
             <span>Subtotal</span>
-            <span>{{ currency.format(eBill.subtotal, eBill.currency) }}</span>
+            <span class="tabular-nums">
+              {{ currency.format(eBill.subtotal, eBill.currency) }}
+            </span>
           </div>
           <div
             v-if="eBill.discount && eBill.discount > 0"
-            class="flex justify-between text-green-600 dark:text-green-400"
+            class="flex justify-between text-emerald-600 font-mono dark:text-emerald-400"
           >
-            <span>Discount</span>
-            <span>-{{ currency.format(eBill.discount, eBill.currency) }}</span>
+            <span class="flex items-center gap-1">
+              <UIcon name="i-heroicons-ticket" class="w-4 h-4" />
+              Discount
+            </span>
+            <span class="tabular-nums"
+              >-{{ currency.format(eBill.discount, eBill.currency) }}</span
+            >
           </div>
-          <div v-if="eBill.tax > 0" class="flex justify-between text-gray-500">
+          <div
+            v-if="eBill.tax > 0"
+            class="flex justify-between text-gray-500 font-mono dark:text-gray-400"
+          >
             <span>Tax</span>
-            <span>{{ currency.format(eBill.tax, eBill.currency) }}</span>
+            <span class="tabular-nums">{{
+              currency.format(eBill.tax, eBill.currency)
+            }}</span>
           </div>
           <div
             v-if="eBill.tip && eBill.tip > 0"
-            class="flex justify-between text-gray-500"
+            class="flex justify-between text-gray-500 font-mono dark:text-gray-400"
           >
-            <span>Tip</span>
-            <span class="text-amber-600">{{
+            <span class="flex items-center gap-1">
+              <UIcon name="i-heroicons-heart" class="w-4 h-4 text-pink-500" />
+              Tip
+            </span>
+            <span class="tabular-nums text-pink-600 dark:text-pink-400">{{
               currency.format(eBill.tip, eBill.currency)
             }}</span>
           </div>
         </div>
 
-        <!-- Grand Total -->
-        <div class="mx-6 bg-gray-900 dark:bg-gray-950 rounded-2xl p-4 mb-6">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-400">Total</span>
-            <span class="text-3xl font-bold text-white">
-              {{ currency.format(eBill.total, eBill.currency) }}
-            </span>
-          </div>
+        <!-- Grand Total - Premium look -->
+        <div class="mx-6 mb-6">
           <div
-            v-if="eBill.totalSats"
-            class="flex justify-between items-center mt-2 pt-2 border-t border-gray-800"
+            class="bg-gradient-to-br from-gray-900 via-gray-800 font-mono to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 rounded-2xl p-5 shadow-lg"
           >
-            <span class="text-gray-500">≈ Sats</span>
-            <span class="text-xl font-semibold text-amber-500">
-              ⚡ {{ eBill.totalSats.toLocaleString() }}
-            </span>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-400 font-medium">Total</span>
+              <span class="text-3xl font-bold text-white tracking-tight">
+                {{ currency.format(eBill.total, eBill.currency) }}
+              </span>
+            </div>
+            <div
+              v-if="eBill.totalSats"
+              class="flex justify-between items-center mt-3 font-mono pt-3 border-t border-gray-700"
+            >
+              <span class="text-gray-500 flex items-center gap-1">
+                <span class="text-amber-500">⚡</span> Bitcoin
+              </span>
+              <span
+                class="text-lg font-semibold text-amber-400 font-mono tabular-nums"
+              >
+                {{ eBill.totalSats.toLocaleString() }} sats
+              </span>
+            </div>
           </div>
         </div>
 
-        <!-- Payment Info -->
+        <!-- Payment Verification - Animated -->
         <div class="px-6 pb-6">
           <div
-            class="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center"
+            class="relative bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-2xl p-5 text-center border border-emerald-100 dark:border-emerald-800/50 overflow-hidden"
           >
+            <!-- Animated background -->
             <div
-              class="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 mb-1"
-            >
-              <span class="text-xl">✓</span>
-              <span class="font-semibold">Payment Verified</span>
+              v-if="showVerified"
+              class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-200/30 to-transparent animate-shimmer"
+            />
+
+            <div class="relative">
+              <div
+                class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30"
+                :class="{ 'animate-bounce-once': showVerified }"
+              >
+                <UIcon name="i-heroicons-check" class="w-8 h-8 text-white" />
+              </div>
+              <p
+                class="font-bold font-mono text-emerald-700 dark:text-emerald-300 text-lg"
+              >
+                Payment Verified
+              </p>
+              <p
+                class="text-sm text-emerald-600 font-mono dark:text-emerald-400 mt-1"
+              >
+                {{ receipt.getPaymentMethodLabel(eBill.paymentMethod) }}
+              </p>
+              <p
+                v-if="eBill.paymentProof?.paymentHash"
+                class="text-xs font-mono text-emerald-500/70 mt-3 font-mono bg-emerald-100 dark:bg-emerald-900/40 rounded-lg px-3 py-1.5 inline-block"
+              >
+                TX: {{ eBill.paymentProof.paymentHash.slice(0, 16) }}...
+              </p>
             </div>
-            <p class="text-sm text-green-700 dark:text-green-300">
-              {{ receipt.getPaymentMethodLabel(eBill.paymentMethod) }}
-            </p>
+          </div>
+        </div>
+
+        <!-- QR Code Section -->
+        <div v-if="qrCodeUrl" class="px-6 pb-6 print:pb-4">
+          <div
+            class="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 text-center"
+          >
             <p
-              v-if="eBill.paymentProof?.paymentHash"
-              class="text-xs text-green-600/70 dark:text-green-400/70 mt-2 font-mono"
+              class="text-xs font-mono uppercase tracking-widest text-gray-400 mb-3"
             >
-              Hash: {{ eBill.paymentProof.paymentHash.slice(0, 16) }}...
+              Scan to Verify
+            </p>
+            <div
+              class="inline-block p-3 bg-white rounded-xl shadow-sm border border-gray-100"
+            >
+              <img
+                :src="qrCodeUrl"
+                alt="Receipt QR Code"
+                class="w-32 h-32 mx-auto"
+              />
+            </div>
+            <p class="text-[10px] text-gray-400 mt-3 font-mono">
+              {{ eBill?.code || eBill?.id.slice(0, 12).toUpperCase() }}
             </p>
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 text-center">
-          <p class="text-sm text-gray-500 mb-2">
+        <!-- Security Footer -->
+        <div
+          class="bg-gray-50 dark:bg-gray-900/50 px-6 py-5 border-t border-gray-100 dark:border-gray-800"
+        >
+          <!-- Thank you message -->
+          <p
+            v-if="receipt.settings.value.footerMessage"
+            class="text-center text-gray-600 dark:text-gray-400 mb-4"
+          >
             {{ receipt.settings.value.footerMessage }}
           </p>
-          <p class="text-xs text-gray-400">Powered by bnos.space ⚡</p>
+
+          <!-- Security indicator -->
+          <div
+            class="flex items-center font-mono justify-center gap-3 text-xs text-gray-400"
+          >
+            <div class="flex items-center gap-1">
+              <UIcon name="i-heroicons-lock-closed" class="w-3.5 h-3.5" />
+              <span>Encrypted</span>
+            </div>
+            <span>•</span>
+            <div class="flex items-center gap-1">
+              <UIcon name="i-heroicons-shield-check" class="w-3.5 h-3.5" />
+              <span>Tamper-proof</span>
+            </div>
+            <span>•</span>
+            <div class="flex items-center gap-1">
+              <UIcon name="i-heroicons-globe-alt" class="w-3.5 h-3.5" />
+              <span>Nostr</span>
+            </div>
+          </div>
+
+          <p class="text-xs font-mono text-gray-400 text-center mt-3">
+            Powered by
+            <span class="font-semibold text-amber-500">bnos.space</span> ⚡
+          </p>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="mt-6 flex gap-3 print:hidden">
+      <div class="mt-6 grid grid-cols-2 font-mono gap-3 print:hidden">
         <UButton
           color="neutral"
-          variant="soft"
-          size="lg"
+          variant="solid"
+          size="xl"
           icon="i-heroicons-arrow-down-tray"
           block
+          class="shadow-lg"
           @click="downloadReceipt"
         >
-          Save / Print
+          Save
         </UButton>
         <UButton
           v-if="canShare"
-          color="neutral"
-          variant="soft"
-          size="lg"
+          color="primary"
+          variant="solid"
+          size="xl"
           icon="i-heroicons-share"
           block
+          class="shadow-lg"
           @click="shareReceipt"
         >
           Share
@@ -366,7 +607,7 @@ const shareReceipt = async () => {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-amber-500 hover:underline"
+            class="text-amber-500 hover:underline font-medium"
             >bnos.space</a
           >
         </p>
@@ -376,12 +617,54 @@ const shareReceipt = async () => {
 </template>
 
 <style scoped>
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce-once {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-bounce-once {
+  animation: bounce-once 0.5s ease-out;
+}
+
 @media print {
   body {
     background: white !important;
   }
 
-  .print\\:hidden {
+  .print\:hidden {
     display: none !important;
   }
 }
