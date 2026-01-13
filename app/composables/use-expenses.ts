@@ -441,12 +441,16 @@ export function useExpenses() {
   // ============================================
 
   async function init(): Promise<void> {
+    // Load from local DB first (fast UI render)
     if (expenses.value.length === 0) {
-      loadFromLocal();
+      await loadFromLocal();
     }
 
+    // Non-blocking background sync with Nostr
     if (offline.isOnline.value) {
-      await loadFromNostr();
+      loadFromNostr().catch((e) =>
+        console.warn("[Expenses] Background sync failed:", e)
+      );
     }
   }
 

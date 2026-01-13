@@ -133,7 +133,10 @@ export function useProductsStore() {
           result = result.filter((p) =>
             employee.assignedProductIds?.includes(p.id)
           );
-        } else if (mode === "category" && employee.assignedCategoryIds?.length) {
+        } else if (
+          mode === "category" &&
+          employee.assignedCategoryIds?.length
+        ) {
           // Only products from assigned categories
           result = result.filter((p) =>
             employee.assignedCategoryIds?.includes(p.categoryId)
@@ -559,7 +562,7 @@ export function useProductsStore() {
     error.value = null;
 
     try {
-      // Load from local DB first (fast)
+      // Load from local DB first (fast UI render)
       await refreshProducts();
       categories.value = await loadCategoriesFromLocal();
       units.value = await loadUnitsFromLocal();
@@ -568,19 +571,22 @@ export function useProductsStore() {
       // Load favorites
       loadFavorites();
 
-      // Sync with Nostr if online
-      if (offline.isOnline.value) {
-        await loadFromNostr();
-      }
-
       // Count pending syncs
       const unsyncedCount = await db.products.filter((p) => !p.synced).count();
       syncPending.value = unsyncedCount;
 
+      // Mark as initialized and release UI IMMEDIATELY
       isInitialized.value = true;
+      isLoading.value = false;
+
+      // Non-blocking background sync with Nostr
+      if (offline.isOnline.value) {
+        loadFromNostr().catch((e) =>
+          console.warn("[Products] Background sync failed:", e)
+        );
+      }
     } catch (e) {
       error.value = `Failed to initialize products: ${e}`;
-    } finally {
       isLoading.value = false;
     }
   }
@@ -751,13 +757,13 @@ export function useProductsStore() {
    */
   async function deleteAllProducts(syncToNostr = true): Promise<number> {
     const deletedCount = products.value.length;
-    const productIds = products.value.map(p => p.id);
+    const productIds = products.value.map((p) => p.id);
 
     console.log(`[Products] Deleting ${deletedCount} products...`);
 
     // Clear local DB
     await db.products.clear();
-    
+
     // Clear in-memory array
     products.value = [];
 
@@ -766,13 +772,13 @@ export function useProductsStore() {
     // Sync to Nostr
     if (syncToNostr && offline.isOnline.value) {
       try {
-        console.log('[Products] Syncing deletions to Nostr...');
+        console.log("[Products] Syncing deletions to Nostr...");
         for (const id of productIds) {
           await nostrData.deleteProduct(id);
         }
-        console.log('[Products] ✅ Deletions synced to Nostr');
+        console.log("[Products] ✅ Deletions synced to Nostr");
       } catch (e) {
-        console.warn('[Products] Failed to sync deletions to Nostr:', e);
+        console.warn("[Products] Failed to sync deletions to Nostr:", e);
       }
     }
 
@@ -784,7 +790,10 @@ export function useProductsStore() {
    * @param ids - Array of product IDs to delete
    * @param syncToNostr - Whether to sync deletions to Nostr (default: true)
    */
-  async function bulkDeleteProducts(ids: string[], syncToNostr = true): Promise<number> {
+  async function bulkDeleteProducts(
+    ids: string[],
+    syncToNostr = true
+  ): Promise<number> {
     let deletedCount = 0;
 
     console.log(`[Products] Bulk deleting ${ids.length} products...`);
