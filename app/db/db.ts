@@ -177,6 +177,7 @@ export interface CustomerRecord {
   notes?: string;
   nostrEventId?: string;
   synced: boolean;
+  cardUid?: string; // NFC/RFID Card UID
 }
 
 // NEW: Stock Adjustments (for offline tracking)
@@ -887,6 +888,8 @@ export interface MembershipCheckInRecord {
   timestamp: number;
   notes?: string;
   staffId?: string;
+  checkOutTime?: number;
+  duration?: number; // minutes
   nostrEventId?: string;
   synced: boolean;
 }
@@ -1567,6 +1570,69 @@ export class POSDatabase extends Dexie {
         "id, customerId, planId, status, startDate, endDate, checkInCount, synced, updatedAt",
       membershipCheckIns:
         "id, membershipId, customerId, timestamp, staffId, synced",
+    });
+
+    // Version 16: Membership Check-out & Chip Card
+    this.version(16).stores({
+      events: "id, kind, created_at, pubkey",
+      meta: "id, type",
+      pendingSync: "++id, status",
+      offlinePayments: "id, orderId, syncStatus, createdAt",
+      localOrders: "id, status, paymentMethod, createdAt, syncedAt",
+      exchangeRates: "id, updatedAt",
+      posSessions: "id, branchId, staffId, status, startedAt",
+      products:
+        "id, sku, barcode, name, categoryId, status, price, stock, updatedAt, synced",
+      categories: "id, name, sortOrder, synced",
+      units: "id, name, symbol, synced",
+      customers:
+        "id, nostrPubkey, name, phone, tier, points, lastVisit, cardUid, synced",
+      stockAdjustments: "id, productId, branchId, reason, createdAt, synced",
+      branches: "id, name, code, synced",
+      staff: "id, name, role, branchId, isActive, synced",
+      ingredients:
+        "id, code, name, categoryId, currentStock, minStock, isActive, synced, updatedAt",
+      ingredientCategories: "id, name, sortOrder, synced",
+      recipes: "id, productId, name, categoryId, isActive, synced, updatedAt",
+      ingredientStockAdjustments:
+        "id, ingredientId, type, referenceId, createdAt, synced",
+      productionPlans: "id, date, status, createdAt, synced",
+      lowStockAlerts: "id, ingredientId, priority, createdAt, acknowledgedAt",
+      suppliers: "id, name, code, status, synced, updatedAt",
+      branchStock: "id, productId, branchId, currentStock, synced, updatedAt",
+      purchaseOrders: "id, supplierId, branchId, status, createdAt, synced",
+      storagePositions:
+        "id, branchId, zone, fullCode, storageType, isActive, synced",
+      stockLots:
+        "id, productId, branchId, lotNumber, status, expiryDate, positionId, supplierId, receivedDate, currentQuantity, synced, updatedAt",
+      stockReceipts:
+        "id, branchId, supplierId, purchaseOrderId, receiptNumber, status, receiptDate, synced",
+      lotStockMovements:
+        "id, lotId, productId, branchId, type, referenceId, createdAt, synced",
+      expiryAlerts:
+        "id, lotId, productId, branchId, alertLevel, expiryDate, acknowledged, createdAt",
+      productActivityLogs:
+        "id, productId, action, userId, timestamp, referenceType, referenceId, synced",
+      cycleCounts:
+        "id, branchId, status, scheduledDate, createdBy, completedAt, synced, updatedAt",
+      accounts: "id, code, name, type, category, isActive, synced, updatedAt",
+      journalEntries: "id, entryNumber, date, status, synced, createdAt",
+      expenses: "id, date, category, vendor, paymentMethod, synced, updatedAt",
+      employees:
+        "id, employeeCode, firstName, lastName, status, branchId, department, position, synced, updatedAt",
+      chatMessages:
+        "id, conversationId, senderPubkey, recipientPubkey, timestamp, status, nostrEventId, synced",
+      chatConversations:
+        "id, type, lastMessageTime, unreadCount, isPinned, isPrivate, updatedAt, deletedAt",
+      deletedConversations: "id, deletedAt",
+      promotions:
+        "id, name, type, status, startDate, endDate, priority, usageCount, synced, updatedAt",
+      membershipPlans:
+        "id, name, duration, price, isActive, sortOrder, synced, updatedAt",
+      memberships:
+        "id, customerId, planId, status, startDate, endDate, checkInCount, synced, updatedAt",
+      membershipCheckIns:
+        "id, membershipId, customerId, timestamp, checkOutTime, staffId, synced",
     });
   }
 }

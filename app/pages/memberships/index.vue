@@ -2,6 +2,7 @@
 <!-- 💳 Membership Management - User-Friendly Check-in & Management -->
 <script setup lang="ts">
 import type { Membership, MembershipPlan } from "~/types";
+import { type ECOption, useEcharts } from '~/hooks';
 
 definePageMeta({
   layout: "default",
@@ -21,10 +22,12 @@ const isLaoLocale = computed(() => locale.value.startsWith("lo"));
 const searchQuery = ref("");
 const showAddModal = ref(false);
 const showCheckInModal = ref(false);
+const showCheckInStatusModal = ref(false);
+const checkInStatusData = ref<any>(null); // { member: Membership, status: 'granted' | 'denied', message: string }
 const showPaymentModal = ref(false);
 const showRenewModal = ref(false);
 const selectedMembership = ref<Membership | null>(null);
-const activeTab = ref<"members" | "plans">("members");
+const activeTab = ref<"dashboard" | "members" | "plans">("dashboard");
 const isProcessingPayment = ref(false);
 const pendingMembershipData = ref<{
   customer: any;
@@ -107,9 +110,201 @@ function formatDate(date: string): string {
   return new Date(date).toLocaleDateString();
 }
 
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === 'dark');
+
+// --- ECharts Layout ---
+const occupancyChartRef = ref<ECOption>();
+const trendsChartRef = ref<ECOption>();
+const { domRef: occupancyChartDom } = useEcharts(occupancyChartRef);
+const { domRef: trendsChartDom } = useEcharts(trendsChartRef);
+
+function updateCharts() {
+  const textColor = isDark.value ? '#9ca3af' : '#6b7280';
+
+  // 1. Occupancy Gauge
+  occupancyChartRef.value = {
+    series: [
+      {
+        type: 'gauge',
+        startAngle: 180,
+        endAngle: 0,
+        min: 0,
+        max: 100, // Capacity
+        splitNumber: 5,
+        itemStyle: {
+          color: '#F87171',
+          shadowColor: 'rgba(0,138,255,0.45)',
+          shadowBlur: 10,
+          shadowOffsetX: 2,
+          shadowOffsetY: 2
+        },
+        progress: {
+          show: true,
+          roundCap: true,
+          width: 15
+        },
+        pointer: {
+          icon: 'path://M2090.36389,615.30999 L2090.36389,615.30999 C2091.48372,615.30999 2092.40383,616.194028 2092.44859,617.312956 L2096.90698,728.755929 C2097.05155,732.369577 2094.2393,735.416212 2090.62566,735.56078 C2090.53845,735.564269 2090.45117,735.566014 2090.36389,735.566014 L2090.36389,735.566014 C2086.74736,735.566014 2083.81557,732.63423 2083.81557,729.017696 C2083.81557,728.930412 2083.81732,728.84314 2083.82081,728.755929 L2088.2792,617.312956 C2088.32396,616.194028 2089.24407,615.30999 2090.36389,615.30999 Z',
+          length: '75%',
+          width: 10,
+          offsetCenter: [0, '5%']
+        },
+        axisLine: {
+          roundCap: true,
+          lineStyle: {
+            width: 15
+          }
+        },
+        axisTick: {
+          splitNumber: 2,
+          lineStyle: {
+            width: 2,
+            color: '#999'
+          }
+        },
+        splitLine: {
+          length: 20,
+          lineStyle: {
+            width: 3,
+            color: '#999'
+          }
+        },
+        axisLabel: {
+          distance: 25,
+          color: textColor,
+          fontSize: 14
+        },
+        title: {
+          show: true
+        },
+        detail: {
+          backgroundColor: '#fff',
+          borderColor: '#999',
+          borderWidth: 2,
+          width: '60%',
+          lineHeight: 40,
+          height: 40,
+          borderRadius: 8,
+          offsetCenter: [0, '35%'],
+          valueAnimation: true,
+          formatter: function (value: number) {
+            return '{value}' + ' Active';
+          },
+          rich: {
+            value: {
+              fontSize: 30,
+              fontWeight: 'bolder',
+              color: '#777'
+            }
+          }
+        },
+        data: [
+          {
+            value: membershipsStore.checkIns.value.filter(c => !c.checkOutTime).length,
+            name: 'Occupancy'
+          }
+        ]
+      }
+    ]
+  };
+
+  // 2. Trends Chart (Mock Data for demo - could be real computed)
+  trendsChartRef.value = {
+    tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      axisLabel: { color: textColor }
+    },
+    yAxis: { type: 'value', axisLabel: { color: textColor } },
+    series: [
+      {
+        data: [12, 18, 15, 25, 30, 45, 20],
+        type: 'bar',
+        showBackground: true,
+        backgroundStyle: {
+          color: 'rgba(180, 180, 180, 0.2)'
+        },
+        itemStyle: { color: '#10B981', borderRadius: [5, 5, 0, 0] }
+      }
+    ]
+  };
+}
+
+// Watchers for Charts
+watch([() => activeTab.value, () => colorMode.value, () => membershipsStore.checkIns.value], () => {
+  if (activeTab.value === 'dashboard') {
+    setTimeout(updateCharts, 100);
+  }
+});
+
+// Audio Feedback
+function playSound(type: 'success' | 'error') {
+  const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioContext) return;
+
+  const ctx = new AudioContext();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  if (type === 'success') {
+    // Nice high chime
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } else {
+    // Low buzzer
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  }
+}
+
 // Actions
+function getActiveCheckIn(membershipId: string) {
+  const memberCheckIns = membershipsStore.checkIns.value.filter(c => c.membershipId === membershipId);
+  // Sort by checkInTime descending
+  const lastCheckIn = memberCheckIns.sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime())[0];
+
+  // Return if active (no checkout time)
+  return (lastCheckIn && !lastCheckIn.checkOutTime) ? lastCheckIn : null;
+}
+
 async function handleCheckIn(membership: Membership) {
-  await membershipsStore.checkIn(membership.id);
+  const activeCheckIn = getActiveCheckIn(membership.id);
+
+  if (activeCheckIn) {
+    // Check OUT
+    await membershipsStore.checkOut(activeCheckIn.id);
+    checkInStatusData.value = {
+      member: membership,
+      status: 'granted',
+      message: 'Checked Out Successfully'
+    };
+  } else {
+    // Check IN
+    await membershipsStore.checkIn(membership.id);
+    checkInStatusData.value = {
+      member: membership,
+      status: 'granted',
+      message: 'Access Granted'
+    };
+  }
+  showCheckInStatusModal.value = true;
+  setTimeout(() => { showCheckInStatusModal.value = false; }, 3000);
 }
 
 async function handleAddMembership() {
@@ -196,9 +391,8 @@ async function processPayment(method: "cash" | "lightning" | "bank_transfer") {
       customerId: customer.id,
       items: [
         {
-          description: `${plan.name} Membership${
-            isRenewal ? " (Renewal)" : ""
-          }`,
+          description: `${plan.name} Membership${isRenewal ? " (Renewal)" : ""
+            }`,
           quantity: 1,
           unitPrice: plan.price,
           total: plan.price,
@@ -277,6 +471,54 @@ function openCheckIn() {
 async function quickCheckIn() {
   if (!searchQuery.value) return;
 
+  // 1. Try Card UID lookup
+  const membershipByCard = await membershipsStore.getMembershipByCard(searchQuery.value);
+
+  if (membershipByCard) {
+    if (membershipByCard.status !== 'active') {
+      toast.add({ title: 'Membership not active', color: 'error' });
+      playSound('error');
+      checkInStatusData.value = {
+        member: membershipByCard,
+        status: 'denied',
+        message: 'Membership Expired/Inactive'
+      };
+      showCheckInStatusModal.value = true;
+      setTimeout(() => { showCheckInStatusModal.value = false; }, 3000);
+      searchQuery.value = "";
+      return;
+    }
+
+    // Check if currently checked in
+    // Sort logic should be reliable if checkInTime is iso string
+    const memberCheckIns = membershipsStore.checkIns.value.filter(c => c.membershipId === membershipByCard.id);
+    const lastCheckIn = memberCheckIns.sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime())[0];
+
+    if (lastCheckIn && !lastCheckIn.checkOutTime) {
+      await membershipsStore.checkOut(lastCheckIn.id);
+      playSound('success');
+      checkInStatusData.value = {
+        member: membershipByCard,
+        status: 'granted',
+        message: 'Checked Out Successfully'
+      };
+    } else {
+      await membershipsStore.checkIn(membershipByCard.id);
+      playSound('success');
+      checkInStatusData.value = {
+        member: membershipByCard,
+        status: 'granted',
+        message: 'Access Granted'
+      };
+    }
+    showCheckInStatusModal.value = true;
+    setTimeout(() => { showCheckInStatusModal.value = false; }, 3000);
+    updateCharts();
+    searchQuery.value = "";
+    return;
+  }
+
+  // 2. Existing Name Search Logic
   const results = membershipsStore.searchMemberships(searchQuery.value);
   const firstResult = results[0];
   if (results.length === 1 && firstResult?.status === "active") {
@@ -390,13 +632,9 @@ async function deletePlan(planId: string) {
 <template>
   <div class="p-4 lg:p-6 space-y-6">
     <!-- Header -->
-    <div
-      class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
-    >
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
       <div>
-        <h1
-          class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
-        >
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           💳 {{ t("memberships.title", "Memberships") }}
         </h1>
         <p class="text-gray-500 dark:text-gray-400">
@@ -406,138 +644,161 @@ async function deletePlan(planId: string) {
         </p>
       </div>
       <div class="flex gap-2">
-        <UButton
-          size="lg"
-          color="primary"
-          variant="soft"
-          icon="i-heroicons-qr-code"
-          @click="openCheckIn"
-        >
+        <UButton size="lg" color="primary" variant="soft" icon="i-heroicons-qr-code" @click="openCheckIn">
           {{ t("memberships.quickCheckIn", "Quick Check-in") }}
         </UButton>
-        <UButton
-          size="lg"
-          color="primary"
-          icon="i-heroicons-plus"
-          @click="showAddModal = true"
-        >
+        <UButton size="lg" color="primary" icon="i-heroicons-plus" @click="showAddModal = true">
           {{ t("memberships.addMember", "Add Member") }}
         </UButton>
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <CommonStatCard
-        icon="i-heroicons-check-circle"
-        icon-color="green"
-        :label="t('memberships.active', 'Active')"
-        :value="membershipsStore.activeMemberships.value.length"
-      />
-      <CommonStatCard
-        icon="i-heroicons-clock"
-        icon-color="yellow"
-        :label="t('memberships.expiringSoon', 'Expiring Soon')"
-        :value="membershipsStore.expiringSoon.value.length"
-      />
-      <CommonStatCard
-        icon="i-heroicons-x-circle"
-        icon-color="red"
-        :label="t('memberships.expired', 'Expired')"
-        :value="membershipsStore.expiredMemberships.value.length"
-      />
-      <CommonStatCard
-        icon="i-heroicons-user-group"
-        icon-color="gray"
-        :label="t('memberships.total', 'Total')"
-        :value="membershipsStore.memberships.value.length"
-      />
-    </div>
-
     <!-- Tabs -->
     <div class="border-b border-gray-200 dark:border-gray-700">
       <nav class="flex gap-4">
-        <button
-          v-for="tab in [
-            {
-              id: 'members',
-              label: t('memberships.members', 'Members'),
-              icon: '👥',
-            },
-            {
-              id: 'plans',
-              label: t('memberships.plans', 'Plans'),
-              icon: '📋',
-            },
-          ]"
-          :key="tab.id"
-          class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-          :class="
-            activeTab === tab.id
-              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          "
-          @click="activeTab = tab.id as typeof activeTab"
-        >
+        <button v-for="tab in [
+          {
+            id: 'dashboard',
+            label: t('memberships.dashboard', 'Live Dashboard'),
+            icon: '📊',
+          },
+          {
+            id: 'members',
+            label: t('memberships.members', 'Members'),
+            icon: '👥',
+          },
+          {
+            id: 'plans',
+            label: t('memberships.plans', 'Plans'),
+            icon: '📋',
+          },
+        ]" :key="tab.id" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="activeTab === tab.id
+          ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          " @click="activeTab = tab.id as typeof activeTab">
           {{ tab.icon }} {{ tab.label }}
         </button>
       </nav>
     </div>
 
+    <!-- Dashboard Tab -->
+    <div v-show="activeTab === 'dashboard'" class="space-y-6">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <CommonStatCard icon="i-heroicons-check-circle" icon-color="green" :label="t('memberships.active', 'Active')"
+          :value="membershipsStore.activeMemberships.value.length" />
+        <CommonStatCard icon="i-heroicons-clock" icon-color="yellow"
+          :label="t('memberships.expiringSoon', 'Expiring Soon')" :value="membershipsStore.expiringSoon.value.length" />
+        <CommonStatCard icon="i-heroicons-x-circle" icon-color="red" :label="t('memberships.expired', 'Expired')"
+          :value="membershipsStore.expiredMemberships.value.length" />
+        <CommonStatCard icon="i-heroicons-user-group" icon-color="gray" :label="t('memberships.total', 'Total')"
+          :value="membershipsStore.memberships.value.length" />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Occupancy -->
+        <UCard class="col-span-1">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-chart-pie" class="w-5 h-5 text-gray-500" />
+              <h3 class="font-semibold text-gray-900 dark:text-white">Live Occupancy</h3>
+            </div>
+          </template>
+          <div ref="occupancyChartDom" class="w-full h-64"></div>
+        </UCard>
+
+        <!-- Trends -->
+        <UCard class="col-span-1 lg:col-span-2">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 text-gray-500" />
+              <h3 class="font-semibold text-gray-900 dark:text-white">Peak Hours (Last 7 Days)</h3>
+            </div>
+          </template>
+          <div ref="trendsChartDom" class="w-full h-64"></div>
+        </UCard>
+      </div>
+
+      <!-- Recent Activity Feed -->
+      <UCard>
+        <template #header>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-clock" class="w-5 h-5 text-gray-500" />
+            <h3 class="font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
+          </div>
+        </template>
+        <div class="space-y-2 max-h-80 overflow-y-auto pr-2">
+          <div
+            v-for="checkIn in membershipsStore.checkIns.value.slice(0, 20).sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime())"
+            :key="checkIn.id" class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                :class="checkIn.checkOutTime ? 'bg-gray-200 text-gray-500 dark:bg-gray-700' : 'bg-green-100 text-green-600 dark:bg-green-900/30'">
+                {{ (checkIn.customerName || "?").charAt(0) }}
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ checkIn.customerName }}</p>
+                <p class="text-xs text-gray-500">{{ checkIn.checkOutTime ? 'Checked Out' : 'Checked In' }} • {{
+                  formatDate(checkIn.checkInTime) }}</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-mono text-gray-500">
+                {{ new Date(checkIn.checkOutTime || checkIn.checkInTime).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </UCard>
+    </div>
+
     <!-- Members Tab -->
     <div v-if="activeTab === 'members'" class="space-y-4">
       <!-- Search -->
-      <UInput
-        v-model="searchQuery"
-        :placeholder="t('memberships.searchPlaceholder', 'Search by name...')"
-        icon="i-heroicons-magnifying-glass"
-        size="lg"
-        @keyup.enter="quickCheckIn"
-      />
+      <UInput v-model="searchQuery" :placeholder="t('memberships.searchPlaceholder', 'Search by name...')"
+        icon="i-heroicons-magnifying-glass" size="lg" @keyup.enter="quickCheckIn" />
 
       <!-- Members List -->
       <div v-if="filteredMemberships.length > 0" class="space-y-3">
-        <div
-          v-for="member in filteredMemberships"
-          :key="member.id"
-          class="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700"
-        >
+        <div v-for="member in filteredMemberships" :key="member.id"
+          class="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           <!-- Avatar -->
           <div
-            class="w-14 h-14 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0"
-          >
-            <span
-              class="text-2xl font-bold text-primary-600 dark:text-primary-400"
-            >
+            class="w-14 h-14 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
+            <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
               {{ (member.customerName || "M").charAt(0).toUpperCase() }}
             </span>
           </div>
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-gray-900 dark:text-white truncate">
+            <NuxtLink :to="`/memberships/${member.id}`"
+              class="font-semibold text-gray-900 dark:text-white truncate hover:underline">
               {{ member.customerName || t("common.unknown") }}
-            </p>
+            </NuxtLink>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               {{ member.planName }} • {{ member.checkInCount }}
               {{ t("memberships.checkIns", "check-ins") }}
             </p>
             <div class="flex items-center gap-2 mt-1">
-              <span
-                :class="getStatusColor(member.status)"
-                class="px-2 py-0.5 rounded-full text-xs font-medium"
-              >
+              <span :class="getStatusColor(member.status)" class="px-2 py-0.5 rounded-full text-xs font-medium">
                 {{ t(`memberships.status.${member.status}`) || member.status }}
               </span>
-              <span
-                v-if="member.status === 'active'"
-                class="text-xs"
-                :class="
-                  getDaysLeft(member.endDate) <= 7
-                    ? 'text-yellow-600'
-                    : 'text-gray-400'
-                "
-              >
+
+              <!-- Active Check-in Badge -->
+              <span v-if="getActiveCheckIn(member.id)"
+                class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-500 text-white flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                In Gym
+              </span>
+
+              <span v-if="member.status === 'active'" class="text-xs" :class="getDaysLeft(member.endDate) <= 7
+                ? 'text-yellow-600'
+                : 'text-gray-400'
+                ">
                 {{ getDaysLeft(member.endDate) }}
                 {{ t("memberships.daysLeft", "days left") }}
               </span>
@@ -546,24 +807,18 @@ async function deletePlan(planId: string) {
 
           <!-- Actions -->
           <div class="flex items-center gap-2">
-            <UButton
-              v-if="member.status === 'active'"
-              size="lg"
-              color="success"
-              icon="i-heroicons-check-circle"
-              variant="soft"
-              @click="handleCheckIn(member)"
-            >
-              {{ t("memberships.checkIn", "Check In") }}
-            </UButton>
-            <UButton
-              v-if="member.status === 'expired'"
-              size="sm"
-              color="primary"
-              icon="i-heroicons-arrow-path"
-              variant="soft"
-              @click="handleRenew(member)"
-            >
+            <template v-if="member.status === 'active'">
+              <UButton v-if="getActiveCheckIn(member.id)" size="lg" color="warning"
+                icon="i-heroicons-arrow-right-start-on-rectangle" variant="soft" @click="handleCheckIn(member)">
+                {{ t("memberships.checkOut", "Check Out") }}
+              </UButton>
+              <UButton v-else size="lg" color="success" icon="i-heroicons-arrow-right-end-on-rectangle" variant="soft"
+                @click="handleCheckIn(member)">
+                {{ t("memberships.checkIn", "Check In") }}
+              </UButton>
+            </template>
+            <UButton v-if="member.status === 'expired'" size="sm" color="primary" icon="i-heroicons-arrow-path"
+              variant="soft" @click="handleRenew(member)">
               {{ t("memberships.renew", "Renew") }}
             </UButton>
           </div>
@@ -586,64 +841,35 @@ async function deletePlan(planId: string) {
     <div v-if="activeTab === 'plans'" class="space-y-4">
       <!-- Add Plan Button -->
       <div class="flex justify-end">
-        <UButton
-          color="primary"
-          icon="i-heroicons-plus"
-          @click="openPlanModal()"
-        >
+        <UButton color="primary" icon="i-heroicons-plus" @click="openPlanModal()">
           {{ t("common.add", "Add") }} {{ t("memberships.plan", "Plan") }}
         </UButton>
       </div>
 
       <!-- Plans Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <UCard
-          v-for="plan in membershipsStore.plans.value"
-          :key="plan.id"
-          class="relative overflow-hidden"
-        >
+        <UCard v-for="plan in membershipsStore.plans.value" :key="plan.id" class="relative overflow-hidden">
           <!-- Edit/Delete Actions -->
           <div class="absolute top-2 right-2 flex gap-1">
-            <UButton
-              icon="i-heroicons-pencil"
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              @click="openPlanModal(plan)"
-            />
-            <UButton
-              icon="i-heroicons-trash"
-              size="xs"
-              color="error"
-              variant="ghost"
-              @click="deletePlan(plan.id)"
-            />
+            <UButton icon="i-heroicons-pencil" size="xs" color="neutral" variant="ghost" @click="openPlanModal(plan)" />
+            <UButton icon="i-heroicons-trash" size="xs" color="error" variant="ghost" @click="deletePlan(plan.id)" />
           </div>
 
           <div class="text-center space-y-3 pt-4">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white">
               {{ isLaoLocale && plan.nameLao ? plan.nameLao : plan.name }}
             </h3>
-            <p
-              class="text-3xl font-bold text-primary-600 dark:text-primary-400"
-            >
+            <p class="text-3xl font-bold text-primary-600 dark:text-primary-400">
               {{ formatCurrency(plan.price) }}
             </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               {{ plan.duration }} {{ t("common.days", "days") }}
             </p>
             <ul class="text-sm text-left space-y-1">
-              <li
-                v-for="(benefit, i) in isLaoLocale && plan.benefitsLao
-                  ? plan.benefitsLao
-                  : plan.benefits"
-                :key="i"
-                class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
-              >
-                <UIcon
-                  name="i-heroicons-check"
-                  class="w-4 h-4 text-green-500"
-                />
+              <li v-for="(benefit, i) in isLaoLocale && plan.benefitsLao
+                ? plan.benefitsLao
+                : plan.benefits" :key="i" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <UIcon name="i-heroicons-check" class="w-4 h-4 text-green-500" />
                 {{ benefit }}
               </li>
             </ul>
@@ -666,87 +892,52 @@ async function deletePlan(planId: string) {
       <template #body>
         <div class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormField
-              :label="(t('products.name', 'Name')) + ' (EN)'"
-              required
-            >
+            <UFormField :label="(t('products.name', 'Name')) + ' (EN)'" required>
               <UInput v-model="planForm.name" placeholder="e.g. Monthly Pass" />
             </UFormField>
             <UFormField :label="(t('products.name', 'Name')) + ' (ລາວ)'">
-              <UInput
-                v-model="planForm.nameLao"
-                placeholder="ເຊັ່ນ: ບັດເດືອນ"
-              />
+              <UInput v-model="planForm.nameLao" placeholder="ເຊັ່ນ: ບັດເດືອນ" />
             </UFormField>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField :label="t('products.price', 'Price')" required>
-              <UInput
-                v-model.number="planForm.price"
-                type="number"
-                placeholder="300000"
-              >
+              <UInput v-model.number="planForm.price" type="number" placeholder="300000">
                 <template #trailing>
                   <span class="text-xs text-gray-400">LAK</span>
                 </template>
               </UInput>
             </UFormField>
-            <UFormField
-              :label="
-                (t('products.duration', 'Duration')) +
-                ' (' +
-                (t('common.days', 'days')) +
-                ')'
-              "
-              required
-            >
-              <UInput
-                v-model.number="planForm.duration"
-                type="number"
-                placeholder="30"
-              />
+            <UFormField :label="(t('products.duration', 'Duration')) +
+              ' (' +
+              (t('common.days', 'days')) +
+              ')'
+              " required>
+              <UInput v-model.number="planForm.duration" type="number" placeholder="30" />
             </UFormField>
           </div>
 
           <UFormField :label="t('products.description', 'Description')">
-            <UTextarea
-              v-model="planForm.description"
-              placeholder="Optional description..."
-              :rows="2"
-            />
+            <UTextarea v-model="planForm.description" placeholder="Optional description..." :rows="2" />
           </UFormField>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Benefits (EN) - one per line">
-              <UTextarea
-                v-model="planForm.benefits"
-                placeholder="Full gym access&#10;Group classes&#10;Locker"
-                :rows="4"
-              />
+              <UTextarea v-model="planForm.benefits" placeholder="Full gym access&#10;Group classes&#10;Locker"
+                :rows="4" />
             </UFormField>
             <UFormField label="Benefits (ລາວ) - ໜຶ່ງຕໍ່ແຖວ">
-              <UTextarea
-                v-model="planForm.benefitsLao"
-                placeholder="ເຂົ້າຢิມເຕັມ&#10;ຫ້ອງຮຽນກຸ່ມ&#10;ຕູ້ເກັບເຄື່ອງ"
-                :rows="4"
-              />
+              <UTextarea v-model="planForm.benefitsLao" placeholder="ເຂົ້າຢิມເຕັມ&#10;ຫ້ອງຮຽນກຸ່ມ&#10;ຕູ້ເກັບເຄື່ອງ"
+                :rows="4" />
             </UFormField>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Max Check-ins (0 = unlimited)">
-              <UInput
-                v-model.number="planForm.maxCheckIns"
-                type="number"
-                placeholder="0"
-              />
+              <UInput v-model.number="planForm.maxCheckIns" type="number" placeholder="0" />
             </UFormField>
             <UFormField label="Status">
-              <USwitch
-                v-model="planForm.isActive"
-                :label="planForm.isActive ? 'Active' : 'Inactive'"
-              />
+              <USwitch v-model="planForm.isActive" :label="planForm.isActive ? 'Active' : 'Inactive'" />
             </UFormField>
           </div>
         </div>
@@ -773,29 +964,16 @@ async function deletePlan(planId: string) {
       <template #body>
         <div class="space-y-4">
           <UFormField :label="t('customers.customer', 'Customer')">
-            <USelect
-              v-model="memberForm.customerId"
-              :items="customers"
-              :placeholder="
-                t('memberships.selectCustomer', 'Select customer')
-              "
-            />
+            <USelect v-model="memberForm.customerId" :items="customers" :placeholder="t('memberships.selectCustomer', 'Select customer')
+              " />
           </UFormField>
           <UFormField :label="t('memberships.plan', 'Plan')">
-            <USelect
-              v-model="memberForm.planId"
-              :items="planOptions"
-              :placeholder="t('memberships.selectPlan', 'Select plan')"
-            />
+            <USelect v-model="memberForm.planId" :items="planOptions"
+              :placeholder="t('memberships.selectPlan', 'Select plan')" />
           </UFormField>
           <UFormField :label="t('orders.notes', 'Notes')">
-            <UTextarea
-              v-model="memberForm.notes"
-              :placeholder="
-                t('memberships.notesPlaceholder', 'Optional notes...')
-              "
-              :rows="2"
-            />
+            <UTextarea v-model="memberForm.notes" :placeholder="t('memberships.notesPlaceholder', 'Optional notes...')
+              " :rows="2" />
           </UFormField>
         </div>
       </template>
@@ -820,35 +998,21 @@ async function deletePlan(planId: string) {
       </template>
       <template #body>
         <div class="space-y-4">
-          <UInput
-            v-model="searchQuery"
-            :placeholder="
-              t('memberships.searchToCheckIn', 'Search member name...')
-            "
-            icon="i-heroicons-magnifying-glass"
-            size="lg"
-            autofocus
-          />
+          <UInput v-model="searchQuery" :placeholder="t('memberships.searchToCheckIn', 'Search member name...')
+            " icon="i-heroicons-magnifying-glass" size="lg" autofocus />
 
-          <div
-            v-if="filteredMemberships.length > 0"
-            class="space-y-2 max-h-64 overflow-y-auto"
-          >
-            <button
-              v-for="member in filteredMemberships.filter(
-                (m) => m.status === 'active'
-              )"
-              :key="member.id"
+          <div v-if="filteredMemberships.length > 0" class="space-y-2 max-h-64 overflow-y-auto">
+            <button v-for="member in filteredMemberships.filter(
+              (m) => m.status === 'active'
+            )" :key="member.id"
               class="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors text-left"
               @click="
                 handleCheckIn(member);
-                showCheckInModal = false;
-                searchQuery = '';
-              "
-            >
+              showCheckInModal = false;
+              searchQuery = '';
+              ">
               <div
-                class="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
-              >
+                class="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                 <span class="text-xl font-bold text-primary-600">
                   {{ (member.customerName || "M").charAt(0) }}
                 </span>
@@ -859,12 +1023,61 @@ async function deletePlan(planId: string) {
                 </p>
                 <p class="text-sm text-gray-500">{{ member.planName }}</p>
               </div>
-              <UIcon
-                name="i-heroicons-arrow-right-circle"
-                class="w-8 h-8 text-green-500"
-              />
+              <UIcon name="i-heroicons-arrow-right-circle" class="w-8 h-8 text-green-500" />
             </button>
           </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Check-in Status Overlay -->
+    <UModal v-model:open="showCheckInStatusModal" :ui="{ width: 'w-full sm:max-w-xl' }">
+      <template #content>
+        <div v-if="checkInStatusData" class="p-8 text-center"
+          :class="checkInStatusData.status === 'granted' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'">
+
+          <div class="mb-6 relative inline-block">
+            <div class="w-32 h-32 rounded-full flex items-center justify-center mx-auto border-4"
+              :class="checkInStatusData.status === 'granted' ? 'border-green-500 bg-green-100' : 'border-red-500 bg-red-100'">
+              <span class="text-5xl font-bold"
+                :class="checkInStatusData.status === 'granted' ? 'text-green-600' : 'text-red-600'">
+                {{ (checkInStatusData.member.customerName || "M").charAt(0).toUpperCase() }}
+              </span>
+            </div>
+            <div
+              class="absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center border-2 border-white"
+              :class="checkInStatusData.status === 'granted' ? 'bg-green-500' : 'bg-red-500'">
+              <UIcon :name="checkInStatusData.status === 'granted' ? 'i-heroicons-check' : 'i-heroicons-x-mark'"
+                class="w-6 h-6 text-white" />
+            </div>
+          </div>
+
+          <h2 class="text-3xl font-bold mb-2"
+            :class="checkInStatusData.status === 'granted' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'">
+            {{ checkInStatusData.message }}
+          </h2>
+
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+            {{ checkInStatusData.member.customerName }}
+          </h3>
+          <p class="text-gray-500 dark:text-gray-400 mb-6">
+            {{ checkInStatusData.member.planName }}
+          </p>
+
+          <div v-if="checkInStatusData.status === 'granted'" class="flex justify-center gap-8">
+            <div class="text-center">
+              <p class="text-xs text-gray-400 uppercase font-bold">Expires</p>
+              <p class="font-mono font-medium">{{ formatDate(checkInStatusData.member.endDate) }}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-gray-400 uppercase font-bold">Days Left</p>
+              <p class="font-mono font-medium"
+                :class="getDaysLeft(checkInStatusData.member.endDate) < 7 ? 'text-red-500' : 'text-green-500'">
+                {{ getDaysLeft(checkInStatusData.member.endDate) }}
+              </p>
+            </div>
+          </div>
+
         </div>
       </template>
     </UModal>
@@ -883,40 +1096,31 @@ async function deletePlan(planId: string) {
             <div class="flex justify-between items-center mb-2">
               <span class="text-gray-600 dark:text-gray-400">{{
                 pendingMembershipData.isRenewal ? "Renewal" : "New Membership"
-              }}</span>
+                }}</span>
               <UBadge color="primary">{{
                 pendingMembershipData.plan.name
-              }}</UBadge>
+                }}</UBadge>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-600 dark:text-gray-400">{{
                 t("customers.name", "Customer")
-              }}</span>
+                }}</span>
               <span class="font-medium text-gray-900 dark:text-white">{{
                 pendingMembershipData.customer.name
-              }}</span>
+                }}</span>
             </div>
             <div class="flex justify-between items-center mt-2">
               <span class="text-gray-600 dark:text-gray-400">{{
                 t("products.duration", "Duration")
-              }}</span>
-              <span class="font-medium text-gray-900 dark:text-white"
-                >{{ pendingMembershipData.plan.duration }}
-                {{ t("common.days", "days") }}</span
-              >
+                }}</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ pendingMembershipData.plan.duration }}
+                {{ t("common.days", "days") }}</span>
             </div>
-            <div
-              class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4"
-            >
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
               <div class="flex justify-between items-center">
-                <span
-                  class="text-lg font-semibold text-gray-900 dark:text-white"
-                  >{{ t("pos.total", "Total") }}</span
-                >
-                <span
-                  class="text-2xl font-bold text-primary-600 dark:text-primary-400"
-                  >{{ formatCurrency(pendingMembershipData.plan.price) }}</span
-                >
+                <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ t("pos.total", "Total") }}</span>
+                <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">{{
+                  formatCurrency(pendingMembershipData.plan.price) }}</span>
               </div>
             </div>
           </div>
@@ -929,12 +1133,8 @@ async function deletePlan(planId: string) {
 
             <button
               class="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
-              :disabled="isProcessingPayment"
-              @click="processPayment('cash')"
-            >
-              <div
-                class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
-              >
+              :disabled="isProcessingPayment" @click="processPayment('cash')">
+              <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <span class="text-2xl">💵</span>
               </div>
               <div class="flex-1 text-left">
@@ -945,20 +1145,13 @@ async function deletePlan(planId: string) {
                   {{ t("payment.methods.cashDesc", "Pay with cash") }}
                 </p>
               </div>
-              <UIcon
-                name="i-heroicons-chevron-right"
-                class="w-5 h-5 text-gray-400"
-              />
+              <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400" />
             </button>
 
             <button
               class="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-yellow-500 dark:hover:border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all"
-              :disabled="isProcessingPayment"
-              @click="processPayment('lightning')"
-            >
-              <div
-                class="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center"
-              >
+              :disabled="isProcessingPayment" @click="processPayment('lightning')">
+              <div class="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
                 <span class="text-2xl">⚡</span>
               </div>
               <div class="flex-1 text-left">
@@ -971,20 +1164,13 @@ async function deletePlan(planId: string) {
                   }}
                 </p>
               </div>
-              <UIcon
-                name="i-heroicons-chevron-right"
-                class="w-5 h-5 text-gray-400"
-              />
+              <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400" />
             </button>
 
             <button
               class="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-              :disabled="isProcessingPayment"
-              @click="processPayment('bank_transfer')"
-            >
-              <div
-                class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
-              >
+              :disabled="isProcessingPayment" @click="processPayment('bank_transfer')">
+              <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                 <span class="text-2xl">🏦</span>
               </div>
               <div class="flex-1 text-left">
@@ -997,35 +1183,22 @@ async function deletePlan(planId: string) {
                   }}
                 </p>
               </div>
-              <UIcon
-                name="i-heroicons-chevron-right"
-                class="w-5 h-5 text-gray-400"
-              />
+              <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400" />
             </button>
           </div>
 
           <!-- Processing Indicator -->
-          <div
-            v-if="isProcessingPayment"
-            class="flex items-center justify-center gap-3 py-4"
-          >
-            <UIcon
-              name="i-heroicons-arrow-path"
-              class="w-6 h-6 animate-spin text-primary-500"
-            />
+          <div v-if="isProcessingPayment" class="flex items-center justify-center gap-3 py-4">
+            <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin text-primary-500" />
             <span class="text-gray-600 dark:text-gray-400">{{
               t("pos.processing", "Processing...")
-            }}</span>
+              }}</span>
           </div>
         </div>
       </template>
       <template #footer>
         <div class="flex justify-end">
-          <UButton
-            variant="ghost"
-            :disabled="isProcessingPayment"
-            @click="cancelPayment"
-          >
+          <UButton variant="ghost" :disabled="isProcessingPayment" @click="cancelPayment">
             {{ t("common.cancel") }}
           </UButton>
         </div>
