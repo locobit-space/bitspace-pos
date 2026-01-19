@@ -23,6 +23,7 @@
             class="text-sm"
             icon="i-heroicons-arrow-path"
             :loading="isSyncing"
+            :badge="syncPending > 0 ? syncPending : undefined"
             @click="handleSyncFromNostr"
           >
             <span class="hidden sm:inline">{{
@@ -96,9 +97,7 @@
               }}</span>
             </UButton>
           </UTooltip>
-          <UTooltip
-            :text="$t('products.settings.manageUnits', 'Manage Units')"
-          >
+          <UTooltip :text="$t('products.settings.manageUnits', 'Manage Units')">
             <UButton
               color="neutral"
               variant="soft"
@@ -1183,15 +1182,24 @@
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                   {{
                     settingsPanelTab === "categories"
-                      ? $t("products.settings.manageCategories", "Manage Categories")
+                      ? $t(
+                          "products.settings.manageCategories",
+                          "Manage Categories"
+                        )
                       : $t("products.settings.manageUnits", "Manage Units")
                   }}
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{
                     settingsPanelTab === "categories"
-                      ? $t("products.settings.manageCategoriesDesc", "Add, edit or delete product categories")
-                      : $t("products.settings.manageUnitsDesc", "Manage product measurement units")
+                      ? $t(
+                          "products.settings.manageCategoriesDesc",
+                          "Add, edit or delete product categories"
+                        )
+                      : $t(
+                          "products.settings.manageUnitsDesc",
+                          "Manage product measurement units"
+                        )
                   }}
                 </p>
               </div>
@@ -1424,7 +1432,10 @@
               <UInput
                 v-model="categoryForm.name"
                 :placeholder="
-                  $t('products.categories.namePlaceholder', 'e.g., Drinks, Food, Snacks')
+                  $t(
+                    'products.categories.namePlaceholder',
+                    'e.g., Drinks, Food, Snacks'
+                  )
                 "
               />
             </UFormField>
@@ -1479,9 +1490,7 @@
           >
             <span>📐</span>
             {{
-              editingUnit
-                ? $t("common.edit", "Edit")
-                : $t("common.add", "Add")
+              editingUnit ? $t("common.edit", "Edit") : $t("common.add", "Add")
             }}
             {{ $t("products.unit", "Unit") }}
           </h3>
@@ -1520,16 +1529,16 @@
               <UInput
                 v-model="unitForm.name"
                 :placeholder="
-                  $t('products.units.namePlaceholder', 'e.g., Piece, Kilogram, Liter')
+                  $t(
+                    'products.units.namePlaceholder',
+                    'e.g., Piece, Kilogram, Liter'
+                  )
                 "
               />
             </UFormField>
 
             <!-- Symbol -->
-            <UFormField
-              :label="$t('products.units.symbol', 'Symbol')"
-              required
-            >
+            <UFormField :label="$t('products.units.symbol', 'Symbol')" required>
               <UInput
                 v-model="unitForm.symbol"
                 :placeholder="
@@ -1586,7 +1595,10 @@
 
           <p class="text-gray-600 dark:text-gray-400 mb-6">
             {{
-              $t("common.deleteConfirmMessage", "Are you sure you want to delete")
+              $t(
+                "common.deleteConfirmMessage",
+                "Are you sure you want to delete"
+              )
             }}
             <strong class="text-gray-900 dark:text-white">
               "{{ categoryToDelete?.name }}" </strong
@@ -1703,6 +1715,7 @@ const products = computed(() => productsStore.products.value);
 const categories = computed(() => productsStore.categories.value);
 const units = computed(() => productsStore.units.value);
 const branches = computed(() => productsStore.branches.value);
+const syncPending = computed(() => productsStore.syncPending.value);
 
 // Filters
 const selectedBranch = ref<string>("all");
@@ -2924,44 +2937,70 @@ const exportToExcel = () => {
 
 const handleExcelImport = async (data: any[]) => {
   let importedCount = 0;
+  const productsToImport: any[] = [];
+
+  // Cache for deduplication during this import session
+  const categoryCache = new Map<string, string>();
+  const unitCache = new Map<string, string>();
+
+  // Pre-fill cache with existing data
+  categories.value.forEach((c) =>
+    categoryCache.set(c.name.toLowerCase(), c.id)
+  );
+  units.value.forEach((u) => {
+    unitCache.set(u.symbol.toLowerCase(), u.id);
+    unitCache.set(u.name.toLowerCase(), u.id);
+  });
 
   for (const row of data) {
     try {
       // 1. Resolve Category
       let categoryId = "all";
       if (row.Category) {
-        const existingCat = categories.value.find(
-          (c) => c.name.toLowerCase() === String(row.Category).toLowerCase()
-        );
-        if (existingCat) {
-          categoryId = existingCat.id;
+        const catName = String(row.Category).trim();
+        const catKey = catName.toLowerCase();
+
+        if (categoryCache.has(catKey)) {
+          categoryId = categoryCache.get(catKey)!;
         } else {
           // Create new category
-          const newId = await productsStore.addCategory({
-            name: String(row.Category),
-            icon: "📦",
-          });
-          categoryId = newId as unknown as string; // Ensure string type
+          try {
+            const newCategory = await productsStore.addCategory({
+              name: catName,
+              icon: "📦",
+            });
+            categoryId = newCategory.id;
+            categoryCache.set(catKey, categoryId);
+          } catch (e) {
+            console.error("Failed to create category:", catName, e);
+            // Fallback to "all" if category creation fails
+          }
         }
       }
 
       // 2. Resolve Unit
       let unitId = "piece"; // default
       if (row.Unit) {
-        const existingUnit = units.value.find(
-          (u) =>
-            u.symbol.toLowerCase() === String(row.Unit).toLowerCase() ||
-            u.name.toLowerCase() === String(row.Unit).toLowerCase()
-        );
-        unitId = existingUnit ? existingUnit.id : "piece"; // Default to piece if not found (safer than creating dupes)
+        const unitName = String(row.Unit).trim();
+        const unitKey = unitName.toLowerCase();
+
+        if (unitCache.has(unitKey)) {
+          unitId = unitCache.get(unitKey)!;
+        }
+        // If not found, default to piece (don't auto-create units to avoid mess)
       }
 
-      // 3. Create Product
+      // Generate SKU if missing
+      const sku = row.SKU
+        ? String(row.SKU)
+        : `SKU-${Date.now().toString(36).toUpperCase()}-${
+            productsToImport.length
+          }`;
+
+      // 3. Prepare Product Object
       const newProduct = {
         name: String(row.Name || "Unnamed Product"),
-        sku: row.SKU
-          ? String(row.SKU)
-          : `SKU-${Date.now().toString(36).toUpperCase()}-${importedCount}`,
+        sku,
         barcode: row.Barcode ? String(row.Barcode) : undefined,
         description: row.Description ? String(row.Description) : "",
         categoryId,
@@ -2970,7 +3009,9 @@ const handleExcelImport = async (data: any[]) => {
         stock: Number(row.Stock) || 0,
         minStock: 5,
         branchId:
-          selectedBranch.value !== "all" ? selectedBranch.value : "main",
+          selectedBranch.value !== "all" && selectedBranch.value
+            ? selectedBranch.value
+            : "main",
         status: (row.Status?.toLowerCase() === "inactive"
           ? "inactive"
           : "active") as "active" | "inactive",
@@ -2985,24 +3026,37 @@ const handleExcelImport = async (data: any[]) => {
         updatedAt: new Date().toISOString(),
       };
 
-      await productsStore.addProduct(newProduct);
-      importedCount++;
+      productsToImport.push(newProduct);
     } catch (e) {
-      console.error("Import error for row", row, e);
+      console.error("Import preparation error for row", row, e);
     }
   }
 
-  if (importedCount > 0) {
-    toast.add({
-      title: "Import Successful",
-      description: `Successfully imported ${importedCount} products.`,
-      color: "green",
-      icon: "i-heroicons-check-circle",
-    });
+  // 4. Bulk Import
+  if (productsToImport.length > 0) {
+    try {
+      await productsStore.bulkAddProducts(productsToImport);
+      importedCount = productsToImport.length;
+
+      toast.add({
+        title: "Import Successful",
+        description: `Successfully imported ${importedCount} products.`,
+        color: "green",
+        icon: "i-heroicons-check-circle",
+      });
+    } catch (e) {
+      console.error("Bulk Import Failed:", e);
+      toast.add({
+        title: "Import Failed",
+        description: "An error occurred during bulk import.",
+        color: "red",
+        icon: "i-heroicons-exclamation-circle",
+      });
+    }
   } else {
     toast.add({
       title: "Import Failed",
-      description: "No products were imported. Please check your file format.",
+      description: "No valid products found to import.",
       color: "red",
       icon: "i-heroicons-exclamation-circle",
     });

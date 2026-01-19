@@ -1760,6 +1760,7 @@ export interface Product {
   taxRate?: number;
   // Public menu visibility
   isPublic?: boolean; // If true, visible on customer menu (unencrypted)
+  synced?: boolean;
 }
 
 export interface Category {

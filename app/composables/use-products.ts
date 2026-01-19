@@ -133,7 +133,10 @@ export function useProductsStore() {
           result = result.filter((p) =>
             employee.assignedProductIds?.includes(p.id)
           );
-        } else if (mode === "category" && employee.assignedCategoryIds?.length) {
+        } else if (
+          mode === "category" &&
+          employee.assignedCategoryIds?.length
+        ) {
           // Only products from assigned categories
           result = result.filter((p) =>
             employee.assignedCategoryIds?.includes(p.categoryId)
@@ -627,6 +630,88 @@ export function useProductsStore() {
     return product;
   }
 
+  async function bulkAddProducts(
+    productsData: Omit<Product, "id" | "createdAt" | "updatedAt">[]
+  ): Promise<Product[]> {
+    const { getCurrentUserIdentifier } = useUserIdentifier();
+
+    // 1. Prepare data
+    const newProducts: Product[] = [];
+    const productRecords: ProductRecord[] = [];
+
+    for (const data of productsData) {
+      const { id, code } = EntityId.product();
+      const product: Product = {
+        ...data,
+        id,
+        sku: data.sku || code,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: getCurrentUserIdentifier(),
+        synced: false,
+      };
+
+      newProducts.push(product);
+
+      productRecords.push({
+        id: product.id,
+        data: JSON.stringify(product),
+        sku: product.sku,
+        barcode: product.barcode,
+        name: product.name,
+        categoryId: product.categoryId,
+        status: product.status,
+        price: product.price,
+        stock: product.stock,
+        updatedAt: Date.now(),
+        synced: false,
+      });
+    }
+
+    // 2. Local State Update (Immediate UI reaction)
+    products.value.push(...newProducts);
+
+    // 3. Local DB Bulk Save (Fast)
+    await db.products.bulkPut(productRecords);
+
+    // 4. Background Activities (Fire and forget)
+    // We don't await these to keep UI responsive
+    (async () => {
+      // Log activities
+      try {
+        // Create activity logs
+        for (const product of newProducts) {
+          await logProductActivity({
+            productId: product.id,
+            action: "create",
+            notes: `Imported product "${product.name}"`,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to log bulk import activities:", e);
+      }
+
+      // Sync to Nostr
+      if (offline.isOnline.value) {
+        try {
+          // Process in chunks to avoid overwhelming relays
+          const chunkSize = 10;
+          for (let i = 0; i < newProducts.length; i += chunkSize) {
+            const chunk = newProducts.slice(i, i + chunkSize);
+            await Promise.all(chunk.map((p) => syncProductToNostr(p)));
+          }
+          console.log("Synced imported products " + newProducts.length);
+        } catch (e) {
+          console.error("Failed to background sync imported products:", e);
+        }
+      } else {
+        syncPending.value += newProducts.length;
+      }
+    })();
+
+    return newProducts;
+  }
+
   async function updateProduct(
     id: string,
     updates: Partial<Product>
@@ -751,13 +836,13 @@ export function useProductsStore() {
    */
   async function deleteAllProducts(syncToNostr = true): Promise<number> {
     const deletedCount = products.value.length;
-    const productIds = products.value.map(p => p.id);
+    const productIds = products.value.map((p) => p.id);
 
     console.log(`[Products] Deleting ${deletedCount} products...`);
 
     // Clear local DB
     await db.products.clear();
-    
+
     // Clear in-memory array
     products.value = [];
 
@@ -766,13 +851,13 @@ export function useProductsStore() {
     // Sync to Nostr
     if (syncToNostr && offline.isOnline.value) {
       try {
-        console.log('[Products] Syncing deletions to Nostr...');
+        console.log("[Products] Syncing deletions to Nostr...");
         for (const id of productIds) {
           await nostrData.deleteProduct(id);
         }
-        console.log('[Products] ✅ Deletions synced to Nostr');
+        console.log("[Products] ✅ Deletions synced to Nostr");
       } catch (e) {
-        console.warn('[Products] Failed to sync deletions to Nostr:', e);
+        console.warn("[Products] Failed to sync deletions to Nostr:", e);
       }
     }
 
@@ -784,7 +869,10 @@ export function useProductsStore() {
    * @param ids - Array of product IDs to delete
    * @param syncToNostr - Whether to sync deletions to Nostr (default: true)
    */
-  async function bulkDeleteProducts(ids: string[], syncToNostr = true): Promise<number> {
+  async function bulkDeleteProducts(
+    ids: string[],
+    syncToNostr = true
+  ): Promise<number> {
     let deletedCount = 0;
 
     console.log(`[Products] Bulk deleting ${ids.length} products...`);
@@ -1447,11 +1535,27 @@ export function useProductsStore() {
 
     // Import products
     if (data.products) {
+      const newProductsData: Omit<Product, "id" | "createdAt" | "updatedAt">[] =
+        [];
+      const { getCurrentUserIdentifier } = useUserIdentifier();
+      const currentUser = getCurrentUserIdentifier();
+
       for (const prod of data.products) {
         if (!products.value.find((p) => p.id === prod.id)) {
-          await addProduct(prod);
+          // Clean up the object to ensure it matches Omit<Product, ...>
+          // If 'prod' has id, createdAt, etc, we should strip them or just cast if we trust the source to mean "new copy"
+          // Use defaults for new import
+          const { id, createdAt, updatedAt, ...rest } = prod;
+          newProductsData.push({
+            ...rest,
+            createdBy: currentUser,
+          });
           productCount++;
         }
+      }
+
+      if (newProductsData.length > 0) {
+        await bulkAddProducts(newProductsData);
       }
     }
 
@@ -1493,6 +1597,7 @@ export function useProductsStore() {
 
     // Product CRUD
     addProduct,
+    bulkAddProducts,
     updateProduct,
     deleteProduct,
     bulkDeleteProducts,
