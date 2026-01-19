@@ -107,10 +107,20 @@ if [ "$AUTO_EXTRACT" = true ]; then
     echo "✓ Files extracted"
 
     # Step 5: Restart PM2 process
-    echo ""
-    echo "🔄 Restarting PM2 process..."
-    ssh -p "${PORT}" "${SERVER}" "pm2 restart 0"
-    echo "✓ PM2 process restarted"
+    # Check if pm2 app exists using grep on the list
+    # We use 'if' directly to prevent 'set -e' from exiting the script if grep returns 1 (not found)
+    if ssh -p "${PORT}" "${SERVER}" "pm2 list | grep -q 'app.bnos.space'"; then
+        echo ""
+        echo "🔄 Restarting PM2 process..."
+        ssh -p "${PORT}" "${SERVER}" "pm2 restart app.bnos.space"
+        echo "✓ PM2 process restarted"
+    else
+        echo ""
+        echo "🔄 Starting PM2 process..."
+        # Must cd to directory first so pm2 finds package.json/script
+        ssh -p "${PORT}" "${SERVER}" "cd ${REMOTE_PATH} && pm2 start 'yarn preview' --name 'app.bnos.space'"
+        echo "✓ PM2 process started"
+    fi
 
     # Cleanup remote zip files (if enabled)
     if [ "$CLEANUP_REMOTE_ZIPS" = true ]; then
@@ -134,3 +144,6 @@ echo "✅ Deployment complete!"
 echo "📍 Deployed to: ${SERVER}:${REMOTE_PATH}/"
 echo ""
 read -p "Press Enter to close..."
+
+# start pm2 app
+# pm2 start "yarn preview" --name "app.bnos.space"
