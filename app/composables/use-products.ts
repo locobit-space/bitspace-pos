@@ -562,7 +562,7 @@ export function useProductsStore() {
     error.value = null;
 
     try {
-      // Load from local DB first (fast)
+      // Load from local DB first (fast UI render)
       await refreshProducts();
       categories.value = await loadCategoriesFromLocal();
       units.value = await loadUnitsFromLocal();
@@ -571,19 +571,22 @@ export function useProductsStore() {
       // Load favorites
       loadFavorites();
 
-      // Sync with Nostr if online
-      if (offline.isOnline.value) {
-        await loadFromNostr();
-      }
-
       // Count pending syncs
       const unsyncedCount = await db.products.filter((p) => !p.synced).count();
       syncPending.value = unsyncedCount;
 
+      // Mark as initialized and release UI IMMEDIATELY
       isInitialized.value = true;
+      isLoading.value = false;
+
+      // Non-blocking background sync with Nostr
+      if (offline.isOnline.value) {
+        loadFromNostr().catch((e) =>
+          console.warn("[Products] Background sync failed:", e)
+        );
+      }
     } catch (e) {
       error.value = `Failed to initialize products: ${e}`;
-    } finally {
       isLoading.value = false;
     }
   }

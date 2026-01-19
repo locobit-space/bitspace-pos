@@ -311,18 +311,30 @@ onMounted(async () => {
     return;
   }
 
-  // Fast load with background refresh
-  if (hasCachedData.value) {
+  // Fast load: Show UI immediately, init stores in parallel
+  // If stores already have data (session cache), UI shows instantly
+  // If not (page refresh), show skeleton briefly while loading from IndexedDB
+
+  // Check if stores already have data from previous navigation
+  const hasSessionData =
+    ordersStore.orders.value.length > 0 ||
+    productsStore.products.value.length > 0;
+
+  if (hasSessionData) {
+    // Session cache hit - show UI immediately
     isInitialLoad.value = false;
     isRefreshing.value = true;
-    await Promise.all([ordersStore.init(), productsStore.init()]).finally(
-      () => {
-        isRefreshing.value = false;
-      }
-    );
+
+    // Init in background (will just trigger Nostr sync since already loaded)
+    Promise.all([ordersStore.init(), productsStore.init()]).finally(() => {
+      isRefreshing.value = false;
+    });
   } else {
+    // Page refresh - need to load from IndexedDB
+    isRefreshing.value = true;
     await Promise.all([ordersStore.init(), productsStore.init()]);
     isInitialLoad.value = false;
+    isRefreshing.value = false;
   }
 
   // Check if we should show onboarding checklist

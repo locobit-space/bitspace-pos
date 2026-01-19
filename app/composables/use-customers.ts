@@ -170,19 +170,24 @@ export function useCustomers() {
     error.value = null;
 
     try {
+      // Load from local DB first (fast UI render)
       customers.value = await loadFromLocal();
-
-      if (offline.isOnline.value) {
-        await loadFromNostr();
-      }
 
       const unsyncedCount = await db.customers.filter((c) => !c.synced).count();
       syncPending.value = unsyncedCount;
 
+      // Mark as initialized and release UI IMMEDIATELY
       isInitialized.value = true;
+      isLoading.value = false;
+
+      // Non-blocking background sync with Nostr
+      if (offline.isOnline.value) {
+        loadFromNostr().catch((e) =>
+          console.warn("[Customers] Background sync failed:", e)
+        );
+      }
     } catch (e) {
       error.value = `Failed to initialize customers: ${e}`;
-    } finally {
       isLoading.value = false;
     }
   }
