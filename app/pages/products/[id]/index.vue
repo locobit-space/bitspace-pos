@@ -8,7 +8,7 @@
         <UButton
           color="neutral"
           variant="ghost"
-          icon="i-heroicons-arrow-left"
+          icon="solar:alt-arrow-left-linear"
           @click="navigateTo('/products')"
         />
         <div v-if="product" class="flex items-center gap-4">
@@ -26,7 +26,7 @@
             }}</span>
             <UIcon
               v-else
-              name="i-heroicons-cube"
+              name="solar:box-minimalistic-linear"
               class="w-8 h-8 text-gray-400"
             />
           </div>
@@ -61,7 +61,7 @@
           v-if="canEditProducts"
           color="primary"
           variant="soft"
-          icon="i-heroicons-pencil"
+          icon="solar:pen-linear"
           :label="$t('common.edit')"
           @click="openProductModal"
         />
@@ -69,7 +69,7 @@
           v-if="canDeleteProducts"
           color="red"
           variant="soft"
-          icon="i-heroicons-trash"
+          icon="solar:trash-bin-trash-linear"
           :label="$t('common.delete')"
           @click="confirmDelete"
         />
@@ -87,25 +87,25 @@
               <CommonStatCard
                 :label="$t('products.price')"
                 :value="formatCurrency(product.price)"
-                icon="i-heroicons-currency-dollar"
+                icon="solar:dollar-minimalistic-linear"
                 icon-color="green"
               />
               <CommonStatCard
                 :label="$t('products.stock')"
                 :value="String(product.stock)"
-                icon="i-heroicons-cube"
+                icon="solar:box-minimalistic-linear"
                 :icon-color="product.stock <= product.minStock ? 'red' : 'blue'"
               />
               <CommonStatCard
                 :label="$t('products.minStock')"
                 :value="String(product.minStock)"
-                icon="i-heroicons-exclamation-triangle"
+                icon="solar:danger-triangle-linear"
                 icon-color="yellow"
               />
               <CommonStatCard
                 :label="$t('products.category')"
                 :value="getCategoryName(product.categoryId)"
-                icon="i-heroicons-folder"
+                icon="solar:folder-linear"
                 icon-color="purple"
               />
             </div>
@@ -156,7 +156,7 @@
                       {{
                         $t(
                           "products.productTypes." +
-                            (product.productType || "good")
+                            (product.productType || "good"),
                         )
                       }}
                     </dd>
@@ -309,7 +309,7 @@
               <CommonStatCard
                 :label="$t('products.currentStock')"
                 :value="String(product.stock)"
-                icon="i-heroicons-cube"
+                icon="solar:box-minimalistic-linear"
                 :icon-color="
                   product.stock <= product.minStock ? 'red' : 'green'
                 "
@@ -317,17 +317,17 @@
               <CommonStatCard
                 :label="$t('products.minStock')"
                 :value="String(product.minStock)"
-                icon="i-heroicons-exclamation-triangle"
+                icon="solar:danger-triangle-linear"
                 icon-color="yellow"
               />
               <CommonStatCard
                 :label="$t('inventory.stockValue')"
                 :value="
                   formatCurrency(
-                    product.stock * (product.costPrice || product.price)
+                    product.stock * (product.costPrice || product.price),
                   )
                 "
-                icon="i-heroicons-banknotes"
+                icon="solar:banknote-2-linear"
                 icon-color="blue"
               />
             </div>
@@ -404,7 +404,7 @@
               </div>
               <div v-else class="p-8 text-center text-gray-500">
                 <UIcon
-                  name="i-heroicons-cube"
+                  name="solar:box-minimalistic-linear"
                   class="w-12 h-12 mx-auto mb-2 text-gray-300"
                 />
                 <p>{{ $t("inventory.noLots") }}</p>
@@ -416,14 +416,14 @@
               <UButton
                 color="primary"
                 variant="soft"
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 :label="$t('inventory.addStock')"
                 @click="openStockAdjustment('add')"
               />
               <UButton
                 color="yellow"
                 variant="soft"
-                icon="i-heroicons-minus"
+                icon="solar:minus-circle-linear"
                 :label="$t('inventory.removeStock')"
                 @click="openStockAdjustment('remove')"
               />
@@ -444,7 +444,7 @@
               <UButton
                 color="neutral"
                 variant="soft"
-                icon="i-heroicons-arrow-path"
+                icon="solar:restart-linear"
                 :label="$t('common.refresh')"
                 :loading="loadingHistory"
                 @click="loadActivityHistory"
@@ -516,7 +516,7 @@
                           formatChangeValue(change.oldValue)
                         }}</span>
                         <UIcon
-                          name="i-heroicons-arrow-right"
+                          name="solar:arrow-right-linear"
                           class="w-3 h-3 inline text-gray-400"
                         />
                         <span class="text-green-500 ml-2">{{
@@ -587,10 +587,7 @@
                       v-if="log.nostrEventId"
                       class="mt-2 flex items-center gap-1 text-xs text-gray-400"
                     >
-                      <UIcon
-                        name="i-heroicons-cloud-arrow-up"
-                        class="w-3 h-3"
-                      />
+                      <UIcon name="solar:cloud-upload-linear" class="w-3 h-3" />
                       <span>{{ $t("common.synced") }}</span>
                     </div>
                   </div>
@@ -611,7 +608,7 @@
 
             <div v-else class="text-center py-12">
               <UIcon
-                name="i-heroicons-clock"
+                name="solar:clock-circle-linear"
                 class="w-16 h-16 mx-auto mb-4 text-gray-300"
               />
               <h3
@@ -654,7 +651,7 @@
             </div>
             <div v-else class="text-center py-12">
               <UIcon
-                name="i-heroicons-beaker"
+                name="solar:test-tube-linear"
                 class="w-16 h-16 mx-auto mb-4 text-gray-300"
               />
               <h3
@@ -674,7 +671,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-20">
       <UIcon
-        name="i-heroicons-arrow-path"
+        name="solar:restart-linear"
         class="w-8 h-8 animate-spin text-primary-500"
       />
     </div>
@@ -682,7 +679,7 @@
     <!-- Not Found -->
     <div v-else-if="!product" class="text-center py-20">
       <UIcon
-        name="i-heroicons-exclamation-triangle"
+        name="solar:danger-triangle-linear"
         class="w-16 h-16 mx-auto mb-4 text-yellow-500"
       />
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -720,7 +717,7 @@
               class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-exclamation-triangle"
+                name="solar:danger-triangle-linear"
                 class="w-6 h-6 text-red-600"
               />
             </div>
@@ -878,10 +875,10 @@ const linkedRecipes = ref<
 
 // Permissions
 const canEditProducts = computed(
-  () => permissions.currentUser.value?.permissions?.canEditProducts ?? false
+  () => permissions.currentUser.value?.permissions?.canEditProducts ?? false,
 );
 const canDeleteProducts = computed(
-  () => permissions.currentUser.value?.permissions?.canDeleteProducts ?? false
+  () => permissions.currentUser.value?.permissions?.canDeleteProducts ?? false,
 );
 
 // Tabs
@@ -962,7 +959,7 @@ async function loadActivityHistory() {
   try {
     const logs = await getProductActivityLogs(
       productId.value,
-      historyLimit.value
+      historyLimit.value,
     );
     activityLogs.value = logs as ProductActivityLog[];
     hasMoreLogs.value = activityLogs.value.length >= historyLimit.value;
@@ -1017,7 +1014,7 @@ function formatDateTime(dateStr: string): string {
 function isExpiringSoon(expiryDate: string | undefined): boolean {
   if (!expiryDate) return false;
   const daysUntilExpiry = Math.ceil(
-    (new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    (new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
   );
   return daysUntilExpiry <= (product.value?.expiryWarningDays || 7);
 }

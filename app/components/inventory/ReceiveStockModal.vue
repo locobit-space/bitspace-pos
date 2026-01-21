@@ -12,7 +12,7 @@
             <div
               class="w-12 h-12 rounded-xl bg-linear-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-2xl shadow-lg shadow-emerald-500/25"
             >
-              📦
+              <UIcon name="solar:box-linear" class="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 class="text-xl font-bold text-gray-900 dark:text-white">
@@ -22,14 +22,14 @@
                 {{
                   $t(
                     "inventory.receiveStockDesc",
-                    "Record incoming inventory with lot tracking"
+                    "Record incoming inventory with lot tracking",
                   )
                 }}
               </p>
             </div>
           </div>
           <UButton
-            icon="i-heroicons-x-mark"
+            icon="solar:close-circle-linear"
             color="neutral"
             variant="ghost"
             size="lg"
@@ -44,7 +44,7 @@
             <h3
               class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
             >
-              <span class="text-lg">📋</span>
+              <UIcon name="solar:clipboard-list-linear" class="w-5 h-5" />
               {{ $t("inventory.receiptInfo", "Receipt Information") }}
             </h3>
 
@@ -122,7 +122,7 @@
               <h3
                 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
               >
-                <span class="text-lg">📦</span>
+                <UIcon name="solar:box-linear" class="w-5 h-5" />
                 {{ $t("inventory.items", "Items") }}
                 <UBadge color="primary" variant="subtle">
                   {{ form.items.length }}
@@ -132,7 +132,7 @@
                 color="primary"
                 variant="soft"
                 size="sm"
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 @click="addItem"
               >
                 {{ $t("inventory.addItem", "Add Item") }}
@@ -171,7 +171,7 @@
                   </div>
                   <UButton
                     v-if="form.items.length > 1"
-                    icon="i-heroicons-trash"
+                    icon="solar:trash-bin-trash-linear"
                     color="red"
                     variant="ghost"
                     size="xs"
@@ -283,20 +283,17 @@
                       : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
                   "
                 >
-                  <UIcon
-                    name="i-heroicons-exclamation-triangle"
-                    class="w-5 h-5"
-                  />
+                  <UIcon name="solar:danger-triangle-linear" class="w-5 h-5" />
                   <span class="text-sm font-medium">
                     {{
                       getDaysUntilExpiry(item.expiryDate) <= 0
                         ? $t("inventory.expired", "Product is expired!")
                         : `${$t(
                             "inventory.expiresIn",
-                            "Expires in"
+                            "Expires in",
                           )} ${getDaysUntilExpiry(item.expiryDate)} ${$t(
                             "common.days",
-                            "days"
+                            "days",
                           )}`
                     }}
                   </span>
@@ -367,14 +364,14 @@
               v-if="form.items.length === 0"
               class="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600"
             >
-              <span class="text-4xl mb-3">📦</span>
+              <UIcon name="solar:box-linear" class="w-8 h-8 opacity-50 mb-3" />
               <p class="text-gray-500 dark:text-gray-400 mb-4">
                 {{ $t("inventory.noItemsAdded", "No items added yet") }}
               </p>
               <UButton
                 color="primary"
                 variant="soft"
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 @click="addItem"
               >
                 {{ $t("inventory.addFirstItem", "Add First Item") }}
@@ -444,7 +441,7 @@
                 :disabled="!canSubmit"
                 @click="submit"
               >
-                <UIcon name="i-heroicons-check" class="w-4 h-4 mr-1" />
+                <UIcon name="solar:check-circle-linear" class="w-4 h-4 mr-1" />
                 {{ $t("inventory.receiveStock", "Receive Stock") }}
               </UButton>
             </div>
@@ -519,7 +516,7 @@ const supplierOptions = computed(() =>
   inventory.suppliers.value.map((s) => ({
     id: s.id,
     name: s.name,
-  }))
+  })),
 );
 
 const poOptions = computed(() => {
@@ -561,18 +558,18 @@ const qualityOptions = [
 
 // Computed
 const totalQuantity = computed(() =>
-  form.value.items.reduce((sum, item) => sum + (item.receivedQty || 0), 0)
+  form.value.items.reduce((sum, item) => sum + (item.receivedQty || 0), 0),
 );
 
 const acceptedQuantity = computed(() =>
-  form.value.items.reduce((sum, item) => sum + (item.acceptedQty || 0), 0)
+  form.value.items.reduce((sum, item) => sum + (item.acceptedQty || 0), 0),
 );
 
 const totalValue = computed(() =>
   form.value.items.reduce(
     (sum, item) => sum + (item.acceptedQty || 0) * (item.unitCost || 0),
-    0
-  )
+    0,
+  ),
 );
 
 const canSubmit = computed(() => {
@@ -690,7 +687,7 @@ async function saveDraft() {
   toast.add({
     title: t("common.saved", "Saved"),
     description: t("inventory.draftSaved", "Draft saved locally"),
-    icon: "i-heroicons-bookmark",
+    icon: "solar:bookmark-linear",
     color: "blue",
   });
 }
@@ -734,7 +731,7 @@ async function submit() {
         description: `${t("inventory.stockReceived", "Stock received")}: ${
           receipt.receiptNumber
         }`,
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
         color: "green",
       });
 
@@ -749,7 +746,7 @@ async function submit() {
       title: t("common.error", "Error"),
       description:
         err instanceof Error ? err.message : "Failed to receive stock",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {

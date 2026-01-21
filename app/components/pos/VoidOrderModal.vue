@@ -43,7 +43,7 @@ watch(
       reason.value = "";
       isProcessing.value = false;
     }
-  }
+  },
 );
 
 // Handle confirmation
@@ -94,7 +94,7 @@ const selectReason = (reasonValue: string) => {
         >
           <div class="flex items-start gap-3">
             <Icon
-              name="heroicons:exclamation-triangle"
+              name="solar:danger-triangle-linear"
               class="w-5 h-5 text-red-600 dark:text-red-400 flex-0 mt-0.5"
             />
             <div class="flex-1">
@@ -165,7 +165,7 @@ const selectReason = (reasonValue: string) => {
             :loading="isProcessing"
             @click="handleConfirm"
           >
-            <Icon name="heroicons:trash" class="w-4 h-4 mr-2" />
+            <Icon name="solar:trash-bin-trash-linear" class="w-4 h-4 mr-2" />
             {{ t("pos.void_order") }}
           </UButton>
         </div>

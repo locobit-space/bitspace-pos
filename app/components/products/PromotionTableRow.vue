@@ -22,14 +22,21 @@ const { getProductName, getStatusColor, getStatusText } = usePromotionHelpers();
 
 // Type display info
 const typeInfo = computed(() => {
-  const types: Record<string, { icon: string; color: string; label: string }> =
-    {
-      bogo: { icon: "🎁", color: "green", label: "BOGO" },
-      discount: { icon: "💰", color: "blue", label: "Discount" },
-      tiered: { icon: "📊", color: "purple", label: "Tiered" },
-      bundle: { icon: "📦", color: "amber", label: "Bundle" },
-      freebie: { icon: "🎀", color: "pink", label: "Free Gift" },
-    };
+  const types: Record<string, { icon: string; color: any; label: string }> = {
+    bogo: { icon: "solar:gift-linear", color: "green", label: "BOGO" },
+    discount: {
+      icon: "solar:wad-of-money-linear",
+      color: "blue",
+      label: "Discount",
+    },
+    tiered: { icon: "solar:chart-linear", color: "purple", label: "Tiered" },
+    bundle: { icon: "solar:box-linear", color: "amber", label: "Bundle" },
+    freebie: {
+      icon: "solar:ribbon-linear",
+      color: "pink",
+      label: "Free Gift",
+    },
+  };
   return types[props.promotion.type] || types.bogo;
 });
 
@@ -124,20 +131,27 @@ function handleViewDetails() {
       <div class="flex items-start gap-3">
         <div
           class="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-          :class="`bg-${typeInfo.color}-100 dark:bg-${typeInfo.color}-900/20`"
+          :class="`bg-${typeInfo?.color || 'gray'}-100 dark:bg-${typeInfo?.color || 'gray'}-900/20`"
         >
-          {{ typeInfo.icon }}
+          <UIcon
+            :name="typeInfo?.icon || 'solar:question-circle-linear'"
+            class="w-6 h-6"
+          />
         </div>
         <div>
           <div class="font-medium text-gray-900 dark:text-white">
             {{ promotion.name }}
           </div>
           <div class="flex items-center gap-2 mt-0.5">
-            <UBadge :color="typeInfo.color" variant="subtle" size="xs">
-              {{ typeInfo.label }}
+            <UBadge
+              :color="(typeInfo?.color as any) || 'gray'"
+              variant="subtle"
+              size="xs"
+            >
+              {{ typeInfo?.label }}
             </UBadge>
             <span v-if="hasRestrictions" class="text-xs text-gray-400">
-              <UIcon name="i-heroicons-clock" class="w-3 h-3 inline" />
+              <UIcon name="solar:clock-circle-linear" class="w-3 h-3 inline" />
             </span>
           </div>
         </div>
@@ -190,7 +204,7 @@ function handleViewDetails() {
           color="gray"
           variant="ghost"
           size="sm"
-          icon="i-heroicons-eye"
+          icon="solar:eye-linear"
           :disabled="isLoading"
           @click="handleViewDetails"
         />
@@ -204,7 +218,7 @@ function handleViewDetails() {
           color="red"
           variant="ghost"
           size="sm"
-          icon="i-heroicons-trash"
+          icon="solar:trash-bin-trash-linear"
           :disabled="isLoading"
           @click="handleDelete"
         />

@@ -6,7 +6,7 @@
         ref="inputRef"
         v-model="barcodeInput"
         :placeholder="placeholder"
-        icon="i-heroicons-qr-code"
+        icon="solar:scanner-linear"
         class="font-mono w-full"
         @keydown.enter="handleScan"
         @focus="isActive = true"
@@ -17,7 +17,7 @@
         class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1"
       >
         <UBadge color="success" variant="subtle" size="xs">
-          <UIcon name="i-heroicons-signal" class="animate-pulse" />
+          <UIcon name="solar:signal-linear" class="animate-pulse" />
           {{ $t("pos.scanner.listening") }}
         </UBadge>
       </div>
@@ -26,7 +26,9 @@
     <!-- Camera Scanner Mode -->
     <div v-if="inputMode === 'camera'" class="space-y-4">
       <!-- Video Container with Overlay -->
-      <div class="relative aspect-square max-w-sm mx-auto bg-black rounded-lg overflow-hidden">
+      <div
+        class="relative aspect-square max-w-sm mx-auto bg-black rounded-lg overflow-hidden"
+      >
         <!-- Video Element -->
         <video
           ref="videoRef"
@@ -37,7 +39,9 @@
         />
 
         <!-- Scanning Overlay (on top of video) -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div
+          class="absolute inset-0 flex items-center justify-center pointer-events-none"
+        >
           <div class="w-64 h-64 border-2 border-white/50 rounded-lg relative">
             <!-- Corner Brackets -->
             <div
@@ -74,7 +78,7 @@
       <div class="flex justify-center gap-2">
         <UButton
           v-if="!cameraActive"
-          icon="i-heroicons-video-camera"
+          icon="solar:videocamera-record-linear"
           size="lg"
           color="primary"
           @click="startCamera"
@@ -86,7 +90,7 @@
           variant="outline"
           size="lg"
           color="red"
-          icon="i-heroicons-video-camera-slash"
+          icon="solar:forbidden-circle-linear"
           @click="stopCamera"
         >
           {{ $t("pos.scanner.stopCamera", "Stop Camera") }}
@@ -108,7 +112,7 @@
         <UButton
           :variant="inputMode === 'camera' ? 'solid' : 'outline'"
           size="sm"
-          icon="i-heroicons-camera"
+          icon="solar:camera-linear"
           @click="inputMode = 'camera'"
         >
           {{ $t("pos.scanner.camera") }}
@@ -128,7 +132,7 @@
         </div>
         <UButton
           variant="ghost"
-          icon="i-heroicons-x-mark"
+          icon="solar:close-circle-linear"
           size="xs"
           @click="lastScanned = ''"
         />
@@ -175,7 +179,7 @@ const props = withDefaults(
     showHistory: false,
     continuous: false,
     initialMode: "keyboard",
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -206,7 +210,7 @@ watch(
       }, 100);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 interface ScanRecord {
@@ -291,7 +295,7 @@ async function startCamera() {
           if (err && !(err instanceof NotFoundException)) {
             console.error("Decode error:", err);
           }
-        }
+        },
       );
     } catch (constraintError) {
       // Fallback to any available camera if rear camera fails
@@ -306,7 +310,7 @@ async function startCamera() {
           if (err && !(err instanceof NotFoundException)) {
             console.error("Decode error:", err);
           }
-        }
+        },
       );
     }
   } catch (error: any) {
@@ -318,10 +322,10 @@ async function startCamera() {
       error.name === "NotAllowedError"
         ? "Camera permission denied. Please allow camera access."
         : error.name === "NotFoundError"
-        ? "No camera found on this device."
-        : error.name === "NotReadableError"
-        ? "Camera is already in use by another application."
-        : `Camera error: ${error.message}`;
+          ? "No camera found on this device."
+          : error.name === "NotReadableError"
+            ? "Camera is already in use by another application."
+            : `Camera error: ${error.message}`;
 
     emit("error", new Error(errorMessage));
 
@@ -332,7 +336,7 @@ async function startCamera() {
         title: "Camera Error",
         description: errorMessage,
         color: "red",
-        icon: "i-heroicons-exclamation-triangle",
+        icon: "solar:danger-triangle-linear",
       });
     }
   }

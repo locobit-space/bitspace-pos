@@ -37,7 +37,7 @@ const emit = defineEmits<Emits>();
 // Available tables (not occupied by others)
 const availableTables = computed(() => {
   return props.tables.filter(
-    (t) => t.status === "available" || t.name === props.currentTableName
+    (t) => t.status === "available" || t.name === props.currentTableName,
   );
 });
 
@@ -123,7 +123,7 @@ const getTimerColorClass = (minutes: number) => {
           <div
             class="w-10 h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl"
           >
-            🍽️
+            <UIcon name="solar:chef-hat-linear" class="w-6 h-6" />
           </div>
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -143,7 +143,7 @@ const getTimerColorClass = (minutes: number) => {
           <div
             class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400"
           >
-            <UIcon name="i-heroicons-check-circle" class="w-5 h-5" />
+            <UIcon name="solar:check-circle-linear" class="w-5 h-5" />
             <span class="font-medium">Current: {{ currentTable.name }}</span>
             <span class="text-sm opacity-75"
               >({{ currentTable.seats }} seats)</span
@@ -168,7 +168,10 @@ const getTimerColorClass = (minutes: number) => {
             <div class="text-2xl">{{ getTableIcon(table) }}</div>
 
             <!-- Table Name -->
-            <span class="font-semibold text-sm" :class="getTableNameColor(table)">
+            <span
+              class="font-semibold text-sm"
+              :class="getTableNameColor(table)"
+            >
               {{ table.name }}
             </span>
 
@@ -180,8 +183,7 @@ const getTimerColorClass = (minutes: number) => {
             <!-- Status Badge -->
             <span
               v-if="
-                table.status !== 'available' &&
-                table.name !== currentTableName
+                table.status !== 'available' && table.name !== currentTableName
               "
               class="absolute top-1 right-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
               :class="
@@ -203,15 +205,17 @@ const getTimerColorClass = (minutes: number) => {
               class="absolute bottom-1 right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
               :class="
                 getTimerColorClass(
-                  tablesStore.getTableOccupiedMinutes(table.id)
+                  tablesStore.getTableOccupiedMinutes(table.id),
                 )
               "
               :key="currentTime?.getTime()"
             >
-              ⏱️
-              {{ tablesStore.formatDuration(
-                tablesStore.getTableOccupiedMinutes(table.id)
-              ) }}
+              <UIcon name="solar:stopwatch-linear" class="w-3 h-3 mr-0.5" />
+              {{
+                tablesStore.formatDuration(
+                  tablesStore.getTableOccupiedMinutes(table.id),
+                )
+              }}
             </span>
 
             <!-- Current Indicator -->
@@ -219,14 +223,19 @@ const getTimerColorClass = (minutes: number) => {
               v-if="table.name === currentTableName"
               class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg"
             >
-              <UIcon name="i-heroicons-check" class="w-3 h-3" />
+              <UIcon name="solar:check-linear" class="w-3 h-3" />
             </span>
           </button>
         </div>
 
         <!-- Empty State -->
         <div v-else class="text-center py-8">
-          <div class="text-4xl mb-3">🪑</div>
+          <div class="mb-3">
+            <UIcon
+              name="solar:chair-2-linear"
+              class="w-12 h-12 text-gray-400"
+            />
+          </div>
           <p class="text-gray-500 dark:text-gray-400 mb-2">
             No tables configured
           </p>
@@ -258,7 +267,7 @@ const getTimerColorClass = (minutes: number) => {
           <UButton
             color="primary"
             variant="soft"
-            icon="i-heroicons-arrow-top-right-on-square"
+            icon="solar:arrow-right-up-linear"
             @click="handleManage"
           >
             Manage Tables

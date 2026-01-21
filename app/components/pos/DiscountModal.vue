@@ -38,7 +38,7 @@ watch(
       discountValue.value = props.currentValue;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Validation
@@ -85,7 +85,7 @@ const labelText = computed(() => {
         <h3
           class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
         >
-          <span>🏷️</span> Apply Discount
+          <UIcon name="solar:tag-price-linear" class="w-6 h-6" /> Apply Discount
         </h3>
 
         <div class="space-y-4">

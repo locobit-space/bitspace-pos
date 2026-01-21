@@ -33,7 +33,7 @@ const form = defineModel<FormData>({ required: true });
           class="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center"
         >
           <UIcon
-            name="i-heroicons-cube"
+            name="solar:box-linear"
             class="w-5 h-5 text-cyan-600 dark:text-cyan-400"
           />
         </div>
@@ -55,7 +55,7 @@ const form = defineModel<FormData>({ required: true });
         class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
       >
         <div class="flex items-center gap-3">
-          <UIcon name="i-heroicons-archive-box" class="w-5 h-5 text-gray-500" />
+          <UIcon name="lucide:archive" class="w-5 h-5 text-gray-500" />
           <div>
             <p class="text-sm font-medium text-gray-900 dark:text-white">
               {{ t("products.trackStock", "Track Stock") }}
@@ -107,7 +107,7 @@ const form = defineModel<FormData>({ required: true });
               {{
                 t(
                   "products.minStockHint",
-                  "Alert when stock falls below this level"
+                  "Alert when stock falls below this level",
                 )
               }}
             </span>

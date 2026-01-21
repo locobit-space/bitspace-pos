@@ -89,7 +89,7 @@ watch(
       imageUrlInput.value = "";
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function handleCustomEmojiUpdate(val: string) {
@@ -166,7 +166,7 @@ function handleDragLeave() {
           class="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center"
         >
           <UIcon
-            name="i-heroicons-photo"
+            name="solar:gallery-linear"
             class="w-5 h-5 text-pink-600 dark:text-pink-400"
           />
         </div>
@@ -178,7 +178,7 @@ function handleDragLeave() {
             {{
               t(
                 "products.imageHint",
-                "Upload image, enter URL, or select emoji"
+                "Upload image, enter URL, or select emoji",
               )
             }}
           </p>
@@ -206,7 +206,7 @@ function handleDragLeave() {
           <!-- Uploading state -->
           <div v-if="cloudinary.isUploading.value" class="text-center">
             <UIcon
-              name="i-heroicons-arrow-path"
+              name="solar:restart-linear"
               class="w-8 h-8 text-primary-500 animate-spin"
             />
             <p class="text-xs text-gray-500 mt-1">Uploading...</p>
@@ -228,7 +228,7 @@ function handleDragLeave() {
           <!-- Empty state -->
           <div v-else class="text-center p-2">
             <UIcon
-              name="i-heroicons-cloud-arrow-up"
+              name="solar:cloud-upload-linear"
               class="w-8 h-8 text-gray-400"
             />
             <p class="text-xs text-gray-400 mt-1">Drop or click</p>
@@ -251,7 +251,7 @@ function handleDragLeave() {
         color="primary"
         variant="soft"
         block
-        icon="i-heroicons-cloud-arrow-up"
+        icon="solar:cloud-upload-linear"
         :loading="cloudinary.isUploading.value"
         @click="triggerFileInput"
       >
@@ -269,7 +269,7 @@ function handleDragLeave() {
           {{
             t(
               "products.cloudinaryNotConfigured",
-              "Configure Cloudinary in Settings → Integrations for image uploads"
+              "Configure Cloudinary in Settings → Integrations for image uploads",
             )
           }}
         </p>
@@ -283,9 +283,13 @@ function handleDragLeave() {
           :placeholder="
             t('products.imageUrlPlaceholder', 'https://example.com/image.jpg')
           "
-          icon="i-heroicons-link"
+          icon="solar:link-linear"
           class="w-full"
-          @update:model-value="(val: string) => { if (val) form.image = val }"
+          @update:model-value="
+            (val: string) => {
+              if (val) form.image = val;
+            }
+          "
         />
       </UFormField>
 
@@ -296,10 +300,10 @@ function handleDragLeave() {
           :placeholder="
             t(
               'products.customEmojiPlaceholder',
-              'Type or paste an emoji (e.g. 🚀)'
+              'Type or paste an emoji (e.g. 🚀)',
             )
           "
-          icon="i-heroicons-face-smile"
+          icon="solar:smile-circle-linear"
           class="w-full"
           @update:model-value="handleCustomEmojiUpdate"
         />
@@ -317,7 +321,7 @@ function handleDragLeave() {
         <div
           class="flex flex-wrap items-center gap-2 text-xs text-gray-500 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800"
         >
-          <UIcon name="i-heroicons-globe-alt" class="w-4 h-4" />
+          <UIcon name="lucide:globe" class="w-4 h-4" />
           <span>{{ t("products.findEmojiOn", "Find on:") }}</span>
           <a
             href="https://emojipedia.org"
@@ -326,10 +330,7 @@ function handleDragLeave() {
             class="text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
           >
             Emojipedia
-            <UIcon
-              name="i-heroicons-arrow-top-right-on-square"
-              class="w-3 h-3"
-            />
+            <UIcon name="solar:arrow-right-up-linear" class="w-3 h-3" />
           </a>
           <span class="text-gray-300 dark:text-gray-700">|</span>
           <a
@@ -339,15 +340,12 @@ function handleDragLeave() {
             class="text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
           >
             Emojiterra
-            <UIcon
-              name="i-heroicons-arrow-top-right-on-square"
-              class="w-3 h-3"
-            />
+            <UIcon name="solar:arrow-right-up-linear" class="w-3 h-3" />
           </a>
 
           <div class="w-full h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
 
-          <UIcon name="i-heroicons-command-line" class="w-4 h-4" />
+          <UIcon name="solar:command-linear" class="w-4 h-4" />
           <span>
             {{ t("products.systemEmojiHint", "Shortcut:") }}
             <span class="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded"

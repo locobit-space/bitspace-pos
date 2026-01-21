@@ -6,37 +6,37 @@ const { t } = useI18n();
 const actions = [
   {
     to: "/pos",
-    icon: "i-heroicons-shopping-cart",
+    icon: "solar:shop-2-linear",
     label: "pos.terminal",
     color: "primary",
   },
   {
     to: "/pos/shift",
-    icon: "i-heroicons-currency-dollar",
+    icon: "solar:dollar-minimalistic-linear",
     label: "pos.shift.title",
     color: "green",
   },
   {
     to: "/pos/tables",
-    icon: "i-heroicons-table-cells",
+    icon: "solar:layers-linear",
     label: "pos.tables.title",
     color: "indigo",
   },
   {
     to: "/kitchen",
-    icon: "i-heroicons-fire",
+    icon: "solar:fire-linear",
     label: "kitchen.title",
     color: "orange",
   },
   {
     to: "/accounting/expenses",
-    icon: "i-heroicons-arrow-trending-down",
+    icon: "solar:graph-down-linear",
     label: "accounting.tabs.expenses",
     color: "red",
   },
   {
     to: "/reports",
-    icon: "i-heroicons-chart-bar-square",
+    icon: "solar:chart-square-linear",
     label: "reports.title",
     color: "purple",
   },

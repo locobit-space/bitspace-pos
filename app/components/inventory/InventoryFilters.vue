@@ -35,7 +35,7 @@ const { t } = useI18n();
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
     <UInput
       v-model="searchQuery"
-      icon="i-heroicons-magnifying-glass"
+      icon="solar:magnifer-linear"
       :placeholder="t('inventory.searchPlaceholder')"
     />
     <USelect
@@ -54,7 +54,7 @@ const { t } = useI18n();
       v-if="showMoreFilters"
       color="gray"
       variant="ghost"
-      icon="i-heroicons-funnel"
+      icon="solar:filter-linear"
       block
       :label="t('common.moreFilters')"
       @click="emit('moreFilters')"

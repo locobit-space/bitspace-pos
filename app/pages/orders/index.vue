@@ -101,7 +101,8 @@ const filteredOrders = computed(() => {
       (order) =>
         order.id.toLowerCase().includes(query) ||
         (order.customer && order.customer.toLowerCase().includes(query)) ||
-        (order.customerName && order.customerName.toLowerCase().includes(query))
+        (order.customerName &&
+          order.customerName.toLowerCase().includes(query)),
     );
   }
 
@@ -165,7 +166,7 @@ const stats = computed(() => {
   today.setHours(0, 0, 0, 0);
 
   const todayOrders = ordersStore.orders.value.filter(
-    (o) => new Date(o.date) >= today
+    (o) => new Date(o.date) >= today,
   );
 
   const completedToday = todayOrders.filter((o) => o.status === "completed");
@@ -319,7 +320,7 @@ const bulkExport = () => {
   XLSX.utils.book_append_sheet(wb, ws, "Orders");
   XLSX.writeFile(
     wb,
-    `Orders_Selected_${new Date().toISOString().split("T")[0]}.xlsx`
+    `Orders_Selected_${new Date().toISOString().split("T")[0]}.xlsx`,
   );
 
   toast.add({
@@ -399,7 +400,7 @@ onMounted(async () => {
             <!-- Sync Status -->
             <UButton
               v-if="ordersStore.syncPending.value > 0"
-              icon="i-heroicons-arrow-path"
+              icon="solar:refresh-circle-linear"
               color="amber"
               variant="soft"
               size="sm"
@@ -411,7 +412,7 @@ onMounted(async () => {
 
             <!-- Export Button -->
             <UButton
-              icon="i-heroicons-arrow-down-tray"
+              icon="solar:download-minimalistic-linear"
               variant="outline"
               color="gray"
               @click="exportAllOrders"
@@ -422,7 +423,7 @@ onMounted(async () => {
             <!-- Create Order Button -->
             <UButton
               v-if="canCreateOrders"
-              icon="i-heroicons-plus"
+              icon="solar:add-circle-linear"
               color="primary"
               to="/orders/create"
             >
@@ -444,7 +445,7 @@ onMounted(async () => {
               class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-clipboard-document-list"
+                name="solar:clipboard-list-linear"
                 class="w-5 h-5 text-blue-600 dark:text-blue-400"
               />
             </div>
@@ -465,7 +466,7 @@ onMounted(async () => {
               class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-calendar-days"
+                name="solar:calendar-date-linear"
                 class="w-5 h-5 text-green-600 dark:text-green-400"
               />
             </div>
@@ -486,7 +487,7 @@ onMounted(async () => {
               class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-banknotes"
+                name="solar:banknote-2-linear"
                 class="w-5 h-5 text-amber-600 dark:text-amber-400"
               />
             </div>
@@ -507,7 +508,7 @@ onMounted(async () => {
               class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-clock"
+                name="solar:clock-circle-linear"
                 class="w-5 h-5 text-yellow-600 dark:text-yellow-400"
               />
             </div>
@@ -532,7 +533,7 @@ onMounted(async () => {
               <div class="flex-1">
                 <UInput
                   v-model="searchQuery"
-                  icon="i-heroicons-magnifying-glass"
+                  icon="solar:magnifer-linear"
                   :placeholder="t('common.search', 'Search orders...')"
                   class="w-full max-w-md"
                 />
@@ -548,7 +549,7 @@ onMounted(async () => {
                 />
               </div>
               <UButton
-                icon="i-heroicons-arrow-path"
+                icon="solar:refresh-circle-linear"
                 variant="soft"
                 color="gray"
                 :loading="ordersStore.isLoading.value"
@@ -558,9 +559,7 @@ onMounted(async () => {
             <!-- Mobile Filter Toggle -->
             <UButton
               class="lg:hidden"
-              :icon="
-                showFilters ? 'i-heroicons-funnel-solid' : 'i-heroicons-funnel'
-              "
+              :icon="showFilters ? 'solar:filter-bold' : 'solar:filter-linear'"
               :color="showFilters ? 'primary' : 'gray'"
               variant="soft"
               @click="showFilters = !showFilters"
@@ -612,7 +611,7 @@ onMounted(async () => {
             </div>
             <div class="flex items-center gap-2 flex-wrap">
               <UButton
-                icon="i-heroicons-check-circle"
+                icon="solar:check-circle-linear"
                 variant="soft"
                 color="green"
                 class="flex-1 md:flex-none"
@@ -621,7 +620,7 @@ onMounted(async () => {
                 Mark Paid
               </UButton>
               <UButton
-                icon="i-heroicons-arrow-down-tray"
+                icon="solar:download-minimalistic-linear"
                 variant="soft"
                 color="gray"
                 class="flex-1 md:flex-none"
@@ -640,7 +639,7 @@ onMounted(async () => {
                 Delete
               </UButton>
               <UButton
-                icon="i-heroicons-x-mark"
+                icon="solar:close-circle-linear"
                 variant="ghost"
                 color="gray"
                 @click="
@@ -676,7 +675,10 @@ onMounted(async () => {
         <div
           class="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400"
         >
-          <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
+          <UIcon
+            name="solar:refresh-circle-linear"
+            class="w-4 h-4 animate-spin"
+          />
           <span>Syncing with Nostr...</span>
         </div>
       </div>
@@ -684,7 +686,7 @@ onMounted(async () => {
       <!-- Empty State -->
       <div
         v-else-if="filteredOrders.length === 0"
-        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-16 text-center"
+        class="bg-white dark:bg-gray-900 rounded-xl border-gray-200 dark:border-gray-800 p-16 text-center"
       >
         <div class="text-6xl mb-4">📋</div>
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -698,7 +700,7 @@ onMounted(async () => {
           to="/orders/create"
           color="primary"
           size="lg"
-          icon="i-heroicons-plus"
+          icon="solar:add-circle-linear"
         >
           Create First Order
         </UButton>

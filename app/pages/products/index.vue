@@ -21,7 +21,7 @@
             variant="soft"
             color="violet"
             class="text-sm"
-            icon="i-heroicons-arrow-path"
+            icon="solar:refresh-circle-linear"
             :loading="isSyncing"
             :badge="syncPending > 0 ? syncPending : undefined"
             @click="handleSyncFromNostr"
@@ -35,31 +35,31 @@
               [
                 {
                   label: $t('common.import', { type: 'Excel' }),
-                  icon: 'i-heroicons-arrow-up-tray',
+                  icon: 'solar:upload-minimalistic-linear',
                   onClick: () => (showExcelImportModal = true),
                 },
                 {
                   label: $t('common.export', { type: 'Excel' }),
-                  icon: 'i-heroicons-arrow-down-tray',
+                  icon: 'solar:download-minimalistic-linear',
                   onClick: exportToExcel,
                 },
               ],
               [
                 {
                   label: $t('common.backup', { type: 'JSON' }),
-                  icon: 'i-heroicons-archive-box-arrow-down',
+                  icon: 'solar:archive-down-minimlistic-linear',
                   onClick: exportProducts,
                 },
                 {
                   label: $t('common.restore', { type: 'JSON' }),
-                  icon: 'i-heroicons-archive-box',
+                  icon: 'solar:box-minimalistic-linear',
                   onClick: importProducts,
                 },
               ],
               [
                 {
                   label: $t('products.clearAll', 'Clear All Products'),
-                  icon: 'i-heroicons-trash',
+                  icon: 'solar:trash-bin-trash-linear',
                   onClick: confirmClearAllProducts,
                   disabled: !canDeleteProducts || filteredProducts.length === 0,
                 },
@@ -69,8 +69,8 @@
             <UButton
               variant="soft"
               class="text-sm"
-              icon="i-heroicons-table-cells"
-              trailing-icon="i-heroicons-chevron-down-20-solid"
+              icon="solar:layers-linear"
+              trailing-icon="solar:alt-arrow-down-linear"
             >
               <span class="hidden sm:inline">{{
                 $t("common.data", "Data")
@@ -89,7 +89,7 @@
               color="neutral"
               variant="soft"
               class="text-sm"
-              icon="i-heroicons-folder"
+              icon="solar:folder-linear"
               @click="openSettingsPanel('categories')"
             >
               <span class="hidden sm:inline">{{
@@ -102,7 +102,7 @@
               color="neutral"
               variant="soft"
               class="text-sm"
-              icon="i-heroicons-scale"
+              icon="solar:ruler-pen-linear"
               @click="openSettingsPanel('units')"
             >
               <span class="hidden sm:inline">{{ $t("products.unit") }}</span>
@@ -114,7 +114,7 @@
           color="primary"
           variant="soft"
           class="text-sm"
-          icon="i-heroicons-magnifying-glass-circle"
+          icon="solar:magnifer-linear"
           @click="showLookupModal = true"
         >
           <span class="hidden sm:inline">{{
@@ -125,7 +125,7 @@
           color="amber"
           variant="soft"
           class="text-sm"
-          icon="i-heroicons-gift"
+          icon="solar:gift-linear"
           :badge="activePromotionsCount > 0 ? activePromotionsCount : undefined"
           @click="navigateTo('/products/promotions')"
         >
@@ -137,7 +137,7 @@
           v-if="canEditProducts"
           color="primary"
           class="text-sm"
-          icon="i-heroicons-plus"
+          icon="solar:add-circle-linear"
           @click="openProductModal()"
         >
           <span class="hidden sm:inline">{{ $t("common.add") }}</span>
@@ -156,7 +156,7 @@
               class="flex items-center justify-center w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg"
             >
               <UIcon
-                name="i-heroicons-gift"
+                name="solar:gift-linear"
                 class="w-5 h-5 text-amber-600 dark:text-amber-400"
               />
             </div>
@@ -170,7 +170,7 @@
                 {{
                   $t(
                     "products.withPromotions",
-                    "products with active promotions"
+                    "products with active promotions",
                   )
                 }}
               </p>
@@ -181,7 +181,7 @@
             variant="solid"
             size="sm"
             :label="$t('promotions.manage', 'Manage Promotions')"
-            trailing-icon="i-heroicons-arrow-right"
+            trailing-icon="solar:alt-arrow-right-linear"
             @click="navigateTo('/products/promotions')"
           />
         </div>
@@ -199,7 +199,7 @@
               class="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg"
             >
               <UIcon
-                name="i-heroicons-check-circle"
+                name="solar:check-circle-linear"
                 class="w-5 h-5 text-blue-600 dark:text-blue-400"
               />
             </div>
@@ -220,7 +220,7 @@
               color="red"
               variant="soft"
               size="sm"
-              icon="i-heroicons-trash"
+              icon="solar:trash-bin-trash-linear"
               :loading="isBulkActionProcessing"
               @click="bulkDeleteSelected"
             >
@@ -231,7 +231,7 @@
               color="green"
               variant="soft"
               size="sm"
-              icon="i-heroicons-check-circle"
+              icon="solar:check-circle-linear"
               :loading="isBulkActionProcessing"
               @click="bulkActivateSelected"
             >
@@ -242,7 +242,7 @@
               color="orange"
               variant="soft"
               size="sm"
-              icon="i-heroicons-eye-slash"
+              icon="solar:eye-closed-linear"
               :loading="isBulkActionProcessing"
               @click="bulkDeactivateSelected"
             >
@@ -252,7 +252,7 @@
               color="blue"
               variant="soft"
               size="sm"
-              icon="i-heroicons-arrow-down-tray"
+              icon="solar:download-minimalistic-linear"
               @click="exportSelectedProducts"
             >
               Export
@@ -265,19 +265,19 @@
                 [
                   {
                     label: 'Select All Filtered',
-                    icon: 'i-heroicons-check',
+                    icon: 'solar:check-read-linear',
                     onClick: selectAllFiltered,
                   },
                   {
                     label: 'Clear Selection',
-                    icon: 'i-heroicons-x-mark',
+                    icon: 'solar:close-circle-linear',
                     onClick: clearSelection,
                   },
                 ],
                 [
                   {
                     label: 'Move to Category',
-                    icon: 'i-heroicons-folder',
+                    icon: 'solar:folder-linear',
                     children: categories.map((cat) => ({
                       label: cat.name,
                       onClick: () => bulkUpdateCategory(cat.id),
@@ -290,7 +290,7 @@
                 color="gray"
                 variant="soft"
                 size="sm"
-                trailing-icon="i-heroicons-chevron-down-20-solid"
+                trailing-icon="solar:alt-arrow-down-linear"
               >
                 More
               </UButton>
@@ -300,7 +300,7 @@
               color="gray"
               variant="ghost"
               size="sm"
-              icon="i-heroicons-x-mark"
+              icon="solar:close-circle-linear"
               @click="clearSelection"
             >
               Clear
@@ -340,7 +340,7 @@
             />
             <UTooltip :text="$t('common.add') + ' ' + $t('products.category')">
               <UButton
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 color="neutral"
                 variant="ghost"
                 size="sm"
@@ -370,7 +370,7 @@
           <UInput
             v-model="searchQuery"
             :placeholder="$t('products.searchPlaceholder')"
-            icon="i-heroicons-magnifying-glass"
+            icon="solar:magnifer-linear"
             class="w-full"
           />
         </UFormField>
@@ -380,7 +380,7 @@
           <UButton
             color="gray"
             variant="ghost"
-            icon="i-heroicons-x-mark"
+            icon="solar:close-circle-linear"
             @click="resetFilters"
             block
           >
@@ -417,14 +417,14 @@
                   v-if="sortKey === 'name'"
                   :name="
                     sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
+                      ? 'solar:alt-arrow-up-linear'
+                      : 'solar:alt-arrow-down-linear'
                   "
                   class="w-4 h-4"
                 />
                 <UIcon
                   v-else
-                  name="i-heroicons-chevron-up-down"
+                  name="solar:sort-vertical-linear"
                   class="w-4 h-4 opacity-30"
                 />
               </div>
@@ -439,14 +439,14 @@
                   v-if="sortKey === 'sku'"
                   :name="
                     sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
+                      ? 'solar:alt-arrow-up-linear'
+                      : 'solar:alt-arrow-down-linear'
                   "
                   class="w-4 h-4"
                 />
                 <UIcon
                   v-else
-                  name="i-heroicons-chevron-up-down"
+                  name="solar:sort-vertical-linear"
                   class="w-4 h-4 opacity-30"
                 />
               </div>
@@ -466,14 +466,14 @@
                   v-if="sortKey === 'category'"
                   :name="
                     sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
+                      ? 'solar:alt-arrow-up-linear'
+                      : 'solar:alt-arrow-down-linear'
                   "
                   class="w-4 h-4"
                 />
                 <UIcon
                   v-else
-                  name="i-heroicons-chevron-up-down"
+                  name="solar:sort-vertical-linear"
                   class="w-4 h-4 opacity-30"
                 />
               </div>
@@ -488,14 +488,14 @@
                   v-if="sortKey === 'price'"
                   :name="
                     sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
+                      ? 'solar:alt-arrow-up-linear'
+                      : 'solar:alt-arrow-down-linear'
                   "
                   class="w-4 h-4"
                 />
                 <UIcon
                   v-else
-                  name="i-heroicons-chevron-up-down"
+                  name="solar:sort-vertical-linear"
                   class="w-4 h-4 opacity-30"
                 />
               </div>
@@ -510,14 +510,14 @@
                   v-if="sortKey === 'stock'"
                   :name="
                     sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
+                      ? 'solar:alt-arrow-up-linear'
+                      : 'solar:alt-arrow-down-linear'
                   "
                   class="w-4 h-4"
                 />
                 <UIcon
                   v-else
-                  name="i-heroicons-chevron-up-down"
+                  name="solar:sort-vertical-linear"
                   class="w-4 h-4 opacity-30"
                 />
               </div>
@@ -532,14 +532,14 @@
                   v-if="sortKey === 'status'"
                   :name="
                     sortOrder === 'asc'
-                      ? 'i-heroicons-chevron-up'
-                      : 'i-heroicons-chevron-down'
+                      ? 'solar:alt-arrow-up-linear'
+                      : 'solar:alt-arrow-down-linear'
                   "
                   class="w-4 h-4"
                 />
                 <UIcon
                   v-else
-                  name="i-heroicons-chevron-up-down"
+                  name="solar:sort-vertical-linear"
                   class="w-4 h-4 opacity-30"
                 />
               </div>
@@ -586,7 +586,7 @@
                 <!-- No image -->
                 <UIcon
                   v-else
-                  name="i-heroicons-photo"
+                  name="solar:gallery-linear"
                   class="w-6 h-6 text-gray-400"
                 />
               </div>
@@ -635,8 +635,8 @@
                     product.stock <= product.minStock
                       ? 'text-red-600 dark:text-red-400'
                       : product.stock <= product.minStock * 2
-                      ? 'text-yellow-600 dark:text-yellow-400'
-                      : 'text-green-600 dark:text-green-400',
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-green-600 dark:text-green-400',
                   ]"
                 >
                   {{ product.stock }}
@@ -660,8 +660,8 @@
                     <UIcon
                       :name="
                         product.isPublic !== false
-                          ? 'i-heroicons-globe-alt'
-                          : 'i-heroicons-lock-closed'
+                          ? 'solar:globe-minimalistic-linear'
+                          : 'solar:lock-linear'
                       "
                       class="w-3 h-3"
                     />
@@ -681,7 +681,7 @@
                 >
                   <UBadge color="amber" variant="solid">
                     <template #leading>
-                      <UIcon name="i-heroicons-gift" class="w-3 h-3" />
+                      <UIcon name="solar:gift-linear" class="w-3 h-3" />
                     </template>
                     {{ getProductPromotions(product.id).length }}
                   </UBadge>
@@ -694,7 +694,7 @@
                   color="gray"
                   variant="ghost"
                   size="sm"
-                  icon="i-heroicons-eye"
+                  icon="solar:eye-linear"
                   @click="viewProduct(product)"
                 />
                 <UButton
@@ -702,7 +702,7 @@
                   color="gray"
                   variant="ghost"
                   size="sm"
-                  icon="i-heroicons-pencil"
+                  icon="solar:pen-linear"
                   @click="editProduct(product)"
                 />
                 <UTooltip v-if="canEditProducts" text="Create Promotion">
@@ -710,7 +710,7 @@
                     color="amber"
                     variant="ghost"
                     size="sm"
-                    icon="i-heroicons-gift"
+                    icon="solar:gift-linear"
                     @click="createPromotionForProduct(product)"
                   />
                 </UTooltip>
@@ -719,7 +719,7 @@
                   color="red"
                   variant="ghost"
                   size="sm"
-                  icon="i-heroicons-trash"
+                  icon="solar:trash-bin-trash-linear"
                   @click="deleteProduct(product)"
                 />
               </div>
@@ -753,7 +753,7 @@
             </span>
             <UIcon
               v-else
-              name="i-heroicons-photo"
+              name="solar:gallery-linear"
               class="w-8 h-8 text-gray-400"
             />
           </div>
@@ -775,12 +775,12 @@
                   product.productType === "good"
                     ? "📦 Good"
                     : product.productType === "service"
-                    ? "⚙️ Service"
-                    : product.productType === "digital"
-                    ? "💾 Digital"
-                    : product.productType === "subscription"
-                    ? "🔄 Subscription"
-                    : "📦 Bundle"
+                      ? "⚙️ Service"
+                      : product.productType === "digital"
+                        ? "💾 Digital"
+                        : product.productType === "subscription"
+                          ? "🔄 Subscription"
+                          : "📦 Bundle"
                 }}
               </UBadge>
               <UTooltip
@@ -790,7 +790,7 @@
                 } active promotion(s)`"
               >
                 <UBadge color="amber" size="xs">
-                  <UIcon name="i-heroicons-gift" class="w-3 h-3" />
+                  <UIcon name="solar:gift-linear" class="w-3 h-3" />
                   {{ getProductPromotions(product.id).length }}
                 </UBadge>
               </UTooltip>
@@ -855,7 +855,7 @@
             color="primary"
             variant="soft"
             size="sm"
-            icon="i-heroicons-eye"
+            icon="solar:eye-linear"
             @click="viewProduct(product)"
             block
           >
@@ -866,7 +866,7 @@
             color="gray"
             variant="soft"
             size="sm"
-            icon="i-heroicons-pencil"
+            icon="solar:pen-linear"
             @click="editProduct(product)"
             block
           >
@@ -877,7 +877,7 @@
             color="amber"
             variant="soft"
             size="sm"
-            icon="i-heroicons-gift"
+            icon="solar:gift-linear"
             @click="createPromotionForProduct(product)"
           />
           <UButton
@@ -885,7 +885,7 @@
             color="red"
             variant="soft"
             size="sm"
-            icon="i-heroicons-trash"
+            icon="solar:trash-bin-trash-linear"
             @click="deleteProduct(product)"
           />
         </div>
@@ -897,7 +897,7 @@
         class="text-center py-12 text-gray-400"
       >
         <UIcon
-          name="i-heroicons-inbox"
+          name="solar:box-minimalistic-linear"
           class="w-12 h-12 mx-auto mb-3 opacity-50"
         />
         <p>{{ $t("common.noData") }}</p>
@@ -916,7 +916,7 @@
           color="gray"
           variant="ghost"
           size="sm"
-          icon="i-heroicons-chevron-left"
+          icon="solar:alt-arrow-left-linear"
           @click="currentPage--"
         />
         <span class="px-3 py-1 text-sm">
@@ -927,7 +927,7 @@
           color="gray"
           variant="ghost"
           size="sm"
-          icon="i-heroicons-chevron-right"
+          icon="solar:alt-arrow-right-linear"
           @click="currentPage++"
         />
       </div>
@@ -1010,7 +1010,7 @@
             class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800"
           >
             <UIcon
-              name="i-heroicons-exclamation-triangle"
+              name="solar:danger-triangle-linear"
               class="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5"
             />
             <div>
@@ -1018,7 +1018,7 @@
                 {{
                   $t(
                     "products.clearAllWarning",
-                    "Warning: This action cannot be undone!"
+                    "Warning: This action cannot be undone!",
                   )
                 }}
               </p>
@@ -1027,7 +1027,7 @@
                   $t(
                     "products.clearAllDescription",
                     { count: filteredProducts.length },
-                    `This will permanently delete all ${filteredProducts.length} products from your inventory.`
+                    `This will permanently delete all ${filteredProducts.length} products from your inventory.`,
                   )
                 }}
               </p>
@@ -1037,7 +1037,7 @@
             {{
               $t(
                 "products.clearAllNote",
-                "Note: This is useful when starting fresh or removing template products."
+                "Note: This is useful when starting fresh or removing template products.",
               )
             }}
           </p>
@@ -1184,7 +1184,7 @@
                     settingsPanelTab === "categories"
                       ? $t(
                           "products.settings.manageCategories",
-                          "Manage Categories"
+                          "Manage Categories",
                         )
                       : $t("products.settings.manageUnits", "Manage Units")
                   }}
@@ -1194,18 +1194,18 @@
                     settingsPanelTab === "categories"
                       ? $t(
                           "products.settings.manageCategoriesDesc",
-                          "Add, edit or delete product categories"
+                          "Add, edit or delete product categories",
                         )
                       : $t(
                           "products.settings.manageUnitsDesc",
-                          "Manage product measurement units"
+                          "Manage product measurement units",
                         )
                   }}
                 </p>
               </div>
             </div>
             <UButton
-              icon="i-heroicons-x-mark"
+              icon="solar:close-circle-linear"
               color="neutral"
               variant="ghost"
               @click="showSettingsPanel = false"
@@ -1284,7 +1284,7 @@
                 <div class="flex items-center gap-1">
                   <UButton
                     v-if="!['all', 'favorites'].includes(category.id)"
-                    icon="i-heroicons-pencil"
+                    icon="solar:pen-linear"
                     color="neutral"
                     variant="ghost"
                     size="xs"
@@ -1292,7 +1292,7 @@
                   />
                   <UButton
                     v-if="!['all', 'favorites'].includes(category.id)"
-                    icon="i-heroicons-trash"
+                    icon="solar:trash-bin-trash-linear"
                     color="red"
                     variant="ghost"
                     size="xs"
@@ -1336,7 +1336,7 @@
                 </div>
                 <div class="flex items-center gap-1">
                   <UButton
-                    icon="i-heroicons-pencil"
+                    icon="solar:pen-linear"
                     color="neutral"
                     variant="ghost"
                     size="xs"
@@ -1361,7 +1361,7 @@
             <UButton
               block
               color="primary"
-              icon="i-heroicons-plus"
+              icon="solar:add-circle-linear"
               @click="
                 settingsPanelTab === 'categories'
                   ? openCategoryModal()
@@ -1434,7 +1434,7 @@
                 :placeholder="
                   $t(
                     'products.categories.namePlaceholder',
-                    'e.g., Drinks, Food, Snacks'
+                    'e.g., Drinks, Food, Snacks',
                   )
                 "
               />
@@ -1531,7 +1531,7 @@
                 :placeholder="
                   $t(
                     'products.units.namePlaceholder',
-                    'e.g., Piece, Kilogram, Liter'
+                    'e.g., Piece, Kilogram, Liter',
                   )
                 "
               />
@@ -1589,7 +1589,7 @@
           <h3
             class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2"
           >
-            <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
+            <UIcon name="solar:danger-triangle-linear" class="w-5 h-5" />
             {{ $t("common.confirmDelete", "Confirm Delete") }}
           </h3>
 
@@ -1597,7 +1597,7 @@
             {{
               $t(
                 "common.deleteConfirmMessage",
-                "Are you sure you want to delete"
+                "Are you sure you want to delete",
               )
             }}
             <strong class="text-gray-900 dark:text-white">
@@ -1930,7 +1930,7 @@ const filteredProducts = computed(() => {
       (p) =>
         p.name.toLowerCase().includes(query) ||
         p.sku.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query)
+        p.description?.toLowerCase().includes(query),
     );
   }
 
@@ -1978,7 +1978,7 @@ const filteredProducts = computed(() => {
 });
 
 const totalPages = computed(() =>
-  Math.ceil(filteredProducts.value.length / itemsPerPage.value)
+  Math.ceil(filteredProducts.value.length / itemsPerPage.value),
 );
 
 const paginatedProducts = computed(() => {
@@ -1989,7 +1989,10 @@ const paginatedProducts = computed(() => {
 
 const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage.value);
 const endIndex = computed(() =>
-  Math.min(startIndex.value + itemsPerPage.value, filteredProducts.value.length)
+  Math.min(
+    startIndex.value + itemsPerPage.value,
+    filteredProducts.value.length,
+  ),
 );
 
 // Sync state
@@ -2113,7 +2116,7 @@ const createPromotionForProduct = (product: Product) => {
 
 // Handler for importing products from public database lookup
 const handleLookupImport = async (
-  products: import("~/composables/use-product-lookup").PublicProduct[]
+  products: import("~/composables/use-product-lookup").PublicProduct[],
 ) => {
   const toast = useToast();
   const imported = [];
@@ -2149,7 +2152,7 @@ const handleLookupImport = async (
     toast.add({
       title: t("common.success"),
       description: `Imported ${imported.length} product(s)`,
-      icon: "i-heroicons-check-circle",
+      icon: "solar:check-circle-linear",
       color: "success",
     });
   }
@@ -2157,7 +2160,7 @@ const handleLookupImport = async (
 
 // Handler for editing a product from lookup - fills form for user to review/edit before saving
 const handleLookupEdit = (
-  product: import("~/composables/use-product-lookup").PublicProduct
+  product: import("~/composables/use-product-lookup").PublicProduct,
 ) => {
   // Create a partial product object with lookup data
   selectedProduct.value = {
@@ -2260,7 +2263,7 @@ const handleProductSave = async (data: {
       toast.add({
         title: "Product updated",
         description: `${data.name} synced to Nostr (encrypted)`,
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
         color: "green",
       });
     } else {
@@ -2273,7 +2276,7 @@ const handleProductSave = async (data: {
       toast.add({
         title: "Product created",
         description: `${data.name} saved & encrypted to Nostr`,
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
         color: "green",
       });
     }
@@ -2284,7 +2287,7 @@ const handleProductSave = async (data: {
     toast.add({
       title: "Error",
       description: "Failed to save product",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2330,7 +2333,7 @@ const _saveProduct = async () => {
       toast.add({
         title: "Product updated",
         description: `${productForm.value.name} synced to Nostr (encrypted)`,
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
         color: "green",
       });
     } else {
@@ -2343,7 +2346,7 @@ const _saveProduct = async () => {
       toast.add({
         title: "Product created",
         description: `${productForm.value.name} saved & encrypted to Nostr`,
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
         color: "green",
       });
     }
@@ -2354,7 +2357,7 @@ const _saveProduct = async () => {
     toast.add({
       title: "Error",
       description: "Failed to save product",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2372,7 +2375,7 @@ const confirmDelete = async () => {
       toast.add({
         title: "Product deleted",
         description: `${productToDelete.value.name} removed`,
-        icon: "i-heroicons-trash",
+        icon: "solar:trash-bin-trash-linear",
         color: "orange",
       });
     }
@@ -2383,7 +2386,7 @@ const confirmDelete = async () => {
     toast.add({
       title: "Error",
       description: "Failed to delete product",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2411,9 +2414,9 @@ const clearAllProducts = async () => {
       description: t(
         "products.clearedCount",
         { count },
-        `${count} products deleted`
+        `${count} products deleted`,
       ),
-      icon: "i-heroicons-trash",
+      icon: "solar:trash-bin-trash-linear",
       color: "success",
     });
 
@@ -2423,7 +2426,7 @@ const clearAllProducts = async () => {
     toast.add({
       title: t("common.error"),
       description: t("products.clearError", "Failed to clear products"),
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2462,7 +2465,7 @@ const toggleProductSelection = (productId: string) => {
 
   // Update select all checkbox state
   isSelectAllChecked.value = paginatedProducts.value.every((p) =>
-    selectedProductIds.value.has(p.id)
+    selectedProductIds.value.has(p.id),
   );
 };
 
@@ -2485,7 +2488,7 @@ const selectAllFiltered = () => {
   toast.add({
     title: t("common.success"),
     description: `Selected ${filteredProducts.value.length} products`,
-    icon: "i-heroicons-check-circle",
+    icon: "solar:check-circle-linear",
     color: "success",
   });
 };
@@ -2495,7 +2498,7 @@ const bulkDeleteSelected = async () => {
   if (!hasSelection.value) return;
 
   const confirmDelete = confirm(
-    `Are you sure you want to delete ${selectedCount.value} selected product(s)? This action cannot be undone.`
+    `Are you sure you want to delete ${selectedCount.value} selected product(s)? This action cannot be undone.`,
   );
 
   if (!confirmDelete) return;
@@ -2508,7 +2511,7 @@ const bulkDeleteSelected = async () => {
     toast.add({
       title: t("common.success"),
       description: `Deleted ${deleted} product(s)`,
-      icon: "i-heroicons-trash",
+      icon: "solar:trash-bin-trash-linear",
       color: "success",
     });
 
@@ -2518,7 +2521,7 @@ const bulkDeleteSelected = async () => {
     toast.add({
       title: t("common.error"),
       description: "Failed to delete selected products",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2540,7 +2543,7 @@ const bulkActivateSelected = async () => {
     toast.add({
       title: t("common.success"),
       description: `Activated ${updated} product(s)`,
-      icon: "i-heroicons-check-circle",
+      icon: "solar:check-circle-linear",
       color: "success",
     });
 
@@ -2550,7 +2553,7 @@ const bulkActivateSelected = async () => {
     toast.add({
       title: t("common.error"),
       description: "Failed to activate products",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2572,7 +2575,7 @@ const bulkDeactivateSelected = async () => {
     toast.add({
       title: t("common.success"),
       description: `Deactivated ${updated} product(s)`,
-      icon: "i-heroicons-eye-slash",
+      icon: "solar:eye-closed-linear",
       color: "success",
     });
 
@@ -2582,7 +2585,7 @@ const bulkDeactivateSelected = async () => {
     toast.add({
       title: t("common.error"),
       description: "Failed to deactivate products",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2594,7 +2597,7 @@ const exportSelectedProducts = () => {
   if (!hasSelection.value) return;
 
   const selectedProducts = products.value.filter((p) =>
-    selectedProductIds.value.has(p.id)
+    selectedProductIds.value.has(p.id),
   );
 
   const data = selectedProducts.map((p) => ({
@@ -2615,13 +2618,13 @@ const exportSelectedProducts = () => {
   XLSX.utils.book_append_sheet(wb, ws, "Selected Products");
   XLSX.writeFile(
     wb,
-    `Selected_Products_${new Date().toISOString().split("T")[0]}.xlsx`
+    `Selected_Products_${new Date().toISOString().split("T")[0]}.xlsx`,
   );
 
   toast.add({
     title: t("common.success"),
     description: `Exported ${selectedCount.value} product(s)`,
-    icon: "i-heroicons-arrow-down-tray",
+    icon: "solar:download-minimalistic-linear",
     color: "success",
   });
 };
@@ -2641,7 +2644,7 @@ const bulkUpdateCategory = async (categoryId: string) => {
     toast.add({
       title: t("common.success"),
       description: `Moved ${updated} product(s) to ${categoryName}`,
-      icon: "i-heroicons-folder",
+      icon: "solar:folder-linear",
       color: "success",
     });
 
@@ -2651,7 +2654,7 @@ const bulkUpdateCategory = async (categoryId: string) => {
     toast.add({
       title: t("common.error"),
       description: "Failed to update category",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   } finally {
@@ -2714,7 +2717,7 @@ const saveCategory = async () => {
       title: "Error",
       description: "Category name is required",
       color: "red",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
     });
     return;
   }
@@ -2731,7 +2734,7 @@ const saveCategory = async () => {
         title: "Success",
         description: "Category updated successfully",
         color: "green",
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
       });
     } else {
       await productsStore.addCategory({
@@ -2743,7 +2746,7 @@ const saveCategory = async () => {
         title: "Success",
         description: "Category created successfully",
         color: "green",
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
       });
     }
     showCategoryModal.value = false;
@@ -2753,7 +2756,7 @@ const saveCategory = async () => {
       title: "Error",
       description: "Failed to save category",
       color: "red",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
     });
   } finally {
     savingCategory.value = false;
@@ -2766,7 +2769,7 @@ const confirmDeleteCategory = (category: Category) => {
       title: "Error",
       description: "Cannot delete built-in category",
       color: "red",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
     });
     return;
   }
@@ -2780,21 +2783,21 @@ const executeDeleteCategory = async () => {
   deletingCategory.value = true;
   try {
     const success = await productsStore.deleteCategory(
-      categoryToDelete.value.id
+      categoryToDelete.value.id,
     );
     if (success) {
       toast.add({
         title: "Success",
         description: "Category deleted successfully",
         color: "green",
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
       });
     } else {
       toast.add({
         title: "Error",
         description: productsStore.error.value || "Failed to delete category",
         color: "red",
-        icon: "i-heroicons-exclamation-circle",
+        icon: "solar:danger-circle-linear",
       });
     }
     showDeleteCategoryModal.value = false;
@@ -2830,7 +2833,7 @@ const saveUnit = async () => {
       title: "Error",
       description: "Unit name and symbol are required",
       color: "red",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
     });
     return;
   }
@@ -2846,7 +2849,7 @@ const saveUnit = async () => {
         title: "Success",
         description: "Unit updated successfully",
         color: "green",
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
       });
     } else {
       await productsStore.addUnit({
@@ -2857,7 +2860,7 @@ const saveUnit = async () => {
         title: "Success",
         description: "Unit created successfully",
         color: "green",
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
       });
     }
     showUnitModal.value = false;
@@ -2867,7 +2870,7 @@ const saveUnit = async () => {
       title: "Error",
       description: "Failed to save unit",
       color: "red",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
     });
   } finally {
     savingUnit.value = false;
@@ -2891,7 +2894,7 @@ const exportProducts = async () => {
     toast.add({
       title: "Export successful",
       description: "Products exported to JSON file",
-      icon: "i-heroicons-arrow-down-tray",
+      icon: "solar:download-minimalistic-linear",
       color: "green",
     });
   } catch (error) {
@@ -2899,7 +2902,7 @@ const exportProducts = async () => {
     toast.add({
       title: "Export failed",
       description: "Could not export products",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   }
@@ -2945,7 +2948,7 @@ const handleExcelImport = async (data: any[]) => {
 
   // Pre-fill cache with existing data
   categories.value.forEach((c) =>
-    categoryCache.set(c.name.toLowerCase(), c.id)
+    categoryCache.set(c.name.toLowerCase(), c.id),
   );
   units.value.forEach((u) => {
     unitCache.set(u.symbol.toLowerCase(), u.id);
@@ -3042,7 +3045,7 @@ const handleExcelImport = async (data: any[]) => {
         title: "Import Successful",
         description: `Successfully imported ${importedCount} products.`,
         color: "green",
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
       });
     } catch (e) {
       console.error("Bulk Import Failed:", e);
@@ -3050,7 +3053,7 @@ const handleExcelImport = async (data: any[]) => {
         title: "Import Failed",
         description: "An error occurred during bulk import.",
         color: "red",
-        icon: "i-heroicons-exclamation-circle",
+        icon: "solar:danger-circle-linear",
       });
     }
   } else {
@@ -3058,7 +3061,7 @@ const handleExcelImport = async (data: any[]) => {
       title: "Import Failed",
       description: "No valid products found to import.",
       color: "red",
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
     });
   }
 
@@ -3081,7 +3084,7 @@ const importProducts = async () => {
       toast.add({
         title: "Import successful",
         description: `Imported ${result.products} products, ${result.categories} categories`,
-        icon: "i-heroicons-arrow-up-tray",
+        icon: "solar:upload-minimalistic-linear",
         color: "green",
       });
     } catch (error) {
@@ -3089,7 +3092,7 @@ const importProducts = async () => {
       toast.add({
         title: "Import failed",
         description: "Could not import products. Check file format.",
-        icon: "i-heroicons-exclamation-circle",
+        icon: "solar:danger-circle-linear",
         color: "red",
       });
     }
@@ -3106,7 +3109,7 @@ watch([selectedBranch, selectedCategory, selectedStatus, searchQuery], () => {
 // Promotion helpers
 // ============================================
 const activePromotionsCount = computed(
-  () => promotionsStore.activePromotions.value.length
+  () => promotionsStore.activePromotions.value.length,
 );
 
 // Count products with active promotions

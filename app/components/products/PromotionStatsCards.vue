@@ -16,10 +16,10 @@ const { t } = useI18n();
 // Computed stats
 const totalPromotions = computed(() => props.promotions.length);
 const activePromotions = computed(
-  () => props.promotions.filter((p) => p.status === "active").length
+  () => props.promotions.filter((p) => p.status === "active").length,
 );
 const totalUses = computed(() =>
-  props.promotions.reduce((total, p) => total + p.usageCount, 0)
+  props.promotions.reduce((total, p) => total + p.usageCount, 0),
 );
 </script>
 
@@ -28,7 +28,7 @@ const totalUses = computed(() =>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <!-- Total Promotions Card -->
       <CommonStatCard
-        :icon="'i-heroicons-gift'"
+        :icon="'i-solar:gift-linear'"
         icon-color="blue"
         :label="t('common.total', 'Total')"
         :value="totalPromotions"
@@ -37,7 +37,7 @@ const totalUses = computed(() =>
 
       <!-- Active Promotions Card -->
       <CommonStatCard
-        :icon="'i-heroicons-check-circle'"
+        :icon="'i-solar:check-circle-linear'"
         icon-color="green"
         :label="t('common.active', 'Active')"
         :value="activePromotions"
@@ -46,7 +46,7 @@ const totalUses = computed(() =>
 
       <!-- Total Uses Card -->
       <CommonStatCard
-        :icon="'i-heroicons-chart-bar'"
+        :icon="'i-solar:chart-square-linear'"
         icon-color="purple"
         :label="t('promotions.totalUses', 'Uses')"
         :value="totalUses"

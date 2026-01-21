@@ -123,8 +123,8 @@ const kpis = computed(() => {
     selectedPeriod.value === "today"
       ? today
       : selectedPeriod.value === "week"
-      ? weekStart
-      : monthStart;
+        ? weekStart
+        : monthStart;
 
   const periodOrders = ordersStore.orders.value.filter((o) => {
     const orderDate = new Date(o.date);
@@ -140,7 +140,7 @@ const kpis = computed(() => {
     .reduce((sum, o) => sum + o.total, 0);
   const lightningSales = periodOrders
     .filter((o) =>
-      ["lightning", "bolt12", "lnurl"].includes(o.paymentMethod || "")
+      ["lightning", "bolt12", "lnurl"].includes(o.paymentMethod || ""),
     )
     .reduce((sum, o) => sum + o.total, 0);
   const otherSales = totalRevenue - cashSales - lightningSales;
@@ -251,7 +251,7 @@ const peakHour = computed(() => {
 
 // Low stock & recent orders
 const lowStockProducts = computed(() =>
-  productsStore.lowStockProducts.value.slice(0, 5)
+  productsStore.lowStockProducts.value.slice(0, 5),
 );
 const recentOrders = computed(() => {
   return [...ordersStore.orders.value]
@@ -339,7 +339,7 @@ onMounted(async () => {
 
   // Check if we should show onboarding checklist
   const checklistDismissed = localStorage.getItem(
-    "bitspace_onboarding_checklist_dismissed"
+    "bitspace_onboarding_checklist_dismissed",
   );
   if (shop.isSetupComplete.value && !checklistDismissed) {
     showOnboardingChecklist.value = true;
@@ -379,7 +379,10 @@ onMounted(async () => {
             v-if="isRefreshing"
             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400"
           >
-            <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
+            <UIcon
+              name="solar:refresh-circle-linear"
+              class="w-3 h-3 animate-spin"
+            />
             {{ t("common.syncing") }}
           </span>
         </div>
@@ -400,7 +403,7 @@ onMounted(async () => {
           />
 
           <NuxtLinkLocale to="/pos">
-            <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
+            <UButton color="primary" icon="solar:shop-2-bold" size="sm">
               {{ t("pos.terminal") }}
             </UButton>
           </NuxtLinkLocale>

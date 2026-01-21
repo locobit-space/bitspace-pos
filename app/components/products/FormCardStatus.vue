@@ -38,7 +38,7 @@ const isPublic = computed({
           class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
         >
           <UIcon
-            name="i-heroicons-check-circle"
+            name="solar:check-circle-linear"
             class="w-5 h-5 text-emerald-600 dark:text-emerald-400"
           />
         </div>
@@ -70,7 +70,9 @@ const isPublic = computed({
           >
             <UIcon
               :name="
-                isActive ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'
+                isActive
+                  ? 'solar:check-circle-linear'
+                  : 'solar:close-circle-linear'
               "
               class="w-6 h-6 transition-colors"
               :class="
@@ -91,7 +93,10 @@ const isPublic = computed({
             <p class="text-sm text-gray-500">
               {{
                 isActive
-                  ? t("products.activeHint", "Product is visible and can be sold")
+                  ? t(
+                      "products.activeHint",
+                      "Product is visible and can be sold",
+                    )
                   : t("products.inactiveHint", "Product is hidden from POS")
               }}
             </p>
@@ -99,8 +104,8 @@ const isPublic = computed({
         </div>
         <USwitch
           v-model="isActive"
-          :on-icon="'i-heroicons-check'"
-          :off-icon="'i-heroicons-x-mark'"
+          :checked-icon="'i-solar:check-circle-linear'"
+          :unchecked-icon="'lucide:eye-off'"
         />
       </div>
 
@@ -118,9 +123,7 @@ const isPublic = computed({
             "
           >
             <UIcon
-              :name="
-                isPublic ? 'i-heroicons-globe-alt' : 'i-heroicons-lock-closed'
-              "
+              :name="isPublic ? 'lucide:globe' : 'solar:lock-linear'"
               class="w-6 h-6 transition-colors"
               :class="
                 isPublic
@@ -148,8 +151,8 @@ const isPublic = computed({
         </div>
         <USwitch
           v-model="isPublic"
-          :on-icon="'i-heroicons-eye'"
-          :off-icon="'i-heroicons-eye-slash'"
+          :unchecked-icon="'solar:eye-linear'"
+          :checked-icon="'solar:eye-closed-linear'"
         />
       </div>
     </div>

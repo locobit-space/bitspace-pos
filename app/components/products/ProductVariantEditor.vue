@@ -188,7 +188,7 @@ const updateVariant = () => {
   if (!editingVariant.value) return;
 
   const index = variants.value.findIndex(
-    (v) => v.id === editingVariant.value?.id
+    (v) => v.id === editingVariant.value?.id,
   );
   if (index !== -1) {
     const updated = [...variants.value];
@@ -262,7 +262,10 @@ const clearAllVariants = () => {
         <div
           class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center"
         >
-          <span class="text-xl">📏</span>
+          <UIcon
+            name="solar:ruler-linear"
+            class="w-6 h-6 text-primary-600 dark:text-primary-400"
+          />
         </div>
         <div>
           <h4 class="font-semibold text-gray-900 dark:text-white">
@@ -270,7 +273,10 @@ const clearAllVariants = () => {
           </h4>
           <p class="text-sm text-gray-500">
             {{
-              t("products.variantsDescription", "Add sizes like S, M, L with different prices")
+              t(
+                "products.variantsDescription",
+                "Add sizes like S, M, L with different prices",
+              )
             }}
           </p>
         </div>
@@ -303,9 +309,7 @@ const clearAllVariants = () => {
       <div v-if="variants.length > 0" class="space-y-2">
         <div class="flex items-center justify-between">
           <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            {{ t("products.variantsList", "Variants") }} ({{
-              variants.length
-            }})
+            {{ t("products.variantsList", "Variants") }} ({{ variants.length }})
           </p>
           <UButton
             color="red"
@@ -332,7 +336,7 @@ const clearAllVariants = () => {
                 color="neutral"
                 variant="ghost"
                 size="xs"
-                icon="i-heroicons-chevron-up"
+                icon="solar:alt-arrow-up-linear"
                 :disabled="index === 0"
                 @click="moveVariant(index, 'up')"
               />
@@ -340,7 +344,7 @@ const clearAllVariants = () => {
                 color="neutral"
                 variant="ghost"
                 size="xs"
-                icon="i-heroicons-chevron-down"
+                icon="solar:alt-arrow-down-linear"
                 :disabled="index === variants.length - 1"
                 @click="moveVariant(index, 'down')"
               />
@@ -371,14 +375,14 @@ const clearAllVariants = () => {
                 color="primary"
                 variant="soft"
                 size="xs"
-                icon="i-heroicons-check"
+                icon="solar:check-circle-linear"
                 @click="updateVariant"
               />
               <UButton
                 color="neutral"
                 variant="ghost"
                 size="xs"
-                icon="i-heroicons-x-mark"
+                icon="solar:close-circle-linear"
                 @click="cancelEdit"
               />
             </template>
@@ -434,14 +438,14 @@ const clearAllVariants = () => {
                 color="neutral"
                 variant="ghost"
                 size="xs"
-                icon="i-heroicons-pencil"
+                icon="solar:pen-linear"
                 @click="startEdit(variant)"
               />
               <UButton
                 color="red"
                 variant="ghost"
                 size="xs"
-                icon="i-heroicons-trash"
+                icon="solar:trash-bin-trash-linear"
                 @click="removeVariant(variant.id)"
               />
             </template>
@@ -493,7 +497,7 @@ const clearAllVariants = () => {
             :disabled="!newVariant.name || !newVariant.shortName"
             @click="addVariant"
           >
-            <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
+            <UIcon name="solar:add-circle-linear" class="w-4 h-4 mr-1" />
             {{ t("common.add", "Add") }}
           </UButton>
           <UButton color="neutral" variant="ghost" size="sm" @click="resetForm">
@@ -511,7 +515,7 @@ const clearAllVariants = () => {
         block
         @click="showAddForm = true"
       >
-        <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
+        <UIcon name="solar:add-circle-linear" class="w-4 h-4 mr-1" />
         {{ t("products.addCustomVariant", "Add Custom Variant") }}
       </UButton>
     </template>

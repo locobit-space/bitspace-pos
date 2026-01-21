@@ -23,10 +23,7 @@ function handleClick() {
 
 // Keyboard shortcut: ? or F1 to open help
 function handleKeydown(e: KeyboardEvent) {
-  if (
-    (e.key === "?" && !e.ctrlKey && !e.metaKey) ||
-    e.key === "F1"
-  ) {
+  if ((e.key === "?" && !e.ctrlKey && !e.metaKey) || e.key === "F1") {
     // Don't trigger if user is typing in an input
     const activeEl = document.activeElement;
     if (
@@ -63,16 +60,14 @@ onUnmounted(() => {
       color="primary"
       variant="solid"
       size="lg"
-      icon="i-heroicons-question-mark-circle"
+      icon="solar:question-circle-linear"
       class="rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
       :aria-label="t('help.openHelp', 'Open Help')"
       @click="handleClick"
     />
 
     <!-- Tooltip on hover (desktop only) -->
-    <div
-      class="absolute bottom-full right-0 mb-2 hidden lg:group-hover:block"
-    >
+    <div class="absolute bottom-full right-0 mb-2 hidden lg:group-hover:block">
       <div
         class="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap"
       >

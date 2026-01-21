@@ -62,7 +62,7 @@ function handleCancel() {
       >
         <div class="flex items-start gap-2">
           <UIcon
-            name="i-heroicons-exclamation-triangle"
+            name="solar:danger-triangle-linear"
             class="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5"
           />
           <div class="text-sm text-yellow-800 dark:text-yellow-200">
@@ -71,7 +71,7 @@ function handleCancel() {
               {{
                 t(
                   "promotions.deleteWarning",
-                  "This action cannot be undone. This will permanently remove the promotion and all its usage data."
+                  "This action cannot be undone. This will permanently remove the promotion and all its usage data.",
                 )
               }}
             </p>

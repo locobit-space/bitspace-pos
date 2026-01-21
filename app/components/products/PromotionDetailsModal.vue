@@ -29,31 +29,31 @@ const typeInfo = computed(() => {
     { icon: string; color: string; label: string; description: string }
   > = {
     bogo: {
-      icon: "🎁",
+      icon: "solar:gift-linear",
       color: "green",
       label: "BOGO",
       description: "Buy One Get One promotion",
     },
     discount: {
-      icon: "💰",
+      icon: "solar:wad-of-money-linear",
       color: "blue",
       label: "Discount",
       description: "Price discount promotion",
     },
     tiered: {
-      icon: "📊",
+      icon: "solar:chart-linear",
       color: "purple",
       label: "Tiered",
       description: "Volume-based discount tiers",
     },
     bundle: {
-      icon: "📦",
+      icon: "solar:box-linear",
       color: "amber",
       label: "Bundle",
       description: "Bundle products together",
     },
     freebie: {
-      icon: "🎀",
+      icon: "solar:ribbon-linear",
       color: "pink",
       label: "Free Gift",
       description: "Free product with purchase",
@@ -95,9 +95,9 @@ const rewardProducts = computed(() => {
 const activeTab = ref<"details" | "usage">("details");
 
 const tabs = [
-  { key: "details", label: "Details", icon: "i-heroicons-information-circle" },
-  { key: "usage", label: "Usage History", icon: "i-heroicons-chart-bar" },
-];
+  { key: "details", label: "Details", icon: "solar:info-circle-linear" },
+  { key: "usage", label: "Usage History", icon: "solar:chart-square-linear" },
+] as const;
 </script>
 
 <template>
@@ -109,7 +109,7 @@ const tabs = [
           class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
           :class="`bg-${typeInfo.color}-100 dark:bg-${typeInfo.color}-900/20`"
         >
-          {{ typeInfo.icon }}
+          <UIcon :name="typeInfo.icon" class="w-6 h-6" />
         </div>
         <div>
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
@@ -181,7 +181,7 @@ const tabs = [
           <div class="flex items-center gap-2 text-gray-900 dark:text-white">
             <span>{{ formatDate(promotion.startDate) }}</span>
             <UIcon
-              name="i-heroicons-arrow-right"
+              name="solar:arrow-right-linear"
               class="w-4 h-4 text-gray-400"
             />
             <span>{{ formatDate(promotion.endDate) }}</span>
@@ -212,8 +212,8 @@ const tabs = [
               promotion.scope === 'all'
                 ? 'All Products'
                 : promotion.scope === 'products'
-                ? 'Specific Products'
-                : 'Categories'
+                  ? 'Specific Products'
+                  : 'Categories'
             "
             variant="subtle"
           />
@@ -247,7 +247,10 @@ const tabs = [
                   class="w-24 h-24 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-lg"
                 >
                   <span class="text-3xl">
-                    {{ "📦" }}
+                    <UIcon
+                      name="solar:box-linear"
+                      class="w-12 h-12 text-gray-400"
+                    />
                   </span>
                 </div>
               </div>
@@ -297,7 +300,11 @@ const tabs = [
                       class="object-cover rounded-lg w-24 h-24"
                     />
                   </div>
-                  <span v-else>🎁</span>
+                  <UIcon
+                    v-else
+                    name="solar:gift-linear"
+                    class="w-12 h-12 text-gray-400"
+                  />
                 </div>
                 <div class="flex-1">
                   <div class="font-medium text-gray-900 dark:text-white">

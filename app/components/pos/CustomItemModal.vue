@@ -33,7 +33,7 @@ watch(
       itemName.value = "";
       itemPrice.value = 0;
     }
-  }
+  },
 );
 
 // Form validation
@@ -71,7 +71,7 @@ const handleCancel = () => {
         <h3
           class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
         >
-          <span>📦</span> Add Custom Item
+          <UIcon name="solar:box-linear" class="w-6 h-6" /> Add Custom Item
         </h3>
 
         <div class="space-y-4">

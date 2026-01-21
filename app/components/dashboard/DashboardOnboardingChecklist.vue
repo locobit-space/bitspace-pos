@@ -12,7 +12,9 @@ const emit = defineEmits<{
 
 // Track completion of recommended actions
 const hasProducts = computed(() => productsStore.products.value.length > 0);
-const hasTaxConfigured = computed(() => (shop.shopConfig.value?.taxRate || 0) > 0);
+const hasTaxConfigured = computed(
+  () => (shop.shopConfig.value?.taxRate || 0) > 0,
+);
 const hasCompanyCode = computed(() => company.hasCompanyCode.value);
 const hasReceiptFooter = computed(() => !!shop.shopConfig.value?.receiptFooter);
 
@@ -21,7 +23,7 @@ const coreItems = computed(() => [
   {
     id: "shop-config",
     label: t("shop.setup.step1.title", "Shop Information"),
-    icon: "i-heroicons-check-circle",
+    icon: "solar:check-circle-linear",
     completed: true,
     color: "text-green-600 dark:text-green-400",
     bgColor: "bg-green-50 dark:bg-green-900/20",
@@ -29,7 +31,7 @@ const coreItems = computed(() => [
   {
     id: "first-branch",
     label: t("shop.setup.step3.title", "First Branch"),
-    icon: "i-heroicons-check-circle",
+    icon: "solar:check-circle-linear",
     completed: true,
     color: "text-green-600 dark:text-green-400",
     bgColor: "bg-green-50 dark:bg-green-900/20",
@@ -40,52 +42,80 @@ const recommendedItems = computed(() => [
   {
     id: "add-products",
     label: t("onboarding.addProducts", "Add your first products"),
-    description: t("onboarding.addProductsDesc", "Start building your product catalog"),
-    icon: "i-heroicons-cube",
+    description: t(
+      "onboarding.addProductsDesc",
+      "Start building your product catalog",
+    ),
+    icon: "solar:box-linear",
     completed: hasProducts.value,
     action: "/products",
-    color: hasProducts.value ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400",
-    bgColor: hasProducts.value ? "bg-green-50 dark:bg-green-900/20" : "bg-amber-50 dark:bg-amber-900/20",
+    color: hasProducts.value
+      ? "text-green-600 dark:text-green-400"
+      : "text-amber-600 dark:text-amber-400",
+    bgColor: hasProducts.value
+      ? "bg-green-50 dark:bg-green-900/20"
+      : "bg-amber-50 dark:bg-amber-900/20",
   },
   {
     id: "configure-tax",
     label: t("onboarding.configureTax", "Configure tax settings"),
-    description: t("onboarding.configureTaxDesc", "Set up tax rates for your business"),
-    icon: "i-heroicons-receipt-percent",
+    description: t(
+      "onboarding.configureTaxDesc",
+      "Set up tax rates for your business",
+    ),
+    icon: "solar:bill-check-linear",
     completed: hasTaxConfigured.value,
     action: "/settings",
-    color: hasTaxConfigured.value ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400",
-    bgColor: hasTaxConfigured.value ? "bg-green-50 dark:bg-green-900/20" : "bg-amber-50 dark:bg-amber-900/20",
+    color: hasTaxConfigured.value
+      ? "text-green-600 dark:text-green-400"
+      : "text-amber-600 dark:text-amber-400",
+    bgColor: hasTaxConfigured.value
+      ? "bg-green-50 dark:bg-green-900/20"
+      : "bg-amber-50 dark:bg-amber-900/20",
   },
   {
     id: "invite-team",
     label: t("onboarding.inviteTeam", "Invite team members"),
-    description: t("onboarding.inviteTeamDesc", "Share your company code with staff"),
-    icon: "i-heroicons-users",
+    description: t(
+      "onboarding.inviteTeamDesc",
+      "Share your company code with staff",
+    ),
+    icon: "solar:users-group-rounded-linear",
     completed: hasCompanyCode.value,
     action: "/settings/company",
-    color: hasCompanyCode.value ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400",
-    bgColor: hasCompanyCode.value ? "bg-green-50 dark:bg-green-900/20" : "bg-amber-50 dark:bg-amber-900/20",
+    color: hasCompanyCode.value
+      ? "text-green-600 dark:text-green-400"
+      : "text-amber-600 dark:text-amber-400",
+    bgColor: hasCompanyCode.value
+      ? "bg-green-50 dark:bg-green-900/20"
+      : "bg-amber-50 dark:bg-amber-900/20",
   },
   {
     id: "receipt-template",
     label: t("onboarding.customizeReceipt", "Customize receipt template"),
-    description: t("onboarding.customizeReceiptDesc", "Add your branding to receipts"),
-    icon: "i-heroicons-document-text",
+    description: t(
+      "onboarding.customizeReceiptDesc",
+      "Add your branding to receipts",
+    ),
+    icon: "solar:document-text-linear",
     completed: hasReceiptFooter.value,
     action: "/settings",
-    color: hasReceiptFooter.value ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400",
-    bgColor: hasReceiptFooter.value ? "bg-green-50 dark:bg-green-900/20" : "bg-amber-50 dark:bg-amber-900/20",
+    color: hasReceiptFooter.value
+      ? "text-green-600 dark:text-green-400"
+      : "text-amber-600 dark:text-amber-400",
+    bgColor: hasReceiptFooter.value
+      ? "bg-green-50 dark:bg-green-900/20"
+      : "bg-amber-50 dark:bg-amber-900/20",
   },
 ]);
 
 // Calculate progress
 const completedRecommended = computed(
-  () => recommendedItems.value.filter((item) => item.completed).length
+  () => recommendedItems.value.filter((item) => item.completed).length,
 );
 const totalRecommended = computed(() => recommendedItems.value.length);
 const progressPercentage = computed(() =>
-  Math.round((completedRecommended.value / totalRecommended.value) * 100)
+  Math.round((completedRecommended.value / totalRecommended.value) * 100),
 );
 
 // Dismiss checklist
@@ -125,7 +155,10 @@ const handleAction = (actionPath: string) => {
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{
-                t("onboarding.completeSetup", "Complete these steps to get the most out of Bitspace POS")
+                t(
+                  "onboarding.completeSetup",
+                  "Complete these steps to get the most out of Bitspace POS",
+                )
               }}
             </p>
           </div>
@@ -138,7 +171,7 @@ const handleAction = (actionPath: string) => {
           @click="handleDismiss"
         >
           <UIcon
-            name="i-heroicons-x-mark"
+            name="solar:close-circle-linear"
             class="w-5 h-5 text-gray-500 dark:text-gray-400"
           />
         </button>
@@ -172,7 +205,7 @@ const handleAction = (actionPath: string) => {
           class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2"
         >
           <UIcon
-            name="i-heroicons-check-badge"
+            name="solar:verified-check-linear"
             class="w-5 h-5 text-green-600 dark:text-green-400"
           />
           {{ t("onboarding.coreSetup", "Core Setup Complete") }}
@@ -183,7 +216,12 @@ const handleAction = (actionPath: string) => {
             :key="item.id"
             class="flex items-center gap-3 p-3 rounded-lg bg-white/80 dark:bg-gray-800/80 border border-green-200 dark:border-green-800/50 shadow-sm"
           >
-            <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', item.bgColor]">
+            <div
+              :class="[
+                'w-8 h-8 rounded-lg flex items-center justify-center',
+                item.bgColor,
+              ]"
+            >
               <UIcon :name="item.icon" :class="['w-5 h-5', item.color]" />
             </div>
             <span class="text-sm font-medium text-gray-900 dark:text-white">
@@ -199,7 +237,7 @@ const handleAction = (actionPath: string) => {
           class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2"
         >
           <UIcon
-            name="i-heroicons-sparkles"
+            name="solar:stars-linear"
             class="w-5 h-5 text-amber-600 dark:text-amber-400"
           />
           {{ t("onboarding.recommendedSteps", "Recommended Next Steps") }}
@@ -221,14 +259,12 @@ const handleAction = (actionPath: string) => {
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <span
-                  class="text-sm font-medium text-gray-900 dark:text-white"
-                >
+                <span class="text-sm font-medium text-gray-900 dark:text-white">
                   {{ item.label }}
                 </span>
                 <UIcon
                   v-if="item.completed"
-                  name="i-heroicons-check-circle-solid"
+                  name="solar:check-circle-bold"
                   class="w-4 h-4 text-green-600 dark:text-green-400"
                 />
               </div>
@@ -237,7 +273,7 @@ const handleAction = (actionPath: string) => {
               </p>
             </div>
             <UIcon
-              name="i-heroicons-arrow-right"
+              name="solar:arrow-right-linear"
               class="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all shrink-0 mt-2"
             />
           </button>
@@ -260,7 +296,10 @@ const handleAction = (actionPath: string) => {
             </p>
             <p class="text-xs text-green-700 dark:text-green-300">
               {{
-                t("onboarding.readyToSell", "Your shop is ready to start making sales.")
+                t(
+                  "onboarding.readyToSell",
+                  "Your shop is ready to start making sales.",
+                )
               }}
             </p>
           </div>

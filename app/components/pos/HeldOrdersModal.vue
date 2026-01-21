@@ -63,7 +63,7 @@ const formatTime = (isoString: string) => {
         <h3
           class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
         >
-          <span>⏸️</span> Held Orders
+          <UIcon name="solar:pause-circle-linear" class="w-6 h-6" /> Held Orders
         </h3>
 
         <!-- Empty State -->
@@ -71,7 +71,10 @@ const formatTime = (isoString: string) => {
           v-if="orders.length === 0"
           class="text-center py-8 text-gray-400 dark:text-gray-500"
         >
-          <span class="text-4xl block mb-2">📋</span>
+          <UIcon
+            name="solar:clipboard-list-linear"
+            class="w-12 h-12 mb-2 mx-auto"
+          />
           No held orders
         </div>
 
@@ -126,7 +129,7 @@ const formatTime = (isoString: string) => {
                 variant="ghost"
                 @click="handleDelete(order.id)"
               >
-                <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+                <UIcon name="solar:trash-bin-trash-linear" class="w-4 h-4" />
               </UButton>
             </div>
           </div>

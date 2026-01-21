@@ -8,7 +8,7 @@
         <h3
           class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
         >
-          <span class="text-lg">📦</span>
+          <UIcon name="solar:box-linear" class="w-5 h-5" />
           {{ $t("inventory.stockLots", "Stock Lots") }}
           <UBadge color="primary" variant="subtle">
             {{ filteredLots.length }}
@@ -29,7 +29,7 @@
         <UInput
           v-model="searchQuery"
           :placeholder="$t('common.search', 'Search...')"
-          icon="i-heroicons-magnifying-glass"
+          icon="solar:magnifer-linear"
           size="sm"
           class="w-48"
         />
@@ -37,9 +37,7 @@
     </div>
 
     <!-- Lots Table -->
-    <div
-      class=" border-gray-200 dark:border-gray-700 overflow-hidden"
-    >
+    <div class="border-gray-200 dark:border-gray-700 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
@@ -125,7 +123,11 @@
                       alt="Product Image"
                       class="w-8 h-8 rounded-md object-cover"
                     />
-                    <span v-else>{{ getProductImage(lot.productId) }}</span>
+                    <span v-else
+                      ><UIcon
+                        name="solar:box-linear"
+                        class="w-6 h-6 text-gray-400"
+                    /></span>
                   </span>
                   <div>
                     <p
@@ -168,9 +170,7 @@
                     {{
                       lot.daysUntilExpiry && lot.daysUntilExpiry <= 0
                         ? $t("inventory.expired", "Expired")
-                        : `${lot.daysUntilExpiry} ${
-                            $t("common.days", "days")
-                          }`
+                        : `${lot.daysUntilExpiry} ${$t("common.days", "days")}`
                     }}
                   </p>
                 </div>
@@ -204,7 +204,7 @@
                     :text="$t('inventory.adjustQty', 'Adjust Quantity')"
                   >
                     <UButton
-                      icon="i-heroicons-plus-minus"
+                      icon="solar:tuning-square-2-linear"
                       color="neutral"
                       variant="ghost"
                       size="xs"
@@ -215,7 +215,7 @@
                     :text="$t('inventory.movePosition', 'Move Position')"
                   >
                     <UButton
-                      icon="i-heroicons-arrows-right-left"
+                      icon="solar:transfer-horizontal-linear"
                       color="neutral"
                       variant="ghost"
                       size="xs"
@@ -224,7 +224,7 @@
                   </UTooltip>
                   <UDropdownMenu :items="getLotActions(lot)" class="w-48">
                     <UButton
-                      icon="i-heroicons-ellipsis-vertical"
+                      icon="solar:menu-dots-bold"
                       color="neutral"
                       variant="ghost"
                       size="xs"
@@ -242,13 +242,13 @@
         v-if="filteredLots.length === 0"
         class="flex flex-col items-center justify-center py-16 text-gray-400"
       >
-        <span class="text-4xl mb-3">📦</span>
+        <UIcon name="solar:box-linear" class="w-12 h-12 mb-3 opacity-50" />
         <p class="font-medium">
           {{ $t("inventory.noLots", "No stock lots found") }}
         </p>
         <p class="text-sm">
           {{
-            $t("inventory.receiveStockToCreate","Receive stock to create lots")
+            $t("inventory.receiveStockToCreate", "Receive stock to create lots")
           }}
         </p>
       </div>
@@ -267,7 +267,7 @@
         <div class="flex gap-2">
           <UButton
             :disabled="currentPage === 1"
-            icon="i-heroicons-chevron-left"
+            icon="solar:alt-arrow-left-linear"
             color="neutral"
             variant="ghost"
             size="sm"
@@ -278,7 +278,7 @@
           </span>
           <UButton
             :disabled="currentPage >= totalPages"
-            icon="i-heroicons-chevron-right"
+            icon="solar:alt-arrow-right-linear"
             color="neutral"
             variant="ghost"
             size="sm"
@@ -319,12 +319,15 @@ const itemsPerPage = 10;
 
 // Options
 const statusOptions = computed(() => [
-  { value: "all", label: t('inventory.allStatus', 'All Status') },
-  { value: "available", label: t('inventory.statusAvailable', '✅ Available') },
-  { value: "low", label: t('inventory.statusLow', '📉 Low') },
-  { value: "expiring", label: t('inventory.statusExpiring', '⏰ Expiring') },
-  { value: "expired", label: t('inventory.statusExpired', '🚫 Expired') },
-  { value: "quarantined", label: t('inventory.statusQuarantined', '⚠️ Quarantine') },
+  { value: "all", label: t("inventory.allStatus", "All Status") },
+  { value: "available", label: t("inventory.statusAvailable", "✅ Available") },
+  { value: "low", label: t("inventory.statusLow", "📉 Low") },
+  { value: "expiring", label: t("inventory.statusExpiring", "⏰ Expiring") },
+  { value: "expired", label: t("inventory.statusExpired", "🚫 Expired") },
+  {
+    value: "quarantined",
+    label: t("inventory.statusQuarantined", "⚠️ Quarantine"),
+  },
 ]);
 
 // Computed
@@ -343,7 +346,7 @@ const filteredLots = computed(() => {
       (l) =>
         l.lotNumber.toLowerCase().includes(query) ||
         l.batchCode?.toLowerCase().includes(query) ||
-        getProductName(l.productId).toLowerCase().includes(query)
+        getProductName(l.productId).toLowerCase().includes(query),
     );
   }
 
@@ -357,14 +360,14 @@ const filteredLots = computed(() => {
 });
 
 const totalPages = computed(() =>
-  Math.ceil(filteredLots.value.length / itemsPerPage)
+  Math.ceil(filteredLots.value.length / itemsPerPage),
 );
 const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage);
 const endIndex = computed(() =>
-  Math.min(startIndex.value + itemsPerPage, filteredLots.value.length)
+  Math.min(startIndex.value + itemsPerPage, filteredLots.value.length),
 );
 const paginatedLots = computed(() =>
-  filteredLots.value.slice(startIndex.value, endIndex.value)
+  filteredLots.value.slice(startIndex.value, endIndex.value),
 );
 
 // Methods
@@ -380,7 +383,7 @@ function getProductSku(productId: string): string {
 
 function getProductImage(productId: string): string {
   const product = productsStore.products.value.find((p) => p.id === productId);
-  return product?.image || "📦";
+  return product?.image || "";
 }
 
 function formatDate(dateStr: string): string {
@@ -401,7 +404,7 @@ function getExpiryTextClass(daysUntil?: number): string {
 }
 
 function getStatusColor(
-  status: string
+  status: string,
 ): "green" | "yellow" | "orange" | "red" | "gray" {
   switch (status) {
     case "available":
@@ -436,17 +439,17 @@ function getLotActions(lot: StockLot) {
     [
       {
         label: t("common.viewDetails", "View Details"),
-        icon: "i-heroicons-eye",
+        icon: "solar:eye-linear",
         onSelect: () => emit("view", lot),
       },
       {
         label: t("inventory.adjustStock", "Adjust Stock"),
-        icon: "i-heroicons-plus-minus",
+        icon: "solar:tuning-square-2-linear",
         onSelect: () => emit("adjust", lot),
       },
       {
         label: t("inventory.movePosition", "Move Position"),
-        icon: "i-heroicons-arrows-right-left",
+        icon: "solar:transfer-horizontal-linear",
         onSelect: () => emit("move", lot),
       },
     ],
@@ -456,7 +459,7 @@ function getLotActions(lot: StockLot) {
           lot.status === "quarantine"
             ? t("inventory.releaseFromQuarantine", "Release")
             : t("inventory.quarantine", "Quarantine"),
-        icon: "i-heroicons-shield-exclamation",
+        icon: "solar:shield-warning-linear",
         color: "amber" as const,
         onSelect: () => emit("quarantine", lot),
       },

@@ -19,7 +19,7 @@ const formatTime = (date: string): string => {
 };
 
 const getStatusColor = (
-  status: string
+  status: string,
 ): "green" | "yellow" | "red" | "gray" => {
   const colors: Record<string, "green" | "yellow" | "red" | "gray"> = {
     completed: "green",
@@ -27,7 +27,7 @@ const getStatusColor = (
     processing: "yellow",
     cancelled: "red",
     refunded: "green",
-    failed: "red"
+    failed: "red",
   };
   return colors[status] || "gray";
 };
@@ -51,7 +51,7 @@ const getStatusColor = (
 
     <div v-if="orders.length === 0" class="text-center py-6 text-gray-500">
       <UIcon
-        name="i-heroicons-inbox"
+        name="solar:inbox-linear"
         class="w-8 h-8 mx-auto text-gray-300 mb-2"
       />
       <p class="text-xs">{{ t("dashboard.noOrdersYet") }}</p>
@@ -68,7 +68,7 @@ const getStatusColor = (
             class="w-7 h-7 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
           >
             <UIcon
-              name="i-heroicons-receipt-percent"
+              name="solar:receipt-linear"
               class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400"
             />
           </div>

@@ -49,14 +49,14 @@ async function lookupBarcode() {
   if (product) {
     toast.add({
       title: t("products.lookup.productFound"),
-      icon: "i-heroicons-check-circle",
+      icon: "solar:check-circle-linear",
       color: "success",
     });
   } else {
     toast.add({
       title: t("products.lookup.productNotFound"),
       description: t("products.lookup.tryManualEntry"),
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "warning",
     });
   }
@@ -82,13 +82,13 @@ function toggleSelect(product: PublicProduct) {
 function importSelected() {
   const results = productLookup.searchResults.value;
   const products = results.filter((p: PublicProduct) =>
-    selectedProducts.value.has(p.id)
+    selectedProducts.value.has(p.id),
   );
 
   if (products.length === 0) {
     toast.add({
       title: t("products.lookup.selectProducts"),
-      icon: "i-heroicons-exclamation-triangle",
+      icon: "solar:danger-triangle-linear",
       color: "warning",
     });
     return;
@@ -141,7 +141,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
               class="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-magnifying-glass-circle"
+                name="solar:magnifer-linear"
                 class="w-5 h-5 text-primary-600 dark:text-primary-400"
               />
             </div>
@@ -155,7 +155,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
             </div>
           </div>
           <UButton
-            icon="i-heroicons-x-mark"
+            icon="solar:close-circle-linear"
             color="neutral"
             variant="ghost"
             @click="closeModal"
@@ -168,17 +168,17 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
             v-for="tab in [
               {
                 id: 'search',
-                icon: 'i-heroicons-magnifying-glass',
+                icon: 'solar:magnifer-linear',
                 label: t('products.lookup.search'),
               },
               {
                 id: 'barcode',
-                icon: 'i-heroicons-qr-code',
+                icon: 'solar:qr-code-linear',
                 label: t('products.lookup.barcode'),
               },
               {
                 id: 'categories',
-                icon: 'i-heroicons-squares-2x2',
+                icon: 'solar:widget-2-linear',
                 label: t('products.lookup.browse'),
               },
             ]"
@@ -209,7 +209,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
             <UInput
               v-model="searchQuery"
               :placeholder="t('products.lookup.searchPlaceholder')"
-              icon="i-heroicons-magnifying-glass"
+              icon="solar:magnifer-linear"
               size="lg"
               autofocus
               class="w-full"
@@ -221,7 +221,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
               class="flex items-center justify-center py-8"
             >
               <UIcon
-                name="i-heroicons-arrow-path"
+                name="solar:restart-linear"
                 class="w-6 h-6 animate-spin text-primary-500"
               />
             </div>
@@ -232,7 +232,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
               class="text-center py-8 text-red-500"
             >
               <UIcon
-                name="i-heroicons-exclamation-circle"
+                name="solar:danger-circle-linear"
                 class="w-8 h-8 mx-auto mb-2"
               />
               <p>{{ productLookup.searchError.value }}</p>
@@ -274,7 +274,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
                   />
                   <UIcon
                     v-else
-                    name="i-heroicons-photo"
+                    name="solar:gallery-linear"
                     class="w-6 h-6 m-4 text-gray-400"
                   />
                 </div>
@@ -309,7 +309,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
                     size="xs"
                     color="neutral"
                     variant="soft"
-                    icon="i-heroicons-pencil-square"
+                    icon="solar:pen-new-square-linear"
                     @click.stop="editProduct(product)"
                   >
                     {{ t("common.edit") }}
@@ -318,7 +318,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
                     size="xs"
                     color="primary"
                     variant="soft"
-                    icon="i-heroicons-plus"
+                    icon="solar:add-circle-linear"
                     @click.stop="importSingle(product)"
                   >
                     {{ t("common.add") }}
@@ -337,7 +337,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
                 >
                   <UIcon
                     v-if="!productLookup.isLoadingMore.value"
-                    name="i-heroicons-arrow-down"
+                    name="solar:alt-arrow-down-linear"
                     class="w-4 h-4 mr-2"
                   />
                   {{
@@ -355,7 +355,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
               class="text-center py-8 text-gray-400"
             >
               <UIcon
-                name="i-heroicons-magnifying-glass"
+                name="solar:magnifer-linear"
                 class="w-12 h-12 mx-auto mb-2 opacity-50"
               />
               <p>{{ t("products.lookup.noResults") }}</p>
@@ -364,7 +364,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
             <!-- Initial State -->
             <div v-else class="text-center py-8 text-gray-400">
               <UIcon
-                name="i-heroicons-sparkles"
+                name="solar:stars-linear"
                 class="w-12 h-12 mx-auto mb-2 opacity-50"
               />
               <p>{{ t("products.lookup.startTyping") }}</p>
@@ -378,7 +378,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
                 class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
               >
                 <UIcon
-                  name="i-heroicons-qr-code"
+                  name="solar:qr-code-linear"
                   class="w-10 h-10 text-gray-400"
                 />
               </div>
@@ -398,7 +398,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
               <UButton
                 color="primary"
                 size="lg"
-                icon="i-heroicons-magnifying-glass"
+                icon="solar:magnifer-linear"
                 :loading="productLookup.isSearching.value"
                 @click="lookupBarcode"
               >
@@ -451,7 +451,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
                 <UButton
                   class="w-full mt-4"
                   color="primary"
-                  icon="i-heroicons-plus"
+                  icon="solar:add-circle-linear"
                   @click="importSingle(product)"
                 >
                   {{ t("products.lookup.importProduct") }}
@@ -492,7 +492,7 @@ function getCategoryName(cat: { name: string; nameLao: string }) {
             block
             color="primary"
             size="lg"
-            icon="i-heroicons-arrow-down-tray"
+            icon="solar:download-linear"
             @click="importSelected"
           >
             {{

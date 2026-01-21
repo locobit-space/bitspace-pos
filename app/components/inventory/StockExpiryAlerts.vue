@@ -17,7 +17,7 @@
         "
       >
         <div class="flex items-center gap-3">
-          <span class="text-2xl">🚫</span>
+          <UIcon name="solar:forbidden-circle-linear" class="w-8 h-8" />
           <div>
             <p class="text-2xl font-bold">{{ expiredCount }}</p>
             <p class="text-xs opacity-75">
@@ -38,7 +38,7 @@
         @click="selectedFilter = selectedFilter === 'urgent' ? 'all' : 'urgent'"
       >
         <div class="flex items-center gap-3">
-          <span class="text-2xl">🔥</span>
+          <UIcon name="solar:fire-linear" class="w-8 h-8" />
           <div>
             <p class="text-2xl font-bold">{{ urgentCount }}</p>
             <p class="text-xs opacity-75">
@@ -61,7 +61,7 @@
         "
       >
         <div class="flex items-center gap-3">
-          <span class="text-2xl">⚠️</span>
+          <UIcon name="solar:danger-triangle-linear" class="w-8 h-8" />
           <div>
             <p class="text-2xl font-bold">{{ criticalCount }}</p>
             <p class="text-xs opacity-75">
@@ -84,7 +84,7 @@
         "
       >
         <div class="flex items-center gap-3">
-          <span class="text-2xl">⏰</span>
+          <UIcon name="solar:alarm-linear" class="w-8 h-8" />
           <div>
             <p class="text-2xl font-bold">{{ warningCount }}</p>
             <p class="text-xs opacity-75">
@@ -106,7 +106,10 @@
         <h3
           class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
         >
-          <UIcon name="i-heroicons-clock" class="w-5 h-5 text-amber-500" />
+          <UIcon
+            name="solar:clock-circle-linear"
+            class="w-5 h-5 text-amber-500"
+          />
           {{ $t("inventory.expiryAlerts", "Expiry Alerts") }}
           <UBadge
             v-if="filteredAlerts.length > 0"
@@ -127,7 +130,7 @@
             {{ $t("inventory.acknowledgeAll", "Acknowledge All") }}
           </UButton>
           <UButton
-            icon="i-heroicons-arrow-path"
+            icon="solar:restart-linear"
             color="neutral"
             variant="ghost"
             size="xs"
@@ -150,7 +153,7 @@
             class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
             :class="getAlertBgClass(alert.alertLevel)"
           >
-            {{ getAlertIcon(alert.alertLevel) }}
+            <UIcon :name="getAlertIcon(alert.alertLevel)" class="w-6 h-6" />
           </div>
 
           <!-- Alert Details -->
@@ -167,11 +170,11 @@
               class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400"
             >
               <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-cube" class="w-3.5 h-3.5" />
+                <UIcon name="solar:box-linear" class="w-3.5 h-3.5" />
                 {{ alert.currentQuantity }} {{ $t("common.units", "units") }}
               </span>
               <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-calendar" class="w-3.5 h-3.5" />
+                <UIcon name="solar:calendar-linear" class="w-3.5 h-3.5" />
                 {{ formatDate(alert.expiryDate) }}
               </span>
             </div>
@@ -198,7 +201,7 @@
           <div class="flex items-center gap-1 shrink-0">
             <UTooltip :text="$t('inventory.viewLot', 'View Lot')">
               <UButton
-                icon="i-heroicons-eye"
+                icon="solar:eye-linear"
                 color="neutral"
                 variant="ghost"
                 size="xs"
@@ -207,7 +210,7 @@
             </UTooltip>
             <UTooltip :text="$t('inventory.quarantine', 'Quarantine')">
               <UButton
-                icon="i-heroicons-shield-exclamation"
+                icon="solar:shield-warning-linear"
                 color="amber"
                 variant="ghost"
                 size="xs"
@@ -219,7 +222,7 @@
               :text="$t('inventory.acknowledge', 'Acknowledge')"
             >
               <UButton
-                icon="i-heroicons-check"
+                icon="solar:check-circle-linear"
                 color="green"
                 variant="ghost"
                 size="xs"
@@ -234,14 +237,17 @@
           v-if="filteredAlerts.length === 0"
           class="flex flex-col items-center justify-center py-12 text-gray-400"
         >
-          <span class="text-4xl mb-3">✅</span>
+          <UIcon
+            name="solar:check-circle-linear"
+            class="w-10 h-10 mb-3 text-green-500"
+          />
           <p class="font-medium">
             {{
               selectedFilter === "all"
                 ? $t("inventory.noExpiryAlerts", "No expiry alerts")
                 : $t(
                     "inventory.noAlertsInCategory",
-                    "No alerts in this category"
+                    "No alerts in this category",
                   )
             }}
           </p>
@@ -249,7 +255,7 @@
             {{
               $t(
                 "inventory.stockHealthy",
-                "All stock is within acceptable expiry dates"
+                "All stock is within acceptable expiry dates",
               )
             }}
           </p>
@@ -264,7 +270,7 @@
           <h3
             class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
           >
-            <span>📦</span>
+            <UIcon name="solar:box-linear" class="w-6 h-6" />
             {{ $t("inventory.lotDetails", "Lot Details") }}
           </h3>
 
@@ -400,19 +406,19 @@ const selectedLot = ref<StockLot | null>(null);
 const expiryAlerts = computed(() => stockLots.expiryAlerts.value);
 
 const expiredCount = computed(
-  () => expiryAlerts.value.filter((a) => a.alertLevel === "expired").length
+  () => expiryAlerts.value.filter((a) => a.alertLevel === "expired").length,
 );
 
 const urgentCount = computed(
-  () => expiryAlerts.value.filter((a) => a.alertLevel === "urgent").length
+  () => expiryAlerts.value.filter((a) => a.alertLevel === "urgent").length,
 );
 
 const criticalCount = computed(
-  () => expiryAlerts.value.filter((a) => a.alertLevel === "critical").length
+  () => expiryAlerts.value.filter((a) => a.alertLevel === "critical").length,
 );
 
 const warningCount = computed(
-  () => expiryAlerts.value.filter((a) => a.alertLevel === "warning").length
+  () => expiryAlerts.value.filter((a) => a.alertLevel === "warning").length,
 );
 
 const filteredAlerts = computed(() => {
@@ -420,7 +426,7 @@ const filteredAlerts = computed(() => {
     return expiryAlerts.value;
   }
   return expiryAlerts.value.filter(
-    (a) => a.alertLevel === selectedFilter.value
+    (a) => a.alertLevel === selectedFilter.value,
   );
 });
 
@@ -443,15 +449,15 @@ const getBadgeColor = computed(() => {
 function getAlertIcon(level: string): string {
   switch (level) {
     case "expired":
-      return "🚫";
+      return "solar:forbidden-circle-linear";
     case "urgent":
-      return "🔥";
+      return "solar:fire-linear";
     case "critical":
-      return "⚠️";
+      return "solar:danger-triangle-linear";
     case "warning":
-      return "⏰";
+      return "solar:alarm-linear";
     default:
-      return "📦";
+      return "solar:box-linear";
   }
 }
 
@@ -486,7 +492,7 @@ function getAlertTextClass(level: string): string {
 }
 
 function getLotStatusColor(
-  status: string
+  status: string,
 ): "green" | "yellow" | "red" | "orange" | "gray" {
   switch (status) {
     case "available":
@@ -536,7 +542,7 @@ async function acknowledge(alertId: string) {
   toast.add({
     title: t("common.success", "Success"),
     description: t("inventory.alertAcknowledged", "Alert acknowledged"),
-    icon: "i-heroicons-check-circle",
+    icon: "solar:check-circle-linear",
     color: "green",
   });
 }
@@ -547,9 +553,11 @@ async function acknowledgeAll() {
   }
   toast.add({
     title: t("common.success", "Success"),
-    description:
-      t("inventory.allAlertsAcknowledged", "All alerts acknowledged"),
-    icon: "i-heroicons-check-circle",
+    description: t(
+      "inventory.allAlertsAcknowledged",
+      "All alerts acknowledged",
+    ),
+    icon: "solar:check-circle-linear",
     color: "green",
   });
 }
@@ -560,14 +568,14 @@ async function quarantineLot() {
   const success = await stockLots.quarantineLot(
     selectedLot.value.id,
     "Quarantined due to expiry",
-    "staff_1" // TODO: Get from auth
+    "staff_1", // TODO: Get from auth
   );
 
   if (success) {
     toast.add({
       title: t("common.success", "Success"),
       description: t("inventory.lotQuarantined", "Lot quarantined"),
-      icon: "i-heroicons-shield-check",
+      icon: "solar:shield-check-linear",
       color: "amber",
     });
     showLotModal.value = false;

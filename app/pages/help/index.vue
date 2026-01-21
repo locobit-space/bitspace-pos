@@ -58,7 +58,7 @@ const filteredArticles = computed(() => {
         a.title.toLowerCase().includes(q) ||
         a.description.toLowerCase().includes(q) ||
         a.content.toLowerCase().includes(q) ||
-        a.tags.some((tag) => tag.toLowerCase().includes(q))
+        a.tags.some((tag) => tag.toLowerCase().includes(q)),
     );
   }
 
@@ -76,7 +76,7 @@ const filteredArticles = computed(() => {
   if (sortBy.value === "recent") {
     articles.sort(
       (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
   } else {
     articles.sort((a, b) => a.title.localeCompare(b.title));
@@ -92,7 +92,7 @@ const groupedArticles = computed(() => {
     if (!groups[article.pageId]) {
       groups[article.pageId] = [];
     }
-    groups[article.pageId].push(article);
+    groups[article.pageId]!.push(article);
   }
   return groups;
 });
@@ -138,7 +138,7 @@ async function handleSync() {
     title: t("help.syncComplete", "Sync Complete"),
     description: t("help.syncedFromNostr", "Articles synced from Nostr"),
     color: "green",
-    icon: "i-heroicons-check-circle",
+    icon: "solar:check-circle-linear",
   });
 }
 
@@ -162,7 +162,10 @@ onMounted(() => {
             </h1>
             <p class="mt-1 text-gray-500 dark:text-gray-400">
               {{
-                t("help.communityDocsDesc", "Browse and contribute documentation written by the community")
+                t(
+                  "help.communityDocsDesc",
+                  "Browse and contribute documentation written by the community",
+                )
               }}
             </p>
           </div>
@@ -170,7 +173,7 @@ onMounted(() => {
             <UButton
               color="neutral"
               variant="outline"
-              icon="i-heroicons-arrow-path"
+              icon="solar:restart-linear"
               :loading="nostrHelp.isSyncing.value"
               @click="handleSync"
             >
@@ -179,7 +182,7 @@ onMounted(() => {
             <UButton
               v-if="canWrite"
               color="primary"
-              icon="i-heroicons-plus"
+              icon="solar:add-circle-linear"
               @click="createNew"
             >
               {{ t("help.writeArticle", "Write Article") }}
@@ -229,7 +232,7 @@ onMounted(() => {
             <UInput
               v-model="searchQuery"
               :placeholder="t('help.searchArticles', 'Search articles...')"
-              icon="i-heroicons-magnifying-glass"
+              icon="solar:magnifer-linear"
               size="lg"
               class="w-full"
             />
@@ -259,7 +262,7 @@ onMounted(() => {
       <!-- Loading -->
       <div v-if="nostrHelp.isLoading.value" class="text-center py-16">
         <UIcon
-          name="i-heroicons-arrow-path"
+          name="solar:restart-linear"
           class="w-10 h-10 animate-spin text-gray-400 mb-4"
         />
         <p class="text-gray-500">
@@ -284,13 +287,16 @@ onMounted(() => {
           {{
             searchQuery
               ? t("help.tryDifferentSearch", "Try a different search term")
-              : t("help.beFirstToWrite", "Be the first to write a help article for the community!")
+              : t(
+                  "help.beFirstToWrite",
+                  "Be the first to write a help article for the community!",
+                )
           }}
         </p>
         <UButton
           v-if="canWrite && !searchQuery"
           color="primary"
-          icon="i-heroicons-pencil-square"
+          icon="solar:pen-new-square-linear"
           @click="createNew"
         >
           {{ t("help.writeFirst", "Write First Article") }}
@@ -356,7 +362,7 @@ onMounted(() => {
             class="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100 dark:border-gray-800"
           >
             <span class="flex items-center gap-1">
-              <UIcon name="i-heroicons-clock" class="w-3 h-3" />
+              <UIcon name="solar:clock-circle-linear" class="w-3 h-3" />
               {{ formatDate(article.updatedAt) }}
             </span>
             <span>v{{ article.version }}</span>
@@ -374,12 +380,15 @@ onMounted(() => {
         </h3>
         <p class="opacity-90 mb-4 max-w-lg mx-auto">
           {{
-            t("help.contributeDesc", "Your knowledge can help other users. Write documentation in your language and share it via Nostr.")
+            t(
+              "help.contributeDesc",
+              "Your knowledge can help other users. Write documentation in your language and share it via Nostr.",
+            )
           }}
         </p>
         <UButton
           color="white"
-          icon="i-heroicons-pencil-square"
+          icon="solar:pen-new-square-linear"
           @click="createNew"
         >
           {{ t("help.writeNew", "Write New Article") }}
@@ -389,14 +398,16 @@ onMounted(() => {
       <!-- Nostr Info -->
       <div class="mt-8 text-center text-sm text-gray-400">
         <p class="flex items-center justify-center gap-2">
-          <UIcon name="i-heroicons-cloud" class="w-4 h-4" />
+          <UIcon name="solar:cloud-linear" class="w-4 h-4" />
           {{
-            t("help.poweredByNostr", "Powered by Nostr - Decentralized & Censorship-Resistant")
+            t(
+              "help.poweredByNostr",
+              "Powered by Nostr - Decentralized & Censorship-Resistant",
+            )
           }}
         </p>
       </div>
     </div>
-
 
     <!-- Help Editor Modal -->
     <CommonHelpEditorModal

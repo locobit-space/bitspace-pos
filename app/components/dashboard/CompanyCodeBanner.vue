@@ -11,10 +11,7 @@
   >
     <div class="flex items-start gap-4">
       <div class="p-2 rounded-lg bg-primary/10">
-        <UIcon
-          name="i-heroicons-building-office-2"
-          class="w-8 h-8 text-primary"
-        />
+        <UIcon name="solar:city-linear" class="w-8 h-8 text-primary" />
       </div>
 
       <div class="flex-1">
@@ -23,7 +20,10 @@
         </h3>
         <p class="text-sm text-gray-500 mb-4">
           {{
-            t("auth.company.connectDescription", "Enter your company code to sync data")
+            t(
+              "auth.company.connectDescription",
+              "Enter your company code to sync data",
+            )
           }}
         </p>
 
@@ -41,7 +41,7 @@
             :disabled="!isValidCode"
             @click="handleConnect"
           >
-            <UIcon name="i-heroicons-link" class="w-5 h-5 mr-2" />
+            <UIcon name="solar:link-linear" class="w-5 h-5 mr-2" />
             {{ t("auth.company.connect", "Connect") }}
           </UButton>
         </div>
@@ -56,7 +56,7 @@
       <UButton
         variant="ghost"
         color="gray"
-        icon="i-heroicons-x-mark"
+        icon="solar:close-circle-linear"
         size="sm"
         @click="dismiss"
       />
@@ -131,7 +131,7 @@ async function handleConnect() {
       ownerPubkey = await nostrData.discoverOwnerByCompanyCode(codeInput.value);
       console.log(
         "[CompanyCode] Discovered owner:",
-        ownerPubkey?.slice(0, 8) + "..."
+        ownerPubkey?.slice(0, 8) + "...",
       );
     } catch (e) {
       console.warn("[CompanyCode] Could not discover owner:", e);
@@ -146,7 +146,7 @@ async function handleConnect() {
     toast.add({
       title: t("auth.company.connectSuccess", "Connected!"),
       description: t("auth.company.syncingData", "Syncing company data..."),
-      icon: "i-heroicons-check-circle",
+      icon: "solar:check-circle-linear",
       color: "success",
     });
 
@@ -156,7 +156,7 @@ async function handleConnect() {
     } catch (syncError) {
       console.warn(
         "[CompanyCode] Sync failed, will retry on page load:",
-        syncError
+        syncError,
       );
     }
 
@@ -165,8 +165,10 @@ async function handleConnect() {
       window.location.reload();
     }, 1500);
   } catch (error) {
-    errorMsg.value =
-      t("auth.company.connectError", "Failed to connect. Please check the code.");
+    errorMsg.value = t(
+      "auth.company.connectError",
+      "Failed to connect. Please check the code.",
+    );
   } finally {
     isConnecting.value = false;
   }

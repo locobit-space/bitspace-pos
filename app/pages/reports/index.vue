@@ -104,7 +104,7 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
       title: t("common.info"),
       description: t(
         "reports.exportComingSoon",
-        "PDF and Excel export coming soon"
+        "PDF and Excel export coming soon",
       ),
       color: "info",
     });
@@ -126,17 +126,17 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
               [
                 {
                   label: 'PDF',
-                  icon: 'i-heroicons-document',
-                  onSelect: () => exportReport('pdf'),
+                  icon: 'solar:file-text-linear',
+                  click: () => exportReport('pdf'),
                 },
                 {
                   label: 'Excel',
-                  icon: 'i-heroicons-table-cells',
-                  onSelect: () => exportReport('excel'),
+                  icon: 'solar:clipboard-list-linear',
+                  click: () => exportReport('excel'),
                 },
                 {
                   label: 'CSV',
-                  icon: 'i-heroicons-document-text',
+                  icon: 'solar:document-text-linear',
                   onSelect: () => exportReport('csv'),
                 },
               ],
@@ -145,14 +145,14 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
             <UButton
               color="gray"
               variant="outline"
-              icon="i-heroicons-arrow-down-tray"
+              icon="solar:download-minimalistic-linear"
               :label="t('common.export')"
-              trailing-icon="i-heroicons-chevron-down"
+              trailing-icon="solar:alt-arrow-down-linear"
             />
           </UDropdownMenu>
           <UButton
             color="primary"
-            icon="i-heroicons-arrow-path"
+            icon="solar:refresh-circle-linear"
             :loading="loading"
             :label="t('reports.generate')"
             @click="generateReport"
@@ -218,7 +218,7 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
           <UButton
             color="primary"
             variant="soft"
-            icon="i-heroicons-chart-bar-square"
+            icon="solar:chart-square-linear"
             to="/reports/inventory"
           >
             {{ t("reports.advancedReports", "Advanced Inventory Reports") }}
@@ -232,28 +232,28 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
       <!-- Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
         <CommonStatCard
-          icon="i-heroicons-currency-dollar"
+          icon="i-solar:dollar-minimalistic-outline"
           icon-color="blue"
           :label="t('reports.totalRevenue')"
           :value="formatCurrency(salesData.totalRevenue)"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-shopping-cart"
+          icon="i-solar:cart-large-minimalistic-linear"
           icon-color="green"
           :label="t('reports.totalOrders')"
           :value="salesData.totalOrders.toLocaleString()"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-calculator"
+          icon="i-solar:calculator-minimalistic-linear"
           icon-color="purple"
           :label="t('reports.avgOrderValue')"
           :value="formatCurrency(salesData.avgOrderValue)"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-banknotes"
+          icon="i-solar:banknote-2-linear"
           icon-color="yellow"
           :label="t('reports.topPaymentMethod')"
           :value="salesData.topPaymentMethod"
@@ -356,21 +356,21 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
     <template v-if="selectedReport === 'customers'">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4">
         <CommonStatCard
-          icon="i-heroicons-users"
+          icon="i-solar:users-group-rounded-linear"
           icon-color="blue"
           :label="t('reports.totalCustomers')"
           :value="customerData.totalCustomers"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-user-plus"
+          icon="i-solar:user-plus-rounded-linear"
           icon-color="green"
           :label="t('reports.newCustomers')"
           :value="'+' + customerData.newCustomers"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-arrow-path"
+          icon="i-solar:refresh-circle-linear"
           icon-color="purple"
           :label="t('reports.repeatRate')"
           :value="customerData.repeatRate + '%'"
@@ -440,7 +440,7 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
       <UCard class="mx-4">
         <template #header>
           <div class="flex items-center gap-2">
-            <Icon name="i-heroicons-bolt" class="w-5 h-5 text-orange-500" />
+            <Icon name="solar:bolt-linear" class="w-5 h-5 text-orange-500" />
             <h3 class="font-medium">{{ t("reports.lightningStats") }}</h3>
           </div>
         </template>
@@ -477,28 +477,28 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
     <template v-if="selectedReport === 'inventory'">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
         <CommonStatCard
-          icon="i-heroicons-cube"
+          icon="i-solar:box-minimalistic-linear"
           icon-color="blue"
           :label="t('reports.totalProducts', 'Total Products')"
           :value="inventoryStats.totalProducts.toLocaleString()"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-currency-dollar"
+          icon="i-solar:dollar-minimalistic-linear"
           icon-color="green"
           :label="t('ingredients.inventoryValue', 'Inventory Value')"
           :value="formatCurrency(inventoryStats.totalValue)"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-exclamation-triangle"
+          icon="i-solar:danger-triangle-linear"
           icon-color="yellow"
           :label="t('inventory.lowStock', 'Low Stock')"
           :value="inventoryStats.lowStock.toLocaleString()"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-x-circle"
+          icon="i-solar:close-circle-linear"
           icon-color="red"
           :label="t('inventory.outOfStock', 'Out of Stock')"
           :value="inventoryStats.outOfStock.toLocaleString()"
@@ -516,7 +516,7 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
               variant="ghost"
               color="primary"
               size="sm"
-              icon="i-heroicons-arrow-right"
+              icon="solar:alt-arrow-right-linear"
               to="/reports/inventory"
             >
               {{ t("reports.viewDetails", "View Details") }}
@@ -590,21 +590,21 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
     <template v-if="selectedReport === 'staff'">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4">
         <CommonStatCard
-          icon="i-heroicons-user-group"
+          icon="i-solar:users-group-rounded-linear"
           icon-color="blue"
           :label="t('reports.totalStaff', 'Total Staff')"
           :value="staffData.totalStaff.toLocaleString()"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-shopping-cart"
+          icon="i-solar:cart-large-minimalistic-linear"
           icon-color="green"
           :label="t('reports.ordersProcessed', 'Orders Processed')"
           :value="staffData.totalOrders.toLocaleString()"
           :loading="loading || !isInitialized"
         />
         <CommonStatCard
-          icon="i-heroicons-currency-dollar"
+          icon="i-solar:dollar-minimalistic-linear"
           icon-color="purple"
           :label="t('reports.totalSales', 'Total Sales')"
           :value="formatCurrency(staffData.totalSales)"
@@ -625,7 +625,7 @@ const exportReport = async (format: "pdf" | "excel" | "csv") => {
           {{
             t(
               "reports.noStaffData",
-              "No staff performance data available for this period"
+              "No staff performance data available for this period",
             )
           }}
         </div>

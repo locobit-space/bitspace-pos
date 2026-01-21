@@ -4,7 +4,7 @@
     <CommonPageHeader
       :title="$t('notifications.title')"
       :description="$t('notifications.pageDescription')"
-      icon="i-heroicons-bell"
+      icon="solar:bell-linear"
     >
       <template #actions>
         <div class="flex items-center gap-2">
@@ -16,14 +16,14 @@
             class="w-40"
           >
             <template #leading>
-              <Icon name="i-heroicons-funnel" size="16" />
+              <Icon name="solar:filter-linear" size="16" />
             </template>
           </USelectMenu>
 
           <!-- Mark All Read -->
           <UButton
             v-if="unreadCount > 0"
-            icon="i-heroicons-check-circle"
+            icon="solar:check-circle-linear"
             variant="soft"
             @click="markAllAsRead"
           >
@@ -33,7 +33,7 @@
           <!-- Clear All -->
           <UButton
             v-if="notifications.length > 0"
-            icon="i-heroicons-trash"
+            icon="solar:trash-bin-trash-linear"
             variant="soft"
             color="error"
             @click="showClearConfirm = true"
@@ -55,7 +55,7 @@
               class="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
             >
               <Icon
-                name="i-heroicons-bell"
+                name="solar:bell-linear"
                 size="24"
                 class="text-primary-600 dark:text-primary-400"
               />
@@ -79,7 +79,7 @@
               class="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center"
             >
               <Icon
-                name="i-heroicons-envelope"
+                name="solar:letter-linear"
                 size="24"
                 class="text-red-600 dark:text-red-400"
               />
@@ -103,7 +103,7 @@
               class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
             >
               <Icon
-                name="i-heroicons-bolt"
+                name="solar:bolt-linear"
                 size="24"
                 class="text-green-600 dark:text-green-400"
               />
@@ -127,7 +127,7 @@
               class="w-12 h-12 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center"
             >
               <Icon
-                name="i-heroicons-archive-box"
+                name="solar:box-linear"
                 size="24"
                 class="text-yellow-600 dark:text-yellow-400"
               />
@@ -154,7 +154,7 @@
             class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
           >
             <Icon
-              name="i-heroicons-bell-slash"
+              name="solar:bell-off-linear"
               size="40"
               class="text-gray-400 dark:text-gray-500"
             />
@@ -238,14 +238,14 @@
                           class="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-500"
                         >
                           <span class="flex items-center gap-1">
-                            <Icon name="i-heroicons-clock" size="14" />
+                            <Icon name="solar:clock-circle-linear" size="14" />
                             {{ formatTime(notification.createdAt) }}
                           </span>
                           <span
                             v-if="notification.read"
                             class="flex items-center gap-1 text-green-600 dark:text-green-400"
                           >
-                            <Icon name="i-heroicons-check-circle" size="14" />
+                            <Icon name="solar:check-circle-linear" size="14" />
                             {{ $t("notifications.read") }}
                           </span>
                         </div>
@@ -257,14 +257,14 @@
                       >
                         <UButton
                           v-if="!notification.read"
-                          icon="i-heroicons-check"
+                          icon="solar:check-read-linear"
                           variant="ghost"
                           size="sm"
                           :title="$t('notifications.markRead')"
                           @click.stop="markAsRead(notification.id)"
                         />
                         <UButton
-                          icon="i-heroicons-trash"
+                          icon="solar:trash-bin-trash-linear"
                           variant="ghost"
                           size="sm"
                           color="error"
@@ -303,14 +303,12 @@
             class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center"
           >
             <Icon
-              name="i-heroicons-exclamation-triangle"
+              name="solar:danger-triangle-linear"
               size="32"
               class="text-red-600 dark:text-red-400"
             />
           </div>
-          <h3
-            class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
-          >
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             {{ $t("notifications.clearConfirmTitle") }}
           </h3>
           <p class="text-gray-500 dark:text-gray-400 mb-6">
@@ -367,10 +365,10 @@ const filterOptions = computed(() => [
 
 // Stats
 const paymentCount = computed(
-  () => notifications.value.filter((n) => n.type === "payment").length
+  () => notifications.value.filter((n) => n.type === "payment").length,
 );
 const stockAlertCount = computed(
-  () => notifications.value.filter((n) => n.type === "stock").length
+  () => notifications.value.filter((n) => n.type === "stock").length,
 );
 
 // Filtered notifications
@@ -439,15 +437,16 @@ function formatTime(dateString: string): string {
 // Icon helpers
 function getIcon(type: POSNotification["type"]): string {
   const icons: Record<POSNotification["type"], string> = {
-    payment: "i-heroicons-bolt",
-    order: "i-heroicons-shopping-bag",
-    stock: "i-heroicons-archive-box",
-    loyalty: "i-heroicons-star",
-    ai_insight: "i-heroicons-sparkles",
-    alert: "i-heroicons-exclamation-triangle",
-    system: "i-heroicons-cog-6-tooth",
+    payment: "solar:bolt-linear",
+    order: "solar:bag-3-linear",
+    stock: "solar:box-linear",
+    loyalty: "solar:star-linear",
+    ai_insight: "solar:stars-minimalistic-linear",
+    alert: "solar:danger-triangle-linear",
+    system: "solar:settings-linear",
+    system_update: "solar:refresh-circle-linear",
   };
-  return icons[type] || "i-heroicons-bell";
+  return icons[type] || "solar:bell-linear";
 }
 
 function getIconClass(type: POSNotification["type"]): string {
@@ -459,6 +458,7 @@ function getIconClass(type: POSNotification["type"]): string {
     ai_insight: "text-cyan-600 dark:text-cyan-400",
     alert: "text-orange-600 dark:text-orange-400",
     system: "text-gray-600 dark:text-gray-400",
+    system_update: "text-blue-600 dark:text-blue-400",
   };
   return classes[type] || "text-gray-600 dark:text-gray-400";
 }
@@ -472,6 +472,7 @@ function getIconBgClass(type: POSNotification["type"]): string {
     ai_insight: "bg-cyan-100 dark:bg-cyan-900/30",
     alert: "bg-orange-100 dark:bg-orange-900/30",
     system: "bg-gray-100 dark:bg-gray-800",
+    system_update: "bg-blue-100 dark:bg-blue-900/30",
   };
   return classes[type] || "bg-gray-100 dark:bg-gray-800";
 }
@@ -485,12 +486,13 @@ function getTypeLabel(type: POSNotification["type"]): string {
     ai_insight: t("notifications.types.ai"),
     alert: t("notifications.types.alert", "Alert"),
     system: t("notifications.types.system", "System"),
+    system_update: t("notifications.types.system_update", "System Update"),
   };
   return labels[type] || type;
 }
 
 function getTypeColor(
-  type: POSNotification["type"]
+  type: POSNotification["type"],
 ): "green" | "blue" | "yellow" | "purple" | "cyan" | "orange" | "gray" {
   const colors: Record<
     POSNotification["type"],
@@ -503,6 +505,7 @@ function getTypeColor(
     ai_insight: "cyan",
     alert: "orange",
     system: "gray",
+    system_update: "blue",
   };
   return colors[type] || "cyan";
 }
@@ -512,7 +515,8 @@ function handleNotificationClick(notification: POSNotification) {
   markAsRead(notification.id);
 
   // Navigate based on notification type and data
-  const actionUrl = (notification as POSNotification & { actionUrl?: string }).actionUrl;
+  const actionUrl = (notification as POSNotification & { actionUrl?: string })
+    .actionUrl;
   if (actionUrl) {
     router.push(actionUrl);
   }

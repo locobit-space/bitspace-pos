@@ -21,8 +21,8 @@ const searchResults = computed(() => {
         id: a.id,
         title: a.title,
         content: a.description,
-        icon: "i-heroicons-document-text",
-      })
+        icon: "solar:document-text-linear",
+      }),
     ),
     ...staticResults,
   ];
@@ -57,7 +57,7 @@ function handleWriteNew() {
           <div class="flex items-center justify-between mb-3 sm:mb-4">
             <div class="flex items-center gap-2">
               <Icon
-                name="i-heroicons-question-mark-circle"
+                name="solar:question-circle-linear"
                 class="text-lg sm:text-xl text-primary-500"
               />
               <h2
@@ -95,7 +95,7 @@ function handleWriteNew() {
               <UButton
                 color="gray"
                 variant="ghost"
-                icon="i-heroicons-x-mark"
+                icon="solar:close-circle-linear"
                 class="min-h-[40px] min-w-[40px]"
                 @click="help.closeHelp()"
               />
@@ -106,7 +106,7 @@ function handleWriteNew() {
           <UInput
             v-model="searchQuery"
             :placeholder="t('help.searchPlaceholder', 'Search help...')"
-            icon="i-heroicons-magnifying-glass"
+            icon="solar:magnifer-linear"
             class="w-full"
             size="lg"
           />
@@ -120,7 +120,7 @@ function handleWriteNew() {
             class="flex items-center justify-center py-8"
           >
             <Icon
-              name="i-heroicons-arrow-path"
+              name="solar:restart-linear"
               class="animate-spin text-2xl text-gray-400"
             />
           </div>
@@ -154,7 +154,7 @@ function handleWriteNew() {
             </div>
             <div v-if="searchResults.length === 0" class="text-center py-8">
               <Icon
-                name="i-heroicons-magnifying-glass"
+                name="solar:magnifer-linear"
                 class="text-4xl text-gray-400 mb-2"
               />
               <p class="text-gray-500">
@@ -171,7 +171,7 @@ function handleWriteNew() {
                 v-if="canEdit"
                 color="gray"
                 variant="ghost"
-                icon="i-heroicons-pencil-square"
+                icon="solar:pen-new-square-linear"
                 size="xs"
                 @click="handleEdit"
               >
@@ -193,7 +193,7 @@ function handleWriteNew() {
               "
               class="text-xs text-gray-400 flex items-center gap-1"
             >
-              <Icon name="i-heroicons-cloud" class="text-sm" />
+              <Icon name="solar:cloud-linear" class="text-sm" />
               {{ t("help.fromNostr", "Synced from Nostr") }}
               · v{{ currentHelp.version }}
             </div>
@@ -202,7 +202,7 @@ function handleWriteNew() {
           <!-- No Help Available - Option to Write -->
           <div v-else class="text-center py-12">
             <Icon
-              name="i-heroicons-document-text"
+              name="solar:document-text-linear"
               class="text-5xl text-gray-400 mb-4"
             />
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">
@@ -210,14 +210,17 @@ function handleWriteNew() {
             </h3>
             <p class="text-sm text-gray-500 mb-4">
               {{
-                t("help.noHelpDesc", "Help content for this page is coming soon.")
+                t(
+                  "help.noHelpDesc",
+                  "Help content for this page is coming soon.",
+                )
               }}
             </p>
             <UButton
               v-if="canEdit"
               color="primary"
               variant="soft"
-              icon="i-heroicons-pencil-square"
+              icon="solar:pen-new-square-linear"
               @click="handleWriteNew"
             >
               {{ t("help.writeHelp", "Write Help Article") }}
@@ -234,7 +237,7 @@ function handleWriteNew() {
             <UButton
               color="primary"
               variant="soft"
-              icon="i-heroicons-book-open"
+              icon="solar:book-bookmark-linear"
               size="lg"
               block
               class="mb-3 min-h-[44px]"
@@ -250,7 +253,7 @@ function handleWriteNew() {
             <UButton
               color="gray"
               variant="soft"
-              icon="i-heroicons-bug-ant"
+              icon="solar:bug-linear"
               size="lg"
               block
               class="min-h-[44px]"
@@ -264,7 +267,7 @@ function handleWriteNew() {
             <UButton
               color="primary"
               variant="soft"
-              icon="i-heroicons-light-bulb"
+              icon="solar:lightbulb-linear"
               size="lg"
               block
               class="min-h-[44px]"

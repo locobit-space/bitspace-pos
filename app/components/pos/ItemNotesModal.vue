@@ -44,7 +44,7 @@ watch(
       notesValue.value = props.initialNotes;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Add quick note to current notes
@@ -78,7 +78,7 @@ const handleCancel = () => {
         <h3
           class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
         >
-          <span>📝</span> Item Notes
+          <UIcon name="solar:notebook-linear" class="w-6 h-6" /> Item Notes
           <span v-if="itemName" class="text-sm font-normal text-gray-500">
             - {{ itemName }}
           </span>

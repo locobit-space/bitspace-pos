@@ -81,7 +81,7 @@ function handleScan(code: string) {
           class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
         >
           <UIcon
-            name="i-heroicons-information-circle"
+            name="solar:info-circle-linear"
             class="w-5 h-5 text-blue-600 dark:text-blue-400"
           />
         </div>
@@ -91,7 +91,10 @@ function handleScan(code: string) {
           </h3>
           <p class="text-xs text-gray-500">
             {{
-              t("products.basicInfoHint", "Product name, price, and identification")
+              t(
+                "products.basicInfoHint",
+                "Product name, price, and identification",
+              )
             }}
           </p>
         </div>
@@ -140,7 +143,7 @@ function handleScan(code: string) {
             >
               <template #leading>
                 <UIcon
-                  name="i-heroicons-hashtag"
+                  name="solar:hashtag-linear"
                   class="w-4 h-4 text-gray-400"
                 />
               </template>
@@ -149,7 +152,7 @@ function handleScan(code: string) {
               color="primary"
               variant="soft"
               size="lg"
-              icon="i-heroicons-sparkles"
+              icon="solar:stars-linear"
               @click="handleGenerateSku"
             >
               {{ t("common.generate", "Gen") }}
@@ -173,7 +176,7 @@ function handleScan(code: string) {
               >
                 <template #leading>
                   <UIcon
-                    name="i-heroicons-qr-code"
+                    name="solar:qr-code-linear"
                     class="w-4 h-4 text-gray-400"
                   />
                 </template>
@@ -182,7 +185,7 @@ function handleScan(code: string) {
                 <UButton
                   color="neutral"
                   variant="soft"
-                  icon="i-heroicons-camera"
+                  icon="solar:camera-linear"
                   size="lg"
                   @click="showScanner = true"
                 />
@@ -208,7 +211,7 @@ function handleScan(code: string) {
             color="primary"
             variant="soft"
             size="lg"
-            icon="i-heroicons-sparkles"
+            icon="solar:stars-linear"
             block
             @click="handleGenerateBarcode"
           >
@@ -237,7 +240,7 @@ function handleScan(code: string) {
               {{ t("pos.scanner.title", "Scan Barcode") }}
             </h3>
             <UButton
-              icon="i-heroicons-x-mark"
+              icon="solar:close-circle-linear"
               color="neutral"
               variant="ghost"
               size="sm"

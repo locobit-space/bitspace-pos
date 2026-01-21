@@ -19,7 +19,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // Check if the icon is an emoji (not starting with 'i-')
-const isEmoji = computed(() => !props.icon?.startsWith("i-"));
+const isEmoji = computed(
+  () => !props.icon?.startsWith("i") && !props.icon?.includes(":"),
+);
 
 type IconColor = "blue" | "green" | "yellow" | "red" | "purple" | "gray";
 
@@ -81,8 +83,8 @@ const colorClasses = computed((): { bg: string; icon: string } => {
         <Icon
           :name="
             trend.direction === 'up'
-              ? 'i-heroicons-arrow-trending-up'
-              : 'i-heroicons-arrow-trending-down'
+              ? 'solar:graph-up-linear'
+              : 'solar:graph-down-linear'
           "
           class="w-5 h-5"
         />

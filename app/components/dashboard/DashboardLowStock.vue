@@ -20,7 +20,7 @@ const { t } = useI18n();
           class="w-6 h-6 rounded bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
         >
           <UIcon
-            name="i-heroicons-exclamation-triangle"
+            name="solar:danger-triangle-linear"
             class="w-3 h-3 text-amber-600 dark:text-amber-400"
           />
         </div>
@@ -41,7 +41,7 @@ const { t } = useI18n();
         class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-2"
       >
         <UIcon
-          name="i-heroicons-check-circle"
+          name="solar:check-circle-linear"
           class="w-4 h-4 text-green-600 dark:text-green-400"
         />
       </div>
@@ -60,7 +60,7 @@ const { t } = useI18n();
             class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center"
           >
             <UIcon
-              name="i-heroicons-cube"
+              name="solar:box-linear"
               class="w-3.5 h-3.5 text-red-600 dark:text-red-400"
             />
           </div>

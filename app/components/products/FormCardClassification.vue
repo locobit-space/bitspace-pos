@@ -52,7 +52,7 @@ function onTypeChange(value: string) {
           class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center"
         >
           <UIcon
-            name="i-heroicons-tag"
+            name="solar:tag-linear"
             class="w-5 h-5 text-purple-600 dark:text-purple-400"
           />
         </div>
@@ -62,7 +62,10 @@ function onTypeChange(value: string) {
           </h3>
           <p class="text-xs text-gray-500">
             {{
-              t("products.classificationHint", "Product type, category, and unit")
+              t(
+                "products.classificationHint",
+                "Product type, category, and unit",
+              )
             }}
           </p>
         </div>
@@ -101,7 +104,7 @@ function onTypeChange(value: string) {
             />
             <UTooltip :text="t('common.add') + ' ' + t('products.category')">
               <UButton
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 color="neutral"
                 variant="soft"
                 @click="$emit('add-category')"
@@ -123,7 +126,7 @@ function onTypeChange(value: string) {
             />
             <UTooltip :text="t('common.add') + ' ' + t('products.unit')">
               <UButton
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 color="neutral"
                 variant="soft"
                 @click="$emit('add-unit')"

@@ -18,7 +18,11 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "scan", result: ScanResult, product?: typeof props.inventoryItems[number]): void;
+  (
+    e: "scan",
+    result: ScanResult,
+    product?: (typeof props.inventoryItems)[number],
+  ): void;
   (e: "close"): void;
 }>();
 
@@ -34,7 +38,9 @@ const toast = useToast();
 const videoRef = ref<HTMLVideoElement | null>(null);
 const manualCode = ref("");
 const scanMode = ref<"camera" | "manual">("camera");
-const lastScannedProduct = ref<typeof props.inventoryItems[number] | null>(null);
+const lastScannedProduct = ref<(typeof props.inventoryItems)[number] | null>(
+  null,
+);
 
 // Scanner composable
 const {
@@ -66,7 +72,7 @@ function handleScan(result: ScanResult) {
     (item) =>
       item.barcode === result.code ||
       item.sku === result.code ||
-      item.productId === result.code
+      item.productId === result.code,
   );
 
   lastScannedProduct.value = product || null;
@@ -78,14 +84,14 @@ function handleScan(result: ScanResult) {
     toast.add({
       title: t("inventory.productFound", "Product Found"),
       description: product.productName,
-      icon: "i-heroicons-check-circle",
+      icon: "solar:check-circle-linear",
       color: "success",
     });
   } else {
     toast.add({
       title: t("inventory.productNotFound", "Product Not Found"),
       description: result.code,
-      icon: "i-heroicons-exclamation-triangle",
+      icon: "solar:danger-triangle-linear",
       color: "warning",
     });
   }
@@ -102,8 +108,11 @@ function handleManualSubmit() {
 
 function playBeep() {
   try {
-    const audioContext = new (window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const audioContext = new (
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext
+    )();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -167,22 +176,31 @@ watch(open, async (isOpen) => {
     <template #content>
       <div class="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
         <!-- Header -->
-        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-primary-500 text-white flex items-center justify-center">
-              <UIcon name="i-heroicons-qr-code" class="w-5 h-5" />
+            <div
+              class="w-10 h-10 rounded-xl bg-primary-500 text-white flex items-center justify-center"
+            >
+              <UIcon name="solar:scanner-linear" class="w-5 h-5" />
             </div>
             <div>
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ t('inventory.scanBarcode', 'Scan Barcode') }}
+                {{ t("inventory.scanBarcode", "Scan Barcode") }}
               </h3>
               <p class="text-xs text-gray-500">
-                {{ t('inventory.scanOrEnterCode', 'Use camera or enter code manually') }}
+                {{
+                  t(
+                    "inventory.scanOrEnterCode",
+                    "Use camera or enter code manually",
+                  )
+                }}
               </p>
             </div>
           </div>
           <UButton
-            icon="i-heroicons-x-mark"
+            icon="solar:close-circle-linear"
             color="neutral"
             variant="ghost"
             @click="closeModal"
@@ -196,20 +214,26 @@ watch(open, async (isOpen) => {
             <UButton
               :color="scanMode === 'camera' ? 'primary' : 'neutral'"
               :variant="scanMode === 'camera' ? 'solid' : 'outline'"
-              icon="i-heroicons-camera"
+              icon="solar:camera-linear"
               class="flex-1"
-              @click="scanMode = 'camera'; startCamera()"
+              @click="
+                scanMode = 'camera';
+                startCamera();
+              "
             >
-              {{ t('inventory.camera', 'Camera') }}
+              {{ t("inventory.camera", "Camera") }}
             </UButton>
             <UButton
               :color="scanMode === 'manual' ? 'primary' : 'neutral'"
               :variant="scanMode === 'manual' ? 'solid' : 'outline'"
-              icon="i-heroicons-pencil-square"
+              icon="solar:pen-new-square-linear"
               class="flex-1"
-              @click="scanMode = 'manual'; stopCameraScanner()"
+              @click="
+                scanMode = 'manual';
+                stopCameraScanner();
+              "
             >
-              {{ t('inventory.manualEntry', 'Manual') }}
+              {{ t("inventory.manualEntry", "Manual") }}
             </UButton>
           </div>
 
@@ -225,17 +249,25 @@ watch(open, async (isOpen) => {
               playsinline
               muted
             />
-            
+
             <!-- Scanner overlay -->
             <div class="absolute inset-0 pointer-events-none">
               <!-- Corner brackets -->
               <div class="absolute top-1/4 left-1/4 w-1/2 h-1/2">
-                <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary-500 rounded-tl-lg" />
-                <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary-500 rounded-tr-lg" />
-                <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary-500 rounded-bl-lg" />
-                <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary-500 rounded-br-lg" />
+                <div
+                  class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary-500 rounded-tl-lg"
+                />
+                <div
+                  class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary-500 rounded-tr-lg"
+                />
+                <div
+                  class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary-500 rounded-bl-lg"
+                />
+                <div
+                  class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary-500 rounded-br-lg"
+                />
               </div>
-              
+
               <!-- Scan line animation -->
               <div
                 v-if="isScanning"
@@ -244,16 +276,19 @@ watch(open, async (isOpen) => {
             </div>
 
             <!-- Status overlay -->
-            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <div
+              class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4"
+            >
               <div class="flex items-center justify-center gap-2 text-white">
                 <div
                   class="w-2 h-2 rounded-full animate-pulse"
                   :class="isScanning ? 'bg-green-500' : 'bg-yellow-500'"
                 />
                 <span class="text-sm">
-                  {{ isScanning 
-                    ? (t('inventory.scanning', 'Scanning...'))
-                    : (t('inventory.startingCamera', 'Starting camera...'))
+                  {{
+                    isScanning
+                      ? t("inventory.scanning", "Scanning...")
+                      : t("inventory.startingCamera", "Starting camera...")
                   }}
                 </span>
               </div>
@@ -264,27 +299,34 @@ watch(open, async (isOpen) => {
               v-if="scannerError"
               class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-white p-4 text-center"
             >
-              <UIcon name="i-heroicons-exclamation-triangle" class="w-12 h-12 text-yellow-500 mb-3" />
+              <UIcon
+                name="solar:danger-triangle-linear"
+                class="w-12 h-12 text-yellow-500 mb-3"
+              />
               <p class="font-medium">{{ scannerError }}</p>
               <UButton class="mt-4" color="primary" @click="startCamera">
-                {{ t('common.retry', 'Retry') }}
+                {{ t("common.retry", "Retry") }}
               </UButton>
             </div>
           </div>
 
           <!-- Manual Entry -->
           <div v-if="scanMode === 'manual'" class="space-y-3">
-            <UFormField :label="t('inventory.enterBarcode', 'Enter Barcode/SKU')">
+            <UFormField
+              :label="t('inventory.enterBarcode', 'Enter Barcode/SKU')"
+            >
               <UInput
                 v-model="manualCode"
-                :placeholder="t('inventory.barcodePlaceholder', 'Scan or type barcode...')"
+                :placeholder="
+                  t('inventory.barcodePlaceholder', 'Scan or type barcode...')
+                "
                 size="lg"
                 autofocus
                 @keyup.enter="handleManualSubmit"
               >
                 <template #trailing>
                   <UButton
-                    icon="i-heroicons-magnifying-glass"
+                    icon="solar:magnifer-linear"
                     color="primary"
                     variant="ghost"
                     size="sm"
@@ -295,7 +337,12 @@ watch(open, async (isOpen) => {
               </UInput>
             </UFormField>
             <p class="text-xs text-gray-500 text-center">
-              {{ t('inventory.physicalScannerHint', 'Physical scanners will auto-detect input') }}
+              {{
+                t(
+                  "inventory.physicalScannerHint",
+                  "Physical scanners will auto-detect input",
+                )
+              }}
             </p>
           </div>
 
@@ -303,9 +350,11 @@ watch(open, async (isOpen) => {
           <div
             v-if="lastScan || lastScannedProduct"
             class="p-4 rounded-xl"
-            :class="lastScannedProduct 
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-              : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'"
+            :class="
+              lastScannedProduct
+                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
+            "
           >
             <div class="flex items-start gap-3">
               <div
@@ -313,24 +362,34 @@ watch(open, async (isOpen) => {
                 :class="lastScannedProduct ? 'bg-green-500' : 'bg-yellow-500'"
               >
                 <UIcon
-                  :name="lastScannedProduct ? 'i-heroicons-check' : 'i-heroicons-question-mark-circle'"
+                  :name="
+                    lastScannedProduct
+                      ? 'solar:check-circle-linear'
+                      : 'solar:question-circle-linear'
+                  "
                   class="w-5 h-5"
                 />
               </div>
               <div class="flex-1 min-w-0">
                 <p
                   class="font-medium"
-                  :class="lastScannedProduct 
-                    ? 'text-green-800 dark:text-green-200'
-                    : 'text-yellow-800 dark:text-yellow-200'"
+                  :class="
+                    lastScannedProduct
+                      ? 'text-green-800 dark:text-green-200'
+                      : 'text-yellow-800 dark:text-yellow-200'
+                  "
                 >
-                  {{ lastScannedProduct?.productName || t('inventory.unknownProduct', 'Unknown Product') }}
+                  {{
+                    lastScannedProduct?.productName ||
+                    t("inventory.unknownProduct", "Unknown Product")
+                  }}
                 </p>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   {{ lastScan?.code }}
                 </p>
                 <p v-if="lastScannedProduct" class="text-xs text-gray-500 mt-1">
-                  {{ t('inventory.currentStock') }}: {{ lastScannedProduct.currentStock }}
+                  {{ t("inventory.currentStock") }}:
+                  {{ lastScannedProduct.currentStock }}
                 </p>
               </div>
             </div>
@@ -341,32 +400,39 @@ watch(open, async (isOpen) => {
                 color="green"
                 variant="soft"
                 size="sm"
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 class="flex-1"
-                @click="emit('scan', lastScan!, lastScannedProduct); closeModal()"
+                @click="
+                  emit('scan', lastScan!, lastScannedProduct);
+                  closeModal();
+                "
               >
-                {{ t('inventory.addStock', 'Add Stock') }}
+                {{ t("inventory.addStock", "Add Stock") }}
               </UButton>
               <UButton
                 color="blue"
                 variant="soft"
                 size="sm"
-                icon="i-heroicons-eye"
+                icon="solar:eye-linear"
                 class="flex-1"
                 @click="navigateTo(`/products/${lastScannedProduct.productId}`)"
               >
-                {{ t('common.view', 'View') }}
+                {{ t("common.view", "View") }}
               </UButton>
             </div>
           </div>
         </div>
 
         <!-- Footer -->
-        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div
+          class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+        >
           <div class="flex items-center justify-between text-xs text-gray-500">
             <div class="flex items-center gap-2">
-              <UIcon name="i-heroicons-information-circle" />
-              <span>{{ t('inventory.supportedFormats', 'EAN-13, UPC-A, Code128, QR') }}</span>
+              <UIcon name="solar:info-circle-linear" />
+              <span>{{
+                t("inventory.supportedFormats", "EAN-13, UPC-A, Code128, QR")
+              }}</span>
             </div>
             <UButton
               color="neutral"
@@ -374,7 +440,7 @@ watch(open, async (isOpen) => {
               size="xs"
               @click="closeModal"
             >
-              {{ t('common.close', 'Close') }}
+              {{ t("common.close", "Close") }}
             </UButton>
           </div>
         </div>
@@ -385,7 +451,8 @@ watch(open, async (isOpen) => {
 
 <style scoped>
 @keyframes scan {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
     opacity: 1;
   }

@@ -59,12 +59,12 @@ const addStockForm = ref<AddStockFormData>({
 // Track if selected product requires expiry
 const selectedProduct = computed(() =>
   props.inventoryItems.find(
-    (item) => item.productId === addStockForm.value.productId
-  )
+    (item) => item.productId === addStockForm.value.productId,
+  ),
 );
 
 const requiresExpiry = computed(
-  () => selectedProduct.value?.hasExpiry || false
+  () => selectedProduct.value?.hasExpiry || false,
 );
 
 // Auto-generate lot number
@@ -83,11 +83,11 @@ watch(
     if (productId && selectedProduct.value?.defaultShelfLifeDays) {
       const expiry = new Date();
       expiry.setDate(
-        expiry.getDate() + selectedProduct.value.defaultShelfLifeDays
+        expiry.getDate() + selectedProduct.value.defaultShelfLifeDays,
       );
       addStockForm.value.expiryDate = expiry.toISOString().split("T")[0];
     }
-  }
+  },
 );
 
 // Reset form when modal opens
@@ -117,11 +117,11 @@ const productOptions = computed(() =>
     stock: item.currentStock,
     unit: item.unitSymbol,
     hasExpiry: item.hasExpiry,
-  }))
+  })),
 );
 
 const branchOptions = computed(() =>
-  props.branches.filter((b) => b.id !== "all")
+  props.branches.filter((b) => b.id !== "all"),
 );
 
 // Get days until expiry for warning
@@ -152,7 +152,7 @@ const expiryWarningColor = computed(() => {
               class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-cube-transparent"
+                name="solar:box-linear"
                 class="w-5 h-5 text-emerald-600 dark:text-emerald-400"
               />
             </div>
@@ -240,14 +240,14 @@ const expiryWarningColor = computed(() => {
               <h4
                 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
               >
-                <UIcon name="i-heroicons-qr-code" class="w-4 h-4" />
+                <UIcon name="solar:scanner-linear" class="w-4 h-4" />
                 {{ t("inventory.lotTracking", "Lot Tracking") }}
               </h4>
               <UButton
                 size="xs"
                 color="neutral"
                 variant="ghost"
-                icon="i-heroicons-sparkles"
+                icon="solar:stars-linear"
                 @click="generateLotNumber"
               >
                 {{ t("inventory.generateLot", "Generate Lot Automatically") }}

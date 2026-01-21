@@ -1,7 +1,7 @@
 <template>
   <UPopover>
     <UButton
-      icon="i-heroicons-user-circle"
+      icon="solar:user-circle-linear"
       variant="ghost"
       size="lg"
       class="rounded-full"
@@ -67,7 +67,7 @@
                 </p>
               </div>
               <UIcon
-                name="i-heroicons-arrow-right-circle"
+                name="solar:alt-arrow-right-linear"
                 class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
               />
             </button>
@@ -79,7 +79,7 @@
             to="/auth/signin"
             class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <UIcon name="i-heroicons-plus-circle" class="w-5 h-5" />
+            <UIcon name="solar:add-circle-linear" class="w-5 h-5" />
             <span class="text-sm">{{
               $t("account.addAccount", "Add Account")
             }}</span>
@@ -94,7 +94,7 @@
           <div>
             <div class="flex items-center gap-2 mb-2">
               <UIcon
-                name="i-heroicons-language"
+                name="solar:global-linear"
                 class="w-5 h-5 text-gray-600 dark:text-gray-400"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -114,7 +114,7 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <UIcon
-                :name="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"
+                :name="isDark ? 'solar:moon-linear' : 'solar:sun-linear'"
                 class="w-5 h-5 text-gray-600 dark:text-gray-400"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -128,7 +128,7 @@
           <div>
             <div class="flex items-center gap-2 mb-2">
               <UIcon
-                name="i-heroicons-swatch"
+                name="solar:palette-linear"
                 class="w-5 h-5 text-gray-600 dark:text-gray-400"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -159,7 +159,7 @@
             to="/settings/account"
             class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
+            <UIcon name="solar:user-circle-linear" class="w-5 h-5" />
             <span class="text-sm">{{ $t("settings.account") }}</span>
           </NuxtLinkLocale>
 
@@ -167,7 +167,7 @@
             to="/settings/general"
             class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5" />
+            <UIcon name="solar:settings-minimalistic-linear" class="w-5 h-5" />
             <span class="text-sm">{{ $t("settings.general.title") }}</span>
           </NuxtLinkLocale>
         </div>
@@ -178,10 +178,7 @@
             class="flex items-center gap-3 w-full px-2 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             @click="signOut"
           >
-            <UIcon
-              name="i-heroicons-arrow-right-on-rectangle"
-              class="w-5 h-5"
-            />
+            <UIcon name="solar:logout-2-linear" class="w-5 h-5" />
             <span class="text-sm font-medium">{{ $t("auth.signOut") }}</span>
           </button>
         </div>
@@ -243,7 +240,7 @@ const userIdentifier = computed(() => {
 });
 
 const authMethod = computed(
-  () => "nostr" as "nostr" | "password" | "pin" | null
+  () => "nostr" as "nostr" | "password" | "pin" | null,
 );
 
 // Auth method display
@@ -258,11 +255,11 @@ const authMethodColor = computed(() => {
 
 const authMethodIcon = computed(() => {
   const icons: Record<string, string> = {
-    nostr: "i-heroicons-bolt",
-    password: "i-heroicons-key",
-    pin: "i-heroicons-hashtag",
+    nostr: "solar:bolt-linear",
+    password: "solar:key-minimalistic-linear",
+    pin: "solar:lock-password-linear",
   };
-  return icons[authMethod.value || "nostr"] || "i-heroicons-user";
+  return icons[authMethod.value || "nostr"] || "solar:user-circle-linear";
 });
 
 const authMethodLabel = computed(() => {
