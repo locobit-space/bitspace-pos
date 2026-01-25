@@ -272,6 +272,7 @@ export default defineNuxtConfig({
           "lo-LA/onboarding.json",
           "lo-LA/order.json",
           "lo-LA/promotions.json",
+          "lo-LA/marketplace.json",
         ],
       },
       {
@@ -317,6 +318,7 @@ export default defineNuxtConfig({
           "en-US/onboarding.json",
           "en-US/order.json",
           "en-US/promotions.json",
+          "en-US/marketplace.json",
         ],
       },
       {
@@ -357,6 +359,7 @@ export default defineNuxtConfig({
           "th-TH/legal.json",
           "th-TH/help.json",
           "th-TH/promotions.json",
+          "th-TH/marketplace.json",
         ],
       },
     ],

@@ -135,7 +135,10 @@ function handleViewDetails(promotion: Promotion) {
                 <div
                   class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4"
                 >
-                  <UIcon name="i-heroicons-gift" class="w-8 h-8 text-gray-400" />
+                  <UIcon
+                    name="solar:gift-linear"
+                    class="w-8 h-8 text-gray-400"
+                  />
                 </div>
                 <h3
                   class="text-lg font-medium text-gray-900 dark:text-white mb-2"
@@ -146,13 +149,13 @@ function handleViewDetails(promotion: Promotion) {
                   {{
                     t(
                       "promotions.noPromotionsDescription",
-                      "Create your first BOGO promotion to get started"
+                      "Create your first BOGO promotion to get started",
                     )
                   }}
                 </p>
                 <UButton
                   color="primary"
-                  icon="i-heroicons-plus"
+                  icon="solar:add-circle-linear"
                   @click="emit('create')"
                 >
                   {{ t("promotions.create", "Create Promotion") }}
@@ -189,12 +192,15 @@ function handleViewDetails(promotion: Promotion) {
     <!-- Mobile Card View -->
     <div class="lg:hidden space-y-3">
       <!-- Empty State -->
-      <div v-if="promotions.length === 0 && !isLoading" class="py-16 text-center">
+      <div
+        v-if="promotions.length === 0 && !isLoading"
+        class="py-16 text-center"
+      >
         <div class="flex flex-col items-center">
           <div
             class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4"
           >
-            <UIcon name="i-heroicons-gift" class="w-8 h-8 text-gray-400" />
+            <UIcon name="solar:gift-linear" class="w-8 h-8 text-gray-400" />
           </div>
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {{ t("promotions.noPromotions", "No Promotions Yet") }}
@@ -203,7 +209,7 @@ function handleViewDetails(promotion: Promotion) {
             {{
               t(
                 "promotions.noPromotionsDescription",
-                "Create your first BOGO promotion to get started"
+                "Create your first BOGO promotion to get started",
               )
             }}
           </p>
@@ -236,12 +242,15 @@ function handleViewDetails(promotion: Promotion) {
         <div class="flex items-start justify-between gap-3">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
-              <UIcon name="i-heroicons-gift" class="w-5 h-5 text-amber-500" />
+              <UIcon name="solar:gift-linear" class="w-5 h-5 text-amber-500" />
               <h3 class="font-semibold text-gray-900 dark:text-white truncate">
                 {{ promotion.name }}
               </h3>
             </div>
-            <p v-if="promotion.description" class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+            <p
+              v-if="promotion.description"
+              class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2"
+            >
               {{ promotion.description }}
             </p>
           </div>
@@ -256,66 +265,95 @@ function handleViewDetails(promotion: Promotion) {
         <!-- Details -->
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.trigger', 'Trigger') }}:</span>
+            <span class="text-gray-500 dark:text-gray-400"
+              >{{ t("promotions.trigger", "Trigger") }}:</span
+            >
             <p class="font-medium text-gray-900 dark:text-white mt-1">
               {{ getTriggerDescription(promotion) }}
             </p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.reward', 'Reward') }}:</span>
+            <span class="text-gray-500 dark:text-gray-400"
+              >{{ t("promotions.reward", "Reward") }}:</span
+            >
             <p class="font-medium text-gray-900 dark:text-white mt-1">
               {{ getRewardDescription(promotion) }}
             </p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.uses', 'Uses') }}:</span>
+            <span class="text-gray-500 dark:text-gray-400"
+              >{{ t("promotions.uses", "Uses") }}:</span
+            >
             <p class="font-medium text-gray-900 dark:text-white mt-1">
               {{ promotion.usageCount }}
-              <span v-if="promotion.maxUsesTotal" class="text-gray-500">/ {{ promotion.maxUsesTotal }}</span>
+              <span v-if="promotion.maxUsesTotal" class="text-gray-500"
+                >/ {{ promotion.maxUsesTotal }}</span
+              >
             </p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400">{{ t('promotions.type', 'Type') }}:</span>
-            <p class="font-medium text-gray-900 dark:text-white mt-1 capitalize">
+            <span class="text-gray-500 dark:text-gray-400"
+              >{{ t("promotions.type", "Type") }}:</span
+            >
+            <p
+              class="font-medium text-gray-900 dark:text-white mt-1 capitalize"
+            >
               {{ promotion.type }}
             </p>
           </div>
         </div>
 
         <!-- Date Range -->
-        <div v-if="promotion.startDate || promotion.endDate" class="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
-          <span v-if="promotion.startDate">{{ new Date(promotion.startDate).toLocaleDateString() }}</span>
+        <div
+          v-if="promotion.startDate || promotion.endDate"
+          class="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700"
+        >
+          <span v-if="promotion.startDate">{{
+            new Date(promotion.startDate).toLocaleDateString()
+          }}</span>
           <span v-if="promotion.startDate && promotion.endDate"> - </span>
-          <span v-if="promotion.endDate">{{ new Date(promotion.endDate).toLocaleDateString() }}</span>
+          <span v-if="promotion.endDate">{{
+            new Date(promotion.endDate).toLocaleDateString()
+          }}</span>
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div
+          class="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700"
+        >
           <UButton
             color="primary"
             variant="soft"
             size="sm"
-            icon="i-heroicons-eye"
+            icon="solar:eye-linear"
             @click="emit('viewDetails', promotion)"
             block
           >
-            {{ t('common.view', 'View') }}
+            {{ t("common.view", "View") }}
           </UButton>
           <UButton
             :color="promotion.status === 'active' ? 'amber' : 'green'"
             variant="soft"
             size="sm"
-            :icon="promotion.status === 'active' ? 'i-heroicons-pause' : 'i-heroicons-play'"
+            :icon="
+              promotion.status === 'active'
+                ? 'solar:pause-circle-linear'
+                : 'solar:play-circle-linear'
+            "
             @click="emit('toggleStatus', promotion)"
             block
           >
-            {{ promotion.status === 'active' ? t('common.pause', 'Pause') : t('common.activate', 'Activate') }}
+            {{
+              promotion.status === "active"
+                ? t("common.pause", "Pause")
+                : t("common.activate", "Activate")
+            }}
           </UButton>
           <UButton
             color="red"
             variant="soft"
             size="sm"
-            icon="i-heroicons-trash"
+            icon="solar:trash-bin-trash-linear"
             @click="emit('delete', promotion)"
           />
         </div>

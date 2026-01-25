@@ -19,7 +19,7 @@ const missingFields = computed(() => {
     missing.push({
       key: "location",
       label: t("marketplace.setup.location", "Location"),
-      icon: "i-heroicons-map-pin",
+      icon: "solar:map-point-linear",
     });
   }
 
@@ -28,7 +28,7 @@ const missingFields = computed(() => {
     missing.push({
       key: "hours",
       label: t("marketplace.setup.hours", "Business Hours"),
-      icon: "i-heroicons-clock",
+      icon: "solar:clock-circle-linear",
     });
   }
 
@@ -36,8 +36,8 @@ const missingFields = computed(() => {
   if (!config.services || config.services.length === 0) {
     missing.push({
       key: "services",
-      label: t("shop.services", "Services"),
-      icon: "i-heroicons-cube",
+      label: t("marketplace.services", "Services"),
+      icon: "solar:box-linear",
     });
   }
 
@@ -46,7 +46,7 @@ const missingFields = computed(() => {
     missing.push({
       key: "description",
       label: t("common.description", "Description"),
-      icon: "i-heroicons-document-text",
+      icon: "solar:document-text-linear",
     });
   }
 
@@ -54,8 +54,8 @@ const missingFields = computed(() => {
   if (!config.lud16) {
     missing.push({
       key: "lightning",
-      label: t("setting.lightning", "Lightning Address"),
-      icon: "i-heroicons-bolt",
+      label: t("marketplace.setup.lightning", "Lightning Address"),
+      icon: "solar:bolt-linear",
     });
   }
 
@@ -64,7 +64,7 @@ const missingFields = computed(() => {
     missing.push({
       key: "phone",
       label: t("common.phone", "Phone"),
-      icon: "i-heroicons-phone",
+      icon: "solar:phone-linear",
     });
   }
 
@@ -127,7 +127,7 @@ const goToSettings = () => {
       class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
       @click="dismiss"
     >
-      <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
+      <UIcon name="solar:close-circle-linear" class="w-5 h-5" />
     </button>
 
     <div class="relative">
@@ -136,7 +136,7 @@ const goToSettings = () => {
         <div
           class="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center shrink-0"
         >
-          <UIcon name="i-heroicons-globe-alt" class="w-6 h-6 text-white" />
+          <UIcon name="lucide:globe" class="w-6 h-6 text-white" />
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
@@ -148,7 +148,7 @@ const goToSettings = () => {
             {{
               t(
                 "marketplace.setup.subtitle",
-                "Help customers discover your store by completing these details"
+                "Help customers discover your store by completing these details",
               )
             }}
           </p>
@@ -193,7 +193,7 @@ const goToSettings = () => {
       <UButton
         color="primary"
         size="lg"
-        icon="i-heroicons-arrow-right"
+        icon="solar:arrow-right-linear"
         trailing
         @click="goToSettings"
       >

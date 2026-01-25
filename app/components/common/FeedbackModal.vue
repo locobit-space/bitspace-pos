@@ -18,22 +18,26 @@ const typeOptions = computed(() => [
   {
     value: "bug",
     label: t("common.feedback.bugReport", "Bug Report"),
-    icon: "i-heroicons-bug-ant",
+    icon: "solar:bug-linear",
   },
   {
     value: "feature",
     label: t("common.feedback.featureRequest", "Feature Request"),
-    icon: "i-heroicons-light-bulb",
+    icon: "solar:lightbulb-linear",
   },
   {
     value: "question",
     label: t("common.feedback.question", "Question"),
-    icon: "i-heroicons-question-mark-circle",
+    icon: "solar:question-circle-linear",
   },
 ]);
 
 const priorityOptions = computed(() => [
-  { value: "low", label: t("common.feedback.priorityLow", "Low"), color: "gray" },
+  {
+    value: "low",
+    label: t("common.feedback.priorityLow", "Low"),
+    color: "gray",
+  },
   {
     value: "medium",
     label: t("common.feedback.priorityMedium", "Medium"),
@@ -67,9 +71,9 @@ const modalTitle = computed(() => {
 
 const modalIcon = computed(() => {
   const type = feedback.feedbackType.value;
-  if (type === "bug") return "i-heroicons-bug-ant";
-  if (type === "feature") return "i-heroicons-light-bulb";
-  return "i-heroicons-question-mark-circle";
+  if (type === "bug") return "solar:bug-linear";
+  if (type === "feature") return "solar:lightbulb-linear";
+  return "solar:question-circle-linear";
 });
 
 const handleSubmit = async () => {
@@ -99,12 +103,16 @@ watch(
       formData.description = "";
       formData.priority = "medium";
     }
-  }
+  },
 );
 </script>
 
 <template>
-  <UModal v-model:open="feedback.isModalOpen.value">
+  <UModal
+    v-model:open="feedback.isModalOpen.value"
+    title="Feedback"
+    description="Send directly to development team"
+  >
     <template #content>
       <UCard>
         <template #header>
@@ -133,7 +141,10 @@ watch(
               </h3>
               <p class="text-sm text-gray-500">
                 {{
-                  t("common.feedback.sendToDevTeam", "Send directly to development team")
+                  t(
+                    "common.feedback.sendToDevTeam",
+                    "Send directly to development team",
+                  )
                 }}
               </p>
             </div>
@@ -170,8 +181,14 @@ watch(
               v-model="formData.title"
               :placeholder="
                 feedback.feedbackType.value === 'bug'
-                  ? t('common.feedback.bugTitlePlaceholder', 'Briefly describe the issue')
-                  : t('common.feedback.featureTitlePlaceholder', 'Briefly describe your idea')
+                  ? t(
+                      'common.feedback.bugTitlePlaceholder',
+                      'Briefly describe the issue',
+                    )
+                  : t(
+                      'common.feedback.featureTitlePlaceholder',
+                      'Briefly describe your idea',
+                    )
               "
               class="w-full"
             />
@@ -186,8 +203,14 @@ watch(
               v-model="formData.description"
               :placeholder="
                 feedback.feedbackType.value === 'bug'
-                  ? t('common.feedback.bugDescPlaceholder', 'What happened? What did you expect?')
-                  : t('common.feedback.featureDescPlaceholder', 'Describe your idea in detail')
+                  ? t(
+                      'common.feedback.bugDescPlaceholder',
+                      'What happened? What did you expect?',
+                    )
+                  : t(
+                      'common.feedback.featureDescPlaceholder',
+                      'Describe your idea in detail',
+                    )
               "
               class="w-full"
               :rows="4"
@@ -216,7 +239,9 @@ watch(
           <!-- Context Info -->
           <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
             <p class="text-gray-500 mb-2">
-              {{ t("common.feedback.autoAttached", "Auto-attached information:") }}
+              {{
+                t("common.feedback.autoAttached", "Auto-attached information:")
+              }}
             </p>
             <div class="flex flex-wrap gap-2">
               <UBadge color="gray" size="xs">
@@ -240,7 +265,7 @@ watch(
               :loading="feedback.isSubmitting.value"
               :disabled="!isFormValid"
               :label="t('common.feedback.submit', 'Submit')"
-              icon="i-heroicons-paper-airplane"
+              icon="solar:plain-2-linear"
               @click="handleSubmit"
             />
           </div>

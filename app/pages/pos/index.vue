@@ -276,7 +276,7 @@ const mergeSelectedOrders = async () => {
 
   // Mark original orders as merged/canceled
   for (const order of ordersToMerge.value) {
-    order.status = "canceled";
+    order.status = "cancelled";
     order.kitchenNotes = `Merged with other orders at ${new Date().toISOString()}`;
     await ordersStore.updateOrder(order.id, order);
   }
@@ -450,6 +450,74 @@ const productsWithPromotionsCount = computed(() => {
   return productsStore.filteredProducts.value.filter((product) =>
     hasPromotion(product.id)
   ).length;
+});
+
+// ============================================
+// Performance Optimization (Infinite Scroll)
+// ============================================
+const visibleLimit = ref(50);
+const loadMoreSentinel = ref<HTMLElement | null>(null);
+
+const visibleProducts = computed(() => {
+  return displayedProducts.value.slice(0, visibleLimit.value);
+});
+
+// Reset limit when filters change
+watch(
+  [
+    () => productsStore.searchQuery.value,
+    () => productsStore.selectedCategory.value,
+    filterByPromotions,
+  ],
+  () => {
+    visibleLimit.value = 50;
+    // Scroll to top of grid if needed (optional, depends on UX preference)
+  }
+);
+
+// Intersection Observer for infinite scroll (Native implementation)
+let observer: IntersectionObserver | null = null;
+const observerTarget = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  // Use a small delay to ensure DOM is ready
+  setTimeout(() => {
+    observer = new IntersectionObserver(
+      (entries: IntersectionObserverEntry[]) => {
+        const entry = entries[0];
+        if (
+          entry?.isIntersecting &&
+          visibleLimit.value < displayedProducts.value.length
+        ) {
+          visibleLimit.value += 50;
+        }
+      },
+      {
+        root: null, // viewport
+        threshold: 0.1,
+      }
+    );
+
+    if (loadMoreSentinel.value) {
+      observer.observe(loadMoreSentinel.value);
+    }
+  }, 100);
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+  }
+});
+
+// Watch sentinel changes (e.g. if re-rendered)
+watch(loadMoreSentinel, (el) => {
+  if (observer) {
+    observer.disconnect();
+    if (el) {
+      observer.observe(el);
+    }
+  }
 });
 
 // Auto-calculate promotions when cart changes
@@ -2698,7 +2766,7 @@ onUnmounted(() => {
           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
         >
           <button
-            v-for="product in displayedProducts"
+            v-for="product in visibleProducts"
             :key="product.id"
             class="group relative bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700/50 hover:border-amber-500/50 dark:hover:border-amber-500/30 rounded-2xl p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-amber-500/5"
             @click="selectProduct(product)"
@@ -2773,6 +2841,19 @@ onUnmounted(() => {
               Low
             </div>
           </button>
+
+          <!-- Sentinel element for infinite scroll -->
+          <div
+            ref="loadMoreSentinel"
+            class="col-span-full h-8 flex items-center justify-center text-xs text-gray-400"
+          >
+            <span v-if="visibleLimit < displayedProducts.length"
+              >Loading more products...</span
+            >
+            <span v-else
+              >All {{ displayedProducts.length }} products loaded</span
+            >
+          </div>
         </div>
       </div>
     </div>

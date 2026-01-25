@@ -18,8 +18,8 @@ const toast = useToast();
 const route = useRoute();
 
 // Form state
-const isSubmitting = useState("is-submitting", () => false)
-const showPreview = useState("show-preview", () => false)
+const isSubmitting = useState("is-submitting", () => false);
+const showPreview = useState("show-preview", () => false);
 
 const form = reactive({
   pageId: props.article?.pageId || route.path.split("/")[1] || "dashboard",
@@ -50,7 +50,7 @@ const localeOptions = computed(() =>
   (locales.value as { code: string; name: string }[]).map((l) => ({
     value: l.code,
     label: l.name || l.code,
-  }))
+  })),
 );
 
 // Validation
@@ -85,10 +85,12 @@ async function handleSubmit() {
     if (article) {
       toast.add({
         title: t("help.editor.publishSuccess", "Help published!"),
-        description:
-          t("help.editor.publishedToNostr", "Article saved to Nostr relays"),
+        description: t(
+          "help.editor.publishedToNostr",
+          "Article saved to Nostr relays",
+        ),
         color: "green",
-        icon: "i-heroicons-check-circle",
+        icon: "solar:check-circle-linear",
       });
       emit("saved", article);
       emit("close");
@@ -100,7 +102,7 @@ async function handleSubmit() {
       title: t("common.error", "Error"),
       description: `${e}`,
       color: "red",
-      icon: "i-heroicons-x-circle",
+      icon: "solar:close-circle-linear",
     });
   } finally {
     isSubmitting.value = false;
@@ -109,7 +111,10 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <UModal v-model:open="nostrHelp.isEditorOpen.value" @update:model-value="emit('close')">
+  <UModal
+    v-model:open="nostrHelp.isEditorOpen.value"
+    @update:model-value="emit('close')"
+  >
     <template #content>
       <div class="p-6">
         <!-- Header -->
@@ -124,13 +129,16 @@ async function handleSubmit() {
           <UButton
             color="gray"
             variant="ghost"
-            icon="i-heroicons-x-mark"
+            icon="solar:close-circle-linear"
             @click="emit('close')"
           />
         </div>
 
         <!-- Form -->
-        <form class="space-y-4 overflow-y-auto max-h-[70vh]" @submit.prevent="handleSubmit">
+        <form
+          class="space-y-4 overflow-y-auto max-h-[70vh]"
+          @submit.prevent="handleSubmit"
+        >
           <!-- Page and Locale Row -->
           <div class="grid grid-cols-2 gap-4">
             <UFormField :label="t('help.editor.page', 'Page')">
@@ -156,7 +164,9 @@ async function handleSubmit() {
           <UFormField :label="t('help.editor.title', 'Title')" required>
             <UInput
               v-model="form.title"
-              :placeholder="t('help.editor.titlePlaceholder', 'e.g. How to use the POS')"
+              :placeholder="
+                t('help.editor.titlePlaceholder', 'e.g. How to use the POS')
+              "
               class="w-full"
             />
           </UFormField>
@@ -168,7 +178,12 @@ async function handleSubmit() {
           >
             <UInput
               v-model="form.description"
-              :placeholder="t('help.editor.descriptionPlaceholder', 'Brief description of this help section')"
+              :placeholder="
+                t(
+                  'help.editor.descriptionPlaceholder',
+                  'Brief description of this help section',
+                )
+              "
               class="w-full"
             />
           </UFormField>
@@ -197,7 +212,12 @@ async function handleSubmit() {
             <UTextarea
               v-if="!showPreview"
               v-model="form.content"
-              :placeholder="t('help.editor.contentPlaceholder', 'Write detailed help content here. Supports **markdown** formatting.')"
+              :placeholder="
+                t(
+                  'help.editor.contentPlaceholder',
+                  'Write detailed help content here. Supports **markdown** formatting.',
+                )
+              "
               :rows="8"
               class="font-mono w-full"
             />
@@ -217,16 +237,28 @@ async function handleSubmit() {
           <!-- Tags -->
           <UFormField
             :label="t('help.editor.tags', 'Tags')"
-            :description="t('help.editor.tagsDescription', 'Comma-separated tags for search')"
+            :description="
+              t(
+                'help.editor.tagsDescription',
+                'Comma-separated tags for search',
+              )
+            "
           >
             <UInput
               v-model="form.tags"
-              :placeholder="t('help.editor.tagsPlaceholder', 'e.g. sales, checkout, payment')"
+              :placeholder="
+                t(
+                  'help.editor.tagsPlaceholder',
+                  'e.g. sales, checkout, payment',
+                )
+              "
             />
           </UFormField>
 
           <!-- Actions -->
-          <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div
+            class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
+          >
             <UButton
               type="button"
               color="gray"
@@ -238,7 +270,7 @@ async function handleSubmit() {
             <UButton
               type="submit"
               color="primary"
-              icon="i-heroicons-paper-airplane"
+              icon="solar:plain-2-linear"
               :loading="isSubmitting"
               :disabled="!isValid"
             >

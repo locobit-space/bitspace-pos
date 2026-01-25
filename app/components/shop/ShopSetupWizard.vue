@@ -29,7 +29,7 @@ const props = withDefaults(
     showBranch: true,
     showMarketplace: true,
     defaultShopType: "cafe",
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -299,7 +299,7 @@ const shopTypes = computed(() => [
 ]);
 
 const selectedShopType = computed(() =>
-  shopTypes.value.find((s) => s.id === shopType.value)
+  shopTypes.value.find((s) => s.id === shopType.value),
 );
 
 // ============ Options ============
@@ -365,7 +365,7 @@ const applyProductTemplates = async () => {
     const categoryId = productsStore.categories.value.find(
       (c) =>
         c.name ===
-        config.categories.find((tc) => tc.id === prod.categoryId)?.name
+        config.categories.find((tc) => tc.id === prod.categoryId)?.name,
     )?.id;
 
     if (categoryId) {
@@ -512,7 +512,7 @@ const completeSetup = async () => {
         try {
           const nostrData = useNostrData();
           const codeHash = await company.hashCompanyCode(
-            generatedCompanyCode.value
+            generatedCompanyCode.value,
           );
           await nostrData.publishCompanyIndex(codeHash);
         } catch (e) {
@@ -557,7 +557,7 @@ const completeSetup = async () => {
       if (offline.isOnline.value) {
         try {
           console.log("[ShopSetup] Syncing products to Nostr...");
-          await productsStore.syncToNostr();
+          await productsStore.syncAllToNostr();
           console.log("[ShopSetup] Products synced to Nostr");
         } catch (e) {
           console.warn("[ShopSetup] Failed to sync products to Nostr:", e);
@@ -569,7 +569,7 @@ const completeSetup = async () => {
       title: t("shop.setup.success", "Setup Complete!"),
       description: t(
         "shop.setup.successDescription",
-        "Your shop is ready to use."
+        "Your shop is ready to use.",
       ),
       icon: "i-heroicons-check-circle",
       color: "success",
@@ -600,7 +600,7 @@ watch(
         .replace(/\s+/g, "-")
         .slice(0, 8);
     }
-  }
+  },
 );
 
 // ============ Lifecycle ============
@@ -683,7 +683,7 @@ onMounted(() => {
             {{
               $t(
                 "shop.setup.selectTypeDesc",
-                "Choose what best describes your business"
+                "Choose what best describes your business",
               )
             }}
           </p>
@@ -973,7 +973,7 @@ onMounted(() => {
                 {{
                   $t(
                     "settings.general.enableTipsDescription",
-                    "Allow customers to tip"
+                    "Allow customers to tip",
                   )
                 }}
               </p>
@@ -1052,7 +1052,7 @@ onMounted(() => {
               :placeholder="
                 $t(
                   'shop.marketplace.descriptionPlaceholder',
-                  'Tell customers about your store...'
+                  'Tell customers about your store...',
                 )
               "
               :rows="3"
@@ -1078,7 +1078,7 @@ onMounted(() => {
                   marketplaceForm.services.includes(option.value)
                     ? (marketplaceForm.services =
                         marketplaceForm.services.filter(
-                          (s) => s !== option.value
+                          (s) => s !== option.value,
                         ))
                     : marketplaceForm.services.push(option.value)
                 "
@@ -1094,7 +1094,7 @@ onMounted(() => {
           <!-- Payment Methods -->
           <div class="space-y-3 pt-2">
             <p class="text-sm font-medium text-gray-900 dark:text-white">
-              {{ $t("shop.marketplace.payments", "Payment Methods") }}
+              {{ $t("marketplace.payments", "Payment Methods") }}
             </p>
 
             <div
@@ -1217,7 +1217,7 @@ onMounted(() => {
               {{
                 $t(
                   "shop.setup.companyCodeHint",
-                  "Share with staff to connect their devices"
+                  "Share with staff to connect their devices",
                 )
               }}
             </p>
@@ -1244,7 +1244,7 @@ onMounted(() => {
                   {{
                     $t(
                       "shop.setup.step1.description",
-                      "Your shop will be created locally"
+                      "Your shop will be created locally",
                     )
                   }}
                 </li>
@@ -1257,7 +1257,7 @@ onMounted(() => {
                   {{
                     $t(
                       "shop.setup.step2.description",
-                      "Data will sync to Nostr relays"
+                      "Data will sync to Nostr relays",
                     )
                   }}
                 </li>
@@ -1270,7 +1270,7 @@ onMounted(() => {
                   {{
                     $t(
                       "shop.setup.step3.description",
-                      "You can switch between workspaces anytime"
+                      "You can switch between workspaces anytime",
                     )
                   }}
                 </li>

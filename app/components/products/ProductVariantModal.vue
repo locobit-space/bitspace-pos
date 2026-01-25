@@ -19,7 +19,7 @@ const emit = defineEmits<{
       modifiers: ProductModifier[];
       notes: string;
       quantity: number;
-    }
+    },
   ];
   cancel: [];
 }>();
@@ -38,7 +38,7 @@ const quantity = ref(1);
 
 // Computed
 const hasVariants = computed(
-  () => props.product?.hasVariants && props.product?.variants?.length
+  () => props.product?.hasVariants && props.product?.variants?.length,
 );
 const hasModifiers = computed(() => props.product?.modifierGroups?.length);
 
@@ -106,14 +106,14 @@ const selectVariant = (variant: ProductVariant) => {
 
 const toggleModifier = (
   modifier: ProductModifier,
-  group: (typeof modifierGroups.value)[0]
+  group: (typeof modifierGroups.value)[0],
 ) => {
   const index = selectedModifiers.value.findIndex((m) => m.id === modifier.id);
 
   if (group.type === "single") {
     // Remove other modifiers from this group
     selectedModifiers.value = selectedModifiers.value.filter(
-      (m) => !group.modifiers.find((gm) => gm.id === m.id)
+      (m) => !group.modifiers.find((gm) => gm.id === m.id),
     );
     if (index === -1) {
       selectedModifiers.value.push(modifier);
@@ -123,7 +123,7 @@ const toggleModifier = (
     if (index === -1) {
       // Check max selection
       const groupCount = selectedModifiers.value.filter((m) =>
-        group.modifiers.find((gm) => gm.id === m.id)
+        group.modifiers.find((gm) => gm.id === m.id),
       ).length;
       if (!group.maxSelect || groupCount < group.maxSelect) {
         selectedModifiers.value.push(modifier);
@@ -188,12 +188,15 @@ const handleCancel = () => {
                 :src="product.image"
                 :alt="product.name"
                 class="w-full h-full object-cover"
-              >
+              />
               <div
                 v-else
                 class="w-full h-full flex items-center justify-center text-3xl"
               >
-                🍽️
+                <UIcon
+                  name="solar:chef-hat-linear"
+                  class="w-12 h-12 text-gray-400"
+                />
               </div>
             </div>
 
@@ -221,7 +224,7 @@ const handleCancel = () => {
             <UButton
               color="neutral"
               variant="ghost"
-              icon="i-heroicons-x-mark"
+              icon="solar:close-circle-linear"
               size="sm"
               @click="handleCancel"
             />
@@ -235,7 +238,7 @@ const handleCancel = () => {
             <h4
               class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2"
             >
-              <span class="text-lg">📏</span>
+              <UIcon name="solar:ruler-linear" class="w-5 h-5" />
               {{ t("products.selectSize", "Select Size") }}
               <span class="text-red-500">*</span>
             </h4>
@@ -285,9 +288,14 @@ const handleCancel = () => {
               <h4
                 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2"
               >
-                <span class="text-lg">{{
-                  group.type === "single" ? "🔘" : "☑️"
-                }}</span>
+                <UIcon
+                  :name="
+                    group.type === 'single'
+                      ? 'solar:record-circle-linear'
+                      : 'solar:check-square-linear'
+                  "
+                  class="w-5 h-5"
+                />
                 {{ group.name }}
                 <span v-if="group.required" class="text-red-500">*</span>
                 <span v-if="group.maxSelect" class="text-xs text-gray-400"
@@ -326,13 +334,16 @@ const handleCancel = () => {
             <h4
               class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2"
             >
-              <span class="text-lg">📝</span>
+              <UIcon name="solar:notes-linear" class="w-5 h-5" />
               {{ t("products.specialInstructions", "Special Instructions") }}
             </h4>
             <UTextarea
               v-model="notes"
               :placeholder="
-                t('products.notesPlaceholder', 'E.g., Less ice, no sugar, extra spicy...')
+                t(
+                  'products.notesPlaceholder',
+                  'E.g., Less ice, no sugar, extra spicy...',
+                )
               "
               :rows="2"
               autoresize
@@ -350,7 +361,7 @@ const handleCancel = () => {
                 color="neutral"
                 variant="soft"
                 size="lg"
-                icon="i-heroicons-minus"
+                icon="solar:minus-circle-linear"
                 :disabled="quantity <= 1"
                 class="w-12 h-12"
                 @click="decreaseQuantity"
@@ -362,7 +373,7 @@ const handleCancel = () => {
                 color="primary"
                 variant="soft"
                 size="lg"
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 class="w-12 h-12"
                 @click="increaseQuantity"
               />
@@ -379,7 +390,7 @@ const handleCancel = () => {
             >
               <div class="flex items-center justify-between w-full px-2">
                 <span class="flex items-center gap-2">
-                  <UIcon name="i-heroicons-shopping-cart" class="w-5 h-5" />
+                  <UIcon name="solar:cart-large-linear" class="w-5 h-5" />
                   {{ t("products.addToCart", "Add to Cart") }}
                 </span>
                 <span>{{ formatPrice(finalPrice) }}</span>

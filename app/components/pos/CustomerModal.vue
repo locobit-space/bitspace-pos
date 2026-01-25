@@ -43,7 +43,9 @@ const filteredCustomers = computed(() => {
       const name = customer.name?.toLowerCase() || "";
       const phone = customer.phone?.toLowerCase() || "";
       const email = customer.email?.toLowerCase() || "";
-      return name.includes(query) || phone.includes(query) || email.includes(query);
+      return (
+        name.includes(query) || phone.includes(query) || email.includes(query)
+      );
     })
     .slice(0, 8);
 });
@@ -55,7 +57,7 @@ watch(
     if (isOpen) {
       searchQuery.value = "";
     }
-  }
+  },
 );
 
 // Handle customer selection
@@ -95,7 +97,7 @@ const getInitials = (name?: string) => {
             Customer Lookup
           </h3>
           <UButton
-            icon="i-heroicons-x-mark"
+            icon="solar:close-circle-linear"
             variant="ghost"
             color="gray"
             @click="handleClose"
@@ -105,7 +107,7 @@ const getInitials = (name?: string) => {
         <!-- Search Input -->
         <UInput
           v-model="searchQuery"
-          icon="i-heroicons-magnifying-glass"
+          icon="solar:magnifer-linear"
           placeholder="Search customers..."
           size="lg"
           autofocus
@@ -159,18 +161,13 @@ const getInitials = (name?: string) => {
         <div
           class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex gap-3"
         >
-          <UButton
-            variant="outline"
-            color="gray"
-            block
-            @click="handleClose"
-          >
+          <UButton variant="outline" color="gray" block @click="handleClose">
             Cancel
           </UButton>
           <UButton
             color="primary"
             block
-            icon="i-heroicons-plus"
+            icon="solar:add-circle-linear"
             @click="handleCreateNew"
           >
             New Customer

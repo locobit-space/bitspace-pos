@@ -29,7 +29,7 @@ onMounted(async () => {
 
 // Loading state
 const isLoading = computed(
-  () => inventory.isLoading.value || !inventory.isInitialized.value
+  () => inventory.isLoading.value || !inventory.isInitialized.value,
 );
 
 // Branches
@@ -49,8 +49,8 @@ const endDate = computed(() => {
 // Cost report data
 const costReport = computed(() =>
   inventory.getCostReport(
-    selectedBranch.value !== "all" ? selectedBranch.value : undefined
-  )
+    selectedBranch.value !== "all" ? selectedBranch.value : undefined,
+  ),
 );
 
 // Stock movement data
@@ -58,8 +58,8 @@ const stockInOut = computed(() =>
   inventory.getStockInOutSummary(
     startDate.value,
     endDate.value,
-    selectedBranch.value !== "all" ? selectedBranch.value : undefined
-  )
+    selectedBranch.value !== "all" ? selectedBranch.value : undefined,
+  ),
 );
 
 // Handlers
@@ -89,7 +89,7 @@ const formatNumber = (num: number): string => {
       :description="
         t(
           'reports.inventoryReportsDesc',
-          'Analyze inventory costs and stock movements'
+          'Analyze inventory costs and stock movements',
         )
       "
     >
@@ -97,7 +97,7 @@ const formatNumber = (num: number): string => {
         <UButton
           color="gray"
           variant="outline"
-          icon="i-heroicons-arrow-left"
+          icon="solar:alt-arrow-left-linear"
           :label="t('common.back', 'Back')"
           @click="navigateTo('/reports')"
         />
@@ -140,7 +140,10 @@ const formatNumber = (num: number): string => {
           "
           @click="activeTab = 'cost'"
         >
-          <UIcon name="i-heroicons-currency-dollar" class="w-4 h-4 mr-1" />
+          <UIcon
+            name="currency-dollar -> solar:dollar-minimalistic-linear"
+            class="w-4 h-4 mr-1"
+          />
           {{ t("reports.costReport", "Cost Report") }}
         </button>
         <button
@@ -152,7 +155,7 @@ const formatNumber = (num: number): string => {
           "
           @click="activeTab = 'movements'"
         >
-          <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-1" />
+          <UIcon name="solar:refresh-circle-linear" class="w-4 h-4 mr-1" />
           {{ t("reports.stockMovements", "Stock Movements") }}
         </button>
       </div>
@@ -163,33 +166,33 @@ const formatNumber = (num: number): string => {
       <!-- Summary Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
         <CommonStatCard
-          icon="i-heroicons-currency-dollar"
+          icon="currency-dollar -> solar:dollar-minimalistic-linear"
           icon-color="blue"
           :label="t('reports.totalInventoryValue', 'Total Inventory Value')"
           :value="formatCurrency(costReport.totalInventoryValue)"
           :loading="isLoading"
         />
         <CommonStatCard
-          icon="i-heroicons-receipt-percent"
+          icon="solar:bill-list-linear"
           icon-color="green"
           :label="t('reports.totalCostValue', 'Total Cost Value')"
           :value="formatCurrency(costReport.totalCostValue)"
           :loading="isLoading"
         />
         <CommonStatCard
-          icon="i-heroicons-chart-bar"
+          icon="solar:chart-2-linear"
           icon-color="purple"
           :label="t('reports.estimatedMargin', 'Estimated Margin')"
           :value="`${costReport.estimatedMargin.toFixed(1)}%`"
           :loading="isLoading"
         />
         <CommonStatCard
-          icon="i-heroicons-calculator"
+          icon="solar:calculator-minimalistic-linear"
           icon-color="yellow"
           :label="t('reports.potentialProfit', 'Potential Profit')"
           :value="
             formatCurrency(
-              costReport.totalInventoryValue - costReport.totalCostValue
+              costReport.totalInventoryValue - costReport.totalCostValue,
             )
           "
           :loading="isLoading"
@@ -310,25 +313,25 @@ const formatNumber = (num: number): string => {
       <!-- Summary Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4">
         <CommonStatCard
-          icon="i-heroicons-arrow-down-tray"
+          icon="solar:download-minimalistic-linear"
           icon-color="green"
           :label="t('reports.totalStockIn', 'Total Stock In')"
           :value="formatNumber(stockInOut.totalIn)"
           :loading="isLoading"
         />
         <CommonStatCard
-          icon="i-heroicons-arrow-up-tray"
+          icon="solar:upload-minimalistic-linear"
           icon-color="red"
           :label="t('reports.totalStockOut', 'Total Stock Out')"
           :value="formatNumber(stockInOut.totalOut)"
           :loading="isLoading"
         />
         <CommonStatCard
-          icon="i-heroicons-plus-minus"
+          icon="solar:tuning-square-2-linear"
           :icon-color="stockInOut.netChange >= 0 ? 'green' : 'red'"
           :label="t('reports.netChange', 'Net Change')"
           :value="`${stockInOut.netChange >= 0 ? '+' : ''}${formatNumber(
-            stockInOut.netChange
+            stockInOut.netChange,
           )}`"
           :loading="isLoading"
         />
@@ -439,8 +442,8 @@ const formatNumber = (num: number): string => {
                   mover.netChange > 0
                     ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400'
                     : mover.netChange < 0
-                    ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                 "
               >
                 {{ mover.netChange > 0 ? "+" : "" }}{{ mover.netChange }}

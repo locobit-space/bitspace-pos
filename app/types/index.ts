@@ -381,7 +381,10 @@ export interface MembershipCheckIn {
   customerId: string;
   checkInTime: string;
   checkOutTime?: string;
+  duration?: number; // minutes
   notes?: string;
+  customerName?: string;
+  staffId?: string;
 }
 
 // ============================================
@@ -1449,6 +1452,7 @@ export interface LoyaltyMember {
   nostrPubkey: string;
   // Profile info (can be fetched from Nostr profile or manually entered)
   name?: string;
+  cardUid?: string; // NFC/RFID Card UID
   email?: string;
   phone?: string;
   lud16?: string; // Lightning address
@@ -1756,6 +1760,7 @@ export interface Product {
   taxRate?: number;
   // Public menu visibility
   isPublic?: boolean; // If true, visible on customer menu (unencrypted)
+  synced?: boolean;
 }
 
 export interface Category {

@@ -19,7 +19,7 @@ const props = withDefaults(
     modelValue: "month",
     showCustom: true,
     compact: false,
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -143,7 +143,7 @@ watch(
       emit("update:dateRange", calculateDateRange(newVal));
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 
@@ -180,7 +180,7 @@ watch(
         ]"
         @click="selectPreset('custom')"
       >
-        <UIcon name="i-heroicons-calendar" class="w-4 h-4" />
+        <UIcon name="solar:calendar-linear" class="w-4 h-4" />
         {{ t("reports.dateRange.custom", "Custom") }}
       </button>
     </div>
@@ -205,7 +205,7 @@ watch(
       <UButton
         color="primary"
         size="sm"
-        icon="i-heroicons-check"
+        icon="solar:check-circle-linear"
         @click="applyCustomRange"
       >
         {{ t("common.apply", "Apply") }}

@@ -21,14 +21,15 @@ const usageHistory = computed(() => {
 
 // Get usage statistics
 const stats = computed(() => {
-  const promoStats = promotionsStore.promotionUsageStats.value[props.promotion.id];
+  const promoStats =
+    promotionsStore.promotionUsageStats.value[props.promotion.id];
   return promoStats || { count: 0, totalDiscount: 0, lastUsed: "" };
 });
 
 // Get orders that used this promotion
 const ordersWithPromotion = computed(() => {
   return ordersStore.orders.value.filter((order) =>
-    order.appliedPromotions?.some((p) => p.promotionId === props.promotion.id)
+    order.appliedPromotions?.some((p) => p.promotionId === props.promotion.id),
   );
 });
 
@@ -47,7 +48,9 @@ function formatDateTime(dateString: string): string {
 // Calculate usage percentage if limit exists
 const usagePercentage = computed(() => {
   if (!props.promotion.maxUsesTotal) return null;
-  return Math.round((props.promotion.usageCount / props.promotion.maxUsesTotal) * 100);
+  return Math.round(
+    (props.promotion.usageCount / props.promotion.maxUsesTotal) * 100,
+  );
 });
 </script>
 
@@ -60,7 +63,7 @@ const usagePercentage = computed(() => {
         class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800"
       >
         <div class="flex items-center justify-between mb-2">
-          <span class="text-2xl">🎯</span>
+          <UIcon name="solar:target-linear" class="text-2xl" />
           <span class="text-xs text-blue-600 dark:text-blue-400 font-medium">
             {{
               usagePercentage !== null
@@ -85,7 +88,7 @@ const usagePercentage = computed(() => {
         class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4 border border-green-200 dark:border-green-800"
       >
         <div class="flex items-center justify-between mb-2">
-          <span class="text-2xl">💰</span>
+          <UIcon name="solar:wad-of-money-linear" class="text-2xl" />
         </div>
         <p class="text-2xl font-bold text-green-900 dark:text-green-100">
           {{ currency.format(stats.totalDiscount, "LAK") }}
@@ -100,7 +103,7 @@ const usagePercentage = computed(() => {
         class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800"
       >
         <div class="flex items-center justify-between mb-2">
-          <span class="text-2xl">🕒</span>
+          <UIcon name="solar:clock-circle-linear" class="text-2xl" />
         </div>
         <p class="text-lg font-bold text-purple-900 dark:text-purple-100">
           {{
@@ -123,8 +126,13 @@ const usagePercentage = computed(() => {
         class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800"
       >
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-          📋 {{ t("promotions.usageHistory", "Usage History") }}
-          ({{ usageHistory.length }})
+          <UIcon
+            name="solar:clipboard-list-linear"
+            class="w-4 h-4 inline mr-1"
+          />
+          {{ t("promotions.usageHistory", "Usage History") }} ({{
+            usageHistory.length
+          }})
         </h3>
       </div>
 
@@ -176,13 +184,18 @@ const usagePercentage = computed(() => {
                 class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
               >
                 <div class="flex flex-col items-center gap-2">
-                  <span class="text-3xl opacity-50">📊</span>
-                  <p>{{ t("promotions.noUsageYet", "No usage history yet") }}</p>
+                  <UIcon
+                    name="solar:chart-linear"
+                    class="text-3xl opacity-50"
+                  />
+                  <p>
+                    {{ t("promotions.noUsageYet", "No usage history yet") }}
+                  </p>
                   <p class="text-xs">
                     {{
                       t(
                         "promotions.usageWillAppear",
-                        "Usage will appear here when customers use this promotion"
+                        "Usage will appear here when customers use this promotion",
                       )
                     }}
                   </p>
@@ -251,7 +264,7 @@ const usagePercentage = computed(() => {
                   size="xs"
                   variant="ghost"
                   color="gray"
-                  icon="i-heroicons-eye"
+                  icon="solar:eye-linear"
                 >
                   {{ t("common.view", "View") }}
                 </UButton>
@@ -270,12 +283,17 @@ const usagePercentage = computed(() => {
         class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800"
       >
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-          🛒 {{ t("promotions.ordersWithPromotion", "Orders Using This Promotion") }}
+          <UIcon name="solar:cart-large-linear" class="w-4 h-4 inline mr-1" />
+          {{
+            t("promotions.ordersWithPromotion", "Orders Using This Promotion")
+          }}
           ({{ ordersWithPromotion.length }})
         </h3>
       </div>
 
-      <div class="divide-y divide-gray-200 dark:divide-gray-800 max-h-80 overflow-y-auto">
+      <div
+        class="divide-y divide-gray-200 dark:divide-gray-800 max-h-80 overflow-y-auto"
+      >
         <div
           v-if="ordersWithPromotion.length === 0"
           class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
@@ -319,9 +337,9 @@ const usagePercentage = computed(() => {
               -{{
                 currency.format(
                   order.appliedPromotions?.find(
-                    (p) => p.promotionId === promotion.id
+                    (p) => p.promotionId === promotion.id,
                   )?.discountAmount || 0,
-                  "LAK"
+                  "LAK",
                 )
               }}
             </p>

@@ -109,16 +109,18 @@ const copyAddress = async () => {
     await navigator.clipboard.writeText(lightningAddress.value);
     toast.add({
       title: t("common.support.copied", "Copied!"),
-      description:
-        t("common.support.addressCopied", "Lightning address copied to clipboard"),
-      icon: "i-heroicons-clipboard-document-check",
+      description: t(
+        "common.support.addressCopied",
+        "Lightning address copied to clipboard",
+      ),
+      icon: "solar:clipboard-check-linear",
       color: "green",
     });
   } catch {
     toast.add({
       title: t("common.error", "Error"),
       description: t("common.support.copyFailed", "Failed to copy"),
-      icon: "i-heroicons-exclamation-circle",
+      icon: "solar:danger-circle-linear",
       color: "red",
     });
   }
@@ -167,9 +169,11 @@ async function postDonationToNostr() {
     if (event) {
       toast.add({
         title: t("common.support.postedToNostr", "Posted to Nostr!"),
-        description:
-          t("common.support.thankYouShared", "Your support message was shared"),
-        icon: "i-heroicons-megaphone",
+        description: t(
+          "common.support.thankYouShared",
+          "Your support message was shared",
+        ),
+        icon: "solar:megaphone-linear",
         color: "green",
       });
     }
@@ -246,7 +250,7 @@ async function fetchInvoiceFromLightningAddress(amountSats: number) {
       throw new Error(
         `Amount must be between ${metaResponse.minSendable / 1000} and ${
           metaResponse.maxSendable / 1000
-        } sats`
+        } sats`,
       );
     }
 
@@ -266,7 +270,7 @@ async function fetchInvoiceFromLightningAddress(amountSats: number) {
     dynamicInvoice.value = invoiceResponse.pr;
     console.log(
       "[Support] Generated invoice:",
-      invoiceResponse.pr.slice(0, 50) + "..."
+      invoiceResponse.pr.slice(0, 50) + "...",
     );
   } catch (e) {
     console.error("[Support] Failed to generate invoice:", e);
@@ -327,7 +331,11 @@ watch(open, (isOpen) => {
 </script>
 
 <template>
-  <UModal v-model:open="open">
+  <UModal
+    v-model:open="open"
+    title="Support"
+    description="Support the developer"
+  >
     <template #content>
       <UCard>
         <template #header>
@@ -366,7 +374,7 @@ watch(open, (isOpen) => {
           <!-- Loading -->
           <div v-if="isLoading" class="flex items-center justify-center py-4">
             <Icon
-              name="i-heroicons-arrow-path"
+              name="solar:restart-linear"
               class="animate-spin text-2xl text-amber-400"
             />
           </div>
@@ -376,7 +384,10 @@ watch(open, (isOpen) => {
             <div class="text-center">
               <p class="text-gray-600 dark:text-gray-400 text-sm">
                 {{
-                  t("common.support.message", "Thank you for using bnos.space! Your support helps us build better software.")
+                  t(
+                    "common.support.message",
+                    "Thank you for using bnos.space! Your support helps us build better software.",
+                  )
                 }}
               </p>
             </div>
@@ -443,7 +454,7 @@ watch(open, (isOpen) => {
                   >
                     <div class="text-center">
                       <Icon
-                        name="i-heroicons-arrow-path"
+                        name="solar:restart-linear"
                         class="animate-spin text-2xl text-amber-500"
                       />
                       <p class="text-xs text-gray-500 mt-1">
@@ -459,7 +470,7 @@ watch(open, (isOpen) => {
                   v-if="dynamicInvoice && selectedAmount"
                   class="flex items-center gap-1 text-green-600 text-xs"
                 >
-                  <Icon name="i-heroicons-check-circle" size="14" />
+                  <Icon name="solar:check-circle-linear" size="14" />
                   <span
                     >BOLT11 Invoice ({{
                       selectedAmount.toLocaleString()
@@ -486,7 +497,7 @@ watch(open, (isOpen) => {
                   <UButton
                     color="amber"
                     variant="soft"
-                    icon="i-heroicons-clipboard-document"
+                    icon="solar:clipboard-text-linear"
                     size="sm"
                     @click="copyLightningUri"
                   >
@@ -527,7 +538,7 @@ watch(open, (isOpen) => {
                     color="gray"
                     variant="ghost"
                     size="sm"
-                    icon="i-heroicons-clipboard-document"
+                    icon="solar:clipboard-text-linear"
                     @click="copyAddress"
                   />
                 </div>
@@ -536,12 +547,15 @@ watch(open, (isOpen) => {
               <!-- No Address Configured -->
               <div v-else class="text-center py-4">
                 <Icon
-                  name="i-heroicons-exclamation-circle"
+                  name="solar:danger-circle-linear"
                   class="text-4xl text-gray-400 mb-2"
                 />
                 <p class="text-sm text-gray-500">
                   {{
-                    t("common.support.noAddressConfigured", "Lightning address not configured")
+                    t(
+                      "common.support.noAddressConfigured",
+                      "Lightning address not configured",
+                    )
                   }}
                 </p>
               </div>
@@ -561,7 +575,10 @@ watch(open, (isOpen) => {
                 </div>
                 <p class="text-sm text-gray-500 mt-3">
                   {{
-                    t("common.support.bankDesc", "Scan with BCEL One or any Lao banking app")
+                    t(
+                      "common.support.bankDesc",
+                      "Scan with BCEL One or any Lao banking app",
+                    )
                   }}
                 </p>
               </div>
@@ -591,7 +608,10 @@ watch(open, (isOpen) => {
                 <UInput
                   v-model="donateMessage"
                   :placeholder="
-                    t('common.support.messagePlaceholder', 'Add a message (optional)')
+                    t(
+                      'common.support.messagePlaceholder',
+                      'Add a message (optional)',
+                    )
                   "
                   size="sm"
                   class="w-full"

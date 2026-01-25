@@ -24,7 +24,7 @@
             :src="userProfile.avatar || '/default-avatar.png'"
             :alt="userProfile.name"
             class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-primary-500 object-cover"
-          >
+          />
           <div
             class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-gray-900"
           />
@@ -42,7 +42,7 @@
             v-if="userProfile.nip05"
             class="text-primary-400 text-sm flex items-center gap-1 mt-1"
           >
-            <UIcon name="i-heroicons-check-badge-solid" />
+            <UIcon name="solar:verified-check-bold" />
             {{ userProfile.nip05 }}
           </p>
         </div>
@@ -92,14 +92,17 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ $t(item.label, item.label.split('.').pop() || '') }}
+              {{ $t(item.label, item.label.split(".").pop() || "") }}
             </h3>
-            <p v-if="$t(item.label.replace('.title', '.subtitle'))" class="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {{ $t(item.label.replace('.title', '.subtitle')) }}
+            <p
+              v-if="$t(item.label.replace('.title', '.subtitle'))"
+              class="text-sm text-gray-500 dark:text-gray-400 truncate"
+            >
+              {{ $t(item.label.replace(".title", ".subtitle")) }}
             </p>
           </div>
           <UIcon
-            name="i-heroicons-chevron-right"
+            name="solar:alt-arrow-right-linear"
             class="w-5 h-5 text-gray-400 shrink-0"
           />
         </div>
@@ -132,14 +135,23 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t(item.label, item.label.split('.').pop() || '') }}
+                {{ $t(item.label, item.label.split(".").pop() || "") }}
               </h3>
-              <p v-if="$t(item.label.replace('.title', '.subtitle')) || $t(item.label.replace('.title', '.description'))" class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t(item.label.replace('.title', '.subtitle')) || $t(item.label.replace('.title', '.description')) }}
+              <p
+                v-if="
+                  $t(item.label.replace('.title', '.subtitle')) ||
+                  $t(item.label.replace('.title', '.description'))
+                "
+                class="text-sm text-gray-500 dark:text-gray-400 truncate"
+              >
+                {{
+                  $t(item.label.replace(".title", ".subtitle")) ||
+                  $t(item.label.replace(".title", ".description"))
+                }}
               </p>
             </div>
             <UIcon
-              name="i-heroicons-chevron-right"
+              name="solar:alt-arrow-right-linear"
               class="w-5 h-5 text-gray-400 shrink-0"
             />
           </div>
@@ -173,14 +185,17 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white">
-                {{ $t(item.label, item.label.split('.').pop() || '') }}
+                {{ $t(item.label, item.label.split(".").pop() || "") }}
               </h3>
-              <p v-if="$t(item.label.replace('.title', '.subtitle'))" class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {{ $t(item.label.replace('.title', '.subtitle')) }}
+              <p
+                v-if="$t(item.label.replace('.title', '.subtitle'))"
+                class="text-sm text-gray-500 dark:text-gray-400 truncate"
+              >
+                {{ $t(item.label.replace(".title", ".subtitle")) }}
               </p>
             </div>
             <UIcon
-              name="i-heroicons-chevron-right"
+              name="solar:alt-arrow-right-linear"
               class="w-5 h-5 text-gray-400 shrink-0"
             />
           </div>
@@ -196,7 +211,7 @@ import {
   getBusinessSettings,
   getSystemSettings,
   settingsColorClasses,
-} from '~/config/settings-navigation';
+} from "~/config/settings-navigation";
 
 definePageMeta({
   layout: "default",

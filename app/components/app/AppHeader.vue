@@ -14,7 +14,10 @@
       </button>
 
       <!-- Logo -->
-      <NuxtLinkLocale to="/" class="flex md:w-12 items-center justify-center gap-2">
+      <NuxtLinkLocale
+        to="/"
+        class="flex md:w-12 items-center justify-center gap-2"
+      >
         <div
           class="w-8 h-8 rounded-lg bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow"
         >
@@ -23,7 +26,10 @@
       </NuxtLinkLocale>
 
       <!-- Shop Switcher (visible after setup) -->
-      <div v-if="showHeaderFeatures" class="hidden md:block ml-2 pl-2 dark:border-gray-700">
+      <div
+        v-if="showHeaderFeatures"
+        class="hidden md:block ml-2 pl-2 dark:border-gray-700"
+      >
         <ShopSwitcher />
       </div>
     </div>
@@ -151,8 +157,8 @@
                   userProvider === "nostr"
                     ? "⚡ Nostr"
                     : userProvider === "password"
-                    ? "🔑 Password"
-                    : "🔢 PIN"
+                      ? "🔑 Password"
+                      : "🔢 PIN"
                 }}
               </span>
             </div>
@@ -502,7 +508,7 @@ const themeColors = [
   { value: "rose", label: "Rose", class: "bg-rose-500" },
 ];
 
-const selectedColor = ref(appConfig.ui?.colors?.primary || "purple");
+const selectedColor = ref(appConfig.ui?.colors?.primary || "orange");
 
 const setThemeColor = (color: string) => {
   selectedColor.value = color;

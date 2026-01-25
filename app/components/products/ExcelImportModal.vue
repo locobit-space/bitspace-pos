@@ -7,13 +7,13 @@
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="text-xl font-bold flex items-center gap-2">
-          <span>📊</span>
+          <UIcon name="solar:chart-linear" class="w-6 h-6" />
           {{ $t("products.import.title", "Import Products") }}
         </h3>
         <UButton
           color="gray"
           variant="ghost"
-          icon="i-heroicons-x-mark"
+          icon="solar:close-circle-linear"
           @click="isOpen = false"
         />
       </div>
@@ -28,7 +28,7 @@
           <div
             class="p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-300"
           >
-            <UIcon name="i-heroicons-document-arrow-down" class="w-6 h-6" />
+            <UIcon name="solar:file-download-linear" class="w-6 h-6" />
           </div>
           <div>
             <h4 class="font-semibold text-blue-900 dark:text-blue-100">
@@ -36,7 +36,10 @@
             </h4>
             <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
               {{
-                $t("products.import.step1Desc", "Use our pre-formatted Excel template to avoid errors.")
+                $t(
+                  "products.import.step1Desc",
+                  "Use our pre-formatted Excel template to avoid errors.",
+                )
               }}
             </p>
             <UButton
@@ -45,9 +48,12 @@
               color="blue"
               variant="soft"
               :label="
-                $t('products.import.downloadTemplate', 'Download Excel Template')
+                $t(
+                  'products.import.downloadTemplate',
+                  'Download Excel Template',
+                )
               "
-              icon="i-heroicons-arrow-down-tray"
+              icon="solar:download-linear"
               @click="downloadTemplate"
             />
           </div>
@@ -71,10 +77,7 @@
           <div
             class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mx-auto flex items-center justify-center mb-4"
           >
-            <UIcon
-              name="i-heroicons-arrow-up-tray"
-              class="w-8 h-8 text-gray-400"
-            />
+            <UIcon name="solar:upload-linear" class="w-8 h-8 text-gray-400" />
           </div>
           <h4 class="font-semibold text-lg text-gray-900 dark:text-white">
             {{ $t("products.import.uploadTitle", "Click or Drop File Here") }}
@@ -156,7 +159,9 @@
           color="primary"
           :loading="importing"
           :label="
-            $t('products.import.confirm', 'Import ') + previewData.length + ' Products'
+            $t('products.import.confirm', 'Import ') +
+            previewData.length +
+            ' Products'
           "
           @click="confirmImport"
         />
@@ -193,7 +198,10 @@ const reset = () => {
 const processedFile = async (file: File) => {
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data);
-  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return;
+  const worksheet = workbook.Sheets[sheetName];
+  if (!worksheet) return;
   const json = XLSX.utils.sheet_to_json(worksheet);
 
   if (json.length > 0) {

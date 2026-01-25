@@ -1,0 +1,51 @@
+{
+  "marketplace": {
+    "lud16": "ທີ່ຢູ່ Lightning",
+    "lud16Hint": "ຮັບການຊຳລະ Lightning ໂດຍກົງ",
+    "nip05": "ຢືນຢັນ Nostr",
+    "nip05Hint": "ຢືນຢັນຕົວຕົນຮ້ານຂອງທ່ານ",
+    "description": "ຄຳອະທິບາຍ",
+    "descriptionPlaceholder": "ບອກລູກຄ້າວ່າຮ້ານຂອງທ່ານພິເສດແນວໃດ...",
+    "services": "ບໍລິການທີ່ໃຫ້",
+    "payments": "ວິທີການຊຳລະ",
+    "lightning": "Lightning Network",
+    "lightningDesc": "ຊຳລະ Bitcoin ໄວ ແລະ ຖືກ",
+    "bitcoin": "Bitcoin On-chain",
+    "bitcoinDesc": "ຊຳລະ Bitcoin ແບບດັ້ງເດີມ",
+    "ready": "ພ້ອມສຳລັບ Marketplace!",
+    "readyDesc": "ຮ້ານຂອງທ່ານຈະຄົ້ນຫາໄດ້ສາທາລະນະ. ລູກຄ້າສາມາດຊອກຫາທ່ານ ແລະ ຊຳລະດ້ວຍ Lightning.",
+    "published": "ເຜີຍແຜ່ແລ້ວ!",
+    "publishedDesc": "ຮ້ານຂອງທ່ານສາມາດຄົ້ນຫາໄດ້ແລ້ວ",
+    "unpublished": "ໂຫມດສ່ວນຕົວ",
+    "unpublishedDesc": "ຮ້ານຂອງທ່ານເປັນສ່ວນຕົວແລ້ວ",
+    "connectionSent": "ສົ່ງຄຳຮ້ອງຂໍແລ້ວ",
+    "reviewSubmitted": "ສົ່ງການທົບທວນແລ້ວ",
+    "setup": {
+      "title": "ກະລຸນາເພີ່ມຂໍ້ມູນ Marketplace",
+      "subtitle": "ຊ່ວຍໃຫ້ລູກຄ້າຊອກຫາຮ້ານຂອງທ່ານໄດ້ງ່າຍຂຶ້ນ",
+      "progress": "ຄວາມສຳເລັດຂອງໂປຣໄຟລ໌",
+      "action": "ເພີ່ມຂໍ້ມູນໃຫ້ຄົບ",
+      "location": "ສະຖານທີ່",
+      "hours": "ເວລາເປີດ-ປິດ",
+      "services": "ບໍລິການ",
+      "description": "ຄຳອະທິບາຍ",
+      "lightning": "ທີ່ຢູ່ Lightning",
+      "phone": "ເບີໂທ"
+    },
+    "location": {
+      "title": "ສະຖານທີ່",
+      "address": "ທີ່ຢູ່",
+      "city": "ເມືອງ",
+      "country": "ປະເທດ",
+      "lat": "ລາຕິຈູດ",
+      "lng": "ລອງຈິຈູດ",
+      "detect": "ກວດຫາຕຳແໜ່ງປັດຈຸບັນ"
+    },
+    "hours": {
+      "title": "ເວລາເປີດ-ປິດ",
+      "timezone": "ເຂດເວລາ",
+      "applyAll": "ໃຊ້ເວລາດຽວກັນສຳລັບທຸກມື້",
+      "closed": "ປິດ"
+    }
+  }
+}

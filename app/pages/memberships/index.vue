@@ -2,6 +2,7 @@
 <!-- 💳 Membership Management - User-Friendly Check-in & Management -->
 <script setup lang="ts">
 import type { Membership, MembershipPlan } from "~/types";
+import { type ECOption, useEcharts } from "~/hooks";
 
 definePageMeta({
   layout: "default",
@@ -21,10 +22,12 @@ const isLaoLocale = computed(() => locale.value.startsWith("lo"));
 const searchQuery = ref("");
 const showAddModal = ref(false);
 const showCheckInModal = ref(false);
+const showCheckInStatusModal = ref(false);
+const checkInStatusData = ref<any>(null); // { member: Membership, status: 'granted' | 'denied', message: string }
 const showPaymentModal = ref(false);
 const showRenewModal = ref(false);
 const selectedMembership = ref<Membership | null>(null);
-const activeTab = ref<"members" | "plans">("members");
+const activeTab = ref<"dashboard" | "members" | "plans">("dashboard");
 const isProcessingPayment = ref(false);
 const pendingMembershipData = ref<{
   customer: any;
@@ -73,14 +76,14 @@ const customers = computed(() =>
   customersStore.customers.value.map((c) => ({
     value: c.id,
     label: c.name,
-  }))
+  })),
 );
 
 const planOptions = computed(() =>
   membershipsStore.plans.value.map((p) => ({
     value: p.id,
     label: isLaoLocale.value && p.nameLao ? p.nameLao : p.name,
-  }))
+  })),
 );
 
 // Status helpers
@@ -107,27 +110,238 @@ function formatDate(date: string): string {
   return new Date(date).toLocaleDateString();
 }
 
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === "dark");
+
+// --- ECharts Layout ---
+const occupancyChartRef = ref<ECOption>();
+const trendsChartRef = ref<ECOption>();
+const { domRef: occupancyChartDom } = useEcharts(occupancyChartRef);
+const { domRef: trendsChartDom } = useEcharts(trendsChartRef);
+
+function updateCharts() {
+  const textColor = isDark.value ? "#9ca3af" : "#6b7280";
+
+  // 1. Occupancy Gauge
+  occupancyChartRef.value = {
+    series: [
+      {
+        type: "gauge",
+        startAngle: 180,
+        endAngle: 0,
+        min: 0,
+        max: 100, // Capacity
+        splitNumber: 5,
+        itemStyle: {
+          color: "#F87171",
+          shadowColor: "rgba(0,138,255,0.45)",
+          shadowBlur: 10,
+          shadowOffsetX: 2,
+          shadowOffsetY: 2,
+        },
+        progress: {
+          show: true,
+          roundCap: true,
+          width: 15,
+        },
+        pointer: {
+          icon: "path://M2090.36389,615.30999 L2090.36389,615.30999 C2091.48372,615.30999 2092.40383,616.194028 2092.44859,617.312956 L2096.90698,728.755929 C2097.05155,732.369577 2094.2393,735.416212 2090.62566,735.56078 C2090.53845,735.564269 2090.45117,735.566014 2090.36389,735.566014 L2090.36389,735.566014 C2086.74736,735.566014 2083.81557,732.63423 2083.81557,729.017696 C2083.81557,728.930412 2083.81732,728.84314 2083.82081,728.755929 L2088.2792,617.312956 C2088.32396,616.194028 2089.24407,615.30999 2090.36389,615.30999 Z",
+          length: "75%",
+          width: 10,
+          offsetCenter: [0, "5%"],
+        },
+        axisLine: {
+          roundCap: true,
+          lineStyle: {
+            width: 15,
+          },
+        },
+        axisTick: {
+          splitNumber: 2,
+          lineStyle: {
+            width: 2,
+            color: "#999",
+          },
+        },
+        splitLine: {
+          length: 20,
+          lineStyle: {
+            width: 3,
+            color: "#999",
+          },
+        },
+        axisLabel: {
+          distance: 25,
+          color: textColor,
+          fontSize: 14,
+        },
+        title: {
+          show: true,
+        },
+        detail: {
+          backgroundColor: "#fff",
+          borderColor: "#999",
+          borderWidth: 2,
+          width: "60%",
+          lineHeight: 40,
+          height: 40,
+          borderRadius: 8,
+          offsetCenter: [0, "35%"],
+          valueAnimation: true,
+          formatter: function (value: number) {
+            return "{value|" + value + "} Active";
+          },
+          rich: {
+            value: {
+              fontSize: 30,
+              fontWeight: "bolder",
+              color: "#777",
+            },
+          },
+        },
+        data: [
+          {
+            value: membershipsStore.checkIns.value.filter(
+              (c) => !c.checkOutTime,
+            ).length,
+            name: "Occupancy",
+          },
+        ],
+      },
+    ],
+  };
+
+  // 2. Trends Chart (Mock Data for demo - could be real computed)
+  trendsChartRef.value = {
+    tooltip: { trigger: "axis" },
+    grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
+    xAxis: {
+      type: "category",
+      data: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      axisLabel: { color: textColor },
+    },
+    yAxis: { type: "value", axisLabel: { color: textColor } },
+    series: [
+      {
+        data: [12, 18, 15, 25, 30, 45, 20],
+        type: "bar",
+        showBackground: true,
+        backgroundStyle: {
+          color: "rgba(180, 180, 180, 0.2)",
+        },
+        itemStyle: { color: "#10B981", borderRadius: [5, 5, 0, 0] },
+      },
+    ],
+  };
+}
+
+// Watchers for Charts
+watch(
+  [
+    () => activeTab.value,
+    () => colorMode.value,
+    () => membershipsStore.checkIns.value,
+  ],
+  () => {
+    if (activeTab.value === "dashboard") {
+      setTimeout(updateCharts, 100);
+    }
+  },
+);
+
+// Audio Feedback
+function playSound(type: "success" | "error") {
+  const AudioContext =
+    window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioContext) return;
+
+  const ctx = new AudioContext();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  if (type === "success") {
+    // Nice high chime
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } else {
+    // Low buzzer
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  }
+}
+
 // Actions
+function getActiveCheckIn(membershipId: string) {
+  const memberCheckIns = membershipsStore.checkIns.value.filter(
+    (c) => c.membershipId === membershipId,
+  );
+  // Sort by checkInTime descending
+  const lastCheckIn = memberCheckIns.sort(
+    (a, b) =>
+      new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime(),
+  )[0];
+
+  // Return if active (no checkout time)
+  return lastCheckIn && !lastCheckIn.checkOutTime ? lastCheckIn : null;
+}
+
 async function handleCheckIn(membership: Membership) {
-  await membershipsStore.checkIn(membership.id);
+  const activeCheckIn = getActiveCheckIn(membership.id);
+
+  if (activeCheckIn) {
+    // Check OUT
+    await membershipsStore.checkOut(activeCheckIn.id);
+    checkInStatusData.value = {
+      member: membership,
+      status: "granted",
+      message: "Checked Out Successfully",
+    };
+  } else {
+    // Check IN
+    await membershipsStore.checkIn(membership.id);
+    checkInStatusData.value = {
+      member: membership,
+      status: "granted",
+      message: "Access Granted",
+    };
+  }
+  showCheckInStatusModal.value = true;
+  setTimeout(() => {
+    showCheckInStatusModal.value = false;
+  }, 3000);
 }
 
 async function handleAddMembership() {
   if (!memberForm.value.customerId || !memberForm.value.planId) {
     toast.add({
       title: t("common.error"),
-      description:
-        t("memberships.selectCustomerAndPlan", "Please select customer and plan"),
+      description: t(
+        "memberships.selectCustomerAndPlan",
+        "Please select customer and plan",
+      ),
       color: "warning",
     });
     return;
   }
 
   const customer = customersStore.customers.value.find(
-    (c) => c.id === memberForm.value.customerId
+    (c) => c.id === memberForm.value.customerId,
   );
   const plan = membershipsStore.plans.value.find(
-    (p) => p.id === memberForm.value.planId
+    (p) => p.id === memberForm.value.planId,
   );
 
   if (!customer || !plan) return;
@@ -147,10 +361,10 @@ async function handleAddMembership() {
 
 async function handleRenew(membership: Membership) {
   const plan = membershipsStore.plans.value.find(
-    (p) => p.id === membership.planId
+    (p) => p.id === membership.planId,
   );
   const customer = customersStore.customers.value.find(
-    (c) => c.id === membership.customerId
+    (c) => c.id === membership.customerId,
   );
 
   if (!plan) {
@@ -218,7 +432,7 @@ async function processPayment(method: "cash" | "lightning" | "bank_transfer") {
       // Create new membership
       const now = new Date();
       const endDate = new Date(
-        now.getTime() + plan.duration * 24 * 60 * 60 * 1000
+        now.getTime() + plan.duration * 24 * 60 * 60 * 1000,
       );
 
       await membershipsStore.addMembership({
@@ -277,6 +491,65 @@ function openCheckIn() {
 async function quickCheckIn() {
   if (!searchQuery.value) return;
 
+  // 1. Try Card UID lookup
+  const membershipByCard = await membershipsStore.getMembershipByCard(
+    searchQuery.value,
+  );
+
+  if (membershipByCard) {
+    if (membershipByCard.status !== "active") {
+      toast.add({ title: "Membership not active", color: "error" });
+      playSound("error");
+      checkInStatusData.value = {
+        member: membershipByCard,
+        status: "denied",
+        message: "Membership Expired/Inactive",
+      };
+      showCheckInStatusModal.value = true;
+      setTimeout(() => {
+        showCheckInStatusModal.value = false;
+      }, 3000);
+      searchQuery.value = "";
+      return;
+    }
+
+    // Check if currently checked in
+    // Sort logic should be reliable if checkInTime is iso string
+    const memberCheckIns = membershipsStore.checkIns.value.filter(
+      (c) => c.membershipId === membershipByCard.id,
+    );
+    const lastCheckIn = memberCheckIns.sort(
+      (a, b) =>
+        new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime(),
+    )[0];
+
+    if (lastCheckIn && !lastCheckIn.checkOutTime) {
+      await membershipsStore.checkOut(lastCheckIn.id);
+      playSound("success");
+      checkInStatusData.value = {
+        member: membershipByCard,
+        status: "granted",
+        message: "Checked Out Successfully",
+      };
+    } else {
+      await membershipsStore.checkIn(membershipByCard.id);
+      playSound("success");
+      checkInStatusData.value = {
+        member: membershipByCard,
+        status: "granted",
+        message: "Access Granted",
+      };
+    }
+    showCheckInStatusModal.value = true;
+    setTimeout(() => {
+      showCheckInStatusModal.value = false;
+    }, 3000);
+    updateCharts();
+    searchQuery.value = "";
+    return;
+  }
+
+  // 2. Existing Name Search Logic
   const results = membershipsStore.searchMemberships(searchQuery.value);
   const firstResult = results[0];
   if (results.length === 1 && firstResult?.status === "active") {
@@ -401,7 +674,10 @@ async function deletePlan(planId: string) {
         </h1>
         <p class="text-gray-500 dark:text-gray-400">
           {{
-            t("memberships.subtitle", "Manage member subscriptions and check-ins")
+            t(
+              "memberships.subtitle",
+              "Manage member subscriptions and check-ins",
+            )
           }}
         </p>
       </div>
@@ -410,7 +686,7 @@ async function deletePlan(planId: string) {
           size="lg"
           color="primary"
           variant="soft"
-          icon="i-heroicons-qr-code"
+          icon="solar:qr-code-linear"
           @click="openCheckIn"
         >
           {{ t("memberships.quickCheckIn", "Quick Check-in") }}
@@ -418,7 +694,7 @@ async function deletePlan(planId: string) {
         <UButton
           size="lg"
           color="primary"
-          icon="i-heroicons-plus"
+          icon="solar:add-circle-linear"
           @click="showAddModal = true"
         >
           {{ t("memberships.addMember", "Add Member") }}
@@ -426,39 +702,16 @@ async function deletePlan(planId: string) {
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <CommonStatCard
-        icon="i-heroicons-check-circle"
-        icon-color="green"
-        :label="t('memberships.active', 'Active')"
-        :value="membershipsStore.activeMemberships.value.length"
-      />
-      <CommonStatCard
-        icon="i-heroicons-clock"
-        icon-color="yellow"
-        :label="t('memberships.expiringSoon', 'Expiring Soon')"
-        :value="membershipsStore.expiringSoon.value.length"
-      />
-      <CommonStatCard
-        icon="i-heroicons-x-circle"
-        icon-color="red"
-        :label="t('memberships.expired', 'Expired')"
-        :value="membershipsStore.expiredMemberships.value.length"
-      />
-      <CommonStatCard
-        icon="i-heroicons-user-group"
-        icon-color="gray"
-        :label="t('memberships.total', 'Total')"
-        :value="membershipsStore.memberships.value.length"
-      />
-    </div>
-
     <!-- Tabs -->
     <div class="border-b border-gray-200 dark:border-gray-700">
       <nav class="flex gap-4">
         <button
           v-for="tab in [
+            {
+              id: 'dashboard',
+              label: t('memberships.dashboard', 'Live Dashboard'),
+              icon: '📊',
+            },
             {
               id: 'members',
               label: t('memberships.members', 'Members'),
@@ -484,13 +737,140 @@ async function deletePlan(planId: string) {
       </nav>
     </div>
 
+    <!-- Dashboard Tab -->
+    <div v-show="activeTab === 'dashboard'" class="space-y-6">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <CommonStatCard
+          icon="solar:check-circle-linear"
+          icon-color="green"
+          :label="t('memberships.active', 'Active')"
+          :value="membershipsStore.activeMemberships.value.length"
+        />
+        <CommonStatCard
+          icon="solar:clock-circle-linear"
+          icon-color="yellow"
+          :label="t('memberships.expiringSoon', 'Expiring Soon')"
+          :value="membershipsStore.expiringSoon.value.length"
+        />
+        <CommonStatCard
+          icon="solar:close-circle-linear"
+          icon-color="red"
+          :label="t('memberships.expired', 'Expired')"
+          :value="membershipsStore.expiredMemberships.value.length"
+        />
+        <CommonStatCard
+          icon="solar:users-group-rounded-linear"
+          icon-color="gray"
+          :label="t('memberships.total', 'Total')"
+          :value="membershipsStore.memberships.value.length"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Occupancy -->
+        <UCard class="col-span-1">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="solar:chart-2-linear"
+                class="w-5 h-5 text-gray-500"
+              />
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                Live Occupancy
+              </h3>
+            </div>
+          </template>
+          <div ref="occupancyChartDom" class="w-full h-64"></div>
+        </UCard>
+
+        <!-- Trends -->
+        <UCard class="col-span-1 lg:col-span-2">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="solar:chart-square-linear"
+                class="w-5 h-5 text-gray-500"
+              />
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                Peak Hours (Last 7 Days)
+              </h3>
+            </div>
+          </template>
+          <div ref="trendsChartDom" class="w-full h-64"></div>
+        </UCard>
+      </div>
+
+      <!-- Recent Activity Feed -->
+      <UCard>
+        <template #header>
+          <div class="flex items-center gap-2">
+            <UIcon
+              name="solar:clock-circle-linear"
+              class="w-5 h-5 text-gray-500"
+            />
+            <h3 class="font-semibold text-gray-900 dark:text-white">
+              Recent Activity
+            </h3>
+          </div>
+        </template>
+        <div class="space-y-2 max-h-80 overflow-y-auto pr-2">
+          <div
+            v-for="checkIn in membershipsStore.checkIns.value
+              .slice(0, 20)
+              .sort(
+                (a, b) =>
+                  new Date(b.checkInTime).getTime() -
+                  new Date(a.checkInTime).getTime(),
+              )"
+            :key="checkIn.id"
+            class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                :class="
+                  checkIn.checkOutTime
+                    ? 'bg-gray-200 text-gray-500 dark:bg-gray-700'
+                    : 'bg-green-100 text-green-600 dark:bg-green-900/30'
+                "
+              >
+                {{ (checkIn.customerName || "?").charAt(0) }}
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ checkIn.customerName }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ checkIn.checkOutTime ? "Checked Out" : "Checked In" }} •
+                  {{ formatDate(checkIn.checkInTime) }}
+                </p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-mono text-gray-500">
+                {{
+                  new Date(
+                    checkIn.checkOutTime || checkIn.checkInTime,
+                  ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </UCard>
+    </div>
+
     <!-- Members Tab -->
     <div v-if="activeTab === 'members'" class="space-y-4">
       <!-- Search -->
       <UInput
         v-model="searchQuery"
         :placeholder="t('memberships.searchPlaceholder', 'Search by name...')"
-        icon="i-heroicons-magnifying-glass"
+        icon="solar:magnifer-linear"
         size="lg"
         @keyup.enter="quickCheckIn"
       />
@@ -515,9 +895,12 @@ async function deletePlan(planId: string) {
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-gray-900 dark:text-white truncate">
+            <NuxtLink
+              :to="`/memberships/${member.id}`"
+              class="font-semibold text-gray-900 dark:text-white truncate hover:underline"
+            >
               {{ member.customerName || t("common.unknown") }}
-            </p>
+            </NuxtLink>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               {{ member.planName }} • {{ member.checkInCount }}
               {{ t("memberships.checkIns", "check-ins") }}
@@ -529,6 +912,18 @@ async function deletePlan(planId: string) {
               >
                 {{ t(`memberships.status.${member.status}`) || member.status }}
               </span>
+
+              <!-- Active Check-in Badge -->
+              <span
+                v-if="getActiveCheckIn(member.id)"
+                class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-500 text-white flex items-center gap-1"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"
+                ></span>
+                In Gym
+              </span>
+
               <span
                 v-if="member.status === 'active'"
                 class="text-xs"
@@ -546,16 +941,28 @@ async function deletePlan(planId: string) {
 
           <!-- Actions -->
           <div class="flex items-center gap-2">
-            <UButton
-              v-if="member.status === 'active'"
-              size="lg"
-              color="success"
-              icon="i-heroicons-check-circle"
-              variant="soft"
-              @click="handleCheckIn(member)"
-            >
-              {{ t("memberships.checkIn", "Check In") }}
-            </UButton>
+            <template v-if="member.status === 'active'">
+              <UButton
+                v-if="getActiveCheckIn(member.id)"
+                size="lg"
+                color="warning"
+                icon="i-heroicons-arrow-right-start-on-rectangle"
+                variant="soft"
+                @click="handleCheckIn(member)"
+              >
+                {{ t("memberships.checkOut", "Check Out") }}
+              </UButton>
+              <UButton
+                v-else
+                size="lg"
+                color="success"
+                icon="i-heroicons-arrow-right-end-on-rectangle"
+                variant="soft"
+                @click="handleCheckIn(member)"
+              >
+                {{ t("memberships.checkIn", "Check In") }}
+              </UButton>
+            </template>
             <UButton
               v-if="member.status === 'expired'"
               size="sm"
@@ -657,22 +1064,17 @@ async function deletePlan(planId: string) {
     <UModal v-model:open="showPlanModal">
       <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{
-            selectedPlan ? t("common.edit", "Edit") : t("common.add", "Add")
-          }}
+          {{ selectedPlan ? t("common.edit", "Edit") : t("common.add", "Add") }}
           {{ t("memberships.plan", "Plan") }}
         </h3>
       </template>
       <template #body>
         <div class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormField
-              :label="(t('products.name', 'Name')) + ' (EN)'"
-              required
-            >
+            <UFormField :label="t('products.name', 'Name') + ' (EN)'" required>
               <UInput v-model="planForm.name" placeholder="e.g. Monthly Pass" />
             </UFormField>
-            <UFormField :label="(t('products.name', 'Name')) + ' (ລາວ)'">
+            <UFormField :label="t('products.name', 'Name') + ' (ລາວ)'">
               <UInput
                 v-model="planForm.nameLao"
                 placeholder="ເຊັ່ນ: ບັດເດືອນ"
@@ -694,9 +1096,9 @@ async function deletePlan(planId: string) {
             </UFormField>
             <UFormField
               :label="
-                (t('products.duration', 'Duration')) +
+                t('products.duration', 'Duration') +
                 ' (' +
-                (t('common.days', 'days')) +
+                t('common.days', 'days') +
                 ')'
               "
               required
@@ -776,9 +1178,7 @@ async function deletePlan(planId: string) {
             <USelect
               v-model="memberForm.customerId"
               :items="customers"
-              :placeholder="
-                t('memberships.selectCustomer', 'Select customer')
-              "
+              :placeholder="t('memberships.selectCustomer', 'Select customer')"
             />
           </UFormField>
           <UFormField :label="t('memberships.plan', 'Plan')">
@@ -836,7 +1236,7 @@ async function deletePlan(planId: string) {
           >
             <button
               v-for="member in filteredMemberships.filter(
-                (m) => m.status === 'active'
+                (m) => m.status === 'active',
               )"
               :key="member.id"
               class="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors text-left"
@@ -864,6 +1264,110 @@ async function deletePlan(planId: string) {
                 class="w-8 h-8 text-green-500"
               />
             </button>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Check-in Status Overlay -->
+    <UModal
+      v-model:open="showCheckInStatusModal"
+      :ui="{ width: 'w-full sm:max-w-xl' }"
+    >
+      <template #content>
+        <div
+          v-if="checkInStatusData"
+          class="p-8 text-center"
+          :class="
+            checkInStatusData.status === 'granted'
+              ? 'bg-green-50 dark:bg-green-900/20'
+              : 'bg-red-50 dark:bg-red-900/20'
+          "
+        >
+          <div class="mb-6 relative inline-block">
+            <div
+              class="w-32 h-32 rounded-full flex items-center justify-center mx-auto border-4"
+              :class="
+                checkInStatusData.status === 'granted'
+                  ? 'border-green-500 bg-green-100'
+                  : 'border-red-500 bg-red-100'
+              "
+            >
+              <span
+                class="text-5xl font-bold"
+                :class="
+                  checkInStatusData.status === 'granted'
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                "
+              >
+                {{
+                  (checkInStatusData.member.customerName || "M")
+                    .charAt(0)
+                    .toUpperCase()
+                }}
+              </span>
+            </div>
+            <div
+              class="absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center border-2 border-white"
+              :class="
+                checkInStatusData.status === 'granted'
+                  ? 'bg-green-500'
+                  : 'bg-red-500'
+              "
+            >
+              <UIcon
+                :name="
+                  checkInStatusData.status === 'granted'
+                    ? 'i-heroicons-check'
+                    : 'i-heroicons-x-mark'
+                "
+                class="w-6 h-6 text-white"
+              />
+            </div>
+          </div>
+
+          <h2
+            class="text-3xl font-bold mb-2"
+            :class="
+              checkInStatusData.status === 'granted'
+                ? 'text-green-700 dark:text-green-400'
+                : 'text-red-700 dark:text-red-400'
+            "
+          >
+            {{ checkInStatusData.message }}
+          </h2>
+
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+            {{ checkInStatusData.member.customerName }}
+          </h3>
+          <p class="text-gray-500 dark:text-gray-400 mb-6">
+            {{ checkInStatusData.member.planName }}
+          </p>
+
+          <div
+            v-if="checkInStatusData.status === 'granted'"
+            class="flex justify-center gap-8"
+          >
+            <div class="text-center">
+              <p class="text-xs text-gray-400 uppercase font-bold">Expires</p>
+              <p class="font-mono font-medium">
+                {{ formatDate(checkInStatusData.member.endDate) }}
+              </p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-gray-400 uppercase font-bold">Days Left</p>
+              <p
+                class="font-mono font-medium"
+                :class="
+                  getDaysLeft(checkInStatusData.member.endDate) < 7
+                    ? 'text-red-500'
+                    : 'text-green-500'
+                "
+              >
+                {{ getDaysLeft(checkInStatusData.member.endDate) }}
+              </p>
+            </div>
           </div>
         </div>
       </template>
@@ -967,7 +1471,10 @@ async function deletePlan(planId: string) {
                 </p>
                 <p class="text-sm text-gray-500">
                   {{
-                    t("payment.methods.lightningDesc", "Pay with Bitcoin Lightning")
+                    t(
+                      "payment.methods.lightningDesc",
+                      "Pay with Bitcoin Lightning",
+                    )
                   }}
                 </p>
               </div>
@@ -993,7 +1500,10 @@ async function deletePlan(planId: string) {
                 </p>
                 <p class="text-sm text-gray-500">
                   {{
-                    t("payment.methods.bankTransferDesc", "Pay via bank account")
+                    t(
+                      "payment.methods.bankTransferDesc",
+                      "Pay via bank account",
+                    )
                   }}
                 </p>
               </div>

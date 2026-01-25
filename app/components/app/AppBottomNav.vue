@@ -34,20 +34,30 @@
       <span class="text-xs mt-0.5 font-medium">{{ item.label }}</span>
     </NuxtLinkLocale>
 
-    <!-- More Menu (opens sidebar) -->
-    <button
-      class="flex flex-col items-center justify-center flex-1 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-      @click="$emit('open-menu')"
+    <!-- More Menu (Apps Page) -->
+    <NuxtLinkLocale
+      to="/apps"
+      class="flex flex-col items-center justify-center flex-1 py-2 transition-colors"
+      :class="[
+        isActive('/apps')
+          ? 'text-primary-600 dark:text-primary-400'
+          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
+      ]"
     >
       <div
-        class="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+        :class="[
+          isActive('/apps')
+            ? 'bg-primary-100 dark:bg-primary-900/30'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800',
+        ]"
       >
-        <Icon name="i-heroicons-squares-2x2" size="22" />
+        <Icon name="solar:widget-2-linear" size="22" />
       </div>
       <span class="text-xs mt-0.5 font-medium">{{
         $t("navigation.more", "More")
       }}</span>
-    </button>
+    </NuxtLinkLocale>
   </nav>
 </template>
 
@@ -63,23 +73,23 @@ const navItems = computed(() => [
   {
     label: t("navigation.dashboard", "Home"),
     to: "/",
-    icon: "i-heroicons-home",
+    icon: "solar:home-smile-linear",
   },
   {
     label: t("navigation.pos", "POS"),
     to: "/pos",
-    icon: "i-heroicons-bolt",
+    icon: "solar:shop-2-linear",
   },
   {
     label: t("navigation.orders", "Orders"),
     to: "/orders",
-    icon: "i-heroicons-shopping-bag",
+    icon: "solar:bag-4-linear",
     badge: ordersStore.pendingOrders.value?.length || 0,
   },
   {
     label: t("navigation.products", "Products"),
     to: "/products",
-    icon: "i-heroicons-cube",
+    icon: "solar:box-minimalistic-linear",
   },
 ]);
 

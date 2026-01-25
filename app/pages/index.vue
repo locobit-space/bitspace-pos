@@ -54,6 +54,7 @@ const isRefreshing = ref(false);
 const showWelcome = ref(false); // Show choice screen
 const showSetup = ref(false); // Show owner setup wizard
 const showOnboardingChecklist = ref(false); // Show post-setup checklist
+const showSupportModal = ref(false);
 
 // Current time for greeting
 const currentTime = ref(new Date());
@@ -123,8 +124,8 @@ const kpis = computed(() => {
     selectedPeriod.value === "today"
       ? today
       : selectedPeriod.value === "week"
-      ? weekStart
-      : monthStart;
+        ? weekStart
+        : monthStart;
 
   const periodOrders = ordersStore.orders.value.filter((o) => {
     const orderDate = new Date(o.date);
@@ -140,7 +141,7 @@ const kpis = computed(() => {
     .reduce((sum, o) => sum + o.total, 0);
   const lightningSales = periodOrders
     .filter((o) =>
-      ["lightning", "bolt12", "lnurl"].includes(o.paymentMethod || "")
+      ["lightning", "bolt12", "lnurl"].includes(o.paymentMethod || ""),
     )
     .reduce((sum, o) => sum + o.total, 0);
   const otherSales = totalRevenue - cashSales - lightningSales;
@@ -251,7 +252,7 @@ const peakHour = computed(() => {
 
 // Low stock & recent orders
 const lowStockProducts = computed(() =>
-  productsStore.lowStockProducts.value.slice(0, 5)
+  productsStore.lowStockProducts.value.slice(0, 5),
 );
 const recentOrders = computed(() => {
   return [...ordersStore.orders.value]
@@ -311,23 +312,35 @@ onMounted(async () => {
     return;
   }
 
-  // Fast load with background refresh
-  if (hasCachedData.value) {
+  // Fast load: Show UI immediately, init stores in parallel
+  // If stores already have data (session cache), UI shows instantly
+  // If not (page refresh), show skeleton briefly while loading from IndexedDB
+
+  // Check if stores already have data from previous navigation
+  const hasSessionData =
+    ordersStore.orders.value.length > 0 ||
+    productsStore.products.value.length > 0;
+
+  if (hasSessionData) {
+    // Session cache hit - show UI immediately
     isInitialLoad.value = false;
     isRefreshing.value = true;
-    await Promise.all([ordersStore.init(), productsStore.init()]).finally(
-      () => {
-        isRefreshing.value = false;
-      }
-    );
+
+    // Init in background (will just trigger Nostr sync since already loaded)
+    Promise.all([ordersStore.init(), productsStore.init()]).finally(() => {
+      isRefreshing.value = false;
+    });
   } else {
+    // Page refresh - need to load from IndexedDB
+    isRefreshing.value = true;
     await Promise.all([ordersStore.init(), productsStore.init()]);
     isInitialLoad.value = false;
+    isRefreshing.value = false;
   }
 
   // Check if we should show onboarding checklist
   const checklistDismissed = localStorage.getItem(
-    "bitspace_onboarding_checklist_dismissed"
+    "bitspace_onboarding_checklist_dismissed",
   );
   if (shop.isSetupComplete.value && !checklistDismissed) {
     showOnboardingChecklist.value = true;
@@ -367,7 +380,10 @@ onMounted(async () => {
             v-if="isRefreshing"
             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400"
           >
-            <UIcon name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin" />
+            <UIcon
+              name="solar:refresh-circle-linear"
+              class="w-3 h-3 animate-spin"
+            />
             {{ t("common.syncing") }}
           </span>
         </div>
@@ -388,7 +404,7 @@ onMounted(async () => {
           />
 
           <NuxtLinkLocale to="/pos">
-            <UButton color="primary" icon="i-heroicons-shopping-cart" size="sm">
+            <UButton color="primary" icon="solar:shop-2-bold" size="sm">
               {{ t("pos.terminal") }}
             </UButton>
           </NuxtLinkLocale>
@@ -551,6 +567,12 @@ onMounted(async () => {
           <DashboardMarketplaceSetup />
         </div>
 
+        <!-- Support Widget -->
+        <DashboardSupportWidget @open-support="showSupportModal = true" />
+
+        <!-- Feature Request Widget -->
+        <DashboardFeatureRequestWidget />
+
         <div class="grid grid-cols-12 gap-3">
           <!-- KPI Cards -->
           <div class="col-span-12">
@@ -601,6 +623,9 @@ onMounted(async () => {
         </div>
       </template>
     </div>
+
+    <!-- Support Modal -->
+    <CommonSupportModal v-model:open="showSupportModal" />
   </div>
 </template>
 

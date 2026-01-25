@@ -50,49 +50,7 @@
       "companyCodeHint": "แบ่งปันรหัสนี้กับพนักงานเพื่อเชื่อมต่ออุปกรณ์ของพวกเขา"
     },
     "companyCodeCopied": "รหัสบริษัทถูกคัดลอกแล้ว",
-    "marketplace": {
-      "lud16": "ที่อยู่ Lightning",
-      "lud16Hint": "รับชำระเงิน Lightning โดยตรง",
-      "nip05": "ยืนยัน Nostr",
-      "nip05Hint": "ยืนยันตัวตนร้านของคุณ",
-      "description": "คำอธิบาย",
-      "descriptionPlaceholder": "บอกลูกค้าว่าร้านของคุณพิเศษอย่างไร...",
-      "services": "บริการที่ให้",
-      "payments": "วิธีการชำระเงิน",
-      "lightning": "Lightning Network",
-      "lightningDesc": "ชำระเงิน Bitcoin เร็วและถูก",
-      "bitcoin": "Bitcoin On-chain",
-      "bitcoinDesc": "ชำระเงิน Bitcoin แบบดั้งเดิม",
-      "ready": "พร้อมสำหรับ Marketplace!",
-      "readyDesc": "ร้านของคุณจะค้นหาได้สาธารณะ ลูกค้าสามารถค้นหาคุณและชำระเงินด้วย Lightning",
-      "setup": {
-        "title": "กรอกข้อมูล Marketplace ให้ครบถ้วน",
-        "subtitle": "ช่วยให้ลูกค้าค้นหาร้านของคุณได้ง่ายขึ้น",
-        "progress": "ความสมบูรณ์ของโปรไฟล์",
-        "action": "กรอกข้อมูลให้ครบ",
-        "location": "ที่อยู่",
-        "hours": "เวลาเปิด-ปิด",
-        "services": "บริการ",
-        "description": "คำอธิบาย",
-        "lightning": "ที่อยู่ Lightning",
-        "phone": "เบอร์โทรศัพท์"
-      },
-      "location": {
-        "title": "ที่อยู่",
-        "address": "ที่อยู่",
-        "city": "เมือง",
-        "country": "ประเทศ",
-        "lat": "ละติจูด",
-        "lng": "ลองจิจูด",
-        "detect": "ตรวจจับตำแหน่งปัจจุบัน"
-      },
-      "hours": {
-        "title": "เวลาเปิด-ปิด",
-        "timezone": "เขตเวลา",
-        "applyAll": "ใช้เวลาเดียวกันสำหรับทุกวัน",
-        "closed": "ปิด"
-      }
-    },
+
     "welcome": {
       "title": "ยินดีต้อนรับสู่ BNOS",
       "subtitle": "เลือกวิธีที่คุณต้องการเริ่มต้น",

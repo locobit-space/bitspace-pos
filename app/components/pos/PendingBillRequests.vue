@@ -29,7 +29,7 @@ const loadPendingBills = () => {
       orderCount: orders.length,
       calculatedTotal: orders.reduce(
         (sum, order) => sum + (order?.total || 0),
-        0
+        0,
       ),
       duration: tableSession.calculateDuration(session.startTime),
     };
@@ -54,7 +54,7 @@ const handleProcessPayment = async (orders: any[], sessionInfo: any) => {
         JSON.stringify({
           orders,
           sessionInfo,
-        })
+        }),
       );
 
       // ALSO broadcast to the POS page in case we're already on it
@@ -77,7 +77,7 @@ const handleProcessPayment = async (orders: any[], sessionInfo: any) => {
       toast.add({
         title: "Payment Ready",
         description: `${orders.length} orders loaded. Select payment method.`,
-        icon: "i-heroicons-credit-card",
+        icon: "solar:card-linear",
         color: "primary",
       });
     } else {
@@ -87,9 +87,9 @@ const handleProcessPayment = async (orders: any[], sessionInfo: any) => {
       toast.add({
         title: "Ready for Payment",
         description: `${orders.length} orders loaded. Total: ${formatPrice(
-          orders.reduce((sum, o) => sum + o.total, 0)
+          orders.reduce((sum, o) => sum + o.total, 0),
         )}`,
-        icon: "i-heroicons-credit-card",
+        icon: "solar:card-linear",
         color: "primary",
       });
     }
@@ -98,7 +98,7 @@ const handleProcessPayment = async (orders: any[], sessionInfo: any) => {
     toast.add({
       title: "Error",
       description: "Failed to prepare payment",
-      icon: "i-heroicons-exclamation-triangle",
+      icon: "solar:danger-triangle-linear",
       color: "red",
     });
   } finally {
@@ -132,7 +132,7 @@ onMounted(() => {
           type: "alert",
           title: `💰 ${tableName} requesting bill!`,
           message: `${event.data.orderCount || 0} orders - Total: ${formatPrice(
-            event.data.sessionTotal || 0
+            event.data.sessionTotal || 0,
           )}`,
           priority: "high",
           actionUrl: "/pos",
@@ -183,7 +183,7 @@ onMounted(() => {
     >
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2 text-white">
-          <UIcon name="i-heroicons-bell-alert" class="w-6 h-6 animate-bounce" />
+          <UIcon name="solar:bell-linear" class="w-6 h-6 animate-bounce" />
           <h3 class="font-bold text-lg">
             {{ pendingBills.length }} Table{{
               pendingBills.length > 1 ? "s" : ""
@@ -221,7 +221,7 @@ onMounted(() => {
           </div>
 
           <UButton color="primary" variant="soft" size="xs" block class="mt-3">
-            <UIcon name="i-heroicons-credit-card" class="w-4 h-4 mr-1" />
+            <UIcon name="solar:card-linear" class="w-4 h-4 mr-1" />
             Process Payment
           </UButton>
         </div>

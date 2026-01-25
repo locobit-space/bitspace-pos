@@ -74,11 +74,11 @@ const isEditing = computed(() => !!props.editingPO);
 const modalTitle = computed(() =>
   isEditing.value
     ? t("inventory.editPO", "Edit Purchase Order")
-    : t("inventory.createPO")
+    : t("inventory.createPO"),
 );
 
 const saveButtonLabel = computed(() =>
-  isEditing.value ? t("common.save", "Save") : t("inventory.createPO")
+  isEditing.value ? t("common.save", "Save") : t("inventory.createPO"),
 );
 
 // Reset or populate form when modal opens
@@ -127,7 +127,7 @@ watch(
       };
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const addItem = () => {
@@ -150,18 +150,18 @@ const handleSave = () => {
 const activeSuppliers = computed(() =>
   props.suppliers
     .filter((s) => s.status === "active")
-    .map((s) => ({ value: s.id, label: s.name }))
+    .map((s) => ({ value: s.id, label: s.name })),
 );
 
 const branchOptions = computed(() =>
-  props.branches.filter((b) => b.id !== "all")
+  props.branches.filter((b) => b.id !== "all"),
 );
 
 const productOptions = computed(() =>
   props.inventoryItems.map((i) => ({
     value: i.productId,
     label: `${i.productName} (${i.sku})`,
-  }))
+  })),
 );
 
 const updateProductName = (index: number, productId: string) => {
@@ -175,7 +175,7 @@ const updateProductName = (index: number, productId: string) => {
 const calculatedTotal = computed(() => {
   return poForm.value.items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
-    0
+    0,
   );
 });
 
@@ -230,7 +230,7 @@ const formatCurrency = (amount: number): string => {
                 size="sm"
                 color="primary"
                 variant="ghost"
-                icon="i-heroicons-plus"
+                icon="solar:add-circle-linear"
                 @click="addItem"
               >
                 {{ t("inventory.addItem") }}
@@ -250,7 +250,9 @@ const formatCurrency = (amount: number): string => {
                   label-key="label"
                   searchable
                   :placeholder="t('inventory.selectProduct')"
-                  @update:model-value="(val) => updateProductName(index, val as string)"
+                  @update:model-value="
+                    (val) => updateProductName(index, val as string)
+                  "
                 />
               </div>
               <div class="w-24">
@@ -280,7 +282,7 @@ const formatCurrency = (amount: number): string => {
                 color="red"
                 variant="ghost"
                 size="sm"
-                icon="i-heroicons-trash"
+                icon="solar:trash-bin-trash-linear"
                 @click="removeItem(index)"
               />
             </div>

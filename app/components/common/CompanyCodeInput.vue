@@ -51,7 +51,7 @@
         v-if="isValid"
         class="text-green-500 flex items-center justify-center gap-1"
       >
-        <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
+        <UIcon name="solar:check-circle-linear" class="w-4 h-4" />
         {{ $t("common.valid", "Valid") }}
       </span>
       <span v-else-if="fullCode.length > 0" class="text-gray-400">
@@ -278,7 +278,7 @@ watch(
       segment3.value = cleaned.slice(10, 15);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Emit initial valid state
@@ -287,7 +287,7 @@ watch(
   (valid) => {
     emit("valid", valid);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Expose methods

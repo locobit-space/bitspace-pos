@@ -232,7 +232,7 @@ watch(
       form.value = getDefaultForm();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Reset form when modal closes
@@ -297,7 +297,7 @@ function handleCancel() {
                 }}</span>
                 <UIcon
                   v-else
-                  name="i-heroicons-cube"
+                  name="solar:box-linear"
                   class="w-7 h-7 text-gray-400"
                 />
               </div>
@@ -312,7 +312,10 @@ function handleCancel() {
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{
                     form.name ||
-                    t("products.newProductHint", "Fill in product details below")
+                    t(
+                      "products.newProductHint",
+                      "Fill in product details below",
+                    )
                   }}
                 </p>
               </div>
@@ -320,7 +323,7 @@ function handleCancel() {
             <UButton
               color="neutral"
               variant="ghost"
-              icon="i-heroicons-x-mark"
+              icon="solar:close-circle-linear"
               size="lg"
               @click="handleCancel"
             />
@@ -406,7 +409,7 @@ function handleCancel() {
                         class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0"
                       >
                         <UIcon
-                          name="i-heroicons-information-circle"
+                          name="solar:info-circle-linear"
                           class="w-6 h-6 text-blue-600 dark:text-blue-400"
                         />
                       </div>
@@ -465,7 +468,7 @@ function handleCancel() {
                     color="primary"
                     size="lg"
                     :loading="loading"
-                    icon="i-heroicons-check"
+                    icon="solar:check-circle-linear"
                   >
                     {{ isEditing ? t("common.update") : t("common.create") }}
                   </UButton>

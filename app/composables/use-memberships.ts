@@ -2,14 +2,19 @@
 // 💳 Membership Management - Plans, Subscriptions, Check-ins
 // With Dexie + Nostr Sync
 
-import type { Membership, MembershipPlan, MembershipCheckIn, MembershipStatus } from '~/types';
+import type {
+  Membership,
+  MembershipPlan,
+  MembershipCheckIn,
+  MembershipStatus,
+} from "~/types";
 import {
   db,
   type MembershipRecord,
   type MembershipPlanRecord,
   type MembershipCheckInRecord,
-} from '~/db/db';
-import { generateUUIDv7 } from '~/utils/id';
+} from "~/db/db";
+import { generateUUIDv7 } from "~/utils/id";
 
 // Nostr Event Kinds for Memberships
 const NOSTR_KINDS = {
@@ -35,21 +40,23 @@ export function useMemberships() {
 
   // Stats
   const activeMemberships = computed(() =>
-    memberships.value.filter((m) => m.status === 'active')
+    memberships.value.filter((m) => m.status === "active")
   );
 
   const expiringSoon = computed(() => {
     const now = new Date();
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysFromNow = new Date(
+      now.getTime() + 30 * 24 * 60 * 60 * 1000
+    );
     return memberships.value.filter((m) => {
-      if (m.status !== 'active') return false;
+      if (m.status !== "active") return false;
       const endDate = new Date(m.endDate);
       return endDate <= thirtyDaysFromNow && endDate > now;
     });
   });
 
   const expiredMemberships = computed(() =>
-    memberships.value.filter((m) => m.status === 'expired')
+    memberships.value.filter((m) => m.status === "expired")
   );
 
   // ============================================
@@ -74,7 +81,7 @@ export function useMemberships() {
         updatedAt: new Date(r.updatedAt).toISOString(),
       }));
     } catch (e) {
-      console.error('Failed to load plans from local DB:', e);
+      console.error("Failed to load plans from local DB:", e);
       return [];
     }
   }
@@ -92,12 +99,13 @@ export function useMemberships() {
         endDate: r.endDate,
         status: r.status as MembershipStatus,
         checkInCount: r.checkInCount,
+        autoRenew: false, // Default to false as it's not in DB yet
         notes: r.notes,
         createdAt: new Date(r.createdAt).toISOString(),
         updatedAt: new Date(r.updatedAt).toISOString(),
       }));
     } catch (e) {
-      console.error('Failed to load memberships from local DB:', e);
+      console.error("Failed to load memberships from local DB:", e);
       return [];
     }
   }
@@ -110,12 +118,16 @@ export function useMemberships() {
         membershipId: r.membershipId,
         customerId: r.customerId,
         customerName: r.customerName,
-        timestamp: new Date(r.timestamp).toISOString(),
+        checkInTime: new Date(r.timestamp).toISOString(),
+        checkOutTime: r.checkOutTime
+          ? new Date(r.checkOutTime).toISOString()
+          : undefined,
+        duration: r.duration,
         notes: r.notes,
         staffId: r.staffId,
       }));
     } catch (e) {
-      console.error('Failed to load check-ins from local DB:', e);
+      console.error("Failed to load check-ins from local DB:", e);
       return [];
     }
   }
@@ -129,7 +141,9 @@ export function useMemberships() {
       duration: plan.duration,
       price: plan.price,
       benefits: JSON.stringify(plan.benefits),
-      benefitsLao: plan.benefitsLao ? JSON.stringify(plan.benefitsLao) : undefined,
+      benefitsLao: plan.benefitsLao
+        ? JSON.stringify(plan.benefitsLao)
+        : undefined,
       isActive: plan.isActive,
       sortOrder: plan.sortOrder,
       createdAt: new Date(plan.createdAt).getTime(),
@@ -164,7 +178,11 @@ export function useMemberships() {
       membershipId: checkIn.membershipId,
       customerId: checkIn.customerId,
       customerName: checkIn.customerName,
-      timestamp: new Date(checkIn.timestamp).getTime(),
+      timestamp: new Date(checkIn.checkInTime).getTime(),
+      checkOutTime: checkIn.checkOutTime
+        ? new Date(checkIn.checkOutTime).getTime()
+        : undefined,
+      duration: checkIn.duration,
       notes: checkIn.notes,
       staffId: checkIn.staffId,
       synced: false,
@@ -206,12 +224,14 @@ export function useMemberships() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to sync plan to Nostr:', e);
+      console.error("Failed to sync plan to Nostr:", e);
       return false;
     }
   }
 
-  async function syncMembershipToNostr(membership: Membership): Promise<boolean> {
+  async function syncMembershipToNostr(
+    membership: Membership
+  ): Promise<boolean> {
     try {
       const event = await nostrData.publishReplaceableEvent(
         NOSTR_KINDS.MEMBERSHIP,
@@ -241,12 +261,14 @@ export function useMemberships() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to sync membership to Nostr:', e);
+      console.error("Failed to sync membership to Nostr:", e);
       return false;
     }
   }
 
-  async function syncCheckInToNostr(checkIn: MembershipCheckIn): Promise<boolean> {
+  async function syncCheckInToNostr(
+    checkIn: MembershipCheckIn
+  ): Promise<boolean> {
     try {
       const event = await nostrData.publishEvent(
         NOSTR_KINDS.MEMBERSHIP_CHECKIN,
@@ -255,7 +277,9 @@ export function useMemberships() {
           membershipId: checkIn.membershipId,
           customerId: checkIn.customerId,
           customerName: checkIn.customerName,
-          timestamp: checkIn.timestamp,
+          timestamp: checkIn.checkInTime,
+          checkOutTime: checkIn.checkOutTime,
+          duration: checkIn.duration,
           notes: checkIn.notes,
           staffId: checkIn.staffId,
         })
@@ -270,7 +294,7 @@ export function useMemberships() {
       }
       return false;
     } catch (e) {
-      console.error('Failed to sync check-in to Nostr:', e);
+      console.error("Failed to sync check-in to Nostr:", e);
       return false;
     }
   }
@@ -300,7 +324,9 @@ export function useMemberships() {
           duration: planRecord.duration,
           price: planRecord.price,
           benefits: JSON.parse(planRecord.benefits),
-          benefitsLao: planRecord.benefitsLao ? JSON.parse(planRecord.benefitsLao) : undefined,
+          benefitsLao: planRecord.benefitsLao
+            ? JSON.parse(planRecord.benefitsLao)
+            : undefined,
           isActive: planRecord.isActive,
           sortOrder: planRecord.sortOrder,
           createdAt: new Date(planRecord.createdAt).toISOString(),
@@ -326,6 +352,7 @@ export function useMemberships() {
           endDate: membershipRecord.endDate,
           status: membershipRecord.status as MembershipStatus,
           checkInCount: membershipRecord.checkInCount,
+          autoRenew: false,
           notes: membershipRecord.notes,
           createdAt: new Date(membershipRecord.createdAt).toISOString(),
           updatedAt: new Date(membershipRecord.updatedAt).toISOString(),
@@ -345,7 +372,11 @@ export function useMemberships() {
           membershipId: checkInRecord.membershipId,
           customerId: checkInRecord.customerId,
           customerName: checkInRecord.customerName,
-          timestamp: new Date(checkInRecord.timestamp).toISOString(),
+          checkInTime: new Date(checkInRecord.timestamp).toISOString(),
+          checkOutTime: checkInRecord.checkOutTime
+            ? new Date(checkInRecord.checkOutTime).toISOString()
+            : undefined,
+          duration: checkInRecord.duration,
           notes: checkInRecord.notes,
           staffId: checkInRecord.staffId,
         };
@@ -356,7 +387,7 @@ export function useMemberships() {
 
       syncPending.value = failed;
     } catch (e) {
-      console.error('Failed to sync pending memberships:', e);
+      console.error("Failed to sync pending memberships:", e);
       error.value = `Sync failed: ${e}`;
     }
 
@@ -390,15 +421,22 @@ export function useMemberships() {
       await checkExpirations();
 
       // Count pending syncs
-      const unsyncedPlans = await db.membershipPlans.filter((p) => !p.synced).count();
-      const unsyncedMemberships = await db.memberships.filter((m) => !m.synced).count();
-      const unsyncedCheckIns = await db.membershipCheckIns.filter((c) => !c.synced).count();
-      syncPending.value = unsyncedPlans + unsyncedMemberships + unsyncedCheckIns;
+      const unsyncedPlans = await db.membershipPlans
+        .filter((p) => !p.synced)
+        .count();
+      const unsyncedMemberships = await db.memberships
+        .filter((m) => !m.synced)
+        .count();
+      const unsyncedCheckIns = await db.membershipCheckIns
+        .filter((c) => !c.synced)
+        .count();
+      syncPending.value =
+        unsyncedPlans + unsyncedMemberships + unsyncedCheckIns;
 
       isInitialized.value = true;
     } catch (e) {
       error.value = `Failed to initialize memberships: ${e}`;
-      console.error('Failed to initialize memberships:', e);
+      console.error("Failed to initialize memberships:", e);
     } finally {
       isLoading.value = false;
     }
@@ -412,13 +450,13 @@ export function useMemberships() {
     return [
       {
         id: generateUUIDv7(),
-        name: 'Day Pass',
-        nameLao: 'ບັດມື້',
-        description: 'Single day access',
+        name: "Day Pass",
+        nameLao: "ບັດມື້",
+        description: "Single day access",
         duration: 1,
         price: 50000,
-        benefits: ['Full gym access', 'Locker usage'],
-        benefitsLao: ['ເຂົ້າຢິມເຕັມ', 'ໃຊ້ຕູ້ເກັບເຄື່ອງ'],
+        benefits: ["Full gym access", "Locker usage"],
+        benefitsLao: ["ເຂົ້າຢິມເຕັມ", "ໃຊ້ຕູ້ເກັບເຄື່ອງ"],
         isActive: true,
         sortOrder: 1,
         createdAt: new Date().toISOString(),
@@ -426,27 +464,37 @@ export function useMemberships() {
       },
       {
         id: generateUUIDv7(),
-        name: 'Monthly',
-        nameLao: 'ລາຍເດືອນ',
-        description: '30 days of unlimited access',
+        name: "Monthly",
+        nameLao: "ລາຍເດືອນ",
+        description: "30 days of unlimited access",
         duration: 30,
         price: 300000,
-        benefits: ['Full gym access', 'Group classes', 'Locker'],
-        benefitsLao: ['ເຂົ້າຢິມເຕັມ', 'ຫ້ອງຮຽນກຸ່ມ', 'ຕູ້ເກັບເຄື່ອງ'],
+        benefits: ["Full gym access", "Group classes", "Locker"],
+        benefitsLao: ["ເຂົ້າຢິມເຕັມ", "ຫ້ອງຮຽນກຸ່ມ", "ຕູ້ເກັບເຄື່ອງ"],
         isActive: true,
         sortOrder: 2,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: 'plan-3month',
-        name: '3 Months',
-        nameLao: '3 ເດືອນ',
-        description: '90 days - Save 15%',
+        id: "plan-3month",
+        name: "3 Months",
+        nameLao: "3 ເດືອນ",
+        description: "90 days - Save 15%",
         duration: 90,
         price: 750000,
-        benefits: ['Full gym access', 'Group classes', 'Personal locker', '1 PT session'],
-        benefitsLao: ['ເຂົ້າຢິມເຕັມ', 'ຫ້ອງຮຽນກຸ່ມ', 'ຕູ້ສ່ວນຕົວ', 'ຝຶກສ່ວນຕົວ 1 ຄັ້ງ'],
+        benefits: [
+          "Full gym access",
+          "Group classes",
+          "Personal locker",
+          "1 PT session",
+        ],
+        benefitsLao: [
+          "ເຂົ້າຢິມເຕັມ",
+          "ຫ້ອງຮຽນກຸ່ມ",
+          "ຕູ້ສ່ວນຕົວ",
+          "ຝຶກສ່ວນຕົວ 1 ຄັ້ງ",
+        ],
         isActive: true,
         sortOrder: 3,
         createdAt: new Date().toISOString(),
@@ -454,13 +502,25 @@ export function useMemberships() {
       },
       {
         id: generateUUIDv7(),
-        name: 'Yearly',
-        nameLao: 'ລາຍປີ',
-        description: '365 days - Best value',
+        name: "Yearly",
+        nameLao: "ລາຍປີ",
+        description: "365 days - Best value",
         duration: 365,
         price: 2500000,
-        benefits: ['Full gym access', 'All classes', 'Personal locker', '5 PT sessions', 'Guest passes'],
-        benefitsLao: ['ເຂົ້າຢິມເຕັມ', 'ທຸກຫ້ອງຮຽນ', 'ຕູ້ສ່ວນຕົວ', 'ຝຶກສ່ວນຕົວ 5 ຄັ້ງ', 'ບັດເຊີນແຂກ'],
+        benefits: [
+          "Full gym access",
+          "All classes",
+          "Personal locker",
+          "5 PT sessions",
+          "Guest passes",
+        ],
+        benefitsLao: [
+          "ເຂົ້າຢິມເຕັມ",
+          "ທຸກຫ້ອງຮຽນ",
+          "ຕູ້ສ່ວນຕົວ",
+          "ຝຶກສ່ວນຕົວ 5 ຄັ້ງ",
+          "ບັດເຊີນແຂກ",
+        ],
         isActive: true,
         sortOrder: 4,
         createdAt: new Date().toISOString(),
@@ -473,13 +533,17 @@ export function useMemberships() {
   // 💳 MEMBERSHIP CRUD
   // ============================================
 
-  async function addMembership(data: Omit<Membership, 'id' | 'createdAt' | 'updatedAt' | 'checkInCount'>): Promise<Membership> {
+  async function addMembership(
+    data: Omit<Membership, "id" | "createdAt" | "updatedAt" | "checkInCount">
+  ): Promise<Membership> {
     const now = new Date().toISOString();
     const membership: Membership = {
       ...data,
       id: generateUUIDv7(),
       checkInCount: 0,
+      autoRenew: false,
       createdAt: now,
+
       updatedAt: now,
     };
 
@@ -493,15 +557,18 @@ export function useMemberships() {
     }
 
     toast.add({
-      title: t('memberships.added', 'Membership Added'),
-      icon: 'i-heroicons-check-circle',
-      color: 'success',
+      title: t("memberships.added", "Membership Added"),
+      icon: "i-heroicons-check-circle",
+      color: "success",
     });
 
     return membership;
   }
 
-  async function updateMembership(id: string, data: Partial<Membership>): Promise<Membership | null> {
+  async function updateMembership(
+    id: string,
+    data: Partial<Membership>
+  ): Promise<Membership | null> {
     const index = memberships.value.findIndex((m) => m.id === id);
     if (index === -1) return null;
 
@@ -531,24 +598,66 @@ export function useMemberships() {
     return true;
   }
 
-  async function getMembershipByCustomer(customerId: string): Promise<Membership | null> {
-    return memberships.value.find((m) => m.customerId === customerId && m.status === 'active') || null;
+  async function getMembershipByCustomer(
+    customerId: string
+  ): Promise<Membership | null> {
+    return (
+      memberships.value.find(
+        (m) => m.customerId === customerId && m.status === "active"
+      ) || null
+    );
+  }
+
+  async function getMembershipByCard(
+    cardUid: string
+  ): Promise<Membership | null> {
+    // 1. Find customer by card UID
+    const customer = await db.customers
+      .where("cardUid")
+      .equals(cardUid)
+      .first();
+    if (!customer) return null;
+
+    // 2. Find active membership for customer
+    return getMembershipByCustomer(customer.id);
+  }
+
+  async function assignCard(
+    customerId: string,
+    cardUid: string
+  ): Promise<boolean> {
+    try {
+      await db.customers.update(customerId, {
+        cardUid,
+        synced: false, // Mark for sync
+      });
+      return true;
+    } catch (e) {
+      console.error("Failed to assign card:", e);
+      return false;
+    }
   }
 
   // ============================================
   // ✅ CHECK-IN
   // ============================================
 
-  async function checkIn(membershipId: string, notes?: string): Promise<MembershipCheckIn | null> {
+  async function checkIn(
+    membershipId: string,
+    notes?: string
+  ): Promise<MembershipCheckIn | null> {
     const membership = memberships.value.find((m) => m.id === membershipId);
     if (!membership) return null;
 
-    if (membership.status !== 'active') {
+    if (membership.status !== "active") {
       toast.add({
-        title: t('memberships.notActive', 'Membership Not Active'),
-        description: t('memberships.cannotCheckIn', 'This membership is not active'),
-        icon: 'i-heroicons-exclamation-circle',
-        color: 'warning',
+        title: t("memberships.notActive", "Membership Not Active"),
+        description: t(
+          "memberships.cannotCheckIn",
+          "This membership is not active"
+        ),
+        icon: "i-heroicons-exclamation-circle",
+        color: "warning",
       });
       return null;
     }
@@ -559,7 +668,7 @@ export function useMemberships() {
       membershipId,
       customerId: membership.customerId,
       customerName: membership.customerName,
-      timestamp: now,
+      checkInTime: now,
       notes,
     };
 
@@ -575,23 +684,67 @@ export function useMemberships() {
     // Update membership check-in count
     membership.checkInCount++;
     membership.updatedAt = now;
-    await updateMembership(membership.id, { checkInCount: membership.checkInCount });
+    await updateMembership(membership.id, {
+      checkInCount: membership.checkInCount,
+    });
 
     toast.add({
-      title: t('memberships.checkedIn', 'Checked In! ✅'),
+      title: t("memberships.checkedIn", "Checked In! ✅"),
       description: membership.customerName || undefined,
-      icon: 'i-heroicons-check-circle',
-      color: 'success',
+      icon: "i-heroicons-check-circle",
+      color: "success",
     });
 
     return checkIn;
+  }
+
+  async function checkOut(
+    checkInId: string
+  ): Promise<MembershipCheckIn | null> {
+    const index = checkIns.value.findIndex((c) => c.id === checkInId);
+    if (index === -1) return null;
+
+    const checkIn = checkIns.value[index]!;
+    if (checkIn.checkOutTime) return checkIn; // Already checked out
+
+    const now = new Date();
+    const checkInTime = new Date(checkIn.checkInTime); // Use timestamp as checkInTime source
+    const duration = Math.round(
+      (now.getTime() - checkInTime.getTime()) / (1000 * 60)
+    ); // minutes
+
+    checkIns.value[index] = {
+      ...checkIn,
+      checkOutTime: now.toISOString(),
+      duration,
+    };
+
+    await saveCheckInToLocal(checkIns.value[index]);
+
+    if (offline.isOnline.value) {
+      await syncCheckInToNostr(checkIns.value[index]);
+    } else {
+      syncPending.value++;
+    }
+
+    toast.add({
+      title: t("memberships.checkedOut", "Checked Out! 👋"),
+      description: `${duration} minutes`,
+      icon: "i-heroicons-arrow-right-start-on-rectangle",
+      color: "info",
+    });
+
+    return checkIns.value[index];
   }
 
   // ============================================
   // 🔄 RENEWAL & EXPIRATION
   // ============================================
 
-  async function renewMembership(id: string, planId?: string): Promise<Membership | null> {
+  async function renewMembership(
+    id: string,
+    planId?: string
+  ): Promise<Membership | null> {
     const membership = memberships.value.find((m) => m.id === id);
     if (!membership) return null;
 
@@ -602,21 +755,31 @@ export function useMemberships() {
     const now = new Date();
     const currentEnd = new Date(membership.endDate);
     const startDate = currentEnd > now ? currentEnd : now;
-    const endDate = new Date(startDate.getTime() + plan.duration * 24 * 60 * 60 * 1000);
+    const endDate = new Date(
+      startDate.getTime() + plan.duration * 24 * 60 * 60 * 1000
+    );
 
     membership.planId = newPlanId;
     membership.planName = plan.name;
     membership.startDate = startDate.toISOString();
     membership.endDate = endDate.toISOString();
-    membership.status = 'active';
+    membership.status = "active";
     membership.updatedAt = new Date().toISOString();
 
-    saveMemberships();
+    // saveMemberships(); // Typo in original file? Assuming updateMembership handles it.
+    await updateMembership(membership.id, {
+      planId: newPlanId,
+      planName: plan.name,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      status: "active",
+      updatedAt: membership.updatedAt,
+    });
 
     toast.add({
-      title: t('memberships.renewed', 'Membership Renewed'),
-      icon: 'i-heroicons-arrow-path',
-      color: 'success',
+      title: t("memberships.renewed", "Membership Renewed"),
+      icon: "i-heroicons-arrow-path",
+      color: "success",
     });
 
     return membership;
@@ -631,18 +794,16 @@ export function useMemberships() {
     let updated = false;
 
     for (const membership of memberships.value) {
-      if (membership.status === 'active') {
+      if (membership.status === "active") {
         const endDate = new Date(membership.endDate);
         if (endDate < now) {
-          membership.status = 'expired';
-          membership.updatedAt = now.toISOString();
+          await updateMembership(membership.id, {
+            status: "expired",
+            updatedAt: now.toISOString(),
+          });
           updated = true;
         }
       }
-    }
-
-    if (updated) {
-      saveMemberships();
     }
   }
 
@@ -650,7 +811,9 @@ export function useMemberships() {
   // 📋 PLAN CRUD
   // ============================================
 
-  async function addPlan(data: Omit<MembershipPlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<MembershipPlan> {
+  async function addPlan(
+    data: Omit<MembershipPlan, "id" | "createdAt" | "updatedAt">
+  ): Promise<MembershipPlan> {
     const now = new Date().toISOString();
     const plan: MembershipPlan = {
       ...data,
@@ -671,7 +834,10 @@ export function useMemberships() {
     return plan;
   }
 
-  async function updatePlan(id: string, data: Partial<MembershipPlan>): Promise<MembershipPlan | null> {
+  async function updatePlan(
+    id: string,
+    data: Partial<MembershipPlan>
+  ): Promise<MembershipPlan | null> {
     const index = plans.value.findIndex((p) => p.id === id);
     if (index === -1) return null;
 
@@ -697,10 +863,13 @@ export function useMemberships() {
     const usedBy = memberships.value.filter((m) => m.planId === id);
     if (usedBy.length > 0) {
       toast.add({
-        title: t('memberships.planInUse', 'Plan In Use'),
-        description: t('memberships.cannotDeletePlan', 'This plan has active memberships'),
-        icon: 'i-heroicons-exclamation-triangle',
-        color: 'warning',
+        title: t("memberships.planInUse", "Plan In Use"),
+        description: t(
+          "memberships.cannotDeletePlan",
+          "This plan has active memberships"
+        ),
+        icon: "i-heroicons-exclamation-triangle",
+        color: "warning",
       });
       return false;
     }
@@ -719,9 +888,10 @@ export function useMemberships() {
 
   function searchMemberships(query: string): Membership[] {
     const q = query.toLowerCase();
-    return memberships.value.filter((m) =>
-      m.customerName?.toLowerCase().includes(q) ||
-      m.id.toLowerCase().includes(q)
+    return memberships.value.filter(
+      (m) =>
+        m.customerName?.toLowerCase().includes(q) ||
+        m.id.toLowerCase().includes(q)
     );
   }
 
@@ -750,14 +920,17 @@ export function useMemberships() {
     updateMembership,
     deleteMembership,
     getMembershipByCustomer,
+    getMembershipByCard,
+    assignCard,
     checkIn,
+    checkOut,
     renewMembership,
     checkExpirations,
     addPlan,
     updatePlan,
     deletePlan,
     searchMemberships,
-    
+
     // Sync
     syncPendingData,
   };

@@ -41,7 +41,7 @@
               class="w-14 h-14 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-user-group"
+                name="solar:users-group-rounded-linear"
                 class="w-7 h-7 text-green-600"
               />
             </div>
@@ -58,7 +58,7 @@
             {{
               t(
                 "shop.welcome.joinDescription",
-                "Enter company code to connect and sync data"
+                "Enter company code to connect and sync data",
               )
             }}
           </p>
@@ -80,7 +80,7 @@
               class="w-14 h-14 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
             >
               <UIcon
-                name="i-heroicons-building-storefront"
+                name="solar:shop-linear"
                 class="w-7 h-7 text-primary-600"
               />
             </div>
@@ -97,7 +97,7 @@
             {{
               t(
                 "shop.welcome.createDescription",
-                "Set up your shop and get a code for staff"
+                "Set up your shop and get a code for staff",
               )
             }}
           </p>
@@ -126,18 +126,15 @@
               <!-- Divider with "or" -->
               <div class="flex items-center gap-3 my-2">
                 <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                <span class="text-xs text-gray-400 uppercase">{{ t('common.or', 'or') }}</span>
+                <span class="text-xs text-gray-400 uppercase">{{
+                  t("common.or", "or")
+                }}</span>
                 <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
               </div>
 
               <!-- QR Scanner Button -->
-              <UButton
-                block
-                variant="outline"
-                size="lg"
-                @click="openQRScanner"
-              >
-                <UIcon name="i-heroicons-camera" class="w-5 h-5 mr-2" />
+              <UButton block variant="outline" size="lg" @click="openQRScanner">
+                <UIcon name="solar:camera-linear" class="w-5 h-5 mr-2" />
                 {{ t("auth.signin.scanQrToJoin", "Scan QR to Join") }}
               </UButton>
 
@@ -155,7 +152,7 @@
                 :disabled="!isValidCode"
                 @click="handleJoinCompany"
               >
-                <UIcon name="i-heroicons-link" class="w-5 h-5 mr-2" />
+                <UIcon name="solar:link-linear" class="w-5 h-5 mr-2" />
                 {{ t("shop.welcome.connect", "Connect & Sync") }}
               </UButton>
 
@@ -180,7 +177,10 @@
 
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{
-                  t("shop.welcome.createHint", "Setup your shop and get a unique code to share")
+                  t(
+                    "shop.welcome.createHint",
+                    "Setup your shop and get a unique code to share",
+                  )
                 }}
               </p>
 
@@ -190,7 +190,7 @@
                 color="primary"
                 @click="handleCreateCompany"
               >
-                <UIcon name="i-heroicons-rocket-launch" class="w-5 h-5 mr-2" />
+                <UIcon name="solar:rocket-linear" class="w-5 h-5 mr-2" />
                 {{ t("shop.welcome.startSetup", "Start Setup") }}
               </UButton>
             </div>
@@ -200,16 +200,9 @@
     </div>
 
     <!-- QR Scanner (hidden trigger, opens modal when showQRScanner is set) -->
-    <AuthQrScanner
-      @scanned="handleQRScanned"
-      @error="handleQRError"
-    >
+    <AuthQrScanner @scanned="handleQRScanned" @error="handleQRError">
       <template #trigger="{ startScanning }">
-        <button 
-          ref="qrScannerTrigger" 
-          class="hidden" 
-          @click="startScanning"
-        />
+        <button ref="qrScannerTrigger" class="hidden" @click="startScanning" />
       </template>
     </AuthQrScanner>
   </div>
@@ -250,18 +243,21 @@ function handleQRScanned(data: string) {
     handleJoinCompany();
   } else {
     toast.add({
-      title: t('common.error', 'Error'),
-      description: t('shop.invalidQRCode', 'Invalid QR code. Please scan a valid company code.'),
-      color: 'error',
+      title: t("common.error", "Error"),
+      description: t(
+        "shop.invalidQRCode",
+        "Invalid QR code. Please scan a valid company code.",
+      ),
+      color: "error",
     });
   }
 }
 
 function handleQRError(message: string) {
   toast.add({
-    title: t('common.error', 'Error'),
+    title: t("common.error", "Error"),
     description: message,
-    color: 'error',
+    color: "error",
   });
 }
 
@@ -280,11 +276,11 @@ async function handleJoinCompany() {
     let ownerPubkey: string | null = null;
     try {
       ownerPubkey = await nostrData.discoverOwnerByCompanyCode(
-        companyCodeInput.value
+        companyCodeInput.value,
       );
       console.log(
         "[WelcomeChoice] Discovered owner pubkey:",
-        ownerPubkey?.slice(0, 8) + "..."
+        ownerPubkey?.slice(0, 8) + "...",
       );
     } catch (e) {
       console.warn("[WelcomeChoice] Could not discover owner:", e);
@@ -293,14 +289,14 @@ async function handleJoinCompany() {
     // Set the new company code WITH owner pubkey
     await company.setCompanyCode(
       companyCodeInput.value,
-      ownerPubkey || undefined
+      ownerPubkey || undefined,
     );
     company.toggleCompanyCode(true);
 
     toast.add({
       title: t("auth.company.connectSuccess", "Connected!"),
       description: t("auth.company.syncingData", "Syncing company data..."),
-      icon: "i-heroicons-check-circle",
+      icon: "solar:check-circle-linear",
       color: "success",
     });
 
@@ -318,8 +314,10 @@ async function handleJoinCompany() {
       window.location.reload();
     }, 1500);
   } catch (error) {
-    errorMsg.value =
-      t("auth.company.connectError", "Failed to connect. Please check the code.");
+    errorMsg.value = t(
+      "auth.company.connectError",
+      "Failed to connect. Please check the code.",
+    );
   } finally {
     isConnecting.value = false;
   }

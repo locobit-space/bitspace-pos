@@ -60,6 +60,11 @@ const statusOptions = computed(() => [
 ]);
 
 // Computed
+// Pagination
+const page = ref(1);
+const itemsPerPage = ref(10);
+
+// Filtered Inventory (Search, Branch, Status)
 const filteredInventory = computed(() => {
   return inventoryItems.value.filter((item) => {
     const matchesSearch =
@@ -73,6 +78,18 @@ const filteredInventory = computed(() => {
       selectedStatus.value === "all" || item.status === selectedStatus.value;
     return matchesSearch && matchesBranch && matchesStatus;
   });
+});
+
+// Paginated Inventory
+const paginatedInventory = computed(() => {
+  const start = (page.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredInventory.value.slice(start, end);
+});
+
+// Reset pagination when filters change
+watch([searchQuery, selectedBranch, selectedStatus], () => {
+  page.value = 1;
 });
 
 // Date range state for movements/PO tabs
@@ -967,7 +984,7 @@ onMounted(async () => {
       <!-- Mobile Card View -->
       <div class="lg:hidden space-y-3 px-4">
         <div
-          v-for="item in filteredInventory"
+          v-for="item in paginatedInventory"
           :key="item.id"
           class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm"
         >
@@ -1080,11 +1097,11 @@ onMounted(async () => {
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
             <tr
-              v-for="item in filteredInventory"
+              v-for="item in paginatedInventory"
               :key="item.id"
-              class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
               <td class="py-3 px-4">
                 <div>
@@ -1153,6 +1170,21 @@ onMounted(async () => {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        v-if="filteredInventory.length > itemsPerPage"
+        class="flex justify-center p-4 border-t border-gray-200 dark:border-gray-800"
+      >
+        <UPagination
+          v-model:page="page"
+          :total="filteredInventory.length"
+          :items-per-page="itemsPerPage"
+          :max="7"
+          show-controls
+          show-edges
+        />
       </div>
     </template>
 
@@ -1255,11 +1287,11 @@ onMounted(async () => {
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
             <tr
               v-for="movement in filteredMovements"
               :key="movement.id"
-              class="border-b border-gray-100 dark:border-gray-800"
+              class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
               <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ new Date(movement.createdAt).toLocaleDateString() }}
