@@ -36,7 +36,7 @@ const missingFields = computed(() => {
   if (!config.services || config.services.length === 0) {
     missing.push({
       key: "services",
-      label: t("shop.services", "Services"),
+      label: t("marketplace.services", "Services"),
       icon: "solar:box-linear",
     });
   }
@@ -54,7 +54,7 @@ const missingFields = computed(() => {
   if (!config.lud16) {
     missing.push({
       key: "lightning",
-      label: t("setting.lightning", "Lightning Address"),
+      label: t("marketplace.setup.lightning", "Lightning Address"),
       icon: "solar:bolt-linear",
     });
   }

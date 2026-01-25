@@ -331,7 +331,11 @@ watch(open, (isOpen) => {
 </script>
 
 <template>
-  <UModal v-model:open="open">
+  <UModal
+    v-model:open="open"
+    title="Support"
+    description="Support the developer"
+  >
     <template #content>
       <UCard>
         <template #header>

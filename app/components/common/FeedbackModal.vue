@@ -108,7 +108,11 @@ watch(
 </script>
 
 <template>
-  <UModal v-model:open="feedback.isModalOpen.value">
+  <UModal
+    v-model:open="feedback.isModalOpen.value"
+    title="Feedback"
+    description="Send directly to development team"
+  >
     <template #content>
       <UCard>
         <template #header>

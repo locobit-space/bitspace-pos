@@ -10,49 +10,7 @@
     "email": "Email",
     "emailPlaceholder": "shop{'@'}example.com",
     "logo": "Logo",
-    "marketplace": {
-      "lud16": "Lightning Address",
-      "lud16Hint": "Receive Lightning payments directly",
-      "nip05": "Nostr Verification",
-      "nip05Hint": "Verify your store identity",
-      "description": "Description",
-      "descriptionPlaceholder": "Tell customers what makes your store special...",
-      "services": "Services Offered",
-      "payments": "Payment Methods",
-      "lightning": "Lightning Network",
-      "lightningDesc": "Fast, cheap Bitcoin payments",
-      "bitcoin": "Bitcoin On-chain",
-      "bitcoinDesc": "Traditional Bitcoin payments",
-      "ready": "Ready for Marketplace!",
-      "readyDesc": "Your store will be publicly discoverable. Customers can find you and pay with Lightning.",
-      "setup": {
-        "title": "Complete Your Marketplace Profile",
-        "subtitle": "Help customers discover your store by completing these details",
-        "progress": "Profile Completion",
-        "action": "Complete Profile",
-        "location": "Location",
-        "hours": "Business Hours",
-        "services": "Services",
-        "description": "Description",
-        "lightning": "Lightning Address",
-        "phone": "Phone"
-      },
-      "location": {
-        "title": "Location",
-        "address": "Address",
-        "city": "City",
-        "country": "Country",
-        "lat": "Latitude",
-        "lng": "Longitude",
-        "detect": "Detect Current Location"
-      },
-      "hours": {
-        "title": "Business Hours",
-        "timezone": "Timezone",
-        "applyAll": "Use same hours for all days",
-        "closed": "Closed"
-      }
-    },
+
     "welcome": {
       "title": "Welcome to BNOS",
       "subtitle": "Choose how you want to get started",

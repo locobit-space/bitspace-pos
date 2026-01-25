@@ -14,7 +14,7 @@ const {
   public: { devRelayUrl = "" },
 } = useRuntimeConfig();
 
-const _devRelays = devRelayUrl ? (JSON.parse(devRelayUrl) as string[]) : [];
+const _devRelays = devRelayUrl ? devRelayUrl.split(",") : [];
 
 // Default relay configurations
 const _DEFAULT_DEV: RelayConfig[] = [
@@ -108,24 +108,24 @@ export const useNostrRelay = () => {
 
   // Get read relays only
   const readRelays = computed(() =>
-    relayConfigs.value.filter((r) => r.read).map((r) => r.url)
+    relayConfigs.value.filter((r) => r.read).map((r) => r.url),
   );
 
   // Get write relays only
   const writeRelays = computed(() =>
-    relayConfigs.value.filter((r) => r.write).map((r) => r.url)
+    relayConfigs.value.filter((r) => r.write).map((r) => r.url),
   );
 
   // Get outbox relays only
   const outboxRelays = computed(() =>
-    relayConfigs.value.filter((r) => r.outbox).map((r) => r.url)
+    relayConfigs.value.filter((r) => r.outbox).map((r) => r.url),
   );
 
   // Get primary relay
   const primaryRelay = computed(
     () =>
       relayConfigs.value.find((r) => r.isPrimary)?.url ||
-      relayConfigs.value[0]?.url
+      relayConfigs.value[0]?.url,
   );
 
   // ============================================
@@ -180,8 +180,8 @@ export const useNostrRelay = () => {
       const storedRelays = loadFromStorage();
       // unix url
       relayConfigs.value = [...storedRelays, ...DEFAULT_RELAYS].filter(
-        (v, i, a) => a.findIndex((t) => t.url === v.url) === i
-      )
+        (v, i, a) => a.findIndex((t) => t.url === v.url) === i,
+      );
 
       // Step 2: Connect to relays immediately (don't wait for Nostr settings)
       await connect();
@@ -228,7 +228,7 @@ export const useNostrRelay = () => {
       console.log(
         "[useNostrRelay] Found",
         nostrRelays.length,
-        "relays in Nostr settings"
+        "relays in Nostr settings",
       );
 
       // Create a map of current relays
@@ -419,7 +419,7 @@ export const useNostrRelay = () => {
    */
   async function queryEvents(
     filter: Filter,
-    selectedRelays?: string[]
+    selectedRelays?: string[],
   ): Promise<Event[]> {
     // Initialize if not already done
     if (!isInitialized.value) {
@@ -444,7 +444,7 @@ export const useNostrRelay = () => {
       onevent: (event: Event) => void;
       oneose?: () => void;
     },
-    selectedRelays?: string[]
+    selectedRelays?: string[],
   ) {
     try {
       const useRelays = selectedRelays || readRelays.value;
@@ -454,7 +454,7 @@ export const useNostrRelay = () => {
             "[NostrRelay] 📨 Event received, kind:",
             event.kind,
             "id:",
-            event.id.slice(0, 8) + "..."
+            event.id.slice(0, 8) + "...",
           );
           callbacks.onevent(event);
         },
@@ -475,7 +475,7 @@ export const useNostrRelay = () => {
    */
   async function publishEvent(
     event: Event,
-    selectedRelays?: string[]
+    selectedRelays?: string[],
   ): Promise<boolean> {
     // Initialize if not already done
     if (!isInitialized.value) {

@@ -54,6 +54,7 @@ const isRefreshing = ref(false);
 const showWelcome = ref(false); // Show choice screen
 const showSetup = ref(false); // Show owner setup wizard
 const showOnboardingChecklist = ref(false); // Show post-setup checklist
+const showSupportModal = ref(false);
 
 // Current time for greeting
 const currentTime = ref(new Date());
@@ -566,6 +567,12 @@ onMounted(async () => {
           <DashboardMarketplaceSetup />
         </div>
 
+        <!-- Support Widget -->
+        <DashboardSupportWidget @open-support="showSupportModal = true" />
+
+        <!-- Feature Request Widget -->
+        <DashboardFeatureRequestWidget />
+
         <div class="grid grid-cols-12 gap-3">
           <!-- KPI Cards -->
           <div class="col-span-12">
@@ -616,6 +623,9 @@ onMounted(async () => {
         </div>
       </template>
     </div>
+
+    <!-- Support Modal -->
+    <CommonSupportModal v-model:open="showSupportModal" />
   </div>
 </template>
 
