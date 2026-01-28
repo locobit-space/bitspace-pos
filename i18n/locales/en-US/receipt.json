@@ -11,6 +11,7 @@
     "preview": "Preview",
     "newOrder": "New Order",
     "printing": "Printing...",
+    "printSuccess": "Receipt sent to printer!",
     "thermalPaper": "Thermal / Paper",
     "showQRToCustomer": "Show QR to customer",
     "sendToCustomer": "Send to customer",

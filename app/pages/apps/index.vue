@@ -98,13 +98,13 @@ const allItems = computed(() => [
     feature: "products",
   },
   {
-    label: "Recipes",
+    label: t("navigation.recipes"),
     to: "/recipes",
     icon: "solar:chef-hat-linear",
     feature: "recipes",
   },
   {
-    label: "Ingredients",
+    label: t("navigation.ingredients"),
     to: "/ingredients",
     icon: "solar:leaf-linear",
     feature: "ingredients",

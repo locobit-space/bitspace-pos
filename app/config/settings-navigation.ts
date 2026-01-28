@@ -117,6 +117,15 @@ export const settingsNavigation: SettingsNavItem[] = [
     order: 13,
   },
   {
+    id: "printers",
+    label: "settings.printers.title",
+    to: "/settings/printers",
+    icon: "solar:printer-linear",
+    color: "indigo",
+    section: "business",
+    order: 13,
+  },
+  {
     id: "bank-accounts",
     label: "settings.bankAccounts.title",
     to: "/settings/bank-accounts",
