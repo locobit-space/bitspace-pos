@@ -578,6 +578,37 @@
         "category_delete": "Category Deleted"
       }
     },
+    "printers": {
+      "title": "Printer Settings",
+      "subtitle": "Network printers",
+      "description": "Manage network printers for receipts and kitchen tickets",
+      "addPrinter": "Add Printer",
+      "editPrinter": "Edit Printer",
+      "name": "Printer Name",
+      "ip": "IP Address",
+      "ipAddress": "IP Address / Hostname",
+      "port": "Port",
+      "location": "Location",
+      "paperWidth": "Paper Width",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "test": "Test",
+      "testPrint": "Test Print",
+      "testSent": "Test print sent",
+      "testConnecting": "Connecting...",
+      "howItWorks": "How it works",
+      "howItWorksDesc": "Configure your network thermal printers here. Ensure the database/backend service has access to these IPs.",
+      "noPrinters": "No printers configured",
+      "addFirst": "Add your first network printer to get started.",
+      "invalidIp": "Invalid IP Address",
+      "locations": {
+        "counter": "Counter",
+        "kitchen": "Kitchen",
+        "bar": "Bar",
+        "custom": "Custom"
+      }
+    },
     "bankAccounts": {
       "title": "Bank Accounts",
       "subtitle": "Payment transfers",

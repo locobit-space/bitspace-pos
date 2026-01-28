@@ -26,6 +26,7 @@
     "title": "Notifications",
     "pageDescription": "Manage and view all your notifications",
     "noNotifications": "No notifications",
+    "allLoaded": "All notifications loaded",
     "empty": "No notifications yet",
     "emptyTitle": "All caught up!",
     "emptyDescription": "You don't have any notifications right now. New notifications will appear here when you receive payments, orders, or alerts.",

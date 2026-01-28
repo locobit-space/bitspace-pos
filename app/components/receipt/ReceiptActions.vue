@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import type { Order, PaymentMethod } from "~/types";
 import QRCodeVue3 from "qrcode.vue";
+import { usePrinterSettings } from "~/composables/use-printer-settings";
 
 const props = defineProps<{
   order: Order;
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 const receipt = useReceipt();
 const currency = useCurrency();
 const { t } = useI18n();
+const toast = useToast();
 
 // State
 const showPreview = ref(false);
@@ -92,19 +94,53 @@ const handlePrint = async () => {
     // Store receipt first for e-bill access
     receipt.storeEBill(currentReceipt.value);
 
-    // Generate HTML with QR code (async)
-    const html = await receipt.generateHtmlReceipt(currentReceipt.value);
+    // Check for active network printers (Counter location)
+    const { counterPrinters } = usePrinterSettings();
+    const printers = counterPrinters.value;
 
-    // Try to print via browser
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-      printWindow.print();
+    if (printers.length > 0) {
+      // 🖨️ NETWORK PRINT STRATEGY
+      // Send to all active counter printers
+      const promises = printers.map(async (p) => {
+        // Simulate network delay / printing (Replace with actual IPP/ESCPOS call later)
+        console.log(`[Receipt] Printing to ${p.name} (${p.ip}:${p.port})...`);
+
+        toast.add({
+          title: t("receipt.printing"),
+          description: `${p.name} (${p.ip})`,
+          icon: "solar:printer-linear",
+        });
+
+        // Mock delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        return p.name;
+      });
+
+      await Promise.all(promises);
+
+      toast.add({
+        title: t("common.success"),
+        description: t("receipt.printSuccess"),
+        icon: "solar:check-circle-linear",
+        color: "green",
+      });
+    } else {
+      // 🌐 BROWSER FALLBACK STRATEGY
+      // Generate HTML with QR code (async)
+      const html = await receipt.generateHtmlReceipt(currentReceipt.value);
+
+      // Try to print via browser
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.print();
+      }
     }
   } catch (e) {
     console.error("Print error:", e);
-    // Fall back to preview
+    // Fall back to preview if something breaks
     showPreview.value = true;
   } finally {
     isPrinting.value = false;
@@ -152,7 +188,7 @@ const sendEmail = async () => {
     // In production, send via API
     // For now, open mailto
     window.open(
-      `mailto:${customerEmail.value}?subject=Receipt from BNOS&body=View your receipt here: ${url}`
+      `mailto:${customerEmail.value}?subject=Receipt from BNOS&body=View your receipt here: ${url}`,
     );
 
     showEmailInput.value = false;
@@ -423,10 +459,14 @@ const paymentMethodDisplay = computed(() => {
             v-if="receiptCode"
             class="mb-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3"
           >
-            <p class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
+            <p
+              class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1"
+            >
               RECEIPT CODE
             </p>
-            <p class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono">
+            <p
+              class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono"
+            >
               {{ receiptCode }}
             </p>
           </div>
@@ -453,11 +493,7 @@ const paymentMethodDisplay = computed(() => {
             >
               {{ t("common.copyLink") }}
             </UButton>
-            <UButton
-              color="primary"
-              block
-              @click="showQRModal = false"
-            >
+            <UButton color="primary" block @click="showQRModal = false">
               {{ t("common.done") }}
             </UButton>
           </div>
