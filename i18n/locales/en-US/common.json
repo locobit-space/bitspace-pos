@@ -2,6 +2,9 @@
   "common": {
     "show": "Show",
     "hide": "Hide",
+    "open": "Open",
+    "apps": "Apps",
+    "appsDescription": "Access all your business tools in one place.",
     "valid": "Valid",
     "copy": "Copy",
     "more": "More",
