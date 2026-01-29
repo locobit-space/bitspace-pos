@@ -20,6 +20,9 @@ const receipt = useReceipt();
 const currency = useCurrency();
 const { t } = useI18n();
 const toast = useToast();
+const pos = usePOS();
+const printService = usePrintService();
+const receiptGenerator = useReceiptGenerator();
 
 // State
 const showPreview = ref(false);
@@ -94,56 +97,83 @@ const handlePrint = async () => {
     // Store receipt first for e-bill access
     receipt.storeEBill(currentReceipt.value);
 
-    // Check for active network printers (Counter location)
-    const { counterPrinters } = usePrinterSettings();
-    const printers = counterPrinters.value;
+    // Check if a printer is selected in POS
+    if (pos.selectedPrinterId.value) {
+      try {
+        // Generate receipt HTML for printing
+        const receiptHtml = await receipt.generateHtmlReceipt(currentReceipt.value);
 
-    if (printers.length > 0) {
-      // 🖨️ NETWORK PRINT STRATEGY
-      // Send to all active counter printers
-      const promises = printers.map(async (p) => {
-        // Simulate network delay / printing (Replace with actual IPP/ESCPOS call later)
-        console.log(`[Receipt] Printing to ${p.name} (${p.ip}:${p.port})...`);
+        // Send to selected printer
+        await printService.sendToPrinter(
+          pos.selectedPrinterId.value,
+          receiptHtml
+        );
 
         toast.add({
-          title: t("receipt.printing"),
-          description: `${p.name} (${p.ip})`,
-          icon: "solar:printer-linear",
+          title: t("common.success"),
+          description: t("receipt.printSuccess"),
+          icon: "solar:check-circle-linear",
+          color: "green",
         });
+      } catch (error) {
+        console.error("Print error:", error);
+        toast.add({
+          title: t("receipt.printFailed"),
+          description: String(error),
+          icon: "solar:danger-circle-linear",
+          color: "red",
+        });
+        // Fall back to browser print
+        await fallbackToBrowserPrint();
+      }
+    } else {
+      // No printer selected - check for counter printers or use browser print
+      const { counterPrinters } = usePrinterSettings();
+      const printers = counterPrinters.value;
 
-        // Mock delay
+      if (printers.length > 0) {
+        // Legacy: Send to counter printers (mocked for now)
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        return p.name;
-      });
-
-      await Promise.all(promises);
-
-      toast.add({
-        title: t("common.success"),
-        description: t("receipt.printSuccess"),
-        icon: "solar:check-circle-linear",
-        color: "green",
-      });
-    } else {
-      // 🌐 BROWSER FALLBACK STRATEGY
-      // Generate HTML with QR code (async)
-      const html = await receipt.generateHtmlReceipt(currentReceipt.value);
-
-      // Try to print via browser
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.print();
+        toast.add({
+          title: t("common.success"),
+          description: t("receipt.printSuccess"),
+          icon: "solar:check-circle-linear",
+          color: "green",
+        });
+      } else {
+        // Direct browser print fallback
+        await fallbackToBrowserPrint();
       }
     }
   } catch (e) {
     console.error("Print error:", e);
-    // Fall back to preview if something breaks
-    showPreview.value = true;
+    toast.add({
+      title: t("receipt.printFailed"),
+      description: String(e),
+      icon: "solar:danger-circle-linear",
+      color: "red",
+    });
   } finally {
     isPrinting.value = false;
+  }
+};
+
+// Browser print fallback
+const fallbackToBrowserPrint = async () => {
+  const html = await receipt.generateHtmlReceipt(currentReceipt.value);
+
+  const printWindow = window.open("", "_blank");
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.print();
+
+    toast.add({
+      title: t("receipt.printing"),
+      description: t("receipt.usingBrowserPrint"),
+      icon: "solar:printer-linear",
+    });
   }
 };
 
@@ -231,24 +261,11 @@ const paymentMethodDisplay = computed(() => {
     <div class="mb-6">
       <!-- Animated Checkmark -->
       <div class="relative w-20 h-20 mx-auto mb-4">
+        <div class="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
         <div
-          class="absolute inset-0 bg-green-500/20 rounded-full animate-ping"
-        />
-        <div
-          class="relative w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30"
-        >
-          <svg
-            class="w-10 h-10 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="3"
-              d="M5 13l4 4L19 7"
-            />
+          class="relative w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
           </svg>
         </div>
       </div>
@@ -256,9 +273,7 @@ const paymentMethodDisplay = computed(() => {
       <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
         {{ t("payment.success") }}
       </h2>
-      <p
-        class="text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2"
-      >
+      <p class="text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
         <span>{{ paymentMethodDisplay.icon }}</span>
         <span>{{ paymentMethodDisplay.name }}</span>
       </p>
@@ -280,10 +295,7 @@ const paymentMethodDisplay = computed(() => {
       <div class="text-3xl font-bold text-gray-900 dark:text-white">
         {{ currency.format(order.total, order.currency || "LAK") }}
       </div>
-      <div
-        v-if="order.totalSats"
-        class="text-amber-600 dark:text-amber-400 text-sm mt-1"
-      >
+      <div v-if="order.totalSats" class="text-amber-600 dark:text-amber-400 text-sm mt-1">
         ⚡ {{ currency.format(order.totalSats, "SATS") }}
       </div>
     </div>
@@ -298,9 +310,7 @@ const paymentMethodDisplay = computed(() => {
         <!-- Print Receipt -->
         <button
           class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all group"
-          :disabled="isPrinting"
-          @click="handlePrint"
-        >
+          :disabled="isPrinting" @click="handlePrint">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">
             🖨️
           </div>
@@ -315,8 +325,7 @@ const paymentMethodDisplay = computed(() => {
         <!-- E-Bill QR -->
         <button
           class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all group"
-          @click="handleEBill"
-        >
+          @click="handleEBill">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">
             <Icon name="system-uicons:iphone-portrait" />
           </div>
@@ -331,8 +340,7 @@ const paymentMethodDisplay = computed(() => {
         <!-- Send Email -->
         <button
           class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 transition-all group"
-          @click="handleSendEmail"
-        >
+          @click="handleSendEmail">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">
             ✉️
           </div>
@@ -349,9 +357,8 @@ const paymentMethodDisplay = computed(() => {
           class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-all group"
           @click="
             showPreview = true;
-            stopCountdown();
-          "
-        >
+          stopCountdown();
+          ">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">
             <Icon name="mynaui:eye" class="w-8 h-8 mx-auto" />
           </div>
@@ -366,36 +373,18 @@ const paymentMethodDisplay = computed(() => {
     </div>
 
     <!-- Email Input (when active) -->
-    <div
-      v-if="showEmailInput"
-      class="mb-6 p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/30"
-    >
+    <div v-if="showEmailInput"
+      class="mb-6 p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/30">
       <h4 class="font-medium text-gray-900 dark:text-white mb-3">
         {{ t("receipt.sendReceiptToEmail") }}
       </h4>
-      <UInput
-        v-model="customerEmail"
-        type="email"
-        placeholder="customer@email.com"
-        icon="i-heroicons-envelope"
-        class="mb-3"
-      />
+      <UInput v-model="customerEmail" type="email" placeholder="customer@email.com" icon="i-heroicons-envelope"
+        class="mb-3" />
       <div class="flex gap-2">
-        <UButton
-          color="neutral"
-          variant="outline"
-          class="flex-1"
-          @click="showEmailInput = false"
-        >
+        <UButton color="neutral" variant="outline" class="flex-1" @click="showEmailInput = false">
           {{ t("common.cancel") }}
         </UButton>
-        <UButton
-          color="green"
-          class="flex-1"
-          :loading="isSending"
-          :disabled="!customerEmail"
-          @click="sendEmail"
-        >
+        <UButton color="green" class="flex-1" :loading="isSending" :disabled="!customerEmail" @click="sendEmail">
           {{ t("common.send") }}
         </UButton>
       </div>
@@ -403,13 +392,7 @@ const paymentMethodDisplay = computed(() => {
 
     <!-- Skip / Done -->
     <div class="space-y-2">
-      <UButton
-        block
-        size="lg"
-        color="primary"
-        class="bg-linear-to-r from-amber-500 to-orange-500"
-        @click="handleSkip"
-      >
+      <UButton block size="lg" color="primary" class="bg-linear-to-r from-amber-500 to-orange-500" @click="handleSkip">
         {{
           countdown > 0
             ? `${t("receipt.newOrder")} (${countdown}s)`
@@ -423,11 +406,7 @@ const paymentMethodDisplay = computed(() => {
     </div>
 
     <!-- E-Bill QR Modal -->
-    <UModal
-      v-model:open="showQRModal"
-      title="E-Bill"
-      description="Scan QR code to view e-bill"
-    >
+    <UModal v-model:open="showQRModal" title="E-Bill" description="Scan QR code to view e-bill">
       <template #content>
         <div class="p-6 bg-white dark:bg-gray-900 text-center">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
@@ -439,34 +418,16 @@ const paymentMethodDisplay = computed(() => {
 
           <!-- QR Code - Use pre-generated if available -->
           <div class="bg-white p-4 rounded-xl inline-block shadow-lg mb-4">
-            <img
-              v-if="qrCodeImage"
-              :src="qrCodeImage"
-              alt="Receipt QR Code"
-              class="w-48 h-48 mx-auto"
-            />
-            <QRCodeVue3
-              v-else-if="eBillUrl"
-              :value="eBillUrl"
-              :size="192"
-              level="M"
-              render-as="svg"
-            />
+            <img v-if="qrCodeImage" :src="qrCodeImage" alt="Receipt QR Code" class="w-48 h-48 mx-auto" />
+            <QRCodeVue3 v-else-if="eBillUrl" :value="eBillUrl" :size="192" level="M" render-as="svg" />
           </div>
 
           <!-- Receipt Code (if available) -->
-          <div
-            v-if="receiptCode"
-            class="mb-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3"
-          >
-            <p
-              class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1"
-            >
+          <div v-if="receiptCode" class="mb-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
+            <p class="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
               RECEIPT CODE
             </p>
-            <p
-              class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono"
-            >
+            <p class="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono">
               {{ receiptCode }}
             </p>
           </div>
@@ -476,21 +437,14 @@ const paymentMethodDisplay = computed(() => {
             <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
               {{ t("receipt.eBillLink") }}
             </p>
-            <p
-              class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all"
-            >
+            <p class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all">
               {{ eBillUrl }}
             </p>
           </div>
 
           <div class="flex gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              block
-              icon="i-heroicons-clipboard-document"
-              @click="copyEBillLink"
-            >
+            <UButton color="neutral" variant="outline" block icon="i-heroicons-clipboard-document"
+              @click="copyEBillLink">
               {{ t("common.copyLink") }}
             </UButton>
             <UButton color="primary" block @click="showQRModal = false">
@@ -502,12 +456,7 @@ const paymentMethodDisplay = computed(() => {
     </UModal>
 
     <!-- Receipt Preview Modal -->
-    <ReceiptPreview
-      v-if="showPreview"
-      :order="props.order"
-      :payment-proof="props.order.paymentProof"
-      :open="showPreview"
-      @close="showPreview = false"
-    />
+    <ReceiptPreview v-if="showPreview" :order="props.order" :payment-proof="props.order.paymentProof"
+      :open="showPreview" @close="showPreview = false" />
   </div>
 </template>

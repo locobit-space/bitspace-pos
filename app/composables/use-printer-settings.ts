@@ -12,18 +12,27 @@ import { computed } from "vue";
 // ============================================
 
 export type PrinterLocation = "counter" | "kitchen" | "bar" | "custom";
-export type PrinterType = "network" | "usb" | "bluetooth"; // Future proofing
+export type PrinterType =
+  | "network"
+  | "wireless"
+  | "bluetooth"
+  | "usb"
+  | "ethernet";
 
 export interface Printer {
   id: string;
   name: string;
-  ip: string; // Network IP address
-  port: number; // Default 9100
+  ip: string; // Network IP address (for network/wireless/ethernet types)
+  port: number; // Default 9100 (for network/wireless/ethernet types)
   type: PrinterType;
   location: PrinterLocation;
   customLocation?: string; // If location is 'custom'
   isActive: boolean;
-  paperWidth: "58mm" | "80mm";
+  paperWidth: "58mm" | "80mm" | "custom";
+  customPaperWidth?: number; // Custom width in mm (when paperWidth is 'custom')
+  autoCut: boolean; // Enable automatic paper cutting after print
+  encoding?: string; // Character encoding (e.g., 'UTF-8', 'GB18030', 'ISO-8859-1')
+  density?: number; // Print density/darkness (1-5 scale, 3 is default)
 }
 
 export interface PrinterSettings {
@@ -129,7 +138,7 @@ export function usePrinterSettings() {
   /**
    * Update an existing printer
    */
-  const updatePrinter = (id: string, updates: Partial<Printer>) => {
+  const updatePrinter = (id: string, updates: Partial<Omit<Printer, "id">>) => {
     const index = settings.value.printers.findIndex((p) => p.id === id);
     if (index !== -1) {
       settings.value.printers[index] = {

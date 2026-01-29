@@ -45,6 +45,10 @@ const deliveryAddress = ref<string>("");
 const customerPhone = ref<string>("");
 const scheduledTime = ref<string>("");
 
+// Printer settings for receipt printing
+const selectedPrinterId = ref<string | null>(null);
+const autoPrintReceipts = ref<boolean>(true);
+
 // Payment state for customer display sync
 const paymentState = ref<{
   status: "idle" | "pending" | "paid" | "cancelled";
@@ -225,7 +229,7 @@ export const usePOS = () => {
 
   // Session computed (uses global state)
   const isSessionActive = computed(
-    () => currentSession.value?.status === "active"
+    () => currentSession.value?.status === "active",
   );
 
   // ============================================
@@ -238,7 +242,7 @@ export const usePOS = () => {
   const calculateItemPrice = (
     product: Product,
     variant?: ProductVariant,
-    modifiers?: ProductModifier[]
+    modifiers?: ProductModifier[],
   ): number => {
     let basePrice = product.prices?.[selectedCurrency.value] || product.price;
 
@@ -267,7 +271,7 @@ export const usePOS = () => {
   const getCartItemKey = (
     productId: string,
     variant?: ProductVariant,
-    modifiers?: ProductModifier[]
+    modifiers?: ProductModifier[],
   ): string => {
     let key = productId;
     if (variant) key += `-${variant.id}`;
@@ -294,7 +298,7 @@ export const usePOS = () => {
       variant?: ProductVariant;
       modifiers?: ProductModifier[];
       notes?: string;
-    }
+    },
   ) => {
     const variant = options?.variant;
     const modifiers = options?.modifiers;
@@ -306,7 +310,7 @@ export const usePOS = () => {
       const existingKey = getCartItemKey(
         item.product.id,
         item.selectedVariant,
-        item.selectedModifiers
+        item.selectedModifiers,
       );
       return existingKey === itemKey && item.notes === notes;
     });
@@ -347,7 +351,7 @@ export const usePOS = () => {
    */
   const removeFromCartById = (productId: string) => {
     const index = cartItems.value.findIndex(
-      (item) => item.product.id === productId
+      (item) => item.product.id === productId,
     );
     if (index !== -1) {
       cartItems.value.splice(index, 1);
@@ -376,7 +380,7 @@ export const usePOS = () => {
    */
   const updateQuantityById = (productId: string, quantity: number) => {
     const index = cartItems.value.findIndex(
-      (item) => item.product.id === productId
+      (item) => item.product.id === productId,
     );
     if (index !== -1) {
       updateQuantity(index, quantity);
@@ -403,7 +407,7 @@ export const usePOS = () => {
       item.price = calculateItemPrice(
         item.product,
         variant,
-        item.selectedModifiers
+        item.selectedModifiers,
       );
       item.total = item.quantity * item.price;
     }
@@ -419,7 +423,7 @@ export const usePOS = () => {
       item.price = calculateItemPrice(
         item.product,
         item.selectedVariant,
-        modifiers
+        modifiers,
       );
       item.total = item.quantity * item.price;
     }
@@ -455,7 +459,7 @@ export const usePOS = () => {
       name?: string;
       nostrPubkey?: string;
       phone?: string;
-    } | null
+    } | null,
   ) => {
     if (customer) {
       customerId.value = customer.id || null;
@@ -480,7 +484,7 @@ export const usePOS = () => {
       deliveryAddress?: string;
       customerPhone?: string;
       scheduledTime?: string;
-    }
+    },
   ) => {
     orderType.value = type;
     if (details?.tableNumber) tableNumber.value = details.tableNumber;
@@ -517,7 +521,7 @@ export const usePOS = () => {
   const applyPromotion = (promotion: AppliedPromotion) => {
     // Check if promotion is already applied
     const existingIndex = appliedPromotions.value.findIndex(
-      (p) => p.promotionId === promotion.promotionId
+      (p) => p.promotionId === promotion.promotionId,
     );
 
     if (existingIndex >= 0) {
@@ -536,7 +540,7 @@ export const usePOS = () => {
    */
   const removePromotion = (promotionId: string) => {
     appliedPromotions.value = appliedPromotions.value.filter(
-      (p) => p.promotionId !== promotionId
+      (p) => p.promotionId !== promotionId,
     );
     broadcastCartState();
   };
@@ -681,7 +685,7 @@ export const usePOS = () => {
 
       // Sort promotions by priority (higher first)
       const sortedPromotions = [...activePromotions].sort(
-        (a, b) => b.priority - a.priority
+        (a, b) => b.priority - a.priority,
       );
 
       for (const promotion of sortedPromotions) {
@@ -757,7 +761,7 @@ export const usePOS = () => {
               } else if (promotion.rewardType === "percentage_off") {
                 const itemsTotal = applicableItems.reduce(
                   (sum, item) => sum + item.total,
-                  0
+                  0,
                 );
                 discountAmount =
                   (itemsTotal * (promotion.rewardDiscount || 0)) / 100;
@@ -770,10 +774,10 @@ export const usePOS = () => {
           case "discount": {
             const itemsTotal = applicableItems.reduce(
               (sum, item) => sum + item.total,
-              0
+              0,
             );
             applicableItems.forEach((item) =>
-              triggerItemIds.push(item.product.id)
+              triggerItemIds.push(item.product.id),
             );
 
             if (promotion.discountType === "percentage") {
@@ -783,7 +787,7 @@ export const usePOS = () => {
             } else if (promotion.discountType === "fixed") {
               discountAmount = Math.min(
                 promotion.discountValue || 0,
-                itemsTotal
+                itemsTotal,
               );
               description = `฿${promotion.discountValue} off`;
             }
@@ -794,14 +798,14 @@ export const usePOS = () => {
           case "tiered": {
             const totalQuantity = applicableItems.reduce(
               (sum, item) => sum + item.quantity,
-              0
+              0,
             );
             const itemsTotal = applicableItems.reduce(
               (sum, item) => sum + item.total,
-              0
+              0,
             );
             applicableItems.forEach((item) =>
-              triggerItemIds.push(item.product.id)
+              triggerItemIds.push(item.product.id),
             );
 
             // Find applicable tier
@@ -831,16 +835,16 @@ export const usePOS = () => {
             // Check if all required products are in cart
             const hasAllProducts = promotion.triggerProductIds?.every(
               (productId) =>
-                cartItems.value.some((item) => item.product.id === productId)
+                cartItems.value.some((item) => item.product.id === productId),
             );
 
             if (hasAllProducts) {
               const bundleTotal = applicableItems.reduce(
                 (sum, item) => sum + item.total,
-                0
+                0,
               );
               applicableItems.forEach((item) =>
-                triggerItemIds.push(item.product.id)
+                triggerItemIds.push(item.product.id),
               );
 
               discountAmount =
@@ -898,7 +902,7 @@ export const usePOS = () => {
   const promotionDiscount = computed(() => {
     return appliedPromotions.value.reduce(
       (sum, promo) => sum + promo.discountAmount,
-      0
+      0,
     );
   });
 
@@ -909,7 +913,7 @@ export const usePOS = () => {
         tax.value +
         tipAmount.value -
         promotionDiscount.value -
-        discountAmount.value
+        discountAmount.value,
     );
   });
 
@@ -1025,7 +1029,7 @@ export const usePOS = () => {
   const startSession = (
     branchId: string,
     staffId: string,
-    openingBalance: number = 0
+    openingBalance: number = 0,
   ): POSSession => {
     const session: POSSession = {
       id: generateUUIDv7(),
@@ -1158,13 +1162,62 @@ export const usePOS = () => {
       tipAmount.value = currency.convert(
         tipAmount.value,
         oldCurrency,
-        newCurrency
+        newCurrency,
       );
+    }
+  };
+
+  // ============================================
+  // Printer Management
+  // ============================================
+
+  /**
+   * Set selected printer for receipt printing
+   */
+  const setSelectedPrinter = (printerId: string | null) => {
+    selectedPrinterId.value = printerId;
+    // Persist to localStorage
+    if (typeof window !== "undefined") {
+      if (printerId) {
+        localStorage.setItem("pos-selected-printer", printerId);
+      } else {
+        localStorage.removeItem("pos-selected-printer");
+      }
+    }
+  };
+
+  /**
+   * Toggle auto-print receipts
+   */
+  const toggleAutoPrint = () => {
+    autoPrintReceipts.value = !autoPrintReceipts.value;
+    // Persist to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pos-auto-print", String(autoPrintReceipts.value));
+    }
+  };
+
+  /**
+   * Load printer settings from localStorage
+   */
+  const loadPrinterSettings = () => {
+    if (typeof window === "undefined") return;
+
+    const savedPrinter = localStorage.getItem("pos-selected-printer");
+    const savedAutoPrint = localStorage.getItem("pos-auto-print");
+
+    if (savedPrinter) {
+      selectedPrinterId.value = savedPrinter;
+    }
+
+    if (savedAutoPrint !== null) {
+      autoPrintReceipts.value = savedAutoPrint === "true";
     }
   };
 
   // Initialize on mount
   restoreSession();
+  loadPrinterSettings();
 
   return {
     // Cart State
@@ -1237,5 +1290,11 @@ export const usePOS = () => {
 
     // Customer
     setCustomer,
+
+    // Printer settings
+    selectedPrinterId,
+    autoPrintReceipts,
+    setSelectedPrinter,
+    toggleAutoPrint,
   };
 };
