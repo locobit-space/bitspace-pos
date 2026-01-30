@@ -17,6 +17,9 @@ const ordersStore = useOrders();
 const toast = useToast();
 const nostrData = useNostrData();
 const company = useCompany();
+const printService = usePrintService();
+const pos = usePOS();
+const { kitchenPrinters } = usePrinterSettings();
 
 // ============================================
 // State
@@ -44,7 +47,7 @@ const kitchenOrders = computed(() => {
         o.status === "processing" ||
         o.status === "pending") &&
       // IMPORTANT: Exclude orders that have been served or picked up
-      o.kitchenStatus !== "served"
+      o.kitchenStatus !== "served",
   );
 
   // Filter by kitchen status
@@ -55,7 +58,7 @@ const kitchenOrders = computed(() => {
   // Sort
   if (sortBy.value === "time") {
     orders.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
   }
 
@@ -69,8 +72,8 @@ const newOrdersCount = computed(
         (o.status === "completed" ||
           o.status === "processing" ||
           o.status === "pending") &&
-        o.kitchenStatus === "new"
-    ).length
+        o.kitchenStatus === "new",
+    ).length,
 );
 
 const preparingOrdersCount = computed(
@@ -80,8 +83,8 @@ const preparingOrdersCount = computed(
         (o.status === "completed" ||
           o.status === "processing" ||
           o.status === "pending") &&
-        o.kitchenStatus === "preparing"
-    ).length
+        o.kitchenStatus === "preparing",
+    ).length,
 );
 
 const readyOrdersCount = computed(
@@ -91,8 +94,8 @@ const readyOrdersCount = computed(
         (o.status === "completed" ||
           o.status === "processing" ||
           o.status === "pending") &&
-        o.kitchenStatus === "ready"
-    ).length
+        o.kitchenStatus === "ready",
+    ).length,
 );
 
 // ============================================
@@ -143,7 +146,7 @@ const getStatusBgColor = (status?: string) => {
 
 const updateKitchenStatus = async (
   orderId: string,
-  kitchenStatus: "new" | "preparing" | "ready" | "served"
+  kitchenStatus: "new" | "preparing" | "ready" | "served",
 ) => {
   try {
     // Find the order and update it via the ordersStore.updateOrderStatus
@@ -192,7 +195,7 @@ const updateKitchenStatus = async (
  */
 const notifyKitchenStatusChange = async (
   order: Order,
-  status: "new" | "preparing" | "ready" | "served"
+  status: "new" | "preparing" | "ready" | "served",
 ) => {
   try {
     // ─────────────────────────────────────────
@@ -242,7 +245,7 @@ const notifyKitchenStatusChange = async (
       // Publish as POS_ALERT event with company tag for cross-device sync
       await nostrData.publishKitchenAlert(
         alertData,
-        company.companyCodeHash.value
+        company.companyCodeHash.value,
       );
     } catch (e) {
       console.error("[Kitchen] ❌ Failed to publish Nostr alert:", e);
@@ -254,7 +257,7 @@ const notifyKitchenStatusChange = async (
     // ✅ NO LOCAL NOTIFICATIONS - Let initPosAlerts handle ALL notifications
     // This prevents duplicates and ensures consistent cross-device notifications
     console.log(
-      `[Kitchen] 📢 Notification will be created by initPosAlerts subscription for status: ${status}`
+      `[Kitchen] 📢 Notification will be created by initPosAlerts subscription for status: ${status}`,
     );
   } catch (error) {
     console.error("[Kitchen] Failed to send notifications:", error);
@@ -280,14 +283,14 @@ const recallOrder = async (orderId: string) => {
 // Sound effects
 const playBellSound = () => {
   const audio = new Audio(
-    "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGUxE0qGv+LrwHQvDTZ5oPXt1YdVJRY7l9bw5aFjQSgsZ7XV5beKfmhYR1BebZabrqKFXD85Pktbe"
+    "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGUxE0qGv+LrwHQvDTZ5oPXt1YdVJRY7l9bw5aFjQSgsZ7XV5beKfmhYR1BebZabrqKFXD85Pktbe",
   );
   audio.play().catch(() => {});
 };
 
 const playClickSound = () => {
   const audio = new Audio(
-    "data:audio/wav;base64,UklGRl9vT19teleHRlbXQAAABXQVZFZm10IBAAAAABAAEAQB8AAEA..."
+    "data:audio/wav;base64,UklGRl9vT19teleHRlbXQAAABXQVZFZm10IBAAAAABAAEAQB8AAEA...",
   );
   audio.play().catch(() => {});
 };
@@ -304,6 +307,177 @@ const formatTime = (date: string) => {
     minute: "2-digit",
     hour12: true,
   });
+};
+
+// ============================================
+// Print Functions
+// ============================================
+const printOrder = async (order: Order) => {
+  try {
+    // Generate kitchen ticket HTML
+    const kitchenTicketHtml = generateKitchenTicket(order);
+
+    // Check if a kitchen printer is configured
+    const printers = kitchenPrinters.value;
+
+    if (printers.length > 0) {
+      // Send to first active kitchen printer
+      const printer = printers[0];
+      await printService.sendToPrinter(printer.id, kitchenTicketHtml);
+
+      toast.add({
+        title: t("common.success"),
+        description: t("kitchen.printSuccess", "Order printed successfully"),
+        icon: "solar:check-circle-linear",
+        color: "green",
+      });
+    } else {
+      // Fallback to browser print
+      const printWindow = window.open("", "_blank", "width=400,height=600");
+      if (printWindow) {
+        printWindow.document.write(kitchenTicketHtml);
+        printWindow.document.close();
+        printWindow.print();
+
+        toast.add({
+          title: t("kitchen.printing", "Printing..."),
+          description: t(
+            "kitchen.usingBrowserPrint",
+            "Using browser print dialog",
+          ),
+          icon: "solar:printer-linear",
+        });
+      }
+    }
+
+    if (soundEnabled.value) {
+      playClickSound();
+    }
+  } catch (error) {
+    console.error("Print error:", error);
+    toast.add({
+      title: t("common.error", "Error"),
+      description: t("kitchen.printFailed", "Failed to print order"),
+      icon: "solar:danger-circle-linear",
+      color: "red",
+    });
+  }
+};
+
+const generateKitchenTicket = (order: Order): string => {
+  const currency = useCurrency();
+  const openTag = "<";
+  const closeTag = ">";
+
+  let html = "";
+  html += openTag + "!DOCTYPE html" + closeTag + "\n";
+  html += openTag + "html" + closeTag + "\n";
+  html += openTag + "head" + closeTag + "\n";
+  html += "  " + openTag + 'meta charset="UTF-8"' + closeTag + "\n";
+  html += `  ${openTag}title${closeTag}Kitchen Order #${order.orderNumber}${openTag}/title${closeTag}\n`;
+  html += `  ${openTag}style${closeTag}\n`;
+  html +=
+    "    @media print { body { margin: 0; padding: 0; } @page { margin: 0; size: 80mm auto; } }\n";
+  html +=
+    '    body { font-family: "Courier New", monospace; width: 80mm; margin: 0 auto; padding: 10mm; font-size: 12px; line-height: 1.4; }\n';
+  html +=
+    "    .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }\n";
+  html +=
+    "    .order-number { font-size: 24px; font-weight: bold; margin: 10px 0; }\n";
+  html +=
+    "    .info-line { display: flex; justify-content: space-between; margin: 5px 0; }\n";
+  html += "    .items { margin: 15px 0; }\n";
+  html +=
+    "    .item { margin: 10px 0; padding: 5px 0; border-bottom: 1px dashed #ccc; }\n";
+  html +=
+    "    .item-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }\n";
+  html +=
+    "    .qty { background: #000; color: #fff; padding: 2px 8px; border-radius: 3px; font-weight: bold; }\n";
+  html +=
+    "    .modifier { margin-left: 20px; font-size: 11px; color: #666; }\n";
+  html +=
+    "    .notes { margin-left: 20px; font-weight: bold; color: #000; background: #ffeb3b; padding: 5px; margin-top: 5px; }\n";
+  html +=
+    "    .footer { text-align: center; border-top: 2px dashed #000; padding-top: 10px; margin-top: 15px; }\n";
+  html +=
+    "    .status-badge { display: inline-block; background: #000; color: #fff; padding: 5px 10px; border-radius: 5px; font-weight: bold; }\n";
+  html += `  ${openTag}/style${closeTag}\n`;
+  html += openTag + "/head" + closeTag + "\n";
+  html += openTag + "body" + closeTag + "\n";
+  html += `  ${openTag}div class="header"${closeTag}\n`;
+  html += `    ${openTag}div style="font-size: 18px; font-weight: bold;"${closeTag}👨\u200d🍳 KITCHEN ORDER${openTag}/div${closeTag}\n`;
+  html += `    ${openTag}div class="order-number"${closeTag}#${order.orderNumber || order.id.slice(-6).toUpperCase()}${openTag}/div${closeTag}\n`;
+  html += `    ${openTag}div class="status-badge"${closeTag}${order.kitchenStatus?.toUpperCase() || "NEW"}${openTag}/div${closeTag}\n`;
+  html += `  ${openTag}/div${closeTag}\n`;
+  html += `  ${openTag}div class="info-line"${closeTag}\n`;
+  html += `    ${openTag}span${closeTag}${openTag}strong${closeTag}Time:${openTag}/strong${closeTag} ${formatTime(order.date)}${openTag}/span${closeTag}\n`;
+  html += `    ${openTag}span${closeTag}${openTag}strong${closeTag}Age:${openTag}/strong${closeTag} ${getOrderAge(order.date)}${openTag}/span${closeTag}\n`;
+  html += `  ${openTag}/div${closeTag}\n`;
+
+  if (order.tableName || order.tableNumber) {
+    html += `  ${openTag}div class="info-line"${closeTag}\n`;
+    html += `    ${openTag}span${closeTag}${openTag}strong${closeTag}🪑 Table:${openTag}/strong${closeTag} ${order.tableName || "Table " + order.tableNumber}${openTag}/span${closeTag}\n`;
+    html += `  ${openTag}/div${closeTag}\n`;
+  }
+
+  if (order.customer) {
+    html += `  ${openTag}div class="info-line"${closeTag}\n`;
+    html += `    ${openTag}span${closeTag}${openTag}strong${closeTag}👤 Customer:${openTag}/strong${closeTag} ${order.customer}${openTag}/span${closeTag}\n`;
+    html += `  ${openTag}/div${closeTag}\n`;
+  }
+
+  html += `  ${openTag}div class="items"${closeTag}\n`;
+  html += `    ${openTag}div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;"${closeTag}ITEMS:${openTag}/div${closeTag}\n`;
+
+  order.items.forEach((item) => {
+    html += `    ${openTag}div class="item"${closeTag}\n`;
+    html += `      ${openTag}div class="item-header"${closeTag}\n`;
+    html += `        ${openTag}span class="qty"${closeTag}${item.quantity}x${openTag}/span${closeTag}\n`;
+    html += `        ${openTag}span${closeTag}${item.product?.name || "Unknown Item"}${openTag}/span${closeTag}\n`;
+    html += `      ${openTag}/div${closeTag}\n`;
+
+    if (item.selectedVariant) {
+      html += `      ${openTag}div class="modifier"${closeTag}↳ ${item.selectedVariant.name}${openTag}/div${closeTag}\n`;
+    }
+
+    if (item.selectedModifiers && item.selectedModifiers.length > 0) {
+      item.selectedModifiers.forEach((mod) => {
+        html += `      ${openTag}div class="modifier"${closeTag}+ ${mod.name}${openTag}/div${closeTag}\n`;
+      });
+    }
+
+    if (item.notes) {
+      html += `      ${openTag}div class="notes"${closeTag}⚠️ NOTE: ${item.notes}${openTag}/div${closeTag}\n`;
+    }
+
+    html += `    ${openTag}/div${closeTag}\n`;
+  });
+
+  html += `  ${openTag}/div${closeTag}\n`;
+
+  if (order.kitchenNotes) {
+    html += `  ${openTag}div class="notes" style="margin-left: 0;"${closeTag}\n`;
+    html += `    ${openTag}strong${closeTag}📝 KITCHEN NOTES:${openTag}/strong${closeTag}${openTag}br${closeTag}\n`;
+    html += `    ${order.kitchenNotes}\n`;
+    html += `  ${openTag}/div${closeTag}\n`;
+  }
+
+  html += `  ${openTag}div class="footer"${closeTag}\n`;
+  html += `    ${openTag}div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;"${closeTag}\n`;
+  html += `      Total: ${currency.format(order.total, order.currency || "LAK")}\n`;
+  html += `    ${openTag}/div${closeTag}\n`;
+  html += `    ${openTag}div style="font-size: 10px; color: #666;"${closeTag}\n`;
+  html += `      Printed: ${new Date().toLocaleTimeString()}\n`;
+  html += `    ${openTag}/div${closeTag}\n`;
+  html += `  ${openTag}/div${closeTag}\n`;
+  html += `  ${openTag}script${closeTag}\n`;
+  html +=
+    "    window.onload = () => { window.print(); setTimeout(() => window.close(), 500); };\n";
+  html += `  ${openTag}/script${closeTag}\n`;
+  html += openTag + "/body" + closeTag + "\n";
+  html += openTag + "/html" + closeTag;
+
+  return html;
 };
 
 // ============================================
@@ -493,12 +667,12 @@ onUnmounted(() => {
           <div class="flex items-center gap-3">
             <div>
               <div
-                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-lg"
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-xl shadow-sm"
               >
                 <NuxtLinkLocale to="/">👨‍🍳</NuxtLinkLocale>
               </div>
             </div>
-            <div>
+            <div class="hidden md:block">
               <h1 class="text-lg font-bold text-gray-900 dark:text-white">
                 {{ t("kitchen.title") }}
               </h1>
@@ -797,12 +971,24 @@ onUnmounted(() => {
                   </span>
                 </div>
               </div>
-              <span
-                class="text-sm font-bold tabular-nums"
-                :class="getAgeColor(order.date)"
-              >
-                {{ getOrderAge(order.date) }}
-              </span>
+              <div class="flex items-center gap-2">
+                <!-- Print Button -->
+                <UTooltip text="Print Order">
+                  <UButton
+                    icon="solar:printer-linear"
+                    color="gray"
+                    variant="ghost"
+                    size="xs"
+                    @click.stop="printOrder(order)"
+                  />
+                </UTooltip>
+                <span
+                  class="text-sm font-bold tabular-nums"
+                  :class="getAgeColor(order.date)"
+                >
+                  {{ getOrderAge(order.date) }}
+                </span>
+              </div>
             </div>
 
             <div class="flex items-center justify-between text-sm pl-8">
@@ -812,8 +998,8 @@ onUnmounted(() => {
                   order.kitchenStatus === 'new'
                     ? 'blue'
                     : order.kitchenStatus === 'preparing'
-                    ? 'amber'
-                    : 'green'
+                      ? 'amber'
+                      : 'green'
                 "
                 variant="soft"
                 size="sm"
@@ -934,8 +1120,8 @@ onUnmounted(() => {
                   order.kitchenStatus === 'ready'
                     ? 'green'
                     : order.kitchenStatus === 'preparing'
-                    ? 'amber'
-                    : 'blue'
+                      ? 'amber'
+                      : 'blue'
                 "
                 size="sm"
                 class="flex-1"

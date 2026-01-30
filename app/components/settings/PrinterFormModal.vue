@@ -57,11 +57,36 @@ watch(
   { immediate: true },
 );
 
+// Auto-parse port from IP if entered as "IP:PORT" format
+watch(
+  () => state.ip,
+  (newIp) => {
+    if (newIp && newIp.includes(":")) {
+      const parts = newIp.split(":");
+      const ip = parts[0]?.trim();
+      const portStr = parts[1]?.trim();
+
+      if (ip) {
+        state.ip = ip;
+      }
+      if (portStr) {
+        const parsedPort = parseInt(portStr);
+        if (!isNaN(parsedPort)) {
+          state.port = parsedPort;
+        }
+      }
+    }
+  },
+);
+
 // Validation Schema
 const schema = z.object({
   name: z.string().min(1, t("validation.required")),
   ip: z.string().optional(),
-  port: z.number().int().positive(),
+  port: z.preprocess(
+    (val) => (val === "" || val === null ? undefined : val),
+    z.number().int().positive().optional(),
+  ),
   location: z.enum(["counter", "kitchen", "bar", "custom"]),
   customLocation: z.string().optional(),
 });
@@ -232,13 +257,9 @@ const onSubmit = (event: FormSubmitEvent<Schema>) => {
               />
             </UFormField>
 
-            <UFormField
-              :label="$t('settings.printers.port')"
-              name="port"
-              required
-            >
+            <UFormField :label="$t('settings.printers.port')" name="port">
               <UInput
-                v-model="state.port"
+                v-model.number="state.port"
                 type="number"
                 placeholder="9100"
                 class="w-full"

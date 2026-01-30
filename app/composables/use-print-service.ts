@@ -56,10 +56,15 @@ export const usePrintService = () => {
     printer: Printer,
     html: string,
   ): Promise<boolean> => {
+    // Use default port 9100 (common for thermal printers) if not specified
+    const port = printer.port || 9100;
+    const printerAddress = `${printer.ip}:${port}`;
+
     console.log("Sending to network printer:", printer.name);
+    console.log("Printer address:", printerAddress);
     console.log("Printer config:", {
       ip: printer.ip,
-      port: printer.port,
+      port: port,
       paperWidth: printer.paperWidth,
       autoCut: printer.autoCut,
       encoding: printer.encoding,
@@ -71,6 +76,13 @@ export const usePrintService = () => {
     // 1. Use backend service to handle ESC/POS conversion and network transmission
     // 2. Use browser-based ESC/POS library (e.g., @tillpos/xml-escpos-helper)
     // 3. Send to print server endpoint that forwards to printer
+
+    // Example for future implementation:
+    // const response = await fetch(`http://${printerAddress}/print`, {
+    //   method: 'POST',
+    //   body: html,
+    //   headers: { 'Content-Type': 'text/html' }
+    // });
 
     // For now, log the attempt and use browser print as fallback
     toast.add({

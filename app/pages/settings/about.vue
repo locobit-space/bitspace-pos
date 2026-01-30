@@ -199,7 +199,7 @@
           <div class="flex items-center justify-center gap-2 text-lg">
             <span>⚡</span>
             <span class="font-semibold text-gray-900 dark:text-white">
-              BitSpace Team
+              BNOS Team
             </span>
             <span>⚡</span>
           </div>

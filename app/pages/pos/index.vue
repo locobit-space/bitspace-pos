@@ -91,7 +91,7 @@ const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mo
 const showPaymentOrderDetails = ref(false); // Toggle order details in payment modal
 // Per-order: Auto-close kitchen status when payment completes (defaults to global setting)
 const autoCloseKitchenOnPayment = ref(
-  posSettings.autoCloseKitchenStatusOnPayment.value
+  posSettings.autoCloseKitchenStatusOnPayment.value,
 );
 const splitOrder = ref<Order | null>(null); // Order being split
 
@@ -181,11 +181,11 @@ const tables = ref<
 
 // Customer selection state
 const selectedCustomer = ref<(typeof customersStore.customers.value)[0] | null>(
-  null
+  null,
 );
 
 const selectCustomer = (
-  customer: (typeof customersStore.customers.value)[0]
+  customer: (typeof customersStore.customers.value)[0],
 ) => {
   selectedCustomer.value = customer;
   // Set customer in POS composable for order creation
@@ -214,8 +214,8 @@ const pendingKitchenOrders = computed(
     ordersStore.orders.value.filter(
       (o) =>
         (o.status === "pending" || o.status === "processing") &&
-        o.kitchenStatus === "new"
-    ).length
+        o.kitchenStatus === "new",
+    ).length,
 );
 
 // List of pending orders for payment (cafe pay-later)
@@ -223,7 +223,7 @@ const pendingKitchenOrders = computed(
 const pendingOrdersList = computed(() =>
   ordersStore.orders.value
     .filter((o) => o.status === "pending" && o.total > 0)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
 );
 
 // Selected pending order for payment
@@ -247,7 +247,6 @@ const isOrderSelectedForMerge = (orderId: string) => {
 };
 
 const mergeSelectedOrders = async () => {
-  const toast = useToast();
   if (ordersToMerge.value.length < 2) {
     toast.add({
       title: "Select at least 2 orders",
@@ -338,13 +337,13 @@ const orderTypes: Array<{ value: OrderType; label: string; icon: string }> = [
 // Available tables for switching
 const availableTables = computed(() =>
   tables.value.filter(
-    (t) => t.status === "available" || t.name === pos.tableNumber.value
-  )
+    (t) => t.status === "available" || t.name === pos.tableNumber.value,
+  ),
 );
 
 // Current table info
 const currentTable = computed(() =>
-  tables.value.find((t) => t.name === pos.tableNumber.value)
+  tables.value.find((t) => t.name === pos.tableNumber.value),
 );
 
 const formattedTime = computed(() => {
@@ -369,7 +368,7 @@ const selectedProductPrice = computed(() => {
   return pos.calculateItemPrice(
     selectedProduct.value,
     selectedVariant.value || undefined,
-    selectedModifiers.value
+    selectedModifiers.value,
   );
 });
 
@@ -448,7 +447,7 @@ const displayedProducts = computed(() => {
 // Count products with promotions
 const productsWithPromotionsCount = computed(() => {
   return productsStore.filteredProducts.value.filter((product) =>
-    hasPromotion(product.id)
+    hasPromotion(product.id),
   ).length;
 });
 
@@ -472,7 +471,7 @@ watch(
   () => {
     visibleLimit.value = 50;
     // Scroll to top of grid if needed (optional, depends on UX preference)
-  }
+  },
 );
 
 // Intersection Observer for infinite scroll (Native implementation)
@@ -495,7 +494,7 @@ onMounted(() => {
       {
         root: null, // viewport
         threshold: 0.1,
-      }
+      },
     );
 
     if (loadMoreSentinel.value) {
@@ -530,7 +529,7 @@ watch(
       pos.clearPromotions();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // ============================================
@@ -551,7 +550,7 @@ const selectProduct = (product: Product) => {
     selectedVariant.value = null;
     // Select default modifiers
     selectedModifiers.value = product.modifierGroups.flatMap((g) =>
-      g.modifiers.filter((m) => m.isDefault)
+      g.modifiers.filter((m) => m.isDefault),
     );
     productQuantity.value = 1;
     showProductOptionsModal.value = true;
@@ -567,7 +566,7 @@ const handleBarcodeScan = (code: string) => {
   const product = productsStore.products.value.find(
     (p) =>
       p.sku?.toLowerCase() === code.toLowerCase() ||
-      p.barcode?.toLowerCase() === code.toLowerCase()
+      p.barcode?.toLowerCase() === code.toLowerCase(),
   );
 
   if (product) {
@@ -575,7 +574,6 @@ const handleBarcodeScan = (code: string) => {
     showBarcodeScannerModal.value = false;
 
     // Success toast
-    const toast = useToast();
     toast.add({
       title: t("pos.scanner.productFound", "Product Found"),
       description: product.name,
@@ -586,8 +584,6 @@ const handleBarcodeScan = (code: string) => {
     // Not found - put code in search
     productsStore.searchQuery.value = code;
     showBarcodeScannerModal.value = false;
-
-    const toast = useToast();
     toast.add({
       title: t("pos.scanner.notFound", "Product Not Found"),
       description:
@@ -726,7 +722,8 @@ const sendToKitchen = async () => {
     if (pos.tableNumber.value) {
       const table = tablesStore.tables.value.find(
         (t) =>
-          t.name === pos.tableNumber.value || t.number === pos.tableNumber.value
+          t.name === pos.tableNumber.value ||
+          t.number === pos.tableNumber.value,
       );
       if (table && table.status === "available") {
         // Use seatTable to properly set status and link order
@@ -747,21 +744,19 @@ const sendToKitchen = async () => {
     pos.clearCart();
 
     // Show success toast
-    const toast = useToast();
     toast.add({
       title: t("pos.orderSentToKitchen", "Order Sent to Kitchen!"),
       description: `${
         order.orderNumber ? "#" + order.orderNumber + " - " : ""
       }${order.code || order.id} - ${t(
         "pos.payLater",
-        "Pay when ready to leave"
+        "Pay when ready to leave",
       )}`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
   } catch (e) {
     console.error("Failed to send order to kitchen:", e);
-    const toast = useToast();
     toast.add({
       title: t("common.error", "Error"),
       description: String(e),
@@ -799,8 +794,6 @@ const updateExistingOrder = async () => {
     };
 
     await ordersStore.updateOrder(editingOrderId.value, updates);
-
-    const toast = useToast();
     toast.add({
       title: t("common.success"),
       description: "Order updated successfully",
@@ -818,7 +811,6 @@ const updateExistingOrder = async () => {
     }
   } catch (e) {
     console.error("Failed to update order:", e);
-    const toast = useToast();
     toast.add({
       title: t("common.error"),
       description: String(e),
@@ -861,12 +853,11 @@ const loadOrderForEditing = (order: Order) => {
   showPendingOrdersModal.value = false;
 
   // Show feedback
-  const toast = useToast();
   toast.add({
     title: t("pos.editingOrder", "Editing Order"),
     description: `${t(
       "pos.addMoreItems",
-      "Add items and click Update Order"
+      "Add items and click Update Order",
     )} - #${order.code || order.id}`,
     color: "blue",
   });
@@ -1059,7 +1050,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
             customerId: order.customer,
             customerPubkey: order.customerPubkey,
             branch: order.branch,
-          }
+          },
         );
       }
     }
@@ -1070,7 +1061,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
         appliedCoupon.value.coupon.id,
         order.id,
         appliedCoupon.value.discountAmount,
-        order.customer
+        order.customer,
       );
     }
 
@@ -1096,7 +1087,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
         method === "cash" ? "cash-payment" : "lightning-payment",
         order.total,
         method,
-        true
+        true,
       );
       await offline.storeOfflinePayment(order, paymentProof);
     }
@@ -1114,7 +1105,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       order.kitchenStatus = "served";
       console.log(
         "[POS] Auto-closed kitchen status for order:",
-        order.id.slice(-8)
+        order.id.slice(-8),
       );
     }
 
@@ -1149,7 +1140,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       if (sessionInfo) {
         console.log(
           "[POS DEBUG] Processing session payment, sessionId:",
-          sessionInfo.sessionId
+          sessionInfo.sessionId,
         );
         // This is a session payment - generate consolidated receipt
         const sessionOrders: Order[] = [];
@@ -1174,7 +1165,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
             method,
             proof: order.paymentProof,
             paidAt: new Date().toISOString(),
-          }
+          },
         );
 
         publicReceipt = consolidated.receipt;
@@ -1192,7 +1183,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
         // Close the session
         console.log(
           "[POS DEBUG] Calling closeSession for:",
-          sessionInfo.sessionId
+          sessionInfo.sessionId,
         );
         const closed = tableSession.closeSession(sessionInfo.sessionId);
         console.log("[POS DEBUG] closeSession result:", closed);
@@ -1271,7 +1262,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
     // Reset table to available if this was a table order
     if (order.tableNumber) {
       const table = tablesStore.tables.value.find(
-        (t) => t.name === order.tableNumber || t.number === order.tableNumber
+        (t) => t.name === order.tableNumber || t.number === order.tableNumber,
       );
       if (table) {
         await tablesStore.freeTable(table.id);
@@ -1380,7 +1371,7 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     // Generate receipt (legacy)
     const generatedReceipt = receipt.generateReceipt(
       completedOrder.value,
-      completedOrder.value.paymentProof
+      completedOrder.value.paymentProof,
     );
     receipt.storeEBill(generatedReceipt);
 
@@ -1429,7 +1420,7 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     } catch (e) {
       console.warn(
         "[POS] Failed to generate public receipt for pending order:",
-        e
+        e,
       );
 
       // Fallback to legacy receipt
@@ -1453,7 +1444,6 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
       });
     }
 
-    const toast = useToast();
     toast.add({
       title: t("payment.success", "Payment Complete!"),
       description: `${t("pos.orderNumber", "Order")}: #${order?.orderNumber}-${
@@ -1466,7 +1456,7 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     // Reset table to available if this was a table order
     if (order.tableNumber) {
       const table = tablesStore.tables.value.find(
-        (t) => t.name === order.tableNumber || t.number === order.tableNumber
+        (t) => t.name === order.tableNumber || t.number === order.tableNumber,
       );
       if (table) {
         await tablesStore.freeTable(table.id);
@@ -1474,7 +1464,6 @@ const payPendingOrder = async (method: PaymentMethod, proof: unknown) => {
     }
   } catch (e) {
     console.error("Failed to process pending order payment:", e);
-    const toast = useToast();
     toast.add({
       title: t("common.error", "Error"),
       description: String(e),
@@ -1509,7 +1498,6 @@ const paySplitPortion = async () => {
   if (!splitOrder.value || isProcessingSplit.value) return;
 
   if (splitPaidCount.value >= splitCount.value) {
-    const toast = useToast();
     toast.add({
       title: t("pos.splitComplete", "Already Paid"),
       description: t("pos.allPortionsPaid", "All portions have been paid"),
@@ -1525,7 +1513,7 @@ const paySplitPortion = async () => {
     amount: splitAmountPerPerson.value,
     satsAmount: currency.toSats(
       splitAmountPerPerson.value,
-      splitOrder.value.currency || "LAK"
+      splitOrder.value.currency || "LAK",
     ),
   });
 
@@ -1540,7 +1528,7 @@ const paySplitPortion = async () => {
  */
 const handleSplitPaymentComplete = async (
   method: PaymentMethod,
-  proof: unknown
+  proof: unknown,
 ) => {
   if (!splitOrder.value || isProcessingSplit.value) return;
 
@@ -1586,16 +1574,14 @@ const handleSplitPaymentComplete = async (
 
       // Play completion sound
       sound.playOrderComplete();
-
-      const toast = useToast();
       toast.add({
         title: t("pos.splitComplete", "Split Bill Complete!"),
         description: `${splitCount.value} ${t(
           "pos.people",
-          "people"
+          "people",
         )} paid ${currency.format(
           splitAmountPerPerson.value,
-          splitOrder.value.currency || "LAK"
+          splitOrder.value.currency || "LAK",
         )} ${t("pos.each", "each")}`,
         icon: "i-heroicons-check-circle",
         color: "green",
@@ -1608,7 +1594,7 @@ const handleSplitPaymentComplete = async (
       // Generate receipt
       const generatedReceipt = receipt.generateReceipt(
         splitOrder.value,
-        splitOrder.value.paymentProof
+        splitOrder.value.paymentProof,
       );
       receipt.storeEBill(generatedReceipt);
 
@@ -1617,7 +1603,7 @@ const handleSplitPaymentComplete = async (
         const table = tablesStore.tables.value.find(
           (t) =>
             t.name === splitOrder.value!.tableNumber ||
-            t.number === splitOrder.value!.tableNumber
+            t.number === splitOrder.value!.tableNumber,
         );
         if (table) {
           await tablesStore.freeTable(table.id);
@@ -1629,15 +1615,14 @@ const handleSplitPaymentComplete = async (
       showReceiptModal.value = true;
     } else {
       // More portions to pay
-      const toast = useToast();
       toast.add({
         title: t("pos.portionPaid", "Portion Paid!"),
         description: `${splitRemainingSplits.value} ${t(
           "pos.moreToGo",
-          "more to go"
+          "more to go",
         )} - ${currency.format(
           splitRemainingAmount.value,
-          splitOrder.value.currency || "LAK"
+          splitOrder.value.currency || "LAK",
         )} ${t("pos.remaining", "remaining")}`,
         icon: "i-heroicons-check",
         color: "blue",
@@ -1656,7 +1641,6 @@ const handleSplitPaymentComplete = async (
     }
     splitPaidCount.value = Math.max(0, splitPaidCount.value - 1);
 
-    const toast = useToast();
     toast.add({
       title: t("common.error", "Error"),
       description: String(e),
@@ -1692,9 +1676,9 @@ const openVoidOrderModal = () => {
       o.status === "pending" &&
       o.items.some((item) =>
         pos.cartItems.value.some(
-          (cartItem) => cartItem.productId === item.productId
-        )
-      )
+          (cartItem) => cartItem.productId === item.productId,
+        ),
+      ),
   );
 
   if (!pendingOrder) {
@@ -1771,7 +1755,8 @@ const taxAmount = computed(() => {
     // Tax is already included in price, calculate it for display
     // If price includes 10% tax: taxAmount = price - (price / 1.10)
     return Math.round(
-      pos.subtotal.value - pos.subtotal.value / (1 + taxRatePercent.value / 100)
+      pos.subtotal.value -
+        pos.subtotal.value / (1 + taxRatePercent.value / 100),
     );
   } else {
     // Tax is added on top
@@ -1794,11 +1779,11 @@ const totalSatsWithTax = computed(() => {
 
 // Formatted totals with tax
 const formattedTotalWithTax = computed(() =>
-  currency.format(totalWithTax.value, pos.selectedCurrency.value)
+  currency.format(totalWithTax.value, pos.selectedCurrency.value),
 );
 
 const formattedTotalSatsWithTax = computed(() =>
-  currency.format(totalSatsWithTax.value, "SATS")
+  currency.format(totalSatsWithTax.value, "SATS"),
 );
 
 const loadTaxSettings = () => {
@@ -1822,7 +1807,7 @@ const saveTaxSettings = () => {
       enabled: taxEnabled.value,
       rate: taxRatePercent.value,
       inclusive: taxInclusive.value,
-    })
+    }),
   );
 };
 
@@ -1848,7 +1833,8 @@ watch(
 
       // Check for exact barcode or SKU match
       const exactMatch = productsStore.products.value.find(
-        (p) => p.status === "active" && (p.barcode === query || p.sku === query)
+        (p) =>
+          p.status === "active" && (p.barcode === query || p.sku === query),
       );
 
       if (exactMatch) {
@@ -1859,7 +1845,6 @@ watch(
         productsStore.searchQuery.value = "";
 
         // Success feedback
-        const toast = useToast();
         toast.add({
           title: t("pos.scanner.productFound", "Product Found"),
           description: exactMatch.name,
@@ -1871,7 +1856,7 @@ watch(
         playBeep();
       }
     }, 300); // 300ms debounce
-  }
+  },
 );
 
 // Audio beep for barcode feedback
@@ -1943,7 +1928,7 @@ const switchTable = (table: (typeof tables.value)[0]) => {
 
   // Check if there's a held order for this table and restore it
   const heldIndex = heldOrders.value.findIndex(
-    (o) => o.tableNumber === table.name
+    (o) => o.tableNumber === table.name,
   );
   if (heldIndex !== -1) {
     const held = heldOrders.value[heldIndex];
@@ -2010,7 +1995,7 @@ onMounted(async () => {
     const tableId = route.query.tableId as string;
     // Find table by ID to get its name (dropdown uses name, not id)
     const foundTable = tables.value.find(
-      (t) => t.id === tableId || t.name === tableId || t.number === tableId
+      (t) => t.id === tableId || t.name === tableId || t.number === tableId,
     );
     if (foundTable) {
       pos.tableNumber.value = foundTable.name || foundTable.number || tableId;
@@ -2029,7 +2014,7 @@ onMounted(async () => {
   // Handle session payment from sessionStorage
   if (import.meta.client) {
     const sessionPaymentData = sessionStorage.getItem(
-      "pending-session-payment"
+      "pending-session-payment",
     );
     if (sessionPaymentData) {
       try {
@@ -2060,7 +2045,7 @@ onMounted(async () => {
             tableName: sessionInfo.tableName,
             tableNumber: sessionInfo.tableNumber,
             orderIds: orders.map((o: Order) => o.id),
-          })
+          }),
         );
 
         // Clear the pending payment data
@@ -2108,8 +2093,6 @@ onMounted(async () => {
       pos.tableNumber.value = order.tableNumber || "";
       pos.orderType.value = order.orderType || "dine_in";
       if (order.notes) pos.customerNote.value = order.notes;
-
-      const toast = useToast();
       toast.add({
         title: "Editing Order",
         description: `Loaded order #${order.id}`,
@@ -2151,7 +2134,6 @@ onMounted(async () => {
         sound.playNotification();
 
         // Show toast notification
-        const toast = useToast();
         toast.add({
           title: "🔔 Order Ready!",
           description: `${order.id}${
@@ -2192,7 +2174,6 @@ onMounted(async () => {
         sound.playNotification();
 
         // Show toast notification
-        const toast = useToast();
         toast.add({
           title: t("pos.newCustomerOrder", "🔔 New Customer Order!"),
           description: `#${order.id.slice(-6).toUpperCase()} - ${
@@ -2214,7 +2195,7 @@ onMounted(async () => {
         // Handle STATUS updates from other POS tabs (e.g. Paid)
         const updatedOrder = event.data.order;
         const index = ordersStore.orders.value.findIndex(
-          (o) => o.id === updatedOrder.id
+          (o) => o.id === updatedOrder.id,
         );
 
         if (index !== -1) {
@@ -2223,7 +2204,6 @@ onMounted(async () => {
 
           // If status changed to completed, show small toast
           if (updatedOrder.status === "completed") {
-            const toast = useToast();
             toast.add({
               title: "Order Updated",
               description: `#${
@@ -2268,7 +2248,7 @@ onMounted(async () => {
             tableName: sessionInfo.tableName,
             tableNumber: sessionInfo.tableNumber,
             orderIds: orders.map((o: Order) => o.id),
-          })
+          }),
         );
 
         // Clear the sessionStorage payment data since we handled it via broadcast
@@ -2698,7 +2678,7 @@ onUnmounted(() => {
                 {{
                   currency.format(
                     pos.promotionDiscount.value,
-                    pos.selectedCurrency.value
+                    pos.selectedCurrency.value,
                   )
                 }}
               </p>
@@ -2729,7 +2709,7 @@ onUnmounted(() => {
                   -{{
                     currency.format(
                       promo.discountAmount,
-                      pos.selectedCurrency.value
+                      pos.selectedCurrency.value,
                     )
                   }}
                 </p>
@@ -2798,7 +2778,10 @@ onUnmounted(() => {
                 :alt="product.name"
                 class="w-full h-full object-cover rounded-lg"
                 loading="lazy"
-                @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                @error="
+                  (e: Event) =>
+                    ((e.target as HTMLImageElement).style.display = 'none')
+                "
               />
               <span v-else class="text-4xl">{{ product.image || "📦" }}</span>
             </div>
@@ -2824,7 +2807,7 @@ onUnmounted(() => {
                   currency.format(
                     product.prices?.[pos.selectedCurrency.value] ||
                       product.price,
-                    pos.selectedCurrency.value
+                    pos.selectedCurrency.value,
                   )
                 }}
               </div>
@@ -3401,10 +3384,10 @@ onUnmounted(() => {
                   discountType === "percentage"
                     ? Math.round(
                         (pos.subtotal.value * discountValue) /
-                          (100 + discountValue)
+                          (100 + discountValue),
                       )
                     : discountValue,
-                  pos.selectedCurrency.value
+                  pos.selectedCurrency.value,
                 )
               }}
             </span>
@@ -3421,7 +3404,7 @@ onUnmounted(() => {
               >-{{
                 currency.format(
                   appliedCoupon.discountAmount,
-                  pos.selectedCurrency.value
+                  pos.selectedCurrency.value,
                 )
               }}</span
             >
@@ -3442,7 +3425,7 @@ onUnmounted(() => {
               >-{{
                 currency.format(
                   promo.discountAmount,
-                  pos.selectedCurrency.value
+                  pos.selectedCurrency.value,
                 )
               }}</span
             >
@@ -3981,7 +3964,7 @@ onUnmounted(() => {
                     <span>{{
                       currency.format(
                         promo.discountAmount,
-                        pos.selectedCurrency.value
+                        pos.selectedCurrency.value,
                       )
                     }}</span>
                   </div>
@@ -3999,7 +3982,7 @@ onUnmounted(() => {
                   <span>{{
                     currency.format(
                       pos.subtotal.value,
-                      pos.selectedCurrency.value
+                      pos.selectedCurrency.value,
                     )
                   }}</span>
                 </div>
@@ -4012,7 +3995,7 @@ onUnmounted(() => {
                     >-{{
                       currency.format(
                         pos.promotionDiscount.value,
-                        pos.selectedCurrency.value
+                        pos.selectedCurrency.value,
                       )
                     }}</span
                   >
@@ -4026,7 +4009,7 @@ onUnmounted(() => {
                     >-{{
                       currency.format(
                         pos.discountAmount.value,
-                        pos.selectedCurrency.value
+                        pos.selectedCurrency.value,
                       )
                     }}</span
                   >
@@ -4048,7 +4031,7 @@ onUnmounted(() => {
                   <span>{{
                     currency.format(
                       pos.tipAmount.value,
-                      pos.selectedCurrency.value
+                      pos.selectedCurrency.value,
                     )
                   }}</span>
                 </div>
@@ -4082,7 +4065,7 @@ onUnmounted(() => {
                   {{
                     $t(
                       "pos.autoCloseKitchenDesc",
-                      "Mark order as served when payment completes"
+                      "Mark order as served when payment completes",
                     )
                   }}
                 </p>
@@ -4096,35 +4079,35 @@ onUnmounted(() => {
               splitOrder
                 ? splitAmountPerPerson
                 : selectedPendingOrder
-                ? selectedPendingOrder.total
-                : totalWithTax
+                  ? selectedPendingOrder.total
+                  : totalWithTax
             "
             :sats-amount="
               splitOrder
                 ? currency.toSats(
                     splitAmountPerPerson,
-                    splitOrder.currency || 'LAK'
+                    splitOrder.currency || 'LAK',
                   )
                 : selectedPendingOrder
-                ? currency.toSats(
-                    selectedPendingOrder.total,
-                    selectedPendingOrder.currency || 'LAK'
-                  )
-                : totalSatsWithTax
+                  ? currency.toSats(
+                      selectedPendingOrder.total,
+                      selectedPendingOrder.currency || 'LAK',
+                    )
+                  : totalSatsWithTax
             "
             :currency="
               splitOrder
                 ? splitOrder.currency || pos.selectedCurrency.value
                 : selectedPendingOrder
-                ? selectedPendingOrder.currency || pos.selectedCurrency.value
-                : pos.selectedCurrency.value
+                  ? selectedPendingOrder.currency || pos.selectedCurrency.value
+                  : pos.selectedCurrency.value
             "
             :order-id="
               splitOrder
                 ? `${splitOrder.id}-${splitPaidCount + 1}`
                 : selectedPendingOrder
-                ? selectedPendingOrder.id
-                : 'ORD-' + Date.now().toString(36).toUpperCase()
+                  ? selectedPendingOrder.id
+                  : 'ORD-' + Date.now().toString(36).toUpperCase()
             "
             :default-method="defaultPaymentMethod || undefined"
             @paid="
@@ -4132,8 +4115,8 @@ onUnmounted(() => {
                 splitOrder
                   ? paySplitPortion(method, proof)
                   : selectedPendingOrder
-                  ? payPendingOrder(method, proof)
-                  : handlePaymentComplete(method, proof)
+                    ? payPendingOrder(method, proof)
+                    : handlePaymentComplete(method, proof)
             "
             @cancel="
               splitOrder
@@ -4320,7 +4303,7 @@ onUnmounted(() => {
                     {{
                       currency.format(
                         order.total,
-                        order.currency || pos.selectedCurrency.value
+                        order.currency || pos.selectedCurrency.value,
                       )
                     }}
                   </p>
@@ -4343,7 +4326,7 @@ onUnmounted(() => {
                   <span>{{
                     currency.format(
                       item.product.price * item.quantity,
-                      order.currency || "LAK"
+                      order.currency || "LAK",
                     )
                   }}</span>
                 </div>
@@ -4430,7 +4413,7 @@ onUnmounted(() => {
               {{
                 currency.format(
                   splitOrder.total,
-                  splitOrder.currency || pos.selectedCurrency.value
+                  splitOrder.currency || pos.selectedCurrency.value,
                 )
               }}
             </div>
@@ -4481,7 +4464,7 @@ onUnmounted(() => {
               {{
                 currency.format(
                   splitAmountPerPerson,
-                  splitOrder?.currency || pos.selectedCurrency.value
+                  splitOrder?.currency || pos.selectedCurrency.value,
                 )
               }}
             </div>
@@ -4510,7 +4493,7 @@ onUnmounted(() => {
               {{
                 currency.format(
                   splitRemainingAmount,
-                  splitOrder?.currency || "LAK"
+                  splitOrder?.currency || "LAK",
                 )
               }}
               {{ t("pos.remaining", "remaining") }}
@@ -4551,7 +4534,7 @@ onUnmounted(() => {
                   {{
                     currency.format(
                       payment.amount,
-                      splitOrder?.currency || "LAK"
+                      splitOrder?.currency || "LAK",
                     )
                   }}
                 </div>
@@ -4750,7 +4733,7 @@ onUnmounted(() => {
                       {{
                         $t(
                           "pos.autoServeOnPaymentDesc",
-                          'Automatically mark orders as "served" when payment is completed'
+                          'Automatically mark orders as "served" when payment is completed',
                         )
                       }}
                     </p>
@@ -4791,7 +4774,7 @@ onUnmounted(() => {
                     {{
                       currency.format(
                         pos.currentSession.value.totalSales,
-                        pos.selectedCurrency.value
+                        pos.selectedCurrency.value,
                       )
                     }}
                   </span>
@@ -4808,7 +4791,7 @@ onUnmounted(() => {
                     {{
                       currency.format(
                         pos.currentSession.value.cashSales,
-                        pos.selectedCurrency.value
+                        pos.selectedCurrency.value,
                       )
                     }}
                   </span>
@@ -4819,7 +4802,7 @@ onUnmounted(() => {
                     {{
                       currency.format(
                         pos.currentSession.value.lightningSales,
-                        pos.selectedCurrency.value
+                        pos.selectedCurrency.value,
                       )
                     }}
                   </span>
@@ -4879,7 +4862,10 @@ onUnmounted(() => {
                   :alt="selectedProduct.name"
                   class="object-cover rounded-lg w-10 h-10"
                   loading="lazy"
-                  @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                  @error="
+                    (e: Event) =>
+                      ((e.target as HTMLImageElement).style.display = 'none')
+                  "
                 />
               </div>
               <div v-else class="text-4xl">📦</div>
@@ -4935,7 +4921,7 @@ onUnmounted(() => {
                         ? `${variant.priceModifier}%`
                         : currency.format(
                             variant.priceModifier,
-                            pos.selectedCurrency.value
+                            pos.selectedCurrency.value,
                           )
                     }}
                   </div>
@@ -5055,7 +5041,7 @@ onUnmounted(() => {
                   {{
                     currency.format(
                       selectedProductPrice * productQuantity,
-                      pos.selectedCurrency.value
+                      pos.selectedCurrency.value,
                     )
                   }}
                 </span>
