@@ -6,6 +6,9 @@ on:
       - "v*" # Triggers on version tags like v1.5.2
   workflow_dispatch: # Allows manual triggering from GitHub UI
 
+permissions:
+  contents: write # Required to create releases and upload assets
+
 jobs:
   release:
     strategy:
