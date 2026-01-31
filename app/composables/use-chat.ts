@@ -4,17 +4,17 @@
 // End-to-end encrypted communication
 // ============================================
 
-import { nip04 } from "nostr-tools";
-import type { Event as NostrEvent, VerifiedEvent } from "nostr-tools";
-import { hexToBytes } from "@noble/hashes/utils";
+import { nip04, utils } from "nostr-tools";
+import type { Event as NostrEvent } from "nostr-tools";
 import {
   db,
   type ChatMessageRecord,
   type ChatConversationRecord,
 } from "~/db/db";
-import type { StoreUser } from "~/types";
 import CryptoJS from "crypto-js";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
+
+const { hexToBytes } = utils;
 
 // ============================================
 // Types
@@ -152,7 +152,7 @@ export function useChat() {
     const query = searchQuery.value.toLowerCase();
     return conversations.value.filter((c) => {
       const namMatch = c.participants.some((p) =>
-        p.name.toLowerCase().includes(query)
+        p.name.toLowerCase().includes(query),
       );
       const msgMatch = c.lastMessage.content.toLowerCase().includes(query);
       const grpMatch = c.groupName?.toLowerCase().includes(query);
@@ -176,7 +176,7 @@ export function useChat() {
     return usersStore.users.value
       .filter(
         (u) =>
-          u.pubkeyHex && u.pubkeyHex !== currentPubkey && u.isActive !== false
+          u.pubkeyHex && u.pubkeyHex !== currentPubkey && u.isActive !== false,
       )
       .map((u) => ({
         id: u.id,
@@ -248,7 +248,7 @@ export function useChat() {
     try {
       // Load deleted conversation IDs
       const deletedIds = new Set(
-        (await db.deletedConversations.toArray()).map((d) => d.id)
+        (await db.deletedConversations.toArray()).map((d) => d.id),
       );
 
       const records = await db.chatConversations.toArray();
@@ -261,7 +261,7 @@ export function useChat() {
             (pubkey: string, i: number) => ({
               pubkey,
               name: JSON.parse(r.participantNames)[i] || "Unknown",
-            })
+            }),
           ),
           groupName: r.groupName,
           groupAvatar: r.groupAvatar,
@@ -288,13 +288,13 @@ export function useChat() {
   }
 
   async function saveConversationToLocal(
-    conversation: ChatConversation
+    conversation: ChatConversation,
   ): Promise<void> {
     // Validate required fields before saving
     if (!conversation.id || typeof conversation.id !== "string") {
       console.error(
         "[Chat] Cannot save conversation without valid ID:",
-        conversation
+        conversation,
       );
       throw new Error("Invalid conversation ID");
     }
@@ -303,10 +303,10 @@ export function useChat() {
       id: conversation.id,
       type: conversation.type,
       participantPubkeys: JSON.stringify(
-        conversation.participants.map((p) => p.pubkey)
+        conversation.participants.map((p) => p.pubkey),
       ),
       participantNames: JSON.stringify(
-        conversation.participants.map((p) => p.name)
+        conversation.participants.map((p) => p.name),
       ),
       groupName: conversation.groupName,
       groupAvatar: conversation.groupAvatar,
@@ -333,7 +333,7 @@ export function useChat() {
   }
 
   async function loadMessagesForConversation(
-    conversationId: string
+    conversationId: string,
   ): Promise<ChatMessage[]> {
     try {
       const records = await db.chatMessages
@@ -378,10 +378,10 @@ export function useChat() {
    * Returns a Map of eventId -> Map of emoji -> MessageReaction[]
    */
   async function fetchReactionsForMessages(
-    messageEventIds: string[]
+    messageEventIds: string[],
   ): Promise<Map<string, Map<string, MessageReaction[]>>> {
     const reactionsMap = new Map<string, Map<string, MessageReaction[]>>();
-    
+
     if (!$nostr?.pool || messageEventIds.length === 0) {
       return reactionsMap;
     }
@@ -396,20 +396,26 @@ export function useChat() {
         limit: 500, // Allow multiple reactions per message
       };
 
-      const reactionEvents = await $nostr.pool.querySync(relayUrls, reactionFilter);
+      const reactionEvents = await $nostr.pool.querySync(
+        relayUrls,
+        reactionFilter,
+      );
 
       // Process each reaction
       for (const reactionEvent of reactionEvents) {
-        const messageId = reactionEvent.tags.find((t: string[]) => t[0] === "e")?.[1];
+        const messageId = reactionEvent.tags.find(
+          (t: string[]) => t[0] === "e",
+        )?.[1];
         const emoji = reactionEvent.content;
 
         if (!messageId || !emoji) continue;
 
         // Find reactor info
         const reactor = usersStore.users.value.find(
-          (u) => u.pubkeyHex === reactionEvent.pubkey
+          (u) => u.pubkeyHex === reactionEvent.pubkey,
         );
-        const reactorName = reactor?.name || `User ${reactionEvent.pubkey.slice(0, 8)}`;
+        const reactorName =
+          reactor?.name || `User ${reactionEvent.pubkey.slice(0, 8)}`;
 
         const reaction: MessageReaction = {
           emoji,
@@ -442,7 +448,7 @@ export function useChat() {
    */
   async function fetchChannelMessagesFromRelay(
     channelId: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<void> {
     if (!$nostr?.pool) {
       return;
@@ -521,10 +527,10 @@ export function useChat() {
         ) {
           const expectedTeamTag = `team:${company.companyCodeHash.value}`;
           const messageTeamTag = event.tags.find(
-            (t: string[]) => t[0] === "t"
+            (t: string[]) => t[0] === "t",
           )?.[1];
           const messageCompanyCode = event.tags.find(
-            (t: string[]) => t[0] === "c"
+            (t: string[]) => t[0] === "c",
           )?.[1];
 
           if (
@@ -537,7 +543,7 @@ export function useChat() {
 
         // Find sender info
         const sender = usersStore.users.value.find(
-          (u) => u.pubkeyHex === event.pubkey
+          (u) => u.pubkeyHex === event.pubkey,
         );
         const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
 
@@ -586,7 +592,7 @@ export function useChat() {
    */
   async function fetchDMsFromRelay(
     otherPubkey: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<void> {
     const keys = getUserKeys();
     if (!keys?.pubkey || !keys?.privkey || !$nostr?.pool) {
@@ -647,7 +653,7 @@ export function useChat() {
 
           // Find sender info
           const sender = usersStore.users.value.find(
-            (u) => u.pubkeyHex === senderPubkey
+            (u) => u.pubkeyHex === senderPubkey,
           );
           const currentUser = usersStore.currentUser.value;
           const senderName = isIncoming
@@ -673,7 +679,7 @@ export function useChat() {
           console.error(
             "[Chat] Failed to decrypt DM:",
             event.id.slice(0, 8),
-            e
+            e,
           );
         }
       }
@@ -745,12 +751,12 @@ export function useChat() {
 
   async function encryptMessage(
     content: string,
-    recipientPubkey: string
+    recipientPubkey: string,
   ): Promise<string> {
     const keys = getUserKeys();
     if (!keys?.privkey) {
       throw new Error(
-        "No private key available for encryption. Please login with your nsec key."
+        "No private key available for encryption. Please login with your nsec key.",
       );
     }
 
@@ -761,12 +767,12 @@ export function useChat() {
 
   async function decryptMessage(
     encryptedContent: string,
-    senderPubkey: string
+    senderPubkey: string,
   ): Promise<string> {
     const keys = getUserKeys();
     if (!keys?.privkey) {
       throw new Error(
-        "No private key available for decryption. Please login with your nsec key."
+        "No private key available for decryption. Please login with your nsec key.",
       );
     }
 
@@ -779,14 +785,14 @@ export function useChat() {
     recipientPubkey: string,
     content: string,
     recipientName: string,
-    replyToId?: string
+    replyToId?: string,
   ): Promise<boolean> {
     const keys = getUserKeys();
     const currentUser = usersStore.currentUser.value;
 
     if (!keys?.pubkey || !keys?.privkey) {
       console.error(
-        "[Chat] Current user has no Nostr private key. Please login with nsec."
+        "[Chat] Current user has no Nostr private key. Please login with nsec.",
       );
       return false;
     }
@@ -859,7 +865,7 @@ export function useChat() {
           conversationId,
           recipientPubkey,
           recipientName,
-          message
+          message,
         );
 
         isSending.value = false;
@@ -881,11 +887,11 @@ export function useChat() {
     otherName: string,
     message: ChatMessage,
     type: "direct" | "channel" = "direct",
-    channelName?: string
+    channelName?: string,
   ): Promise<void> {
     const currentUser = usersStore.currentUser.value;
     const existingConv = conversations.value.find(
-      (c) => c.id === conversationId
+      (c) => c.id === conversationId,
     );
 
     if (existingConv) {
@@ -935,7 +941,7 @@ export function useChat() {
    */
   const getShopChannels = (shopId: string): ChatConversation[] => {
     return conversations.value.filter(
-      (c) => c.type === "channel" && c.scope === "shop" && c.shopId === shopId
+      (c) => c.type === "channel" && c.scope === "shop" && c.shopId === shopId,
     );
   };
 
@@ -944,7 +950,7 @@ export function useChat() {
    */
   const getCompanyChannels = (): ChatConversation[] => {
     return conversations.value.filter(
-      (c) => c.type === "channel" && c.scope === "company"
+      (c) => c.type === "channel" && c.scope === "company",
     );
   };
 
@@ -956,7 +962,7 @@ export function useChat() {
       (c) =>
         c.type === "channel" &&
         c.scope === "department" &&
-        c.tags?.includes(department)
+        c.tags?.includes(department),
     );
   };
 
@@ -982,7 +988,7 @@ export function useChat() {
    */
   async function addChannelMember(
     channelId: string,
-    pubkey: string
+    pubkey: string,
   ): Promise<boolean> {
     const channel = conversations.value.find((c) => c.id === channelId);
     if (!channel || !channel.isPrivate) return false;
@@ -1006,7 +1012,7 @@ export function useChat() {
    */
   async function removeChannelMember(
     channelId: string,
-    pubkey: string
+    pubkey: string,
   ): Promise<boolean> {
     const channel = conversations.value.find((c) => c.id === channelId);
     if (!channel || !channel.isPrivate) return false;
@@ -1042,7 +1048,7 @@ export function useChat() {
     shopId?: string,
     scope: "shop" | "company" | "department" = "company",
     tags: string[] = [],
-    memberPubkeys: string[] = [] // NEW: Members to auto-invite to private channel
+    memberPubkeys: string[] = [], // NEW: Members to auto-invite to private channel
   ): Promise<string | null> {
     const keys = getUserKeys();
     if (!keys?.privkey) {
@@ -1111,20 +1117,26 @@ export function useChat() {
           scope,
           tags,
           isReadOnly: false,
-          memberPubkeys: isPrivate && currentPubkey 
-            ? [currentPubkey, ...memberPubkeys.filter(pk => pk !== currentPubkey)] 
-            : [], // Add creator and invited members to private channel
+          memberPubkeys:
+            isPrivate && currentPubkey
+              ? [
+                  currentPubkey,
+                  ...memberPubkeys.filter((pk) => pk !== currentPubkey),
+                ]
+              : [], // Add creator and invited members to private channel
         };
         conversations.value.unshift(newConversation);
         await saveConversationToLocal(newConversation);
 
         // Auto-invite members to private channel
         if (isPrivate && secretKey && memberPubkeys.length > 0) {
-          console.log(`[Chat] 🔐 Auto-inviting ${memberPubkeys.length} members to private channel`);
-          
+          console.log(
+            `[Chat] 🔐 Auto-inviting ${memberPubkeys.length} members to private channel`,
+          );
+
           for (const memberPubkey of memberPubkeys) {
             if (memberPubkey === currentPubkey) continue; // Skip self
-            
+
             try {
               // Send encryption key via DM
               const inviteContent = JSON.stringify({
@@ -1133,11 +1145,16 @@ export function useChat() {
                 channelName: name,
                 key: secretKey,
               });
-              
+
               await sendMessage(memberPubkey, inviteContent, "User");
-              console.log(`[Chat] ✅ Invited ${memberPubkey.slice(0, 8)} to private channel`);
+              console.log(
+                `[Chat] ✅ Invited ${memberPubkey.slice(0, 8)} to private channel`,
+              );
             } catch (err) {
-              console.error(`[Chat] Failed to invite ${memberPubkey.slice(0, 8)}:`, err);
+              console.error(
+                `[Chat] Failed to invite ${memberPubkey.slice(0, 8)}:`,
+                err,
+              );
             }
           }
         }
@@ -1176,12 +1193,12 @@ export function useChat() {
 
   async function inviteToChannel(
     channelId: string,
-    pubkey: string
+    pubkey: string,
   ): Promise<boolean> {
     const conv = conversations.value.find((c) => c.id === channelId);
     if (!conv || !conv.isPrivate || !conv.key) {
       console.error(
-        "[Chat] Cannot invite: Channel not found, not private, or missing key"
+        "[Chat] Cannot invite: Channel not found, not private, or missing key",
       );
       return false;
     }
@@ -1255,7 +1272,7 @@ export function useChat() {
   async function sendChannelMessage(
     channelId: string,
     content: string,
-    replyToId?: string
+    replyToId?: string,
   ): Promise<boolean> {
     const keys = getUserKeys();
     const currentUser = usersStore.currentUser.value;
@@ -1278,7 +1295,7 @@ export function useChat() {
     if (replyToId) {
       const conversationMessages = messages.value.get(channelId);
       const replyToMessage = conversationMessages?.find(
-        (m) => m.id === replyToId || m.nostrEventId === replyToId
+        (m) => m.id === replyToId || m.nostrEventId === replyToId,
       );
       if (replyToMessage) {
         replyToContent = replyToMessage.content;
@@ -1362,7 +1379,7 @@ export function useChat() {
           "",
           "", // No specific recipient for channel
           message,
-          "channel"
+          "channel",
         );
         isSending.value = false;
         return true;
@@ -1409,7 +1426,7 @@ export function useChat() {
     title: string,
     body: string,
     conversationId: string,
-    icon?: string
+    icon?: string,
   ): void {
     if (Notification.permission !== "granted") return;
 
@@ -1456,7 +1473,7 @@ export function useChat() {
     lastTypingTime = now;
 
     const conversation = conversations.value.find(
-      (c) => c.id === conversationId
+      (c) => c.id === conversationId,
     );
     if (!conversation) return;
 
@@ -1484,7 +1501,7 @@ export function useChat() {
       } else if (conversation.type === "direct") {
         // For DMs, tag the other participant
         const otherParticipant = conversation.participants.find(
-          (p) => p.pubkey !== currentUser.pubkeyHex
+          (p) => p.pubkey !== currentUser.pubkeyHex,
         );
         if (otherParticipant) {
           tags.push(["p", otherParticipant.pubkey]);
@@ -1562,7 +1579,7 @@ export function useChat() {
   async function addReaction(
     messageId: string,
     emoji: string,
-    conversationId: string
+    conversationId: string,
   ): Promise<boolean> {
     const currentUser = usersStore.currentUser.value;
     if (!currentUser?.pubkeyHex || !$nostr?.pool) return false;
@@ -1591,7 +1608,7 @@ export function useChat() {
 
       // Add team tag for channel reactions (BOTH standard #t and custom #c)
       const conversation = conversations.value.find(
-        (c) => c.id === conversationId
+        (c) => c.id === conversationId,
       );
       if (conversation?.type !== "direct" && company.companyCodeHash.value) {
         const teamTag = `team:${company.companyCodeHash.value}`;
@@ -1618,7 +1635,7 @@ export function useChat() {
 
       const emojiReactions = message.reactions.get(emoji) || [];
       const existingIndex = emojiReactions.findIndex(
-        (r) => r.pubkey === currentUser.pubkeyHex
+        (r) => r.pubkey === currentUser.pubkeyHex,
       );
 
       if (existingIndex === -1) {
@@ -1649,7 +1666,7 @@ export function useChat() {
   async function removeReaction(
     messageId: string,
     emoji: string,
-    conversationId: string
+    conversationId: string,
   ): Promise<boolean> {
     const currentUser = usersStore.currentUser.value;
     if (!currentUser?.pubkeyHex || !$nostr?.pool) return false;
@@ -1664,7 +1681,7 @@ export function useChat() {
       if (!emojiReactions) return false;
 
       const myReaction = emojiReactions.find(
-        (r) => r.pubkey === currentUser.pubkeyHex
+        (r) => r.pubkey === currentUser.pubkeyHex,
       );
       if (!myReaction?.eventId) {
         console.warn("[Chat] Cannot remove reaction - no event ID found");
@@ -1706,12 +1723,12 @@ export function useChat() {
 
       console.log(
         "[Chat] 🗑️ Reaction deletion event published:",
-        signedEvent.id.slice(0, 8)
+        signedEvent.id.slice(0, 8),
       );
 
       // Remove from local state
       const filtered = emojiReactions.filter(
-        (r) => r.pubkey !== currentUser.pubkeyHex
+        (r) => r.pubkey !== currentUser.pubkeyHex,
       );
       if (filtered.length === 0) {
         message.reactions.delete(emoji);
@@ -1734,7 +1751,7 @@ export function useChat() {
    */
   function getMessageReactions(
     messageId: string,
-    conversationId: string
+    conversationId: string,
   ): Map<string, MessageReaction[]> {
     const conversationMessages = messages.value.get(conversationId);
     const message = conversationMessages?.find((m) => m.id === messageId);
@@ -1794,7 +1811,7 @@ export function useChat() {
    */
   async function searchInConversation(
     conversationId: string,
-    query: string
+    query: string,
   ): Promise<ChatMessage[]> {
     if (!query.trim()) return [];
 
@@ -1805,7 +1822,7 @@ export function useChat() {
       const results = conversationMessages.filter(
         (msg) =>
           msg.content.toLowerCase().includes(lowerQuery) ||
-          msg.senderName.toLowerCase().includes(lowerQuery)
+          msg.senderName.toLowerCase().includes(lowerQuery),
       );
 
       return results;
@@ -1823,7 +1840,7 @@ export function useChat() {
     // Close any existing subscription before creating a new one
     if (chatSubscription) {
       console.log(
-        "[Chat] 🔄 Closing existing subscription before re-subscribing"
+        "[Chat] 🔄 Closing existing subscription before re-subscribing",
       );
       chatSubscription.close();
       chatSubscription = null;
@@ -1950,17 +1967,17 @@ export function useChat() {
             "id:",
             event.id.slice(0, 8) + "...",
             "from:",
-            event.pubkey.slice(0, 8) + "..."
+            event.pubkey.slice(0, 8) + "...",
           );
           console.log(
             "[Chat] 📨 Event tags:",
-            JSON.stringify(event.tags.slice(0, 3))
+            JSON.stringify(event.tags.slice(0, 3)),
           );
           await handleIncomingMessage(event);
         },
         oneose() {
           console.log(
-            "[Chat] ✅ Subscription established, EOSE received - now listening for real-time events"
+            "[Chat] ✅ Subscription established, EOSE received - now listening for real-time events",
           );
         },
         onclose(reasons: string[]) {
@@ -1971,7 +1988,7 @@ export function useChat() {
             subscribeToMessages();
           }, 5000);
         },
-      }
+      },
     );
 
     // Log subscription status
@@ -2074,7 +2091,7 @@ export function useChat() {
         try {
           const events = await $nostr.pool.querySync(
             relayUrls,
-            filter as Parameters<typeof $nostr.pool.querySync>[1]
+            filter as Parameters<typeof $nostr.pool.querySync>[1],
           );
           if (events.length > 0) {
             console.log("[Chat] ⏰ Poll found", events.length, "new events");
@@ -2143,7 +2160,7 @@ export function useChat() {
           if (!teamTagMatches && !companyCodeMatches) {
             console.log(
               "[Chat] Ignoring message from different team:",
-              messageTeamTag || messageCompanyCode
+              messageTeamTag || messageCompanyCode,
             );
             return; // Silently ignore messages from different companies
           }
@@ -2166,14 +2183,14 @@ export function useChat() {
           if (wasDeleted) {
             console.log(
               "[Chat] Ignoring message for deleted channel:",
-              channelId.slice(0, 16)
+              channelId.slice(0, 16),
             );
             return;
           }
 
           console.warn(
             "[Chat] Channel not found, fetching metadata:",
-            channelId.slice(0, 16)
+            channelId.slice(0, 16),
           );
 
           // Fetch channel metadata BEFORE creating to get isPrivate and key
@@ -2189,7 +2206,7 @@ export function useChat() {
               if (channelMetadata.length > 0) {
                 const metadata = channelMetadata[0];
                 let channelData: any = {};
-                
+
                 try {
                   channelData = JSON.parse(metadata.content);
                 } catch (e) {
@@ -2198,11 +2215,18 @@ export function useChat() {
 
                 // If private channel, try to get the key from Nostr data sync
                 let channelKey: string | undefined;
-                if (channelData.isPrivate && company.isCompanyCodeEnabled.value) {
+                if (
+                  channelData.isPrivate &&
+                  company.isCompanyCodeEnabled.value
+                ) {
                   try {
-                    const syncedConv = await nostrData.getConversation(channelId);
+                    const syncedConv =
+                      await nostrData.getConversation(channelId);
                     channelKey = syncedConv?.key;
-                    console.log("[Chat] 🔑 Retrieved channel key from sync:", !!channelKey);
+                    console.log(
+                      "[Chat] 🔑 Retrieved channel key from sync:",
+                      !!channelKey,
+                    );
                   } catch (e) {
                     console.warn("[Chat] Failed to get channel key from sync");
                   }
@@ -2230,8 +2254,13 @@ export function useChat() {
                   isReadOnly: channelData.isReadOnly,
                   memberPubkeys: [],
                 };
-                
-                console.log("[Chat] ✅ Channel metadata fetched, isPrivate:", conversation.isPrivate, "hasKey:", !!conversation.key);
+
+                console.log(
+                  "[Chat] ✅ Channel metadata fetched, isPrivate:",
+                  conversation.isPrivate,
+                  "hasKey:",
+                  !!conversation.key,
+                );
               } else {
                 // No metadata found, create placeholder
                 conversation = {
@@ -2298,18 +2327,21 @@ export function useChat() {
         } else if (conversation.isPrivate && !conversation.key) {
           // No key available - request access
           console.warn(
-            "[Chat] 🔒 Private channel message but no key available"
+            "[Chat] 🔒 Private channel message but no key available",
           );
-          
+
           // Auto-request access once
           const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
-          if (currentPubkey && !conversation.memberPubkeys?.includes(currentPubkey)) {
+          if (
+            currentPubkey &&
+            !conversation.memberPubkeys?.includes(currentPubkey)
+          ) {
             console.log("[Chat] 🔑 Auto-requesting channel access...");
             requestChannelAccess(channelId).catch((e) =>
-              console.error("[Chat] Failed to request access:", e)
+              console.error("[Chat] Failed to request access:", e),
             );
           }
-          
+
           content = "🔒 [Private Channel - Requesting Access...]";
         } else {
           // Try to parse as JSON for non-private channels
@@ -2323,12 +2355,12 @@ export function useChat() {
 
         // Get sender info
         const sender = usersStore.users.value.find(
-          (u) => u.pubkeyHex === event.pubkey
+          (u) => u.pubkeyHex === event.pubkey,
         );
 
         // Extract reply context from tags (NIP-10)
         const replyTag = event.tags.find(
-          (t) => t[0] === "e" && t[3] === "reply"
+          (t) => t[0] === "e" && t[3] === "reply",
         );
         let replyToId: string | undefined;
         let replyToContent: string | undefined;
@@ -2339,7 +2371,7 @@ export function useChat() {
           // Try to find the original message in current messages
           const channelMessages = messages.value.get(channelId) || [];
           const originalMsg = channelMessages.find(
-            (m) => m.nostrEventId === replyToId || m.id === replyToId
+            (m) => m.nostrEventId === replyToId || m.id === replyToId,
           );
           if (originalMsg) {
             replyToContent = originalMsg.content.slice(0, 100);
@@ -2393,13 +2425,13 @@ export function useChat() {
             conversation.groupName || "Team Chat",
             `${newMessage.senderName}: ${content.slice(0, 100)}`,
             channelId,
-            conversation.groupAvatar
+            conversation.groupAvatar,
           );
         }
 
         console.log(
           "[Chat] 🔔 New message notification triggered for channel:",
-          channelId.slice(0, 8) + "..."
+          channelId.slice(0, 8) + "...",
         );
         return;
       }
@@ -2408,7 +2440,7 @@ export function useChat() {
       if (event.kind === NOSTR_KINDS.ENCRYPTED_DM) {
         console.log(
           "[Chat] 💬 Processing DM from:",
-          event.pubkey.slice(0, 8) + "..."
+          event.pubkey.slice(0, 8) + "...",
         );
 
         // Skip if it's my own message
@@ -2425,7 +2457,7 @@ export function useChat() {
         // CHECK FOR INVITE OR ACCESS REQUEST
         try {
           const parsed = JSON.parse(content);
-          
+
           // Handle channel invite
           if (
             parsed.type === "channel_invite" &&
@@ -2433,18 +2465,21 @@ export function useChat() {
             parsed.key
           ) {
             // It's a channel invite!
-            console.log("[Chat] 🔑 Received channel invite:", parsed.channelName);
-            
+            console.log(
+              "[Chat] 🔑 Received channel invite:",
+              parsed.channelName,
+            );
+
             // Check if we already have this channel
             let existingConv = conversations.value.find(
-              (c) => c.id === parsed.channelId
+              (c) => c.id === parsed.channelId,
             );
             if (existingConv) {
               // Update key if missing
               if (!existingConv.key) {
                 existingConv.key = parsed.key;
                 existingConv.isPrivate = true;
-                
+
                 // Add self to member list
                 const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
                 if (currentPubkey) {
@@ -2455,9 +2490,11 @@ export function useChat() {
                     existingConv.memberPubkeys.push(currentPubkey);
                   }
                 }
-                
+
                 await saveConversationToLocal(existingConv);
-                console.log("[Chat] ✅ Channel key updated, can now decrypt messages");
+                console.log(
+                  "[Chat] ✅ Channel key updated, can now decrypt messages",
+                );
               }
             } else {
               // Create new channel placeholder with key
@@ -2486,22 +2523,29 @@ export function useChat() {
             }
             return; // Stop processing as normal DM
           }
-          
+
           // Handle channel access request
           if (
             parsed.type === "channel_access_request" &&
             parsed.channelId &&
             parsed.requestedBy
           ) {
-            console.log("[Chat] 🔐 Received access request for channel:", parsed.channelName);
-            
+            console.log(
+              "[Chat] 🔐 Received access request for channel:",
+              parsed.channelName,
+            );
+
             // Check if we have this channel and own it
-            const channel = conversations.value.find((c) => c.id === parsed.channelId);
+            const channel = conversations.value.find(
+              (c) => c.id === parsed.channelId,
+            );
             if (channel && channel.key) {
               // We have the channel - auto-invite the requester
               try {
                 await inviteToChannel(parsed.channelId, parsed.requestedBy);
-                console.log("[Chat] ✅ Auto-invited requester to private channel");
+                console.log(
+                  "[Chat] ✅ Auto-invited requester to private channel",
+                );
               } catch (err) {
                 console.error("[Chat] Failed to auto-invite:", err);
               }
@@ -2514,12 +2558,12 @@ export function useChat() {
 
         const conversationId = generateConversationId(
           currentUser.pubkeyHex,
-          event.pubkey
+          event.pubkey,
         );
 
         // Find sender info
         const sender = usersStore.users.value.find(
-          (u) => u.pubkeyHex === event.pubkey
+          (u) => u.pubkeyHex === event.pubkey,
         );
         const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
 
@@ -2546,7 +2590,7 @@ export function useChat() {
           conversationId,
           event.pubkey,
           senderName,
-          message
+          message,
         );
 
         // Notify
@@ -2567,7 +2611,7 @@ export function useChat() {
               showPushNotification(
                 `💬 ${senderName}`,
                 messagePreview,
-                conversationId
+                conversationId,
               );
 
               // Also show toast as fallback
@@ -2588,7 +2632,7 @@ export function useChat() {
 
         // Move conversation to top (like WhatsApp/Telegram)
         const index = conversations.value.findIndex(
-          (c) => c.id === conversationId
+          (c) => c.id === conversationId,
         );
         if (index > 0) {
           const [movedConv] = conversations.value.splice(index, 1);
@@ -2621,7 +2665,7 @@ export function useChat() {
 
         // Check if exists (might be loaded from local)
         const existing = conversations.value.find(
-          (c) => c.id === conversationId
+          (c) => c.id === conversationId,
         );
         if (!existing) {
           conversations.value.unshift(newConversation);
@@ -2666,7 +2710,7 @@ export function useChat() {
         }
 
         const sender = usersStore.users.value.find(
-          (u) => u.pubkeyHex === event.pubkey
+          (u) => u.pubkeyHex === event.pubkey,
         );
         const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
 
@@ -2703,7 +2747,7 @@ export function useChat() {
           "",
           message,
           "channel",
-          conv.groupName
+          conv.groupName,
         );
 
         // Notify
@@ -2765,7 +2809,7 @@ export function useChat() {
 
           // Get sender info
           const sender = usersStore.users.value.find(
-            (u) => u.pubkeyHex === event.pubkey
+            (u) => u.pubkeyHex === event.pubkey,
           );
           const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
 
@@ -2806,7 +2850,7 @@ export function useChat() {
           "[Chat] 😀 Received reaction:",
           event.content,
           "from:",
-          event.pubkey.slice(0, 8) + "..."
+          event.pubkey.slice(0, 8) + "...",
         );
 
         try {
@@ -2824,7 +2868,7 @@ export function useChat() {
 
           for (const [conversationId, msgs] of messages.value) {
             const msg = msgs.find(
-              (m) => m.id === messageId || m.nostrEventId === messageId
+              (m) => m.id === messageId || m.nostrEventId === messageId,
             );
             if (msg) {
               targetMessage = msg;
@@ -2839,7 +2883,7 @@ export function useChat() {
 
           // Get sender info
           const sender = usersStore.users.value.find(
-            (u) => u.pubkeyHex === event.pubkey
+            (u) => u.pubkeyHex === event.pubkey,
           );
           const senderName = sender?.name || `User ${event.pubkey.slice(0, 8)}`;
 
@@ -2853,7 +2897,7 @@ export function useChat() {
 
           // Check if this user already reacted with this emoji
           const existingIndex = emojiReactions.findIndex(
-            (r) => r.pubkey === event.pubkey
+            (r) => r.pubkey === event.pubkey,
           );
 
           if (existingIndex === -1) {
@@ -2880,7 +2924,7 @@ export function useChat() {
       else if (event.kind === 5) {
         console.log(
           "[Chat] 🗑️ Received deletion event from:",
-          event.pubkey.slice(0, 8) + "..."
+          event.pubkey.slice(0, 8) + "...",
         );
 
         try {
@@ -2897,7 +2941,7 @@ export function useChat() {
               for (const [emoji, reactions] of msg.reactions) {
                 const reactionIndex = reactions.findIndex(
                   (r) =>
-                    r.eventId === deletedEventId && r.pubkey === event.pubkey
+                    r.eventId === deletedEventId && r.pubkey === event.pubkey,
                 );
                 if (reactionIndex !== -1) {
                   reactions.splice(reactionIndex, 1);
@@ -2985,7 +3029,7 @@ export function useChat() {
         for (const filter of filters) {
           const events = await $nostr.pool.querySync(
             relayUrls,
-            filter as Parameters<typeof $nostr.pool.querySync>[1]
+            filter as Parameters<typeof $nostr.pool.querySync>[1],
           );
 
           for (const event of events) {
@@ -3004,7 +3048,7 @@ export function useChat() {
 
             // Find sender info
             const sender = usersStore.users.value.find(
-              (u) => u.pubkeyHex === event.pubkey
+              (u) => u.pubkeyHex === event.pubkey,
             );
             const senderName =
               sender?.name || `User ${event.pubkey.slice(0, 8)}`;
@@ -3044,7 +3088,7 @@ export function useChat() {
         }
 
         const otherPubkey = conv.participants.find(
-          (p) => p.pubkey !== keys.pubkey
+          (p) => p.pubkey !== keys.pubkey,
         )?.pubkey;
         if (!otherPubkey) {
           isLoadingMore.value = false;
@@ -3071,7 +3115,7 @@ export function useChat() {
         for (const filter of filters) {
           const events = await $nostr.pool.querySync(
             relayUrls,
-            filter as Parameters<typeof $nostr.pool.querySync>[1]
+            filter as Parameters<typeof $nostr.pool.querySync>[1],
           );
 
           for (const event of events) {
@@ -3089,11 +3133,11 @@ export function useChat() {
               const decryptedContent = await nip04.decrypt(
                 privateKey,
                 otherPartyPubkey,
-                event.content
+                event.content,
               );
 
               const sender = usersStore.users.value.find(
-                (u) => u.pubkeyHex === event.pubkey
+                (u) => u.pubkeyHex === event.pubkey,
               );
 
               const message: ChatMessage = {
@@ -3142,7 +3186,7 @@ export function useChat() {
   async function selectConversation(conversationId: string): Promise<void> {
     console.log(
       "[Chat] 📂 Selecting conversation:",
-      conversationId.slice(0, 16) + "..."
+      conversationId.slice(0, 16) + "...",
     );
     activeConversationId.value = conversationId;
 
@@ -3158,27 +3202,30 @@ export function useChat() {
       const messageEventIds = msgs
         .filter((m) => m.nostrEventId)
         .map((m) => m.nostrEventId!);
-      
+
       if (messageEventIds.length > 0) {
         // Fetch latest reactions in background
-        fetchReactionsForMessages(messageEventIds).then(async (reactionsMap) => {
-          let updated = false;
-          for (const msg of msgs) {
-            if (msg.nostrEventId && reactionsMap.has(msg.nostrEventId)) {
-              msg.reactions = reactionsMap.get(msg.nostrEventId);
-              await saveMessageToLocal(msg);
-              updated = true;
+        fetchReactionsForMessages(messageEventIds)
+          .then(async (reactionsMap) => {
+            let updated = false;
+            for (const msg of msgs) {
+              if (msg.nostrEventId && reactionsMap.has(msg.nostrEventId)) {
+                msg.reactions = reactionsMap.get(msg.nostrEventId);
+                await saveMessageToLocal(msg);
+                updated = true;
+              }
             }
-          }
-          
-          // Reload if any reactions were updated
-          if (updated) {
-            const updatedMsgs = await loadMessagesForConversation(conversationId);
-            messages.value.set(conversationId, updatedMsgs);
-          }
-        }).catch((e) => {
-          console.error("[Chat] Failed to sync reactions:", e);
-        });
+
+            // Reload if any reactions were updated
+            if (updated) {
+              const updatedMsgs =
+                await loadMessagesForConversation(conversationId);
+              messages.value.set(conversationId, updatedMsgs);
+            }
+          })
+          .catch((e) => {
+            console.error("[Chat] Failed to sync reactions:", e);
+          });
       }
     }
 
@@ -3199,7 +3246,7 @@ export function useChat() {
         if (keys?.pubkey) {
           // Find the other participant's pubkey
           const otherParticipant = conv.participants.find(
-            (p) => p.pubkey !== keys.pubkey
+            (p) => p.pubkey !== keys.pubkey,
           );
           if (otherParticipant?.pubkey) {
             console.log("[Chat] 🌐 Fetching DM messages in background...");
@@ -3224,7 +3271,7 @@ export function useChat() {
 
     const conversationId = generateConversationId(
       currentUser.pubkeyHex,
-      contact.pubkey
+      contact.pubkey,
     );
 
     // Check if conversation already exists
@@ -3280,7 +3327,7 @@ export function useChat() {
   async function deleteConversation(conversationId: string): Promise<void> {
     const keys = getUserKeys();
     const conv = conversations.value.find((c) => c.id === conversationId);
-    
+
     // Get all messages in this conversation
     const msgs = await db.chatMessages
       .where("conversationId")
@@ -3309,11 +3356,17 @@ export function useChat() {
             const channelDeletionEvent = {
               kind: NOSTR_KINDS.DELETION,
               content: "Channel deleted by creator",
-              tags: [["e", conversationId], ["k", String(NOSTR_KINDS.CHANNEL_CREATE)]],
+              tags: [
+                ["e", conversationId],
+                ["k", String(NOSTR_KINDS.CHANNEL_CREATE)],
+              ],
               created_at: Math.floor(Date.now() / 1000),
             };
 
-            const signedChannelDeletion = $nostr.finalizeEvent(channelDeletionEvent, privateKey);
+            const signedChannelDeletion = $nostr.finalizeEvent(
+              channelDeletionEvent,
+              privateKey,
+            );
             await $nostr.pool.publish(relayUrls, signedChannelDeletion);
             console.log("[Chat] 🗑️ Channel deleted on Nostr");
           }
@@ -3321,7 +3374,7 @@ export function useChat() {
 
         // Delete our own messages in the conversation
         const myMessages = msgs.filter(
-          (m) => m.senderPubkey === keys.pubkey && m.nostrEventId
+          (m) => m.senderPubkey === keys.pubkey && m.nostrEventId,
         );
 
         if (myMessages.length > 0) {
@@ -3357,7 +3410,7 @@ export function useChat() {
 
     // Remove from state
     conversations.value = conversations.value.filter(
-      (c) => c.id !== conversationId
+      (c) => c.id !== conversationId,
     );
     messages.value.delete(conversationId);
 
@@ -3383,7 +3436,7 @@ export function useChat() {
     try {
       // Load deleted conversation IDs to filter them out
       const deletedIds = new Set(
-        (await db.deletedConversations.toArray()).map((d) => d.id)
+        (await db.deletedConversations.toArray()).map((d) => d.id),
       );
 
       // Query team conversations by company code hash
@@ -3397,13 +3450,13 @@ export function useChat() {
         if (deletedIds.has(conv.id)) {
           console.log(
             "[Chat] Skipping deleted conversation:",
-            conv.id.slice(0, 16)
+            conv.id.slice(0, 16),
           );
           continue;
         }
 
         const existingIndex = conversations.value.findIndex(
-          (c) => c.id === conv.id
+          (c) => c.id === conv.id,
         );
 
         if (existingIndex >= 0) {
@@ -3464,7 +3517,7 @@ export function useChat() {
 
     if (!$nostr?.pool) {
       console.warn(
-        "[Chat] Nostr pool not available for conversation subscription"
+        "[Chat] Nostr pool not available for conversation subscription",
       );
       return;
     }
@@ -3474,7 +3527,7 @@ export function useChat() {
 
     console.log(
       "[Chat] 📢 Subscribing to conversation updates for team:",
-      teamTag.slice(0, 32) + "..."
+      teamTag.slice(0, 32) + "...",
     );
 
     // Subscribe to team channel updates (BOTH standard #t and custom #c tags)
@@ -3503,7 +3556,7 @@ export function useChat() {
           try {
             // Check if content is encrypted
             const isEncrypted = event.tags.find(
-              (t) => t[0] === "encrypted" && t[1] === "true"
+              (t) => t[0] === "encrypted" && t[1] === "true",
             );
 
             // Parse conversation from event
@@ -3523,13 +3576,13 @@ export function useChat() {
             if (!data.id || typeof data.id !== "string") {
               console.warn(
                 "[Chat] Invalid conversation data - missing or invalid ID:",
-                data
+                data,
               );
               return;
             }
 
             const existingIndex = conversations.value.findIndex(
-              (c) => c.id === data.id
+              (c) => c.id === data.id,
             );
 
             if (existingIndex >= 0) {
@@ -3576,7 +3629,7 @@ export function useChat() {
         oneose() {
           // Conversation subscription established
         },
-      }
+      },
     );
   }
 

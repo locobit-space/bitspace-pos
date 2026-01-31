@@ -4,8 +4,9 @@
 // ============================================
 
 import { getPublicKey, finalizeEvent, verifyEvent } from "nostr-tools/pure";
-import { nip19 } from "nostr-tools";
-import { hexToBytes } from "@noble/hashes/utils";
+import { nip19, utils } from "nostr-tools";
+
+const { hexToBytes } = utils;
 import type {
   StoreUser,
   AuthMethod,
@@ -37,7 +38,7 @@ export function useStaffAuth() {
    */
   async function hashPassword(
     password: string,
-    salt?: string
+    salt?: string,
   ): Promise<{ hash: string; salt: string }> {
     const useSalt = salt || generateRandomString(32);
     const encoder = new TextEncoder();
@@ -48,7 +49,7 @@ export function useStaffAuth() {
       encoder.encode(password),
       "PBKDF2",
       false,
-      ["deriveBits"]
+      ["deriveBits"],
     );
 
     // Derive key using PBKDF2
@@ -60,7 +61,7 @@ export function useStaffAuth() {
         hash: "SHA-256",
       },
       keyMaterial,
-      256
+      256,
     );
 
     const hashArray = Array.from(new Uint8Array(derivedBits));
@@ -75,7 +76,7 @@ export function useStaffAuth() {
   async function verifyPassword(
     password: string,
     storedHash: string,
-    salt: string
+    salt: string,
   ): Promise<boolean> {
     const { hash } = await hashPassword(password, salt);
     return hash === storedHash;
@@ -119,7 +120,7 @@ export function useStaffAuth() {
   async function verifyNostrSignature(
     npub: string,
     signature: string,
-    challengeId: string
+    challengeId: string,
   ): Promise<boolean> {
     // Get the challenge
     if (!authChallenge.value || authChallenge.value.id !== challengeId) {
@@ -152,7 +153,7 @@ export function useStaffAuth() {
       if (isValid && signedEvent.pubkey === pubkeyHex) {
         // Check that the challenge matches
         const challengeTag = signedEvent.tags.find(
-          (t: string[]) => t[0] === "challenge"
+          (t: string[]) => t[0] === "challenge",
         );
         if (challengeTag && challengeTag[1] === authChallenge.value.challenge) {
           authChallenge.value.isUsed = true;
@@ -172,7 +173,7 @@ export function useStaffAuth() {
    */
   async function signAuthChallenge(
     nsec: string,
-    challenge: AuthChallenge
+    challenge: AuthChallenge,
   ): Promise<string | null> {
     try {
       // Decode nsec to hex
@@ -191,7 +192,7 @@ export function useStaffAuth() {
       // Sign the event
       const signedEvent = finalizeEvent(
         unsignedEvent,
-        hexToBytes(privateKeyHex)
+        hexToBytes(privateKeyHex),
       );
 
       return JSON.stringify(signedEvent);
@@ -205,7 +206,7 @@ export function useStaffAuth() {
    * Get public key from nsec
    */
   function getNpubFromNsec(
-    nsec: string
+    nsec: string,
   ): { npub: string; pubkeyHex: string } | null {
     try {
       const privateKeyHex = nostrKey.decodePrivateKey(nsec);
@@ -227,7 +228,7 @@ export function useStaffAuth() {
    */
   async function loginWithNostr(
     nsec: string,
-    users: StoreUser[]
+    users: StoreUser[],
   ): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
     isAuthenticating.value = true;
 
@@ -240,7 +241,7 @@ export function useStaffAuth() {
 
       // Find user by npub
       const user = users.find(
-        (u) => u.npub === keyInfo.npub || u.pubkeyHex === keyInfo.pubkeyHex
+        (u) => u.npub === keyInfo.npub || u.pubkeyHex === keyInfo.pubkeyHex,
       );
 
       if (!user) {
@@ -273,7 +274,7 @@ export function useStaffAuth() {
       // Check lockout
       if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
         const remaining = Math.ceil(
-          (new Date(user.lockedUntil).getTime() - Date.now()) / 60000
+          (new Date(user.lockedUntil).getTime() - Date.now()) / 60000,
         );
         return {
           success: false,
@@ -299,7 +300,7 @@ export function useStaffAuth() {
   async function loginWithPassword(
     identifier: string, // email or username
     password: string,
-    users: StoreUser[]
+    users: StoreUser[],
   ): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
     isAuthenticating.value = true;
 
@@ -308,7 +309,7 @@ export function useStaffAuth() {
       const user = users.find(
         (u) =>
           u.email?.toLowerCase().trim() === identifier.toLowerCase().trim() ||
-          u.name.toLowerCase().trim() === identifier.toLowerCase().trim()
+          u.name.toLowerCase().trim() === identifier.toLowerCase().trim(),
       );
 
       if (!user) {
@@ -326,7 +327,7 @@ export function useStaffAuth() {
       // Check lockout
       if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
         const remaining = Math.ceil(
-          (new Date(user.lockedUntil).getTime() - Date.now()) / 60000
+          (new Date(user.lockedUntil).getTime() - Date.now()) / 60000,
         );
         return {
           success: false,
@@ -354,7 +355,7 @@ export function useStaffAuth() {
               ...user,
               failedLoginAttempts: attempts,
               lockedUntil: new Date(
-                Date.now() + LOCKOUT_DURATION
+                Date.now() + LOCKOUT_DURATION,
               ).toISOString(),
             } as StoreUser,
           };
@@ -408,7 +409,7 @@ export function useStaffAuth() {
    */
   async function loginWithPin(
     pin: string,
-    users: StoreUser[]
+    users: StoreUser[],
   ): Promise<{ success: boolean; user?: StoreUser; error?: string }> {
     isAuthenticating.value = true;
 
@@ -440,7 +441,7 @@ export function useStaffAuth() {
       // Check lockout
       if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
         const remaining = Math.ceil(
-          (new Date(user.lockedUntil).getTime() - Date.now()) / 60000
+          (new Date(user.lockedUntil).getTime() - Date.now()) / 60000,
         );
         return {
           success: false,
@@ -505,7 +506,7 @@ export function useStaffAuth() {
   function extendSession(): void {
     if (authSession.value && authSession.value.isValid) {
       authSession.value.expiresAt = new Date(
-        Date.now() + SESSION_DURATION
+        Date.now() + SESSION_DURATION,
       ).toISOString();
     }
   }
@@ -570,7 +571,7 @@ export function useStaffAuth() {
     }
     if (
       /^(0123|1234|2345|3456|4567|5678|6789|9876|8765|7654|6543|5432|4321|3210)/.test(
-        pin
+        pin,
       )
     ) {
       return { valid: false, error: "PIN cannot be a sequential pattern" };

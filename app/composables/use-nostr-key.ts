@@ -1,6 +1,6 @@
 import { getPublicKey } from "nostr-tools/pure";
-import { nip19 } from "nostr-tools";
-import { hexToBytes, bytesToHex } from "@noble/hashes/utils";
+import { nip19, utils } from "nostr-tools";
+const { hexToBytes, bytesToHex } = utils;
 
 export const useNostrKey = () => {
   /**
@@ -22,7 +22,7 @@ export const useNostrKey = () => {
     const hexKey = trimmedKey.toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(hexKey)) {
       throw new Error(
-        "Invalid private key format. Must be 64-character hex or valid nsec."
+        "Invalid private key format. Must be 64-character hex or valid nsec.",
       );
     }
 

@@ -6,16 +6,17 @@
 // ============================================
 
 import { ref, computed } from "vue";
-import { finalizeEvent } from "nostr-tools/pure";
-import { hexToBytes } from "@noble/hashes/utils";
-import type { ShopConfig } from "./use-shop";
 import type { Event } from "nostr-tools";
+import { finalizeEvent, utils } from "nostr-tools";
+import type { ShopConfig } from "./use-shop";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
 import type { ShopType } from "~/types";
 import {
   getShopTypeConfig,
   shouldTrackStockByDefault,
 } from "~/data/shop-templates";
+
+const { hexToBytes } = utils;
 
 // ============================================
 // 📦 TYPES
@@ -83,12 +84,12 @@ export function useShopManager() {
   const currentWorkspace = computed(
     () =>
       state.value.workspaces.find(
-        (w) => w.id === state.value.currentWorkspaceId
-      ) || null
+        (w) => w.id === state.value.currentWorkspaceId,
+      ) || null,
   );
 
   const hasMultipleWorkspaces = computed(
-    () => state.value.workspaces.length > 1
+    () => state.value.workspaces.length > 1,
   );
 
   const isLoading = computed(() => state.value.isLoading);
@@ -130,13 +131,13 @@ export function useShopManager() {
     try {
       localStorage.setItem(
         STORAGE_KEYS.WORKSPACES,
-        JSON.stringify(state.value.workspaces)
+        JSON.stringify(state.value.workspaces),
       );
 
       if (state.value.currentWorkspaceId) {
         localStorage.setItem(
           STORAGE_KEYS.CURRENT_WORKSPACE,
-          state.value.currentWorkspaceId
+          state.value.currentWorkspaceId,
         );
       }
 
@@ -271,7 +272,7 @@ export function useShopManager() {
 
       // Get most recent event
       const latestEvent = events.sort(
-        (a: Event, b: Event) => b.created_at - a.created_at
+        (a: Event, b: Event) => b.created_at - a.created_at,
       )[0];
       if (!latestEvent) return false;
 
@@ -286,7 +287,7 @@ export function useShopManager() {
         // Merge with existing workspaces (don't overwrite if local is newer)
         const existingIds = new Set(state.value.workspaces.map((w) => w.id));
         const newWorkspaces = data.workspaces.filter(
-          (w: ShopWorkspace) => !existingIds.has(w.id)
+          (w: ShopWorkspace) => !existingIds.has(w.id),
         );
 
         if (newWorkspaces.length > 0) {
@@ -296,20 +297,20 @@ export function useShopManager() {
           ];
           localStorage.setItem(
             STORAGE_KEYS.WORKSPACES,
-            JSON.stringify(state.value.workspaces)
+            JSON.stringify(state.value.workspaces),
           );
         }
 
         // Restore current workspace ID if not set
         if (!state.value.currentWorkspaceId && data.currentWorkspaceId) {
           const exists = state.value.workspaces.some(
-            (w) => w.id === data.currentWorkspaceId
+            (w) => w.id === data.currentWorkspaceId,
           );
           if (exists) {
             state.value.currentWorkspaceId = data.currentWorkspaceId;
             localStorage.setItem(
               STORAGE_KEYS.CURRENT_WORKSPACE,
-              data.currentWorkspaceId
+              data.currentWorkspaceId,
             );
           }
         }
@@ -341,7 +342,7 @@ export function useShopManager() {
    * Add a new workspace (shop)
    */
   function addWorkspace(
-    workspace: Omit<ShopWorkspace, "id" | "createdAt" | "lastAccessedAt">
+    workspace: Omit<ShopWorkspace, "id" | "createdAt" | "lastAccessedAt">,
   ): ShopWorkspace {
     const newWorkspace: ShopWorkspace = {
       ...workspace,
@@ -374,7 +375,7 @@ export function useShopManager() {
     ownerPubkey: string,
     companyCodeHash?: string,
     companyCode?: string,
-    shopConfigJson?: string
+    shopConfigJson?: string,
   ): ShopWorkspace {
     return addWorkspace({
       name: shopConfig.name,
@@ -395,7 +396,7 @@ export function useShopManager() {
    */
   function updateWorkspace(
     workspaceId: string,
-    updates: Partial<ShopWorkspace>
+    updates: Partial<ShopWorkspace>,
   ): boolean {
     const index = state.value.workspaces.findIndex((w) => w.id === workspaceId);
     if (index === -1) return false;
@@ -463,7 +464,7 @@ export function useShopManager() {
    */
   async function seedTemplatesAfterClear(
     shopType?: ShopType,
-    syncToNostr = true
+    syncToNostr = true,
   ): Promise<void> {
     if (!import.meta.client) return;
 
@@ -479,7 +480,7 @@ export function useShopManager() {
       const config = getShopTypeConfig(currentShopType);
       if (!config) {
         console.warn(
-          `[ShopManager] No template config found for ${currentShopType}`
+          `[ShopManager] No template config found for ${currentShopType}`,
         );
         return;
       }
@@ -504,7 +505,7 @@ export function useShopManager() {
         const categoryId = productsStore.categories.value.find(
           (c) =>
             c.name ===
-            config.categories.find((tc) => tc.id === prod.categoryId)?.name
+            config.categories.find((tc) => tc.id === prod.categoryId)?.name,
         )?.id;
 
         if (categoryId) {
@@ -588,7 +589,7 @@ export function useShopManager() {
     }
 
     console.log(
-      `[ShopManager] Removing ${keysToRemove.length} localStorage keys...`
+      `[ShopManager] Removing ${keysToRemove.length} localStorage keys...`,
     );
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);
@@ -671,13 +672,13 @@ export function useShopManager() {
       if (workspace.companyCodeHash) {
         localStorage.setItem(
           "bitspace_company_code_hash",
-          workspace.companyCodeHash
+          workspace.companyCodeHash,
         );
       }
       if (workspace.ownerPubkey) {
         localStorage.setItem(
           "bitspace_company_owner_pubkey",
-          workspace.ownerPubkey
+          workspace.ownerPubkey,
         );
       }
 
@@ -772,7 +773,7 @@ export function useShopManager() {
 
       // Check if workspace already exists
       const existingWorkspace = state.value.workspaces.find(
-        (w) => w.ownerPubkey === ownerPubkey && w.name === shopConfig.name
+        (w) => w.ownerPubkey === ownerPubkey && w.name === shopConfig.name,
       );
 
       if (existingWorkspace) {
@@ -810,7 +811,7 @@ export function useShopManager() {
         ownerPubkey,
         companyCodeHash,
         companyCode,
-        shopConfigStr // Store full config JSON for restoration on switch
+        shopConfigStr, // Store full config JSON for restoration on switch
       );
 
       state.value.currentWorkspaceId = workspace.id;
@@ -897,7 +898,7 @@ export function useShopManager() {
         localStorage.getItem("bitspace_company_code_hash") || undefined;
 
       console.log(
-        "[ShopManager] 🔄 AUTO-MIGRATION: Creating workspace from existing shop data"
+        "[ShopManager] 🔄 AUTO-MIGRATION: Creating workspace from existing shop data",
       );
 
       // Create workspace from existing shop config
@@ -912,7 +913,7 @@ export function useShopManager() {
         ownerPubkey,
         companyCodeHash,
         companyCode,
-        shopConfigStr
+        shopConfigStr,
       );
 
       // Set as current workspace

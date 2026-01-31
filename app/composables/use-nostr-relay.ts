@@ -9,6 +9,7 @@ import type { RelayConfig } from "~/types";
 // ============================================
 
 const STORAGE_KEY = "bitspace_relays";
+const SELECTED_RELAY_KEY = "bitspace_selected_relay";
 
 const {
   public: { devRelayUrl = "" },
@@ -160,6 +161,31 @@ export const useNostrRelay = () => {
     }
   }
 
+  /**
+   * Save selected relay URL to localStorage
+   */
+  function saveSelectedRelay(url: string): void {
+    try {
+      if (typeof window === "undefined") return;
+      localStorage.setItem(SELECTED_RELAY_KEY, url);
+    } catch (e) {
+      console.warn("[useNostrRelay] Failed to save selected relay:", e);
+    }
+  }
+
+  /**
+   * Load selected relay URL from localStorage
+   */
+  function loadSelectedRelay(): string | null {
+    try {
+      if (typeof window === "undefined") return null;
+      return localStorage.getItem(SELECTED_RELAY_KEY);
+    } catch (e) {
+      console.warn("[useNostrRelay] Failed to load selected relay:", e);
+      return null;
+    }
+  }
+
   // ============================================
   // 🔄 INITIALIZATION & MERGE FUNCTIONS
   // ============================================
@@ -179,9 +205,23 @@ export const useNostrRelay = () => {
       // Step 1: Load from localStorage first (fast startup)
       const storedRelays = loadFromStorage();
       // unix url
-      relayConfigs.value = [...storedRelays, ...DEFAULT_RELAYS].filter(
+      relayConfigs.value = [...storedRelays].filter(
         (v, i, a) => a.findIndex((t) => t.url === v.url) === i,
       );
+
+      // Step 1.5: Set selected relay as primary if available
+      const selectedRelayUrl = loadSelectedRelay();
+      if (selectedRelayUrl) {
+        const selectedRelay = relayConfigs.value.find(
+          (r) => r.url === selectedRelayUrl,
+        );
+        if (selectedRelay) {
+          // Unset all primary flags first
+          relayConfigs.value.forEach((r) => (r.isPrimary = false));
+          // Set selected as primary
+          selectedRelay.isPrimary = true;
+        }
+      }
 
       // Step 2: Connect to relays immediately (don't wait for Nostr settings)
       await connect();
@@ -374,7 +414,22 @@ export const useNostrRelay = () => {
    * Set primary relay
    */
   function setPrimaryRelay(url: string): boolean {
-    return updateRelay(url, { isPrimary: true });
+    const success = updateRelay(url, { isPrimary: true });
+    if (success) {
+      saveSelectedRelay(url);
+    }
+    return success;
+  }
+
+  /**
+   * Set selected relay (primary relay + save to localStorage)
+   */
+  function setSelectedRelay(url: string): boolean {
+    const success = setPrimaryRelay(url);
+    if (success) {
+      saveSelectedRelay(url);
+    }
+    return success;
   }
 
   /**
@@ -521,6 +576,8 @@ export const useNostrRelay = () => {
     removeRelay,
     updateRelay,
     setPrimaryRelay,
+    setSelectedRelay,
+    loadSelectedRelay,
     saveRelaysToNostr,
     mergeWithNostrSettings,
 
