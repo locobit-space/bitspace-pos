@@ -6,6 +6,9 @@ on:
       - "v*" # Triggers on version tags like v1.5.2
   workflow_dispatch: # Allows manual triggering from GitHub UI
 
+permissions:
+  contents: write # Required to create releases and upload assets
+
 jobs:
   release:
     strategy:
@@ -36,11 +39,13 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "yarn"
 
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
+        env:
+          NODE_OPTIONS: "--max_old_space_size=8192"
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -59,6 +64,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: "--max_old_space_size=8192"
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "bnos ${{ github.ref_name }}"
