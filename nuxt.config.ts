@@ -12,6 +12,21 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  vite: {
+    // Tauri-specific configuration
+    clearScreen: false,
+    envPrefix: ["VITE_", "TAURI_"],
+    server: {
+      strictPort: true,
+    },
+    // Better source maps for desktop debugging
+    build: {
+      target: "esnext",
+      minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
+      sourcemap: !!process.env.TAURI_DEBUG,
+    },
+  },
+
   runtimeConfig: {
     public: {
       version: process.env.npm_package_version || "0.0.1",

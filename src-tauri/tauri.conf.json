@@ -1,0 +1,39 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "BNOS - Business OS",
+  "version": "1.5.2",
+  "identifier": "com.bnos.pos",
+  "build": {
+    "frontendDist": "../.output/public",
+    "devUrl": "http://localhost:3002",
+    "beforeDevCommand": "yarn dev",
+    "beforeBuildCommand": "yarn generate"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "BNOS - Business OS",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "minWidth": 800,
+        "minHeight": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
