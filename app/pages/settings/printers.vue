@@ -180,7 +180,7 @@ const testPrint = (printer: Printer) => {
           class="overflow-hidden transition-all hover:ring-2 hover:ring-primary-500/50"
         >
           <div class="p-4">
-            <div class="flex justify-between items-start mb-2">
+            <div class="flex justify-between items-start mb-3">
               <div class="flex items-center gap-2">
                 <div
                   class="w-2 h-2 rounded-full"
@@ -197,22 +197,60 @@ const testPrint = (printer: Printer) => {
               }}</UBadge>
             </div>
 
-            <div class="space-y-1 text-sm text-gray-600 dark:text-gray-300">
+            <div
+              class="space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3"
+            >
+              <!-- Connection Type -->
               <div class="flex items-center gap-2">
                 <UIcon
-                  name="solar:global-linear"
+                  :name="
+                    printer.type === 'network'
+                      ? 'solar:global-linear'
+                      : printer.type === 'wireless'
+                        ? 'solar:wi-fi-router-minimalistic-line-duotone'
+                        : printer.type === 'bluetooth'
+                          ? 'solar:bluetooth-linear'
+                          : printer.type === 'usb'
+                            ? 'solar:usb-linear'
+                            : 'solar:server-path-linear'
+                  "
                   class="w-4 h-4 text-gray-400"
                 />
-                <span class="font-mono"
+                <span class="capitalize">{{ printer.type }}</span>
+                <UBadge
+                  v-if="printer.autoCut"
+                  color="green"
+                  variant="subtle"
+                  size="xs"
+                  >Auto-cut</UBadge
+                >
+              </div>
+              <!-- IP Address (for network types) -->
+              <div
+                v-if="
+                  ['network', 'wireless', 'ethernet'].includes(printer.type)
+                "
+                class="flex items-center gap-2"
+              >
+                <UIcon
+                  name="solar:router-linear"
+                  class="w-4 h-4 text-gray-400"
+                />
+                <span class="font-mono text-xs"
                   >{{ printer.ip }}:{{ printer.port }}</span
                 >
               </div>
+              <!-- Paper Width -->
               <div class="flex items-center gap-2">
                 <UIcon
                   name="solar:document-text-linear"
                   class="w-4 h-4 text-gray-400"
                 />
-                <span>{{ printer.paperWidth }}</span>
+                <span>{{
+                  printer.paperWidth === "custom"
+                    ? `${printer.customPaperWidth}mm (custom)`
+                    : printer.paperWidth
+                }}</span>
               </div>
             </div>
           </div>
@@ -274,6 +312,12 @@ const testPrint = (printer: Printer) => {
                   scope="col"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
+                  Connection
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
                   {{ $t("settings.printers.location") }}
                 </th>
                 <th
@@ -287,6 +331,12 @@ const testPrint = (printer: Printer) => {
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   {{ $t("settings.printers.paperWidth") }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Features
                 </th>
                 <th scope="col" class="relative px-6 py-3">
                   <span class="sr-only">{{ $t("common.actions") }}</span>
@@ -323,6 +373,28 @@ const testPrint = (printer: Printer) => {
                   >
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <UIcon
+                      :name="
+                        printer.type === 'network'
+                          ? 'solar:global-linear'
+                          : printer.type === 'wireless'
+                            ? 'solar:wi-fi-router-minimalistic-line-duotone'
+                            : printer.type === 'bluetooth'
+                              ? 'solar:bluetooth-linear'
+                              : printer.type === 'usb'
+                                ? 'solar:usb-linear'
+                                : 'solar:server-path-linear'
+                      "
+                      class="w-4 h-4 text-gray-400"
+                    />
+                    <span
+                      class="text-sm text-gray-900 dark:text-white capitalize"
+                      >{{ printer.type }}</span
+                    >
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
                   <UBadge color="gray" variant="soft" size="xs">{{
                     printer.location === "custom"
                       ? printer.customLocation
@@ -331,17 +403,43 @@ const testPrint = (printer: Printer) => {
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div
+                    v-if="
+                      ['network', 'wireless', 'ethernet'].includes(printer.type)
+                    "
                     class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
                   >
-                    <span class="font-mono"
+                    <span class="font-mono text-xs"
                       >{{ printer.ip }}:{{ printer.port }}</span
                     >
                   </div>
+                  <span v-else class="text-sm text-gray-400">-</span>
                 </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
                 >
-                  {{ printer.paperWidth }}
+                  {{
+                    printer.paperWidth === "custom"
+                      ? `${printer.customPaperWidth}mm`
+                      : printer.paperWidth
+                  }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex gap-1">
+                    <UBadge
+                      v-if="printer.autoCut"
+                      color="green"
+                      variant="subtle"
+                      size="xs"
+                      >Auto-cut</UBadge
+                    >
+                    <UBadge
+                      v-if="printer.encoding && printer.encoding !== 'UTF-8'"
+                      color="blue"
+                      variant="subtle"
+                      size="xs"
+                      >{{ printer.encoding }}</UBadge
+                    >
+                  </div>
                 </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
