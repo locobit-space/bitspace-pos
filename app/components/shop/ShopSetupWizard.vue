@@ -44,6 +44,7 @@ const productsStore = useProductsStore();
 const marketplace = useMarketplace();
 const nostrUser = useNostrUser();
 const offline = useOffline();
+const nostrRelay = useNostrRelay();
 
 // ============ State ============
 const currentStep = ref(0);
@@ -87,6 +88,7 @@ const marketplaceForm = reactive({
 });
 
 const generatedCompanyCode = ref("");
+const selectedRelayUrl = ref<string>("");
 
 // Debug mode
 const isWorkspaceMode = computed(() => props.mode === "workspace");
@@ -111,6 +113,15 @@ const allSteps = computed<WizardStep[]>(() => {
       iconBg:
         "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
       isValid: () => !!shopType.value,
+    },
+    {
+      id: "relay",
+      title: t("shop.setup.relay.title", "Nostr Relay"),
+      subtitle: t("shop.setup.relay.subtitle", "Select your relay"),
+      icon: "i-heroicons-signal",
+      iconBg:
+        "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400",
+      isValid: () => !!selectedRelayUrl.value,
     },
     {
       id: "info",
@@ -508,6 +519,11 @@ const completeSetup = async () => {
       await company.setCompanyCode(generatedCompanyCode.value, ownerPubkey);
       company.toggleCompanyCode(true);
 
+      // Save selected relay
+      if (selectedRelayUrl.value) {
+        nostrRelay.setSelectedRelay(selectedRelayUrl.value);
+      }
+
       if (ownerPubkey) {
         try {
           const nostrData = useNostrData();
@@ -604,8 +620,21 @@ watch(
 );
 
 // ============ Lifecycle ============
-onMounted(() => {
+onMounted(async () => {
   nostrUser.initializeUser();
+
+  // Initialize relay
+  await nostrRelay.init();
+
+  // Load selected relay or default to primary
+  const savedRelay = nostrRelay.loadSelectedRelay();
+  if (savedRelay) {
+    selectedRelayUrl.value = savedRelay;
+  } else if (nostrRelay.primaryRelay.value) {
+    selectedRelayUrl.value = nostrRelay.primaryRelay.value;
+  } else if (nostrRelay.DEFAULT_RELAYS.length > 0) {
+    selectedRelayUrl.value = nostrRelay.DEFAULT_RELAYS[0]?.url || "";
+  }
 
   // Always generate new company code for new workspace
   // Or generate if initial setup has no code
@@ -725,6 +754,84 @@ onMounted(() => {
               >
                 {{ type.description }}
               </p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step: Relay Selection -->
+        <div v-show="currentStepData?.id === 'relay'" class="space-y-4">
+          <p class="text-center text-gray-600 dark:text-gray-400 mb-6">
+            {{
+              $t(
+                "shop.setup.relay.description",
+                "Choose your preferred Nostr relay for data sync",
+              )
+            }}
+          </p>
+
+          <div class="space-y-3">
+            <button
+              v-for="relay in nostrRelay.DEFAULT_RELAYS"
+              :key="relay.url"
+              type="button"
+              class="w-full p-4 rounded-xl border-2 transition-all duration-200 text-left active:scale-[0.98]"
+              :class="{
+                'border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-lg shadow-primary-500/20':
+                  selectedRelayUrl === relay.url,
+                'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600':
+                  selectedRelayUrl !== relay.url,
+              }"
+              @click="selectedRelayUrl = relay.url"
+            >
+              <div class="flex items-start gap-3">
+                <!-- Selection Indicator -->
+                <div
+                  class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5"
+                  :class="
+                    selectedRelayUrl === relay.url
+                      ? 'border-primary-500 bg-primary-500'
+                      : 'border-gray-300 dark:border-gray-600'
+                  "
+                >
+                  <Icon
+                    v-if="selectedRelayUrl === relay.url"
+                    name="i-heroicons-check"
+                    size="12"
+                    class="text-white"
+                  />
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <p
+                      class="font-medium text-sm"
+                      :class="
+                        selectedRelayUrl === relay.url
+                          ? 'text-primary-700 dark:text-primary-300'
+                          : 'text-gray-900 dark:text-white'
+                      "
+                    >
+                      {{ relay.url.replace("wss://", "") }}
+                    </p>
+                    <span
+                      v-if="relay.isPrimary"
+                      class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                    >
+                      {{ $t("relay.primary", "Primary") }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-3 text-xs text-gray-500">
+                    <span v-if="relay.read" class="flex items-center gap-1">
+                      <Icon name="i-heroicons-arrow-down-tray" size="12" />
+                      {{ $t("relay.read", "Read") }}
+                    </span>
+                    <span v-if="relay.write" class="flex items-center gap-1">
+                      <Icon name="i-heroicons-arrow-up-tray" size="12" />
+                      {{ $t("relay.write", "Write") }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </button>
           </div>
         </div>

@@ -3,10 +3,11 @@
 // Sync staff data across devices using Nostr
 // ============================================
 
-import { finalizeEvent } from "nostr-tools/pure";
-import { hexToBytes } from "@noble/hashes/utils";
+import { finalizeEvent, utils } from "nostr-tools";
 import type { StoreUser, UserPermissions } from "~/types";
 import { NOSTR_KINDS } from "~/types/nostr-kinds";
+
+const { hexToBytes } = utils;
 
 // Singleton state
 const isSyncing = ref(false);
@@ -97,7 +98,7 @@ export function useStaffSync() {
    */
   async function syncToRelays(
     user: StoreUser,
-    nsec: string
+    nsec: string,
   ): Promise<{ success: boolean; error?: string }> {
     if (isSyncing.value) {
       return { success: false, error: "Sync already in progress" };
@@ -138,7 +139,7 @@ export function useStaffSync() {
       // Sign the event
       const signedEvent = finalizeEvent(
         unsignedEvent,
-        hexToBytes(privateKeyHex)
+        hexToBytes(privateKeyHex),
       );
 
       // Publish to relays
@@ -184,7 +185,7 @@ export function useStaffSync() {
    */
   async function fetchFromRelays(
     npub: string,
-    nsec: string
+    nsec: string,
   ): Promise<{ success: boolean; data?: Partial<StoreUser>; error?: string }> {
     isSyncing.value = true;
     syncError.value = null;
@@ -217,7 +218,7 @@ export function useStaffSync() {
       // Get the most recent event
       type NostrEvent = { created_at: number; content: string };
       const latestEvent = (events as NostrEvent[]).sort(
-        (a, b) => b.created_at - a.created_at
+        (a, b) => b.created_at - a.created_at,
       )[0];
 
       // Parse content (stored as JSON)
@@ -303,7 +304,7 @@ export function useStaffSync() {
    */
   function generateLinkData(
     user: StoreUser,
-    nsec: string
+    nsec: string,
   ): { data: string; expiresAt: number } {
     const linkToken = {
       npub: user.npub,
@@ -322,7 +323,7 @@ export function useStaffSync() {
    * Parse link data from QR scan
    */
   function parseLinkData(
-    qrData: string
+    qrData: string,
   ): { npub: string; nsec: string; userId: string } | null {
     try {
       const url = new URL(qrData);
@@ -356,7 +357,7 @@ export function useStaffSync() {
    */
   async function handleNewDeviceLogin(
     npub: string,
-    nsec: string
+    nsec: string,
   ): Promise<{ synced: boolean; data?: Partial<StoreUser> }> {
     // Check if this is a new device
     const isNewDevice = !localStorage.getItem("bitspace_device_initialized");
