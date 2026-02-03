@@ -339,5 +339,14 @@
     "required": "This field is required",
     "min_length": "Must be at least {length} characters",
     "passwords_dont_match": "Passwords do not match"
+  },
+  "pwa": {
+    "update_available": "Update Available",
+    "update_desc": "New content is available. Click the reload button to update.",
+    "reload": "Reload",
+    "install_title": "Install App",
+    "install_desc": "Install BNOS on your device for faster access and offline functionality.",
+    "install": "Install",
+    "later": "Maybe Later"
   }
 }

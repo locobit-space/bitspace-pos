@@ -12,6 +12,15 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  // Disable fork pool to fix spawn EBADF error on macOS with Node 22.x
+  // The issue is with Nuxt's development server warmup feature that uses fork pool
+  devServer: {
+    loadingTemplate: (data) => {
+      return `Loading...`;
+    },
+    url: "http://localhost:3000",
+  },
+
   vite: {
     // Tauri-specific configuration
     clearScreen: false,

@@ -1,6 +1,6 @@
 {
   "name": "bnos",
-  "version": "1.5.4",
+  "version": "1.5.6",
   "private": false,
   "type": "module",
   "scripts": {
@@ -26,7 +26,7 @@
     "@nuxt/icon": "^1.15.0",
     "@nuxt/image": "1.10.0",
     "@nuxt/test-utils": "3.18.0",
-    "@nuxt/ui": "^4.3.0",
+    "@nuxt/ui": "^4.4.0",
     "@nuxtjs/i18n": "^9.5.4",
     "@tauri-apps/api": "~2.9.0",
     "@types/qrcode": "^1.5.6",
@@ -56,9 +56,6 @@
     "happy-dom": "^20.0.11",
     "playwright": "^1.57.0",
     "vitest": "^4.0.16"
-  },
-  "resolutions": {
-    "esbuild": "0.19.12"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

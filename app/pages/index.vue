@@ -350,6 +350,9 @@ onMounted(async () => {
 
 <template>
   <div>
+    <!-- PWA -->
+    <ClientPwa />
+
     <!-- Welcome Choice (Join vs Create) -->
     <DashboardWelcomeChoice
       v-if="showWelcome"
