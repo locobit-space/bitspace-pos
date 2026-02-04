@@ -404,6 +404,24 @@ export const useAuth = () => {
         // Don't block login if logging fails
       }
 
+      // 🔄 Sync Company Code (Bi-directional)
+      try {
+        const company = useCompany();
+        // Give a small delay to ensure keys are ready/propagated
+        setTimeout(() => {
+          if (company.hasCompanyCode.value) {
+            // We have a code locally => Backup to Nostr (ensure it's saved/updated)
+            console.log("[Auth] Backing up company code to Nostr...");
+            company.saveCompanyToNostr();
+          } else {
+            // We don't have a code => Restore from Nostr
+            company.restoreCompanyFromNostr();
+          }
+        }, 100);
+      } catch (e) {
+        console.warn("[Auth] Failed to trigger company sync:", e);
+      }
+
       return true;
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Nostr sign in failed";
@@ -485,6 +503,24 @@ export const useAuth = () => {
 
       // Save to localStorage
       saveAuthState();
+
+      // 🔄 Sync Company Code (Bi-directional)
+      // Note: This might fail if user doesn't have extension to decrypt (since it's read-only login)
+      // But if they have extension but just chose "Login with npub", it might work.
+      try {
+        const company = useCompany();
+        setTimeout(() => {
+          if (company.hasCompanyCode.value) {
+            // Backup
+            company.saveCompanyToNostr();
+          } else {
+            // Restore
+            company.restoreCompanyFromNostr();
+          }
+        }, 100);
+      } catch (e) {
+        console.warn("[Auth] Failed to trigger company sync:", e);
+      }
 
       return true;
     } catch (e) {
@@ -717,13 +753,14 @@ export const useAuth = () => {
       console.warn("[Auth] Failed to clear IndexedDB:", e);
     }
 
-    // Clear shop manager workspaces if not keeping them
     if (!keepWorkspaces) {
       try {
+        console.log("[Auth] Clearing all workspaces...");
         const { clearAllWorkspaces } = useShopManager();
         clearAllWorkspaces();
-      } catch {
-        // Shop manager may not be initialized
+        console.log("[Auth] Workspaces cleared");
+      } catch (e) {
+        console.warn("[Auth] Failed to clear workspaces:", e);
       }
     }
 

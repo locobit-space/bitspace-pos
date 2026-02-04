@@ -542,6 +542,6 @@ const providerBadgeClass = computed(() => {
 // Logout - use improved auth signOut that cleans all data
 const handleLogout = async () => {
   const auth = useAuth();
-  await auth.signOut({ keepWorkspaces: true }); // Keep workspaces for quick re-login
+  await auth.signOut({ keepWorkspaces: false }); // Clear workspaces for full logout
 };
 </script>

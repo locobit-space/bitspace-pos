@@ -337,7 +337,7 @@ onMounted(() => {
 const signOut = async () => {
   // Use the improved auth signOut that cleans all data
   const auth = useAuth();
-  await auth.signOut({ keepWorkspaces: true }); // Keep workspaces for quick re-login
+  await auth.signOut({ keepWorkspaces: false }); // Clear workspaces for full logout
 };
 
 // Switch account

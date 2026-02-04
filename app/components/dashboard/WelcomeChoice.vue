@@ -24,7 +24,20 @@
       </div>
 
       <!-- Choice Cards -->
-      <div class="grid md:grid-cols-2 gap-6">
+      <div v-if="company.isSyncing.value" class="text-center py-12">
+        <UIcon
+          name="svg-spinners:3-dots-fade"
+          class="w-16 h-16 text-primary-500 mx-auto mb-4"
+        />
+        <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+          {{ t("common.syncing", "Syncing company profile...") }}
+        </h3>
+        <p class="text-gray-500 mt-2">
+          Checking your Nostr profile for existing company connections
+        </p>
+      </div>
+
+      <div v-else class="grid md:grid-cols-2 gap-6">
         <!-- Join Company (Staff) -->
         <button
           type="button"
@@ -226,6 +239,26 @@ const isConnecting = ref(false);
 const errorMsg = ref("");
 const isValidCode = ref(false);
 const qrScannerTrigger = ref<HTMLButtonElement | null>(null);
+
+// Auto-sync on mount
+onMounted(async () => {
+  if (!company.hasCompanyCode.value) {
+    // Attempt to restore
+    const restored = await company.restoreCompanyFromNostr();
+    console.log("[WelcomeChoice] Restored:", restored);
+    if (restored) {
+      toast.add({
+        title: "Company Restored",
+        description: "Your company connection has been restored from Nostr.",
+        color: "success",
+      });
+      // Emit join to proceed
+      emit("join");
+      // Reload to ensure everything is fresh
+      setTimeout(() => window.location.reload(), 1000);
+    }
+  }
+});
 
 // Open QR Scanner
 function openQRScanner() {

@@ -293,6 +293,11 @@ onMounted(async () => {
   await shop.init();
   await company.loadCompanyCode();
 
+  // 🔄 Auto-restore if missing (e.g. fresh login/device)
+  if (!company.hasCompanyCode.value) {
+    await company.restoreCompanyFromNostr();
+  }
+
   // If company code is enabled, user is staff - go straight to dashboard
   if (company.isCompanyCodeEnabled.value) {
     console.log("[Dashboard] Company code enabled - skipping setup");
