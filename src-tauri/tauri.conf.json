@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "BNOS - Business OS",
+        "title": "BnOS - Business OS",
         "width": 1280,
         "height": 800,
         "resizable": true,

@@ -16,7 +16,7 @@
           <span class="text-4xl">🏪</span>
         </div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          {{ t("shop.welcome.title", "Welcome to BNOS") }}
+          {{ t("shop.welcome.title", "Welcome to BnOS") }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-2">
           {{ t("shop.welcome.subtitle", "Choose how you want to get started") }}

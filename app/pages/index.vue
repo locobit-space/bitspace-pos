@@ -6,19 +6,19 @@ definePageMeta({
 });
 
 useHead({
-  title: "bnos.space - BNOS Business Operation System",
+  title: "bnos.space - BnOS Business Operation System",
   meta: [
     {
       name: "description",
-      content: "BNOS Business Operation System",
+      content: "BnOS Business Operation System",
     },
     {
       name: "keywords",
-      content: "POS, bnos.space",
+      content: "POS, bnos.space, BnOS",
     },
     {
       name: "author",
-      content: "bnos.space",
+      content: "BnOS",
     },
     {
       name: "robots",

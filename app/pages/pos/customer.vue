@@ -53,7 +53,7 @@ watch(
         autoClearTimeout = null;
       }, 15000); // 15 seconds for customer to scan e-bill
     }
-  }
+  },
 );
 
 // Cleanup on unmount
@@ -201,7 +201,7 @@ const { settings } = useReceipt();
           <h1
             class="text-lg font-bold bg-linear-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 bg-clip-text text-transparent"
           >
-            {{ settings?.merchantName || "BNOS.SPACE" }}
+            {{ settings?.merchantName || "BnOS.SPACE" }}
           </h1>
           <p class="text-sm text-gray-400 font-light">{{ formatDate }}</p>
         </div>
@@ -334,7 +334,10 @@ const { settings } = useReceipt();
                     :alt="item.product?.name"
                     class="w-full h-full object-cover rounded-lg"
                     loading="lazy"
-                    @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                    @error="
+                      (e: Event) =>
+                        ((e.target as HTMLImageElement).style.display = 'none')
+                    "
                   />
                   <span v-else>{{ "📦" }}</span>
                 </div>
@@ -414,7 +417,7 @@ const { settings } = useReceipt();
                 >-{{
                   currency.format(
                     pos.discountAmount.value,
-                    pos.selectedCurrency.value
+                    pos.selectedCurrency.value,
                   )
                 }}</span
               >
@@ -519,7 +522,7 @@ const { settings } = useReceipt();
               {{
                 currency.format(
                   pos.paymentState.value.amount || pos.total.value,
-                  pos.selectedCurrency.value
+                  pos.selectedCurrency.value,
                 )
               }}
             </div>
@@ -629,7 +632,7 @@ const { settings } = useReceipt();
               {{
                 currency.format(
                   pos.paymentState.value.amount || pos.total.value,
-                  pos.selectedCurrency.value
+                  pos.selectedCurrency.value,
                 )
               }}
             </div>
@@ -704,7 +707,7 @@ const { settings } = useReceipt();
             {{
               currency.format(
                 pos.paymentState.value.amount || pos.total.value,
-                pos.selectedCurrency.value
+                pos.selectedCurrency.value,
               )
             }}
           </div>
@@ -746,7 +749,7 @@ const { settings } = useReceipt();
             {{
               currency.format(
                 pos.paymentState.value.amount || pos.total.value,
-                pos.selectedCurrency.value
+                pos.selectedCurrency.value,
               )
             }}
           </div>
@@ -780,7 +783,7 @@ const { settings } = useReceipt();
             {{
               currency.format(
                 pos.paymentState.value.amount || pos.total.value,
-                pos.selectedCurrency.value
+                pos.selectedCurrency.value,
               )
             }}
           </div>
@@ -879,7 +882,7 @@ const { settings } = useReceipt();
                   {{
                     currency.format(
                       pos.paymentState.value.amount,
-                      pos.selectedCurrency.value
+                      pos.selectedCurrency.value,
                     )
                   }}
                 </p>
@@ -914,7 +917,7 @@ const { settings } = useReceipt();
                     <div
                       v-for="(item, idx) in pos.paymentState.value.items.slice(
                         0,
-                        4
+                        4,
                       )"
                       :key="idx"
                       class="flex justify-between text-sm"
@@ -927,7 +930,7 @@ const { settings } = useReceipt();
                         >{{
                           currency.format(
                             item.total,
-                            pos.selectedCurrency.value
+                            pos.selectedCurrency.value,
                           )
                         }}</span
                       >

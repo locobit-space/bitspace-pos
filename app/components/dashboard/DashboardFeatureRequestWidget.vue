@@ -78,7 +78,7 @@ onMounted(() => {
           {{
             t(
               "dashboard.feature.subtitle",
-              "Help us improve BNOS with your feedback.",
+              "Help us improve BnOS with your feedback.",
             )
           }}
         </p>

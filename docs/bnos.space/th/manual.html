@@ -1,18 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>คู่มือการใช้งาน BNOS | เอกสาร</title>
+    <title>คู่มือการใช้งาน BnOS | เอกสาร</title>
     <meta
       name="description"
-      content="คู่มือการใช้งานฉบับสมบูรณ์สำหรับ BNOS - ระบบปฏิบัติการธุรกิจ จุดขายที่ขับเคลื่อนด้วย Lightning และสร้างด้วยโปรโตคอล Nostr"
+      content="คู่มือการใช้งานฉบับสมบูรณ์สำหรับ BnOS - ระบบปฏิบัติการธุรกิจ จุดขายที่ขับเคลื่อนด้วย Lightning และสร้างด้วยโปรโตคอล Nostr"
     />
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="../favicon.ico"
-    />
+    <link rel="icon" type="image/x-icon" href="../favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -31,8 +27,14 @@
       }
 
       body {
-        font-family: "Noto Sans Thai", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, sans-serif;
+        font-family:
+          "Noto Sans Thai",
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
         background: #0a0a12;
         color: rgba(255, 255, 255, 0.85);
         line-height: 1.7;
@@ -487,10 +489,61 @@
   </head>
   <body>
     <!-- Language Switcher -->
-    <div class="lang-switcher" style="position:fixed;top:20px;right:20px;z-index:1001;display:flex;gap:8px;">
-      <a href="../en/manual.html" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);text-decoration:none;font-size:13px;font-weight:500;transition:all 0.3s;">EN</a>
-      <a href="../lo/manual.html" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);text-decoration:none;font-size:13px;font-weight:500;transition:all 0.3s;">ລາວ</a>
-      <a href="../th/manual.html" style="padding:8px 16px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;color:#f59e0b;text-decoration:none;font-size:13px;font-weight:500;">ไทย</a>
+    <div
+      class="lang-switcher"
+      style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1001;
+        display: flex;
+        gap: 8px;
+      "
+    >
+      <a
+        href="../en/manual.html"
+        style="
+          padding: 8px 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          color: rgba(255, 255, 255, 0.6);
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.3s;
+        "
+        >EN</a
+      >
+      <a
+        href="../lo/manual.html"
+        style="
+          padding: 8px 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          color: rgba(255, 255, 255, 0.6);
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.3s;
+        "
+        >ລາວ</a
+      >
+      <a
+        href="../th/manual.html"
+        style="
+          padding: 8px 16px;
+          background: rgba(245, 158, 11, 0.15);
+          border: 1px solid rgba(245, 158, 11, 0.3);
+          border-radius: 8px;
+          color: #f59e0b;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 500;
+        "
+        >ไทย</a
+      >
     </div>
 
     <!-- Navigation -->
@@ -502,7 +555,7 @@
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
           </div>
-          <span class="nav-logo-text">BNOS</span>
+          <span class="nav-logo-text">BnOS</span>
         </a>
         <ul class="nav-links">
           <li><a href="index.html">หน้าแรก</a></li>
@@ -539,16 +592,23 @@
 
       <!-- Main Content -->
       <main class="main-content">
-        <h1>BNOS คู่มือการใช้งาน</h1>
+        <h1>BnOS คู่มือการใช้งาน</h1>
         <p class="lead">
-          Bitcoin Nostr Operating System - Business Operating System - Lightning-Powered ระบบจุดขายสำหรับยุคใหม่
+          Bitcoin Nostr Operating System - Business Operating System -
+          Lightning-Powered ระบบจุดขายสำหรับยุคใหม่
         </p>
 
         <!-- Introduction -->
         <section id="introduction">
           <h2>บทนำ</h2>
           <p>
-            <strong>BNOS (Bitcoin Nostr Operating System - Business Operating System)</strong> คือระบบจุดขายและระบบปฏิบัติการธุรกิจยุคใหม่บนเทคโนโลยีกระจายอำนาจ ใช้ Lightning Network สำหรับการชำระเงิน Bitcoin ทันที และโปรโตคอล Nostr เพื่อการจัดการข้อมูลที่ปลอดภัยและไร้การเซ็นเซอร์
+            <strong
+              >BnOS (Bitcoin Nostr Operating System - Business Operating
+              System)</strong
+            >
+            คือระบบจุดขายและระบบปฏิบัติการธุรกิจยุคใหม่บนเทคโนโลยีกระจายอำนาจ
+            ใช้ Lightning Network สำหรับการชำระเงิน Bitcoin ทันที และโปรโตคอล
+            Nostr เพื่อการจัดการข้อมูลที่ปลอดภัยและไร้การเซ็นเซอร์
           </p>
 
           <h3>คุณสมบัติเด่น</h3>
@@ -556,22 +616,30 @@
             <div class="feature-card">
               <div class="feature-card-icon">⚡</div>
               <div class="feature-card-title">Lightning-first</div>
-              <div class="feature-card-desc">รับจ่าย Bitcoin ทันที ค่าธรรมเนียมต่ำ</div>
+              <div class="feature-card-desc">
+                รับจ่าย Bitcoin ทันที ค่าธรรมเนียมต่ำ
+              </div>
             </div>
             <div class="feature-card">
               <div class="feature-card-icon">🟣</div>
               <div class="feature-card-title">Nostr-native</div>
-              <div class="feature-card-desc">โครงสร้างข้อมูลแบบกระจายอำนาจ เป็นเจ้าของข้อมูลเอง</div>
+              <div class="feature-card-desc">
+                โครงสร้างข้อมูลแบบกระจายอำนาจ เป็นเจ้าของข้อมูลเอง
+              </div>
             </div>
             <div class="feature-card">
               <div class="feature-card-icon">📦</div>
               <div class="feature-card-title">POS + Inventory</div>
-              <div class="feature-card-desc">ขายสินค้า จัดการสต็อก และออกใบเสร็จในที่เดียว</div>
+              <div class="feature-card-desc">
+                ขายสินค้า จัดการสต็อก และออกใบเสร็จในที่เดียว
+              </div>
             </div>
             <div class="feature-card">
               <div class="feature-card-icon">📊</div>
               <div class="feature-card-title">Analytics</div>
-              <div class="feature-card-desc">ดูยอดขาย สินค้าขายดี และแนวโน้มแบบเรียลไทม์</div>
+              <div class="feature-card-desc">
+                ดูยอดขาย สินค้าขายดี และแนวโน้มแบบเรียลไทม์
+              </div>
             </div>
           </div>
         </section>
@@ -583,13 +651,18 @@
           <h3>ความต้องการระบบ</h3>
           <ul>
             <li>เบราว์เซอร์ที่รองรับ PWA (Chrome, Edge, Safari)</li>
-            <li>การเชื่อมต่ออินเทอร์เน็ต (โหมดออฟไลน์ทำงานได้เมื่อเชื่อมต่ออีกครั้ง)</li>
+            <li>
+              การเชื่อมต่ออินเทอร์เน็ต
+              (โหมดออฟไลน์ทำงานได้เมื่อเชื่อมต่ออีกครั้ง)
+            </li>
             <li>กุญแจ Nostr (npub/nsec) หรือสร้างใหม่ในแอป</li>
           </ul>
 
           <h3>Quick Start</h3>
           <div class="steps">
-            <div class="step">1) เปิด <strong>https://app.bnos.space</strong></div>
+            <div class="step">
+              1) เปิด <strong>https://app.bnos.space</strong>
+            </div>
             <div class="step">2) ลงชื่อเข้าใช้หรือสร้างกุญแจ Nostr ใหม่</div>
             <div class="step">3) ตั้งค่าร้านและกระเป๋า Lightning</div>
             <div class="step">4) เพิ่มสินค้าแรกและเริ่มขาย</div>
@@ -616,7 +689,8 @@
 
           <h3>ข้อแนะนำความปลอดภัย</h3>
           <div class="alert alert-warning">
-            อย่าแชร์ nsec กับใคร สำรองไว้ในที่ปลอดภัย และพิจารณาใช้ฮาร์ดแวร์วอลเล็ต
+            อย่าแชร์ nsec กับใคร สำรองไว้ในที่ปลอดภัย
+            และพิจารณาใช้ฮาร์ดแวร์วอลเล็ต
           </div>
           <ul>
             <li>เปิดใช้งานการล็อกอัตโนมัติในอุปกรณ์</li>
@@ -630,7 +704,10 @@
           <h2>ตั้งค่าร้านค้า</h2>
 
           <h3>ตั้งค่าเริ่มต้น</h3>
-          <p>เลือกประเภทธุรกิจ กำหนดสกุลเงิน ภาษี และโซนเวลาให้ตรงกับพื้นที่ดำเนินการ</p>
+          <p>
+            เลือกประเภทธุรกิจ กำหนดสกุลเงิน ภาษี
+            และโซนเวลาให้ตรงกับพื้นที่ดำเนินการ
+          </p>
 
           <h4>ตั้งค่ากระเป๋า Lightning</h4>
           <ol>
@@ -646,7 +723,9 @@
 
           <h3>เพิ่มสินค้า</h3>
           <div class="steps">
-            <div class="step">ไปที่ <strong>สินค้า</strong> > <strong>+ เพิ่มสินค้า</strong></div>
+            <div class="step">
+              ไปที่ <strong>สินค้า</strong> > <strong>+ เพิ่มสินค้า</strong>
+            </div>
             <div class="step">ใส่ชื่อ ราคา ภาษี และเปิดติดตามสต็อก</div>
             <div class="step">อัปโหลดรูปและเลือกหมวดหมู่</div>
           </div>
@@ -781,15 +860,21 @@
 
           <div class="faq-item">
             <div class="faq-question">Q: ต้องมี Bitcoin ก่อนหรือไม่?</div>
-            <div class="faq-answer">A: ไม่จำเป็น สามารถรับชำระและแปลงสกุลภายหลังได้</div>
+            <div class="faq-answer">
+              A: ไม่จำเป็น สามารถรับชำระและแปลงสกุลภายหลังได้
+            </div>
           </div>
           <div class="faq-item">
             <div class="faq-question">Q: ใช้งานออฟไลน์ได้ไหม?</div>
-            <div class="faq-answer">A: ได้ ระบบบันทึกธุรกรรมไว้และซิงก์เมื่อออนไลน์</div>
+            <div class="faq-answer">
+              A: ได้ ระบบบันทึกธุรกรรมไว้และซิงก์เมื่อออนไลน์
+            </div>
           </div>
           <div class="faq-item">
             <div class="faq-question">Q: ข้อมูลปลอดภัยแค่ไหน?</div>
-            <div class="faq-answer">A: ข้อมูลถูกเข้ารหัสและคุณถือกุญแจด้วยตนเองผ่าน Nostr</div>
+            <div class="faq-answer">
+              A: ข้อมูลถูกเข้ารหัสและคุณถือกุญแจด้วยตนเองผ่าน Nostr
+            </div>
           </div>
         </section>
 
@@ -797,22 +882,31 @@
         <section id="support">
           <h2>ช่วยเหลือ</h2>
           <ul>
-            <li>📖 เอกสาร: <a href="https://docs.bnos.space">docs.bnos.space</a></li>
+            <li>
+              📖 เอกสาร: <a href="https://docs.bnos.space">docs.bnos.space</a>
+            </li>
             <li>💬 ชุมชน Nostr และ Discord</li>
             <li>📧 อีเมล: support@bnos.space</li>
-            <li>🐛 รายงานบั๊ก: <a href="https://github.com/locobit-space/bitspace-pos/issues" target="_blank">GitHub Issues</a></li>
+            <li>
+              🐛 รายงานบั๊ก:
+              <a
+                href="https://github.com/locobit-space/bitspace-pos/issues"
+                target="_blank"
+                >GitHub Issues</a
+              >
+            </li>
           </ul>
         </section>
 
         <!-- Footer -->
         <footer class="footer">
           <p>
-            ⚡ <strong>BNOS - Business Operating System</strong><br />
+            ⚡ <strong>BnOS - Business Operating System</strong><br />
             สร้างด้วย ❤️ บน Nostr & Lightning Network<br />
             <a href="https://github.com/locobit-space">GitHub</a> •
             <a href="https://bnos.space">Website</a>
           </p>
-          <p style="margin-top: 16px">© 2026 BNOS. สงวนลิขสิทธิ์ทั้งหมด.</p>
+          <p style="margin-top: 16px">© 2026 BnOS. สงวนลิขสิทธิ์ทั้งหมด.</p>
         </footer>
       </main>
     </div>
