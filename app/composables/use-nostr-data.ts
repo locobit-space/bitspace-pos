@@ -369,7 +369,6 @@ export function useNostrData() {
       content,
       pubkey: keys.pubkey,
     };
-
     // If we have privkey, sign directly
     if (keys.privkey) {
       try {

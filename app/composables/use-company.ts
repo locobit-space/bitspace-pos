@@ -280,7 +280,6 @@ export function useCompany() {
     if (storedCode && storedHash) {
       // Check if hash is old format (8 chars) or mismatched
       const correctHash = await hashCompanyCode(storedCode);
-
       if (storedHash !== correctHash) {
         console.warn(
           `[Company] 🔄 Migrating company hash from ${storedHash.length} to ${correctHash.length} characters`,

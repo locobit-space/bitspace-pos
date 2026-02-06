@@ -299,6 +299,7 @@ export function useShopManager() {
             STORAGE_KEYS.WORKSPACES,
             JSON.stringify(state.value.workspaces),
           );
+          switchWorkspace(newWorkspaces[0].id);
         }
 
         // Restore current workspace ID if not set
@@ -312,6 +313,7 @@ export function useShopManager() {
               STORAGE_KEYS.CURRENT_WORKSPACE,
               data.currentWorkspaceId,
             );
+            switchWorkspace(data.currentWorkspaceId);
           }
         }
 

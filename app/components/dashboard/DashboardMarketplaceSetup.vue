@@ -122,13 +122,13 @@ const goToSettings = () => {
     />
 
     <!-- Close button -->
-    <button
-      type="button"
-      class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+    <UButton
+      color="neutral"
+      variant="ghost"
+      class="absolute top-4 right-4"
+      icon="solar:close-circle-linear"
       @click="dismiss"
-    >
-      <UIcon name="solar:close-circle-linear" class="w-5 h-5" />
-    </button>
+    />
 
     <div class="relative">
       <!-- Header -->
