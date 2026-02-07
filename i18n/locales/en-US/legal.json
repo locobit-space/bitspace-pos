@@ -5,11 +5,11 @@
       "lastUpdated": "Last Updated",
       "intro": {
         "title": "Introduction",
-        "content": "BNOS Business OS respects your privacy and is committed to protecting your personal data. This privacy policy explains how we handle your information when you use our point-of-sale application."
+        "content": "BnOS Business OS respects your privacy and is committed to protecting your personal data. This privacy policy explains how we handle your information when you use our point-of-sale application."
       },
       "dataCollection": {
         "title": "Data We Collect",
-        "content": "BNOS Business OS is designed with privacy-first principles. We collect minimal data necessary for the application to function:",
+        "content": "BnOS Business OS is designed with privacy-first principles. We collect minimal data necessary for the application to function:",
         "item1": "Business information you enter (shop name, address, products, etc.)",
         "item2": "Transaction records for your business operations",
         "item3": "Nostr public keys for data synchronization (optional)",
@@ -29,7 +29,7 @@
       },
       "thirdParty": {
         "title": "Third-Party Services",
-        "content": "BNOS Business OS may integrate with third-party services such as Lightning wallet providers (LNbits, Alby, NWC) and image hosting (Cloudinary). These services have their own privacy policies. We only share data necessary for the integration to function."
+        "content": "BnOS Business OS may integrate with third-party services such as Lightning wallet providers (LNbits, Alby, NWC) and image hosting (Cloudinary). These services have their own privacy policies. We only share data necessary for the integration to function."
       },
       "rights": {
         "title": "Your Rights",

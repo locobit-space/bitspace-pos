@@ -76,7 +76,7 @@ const handleSignUp = async () => {
   const success = await auth.signUpWithEmail(
     formData.value.email,
     formData.value.password,
-    formData.value.displayName
+    formData.value.displayName,
   );
 
   if (success) {
@@ -159,7 +159,7 @@ const confirmAccountCreation = async () => {
 
   console.log(
     "[Signup] Auto-logged in with new Nostr account:",
-    pubkeyHex.slice(0, 8) + "..."
+    pubkeyHex.slice(0, 8) + "...",
   );
 
   showKeysModal.value = false;
@@ -212,9 +212,9 @@ onMounted(() => {
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           {{ t("common.back") }}
         </NuxtLinkLocale>
-       <div class="max-w-sm">
-         <CommonSwitchLanguage />
-       </div>
+        <div class="max-w-sm">
+          <CommonSwitchLanguage />
+        </div>
       </div>
 
       <!-- Logo & Header -->
@@ -299,7 +299,7 @@ onMounted(() => {
               <template #leading>
                 <span class="text-lg">🔌</span>
               </template>
-              Connect with Nostr Extension
+              {{ t("auth.nostr.connectExtension") }}
             </UButton>
 
             <UButton
@@ -311,7 +311,7 @@ onMounted(() => {
               class="hidden"
               @click="handleGoogleSignUp"
             >
-              Continue with Google
+              {{ t("auth.nostr.continueWithGoogle") }}
             </UButton>
           </div>
 
@@ -322,9 +322,9 @@ onMounted(() => {
               />
             </div>
             <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white dark:bg-gray-900 text-gray-500"
-                >or create with email</span
-              >
+              <span class="px-2 bg-white dark:bg-gray-900 text-gray-500">{{
+                t("auth.signup.orCreateWithEmail")
+              }}</span>
             </div>
           </div>
 
@@ -333,12 +333,12 @@ onMounted(() => {
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Display Name</label
+                >{{ t("auth.signup.displayName") }}</label
               >
               <UInput
                 v-model="formData.displayName"
                 type="text"
-                placeholder="John Doe"
+                :placeholder="t('auth.signup.displayNamePlaceholder')"
                 size="lg"
                 class="w-full"
               />
@@ -347,12 +347,12 @@ onMounted(() => {
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Email</label
+                >{{ t("auth.signup.emailLabel") }}</label
               >
               <UInput
                 v-model="formData.email"
                 type="email"
-                placeholder="you@example.com"
+                :placeholder="t('auth.signup.emailPlaceholder')"
                 size="lg"
                 required
                 class="w-full"
@@ -362,12 +362,12 @@ onMounted(() => {
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Password</label
+                >{{ t("auth.signup.passwordLabel") }}</label
               >
               <UInput
                 v-model="formData.password"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="Create a strong password"
+                :placeholder="t('auth.signup.passwordPlaceholder')"
                 size="lg"
                 required
                 class="w-full"
@@ -413,12 +413,12 @@ onMounted(() => {
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Confirm Password</label
+                >{{ t("auth.signup.confirmPasswordLabel") }}</label
               >
               <UInput
                 v-model="formData.confirmPassword"
                 type="password"
-                placeholder="Confirm your password"
+                :placeholder="t('auth.signup.confirmPasswordPlaceholder')"
                 size="lg"
                 required
                 class="w-full"
@@ -430,24 +430,24 @@ onMounted(() => {
                 "
                 class="mt-1 text-xs text-red-400"
               >
-                Passwords do not match
+                {{ t("auth.signup.passwordMismatch") }}
               </p>
             </div>
 
             <label class="flex items-start gap-3 cursor-pointer">
               <UCheckbox v-model="agreeTerms" class="mt-0.5" />
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                I agree to the
+                {{ t("auth.signup.agreeTerms") }}
                 <NuxtLink
                   to="/legal/terms"
                   class="text-amber-500 hover:text-amber-400"
-                  >Terms of Service</NuxtLink
+                  >{{ t("auth.signup.termsOfService") }}</NuxtLink
                 >
-                and
+                {{ t("auth.signup.and") }}
                 <NuxtLink
                   to="/legal/privacy"
                   class="text-amber-500 hover:text-amber-400"
-                  >Privacy Policy</NuxtLink
+                  >{{ t("auth.signup.privacyPolicy") }}</NuxtLink
                 >
               </span>
             </label>
@@ -460,7 +460,7 @@ onMounted(() => {
               :loading="auth.isLoading.value"
               :disabled="!isFormValid"
             >
-              Create Account
+              {{ t("auth.signup.createAccountButton") }}
             </UButton>
           </form>
         </div>
@@ -486,16 +486,20 @@ onMounted(() => {
         <div>
           <div class="text-2xl mb-1">⚡</div>
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            Lightning Payments
+            {{ t("auth.signup.features.lightning") }}
           </p>
         </div>
         <div>
           <div class="text-2xl mb-1">🔐</div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Non-Custodial</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{ t("auth.signup.features.nonCustodial") }}
+          </p>
         </div>
         <div>
           <div class="text-2xl mb-1">🌐</div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Decentralized</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{ t("auth.signup.features.decentralized") }}
+          </p>
         </div>
       </div>
     </div>
@@ -512,11 +516,10 @@ onMounted(() => {
                 <span class="text-3xl">🎉</span>
               </div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-                Account Created!
+                {{ t("auth.signup.keysModal.title") }}
               </h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Save your keys securely - you'll need them to recover your
-                account
+                {{ t("auth.signup.keysModal.subtitle") }}
               </p>
             </div>
           </template>
@@ -531,9 +534,10 @@ onMounted(() => {
               >
                 <span class="text-lg">⚠️</span>
                 <span>
-                  <strong class="block">Save these keys now!</strong>
-                  Your private key (nsec) will not be shown again. Store it
-                  securely.
+                  <strong class="block">{{
+                    t("auth.signup.keysModal.warning")
+                  }}</strong>
+                  {{ t("auth.signup.keysModal.warningDesc") }}
                 </span>
               </p>
             </div>
@@ -543,7 +547,7 @@ onMounted(() => {
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Public Key (npub) - Share this
+                {{ t("auth.signup.keysModal.publicKeyLabel") }}
               </label>
               <div class="flex gap-2">
                 <UInput
@@ -569,7 +573,7 @@ onMounted(() => {
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Private Key (nsec) - Keep this secret!
+                {{ t("auth.signup.keysModal.privateKeyLabel") }}
               </label>
               <div class="flex gap-2">
                 <UInput
@@ -590,7 +594,7 @@ onMounted(() => {
                 />
               </div>
               <p class="text-xs text-red-400 mt-1">
-                🔐 Never share your nsec with anyone!
+                {{ t("auth.signup.keysModal.neverShare") }}
               </p>
             </div>
           </div>
@@ -603,10 +607,10 @@ onMounted(() => {
                 size="lg"
                 @click="confirmAccountCreation"
               >
-                I've Saved My Keys - Continue
+                {{ t("auth.signup.keysModal.confirmButton") }}
               </UButton>
               <p class="text-xs text-gray-500 text-center">
-                You can find your keys later in Settings → Account
+                {{ t("auth.signup.keysModal.settingsNote") }}
               </p>
             </div>
           </template>

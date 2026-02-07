@@ -1,6 +1,6 @@
-# BNOS Website
+# BnOS Website
 
-Bilingual website for BNOS (Business OS / Bitcoin Nostr Operating System)
+Bilingual website for BnOS (Business OS / Bitcoin Nostr Operating System)
 
 ## 📁 Structure
 
@@ -22,6 +22,7 @@ bnos.space/
 ## ✅ Completed Features
 
 ### 1. Shared CSS Architecture
+
 - **[css/style.css](css/style.css)** - Centralized stylesheet
 - Extracted common styles from inline CSS
 - Includes:
@@ -32,6 +33,7 @@ bnos.space/
   - Responsive design breakpoints
 
 ### 2. Language System
+
 - **Auto-detection**: Detects browser language preference
 - **Manual selection**: Language switcher on all pages
 - **Persistent**: Remembers user's choice in localStorage
@@ -40,22 +42,26 @@ bnos.space/
 ### 3. Completed Pages
 
 #### English (en/)
+
 - ✅ index.html - Full landing page with hero, features, etc.
 - ✅ comming.html - Coming soon page with countdown timer
 - ✅ manual.html - Complete documentation
 
 #### Lao (lo/)
+
 - ✅ comming.html - Fully translated with Lao font support
 
 ## ⏳ Pending Tasks
 
 ### Pages to Complete
+
 1. **lo/index.html** - Translate main landing page to Lao
 2. **lo/manual.html** - Translate documentation to Lao
 
 ### How to Complete Lao Pages
 
 1. Copy the English version:
+
    ```bash
    cp en/index.html lo/index.html
    cp en/manual.html lo/manual.html
@@ -65,7 +71,10 @@ bnos.space/
    - Change `lang="en"` to `lang="lo"`
    - Add Noto Sans Lao font in `<head>`:
      ```html
-     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+     <link
+       href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700;800&display=swap"
+       rel="stylesheet"
+     />
      ```
    - Update font-family in CSS to include Lao font first
    - Translate all text content to Lao
@@ -81,6 +90,7 @@ Deploy the website using:
 ```
 
 This script:
+
 - Reads server config from `.env` (SITE_SERVER, SITE_PORT, SITE_REMOTE_PATH)
 - Zips the entire `docs/bnos.space` directory
 - Uploads to `/var/www/bnos.space/html/`
@@ -118,13 +128,26 @@ All pages should link to the shared stylesheet:
 ## 🌐 Font Support
 
 ### English Pages
+
 ```css
-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+font-family:
+  "Inter",
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  Roboto,
+  sans-serif;
 ```
 
 ### Lao Pages
+
 ```css
-font-family: "Noto Sans Lao", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+font-family:
+  "Noto Sans Lao",
+  "Inter",
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
 ```
 
 ## 📝 Translation Guidelines

@@ -43,7 +43,7 @@ CLEANUP_LOCAL_ZIPS=true   # Remove local zip files after upload
 WEBSITE_DIR="docs/bnos.space"
 ZIP_FILE="bnos-site.zip"
 
-echo "🚀 Starting BNOS website deployment..."
+echo "🚀 Starting BnOS website deployment..."
 echo "📍 Target: ${SITE_SERVER}:${SITE_REMOTE_PATH}"
 echo ""
 

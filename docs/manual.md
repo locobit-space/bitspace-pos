@@ -1,4 +1,4 @@
-# BNOS User Manual
+# BnOS User Manual
 
 > **Business Operating System - Lightning-Powered Point of Sale**
 
@@ -23,7 +23,7 @@
 
 ## Introduction
 
-**BNOS (Business Operating System)** is a next-generation Point of Sale system built on decentralized technologies. Powered by the Lightning Network for instant Bitcoin payments and the Nostr Protocol for secure, censorship-resistant data management.
+**BnOS (Business Operating System)** is a next-generation Point of Sale system built on decentralized technologies. Powered by the Lightning Network for instant Bitcoin payments and the Nostr Protocol for secure, censorship-resistant data management.
 
 ### Key Features
 
@@ -118,7 +118,6 @@ Select your business type:
 Configure your Lightning wallet:
 
 1. **Connect Lightning Wallet**
-
    - Enter your Lightning Address (e.g., `shop@getalby.com`)
    - Or connect via LNUrl
 
@@ -224,7 +223,7 @@ After payment:
 
 ### Lightning Network
 
-BNOS uses the Lightning Network for instant Bitcoin payments:
+BnOS uses the Lightning Network for instant Bitcoin payments:
 
 1. Customer scans QR code
 2. Payment confirms in ~1 second
@@ -367,11 +366,11 @@ Configure alerts:
 
 ### General
 
-**Q: Is BNOS free to use?**
+**Q: Is BnOS free to use?**
 
-> A: BNOS offers a free tier with basic features. Premium features are available through subscription.
+> A: BnOS offers a free tier with basic features. Premium features are available through subscription.
 
-**Q: Do I need Bitcoin to use BNOS?**
+**Q: Do I need Bitcoin to use BnOS?**
 
 > A: You can accept Lightning payments without holding Bitcoin yourself. Payments can be converted to your preferred currency.
 
@@ -379,13 +378,13 @@ Configure alerts:
 
 **Q: What happens if I lose internet?**
 
-> A: BNOS works offline. Transactions are saved locally and synced when you're back online.
+> A: BnOS works offline. Transactions are saved locally and synced when you're back online.
 
 **Q: How secure is my data?**
 
 > A: Your data is encrypted and stored using the Nostr Protocol. Only you can access it with your private key.
 
-**Q: Can I use BNOS on multiple devices?**
+**Q: Can I use BnOS on multiple devices?**
 
 > A: Yes! Log in with your Nostr keys on any device to access your shop.
 
@@ -438,7 +437,7 @@ If you encounter a problem:
 ---
 
 <p align="center">
-  <strong>⚡ BNOS - Business Operating System</strong><br>
+  <strong>⚡ BnOS - Business Operating System</strong><br>
   Built with ❤️ on Nostr & Lightning Network<br>
   <a href="https://github.com/locobit-space">GitHub</a> •
   <a href="https://bnos.space">Website</a>
