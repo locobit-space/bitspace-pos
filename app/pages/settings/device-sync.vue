@@ -23,7 +23,9 @@
             <UIcon :name="deviceIcon" class="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h3 class="font-semibold">{{ t("auth.deviceSync.currentDevice", "Current Device") }}</h3>
+            <h3 class="font-semibold">
+              {{ t("auth.deviceSync.currentDevice", "Current Device") }}
+            </h3>
             <p class="text-sm text-gray-500">
               {{ deviceInfo.name }} • {{ deviceInfo.browser }}
             </p>
@@ -33,18 +35,27 @@
 
       <div class="space-y-4">
         <!-- Device ID -->
-        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+        <div
+          class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+        >
           <div>
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
               {{ t("auth.deviceSync.deviceId", "Device ID") }}
             </p>
             <p class="font-mono text-sm">{{ deviceInfo.id }}</p>
           </div>
-          <UButton variant="ghost" size="sm" icon="i-heroicons-clipboard-document" @click="copyDeviceId" />
+          <UButton
+            variant="ghost"
+            size="sm"
+            icon="i-heroicons-clipboard-document"
+            @click="copyDeviceId"
+          />
         </div>
 
         <!-- Last Synced -->
-        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        <div
+          class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+        >
           <UIcon name="i-heroicons-clock" class="w-4 h-4" />
           <span v-if="lastSyncedAt">
             {{ t("auth.deviceSync.lastSynced") }}: {{ formattedLastSync }}
@@ -61,12 +72,22 @@
       <template #header>
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-            <UIcon name="i-heroicons-building-office-2" class="w-6 h-6 text-green-600" />
+            <UIcon
+              name="i-heroicons-building-office-2"
+              class="w-6 h-6 text-green-600"
+            />
           </div>
           <div>
-            <h3 class="font-semibold">{{ t("auth.company.connectTitle", "Connect to Company") }}</h3>
+            <h3 class="font-semibold">
+              {{ t("auth.company.connectTitle", "Connect to Company") }}
+            </h3>
             <p class="text-sm text-gray-500">
-              {{ t("auth.company.connectDescription", "Enter company code to sync data") }}
+              {{
+                t(
+                  "auth.company.connectDescription",
+                  "Enter company code to sync data",
+                )
+              }}
             </p>
           </div>
         </div>
@@ -74,28 +95,46 @@
 
       <div class="space-y-4">
         <!-- Show current code if connected -->
-        <div v-if="hasCompanyCode"
-          class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+        <div
+          v-if="hasCompanyCode"
+          class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+        >
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-green-700 dark:text-green-300">
                 {{ t("auth.company.connected", "Connected to company") }}
               </p>
-              <p class="font-mono text-2xl font-bold tracking-widest text-green-800 dark:text-green-200">
+              <p
+                class="font-mono text-2xl font-bold tracking-widest text-green-800 dark:text-green-200"
+              >
                 {{ companyCode }}
               </p>
             </div>
-            <UIcon name="i-heroicons-check-circle" class="w-8 h-8 text-green-600" />
+            <UIcon
+              name="i-heroicons-check-circle"
+              class="w-8 h-8 text-green-600"
+            />
           </div>
         </div>
 
         <!-- Enter code if not connected -->
         <div v-else class="space-y-3">
-          <UInput v-model="companyCodeInput" placeholder="XXXX-XXXX-XXXX" icon="i-heroicons-key" size="lg"
-            maxlength="14" class="w-full text-center font-mono text-xl tracking-widest"
-            @input="formatCompanyCodeInput" />
-          <UButton block size="lg" color="green" :loading="isConnecting" :disabled="!isValidCompanyCode"
-            @click="handleConnectCompany">
+          <UInput
+            v-model="companyCodeInput"
+            icon="i-heroicons-key"
+            size="lg"
+            maxlength="14"
+            class="w-full text-center font-mono text-xl tracking-widest"
+            @input="formatCompanyCodeInput"
+          />
+          <UButton
+            block
+            size="lg"
+            color="green"
+            :loading="isConnecting"
+            :disabled="!isValidCompanyCode"
+            @click="handleConnectCompany"
+          >
             <UIcon name="i-heroicons-link" class="w-5 h-5 mr-2" />
             {{ t("auth.company.connect", "Connect") }}
           </UButton>
@@ -108,12 +147,22 @@
       <template #header>
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-            <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 text-blue-600" />
+            <UIcon
+              name="i-heroicons-arrow-path"
+              class="w-6 h-6 text-blue-600"
+            />
           </div>
           <div>
-            <h3 class="font-semibold">{{ t("auth.deviceSync.syncActions", "Sync Actions") }}</h3>
+            <h3 class="font-semibold">
+              {{ t("auth.deviceSync.syncActions", "Sync Actions") }}
+            </h3>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.syncDescription", "Manage your data synchronization") }}
+              {{
+                t(
+                  "auth.deviceSync.syncDescription",
+                  "Manage your data synchronization",
+                )
+              }}
             </p>
           </div>
         </div>
@@ -123,18 +172,33 @@
         <!-- Nsec Input for Sync -->
         <div class="space-y-2">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ t("auth.deviceSync.enterNsecToSync", "Enter your nsec to sync") }}
+            {{
+              t("auth.deviceSync.enterNsecToSync", "Enter your nsec to sync")
+            }}
           </label>
-          <UInput v-model="syncNsec" type="password" :placeholder="'nsec1...'" icon="i-heroicons-key" size="lg"
-            class="w-full" />
+          <UInput
+            v-model="syncNsec"
+            type="password"
+            :placeholder="'nsec1...'"
+            icon="i-heroicons-key"
+            size="lg"
+            class="w-full"
+          />
           <p class="text-xs text-gray-500">
-            {{ t("auth.deviceSync.nsecNote", "Your nsec is used only for this sync and is never stored permanently.")
+            {{
+              t(
+                "auth.deviceSync.nsecNote",
+                "Your nsec is used only for this sync and is never stored permanently.",
+              )
             }}
           </p>
         </div>
 
         <!-- Sync Status -->
-        <div v-if="syncError" class="p-4 rounded-lg bg-red-50 dark:bg-red-900/20">
+        <div
+          v-if="syncError"
+          class="p-4 rounded-lg bg-red-50 dark:bg-red-900/20"
+        >
           <div class="flex items-center gap-2 text-red-600 dark:text-red-400">
             <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
             <span>{{ syncError }}</span>
@@ -142,13 +206,29 @@
         </div>
 
         <!-- Sync Now -->
-        <UButton block size="lg" :loading="isSyncing" :disabled="!canSync" @click="handleSyncNow">
+        <UButton
+          block
+          size="lg"
+          :loading="isSyncing"
+          :disabled="!canSync"
+          @click="handleSyncNow"
+        >
           <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 mr-2" />
-          {{ isSyncing ? t("auth.deviceSync.syncing") : t("auth.deviceSync.syncNow") }}
+          {{
+            isSyncing
+              ? t("auth.deviceSync.syncing")
+              : t("auth.deviceSync.syncNow")
+          }}
         </UButton>
 
         <!-- Link Device QR -->
-        <UButton block size="lg" variant="outline" :disabled="!canSync" @click="showLinkModal = true">
+        <UButton
+          block
+          size="lg"
+          variant="outline"
+          :disabled="!canSync"
+          @click="showLinkModal = true"
+        >
           <UIcon name="i-heroicons-qr-code" class="w-5 h-5 mr-2" />
           {{ t("auth.deviceSync.linkDevice") }}
         </UButton>
@@ -158,45 +238,71 @@
     <!-- How It Works Card -->
     <UCard>
       <template #header>
-        <h3 class="font-semibold">{{ t("auth.deviceSync.howItWorks", "How It Works") }}</h3>
+        <h3 class="font-semibold">
+          {{ t("auth.deviceSync.howItWorks", "How It Works") }}
+        </h3>
       </template>
 
       <div class="space-y-4">
         <div class="flex items-start gap-3">
           <div
-            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold"
+          >
             1
           </div>
           <div>
-            <p class="font-medium">{{ t("auth.deviceSync.step1Title", "Login with Nostr") }}</p>
+            <p class="font-medium">
+              {{ t("auth.deviceSync.step1Title", "Login with Nostr") }}
+            </p>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.step1Desc", "Use your nsec or Nostr extension to authenticate") }}
+              {{
+                t(
+                  "auth.deviceSync.step1Desc",
+                  "Use your nsec or Nostr extension to authenticate",
+                )
+              }}
             </p>
           </div>
         </div>
 
         <div class="flex items-start gap-3">
           <div
-            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold"
+          >
             2
           </div>
           <div>
-            <p class="font-medium">{{ t("auth.deviceSync.step2Title", "Data Syncs via Relays") }}</p>
+            <p class="font-medium">
+              {{ t("auth.deviceSync.step2Title", "Data Syncs via Relays") }}
+            </p>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.step2Desc", "Your encrypted data is stored on Nostr relays") }}
+              {{
+                t(
+                  "auth.deviceSync.step2Desc",
+                  "Your encrypted data is stored on Nostr relays",
+                )
+              }}
             </p>
           </div>
         </div>
 
         <div class="flex items-start gap-3">
           <div
-            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold"
+          >
             3
           </div>
           <div>
-            <p class="font-medium">{{ t("auth.deviceSync.step3Title", "Access on Any Device") }}</p>
+            <p class="font-medium">
+              {{ t("auth.deviceSync.step3Title", "Access on Any Device") }}
+            </p>
             <p class="text-sm text-gray-500">
-              {{ t("auth.deviceSync.step3Desc", "Login on a new device and your data syncs automatically") }}
+              {{
+                t(
+                  "auth.deviceSync.step3Desc",
+                  "Login on a new device and your data syncs automatically",
+                )
+              }}
             </p>
           </div>
         </div>
@@ -220,12 +326,18 @@
         </p>
 
         <!-- QR Code -->
-        <div v-if="linkQrData" class="flex justify-center p-4 bg-white rounded-lg">
+        <div
+          v-if="linkQrData"
+          class="flex justify-center p-4 bg-white rounded-lg"
+        >
           <QrcodeVue :value="linkQrData.data" :size="200" level="M" />
         </div>
 
         <!-- Expiry Warning -->
-        <div v-if="linkQrData" class="flex items-center gap-2 text-sm text-amber-600">
+        <div
+          v-if="linkQrData"
+          class="flex items-center gap-2 text-sm text-amber-600"
+        >
           <UIcon name="i-heroicons-clock" class="w-4 h-4" />
           <span>{{ t("auth.deviceSync.qrExpiry") }}</span>
         </div>
@@ -274,18 +386,14 @@ const isConnecting = ref(false);
 // Company code computed
 const hasCompanyCode = computed(() => company.hasCompanyCode.value);
 const companyCode = computed(() => company.companyCode.value);
-const isValidCompanyCode = computed(() => company.isValidCompanyCode(companyCodeInput.value));
+const isValidCompanyCode = computed(() =>
+  company.isValidCompanyCode(companyCodeInput.value),
+);
 
 // Format company code input (auto-add dashes)
 function formatCompanyCodeInput(event: Event) {
   const input = event.target as HTMLInputElement;
-  let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-
-  if (value.length > 4) value = value.slice(0, 4) + "-" + value.slice(4);
-  if (value.length > 9) value = value.slice(0, 9) + "-" + value.slice(9);
-  if (value.length > 14) value = value.slice(0, 14);
-
-  companyCodeInput.value = value;
+  companyCodeInput.value = input.value.toUpperCase();
 }
 
 // Computed - Get current user info
@@ -306,7 +414,8 @@ const deviceIcon = computed(() => {
 
 // Can sync if we have nsec and not currently syncing
 const canSync = computed(() => {
-  const hasValidNsec = syncNsec.value.startsWith("nsec1") && syncNsec.value.length > 60;
+  const hasValidNsec =
+    syncNsec.value.startsWith("nsec1") && syncNsec.value.length > 60;
   return hasValidNsec && !isSyncing.value;
 });
 
@@ -344,13 +453,13 @@ async function handleConnectCompany() {
     // If no keys exist, generate them automatically
     if (!nostrKey.hasKey()) {
       console.log(
-        "[DeviceSync] 🔑 No Nostr keys found - generating keys for staff..."
+        "[DeviceSync] 🔑 No Nostr keys found - generating keys for staff...",
       );
       const newUser = $nostr.generateKeys();
       await nostrUser.setupUser(newUser.privateKey);
       console.log(
         "[DeviceSync] ✅ Keys generated! Pubkey:",
-        newUser.publicKey.slice(0, 8) + "..."
+        newUser.publicKey.slice(0, 8) + "...",
       );
 
       toast.add({
@@ -371,13 +480,21 @@ async function handleConnectCompany() {
     const nostrData = useNostrData();
     let ownerPubkey: string | null = null;
     try {
-      ownerPubkey = await nostrData.discoverOwnerByCompanyCode(companyCodeInput.value);
-      console.log("[DeviceSync] Discovered owner:", ownerPubkey?.slice(0, 8) + "...");
+      ownerPubkey = await nostrData.discoverOwnerByCompanyCode(
+        companyCodeInput.value,
+      );
+      console.log(
+        "[DeviceSync] Discovered owner:",
+        ownerPubkey?.slice(0, 8) + "...",
+      );
     } catch (e) {
       console.warn("[DeviceSync] Could not discover owner:", e);
     }
 
-    await company.setCompanyCode(companyCodeInput.value, ownerPubkey || undefined);
+    await company.setCompanyCode(
+      companyCodeInput.value,
+      ownerPubkey || undefined,
+    );
     company.toggleCompanyCode(true);
 
     // Show appropriate toast based on whether owner was found
@@ -420,7 +537,10 @@ async function handleSyncNow() {
   if (!syncNsec.value) {
     toast.add({
       title: t("auth.deviceSync.noNsec", "No private key"),
-      description: t("auth.deviceSync.enterNsecToSync", "Please enter your nsec to sync"),
+      description: t(
+        "auth.deviceSync.enterNsecToSync",
+        "Please enter your nsec to sync",
+      ),
       icon: "i-heroicons-exclamation-circle",
       color: "warning",
     });
@@ -448,7 +568,11 @@ async function handleSyncNow() {
     name: currentUser.value?.displayName || "User",
     npub: npub,
     pubkeyHex: pubkeyHex,
-    role: (currentUser.value?.role || "staff") as "owner" | "admin" | "cashier" | "staff",
+    role: (currentUser.value?.role || "staff") as
+      | "owner"
+      | "admin"
+      | "cashier"
+      | "staff",
     permissions: {} as import("~/types").UserPermissions,
     isActive: true,
     authMethod: "nostr" as const,
@@ -478,7 +602,11 @@ function regenerateLink() {
     id: currentUser.value?.id || `user_${pubkeyHex.slice(0, 8)}`,
     name: currentUser.value?.displayName || "User",
     npub: npub,
-    role: (currentUser.value?.role || "staff") as "owner" | "admin" | "cashier" | "staff",
+    role: (currentUser.value?.role || "staff") as
+      | "owner"
+      | "admin"
+      | "cashier"
+      | "staff",
     permissions: {} as import("~/types").UserPermissions,
     isActive: true,
     authMethod: "nostr" as const,

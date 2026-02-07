@@ -12,6 +12,15 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  // Disable fork pool to fix spawn EBADF error on macOS with Node 22.x
+  // The issue is with Nuxt's development server warmup feature that uses fork pool
+  devServer: {
+    loadingTemplate: (data) => {
+      return `Loading...`;
+    },
+    url: "http://localhost:3000",
+  },
+
   vite: {
     // Tauri-specific configuration
     clearScreen: false,
@@ -66,10 +75,10 @@ export default defineNuxtConfig({
   pwa: {
     registerType: "autoUpdate",
     manifest: {
-      name: "BNOS - Business OS",
-      short_name: "BNOS",
+      name: "BnOS - Business OS",
+      short_name: "BnOS",
       description:
-        "Lightning-powered Point of Sale System, Business OS - Nostr BNOS | Bitcoin Nostr Operating System",
+        "Lightning-powered Point of Sale System, Business OS - Nostr BnOS | Bitcoin Nostr Operating System",
       theme_color: "#FFA240",
       background_color: "#111827",
       display: "standalone",
@@ -100,35 +109,35 @@ export default defineNuxtConfig({
           sizes: "500x520",
           type: "image/png",
           form_factor: "narrow",
-          label: "BNOS - Mobile",
+          label: "BnOS - Mobile",
         },
         {
           src: "/screenshots/tablet-splash.png",
           sizes: "796x547",
           type: "image/png",
           form_factor: "wide",
-          label: "BNOS - Tablet",
+          label: "BnOS - Tablet",
         },
         {
           src: "/screenshots/dashboard.png",
           sizes: "837x802",
           type: "image/png",
           form_factor: "wide",
-          label: "BNOS - Dashboard",
+          label: "BnOS - Dashboard",
         },
         {
           src: "/screenshots/dashboard-2-light.png",
           sizes: "540x805",
           type: "image/png",
           form_factor: "wide",
-          label: "BNOS - Dashboard",
+          label: "BnOS - Dashboard",
         },
         {
           src: "/screenshots/settings.png",
           sizes: "901x801",
           type: "image/png",
           form_factor: "wide",
-          label: "BNOS - Settings",
+          label: "BnOS - Settings",
         },
       ],
       // iOS specific splash screen settings

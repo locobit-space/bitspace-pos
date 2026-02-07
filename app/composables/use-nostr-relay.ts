@@ -141,12 +141,17 @@ export const useNostrRelay = () => {
       if (typeof window === "undefined") return [];
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored) as RelayConfig[];
+        const relayConvert = JSON.parse(stored) as RelayConfig[];
+        if (relayConvert.length === 0) {
+          return DEFAULT_RELAYS;
+        }
+        return relayConvert;
       }
+      return DEFAULT_RELAYS;
     } catch (e) {
       console.warn("[useNostrRelay] Failed to load from localStorage:", e);
     }
-    return [];
+    return DEFAULT_RELAYS;
   }
 
   /**
@@ -223,6 +228,10 @@ export const useNostrRelay = () => {
         }
       }
 
+      if (relayConfigs.value.length === 0) {
+        relayConfigs.value = DEFAULT_RELAYS;
+      }
+
       // Step 2: Connect to relays immediately (don't wait for Nostr settings)
       await connect();
 
@@ -265,11 +274,6 @@ export const useNostrRelay = () => {
       }
 
       const nostrRelays = settings.relays;
-      console.log(
-        "[useNostrRelay] Found",
-        nostrRelays.length,
-        "relays in Nostr settings",
-      );
 
       // Create a map of current relays
       const currentMap = new Map(relayConfigs.value.map((r) => [r.url, r]));

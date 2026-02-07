@@ -27,6 +27,10 @@ const manualNsec = ref("");
 const detectedExtension = ref<"alby" | "nos2x" | "unknown" | null>(null);
 const nostrError = ref<string | null>(null);
 
+// nsec input enhancements
+const showNsecKey = ref(false);
+const nsecValidation = ref<"valid" | "invalid" | null>(null);
+
 // Company code state (for cross-device sync)
 const companyCodeInput = ref("");
 const isLoadingCompanyCode = ref(false);
@@ -37,7 +41,7 @@ const nostrData = useNostrData();
 
 // Computed
 const isValidCompanyCode = computed(() =>
-  company.isValidCompanyCode(companyCodeInput.value)
+  company.isValidCompanyCode(companyCodeInput.value),
 );
 
 // Format company code input with dashes
@@ -71,22 +75,26 @@ const handleNostrSignIn = async () => {
 
       const nostrPubkeyCookie = useCookie("nostr-pubkey");
       const existingUser = usersComposable.users.value.find(
-        (u) => u.pubkeyHex === nostrPubkeyCookie.value
+        (u) => u.pubkeyHex === nostrPubkeyCookie.value,
       );
 
       if (existingUser) {
         // Check if user is blocked or expired
         if (existingUser.revokedAt) {
-          nostrError.value =
-            t("auth.signin.accessRevoked", "🚫 Access has been revoked. Contact your manager.");
+          nostrError.value = t(
+            "auth.signin.accessRevoked",
+            "🚫 Access has been revoked. Contact your manager.",
+          );
           return;
         }
         if (
           existingUser.expiresAt &&
           new Date(existingUser.expiresAt) < new Date()
         ) {
-          nostrError.value =
-            t("auth.signin.accessExpired", "⏰ Access has expired. Contact your manager.");
+          nostrError.value = t(
+            "auth.signin.accessExpired",
+            "⏰ Access has expired. Contact your manager.",
+          );
           return;
         }
         usersComposable.setCurrentUser(existingUser);
@@ -145,21 +153,25 @@ const triggerNos2xPopup = async () => {
       // Check if user exists and has access
       await usersComposable.refreshFromNostr();
       const existingUser = usersComposable.users.value.find(
-        (u) => u.pubkeyHex === pubkey
+        (u) => u.pubkeyHex === pubkey,
       );
 
       if (existingUser) {
         if (existingUser.revokedAt) {
-          nostrError.value =
-            t("auth.signin.accessRevoked", "🚫 Access has been revoked. Contact your manager.");
+          nostrError.value = t(
+            "auth.signin.accessRevoked",
+            "🚫 Access has been revoked. Contact your manager.",
+          );
           return;
         }
         if (
           existingUser.expiresAt &&
           new Date(existingUser.expiresAt) < new Date()
         ) {
-          nostrError.value =
-            t("auth.signin.accessExpired", "⏰ Access has expired. Contact your manager.");
+          nostrError.value = t(
+            "auth.signin.accessExpired",
+            "⏰ Access has expired. Contact your manager.",
+          );
           return;
         }
       }
@@ -186,6 +198,35 @@ const triggerNos2xPopup = async () => {
   }
 };
 
+// Validate nsec format
+const validateNsecFormat = (value: string): boolean => {
+  if (!value) return false;
+  const trimmed = value.trim();
+  // Check if it's nsec1... format (Bech32) or 64-char hex
+  const isNsec = trimmed.startsWith("nsec1") && trimmed.length >= 60;
+  const isHex = /^[0-9a-fA-F]{64}$/.test(trimmed);
+  return isNsec || isHex;
+};
+
+// Paste from clipboard
+const handlePasteNsec = async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    manualNsec.value = text.trim();
+  } catch (e) {
+    console.error("Failed to paste from clipboard:", e);
+  }
+};
+
+// Watch for nsec input changes and validate
+watch(manualNsec, (value) => {
+  if (!value) {
+    nsecValidation.value = null;
+    return;
+  }
+  nsecValidation.value = validateNsecFormat(value) ? "valid" : "invalid";
+});
+
 // Sign in with nsec (private key) - Universal login for owner & staff
 const handleNsecSignIn = async () => {
   if (!manualNsec.value.trim()) return;
@@ -199,7 +240,7 @@ const handleNsecSignIn = async () => {
     const setupSuccess = await nostrUser.setupUser(nsec);
     if (!setupSuccess) {
       throw new Error(
-        "Invalid private key format. Use nsec1... or 64-char hex."
+        "Invalid private key format. Use nsec1... or 64-char hex.",
       );
     }
 
@@ -222,14 +263,16 @@ const handleNsecSignIn = async () => {
     await usersComposable.refreshFromNostr();
 
     const existingUser = usersComposable.users.value.find(
-      (u) => u.pubkeyHex === pubkeyHex
+      (u) => u.pubkeyHex === pubkeyHex,
     );
 
     if (existingUser) {
       // Check access status
       if (existingUser.revokedAt) {
-        nostrError.value =
-          t("auth.signin.accessRevoked", "🚫 Access has been revoked. Contact your manager.");
+        nostrError.value = t(
+          "auth.signin.accessRevoked",
+          "🚫 Access has been revoked. Contact your manager.",
+        );
         manualNsec.value = "";
         return;
       }
@@ -237,8 +280,10 @@ const handleNsecSignIn = async () => {
         existingUser.expiresAt &&
         new Date(existingUser.expiresAt) < new Date()
       ) {
-        nostrError.value =
-          t("auth.signin.accessExpired", "⏰ Access has expired. Contact your manager.");
+        nostrError.value = t(
+          "auth.signin.accessExpired",
+          "⏰ Access has expired. Contact your manager.",
+        );
         manualNsec.value = "";
         return;
       }
@@ -293,23 +338,27 @@ const handleCompanyCodeSubmit = async () => {
 
     if (!ownerPubkey) {
       ownerPubkey = await nostrData.discoverOwnerByCompanyCode(
-        companyCodeInput.value
+        companyCodeInput.value,
       );
       if (!ownerPubkey) {
-        companyCodeError.value =
-          t("auth.signin.invalidCode", "Invalid code. Check with your manager.");
+        companyCodeError.value = t(
+          "auth.signin.invalidCode",
+          "Invalid code. Check with your manager.",
+        );
         return;
       }
     }
 
     const staff = await nostrData.fetchStaffByCompanyCode(
       companyCodeInput.value,
-      ownerPubkey
+      ownerPubkey,
     );
 
     if (staff.length === 0) {
-      companyCodeError.value =
-        t("auth.signin.noStaffFound", "Invalid code or no staff found.");
+      companyCodeError.value = t(
+        "auth.signin.noStaffFound",
+        "Invalid code or no staff found.",
+      );
       return;
     }
 
@@ -338,9 +387,10 @@ const handleCompanyCodeSubmit = async () => {
 
     toast.add({
       title: t("auth.signin.syncSuccess", "Synced!"),
-      description: `${staff.length} ${
-        t("auth.signin.staffSynced", "staff members synced")
-      }`,
+      description: `${staff.length} ${t(
+        "auth.signin.staffSynced",
+        "staff members synced",
+      )}`,
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -348,8 +398,10 @@ const handleCompanyCodeSubmit = async () => {
     companyCodeInput.value = "";
     showCompanyCode.value = false;
   } catch (e) {
-    companyCodeError.value =
-      t("auth.signin.syncFailed", "Failed to connect. Check code and try again.");
+    companyCodeError.value = t(
+      "auth.signin.syncFailed",
+      "Failed to connect. Check code and try again.",
+    );
   } finally {
     isLoadingCompanyCode.value = false;
   }
@@ -492,8 +544,8 @@ onMounted(async () => {
                   detectedExtension === "alby"
                     ? t("auth.nostr.albyDetected")
                     : detectedExtension === "nos2x"
-                    ? t("auth.nostr.nos2xDetected")
-                    : t("auth.nostr.extensionDetected")
+                      ? t("auth.nostr.nos2xDetected")
+                      : t("auth.nostr.extensionDetected")
                 }}
               </span>
             </div>
@@ -567,9 +619,7 @@ onMounted(async () => {
                 <template #leading>
                   <UIcon name="i-heroicons-building-office" class="w-4 h-4" />
                 </template>
-                {{
-                  t("auth.signin.syncFromCompany", "Sync from Company Code")
-                }}
+                {{ t("auth.signin.syncFromCompany", "Sync from Company Code") }}
               </UButton>
             </div>
           </template>
@@ -589,23 +639,87 @@ onMounted(async () => {
               </h3>
               <p class="text-gray-600 dark:text-gray-400 text-sm">
                 {{
-                  t("auth.signin.enterKeyDesc", "Enter your private key to sign in")
+                  t(
+                    "auth.signin.enterKeyDesc",
+                    "Enter your private key to sign in",
+                  )
                 }}
               </p>
             </div>
 
             <!-- nsec Input -->
             <div class="space-y-4">
-              <UInput
-                v-model="manualNsec"
-                type="password"
-                :placeholder="
-                  t('auth.signin.nsecPlaceholder', 'nsec1... or hex private key')
-                "
-                size="lg"
-                class="w-full"
-                icon="i-heroicons-key"
-              />
+              <div class="relative">
+                <UInput
+                  v-model="manualNsec"
+                  :type="showNsecKey ? 'text' : 'password'"
+                  :placeholder="
+                    t(
+                      'auth.signin.nsecPlaceholder',
+                      'nsec1... or hex private key',
+                    )
+                  "
+                  size="lg"
+                  class="w-full"
+                  icon="i-heroicons-key"
+                  @input="manualNsec = manualNsec.trim()"
+                >
+                  <template #trailing>
+                    <div class="flex items-center gap-1">
+                      <!-- Validation indicator -->
+                      <UIcon
+                        v-if="nsecValidation === 'valid'"
+                        name="i-heroicons-check-circle"
+                        class="w-5 h-5 text-green-500"
+                      />
+                      <UIcon
+                        v-else-if="nsecValidation === 'invalid'"
+                        name="i-heroicons-exclamation-circle"
+                        class="w-5 h-5 text-red-500"
+                      />
+
+                      <!-- Paste button -->
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="xs"
+                        icon="i-heroicons-clipboard-document"
+                        @click="handlePasteNsec"
+                      />
+
+                      <!-- Show/Hide toggle -->
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="xs"
+                        :icon="
+                          showNsecKey
+                            ? 'i-heroicons-eye-slash'
+                            : 'i-heroicons-eye'
+                        "
+                        @click="showNsecKey = !showNsecKey"
+                      />
+                    </div>
+                  </template>
+                </UInput>
+
+                <!-- Helper text -->
+                <p
+                  v-if="manualNsec && nsecValidation === 'invalid'"
+                  class="mt-1.5 text-xs text-red-400 flex items-start gap-1"
+                >
+                  <UIcon
+                    name="i-heroicons-exclamation-triangle"
+                    class="w-3 h-3 mt-0.5"
+                  />
+                  <span>{{
+                    t(
+                      "auth.signin.invalidKeyFormat",
+                      "Invalid key format. Use nsec1... or 64-character hex",
+                    )
+                  }}</span>
+                </p>
+              </div>
 
               <UButton
                 block
@@ -637,7 +751,10 @@ onMounted(async () => {
                   />
                   <span>
                     {{
-                      t("auth.signin.keyInfo", "Your key is stored locally and never sent to servers. Use the same key on all devices.")
+                      t(
+                        "auth.signin.keyInfo",
+                        "Your key is stored locally and never sent to servers. Use the same key on all devices.",
+                      )
                     }}
                   </span>
                 </p>
@@ -674,9 +791,7 @@ onMounted(async () => {
                 <template #leading>
                   <UIcon name="i-heroicons-building-office" class="w-4 h-4" />
                 </template>
-                {{
-                  t("auth.signin.syncFromCompany", "Sync from Company Code")
-                }}
+                {{ t("auth.signin.syncFromCompany", "Sync from Company Code") }}
               </UButton>
             </div>
 
@@ -736,7 +851,10 @@ onMounted(async () => {
               </h3>
               <p class="text-gray-600 dark:text-gray-400 text-sm">
                 {{
-                  t("auth.signin.syncDesc", "Enter your company code to sync staff data")
+                  t(
+                    "auth.signin.syncDesc",
+                    "Enter your company code to sync staff data",
+                  )
                 }}
               </p>
             </div>
@@ -794,7 +912,10 @@ onMounted(async () => {
                 />
                 <span>
                   {{
-                    t("auth.signin.syncInfo", "Get the company code from your manager. This will sync all staff data to your device.")
+                    t(
+                      "auth.signin.syncInfo",
+                      "Get the company code from your manager. This will sync all staff data to your device.",
+                    )
                   }}
                 </span>
               </p>

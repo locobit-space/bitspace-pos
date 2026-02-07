@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="lo">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BNOS - ລະບົບປະຕິບັດການທຸລະກິດ | ກຳລັງມາເຖິງ</title>
+    <title>BnOS - ລະບົບປະຕິບັດການທຸລະກິດ | ກຳລັງມາເຖິງ</title>
     <meta
       name="description"
       content="ລະບົບຈຸດຂາຍທີ່ໃຊ້ພະລັງງານ Lightning & ລະບົບປະຕິບັດການທຸລະກິດ. ສ້າງຂຶ້ນດ້ວຍໂປຣໂຕຄອນ Nostr. ເປີດຕົວ 1 ມັງກອນ 2026."
@@ -29,8 +29,14 @@
       html,
       body {
         height: 100%;
-        font-family: "Noto Sans Lao", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, sans-serif;
+        font-family:
+          "Noto Sans Lao",
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
         scroll-behavior: smooth;
       }
 
@@ -87,10 +93,8 @@
       .grid-pattern {
         position: absolute;
         inset: 0;
-        background-image: linear-gradient(
-            rgba(245, 158, 11, 0.03) 1px,
-            transparent 1px
-          ),
+        background-image:
+          linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
         background-size: 60px 60px;
         z-index: 1;
@@ -153,8 +157,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3),
-          0 0 60px rgba(245, 158, 11, 0.4), 0 20px 60px rgba(0, 0, 0, 0.5);
+        box-shadow:
+          0 0 0 1px rgba(245, 158, 11, 0.3),
+          0 0 60px rgba(245, 158, 11, 0.4),
+          0 20px 60px rgba(0, 0, 0, 0.5);
         animation: logoGlow 4s ease-in-out infinite;
         position: relative;
       }
@@ -183,12 +189,16 @@
       @keyframes logoGlow {
         0%,
         100% {
-          box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3),
-            0 0 60px rgba(245, 158, 11, 0.3), 0 20px 60px rgba(0, 0, 0, 0.5);
+          box-shadow:
+            0 0 0 1px rgba(245, 158, 11, 0.3),
+            0 0 60px rgba(245, 158, 11, 0.3),
+            0 20px 60px rgba(0, 0, 0, 0.5);
         }
         50% {
-          box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.5),
-            0 0 80px rgba(245, 158, 11, 0.5), 0 20px 60px rgba(0, 0, 0, 0.5);
+          box-shadow:
+            0 0 0 1px rgba(245, 158, 11, 0.5),
+            0 0 80px rgba(245, 158, 11, 0.5),
+            0 20px 60px rgba(0, 0, 0, 0.5);
         }
       }
 
@@ -551,13 +561,14 @@
 
         <!-- Brand -->
         <div class="brand">
-          <h1 class="brand-name">BNOS</h1>
+          <h1 class="brand-name">BnOS</h1>
           <p class="tagline">ລະບົບປະຕິບັດການທຸລະກິດ</p>
         </div>
 
         <p class="subtitle">
           ລະບົບຈຸດຂາຍທີ່ໃຊ້ພະລັງງານ Lightning ສ້າງຂຶ້ນດ້ວຍໂປຣໂຕຄອນ Nostr.
-          ແບບກະຈາຍສ່ວນ, ເປັນເຈົ້າຂອງເອງ ແລະ ເອົາໃຈໃສ່ຄວາມເປັນສ່ວນຕົວສຳລັບທຸລະກິດທີ່ທັນສະໄໝ.
+          ແບບກະຈາຍສ່ວນ, ເປັນເຈົ້າຂອງເອງ ແລະ
+          ເອົາໃຈໃສ່ຄວາມເປັນສ່ວນຕົວສຳລັບທຸລະກິດທີ່ທັນສະໄໝ.
         </p>
 
         <!-- Countdown -->
@@ -654,7 +665,9 @@
             </svg>
           </a>
         </div>
-        <p class="footer-text">ຂັບເຄື່ອນໂດຍ Nostr ແລະ Bitcoin Lightning Network</p>
+        <p class="footer-text">
+          ຂັບເຄື່ອນໂດຍ Nostr ແລະ Bitcoin Lightning Network
+        </p>
       </div>
     </div>
 
@@ -696,26 +709,26 @@
 
           const days = Math.floor(distance / (1000 * 60 * 60 * 24));
           const hours = Math.floor(
-            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
           );
           const minutes = Math.floor(
-            (distance % (1000 * 60 * 60)) / (1000 * 60)
+            (distance % (1000 * 60 * 60)) / (1000 * 60),
           );
           const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
           document.getElementById("days").textContent = String(days).padStart(
             2,
-            "0"
+            "0",
           );
           document.getElementById("hours").textContent = String(hours).padStart(
             2,
-            "0"
+            "0",
           );
           document.getElementById("minutes").textContent = String(
-            minutes
+            minutes,
           ).padStart(2, "0");
           document.getElementById("seconds").textContent = String(
-            seconds
+            seconds,
           ).padStart(2, "0");
         }
 

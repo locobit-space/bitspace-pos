@@ -6,19 +6,19 @@ definePageMeta({
 });
 
 useHead({
-  title: "bnos.space - BNOS Business Operation System",
+  title: "bnos.space - BnOS Business Operation System",
   meta: [
     {
       name: "description",
-      content: "BNOS Business Operation System",
+      content: "BnOS Business Operation System",
     },
     {
       name: "keywords",
-      content: "POS, bnos.space",
+      content: "POS, bnos.space, BnOS",
     },
     {
       name: "author",
-      content: "bnos.space",
+      content: "BnOS",
     },
     {
       name: "robots",
@@ -293,6 +293,11 @@ onMounted(async () => {
   await shop.init();
   await company.loadCompanyCode();
 
+  // 🔄 Auto-restore if missing (e.g. fresh login/device)
+  if (!company.hasCompanyCode.value) {
+    await company.restoreCompanyFromNostr();
+  }
+
   // If company code is enabled, user is staff - go straight to dashboard
   if (company.isCompanyCodeEnabled.value) {
     console.log("[Dashboard] Company code enabled - skipping setup");
@@ -350,6 +355,9 @@ onMounted(async () => {
 
 <template>
   <div>
+    <!-- PWA -->
+    <ClientPwa />
+
     <!-- Welcome Choice (Join vs Create) -->
     <DashboardWelcomeChoice
       v-if="showWelcome"

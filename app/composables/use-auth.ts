@@ -62,7 +62,7 @@ export const useAuth = () => {
    */
   const signInWithEmail = async (
     email: string,
-    password: string
+    password: string,
   ): Promise<boolean> => {
     isLoading.value = true;
     error.value = null;
@@ -74,7 +74,7 @@ export const useAuth = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -102,7 +102,7 @@ export const useAuth = () => {
         const { logActivity } = useAuditLog();
         await logActivity(
           "login_failed",
-          `Failed login attempt for email: ${email}`
+          `Failed login attempt for email: ${email}`,
         );
       } catch {
         // Silent fail
@@ -120,7 +120,7 @@ export const useAuth = () => {
   const signUpWithEmail = async (
     email: string,
     password: string,
-    displayName?: string
+    displayName?: string,
   ): Promise<boolean> => {
     isLoading.value = true;
     error.value = null;
@@ -140,7 +140,7 @@ export const useAuth = () => {
               allowedRoles: ["cashier", "viewer"],
             },
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -262,7 +262,7 @@ export const useAuth = () => {
 
       if (!win.nostr) {
         throw new Error(
-          "Nostr extension not found. Please install Alby or nos2x."
+          "Nostr extension not found. Please install Alby or nos2x.",
         );
       }
 
@@ -278,7 +278,7 @@ export const useAuth = () => {
         } catch (enableErr) {
           console.warn(
             "[Nostr Auth] Alby enable failed, continuing anyway:",
-            enableErr
+            enableErr,
           );
         }
       }
@@ -294,7 +294,7 @@ export const useAuth = () => {
           "[Nostr Auth] getPublicKey raw result:",
           result,
           "type:",
-          typeof result
+          typeof result,
         );
 
         // Handle Promise
@@ -305,7 +305,7 @@ export const useAuth = () => {
             "[Nostr Auth] Awaited result:",
             awaited,
             "type:",
-            typeof awaited
+            typeof awaited,
           );
 
           if (typeof awaited === "string" && awaited.length > 0) {
@@ -326,11 +326,11 @@ export const useAuth = () => {
           errorMessage.includes("denied")
         ) {
           throw new Error(
-            "Permission denied. Please approve the request in your Nostr extension."
+            "Permission denied. Please approve the request in your Nostr extension.",
           );
         }
         throw new Error(
-          "Failed to get public key. Please make sure your Nostr extension is unlocked."
+          "Failed to get public key. Please make sure your Nostr extension is unlocked.",
         );
       }
 
@@ -342,7 +342,7 @@ export const useAuth = () => {
             "💡 Troubleshooting:\n" +
             "• nos2x: Click the extension icon and make sure you have a key\n" +
             "• Alby: Go to Settings → Nostr → Enable Nostr\n" +
-            "• Try refreshing the page after setup"
+            "• Try refreshing the page after setup",
         );
       }
 
@@ -361,7 +361,7 @@ export const useAuth = () => {
           ["method", "GET"],
           ["u", window.location.origin],
         ],
-        content: "BNOS Login",
+        content: "BnOS Login",
       };
 
       let signedEvent: object;
@@ -369,7 +369,7 @@ export const useAuth = () => {
         signedEvent = await win.nostr.signEvent(authEvent);
       } catch {
         throw new Error(
-          "Failed to sign event. Please approve the signature request."
+          "Failed to sign event. Please approve the signature request.",
         );
       }
 
@@ -404,6 +404,24 @@ export const useAuth = () => {
         // Don't block login if logging fails
       }
 
+      // 🔄 Sync Company Code (Bi-directional)
+      try {
+        const company = useCompany();
+        // Give a small delay to ensure keys are ready/propagated
+        setTimeout(() => {
+          if (company.hasCompanyCode.value) {
+            // We have a code locally => Backup to Nostr (ensure it's saved/updated)
+            console.log("[Auth] Backing up company code to Nostr...");
+            company.saveCompanyToNostr();
+          } else {
+            // We don't have a code => Restore from Nostr
+            company.restoreCompanyFromNostr();
+          }
+        }, 100);
+      } catch (e) {
+        console.warn("[Auth] Failed to trigger company sync:", e);
+      }
+
       return true;
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Nostr sign in failed";
@@ -415,7 +433,7 @@ export const useAuth = () => {
           "login_failed",
           `Failed Nostr login: ${
             e instanceof Error ? e.message : "Unknown error"
-          }`
+          }`,
         );
       } catch {
         // Silent fail
@@ -454,13 +472,13 @@ export const useAuth = () => {
       // Validate hex pubkey (64 characters, hex only)
       if (!/^[0-9a-f]{64}$/i.test(pubkey)) {
         throw new Error(
-          "Invalid public key format. Please enter a valid npub or hex pubkey."
+          "Invalid public key format. Please enter a valid npub or hex pubkey.",
         );
       }
 
       console.log(
         "[Nostr Auth] Manual login with pubkey:",
-        pubkey.slice(0, 16) + "..."
+        pubkey.slice(0, 16) + "...",
       );
 
       // Create user (read-only mode - no signed event)
@@ -485,6 +503,24 @@ export const useAuth = () => {
 
       // Save to localStorage
       saveAuthState();
+
+      // 🔄 Sync Company Code (Bi-directional)
+      // Note: This might fail if user doesn't have extension to decrypt (since it's read-only login)
+      // But if they have extension but just chose "Login with npub", it might work.
+      try {
+        const company = useCompany();
+        setTimeout(() => {
+          if (company.hasCompanyCode.value) {
+            // Backup
+            company.saveCompanyToNostr();
+          } else {
+            // Restore
+            company.restoreCompanyFromNostr();
+          }
+        }, 100);
+      } catch (e) {
+        console.warn("[Auth] Failed to trigger company sync:", e);
+      }
 
       return true;
     } catch (e) {
@@ -569,7 +605,7 @@ export const useAuth = () => {
         user: Record<string, unknown>;
       };
     },
-    provider: "hasura" | "google"
+    provider: "hasura" | "google",
   ) => {
     if (data.session) {
       accessToken.value = data.session.accessToken;
@@ -630,11 +666,12 @@ export const useAuth = () => {
    * @param options.keepWorkspaces - If true, preserves workspace list for quick re-login
    * @param options.redirectTo - Custom redirect path after logout
    */
-  const signOut = async (options?: { 
+  const signOut = async (options?: {
     keepWorkspaces?: boolean;
     redirectTo?: string;
   }) => {
-    const { keepWorkspaces = false, redirectTo = "/auth/signin" } = options || {};
+    const { keepWorkspaces = false, redirectTo = "/auth/signin" } =
+      options || {};
 
     // Log logout before clearing data
     try {
@@ -664,18 +701,14 @@ export const useAuth = () => {
     refreshToken.value = null;
 
     // Keys to preserve (only theme/locale preferences if not keeping workspaces)
-    const keysToPreserve = [
-      "locale",
-      "theme-color",
-      "colorMode",
-    ];
+    const keysToPreserve = ["locale", "theme-color", "colorMode"];
 
     // If keeping workspaces, preserve those too
     if (keepWorkspaces) {
       keysToPreserve.push(
         "bitspace_workspaces",
         "bitspace_current_workspace",
-        "userList" // Account list for quick switch
+        "userList", // Account list for quick switch
       );
     }
 
@@ -720,13 +753,14 @@ export const useAuth = () => {
       console.warn("[Auth] Failed to clear IndexedDB:", e);
     }
 
-    // Clear shop manager workspaces if not keeping them
     if (!keepWorkspaces) {
       try {
+        console.log("[Auth] Clearing all workspaces...");
         const { clearAllWorkspaces } = useShopManager();
         clearAllWorkspaces();
-      } catch {
-        // Shop manager may not be initialized
+        console.log("[Auth] Workspaces cleared");
+      } catch (e) {
+        console.warn("[Auth] Failed to clear workspaces:", e);
       }
     }
 
@@ -804,7 +838,7 @@ export const useAuth = () => {
   const isAuthenticated = computed(() => !!user.value);
   const isNostrUser = computed(() => user.value?.provider === "nostr");
   const userDisplayName = computed(
-    () => user.value?.displayName || user.value?.email || "User"
+    () => user.value?.displayName || user.value?.email || "User",
   );
 
   // Initialize

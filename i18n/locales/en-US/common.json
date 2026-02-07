@@ -339,5 +339,29 @@
     "required": "This field is required",
     "min_length": "Must be at least {length} characters",
     "passwords_dont_match": "Passwords do not match"
+  },
+  "pwa": {
+    "update_available": "Update Available",
+    "update_desc": "New content is available. Click the reload button to update.",
+    "reload": "Reload",
+    "install_title": "Install App",
+    "install_desc": "Install BnOS on your device for faster access and offline functionality.",
+    "install": "Install",
+    "later": "Maybe Later"
+  },
+  "donate": {
+    "title": "Support the Developer",
+    "subtitle": "Help keep bnos.space free and open source",
+    "lightning": "Bitcoin Lightning",
+    "lightningDesc": "Scan with any Lightning wallet or click to copy",
+    "noLightning": "No Lightning address available",
+    "bank": "Bank Transfer (BCEL)",
+    "bankName": "Bank",
+    "bankDesc": "Scan with BCEL One or any Lao banking app",
+    "thanks": "Thank you for supporting open source software! ❤️",
+    "tabs": {
+      "lightning": "⚡ Lightning",
+      "bank": "🏦 Bank (BCEL)"
+    }
   }
 }

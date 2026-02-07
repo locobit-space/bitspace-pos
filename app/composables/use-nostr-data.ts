@@ -63,7 +63,7 @@ export function useNostrData() {
 
     // Helper to normalize private key to hex format
     const normalizePrivkey = (
-      key: string | null | undefined
+      key: string | null | undefined,
     ): string | null => {
       if (!key) return null;
 
@@ -160,7 +160,7 @@ export function useNostrData() {
       try {
         const encrypted = await company.encryptWithCode(
           data,
-          company.companyCode.value
+          company.companyCode.value,
         );
         return JSON.stringify({ v: 4, cc: encrypted }); // v4 = company code encryption
       } catch (e) {
@@ -227,7 +227,7 @@ export function useNostrData() {
           const plaintext = JSON.stringify(data);
           const ciphertext = await win.nostr.nip04.encrypt(
             keys.pubkey,
-            plaintext
+            plaintext,
           );
           return JSON.stringify({ v: 1, ct: ciphertext }); // v1 = NIP-04 from extension
         } catch (e) {
@@ -259,7 +259,7 @@ export function useNostrData() {
         try {
           const decrypted = await company.decryptWithCode<T>(
             payload.cc,
-            company.companyCode.value
+            company.companyCode.value,
           );
           return decrypted;
         } catch {
@@ -288,7 +288,7 @@ export function useNostrData() {
               version: 2,
               encryptedAt: "",
             },
-            { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
+            { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey },
           );
           return result.success ? result.data || null : null;
         }
@@ -302,7 +302,7 @@ export function useNostrData() {
               version: 1,
               encryptedAt: "",
             },
-            { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey }
+            { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey },
           );
           return result.success ? result.data || null : null;
         }
@@ -321,7 +321,7 @@ export function useNostrData() {
           try {
             const plaintext = await win.nostr.nip04.decrypt(
               keys.pubkey,
-              payload.ct
+              payload.ct,
             );
             return JSON.parse(plaintext) as T;
           } catch (e) {
@@ -354,7 +354,7 @@ export function useNostrData() {
   async function createEvent(
     kind: number,
     content: string,
-    tags: string[][] = []
+    tags: string[][] = [],
   ): Promise<Event | null> {
     const keys = getUserKeys();
     if (!keys) {
@@ -369,7 +369,6 @@ export function useNostrData() {
       content,
       pubkey: keys.pubkey,
     };
-
     // If we have privkey, sign directly
     if (keys.privkey) {
       try {
@@ -416,7 +415,7 @@ export function useNostrData() {
     data: unknown,
     dTag: string,
     extraTags: string[][] = [],
-    shouldEncrypt: boolean = true
+    shouldEncrypt: boolean = true,
   ): Promise<Event | null> {
     const content = shouldEncrypt
       ? await encryptData(data)
@@ -447,7 +446,7 @@ export function useNostrData() {
     kind: number,
     data: unknown,
     tags: string[][] = [],
-    shouldEncrypt: boolean = true
+    shouldEncrypt: boolean = true,
   ): Promise<Event | null> {
     const content = shouldEncrypt
       ? await encryptData(data)
@@ -482,7 +481,7 @@ export function useNostrData() {
       since?: number;
       until?: number;
       limit?: number;
-    } = {}
+    } = {},
   ): Promise<Event[]> {
     const keys = getUserKeys();
     const company = useCompany();
@@ -491,7 +490,7 @@ export function useNostrData() {
     // If no keys available, return empty array instead of querying all authors
     if (!keys && !options.authors) {
       console.warn(
-        "No user keys available and no authors specified - skipping query to avoid fetching other users data"
+        "No user keys available and no authors specified - skipping query to avoid fetching other users data",
       );
       return [];
     }
@@ -502,20 +501,14 @@ export function useNostrData() {
       authors = [keys!.pubkey];
 
       // CRITICAL: Include team members in query when company code is enabled
-      // IMPORTANT: We can't call useUsers() here as it creates infinite recursion
-      // Instead, we only add owner pubkey for staff, and rely on company code hash tag
       if (company.hasCompanyCode.value && company.isCompanyCodeEnabled.value) {
         const ownerPubkey = company.ownerPubkey.value;
-
         // For STAFF: Add owner pubkey
         if (ownerPubkey && ownerPubkey !== keys!.pubkey) {
           if (!authors.includes(ownerPubkey)) {
             authors.push(ownerPubkey);
           }
         }
-        // For OWNER: We can't fetch staff list here (circular dependency)
-        // Instead, queries should use company code hash tag (#c) to filter
-        // Or pass staff pubkeys explicitly when calling queryEvents
       }
     }
 
@@ -539,7 +532,7 @@ export function useNostrData() {
 
     try {
       return await relay.queryEvents(
-        filter as Parameters<typeof relay.queryEvents>[0]
+        filter as Parameters<typeof relay.queryEvents>[0],
       );
     } catch (e) {
       error.value = `Query failed: ${e}`;
@@ -552,7 +545,7 @@ export function useNostrData() {
    */
   async function getReplaceableEvent<T>(
     kind: number,
-    dTag: string
+    dTag: string,
   ): Promise<{ event: Event; data: T } | null> {
     const events = await queryEvents([kind], { dTags: [dTag], limit: 1 });
 
@@ -576,7 +569,7 @@ export function useNostrData() {
    */
   async function getAllEventsOfKind<T>(
     kind: number,
-    options: { since?: number; limit?: number; authors?: string[] } = {}
+    options: { since?: number; limit?: number; authors?: string[] } = {},
   ): Promise<Array<{ event: Event; data: T }>> {
     const events = await queryEvents([kind], options);
     const results: Array<{ event: Event; data: T }> = [];
@@ -618,7 +611,7 @@ export function useNostrData() {
         ["status", product.status],
         ["public", product.isPublic !== false ? "true" : "false"],
       ],
-      false // DO NOT ENCRYPT - products need to be publicly readable
+      false, // DO NOT ENCRYPT - products need to be publicly readable
     );
   }
 
@@ -649,7 +642,7 @@ export function useNostrData() {
    * Get categories for a specific owner (for public menu access)
    */
   async function getCategoriesForOwner(
-    ownerPubkey: string
+    ownerPubkey: string,
   ): Promise<Category[]> {
     const results = await getAllEventsOfKind<Category>(NOSTR_KINDS.CATEGORY, {
       authors: [ownerPubkey],
@@ -665,7 +658,7 @@ export function useNostrData() {
       NOSTR_KINDS.PRODUCT,
       { deleted: true, deletedAt: new Date().toISOString() },
       id,
-      [["deleted", "true"]]
+      [["deleted", "true"]],
     );
     return event !== null;
   }
@@ -681,7 +674,7 @@ export function useNostrData() {
       category,
       category.id,
       [["name", category.name]],
-      false // DO NOT ENCRYPT - categories need to be publicly readable
+      false, // DO NOT ENCRYPT - categories need to be publicly readable
     );
   }
 
@@ -737,7 +730,7 @@ export function useNostrData() {
           ? ["c", company.companyCodeHash.value]
           : [],
       ].filter((t) => t.length > 0) as string[][],
-      shouldEncrypt
+      shouldEncrypt,
     );
   }
 
@@ -756,7 +749,7 @@ export function useNostrData() {
       items?: number;
       timestamp: string;
     },
-    companyCodeHash?: string | null
+    companyCodeHash?: string | null,
   ): Promise<Event | null> {
     try {
       const tags: string[][] = [
@@ -778,7 +771,7 @@ export function useNostrData() {
       const event = await createEvent(
         NOSTR_KINDS.POS_ALERT,
         JSON.stringify(alertData),
-        tags
+        tags,
       );
 
       if (!event) return null;
@@ -808,7 +801,7 @@ export function useNostrData() {
   }
 
   async function getAllOrders(
-    options: { since?: number; limit?: number } = {}
+    options: { since?: number; limit?: number } = {},
   ): Promise<Order[]> {
     const company = useCompany();
 
@@ -833,7 +826,7 @@ export function useNostrData() {
         }
 
         const events = await relay.queryEvents(
-          filter as Parameters<typeof relay.queryEvents>[0]
+          filter as Parameters<typeof relay.queryEvents>[0],
         );
 
         const orders: Order[] = [];
@@ -855,12 +848,12 @@ export function useNostrData() {
 
         // Sort by date descending
         return orders.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
         );
       } catch (e) {
         console.warn(
           "[NostrData] Company code query failed, falling back to normal query:",
-          e
+          e,
         );
         // Fall through to normal query
       }
@@ -891,7 +884,7 @@ export function useNostrData() {
    */
   async function saveOrderAsAnonymous(
     order: Order,
-    ownerPubkey: string
+    ownerPubkey: string,
   ): Promise<Event | null> {
     if (!import.meta.client) return null;
 
@@ -924,7 +917,7 @@ export function useNostrData() {
       // Sign with ephemeral key
       const signedEvent = finalizeEvent(
         unsignedEvent,
-        hexToBytes(ephemeralKeys.privateKey)
+        hexToBytes(ephemeralKeys.privateKey),
       );
 
       // Publish to relay
@@ -955,7 +948,7 @@ export function useNostrData() {
       };
 
       const events = await relay.queryEvents(
-        filter as Parameters<typeof relay.queryEvents>[0]
+        filter as Parameters<typeof relay.queryEvents>[0],
       );
       const orders: Order[] = [];
 
@@ -977,7 +970,7 @@ export function useNostrData() {
 
       // Sort by date descending
       return orders.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       );
     } catch (e) {
       console.error("[NostrData] Failed to get store orders:", e);
@@ -998,21 +991,21 @@ export function useNostrData() {
         ["p", customer.nostrPubkey],
         ["tier", customer.tier],
         ["points", customer.points.toString()],
-      ]
+      ],
     );
   }
 
   async function getCustomer(pubkey: string): Promise<LoyaltyMember | null> {
     const result = await getReplaceableEvent<LoyaltyMember>(
       NOSTR_KINDS.CUSTOMER,
-      pubkey
+      pubkey,
     );
     return result?.data || null;
   }
 
   async function getAllCustomers(): Promise<LoyaltyMember[]> {
     const results = await getAllEventsOfKind<LoyaltyMember>(
-      NOSTR_KINDS.CUSTOMER
+      NOSTR_KINDS.CUSTOMER,
     );
     return results.map((r) => r.data);
   }
@@ -1071,7 +1064,7 @@ export function useNostrData() {
       conversation,
       conversation.id,
       tags,
-      shouldEncrypt
+      shouldEncrypt,
     );
   }
 
@@ -1084,7 +1077,7 @@ export function useNostrData() {
       companyCodeHash?: string;
       scope?: string;
       shopId?: string;
-    } = {}
+    } = {},
   ): Promise<
     Array<{
       id: string;
@@ -1120,7 +1113,7 @@ export function useNostrData() {
 
       // Query with #t tag first
       let events = await relay.queryEvents(
-        filter as Parameters<typeof relay.queryEvents>[0]
+        filter as Parameters<typeof relay.queryEvents>[0],
       );
 
       // Fallback: also query with #c tag for backward compatibility
@@ -1130,7 +1123,7 @@ export function useNostrData() {
           "#c": [options.companyCodeHash],
         };
         events = await relay.queryEvents(
-          fallbackFilter as Parameters<typeof relay.queryEvents>[0]
+          fallbackFilter as Parameters<typeof relay.queryEvents>[0],
         );
       }
 
@@ -1240,7 +1233,7 @@ export function useNostrData() {
       metadata,
       params.groupId,
       tags,
-      false // Unencrypted for team visibility
+      false, // Unencrypted for team visibility
     );
   }
 
@@ -1249,7 +1242,7 @@ export function useNostrData() {
    */
   async function publishGroupAdmins(
     groupId: string,
-    adminPubkeys: string[]
+    adminPubkeys: string[],
   ): Promise<Event | null> {
     const company = useCompany();
 
@@ -1264,7 +1257,7 @@ export function useNostrData() {
       { groupId, admins: adminPubkeys },
       groupId,
       tags,
-      false
+      false,
     );
   }
 
@@ -1273,7 +1266,7 @@ export function useNostrData() {
    */
   async function publishGroupMembers(
     groupId: string,
-    memberPubkeys: string[]
+    memberPubkeys: string[],
   ): Promise<Event | null> {
     const company = useCompany();
 
@@ -1288,7 +1281,7 @@ export function useNostrData() {
       { groupId, members: memberPubkeys },
       groupId,
       tags,
-      false
+      false,
     );
   }
 
@@ -1312,7 +1305,7 @@ export function useNostrData() {
       NOSTR_KINDS.GROUP_CHAT_MESSAGE,
       { content: params.content },
       tags,
-      false // Plain text for now
+      false, // Plain text for now
     );
   }
 
@@ -1384,7 +1377,7 @@ export function useNostrData() {
       };
 
       const events = await relay.queryEvents(
-        filter as Parameters<typeof relay.queryEvents>[0]
+        filter as Parameters<typeof relay.queryEvents>[0],
       );
 
       const groups: Array<{
@@ -1424,14 +1417,14 @@ export function useNostrData() {
       settings,
       "store-settings",
       [],
-      true // Always encrypt settings
+      true, // Always encrypt settings
     );
   }
 
   async function getSettings(): Promise<StoreSettings | null> {
     const result = await getReplaceableEvent<StoreSettings>(
       NOSTR_KINDS.STORE_SETTINGS,
-      "store-settings"
+      "store-settings",
     );
     return result?.data || null;
   }
@@ -1472,13 +1465,13 @@ export function useNostrData() {
         ["role", staff.role],
         staff.pubkeyHex ? ["p", staff.pubkeyHex] : [],
         companyTag,
-      ].filter((t) => t.length > 0) as string[][]
+      ].filter((t) => t.length > 0) as string[][],
     );
   }
 
   async function getAllStaff(): Promise<StoreUser[]> {
     const results = await getAllEventsOfKind<StoreUser>(
-      NOSTR_KINDS.STAFF_MEMBER
+      NOSTR_KINDS.STAFF_MEMBER,
     );
     return results.map((r) => r.data).filter((s) => s.isActive);
   }
@@ -1490,7 +1483,7 @@ export function useNostrData() {
    */
   async function fetchStaffByCompanyCode(
     companyCode: string,
-    ownerPubkey: string
+    ownerPubkey: string,
   ): Promise<StoreUser[]> {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
@@ -1504,7 +1497,7 @@ export function useNostrData() {
 
     try {
       const events = await relay.queryEvents(
-        filter as Parameters<typeof relay.queryEvents>[0]
+        filter as Parameters<typeof relay.queryEvents>[0],
       );
 
       const results: StoreUser[] = [];
@@ -1524,7 +1517,7 @@ export function useNostrData() {
               if (payload.v === 4) {
                 data = await company.decryptWithCode<StoreUser>(
                   payload.ct,
-                  companyCode
+                  companyCode,
                 );
               } else {
                 // Fall back to standard decryption
@@ -1561,7 +1554,7 @@ export function useNostrData() {
    * This allows new devices to find owner pubkey by company code
    */
   async function publishCompanyIndex(
-    companyCodeHash: string
+    companyCodeHash: string,
   ): Promise<Event | null> {
     const keys = getUserKeys();
     if (!keys) {
@@ -1599,7 +1592,7 @@ export function useNostrData() {
    * Queries public company index events by company code hash
    */
   async function discoverOwnerByCompanyCode(
-    companyCode: string
+    companyCode: string,
   ): Promise<string | null> {
     const company = useCompany();
     const codeHash = await company.hashCompanyCode(companyCode);
@@ -1612,7 +1605,7 @@ export function useNostrData() {
 
     try {
       const events = await relay.queryEvents(
-        filter as Parameters<typeof relay.queryEvents>[0]
+        filter as Parameters<typeof relay.queryEvents>[0],
       );
 
       if (events.length === 0) return null;
@@ -1645,12 +1638,12 @@ export function useNostrData() {
   }
 
   async function recordStockAdjustment(
-    adjustment: StockAdjustment
+    adjustment: StockAdjustment,
   ): Promise<Event | null> {
     return publishReplaceableEvent(
       NOSTR_KINDS.STOCK_ADJUSTMENT,
       adjustment,
-      adjustment.id
+      adjustment.id,
     );
   }
 
@@ -1660,18 +1653,18 @@ export function useNostrData() {
 
   async function getStockHistory(
     productId: string,
-    limit = 50
+    limit = 50,
   ): Promise<StockAdjustment[]> {
     const allAdjustments = await getAllEventsOfKind<StockAdjustment>(
       NOSTR_KINDS.STOCK_ADJUSTMENT,
-      { limit }
+      { limit },
     );
     return allAdjustments
       .map((r) => r.data)
       .filter((a) => a.productId === productId)
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
   }
 
@@ -1747,7 +1740,7 @@ export function useNostrData() {
       filter["#c"] = [company.companyCodeHash.value];
       console.log(
         "[NostrData] Subscribing to team updates with company hash:",
-        company.companyCodeHash.value.slice(0, 8) + "..."
+        company.companyCodeHash.value.slice(0, 8) + "...",
       );
     } else {
       // PERSONAL MODE: Only subscribe to own events
@@ -1773,7 +1766,7 @@ export function useNostrData() {
             "from:",
             event.pubkey.slice(0, 8) + "...",
             "isOwn:",
-            event.pubkey === keys.pubkey
+            event.pubkey === keys.pubkey,
           );
 
           try {
@@ -1790,7 +1783,7 @@ export function useNostrData() {
                     // Company-code encrypted
                     data = await company.decryptWithCode(
                       payload.ct,
-                      company.companyCode.value || ""
+                      company.companyCode.value || "",
                     );
                   } else {
                     data = await decryptData(event.content);
@@ -1814,7 +1807,7 @@ export function useNostrData() {
               case NOSTR_KINDS.ORDER:
                 console.log(
                   "[NostrData] 📨 Real-time order update received:",
-                  (data as Order).id?.slice(-8)
+                  (data as Order).id?.slice(-8),
                 );
                 callbacks.onOrder?.(data as Order);
                 break;
@@ -1825,11 +1818,11 @@ export function useNostrData() {
           } catch (e) {
             console.warn(
               "[NostrData] Failed to process subscription event:",
-              e
+              e,
             );
           }
         },
-      }
+      },
     );
   }
 

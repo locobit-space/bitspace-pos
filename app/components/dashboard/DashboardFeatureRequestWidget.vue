@@ -78,20 +78,13 @@ onMounted(() => {
           {{
             t(
               "dashboard.feature.subtitle",
-              "Help us improve BNOS with your feedback.",
+              "Help us improve BnOS with your feedback.",
             )
           }}
         </p>
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <UButton
-          color="gray"
-          variant="ghost"
-          size="sm"
-          icon="solar:close-circle-linear"
-          @click="dismiss"
-        />
         <UButton
           color="primary"
           variant="solid"
@@ -101,6 +94,13 @@ onMounted(() => {
         >
           {{ t("dashboard.feature.button", "Request Feature") }}
         </UButton>
+        <UButton
+          color="gray"
+          variant="ghost"
+          size="sm"
+          icon="solar:close-circle-linear"
+          @click="dismiss"
+        />
       </div>
     </div>
   </div>

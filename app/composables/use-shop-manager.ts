@@ -299,6 +299,7 @@ export function useShopManager() {
             STORAGE_KEYS.WORKSPACES,
             JSON.stringify(state.value.workspaces),
           );
+          switchWorkspace(newWorkspaces[0].id);
         }
 
         // Restore current workspace ID if not set
@@ -312,6 +313,7 @@ export function useShopManager() {
               STORAGE_KEYS.CURRENT_WORKSPACE,
               data.currentWorkspaceId,
             );
+            switchWorkspace(data.currentWorkspaceId);
           }
         }
 
@@ -532,7 +534,7 @@ export function useShopManager() {
       if (syncToNostr && offline.isOnline.value) {
         console.log("[ShopManager] 🔄 Syncing templates to Nostr...");
         try {
-          await productsStore.syncToNostr();
+          await productsStore.syncAllToNostr();
           console.log("[ShopManager] ✅ Templates synced to Nostr");
         } catch (e) {
           console.warn("[ShopManager] Failed to sync templates to Nostr:", e);
@@ -715,7 +717,13 @@ export function useShopManager() {
 
     try {
       const nostrData = useNostrData();
+      const company = useCompany();
+
+      // 1. Sync store data
       await nostrData.fullSync();
+
+      // 2. Sync company code & keys (CRITICAL for multi-device)
+      await company.saveCompanyToNostr();
 
       updateWorkspace(currentWorkspace.value.id, {
         lastSyncAt: new Date().toISOString(),

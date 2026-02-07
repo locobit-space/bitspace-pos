@@ -21,7 +21,7 @@
         <div
           class="w-8 h-8 rounded-lg bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow"
         >
-          <span title="BNOS" class="text-white font-bold text-sm">⚡</span>
+          <span title="BnOS" class="text-white font-bold text-sm">⚡</span>
         </div>
       </NuxtLinkLocale>
 
@@ -542,6 +542,6 @@ const providerBadgeClass = computed(() => {
 // Logout - use improved auth signOut that cleans all data
 const handleLogout = async () => {
   const auth = useAuth();
-  await auth.signOut({ keepWorkspaces: true }); // Keep workspaces for quick re-login
+  await auth.signOut({ keepWorkspaces: false }); // Clear workspaces for full logout
 };
 </script>

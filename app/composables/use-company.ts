@@ -19,8 +19,10 @@ const companyCodeHash = ref<string | null>(null);
 const ownerPubkey = ref<string | null>(null);
 const isCompanyCodeEnabled = ref(false); // Default off
 const isInitialized = ref(false);
+const isSyncing = ref(false); // New state for UI sync status
 
 export function useCompany() {
+  const nostrData = useNostrData();
   // ============================================
   // 🔢 CODE GENERATION
   // ============================================
@@ -107,7 +109,7 @@ export function useCompany() {
     // Check if crypto.subtle is available
     if (typeof crypto === "undefined" || !crypto.subtle) {
       console.warn(
-        "[Company] crypto.subtle not available - encryption disabled"
+        "[Company] crypto.subtle not available - encryption disabled",
       );
       return null;
     }
@@ -118,7 +120,7 @@ export function useCompany() {
       encoder.encode(code),
       "PBKDF2",
       false,
-      ["deriveBits", "deriveKey"]
+      ["deriveBits", "deriveKey"],
     );
 
     // Use a fixed salt (since all devices need same key from same code)
@@ -134,7 +136,7 @@ export function useCompany() {
       keyMaterial,
       { name: "AES-GCM", length: 256 },
       true,
-      ["encrypt", "decrypt"]
+      ["encrypt", "decrypt"],
     );
   }
 
@@ -147,12 +149,12 @@ export function useCompany() {
    */
   async function encryptWithCode<T>(
     data: T,
-    code: string
+    code: string,
   ): Promise<string | null> {
     const key = await deriveKeyFromCode(code);
     if (!key) {
       console.warn(
-        "[Company] Encryption unavailable - crypto.subtle not available"
+        "[Company] Encryption unavailable - crypto.subtle not available",
       );
       return null;
     }
@@ -166,12 +168,12 @@ export function useCompany() {
     const ciphertext = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv },
       key,
-      encoder.encode(plaintext)
+      encoder.encode(plaintext),
     );
 
     // Combine IV + ciphertext and encode as base64
     const combined = new Uint8Array(
-      iv.length + new Uint8Array(ciphertext).length
+      iv.length + new Uint8Array(ciphertext).length,
     );
     combined.set(iv);
     combined.set(new Uint8Array(ciphertext), iv.length);
@@ -184,13 +186,13 @@ export function useCompany() {
    */
   async function decryptWithCode<T>(
     encrypted: string,
-    code: string
+    code: string,
   ): Promise<T | null> {
     try {
       const key = await deriveKeyFromCode(code);
       if (!key) {
         console.warn(
-          "[Company] Decryption unavailable - crypto.subtle not available"
+          "[Company] Decryption unavailable - crypto.subtle not available",
         );
         return null;
       }
@@ -201,7 +203,7 @@ export function useCompany() {
       const combined = new Uint8Array(
         atob(encrypted)
           .split("")
-          .map((c) => c.charCodeAt(0))
+          .map((c) => c.charCodeAt(0)),
       );
 
       // Extract IV and ciphertext
@@ -211,7 +213,7 @@ export function useCompany() {
       const plaintext = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv },
         key,
-        ciphertext
+        ciphertext,
       );
 
       return JSON.parse(decoder.decode(plaintext)) as T;
@@ -219,7 +221,9 @@ export function useCompany() {
       // This is expected when switching shops or trying to decrypt with wrong code
       // Only log at debug level, not as error
       if (import.meta.dev) {
-        console.debug("[Company] Decryption failed (wrong code or corrupted data)");
+        console.debug(
+          "[Company] Decryption failed (wrong code or corrupted data)",
+        );
       }
       return null;
     }
@@ -245,6 +249,12 @@ export function useCompany() {
     if (pubkey) {
       localStorage.setItem(STORAGE_KEYS.COMPANY_OWNER_PUBKEY, pubkey);
     }
+
+    // Attempt to sync to Nostr (if logged in and keys available)
+    // We don't await this to keep UI snappy
+    saveCompanyToNostr().catch((e) =>
+      console.debug("[Company] Background sync failed:", e),
+    );
   }
 
   /**
@@ -257,7 +267,7 @@ export function useCompany() {
     const storedCode = localStorage.getItem(STORAGE_KEYS.COMPANY_CODE);
     const storedHash = localStorage.getItem(STORAGE_KEYS.COMPANY_CODE_HASH);
     const storedPubkey = localStorage.getItem(
-      STORAGE_KEYS.COMPANY_OWNER_PUBKEY
+      STORAGE_KEYS.COMPANY_OWNER_PUBKEY,
     );
     const storedEnabled = localStorage.getItem(STORAGE_KEYS.IS_ENABLED);
 
@@ -270,13 +280,12 @@ export function useCompany() {
     if (storedCode && storedHash) {
       // Check if hash is old format (8 chars) or mismatched
       const correctHash = await hashCompanyCode(storedCode);
-
       if (storedHash !== correctHash) {
         console.warn(
-          `[Company] 🔄 Migrating company hash from ${storedHash.length} to ${correctHash.length} characters`
+          `[Company] 🔄 Migrating company hash from ${storedHash.length} to ${correctHash.length} characters`,
         );
         console.log(
-          `[Company] Old hash: ${storedHash.slice(0, 8)}... → New hash: ${correctHash.slice(0, 8)}...`
+          `[Company] Old hash: ${storedHash.slice(0, 8)}... → New hash: ${correctHash.slice(0, 8)}...`,
         );
 
         // Update to correct hash
@@ -320,6 +329,80 @@ export function useCompany() {
   }
 
   // ============================================
+  // ☁️ CLOUD SYNC (NOSTR)
+  // ============================================
+
+  /**
+   * Encrypt and save company code to Nostr (Kind 30078)
+   * This allows the code to be restored on other devices
+   */
+  async function saveCompanyToNostr(): Promise<boolean> {
+    if (!companyCode.value) return false;
+
+    // Only sync if we have a company code and it's enabled
+    // (Or maybe always if we have one? Let's say yes for now if the user explicitly joined)
+
+    try {
+      const data = {
+        code: companyCode.value,
+        owner: ownerPubkey.value,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Use bitspace-company-sync as the d-tag
+      const dTag = "bitspace-company-sync";
+
+      // Publish event (will be encrypted by default by publishReplaceableEvent)
+      // We use APPLICATION_SPECIFIC_DATA kind (30078)
+      const event = await nostrData.publishReplaceableEvent(
+        30078, // Kind 30078: App Data
+        data,
+        dTag,
+        [],
+        true, // Encrypt!
+      );
+
+      return !!event;
+    } catch (e) {
+      console.warn("[Company] Failed to save to Nostr:", e);
+      return false;
+    }
+  }
+
+  /**
+   * Restore company code from Nostr
+   */
+  async function restoreCompanyFromNostr(): Promise<boolean> {
+    isSyncing.value = true;
+    try {
+      const dTag = "bitspace-company-sync";
+
+      // Get the event
+      const result = await nostrData.getReplaceableEvent<{
+        code: string;
+        owner?: string;
+        updatedAt?: string;
+      }>(30078, dTag);
+
+      if (result && result.data && result.data.code) {
+        // Validate before setting
+        if (isValidCompanyCode(result.data.code)) {
+          await setCompanyCode(result.data.code, result.data.owner);
+
+          toggleCompanyCode(true); // Enable if found
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      console.warn("[Company] Failed to restore from Nostr:", e);
+      return false;
+    } finally {
+      isSyncing.value = false;
+    }
+  }
+
+  // ============================================
   // 🏪 COMPANY SETUP
   // ============================================
 
@@ -360,7 +443,8 @@ export function useCompany() {
     ownerPubkey: computed(() => ownerPubkey.value),
     hasCompanyCode: computed(() => !!companyCode.value),
     isInitialized: computed(() => isInitialized.value),
-    isCompanyCodeEnabled: computed(() => isCompanyCodeEnabled.value), // Export state
+    isCompanyCodeEnabled: computed(() => isCompanyCodeEnabled.value),
+    isSyncing: computed(() => isSyncing.value),
 
     // Code management
     generateCompanyCode,
@@ -371,7 +455,11 @@ export function useCompany() {
     clearCompanyCode,
     validateCode,
     initializeCompany,
-    toggleCompanyCode, // Export function
+    toggleCompanyCode,
+
+    // Sync
+    saveCompanyToNostr,
+    restoreCompanyFromNostr,
 
     // Encryption
     deriveKeyFromCode,

@@ -47,7 +47,7 @@ export const useNotifications = () => {
       skipToast?: boolean;
       skipSound?: boolean;
       skipBrowserNotification?: boolean;
-    }
+    },
   ): POSNotification {
     const newNotification: POSNotification = {
       ...notification,
@@ -70,7 +70,7 @@ export const useNotifications = () => {
       playNotificationSound(
         notification.type,
         notification.kitchenStatus,
-        notification.persistent
+        notification.persistent,
       );
     }
 
@@ -96,7 +96,7 @@ export const useNotifications = () => {
   function playNotificationSound(
     type: POSNotification["type"],
     kitchenStatus?: string,
-    persistent?: boolean
+    persistent?: boolean,
   ) {
     // Persistent/critical alerts use urgent sound
     if (persistent) {
@@ -401,7 +401,7 @@ export const useNotifications = () => {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(
       "bnos_space_notifications",
-      JSON.stringify(notifications.value)
+      JSON.stringify(notifications.value),
     );
   }
 
@@ -432,7 +432,7 @@ export const useNotifications = () => {
   function notifyPaymentReceived(
     amount: number,
     currency: string,
-    orderId?: string
+    orderId?: string,
   ) {
     addNotification({
       type: "payment",
@@ -466,7 +466,7 @@ export const useNotifications = () => {
     currentStock: number,
     minStock: number,
     productId?: string,
-    branchName?: string
+    branchName?: string,
   ) {
     // Calculate priority based on how low the stock is
     let priority: NotificationPriority = "medium";
@@ -557,7 +557,7 @@ export const useNotifications = () => {
       const existingAlerts = new Set(
         notifications.value
           .filter((n) => n.type === "stock" && !n.read && n.data?.productId)
-          .map((n) => `${n.data?.productId}_${n.data?.branchName || ""}`)
+          .map((n) => `${n.data?.productId}_${n.data?.branchName || ""}`),
       );
 
       let alertCount = 0;
@@ -583,7 +583,7 @@ export const useNotifications = () => {
                 bs.currentStock,
                 bs.minStock,
                 bs.productId,
-                branchMap.get(bs.branchId)
+                branchMap.get(bs.branchId),
               );
               alertCount++;
             }
@@ -705,7 +705,7 @@ export const useNotifications = () => {
   function notifyAIInsight(
     title: string,
     message: string,
-    data?: Record<string, unknown>
+    data?: Record<string, unknown>,
   ) {
     addNotification({
       type: "ai_insight",
@@ -728,11 +728,11 @@ export const useNotifications = () => {
     status: "new" | "preparing" | "ready" | "served",
     customer: string,
     tableName?: string,
-    itemCount?: number
+    itemCount?: number,
   ) {
     // Deduplicate: Check if we already have this notification (same order + status)
     const existingNotif = notifications.value.find(
-      (n) => n.data?.orderId === orderId && n.data?.kitchenStatus === status
+      (n) => n.data?.orderId === orderId && n.data?.kitchenStatus === status,
     );
     if (existingNotif) {
       return; // Skip duplicate
@@ -795,7 +795,7 @@ export const useNotifications = () => {
   function notifyWaiterCall(
     tableNumber: string,
     tableName?: string,
-    sessionId?: string
+    sessionId?: string,
   ) {
     const displayName = tableName || `Table ${tableNumber}`;
 
@@ -824,7 +824,7 @@ export const useNotifications = () => {
     tableName?: string,
     sessionId?: string,
     total?: number,
-    orderCount?: number
+    orderCount?: number,
   ) {
     const displayName = tableName || `Table ${tableNumber}`;
     const totalInfo = total ? ` - Total: ${total}` : "";
@@ -875,7 +875,7 @@ export const useNotifications = () => {
       "bnos.space-bugfix", // Important bug fixes
       // for dev
       import.meta.env.DEV && "test-announcement",
-    ];
+    ].filter(Boolean) as string[];
 
     // Map announcement tags to notification properties
     const getAnnouncementConfig = (tags: string[]) => {
@@ -988,7 +988,7 @@ export const useNotifications = () => {
       // Deduplicate and process events
       const uniqueEvents = new Map<string, any>();
       events.forEach(
-        (e) => !uniqueEvents.has(e.id) && uniqueEvents.set(e.id, e)
+        (e) => !uniqueEvents.has(e.id) && uniqueEvents.set(e.id, e),
       );
       Array.from(uniqueEvents.values())
         .sort((a, b) => b.created_at - a.created_at)
@@ -1005,7 +1005,7 @@ export const useNotifications = () => {
         ],
         {
           onevent: processEvent,
-        }
+        },
       );
     } catch (e) {
       console.error("Failed to initialize system notifications:", e);
@@ -1019,351 +1019,378 @@ export const useNotifications = () => {
   async function initPosAlerts() {
     // Singleton guard - prevent multiple subscriptions
     if (posAlertsInitialized) return;
-    posAlertsInitialized = true;
 
     const { $nostr } = useNuxtApp();
     const company = useCompany();
 
-    const companyCodeHash = company.companyCodeHash.value;
-    const ownerPubkey = company.ownerPubkey.value;
+    // Internal function to start subscription
+    const startSubscription = async () => {
+      if (posAlertsInitialized) return;
 
-    if (!companyCodeHash && !ownerPubkey) {
-      console.warn(
-        "[POS Alerts] No company code or owner pubkey - alerts disabled"
-      );
-      return;
-    }
+      const companyCodeHash = company.companyCodeHash.value;
+      const ownerPubkey = company.ownerPubkey.value;
 
-    // Track processed event IDs to prevent duplicates
-    const processedEventIds = new Set<string>();
-    const sessionStartTime = Math.floor(Date.now() / 1000);
+      if (!companyCodeHash && !ownerPubkey) {
+        // Wait for company code to be available
+        return;
+      }
 
-    // Process incoming POS_ALERT events
-    // isHistorical = true for initial fetch or polling, false for real-time subscription
-    const processAlert = (event: any, isHistorical = false) => {
-      if (processedEventIds.has(event.id)) return;
-      processedEventIds.add(event.id);
+      // Mark as initialized only when we actually start
+      posAlertsInitialized = true;
 
-      // Only skip toast/sound for historical events (initial fetch or polling)
-      // Real-time subscription events (isHistorical=false) should ALWAYS play sound
-      // This ensures customer alerts like waiter calls trigger sounds immediately
-      const skipNotify = isHistorical;
+      // Track processed event IDs to prevent duplicates
+      const processedEventIds = new Set<string>();
+      const sessionStartTime = Math.floor(Date.now() / 1000);
 
-      try {
-        const data = JSON.parse(event.content);
+      // Process incoming POS_ALERT events
+      // isHistorical = true for initial fetch or polling, false for real-time subscription
+      const processAlert = (event: any, isHistorical = false) => {
+        if (processedEventIds.has(event.id)) return;
+        processedEventIds.add(event.id);
 
-        const kitchenStatusMap: Record<
-          string,
-          "new" | "preparing" | "ready" | "served"
-        > = {
-          "new-order": "new",
-          "order-preparing": "preparing",
-          "order-ready": "ready",
-          "order-served": "served",
+        // Only skip toast/sound for historical events (initial fetch or polling)
+        // Real-time subscription events (isHistorical=false) should ALWAYS play sound
+        // This ensures customer alerts like waiter calls trigger sounds immediately
+        const skipNotify = isHistorical;
+
+        try {
+          const data = JSON.parse(event.content);
+
+          const kitchenStatusMap: Record<
+            string,
+            "new" | "preparing" | "ready" | "served"
+          > = {
+            "new-order": "new",
+            "order-preparing": "preparing",
+            "order-ready": "ready",
+            "order-served": "served",
+          };
+
+          if (data.type === "waiter-call") {
+            notifyWaiterCallWithOptions(
+              data.tableNumber,
+              data.tableName,
+              data.sessionId,
+              skipNotify,
+            );
+          } else if (data.type === "bill-request") {
+            notifyBillRequestWithOptions(
+              data.tableNumber,
+              data.tableName,
+              data.sessionId,
+              data.total,
+              data.orderCount,
+              skipNotify,
+            );
+          } else {
+            const status = kitchenStatusMap[data.type];
+            if (status) {
+              notifyKitchenStatusChangeWithOptions(
+                data.orderId,
+                data.orderCode || data.orderNumber || data.orderId?.slice(-6),
+                status,
+                data.customer || "Customer",
+                data.tableName,
+                data.itemCount || data.items,
+                skipNotify,
+              );
+            }
+          }
+        } catch (e) {
+          console.error("[POS Alerts] Failed to process alert:", e);
+        }
+      };
+
+      // Helper functions that accept skipNotify option
+      const notifyKitchenStatusChangeWithOptions = (
+        orderId: string,
+        orderNumber: string,
+        status: "new" | "preparing" | "ready" | "served",
+        customer: string,
+        tableName?: string,
+        itemCount?: number,
+        skipNotify = false,
+      ) => {
+        const existingNotif = notifications.value.find(
+          (n) =>
+            n.data?.orderId === orderId && n.data?.kitchenStatus === status,
+        );
+        if (existingNotif) return;
+
+        const statusConfig = {
+          new: {
+            emoji: "🆕",
+            title: t("kitchen.newOrder", "New Order"),
+            priority: "high" as NotificationPriority,
+            groupKey: "kitchen-new",
+          },
+          preparing: {
+            emoji: "👨‍🍳",
+            title: t("kitchen.preparing", "Preparing"),
+            priority: "medium" as NotificationPriority,
+            groupKey: "kitchen-preparing",
+          },
+          ready: {
+            emoji: "🔔",
+            title: t("kitchen.orderReady", "Order Ready!"),
+            priority: "high" as NotificationPriority,
+            groupKey: "kitchen-ready",
+          },
+          served: {
+            emoji: "✅",
+            title: t("kitchen.orderServed", "Order Served"),
+            priority: "low" as NotificationPriority,
+            groupKey: "kitchen-served",
+          },
         };
 
-        if (data.type === "waiter-call") {
-          notifyWaiterCallWithOptions(
-            data.tableNumber,
-            data.tableName,
-            data.sessionId,
-            skipNotify
-          );
-        } else if (data.type === "bill-request") {
-          notifyBillRequestWithOptions(
-            data.tableNumber,
-            data.tableName,
-            data.sessionId,
-            data.total,
-            data.orderCount,
-            skipNotify
-          );
-        } else {
-          const status = kitchenStatusMap[data.type];
-          if (status) {
-            notifyKitchenStatusChangeWithOptions(
-              data.orderId,
-              data.orderCode || data.orderNumber || data.orderId?.slice(-6),
-              status,
-              data.customer || "Customer",
-              data.tableName,
-              data.itemCount || data.items,
-              skipNotify
-            );
-          }
-        }
-      } catch (e) {
-        console.error("[POS Alerts] Failed to process alert:", e);
-      }
-    };
+        const config = statusConfig[status];
+        const tableInfo = tableName ? ` - ${tableName}` : "";
+        const items = itemCount ? ` (${itemCount} items)` : "";
 
-    // Helper functions that accept skipNotify option
-    const notifyKitchenStatusChangeWithOptions = (
-      orderId: string,
-      orderNumber: string,
-      status: "new" | "preparing" | "ready" | "served",
-      customer: string,
-      tableName?: string,
-      itemCount?: number,
-      skipNotify = false
-    ) => {
-      const existingNotif = notifications.value.find(
-        (n) => n.data?.orderId === orderId && n.data?.kitchenStatus === status
-      );
-      if (existingNotif) return;
-
-      const statusConfig = {
-        new: {
-          emoji: "🆕",
-          title: t("kitchen.newOrder", "New Order"),
-          priority: "high" as NotificationPriority,
-          groupKey: "kitchen-new",
-        },
-        preparing: {
-          emoji: "👨‍🍳",
-          title: t("kitchen.preparing", "Preparing"),
-          priority: "medium" as NotificationPriority,
-          groupKey: "kitchen-preparing",
-        },
-        ready: {
-          emoji: "🔔",
-          title: t("kitchen.orderReady", "Order Ready!"),
-          priority: "high" as NotificationPriority,
-          groupKey: "kitchen-ready",
-        },
-        served: {
-          emoji: "✅",
-          title: t("kitchen.orderServed", "Order Served"),
-          priority: "low" as NotificationPriority,
-          groupKey: "kitchen-served",
-        },
-      };
-
-      const config = statusConfig[status];
-      const tableInfo = tableName ? ` - ${tableName}` : "";
-      const items = itemCount ? ` (${itemCount} items)` : "";
-
-      addNotification(
-        {
-          type: "order",
-          title: `${config.emoji} ${config.title}${tableInfo}`,
-          message: `Order #${orderNumber} - ${customer}${items}`,
-          priority: config.priority,
-          actionUrl: `/orders/${orderId}`,
-          kitchenStatus: status,
-          groupKey: config.groupKey,
-          data: {
-            orderId,
-            orderNumber,
-            status,
-            customer,
-            tableName,
-            itemCount,
+        addNotification(
+          {
+            type: "order",
+            title: `${config.emoji} ${config.title}${tableInfo}`,
+            message: `Order #${orderNumber} - ${customer}${items}`,
+            priority: config.priority,
+            actionUrl: `/orders/${orderId}`,
             kitchenStatus: status,
+            groupKey: config.groupKey,
+            data: {
+              orderId,
+              orderNumber,
+              status,
+              customer,
+              tableName,
+              itemCount,
+              kitchenStatus: status,
+            },
           },
-        },
-        { skipToast: skipNotify, skipSound: skipNotify }
-      );
-    };
-
-    const notifyWaiterCallWithOptions = (
-      tableNumber: string,
-      tableName?: string,
-      sessionId?: string,
-      skipNotify = false
-    ) => {
-      const displayName = tableName || `Table ${tableNumber}`;
-      addNotification(
-        {
-          type: "alert",
-          title: `🔔 ${displayName} needs assistance!`,
-          message: t("notifications.waiterCall", "Customer called for waiter"),
-          priority: "critical",
-          persistent: true,
-          requiresAcknowledgment: true,
-          actionUrl: "/tables",
-          data: {
-            tableNumber,
-            tableName,
-            sessionId,
-            serviceType: "waiter_call",
-          },
-        },
-        { skipToast: skipNotify, skipSound: skipNotify }
-      );
-    };
-
-    const notifyBillRequestWithOptions = (
-      tableNumber: string,
-      tableName?: string,
-      sessionId?: string,
-      total?: number,
-      orderCount?: number,
-      skipNotify = false
-    ) => {
-      const displayName = tableName || `Table ${tableNumber}`;
-      const totalInfo = total ? ` - Total: ${total}` : "";
-      const ordersInfo = orderCount ? `${orderCount} orders` : "";
-      addNotification(
-        {
-          type: "alert",
-          title: `💰 ${displayName} requesting bill!`,
-          message: `${ordersInfo}${totalInfo}`,
-          priority: "high",
-          persistent: true,
-          requiresAcknowledgment: true,
-          actionUrl: "/pos",
-          data: {
-            tableNumber,
-            tableName,
-            sessionId,
-            sessionTotal: total,
-            orderCount,
-            serviceType: "bill_request",
-          },
-        },
-        { skipToast: skipNotify, skipSound: skipNotify }
-      );
-    };
-
-    try {
-      // Use SAME relays as customer (from use-nostr-relay config)
-      // This ensures customer publishes and POS subscribes to identical relay set
-      const relayConfig = useNostrRelay();
-
-      // CRITICAL: Initialize relays first to add them to the pool
-      await relayConfig.init();
-
-      // Use the ACTUAL configured relays (not static defaults)
-      let allRelays = relayConfig.writeRelays.value;
-
-      if (!allRelays || allRelays.length === 0) {
-        allRelays = relayConfig.DEFAULT_RELAYS.map((r) => r.url);
-      }
-
-      const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
-
-      // Build filter - fetch ALL POS_ALERT events and filter client-side
-      // Many relays don't support custom tag filtering (#c), so we filter after fetching
-      const baseFilter = {
-        kinds: [NOSTR_KINDS.POS_ALERT],
-        limit: 50,
+          { skipToast: skipNotify, skipSound: skipNotify },
+        );
       };
 
-      // Client-side filter function
-      const matchesFilter = (event: any): boolean => {
-        const tags = event.tags || [];
-
-        // Check for company code hash match
-        if (companyCodeHash) {
-          const cTag = tags.find(
-            (t: string[]) => t[0] === "c" && t[1] === companyCodeHash
-          );
-          if (cTag) return true;
-        }
-
-        // Check for owner pubkey match
-        if (ownerPubkey) {
-          const pTag = tags.find(
-            (t: string[]) => t[0] === "p" && t[1] === ownerPubkey
-          );
-          if (pTag) return true;
-        }
-
-        return false;
+      const notifyWaiterCallWithOptions = (
+        tableNumber: string,
+        tableName?: string,
+        sessionId?: string,
+        skipNotify = false,
+      ) => {
+        const displayName = tableName || `Table ${tableNumber}`;
+        addNotification(
+          {
+            type: "alert",
+            title: `🔔 ${displayName} needs assistance!`,
+            message: t(
+              "notifications.waiterCall",
+              "Customer called for waiter",
+            ),
+            priority: "critical",
+            persistent: true,
+            requiresAcknowledgment: true,
+            actionUrl: "/tables",
+            data: {
+              tableNumber,
+              tableName,
+              sessionId,
+              serviceType: "waiter_call",
+            },
+          },
+          { skipToast: skipNotify, skipSound: skipNotify },
+        );
       };
 
-      // Initial fetch of existing events
+      const notifyBillRequestWithOptions = (
+        tableNumber: string,
+        tableName?: string,
+        sessionId?: string,
+        total?: number,
+        orderCount?: number,
+        skipNotify = false,
+      ) => {
+        const displayName = tableName || `Table ${tableNumber}`;
+        const totalInfo = total ? ` - Total: ${total}` : "";
+        const ordersInfo = orderCount ? `${orderCount} orders` : "";
+        addNotification(
+          {
+            type: "alert",
+            title: `💰 ${displayName} requesting bill!`,
+            message: `${ordersInfo}${totalInfo}`,
+            priority: "high",
+            persistent: true,
+            requiresAcknowledgment: true,
+            actionUrl: "/pos",
+            data: {
+              tableNumber,
+              tableName,
+              sessionId,
+              sessionTotal: total,
+              orderCount,
+              serviceType: "bill_request",
+            },
+          },
+          { skipToast: skipNotify, skipSound: skipNotify },
+        );
+      };
+
       try {
-        const allEvents = await $nostr.pool.querySync(allRelays, baseFilter);
+        // Use SAME relays as customer (from use-nostr-relay config)
+        // This ensures customer publishes and POS subscribes to identical relay set
+        const relayConfig = useNostrRelay();
 
-        const matchingEvents = allEvents.filter(matchesFilter);
+        // CRITICAL: Initialize relays first to add them to the pool
+        await relayConfig.init();
 
-        // Deduplicate and process matching events
-        const uniqueEvents = new Map<string, any>();
-        for (const event of matchingEvents) {
-          if (!uniqueEvents.has(event.id)) {
-            uniqueEvents.set(event.id, event);
+        // Use the ACTUAL configured relays (not static defaults)
+        let allRelays = relayConfig.writeRelays.value;
+
+        if (!allRelays || allRelays.length === 0) {
+          allRelays = relayConfig.DEFAULT_RELAYS.map((r) => r.url);
+        }
+
+        const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+
+        // Build filter - fetch ALL POS_ALERT events and filter client-side
+        // Many relays don't support custom tag filtering (#c), so we filter after fetching
+        const baseFilter = {
+          kinds: [NOSTR_KINDS.POS_ALERT],
+          limit: 50,
+        };
+
+        // Client-side filter function
+        const matchesFilter = (event: any): boolean => {
+          const tags = event.tags || [];
+
+          // Check for company code hash match
+          if (companyCodeHash) {
+            const cTag = tags.find(
+              (t: string[]) => t[0] === "c" && t[1] === companyCodeHash,
+            );
+            if (cTag) return true;
           }
-        }
 
-        // Process existing events (newest first) - mark as historical to skip toast/sound
-        Array.from(uniqueEvents.values())
-          .sort((a: any, b: any) => b.created_at - a.created_at)
-          .forEach((e) => processAlert(e, true)); // isHistorical = true
-      } catch (e) {
-        console.error("[POS Alerts] Failed to fetch existing events:", e);
-      }
+          // Check for owner pubkey match
+          if (ownerPubkey) {
+            const pTag = tags.find(
+              (t: string[]) => t[0] === "p" && t[1] === ownerPubkey,
+            );
+            if (pTag) return true;
+          }
 
-      // Real-time subscription with multiple filters (OR relationship)
-      // Each filter is checked independently - event matches if ANY filter matches
-      // This ensures we receive alerts from:
-      // 1. Staff (tagged with companyCodeHash)
-      // 2. Customers (tagged with ownerPubkey)
-      const realtimeFilters: Record<string, any>[] = [];
+          return false;
+        };
 
-      // Filter for company code hash (staff-to-staff alerts)
-      if (companyCodeHash) {
-        realtimeFilters.push({
-          kinds: [NOSTR_KINDS.POS_ALERT],
-          "#c": [companyCodeHash],
-        });
-      }
-
-      // Filter for owner pubkey (customer-to-staff alerts)
-      // Customers tag alerts with ownerPubkey since they don't have companyCodeHash
-      if (ownerPubkey) {
-        realtimeFilters.push({
-          kinds: [NOSTR_KINDS.POS_ALERT],
-          "#p": [ownerPubkey],
-        });
-        // Also check #c with ownerPubkey (customer uses both tags)
-        realtimeFilters.push({
-          kinds: [NOSTR_KINDS.POS_ALERT],
-          "#c": [ownerPubkey],
-        });
-      }
-
-      console.log(
-        "[POS Alerts] 🔌 Subscribing with",
-        realtimeFilters.length,
-        "filters"
-      );
-
-      // Real-time subscription with multiple filters
-      const sub = $nostr.pool.subscribeMany(allRelays, realtimeFilters, {
-        onevent(event: any) {
-          console.log(
-            "[POS Alerts] 📨 Received event:",
-            event.id.slice(0, 8) + "..."
-          );
-          if (matchesFilter(event)) processAlert(event);
-        },
-      });
-
-      // Polling fallback for relays that don't push via WebSocket
-      const POLL_INTERVAL = 5000;
-      const pollForEvents = async () => {
+        // Initial fetch of existing events
         try {
-          const events = await $nostr.pool.querySync(allRelays, baseFilter);
-          // Process as historical since these are fetched, not pushed
-          events.filter(matchesFilter).forEach((e) => processAlert(e, true));
-        } catch {
-          // Silent fail
-        }
-      };
-      const pollInterval = setInterval(pollForEvents, POLL_INTERVAL);
+          const allEvents = await $nostr.pool.querySync(allRelays, baseFilter);
 
-      // Cleanup on page unload
-      if (import.meta.client) {
-        window.addEventListener("beforeunload", () => {
-          sub?.close();
-          clearInterval(pollInterval);
+          const matchingEvents = allEvents.filter(matchesFilter);
+
+          // Deduplicate and process matching events
+          const uniqueEvents = new Map<string, any>();
+          for (const event of matchingEvents) {
+            if (!uniqueEvents.has(event.id)) {
+              uniqueEvents.set(event.id, event);
+            }
+          }
+
+          // Process existing events (newest first) - mark as historical to skip toast/sound
+          Array.from(uniqueEvents.values())
+            .sort((a: any, b: any) => b.created_at - a.created_at)
+            .forEach((e) => processAlert(e, true)); // isHistorical = true
+        } catch (e) {
+          console.error("[POS Alerts] Failed to fetch existing events:", e);
+        }
+
+        // Real-time subscription with multiple filters (OR relationship)
+        // Each filter is checked independently - event matches if ANY filter matches
+        // This ensures we receive alerts from:
+        // 1. Staff (tagged with companyCodeHash)
+        // 2. Customers (tagged with ownerPubkey)
+        const realtimeFilters: any[] = [];
+
+        // Filter for company code hash (staff-to-staff alerts)
+        if (companyCodeHash) {
+          realtimeFilters.push({
+            kinds: [NOSTR_KINDS.POS_ALERT],
+            "#c": [companyCodeHash],
+          });
+        }
+
+        // Filter for owner pubkey (customer-to-staff alerts)
+        // Customers tag alerts with ownerPubkey since they don't have companyCodeHash
+        if (ownerPubkey) {
+          realtimeFilters.push({
+            kinds: [NOSTR_KINDS.POS_ALERT],
+            "#p": [ownerPubkey],
+          });
+          // Also check #c with ownerPubkey (customer uses both tags)
+          realtimeFilters.push({
+            kinds: [NOSTR_KINDS.POS_ALERT],
+            "#c": [ownerPubkey],
+          });
+        }
+
+        console.log(
+          "[POS Alerts] 🔌 Subscribing with",
+          realtimeFilters.length,
+          "filters",
+        );
+
+        // Real-time subscription with multiple filters
+        const sub = $nostr.pool.subscribeMany(allRelays, realtimeFilters, {
+          onevent(event: any) {
+            console.log(
+              "[POS Alerts] 📨 Received event:",
+              event.id.slice(0, 8) + "...",
+            );
+            if (matchesFilter(event)) processAlert(event);
+          },
         });
+
+        // Polling fallback for relays that don't push via WebSocket
+        const POLL_INTERVAL = 5000;
+        const pollForEvents = async () => {
+          try {
+            const events = await $nostr.pool.querySync(allRelays, baseFilter);
+            // Process as historical since these are fetched, not pushed
+            events.filter(matchesFilter).forEach((e) => processAlert(e, true));
+          } catch {
+            // Silent fail
+          }
+        };
+        const pollInterval = setInterval(pollForEvents, POLL_INTERVAL);
+
+        // Cleanup on page unload
+        if (import.meta.client) {
+          window.addEventListener("beforeunload", () => {
+            sub?.close();
+            clearInterval(pollInterval);
+          });
+        }
+      } catch (e) {
+        console.error("[POS Alerts] ❌ Failed to initialize:", e);
+        // Reset initialization flag so we can retry?
+        // Actually, if it failed this hard, maybe better to leave it.
       }
-    } catch (e) {
-      console.error("[POS Alerts] ❌ Failed to initialize:", e);
-    }
+    };
+
+    // Check initially
+    startSubscription();
+
+    // Watch for company updates if not initialized
+    watch(
+      [company.companyCodeHash, company.ownerPubkey],
+      ([newHash, newPubkey]) => {
+        if (!posAlertsInitialized && (newHash || newPubkey)) {
+          console.log(
+            "[POS Alerts] Company info detected, starting subscription...",
+          );
+          startSubscription();
+        }
+      },
+    );
   }
 
   // ============================================
@@ -1412,7 +1439,7 @@ export const useNotifications = () => {
     // Browser notifications
     requestBrowserNotificationPermission,
     browserNotificationPermission: computed(
-      () => browserNotificationPermission.value
+      () => browserNotificationPermission.value,
     ),
   };
 };

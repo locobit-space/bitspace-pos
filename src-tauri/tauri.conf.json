@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "BNOS - Business OS",
+  "productName": "BnOS - Business OS",
   "version": "1.5.2",
   "identifier": "com.bnos.pos",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "BNOS - Business OS",
+        "title": "BnOS - Business OS",
         "width": 1280,
         "height": 800,
         "resizable": true,

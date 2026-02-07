@@ -68,7 +68,7 @@ const getStatusColor = (
             class="w-7 h-7 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
           >
             <UIcon
-              name="solar:receipt-linear"
+              name="solar:bill-check-bold"
               class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400"
             />
           </div>

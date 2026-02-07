@@ -2,7 +2,7 @@
 // 🧾 Receipt & E-Bill System
 // Supports: Thermal/POS printers (ESC/POS), Browser print, E-Bill via QR
 
-import {  computed } from "vue";
+import { computed } from "vue";
 import type { Order, PaymentProof, CurrencyCode, PaymentMethod } from "~/types"; // Re-add CartItem if needed but ReceiptItem is local
 import QRCode from "qrcode";
 
@@ -119,7 +119,7 @@ export const useReceipt = () => {
   const generateReceipt = (
     order: Order,
     paymentProof?: PaymentProof,
-    merchantPubkey?: string
+    merchantPubkey?: string,
   ): EReceipt => {
     const items: ReceiptItem[] = order.items.map((item) => ({
       name: item.product.name,
@@ -148,7 +148,10 @@ export const useReceipt = () => {
       if (order.appliedPromotions) {
         for (const promo of order.appliedPromotions) {
           // For BOGO promotions, rewardItemIds contains product IDs that are free
-          if (promo.rewardItemIds && promo.rewardItemIds.includes(item.product.id)) {
+          if (
+            promo.rewardItemIds &&
+            promo.rewardItemIds.includes(item.product.id)
+          ) {
             // Each application of the promotion gives rewardQuantity free items
             // For "Buy 1 Get 1", timesApplied=1 means 1 free item
             freeQuantity += promo.timesApplied;
@@ -213,7 +216,7 @@ export const useReceipt = () => {
   // ============================================
   const formatAmount = (
     amount: number,
-    currencyCode: CurrencyCode = "LAK"
+    currencyCode: CurrencyCode = "LAK",
   ): string => {
     return currency.format(amount, currencyCode);
   };
@@ -306,7 +309,7 @@ export const useReceipt = () => {
   // ============================================
   const generateQRCodeDataUrl = async (
     data: string,
-    size: number = 150
+    size: number = 150,
   ): Promise<string> => {
     try {
       return await QRCode.toDataURL(data, {
@@ -339,7 +342,7 @@ export const useReceipt = () => {
       const duration = performance.now() - startTime;
       console.log(
         `[Receipt] QR generated in ${duration.toFixed(2)}ms:`,
-        qrCodeDataUrl ? "✓" : "✗ (empty)"
+        qrCodeDataUrl ? "✓" : "✗ (empty)",
       );
     } else {
       console.log("[Receipt] QR code disabled in settings");
@@ -518,7 +521,7 @@ export const useReceipt = () => {
       <div class="order-details-right">
         <div>${new Date(receipt.createdAt).toLocaleDateString()}</div>
         <div style="font-size: 9px;">${new Date(
-          receipt.createdAt
+          receipt.createdAt,
         ).toLocaleTimeString()}</div>
       </div>
     </div>
@@ -533,7 +536,7 @@ export const useReceipt = () => {
           <span class="item-name">${item.quantity}× ${item.name}</span>
           <span class="item-price">${formatAmount(
             item.total,
-            receipt.currency
+            receipt.currency,
           )}</span>
         </div>
         ${
@@ -553,7 +556,7 @@ export const useReceipt = () => {
             : ""
         }
       </div>
-    `
+    `,
       )
       .join("")}
   </div>
@@ -585,11 +588,11 @@ export const useReceipt = () => {
         <span style="color: #15803d; font-weight: 600;">💰 You Saved:</span>
         <span style="color: #15803d; font-weight: bold;">${formatAmount(
           promo.discountAmount,
-          receipt.currency
+          receipt.currency,
         )}</span>
       </div>
     </div>
-    `
+    `,
       )
       .join("")}
   </div>
@@ -617,9 +620,9 @@ export const useReceipt = () => {
         <span>-${formatAmount(
           receipt.appliedPromotions.reduce(
             (sum, p) => sum + p.discountAmount,
-            0
+            0,
           ),
-          receipt.currency
+          receipt.currency,
         )}</span>
       </div>
     `
@@ -729,7 +732,7 @@ export const useReceipt = () => {
         : ""
     }
 
-    <div>BNOS.SPACE</div>
+    <div>BnOS.SPACE</div>
     <div>Powered by Nostr & Bitcoin Lightning ⚡</div>
   </div>
 </body>
@@ -780,7 +783,7 @@ export const useReceipt = () => {
             }
 
             console.log(
-              `[Receipt] Waiting for ${images.length} image(s) to load...`
+              `[Receipt] Waiting for ${images.length} image(s) to load...`,
             );
             let loaded = 0;
             const checkAllLoaded = () => {
@@ -799,7 +802,7 @@ export const useReceipt = () => {
                 img.onerror = () => {
                   console.warn(
                     "[Receipt] Image failed to load:",
-                    img.src?.slice(0, 50)
+                    img.src?.slice(0, 50),
                   );
                   checkAllLoaded(); // Don't block on error
                 };
@@ -874,7 +877,7 @@ export const useReceipt = () => {
     // Header
     lines.push("");
     lines.push(
-      center(settings.value.logoEmoji + " " + settings.value.merchantName)
+      center(settings.value.logoEmoji + " " + settings.value.merchantName),
     );
     if (settings.value.merchantAddress) {
       lines.push(center(settings.value.merchantAddress));
@@ -889,7 +892,7 @@ export const useReceipt = () => {
     lines.push(
       `Order: ${
         receipt.orderNumber ? "#" + receipt.orderNumber : receipt.orderId
-      }`
+      }`,
     );
     lines.push(`Date: ${new Date(receipt.createdAt).toLocaleString()}`);
     lines.push(`Receipt: ${receipt.id}`);
@@ -935,10 +938,12 @@ export const useReceipt = () => {
 
         // Savings
         lines.push("");
-        lines.push(rightAlign(
-          "💰 You Saved:",
-          formatAmount(promo.discountAmount, receipt.currency)
-        ));
+        lines.push(
+          rightAlign(
+            "💰 You Saved:",
+            formatAmount(promo.discountAmount, receipt.currency),
+          ),
+        );
         lines.push("");
       });
 
@@ -946,12 +951,14 @@ export const useReceipt = () => {
       if (receipt.appliedPromotions.length > 1) {
         const totalSavings = receipt.appliedPromotions.reduce(
           (sum, p) => sum + p.discountAmount,
-          0
+          0,
         );
-        lines.push(rightAlign(
-          "🎉 Total Savings:",
-          formatAmount(totalSavings, receipt.currency)
-        ));
+        lines.push(
+          rightAlign(
+            "🎉 Total Savings:",
+            formatAmount(totalSavings, receipt.currency),
+          ),
+        );
         lines.push("");
       }
 
@@ -964,8 +971,8 @@ export const useReceipt = () => {
       lines.push(
         rightAlign(
           "Subtotal:",
-          formatAmount(receipt.subtotal, receipt.currency)
-        )
+          formatAmount(receipt.subtotal, receipt.currency),
+        ),
       );
     }
 
@@ -973,13 +980,13 @@ export const useReceipt = () => {
     if (receipt.appliedPromotions && receipt.appliedPromotions.length > 0) {
       const totalPromotionDiscount = receipt.appliedPromotions.reduce(
         (sum, p) => sum + p.discountAmount,
-        0
+        0,
       );
       lines.push(
         rightAlign(
           "Promotion Savings:",
-          `-${formatAmount(totalPromotionDiscount, receipt.currency)}`
-        )
+          `-${formatAmount(totalPromotionDiscount, receipt.currency)}`,
+        ),
       );
     }
 
@@ -987,29 +994,29 @@ export const useReceipt = () => {
       lines.push(
         rightAlign(
           "Discount:",
-          `-${formatAmount(receipt.discount, receipt.currency)}`
-        )
+          `-${formatAmount(receipt.discount, receipt.currency)}`,
+        ),
       );
     }
     if (contentSettings.showTax && receipt.tax > 0) {
       lines.push(
-        rightAlign("Tax:", formatAmount(receipt.tax, receipt.currency))
+        rightAlign("Tax:", formatAmount(receipt.tax, receipt.currency)),
       );
     }
     if (receipt.tip && receipt.tip > 0) {
       lines.push(
-        rightAlign("Tip:", formatAmount(receipt.tip, receipt.currency))
+        rightAlign("Tip:", formatAmount(receipt.tip, receipt.currency)),
       );
     }
 
     lines.push(doubleDivider);
     lines.push(
-      rightAlign("TOTAL:", formatAmount(receipt.total, receipt.currency))
+      rightAlign("TOTAL:", formatAmount(receipt.total, receipt.currency)),
     );
 
     if (receipt.totalSats && receipt.totalSats > 0) {
       lines.push(
-        rightAlign("≈ Sats:", `⚡ ${receipt.totalSats.toLocaleString()}`)
+        rightAlign("≈ Sats:", `⚡ ${receipt.totalSats.toLocaleString()}`),
       );
     }
     lines.push(doubleDivider);
@@ -1017,7 +1024,7 @@ export const useReceipt = () => {
     // Payment Method - respect content settings
     if (contentSettings.showPaymentMethod) {
       lines.push(
-        center(`Paid via: ${getPaymentMethodLabel(receipt.paymentMethod)}`)
+        center(`Paid via: ${getPaymentMethodLabel(receipt.paymentMethod)}`),
       );
       lines.push("");
     }
