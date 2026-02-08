@@ -1,0 +1,40 @@
+{
+  "voice": {
+    "title": "Voice Order",
+    "start": "Start Voice Input",
+    "stop": "Stop Recording",
+    "listening": "Listening...",
+    "processing": "Processing voice command...",
+    "confirm": "Confirm Order",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "error": "Error occurred",
+    "tryAgain": "Try Again",
+    "reviewOrder": "Review your order",
+    "confidence": "Confidence",
+    "matchedProducts": "Matched Products",
+    "noMatch": "No products matched. Please try again.",
+    "alternatives": "Did you mean",
+    "reviewNotice": "Please review the order carefully before confirming",
+    "errors": {
+      "notSupported": "Voice input is not supported in this browser",
+      "noSpeech": "No speech detected. Please try again.",
+      "aborted": "Voice input was cancelled",
+      "audioCapture": "Could not access microphone",
+      "notAllowed": "Microphone permission was denied",
+      "network": "Network error occurred",
+      "parserError": "Could not understand command",
+      "productNotFound": "Product not found",
+      "ambiguous": "Multiple matches found. Please be more specific.",
+      "timeout": "Voice input timed out"
+    },
+    "help": {
+      "tapToSpeak": "Tap the microphone to start speaking",
+      "examples": "Example commands",
+      "example1": "Add 2 large cappuccinos",
+      "example2": "Large latte with extra sugar",
+      "example3": "Iced americano",
+      "example4": "High confidence orders auto-add in 1.5s"
+    }
+  }
+}

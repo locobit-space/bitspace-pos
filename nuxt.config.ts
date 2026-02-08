@@ -297,6 +297,7 @@ export default defineNuxtConfig({
           "lo-LA/order.json",
           "lo-LA/promotions.json",
           "lo-LA/marketplace.json",
+          "lo-LA/voice.json",
         ],
       },
       {
@@ -343,6 +344,7 @@ export default defineNuxtConfig({
           "en-US/order.json",
           "en-US/promotions.json",
           "en-US/marketplace.json",
+          "en-US/voice.json",
         ],
       },
       {
@@ -384,6 +386,7 @@ export default defineNuxtConfig({
           "th-TH/help.json",
           "th-TH/promotions.json",
           "th-TH/marketplace.json",
+          "th-TH/voice.json",
         ],
       },
     ],
