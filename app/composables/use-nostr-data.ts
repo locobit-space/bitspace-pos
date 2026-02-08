@@ -622,7 +622,9 @@ export function useNostrData() {
 
   async function getAllProducts(): Promise<Product[]> {
     const results = await getAllEventsOfKind<Product>(NOSTR_KINDS.PRODUCT);
-    return results.map((r) => r.data);
+    return results
+      .map((r) => r.data)
+      .filter((p) => !(p as Product & { deleted?: boolean }).deleted);
   }
 
   /**

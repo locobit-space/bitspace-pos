@@ -86,6 +86,7 @@ const showSplitBillModal = ref(false); // Split bill modal
 const showCustomerModal = ref(false); // Customer lookup modal
 const showBarcodeScannerModal = ref(false); // Barcode scanner modal
 const showVoidOrderModal = ref(false); // Void/cancel order modal
+const showVoiceOrderModal = ref(false); // Voice order modal
 const orderToVoid = ref<{ id: string; orderNumber?: string } | null>(null); // Order being cancelled
 const barcodeScannerMode = ref<"keyboard" | "camera">("keyboard"); // Scanner mode
 const showPaymentOrderDetails = ref(false); // Toggle order details in payment modal
@@ -2494,19 +2495,37 @@ onUnmounted(() => {
               class="flex-1 w-full"
             >
               <template #trailing>
-                <UTooltip
-                  :text="t('pos.scanner.scanBarcode', 'Scan with Camera (F2)')"
-                >
-                  <UButton
-                    size="xs"
-                    color="amber"
-                    variant="soft"
-                    icon="i-heroicons-qr-code"
-                    class="cursor-pointer"
-                    :padded="false"
-                    @click="openCameraScanner"
-                  />
-                </UTooltip>
+                <div class="flex items-center gap-1">
+                  <!-- Voice Order Button -->
+                  <UTooltip :text="t('voice.start', 'Voice Order (Ctrl+M)')">
+                    <UButton
+                      size="xs"
+                      color="primary"
+                      variant="soft"
+                      icon="i-heroicons-microphone"
+                      class="cursor-pointer"
+                      :padded="false"
+                      @click="showVoiceOrderModal = true"
+                    />
+                  </UTooltip>
+
+                  <!-- Barcode Scanner Button -->
+                  <UTooltip
+                    :text="
+                      t('pos.scanner.scanBarcode', 'Scan with Camera (F2)')
+                    "
+                  >
+                    <UButton
+                      size="xs"
+                      color="amber"
+                      variant="soft"
+                      icon="i-heroicons-qr-code"
+                      class="cursor-pointer"
+                      :padded="false"
+                      @click="openCameraScanner"
+                    />
+                  </UTooltip>
+                </div>
               </template>
             </UInput>
           </div>
@@ -4175,6 +4194,16 @@ onUnmounted(() => {
       :order-id="orderToVoid?.id"
       :order-number="orderToVoid?.orderNumber"
       @confirm="handleVoidOrder"
+    />
+
+    <!-- Voice Order Modal -->
+    <PosVoiceOrderInput
+      v-model="showVoiceOrderModal"
+      @command-applied="
+        () => {
+          showVoiceOrderModal = false;
+        }
+      "
     />
 
     <!-- Held Orders Modal -->

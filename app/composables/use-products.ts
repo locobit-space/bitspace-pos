@@ -121,7 +121,7 @@ export function useProductsStore() {
 
       // Find employee record for current staff user
       const employee = employeesStore.employees.value.find(
-        (e) => e.userId === currentUser.id || e.npub === currentUser.npub
+        (e) => e.userId === currentUser.id || e.npub === currentUser.npub,
       );
 
       if (employee) {
@@ -131,7 +131,7 @@ export function useProductsStore() {
         if (mode === "assigned" && employee.assignedProductIds?.length) {
           // Only assigned products
           result = result.filter((p) =>
-            employee.assignedProductIds?.includes(p.id)
+            employee.assignedProductIds?.includes(p.id),
           );
         } else if (
           mode === "category" &&
@@ -139,7 +139,7 @@ export function useProductsStore() {
         ) {
           // Only products from assigned categories
           result = result.filter((p) =>
-            employee.assignedCategoryIds?.includes(p.categoryId)
+            employee.assignedCategoryIds?.includes(p.categoryId),
           );
         }
         // mode === "all" - no filtering needed
@@ -161,7 +161,7 @@ export function useProductsStore() {
           p.name.toLowerCase().includes(query) ||
           p.sku.toLowerCase().includes(query) ||
           p.barcode?.toLowerCase().includes(query) ||
-          p.description?.toLowerCase().includes(query)
+          p.description?.toLowerCase().includes(query),
       );
     }
 
@@ -172,20 +172,22 @@ export function useProductsStore() {
   });
 
   const activeProducts = computed(() =>
-    products.value.filter((p) => p.status === "active")
+    products.value.filter((p) => p.status === "active"),
   );
 
   const lowStockProducts = computed(() =>
     products.value.filter(
       (p) =>
-        p.stock <= p.minStock && p.status === "active" && p.trackStock !== false // Exclude products with stock tracking disabled
-    )
+        p.stock <= p.minStock &&
+        p.status === "active" &&
+        p.trackStock !== false, // Exclude products with stock tracking disabled
+    ),
   );
 
   const outOfStockProducts = computed(() =>
     products.value.filter(
-      (p) => p.stock <= 0 && p.status === "active" && p.trackStock !== false // Exclude products with stock tracking disabled
-    )
+      (p) => p.stock <= 0 && p.status === "active" && p.trackStock !== false, // Exclude products with stock tracking disabled
+    ),
   );
 
   const productsByCategory = computed(() => {
@@ -201,7 +203,7 @@ export function useProductsStore() {
 
   // Public products for customer menu (visible to customers)
   const publicProducts = computed(() =>
-    products.value.filter((p) => p.status === "active" && p.isPublic !== false)
+    products.value.filter((p) => p.status === "active" && p.isPublic !== false),
   );
 
   // Public products grouped by category
@@ -465,6 +467,11 @@ export function useProductsStore() {
           // Check if local has unsynced stock changes
           const localProduct = JSON.parse(existingRecord.data) as Product;
 
+          // If local product is marked as inactive/deleted, skip syncing from Nostr
+          if (localProduct.status === "inactive") {
+            continue; // Don't overwrite local deletions
+          }
+
           // If local stock differs from Nostr and local is not synced,
           // preserve local stock (it's more recent)
           if (
@@ -582,7 +589,7 @@ export function useProductsStore() {
       // Non-blocking background sync with Nostr
       if (offline.isOnline.value) {
         loadFromNostr().catch((e) =>
-          console.warn("[Products] Background sync failed:", e)
+          console.warn("[Products] Background sync failed:", e),
         );
       }
     } catch (e) {
@@ -596,7 +603,7 @@ export function useProductsStore() {
   // ============================================
 
   async function addProduct(
-    productData: Omit<Product, "id" | "createdAt" | "updatedAt">
+    productData: Omit<Product, "id" | "createdAt" | "updatedAt">,
   ): Promise<Product> {
     const { getCurrentUserIdentifier } = useUserIdentifier();
     const { id, code } = EntityId.product();
@@ -634,7 +641,7 @@ export function useProductsStore() {
   }
 
   async function bulkAddProducts(
-    productsData: Omit<Product, "id" | "createdAt" | "updatedAt">[]
+    productsData: Omit<Product, "id" | "createdAt" | "updatedAt">[],
   ): Promise<Product[]> {
     const { getCurrentUserIdentifier } = useUserIdentifier();
 
@@ -717,7 +724,7 @@ export function useProductsStore() {
 
   async function updateProduct(
     id: string,
-    updates: Partial<Product>
+    updates: Partial<Product>,
   ): Promise<Product | null> {
     const index = products.value.findIndex((p) => p.id === id);
     if (index === -1) return null;
@@ -874,7 +881,7 @@ export function useProductsStore() {
    */
   async function bulkDeleteProducts(
     ids: string[],
-    syncToNostr = true
+    syncToNostr = true,
   ): Promise<number> {
     let deletedCount = 0;
 
@@ -968,7 +975,7 @@ export function useProductsStore() {
   // ============================================
 
   async function addCategory(
-    categoryData: Omit<Category, "id">
+    categoryData: Omit<Category, "id">,
   ): Promise<Category> {
     const { id } = EntityId.category();
     const category: Category = {
@@ -989,7 +996,7 @@ export function useProductsStore() {
 
   async function updateCategory(
     id: string,
-    updates: Partial<Category>
+    updates: Partial<Category>,
   ): Promise<Category | null> {
     const index = categories.value.findIndex((c) => c.id === id);
     if (index === -1) return null;
@@ -1053,7 +1060,7 @@ export function useProductsStore() {
 
   async function updateUnit(
     id: string,
-    updates: Partial<Unit>
+    updates: Partial<Unit>,
   ): Promise<Unit | null> {
     const index = units.value.findIndex((u) => u.id === id);
     if (index === -1) return null;
@@ -1099,7 +1106,7 @@ export function useProductsStore() {
 
   async function updateBranch(
     id: string,
-    updates: Partial<Branch>
+    updates: Partial<Branch>,
   ): Promise<Branch | null> {
     const index = branches.value.findIndex((b) => b.id === id);
     if (index === -1) return null;
@@ -1163,7 +1170,7 @@ export function useProductsStore() {
       | "count"
       | "waste"
       | "return" = "adjustment",
-    notes?: string
+    notes?: string,
   ): Promise<boolean> {
     const product = products.value.find((p) => p.id === productId);
     if (!product) return false;
@@ -1203,7 +1210,7 @@ export function useProductsStore() {
 
   async function decreaseStock(
     productId: string,
-    quantity: number
+    quantity: number,
   ): Promise<boolean> {
     return updateStock(productId, -quantity, "sale");
   }
@@ -1211,7 +1218,7 @@ export function useProductsStore() {
   async function increaseStock(
     productId: string,
     quantity: number,
-    reason: "purchase" | "return" = "purchase"
+    reason: "purchase" | "return" = "purchase",
   ): Promise<boolean> {
     return updateStock(productId, quantity, reason);
   }
@@ -1219,7 +1226,7 @@ export function useProductsStore() {
   async function setStock(
     productId: string,
     newStock: number,
-    notes?: string
+    notes?: string,
   ): Promise<boolean> {
     const product = products.value.find((p) => p.id === productId);
     if (!product) return false;
@@ -1230,7 +1237,7 @@ export function useProductsStore() {
 
   async function getStockHistory(
     productId: string,
-    limit = 50
+    limit = 50,
   ): Promise<
     Array<{
       id: string;
@@ -1285,7 +1292,7 @@ export function useProductsStore() {
    * Log a product activity (audit trail)
    */
   async function logProductActivity(
-    options: ActivityLogOptions
+    options: ActivityLogOptions,
   ): Promise<void> {
     const currentUser = getCurrentUser();
 
@@ -1360,7 +1367,7 @@ export function useProductsStore() {
               priceBefore: options.priceBefore,
               priceAfter: options.priceAfter,
             },
-          }
+          },
         );
       }
     } catch {
@@ -1373,7 +1380,7 @@ export function useProductsStore() {
    */
   async function getProductActivityLogs(
     productId: string,
-    limit = 100
+    limit = 100,
   ): Promise<
     Array<{
       id: string;
@@ -1454,7 +1461,7 @@ export function useProductsStore() {
   function saveFavorites(): void {
     localStorage.setItem(
       "pos_favorites",
-      JSON.stringify([...favoriteIds.value])
+      JSON.stringify([...favoriteIds.value]),
     );
   }
 
@@ -1480,7 +1487,7 @@ export function useProductsStore() {
         p.name.toLowerCase().includes(q) ||
         p.sku.toLowerCase().includes(q) ||
         p.barcode?.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q)
+        p.description?.toLowerCase().includes(q),
     );
   }
 
