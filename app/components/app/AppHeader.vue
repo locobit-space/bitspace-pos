@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 z-40 flex items-center justify-between h-14 px-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
+    class="sticky top-0 z-40 flex items-center justify-between h-14 px-4 backdrop-blur-lg bg-white/20 dark:bg-gray-900/20"
   >
     <!-- Left: Hamburger (mobile) + Logo + Shop Switcher -->
     <div class="flex items-center gap-1">

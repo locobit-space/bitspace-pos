@@ -60,7 +60,7 @@ const sidebarOpen = ref(false);
 // Get navigation visibility from page (if provided)
 const pageNavigationControl = inject<Ref<boolean> | undefined>(
   "shouldShowNavigation",
-  undefined
+  undefined,
 );
 
 // Check if navigation should be shown
@@ -79,7 +79,7 @@ watch(
   () => route.path,
   () => {
     sidebarOpen.value = false;
-  }
+  },
 );
 
 // Load saved theme color on layout mount
