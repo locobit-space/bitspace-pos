@@ -60,10 +60,10 @@ function renderChart() {
         {
           name: props.title || "Access From",
           type: "pie",
-          radius: ["85%", "100%"],
-          center: ["50%", "100%"],
-          startAngle: 180,
-          endAngle: 360,
+          radius: ["85%", "60%"],
+          center: ["50%", "50%"],
+          // startAngle: 180,
+          // endAngle: 360,
           avoidLabelOverlap: false,
           label: {
             position: "center",

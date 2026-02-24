@@ -170,6 +170,41 @@
             <UIcon name="solar:settings-minimalistic-linear" class="w-5 h-5" />
             <span class="text-sm">{{ $t("settings.general.title") }}</span>
           </NuxtLinkLocale>
+          <!-- PWA Update Button -->
+          <button
+            class="flex items-center gap-3 w-full px-2 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            :disabled="isUpdating"
+            @click="handleUpdate"
+          >
+            <div class="relative">
+              <UIcon
+                :name="
+                  isUpdating ? 'solar:refresh-bold' : 'solar:refresh-linear'
+                "
+                class="w-5 h-5 transition-transform"
+                :class="{ 'animate-spin': isUpdating }"
+              />
+              <span
+                v-if="pwa?.needRefresh"
+                class="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"
+              />
+            </div>
+            <span class="text-sm flex-1 text-left">
+              {{
+                isUpdating
+                  ? $t("account.updating", "Updating...")
+                  : $t("account.checkUpdate", "Check for Update")
+              }}
+            </span>
+            <UBadge
+              v-if="pwa?.needRefresh"
+              color="success"
+              variant="subtle"
+              size="xs"
+            >
+              {{ $t("account.newVersion", "New") }}
+            </UBadge>
+          </button>
         </div>
 
         <!-- Sign Out -->
@@ -189,6 +224,45 @@
 
 <script setup lang="ts">
 const { t, locale, locales } = useI18n();
+
+// PWA update — usePWA() is auto-provided by @vite-pwa/nuxt plugin
+const pwa = usePWA();
+const toast = useToast();
+const isUpdating = ref(false);
+
+const handleUpdate = async () => {
+  if (isUpdating.value) return;
+  isUpdating.value = true;
+  try {
+    if (pwa?.needRefresh) {
+      // New version is waiting → skip waiting + reload
+      await pwa.updateServiceWorker(true);
+    } else {
+      // Manually ping for a new service worker
+      const reg =
+        pwa?.getSWRegistration?.() ??
+        (await navigator.serviceWorker?.getRegistration());
+      if (reg) {
+        await reg.update();
+        // Brief wait to let SW signal needRefresh
+        await new Promise((r) => setTimeout(r, 1800));
+      }
+      if (!pwa?.needRefresh) {
+        toast.add({
+          title: t("account.upToDate", "Up to date"),
+          description: t(
+            "account.upToDateDesc",
+            "You are already on the latest version.",
+          ),
+          icon: "solar:check-circle-linear",
+          color: "success",
+        });
+      }
+    }
+  } finally {
+    isUpdating.value = false;
+  }
+};
 const colorMode = useColorMode();
 const appConfig = useAppConfig();
 const nostrStorage = useNostrStorage();
