@@ -2,7 +2,7 @@
 /**
  * 📝 Expense Form Modal Component
  */
-import type { Expense } from '~/composables/use-expenses'
+import type { Expense } from "~/composables/use-expenses";
 
 interface Category {
   value: string;
@@ -23,15 +23,15 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'update:open': [value: boolean];
-  'save': [data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'synced'>];
+  "update:open": [value: boolean];
+  save: [data: Omit<Expense, "id" | "createdAt" | "updatedAt" | "synced">];
 }>();
 
 const { t } = useI18n();
 
 const isOpen = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val),
+  set: (val) => emit("update:open", val),
 });
 
 // Form state - explicit types to ensure values are never undefined
@@ -47,45 +47,49 @@ const form = reactive<{
   receipt: string;
 }>({
   amount: 0,
-  category: 'other',
-  description: '',
-  date: new Date().toISOString().split('T')[0]!,
-  vendor: '',
-  paymentMethod: 'cash',
-  reference: '',
-  notes: '',
-  receipt: '',
+  category: "other",
+  description: "",
+  date: new Date().toISOString().split("T")[0]!,
+  vendor: "",
+  paymentMethod: "cash",
+  reference: "",
+  notes: "",
+  receipt: "",
 });
 
 const receiptInputRef = ref<HTMLInputElement | null>(null);
 
 // Watch for expense prop changes
-watch(() => props.expense, (expense) => {
-  if (expense) {
-    form.amount = expense.amount;
-    form.category = expense.category;
-    form.description = expense.description;
-    form.date = expense.date;
-    form.vendor = expense.vendor || '';
-    form.paymentMethod = expense.paymentMethod;
-    form.reference = expense.reference || '';
-    form.notes = expense.notes || '';
-    form.receipt = expense.receipt || '';
-  } else {
-    resetForm();
-  }
-}, { immediate: true });
+watch(
+  () => props.expense,
+  (expense) => {
+    if (expense) {
+      form.amount = expense.amount;
+      form.category = expense.category;
+      form.description = expense.description;
+      form.date = expense.date;
+      form.vendor = expense.vendor || "";
+      form.paymentMethod = expense.paymentMethod;
+      form.reference = expense.reference || "";
+      form.notes = expense.notes || "";
+      form.receipt = expense.receipt || "";
+    } else {
+      resetForm();
+    }
+  },
+  { immediate: true },
+);
 
 function resetForm() {
   form.amount = 0;
-  form.category = 'other';
-  form.description = '';
-  form.date = new Date().toISOString().split('T')[0]!;
-  form.vendor = '';
-  form.paymentMethod = 'cash';
-  form.reference = '';
-  form.notes = '';
-  form.receipt = '';
+  form.category = "other";
+  form.description = "";
+  form.date = new Date().toISOString().split("T")[0]!;
+  form.vendor = "";
+  form.paymentMethod = "cash";
+  form.reference = "";
+  form.notes = "";
+  form.receipt = "";
 }
 
 function handleReceiptUpload(event: Event) {
@@ -96,7 +100,7 @@ function handleReceiptUpload(event: Event) {
 }
 
 function handleSave() {
-  const data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'synced'> = {
+  const data: Omit<Expense, "id" | "createdAt" | "updatedAt" | "synced"> = {
     amount: form.amount,
     category: form.category,
     description: form.description,
@@ -107,7 +111,7 @@ function handleSave() {
     notes: form.notes || undefined,
     receipt: form.receipt || undefined,
   };
-  emit('save', data);
+  emit("save", data);
 }
 </script>
 
@@ -115,63 +119,133 @@ function handleSave() {
   <UModal v-model:open="isOpen">
     <template #header>
       <h3 class="font-semibold">
-        {{ expense?.id ? t('accounting.expenses.editExpense') : t('accounting.expenses.addExpense') }}
+        {{
+          expense?.id
+            ? t("accounting.expenses.editExpense")
+            : t("accounting.expenses.addExpense")
+        }}
       </h3>
     </template>
 
     <template #body>
       <div class="space-y-4">
-        <UFormField :label="t('accounting.expenses.amount')" required>
-          <UInput v-model.number="form.amount" type="number" min="0" step="0.01"
-            :placeholder="t('accounting.expenses.amountPlaceholder')" />
-        </UFormField>
+        <div class="grid grid-cols-2 gap-4">
+          <UFormField :label="t('accounting.expenses.amount')" required>
+            <UInput
+              v-model.number="form.amount"
+              type="number"
+              min="0"
+              step="0.01"
+              :placeholder="t('accounting.expenses.amountPlaceholder')"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField :label="t('accounting.expenses.date')" required>
+            <UInput v-model="form.date" type="date" class="w-full" />
+          </UFormField>
+        </div>
 
         <UFormField :label="t('accounting.expenses.category')" required>
-          <USelect v-model="form.category"
-            :items="categories.map(c => ({ value: c.value, label: t(`accounting.expenses.expenseCategories.${c.value}`) }))"
-            value-key="value" label-key="label" :placeholder="t('accounting.expenses.selectCategory')" />
+          <USelect
+            v-model="form.category"
+            :items="
+              categories.map((c) => ({
+                value: c.value,
+                label: t(`accounting.expenses.expenseCategories.${c.value}`),
+              }))
+            "
+            value-key="value"
+            label-key="label"
+            :placeholder="t('accounting.expenses.selectCategory')"
+            class="w-full"
+          />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.description')" required>
-          <UInput v-model="form.description" :placeholder="t('accounting.expenses.descriptionPlaceholder')" />
-        </UFormField>
-
-        <UFormField :label="t('accounting.expenses.date')" required>
-          <UInput v-model="form.date" type="date" />
+          <UInput
+            v-model="form.description"
+            :placeholder="t('accounting.expenses.descriptionPlaceholder')"
+            class="w-full"
+          />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.vendor')">
-          <UInput v-model="form.vendor" :placeholder="t('accounting.expenses.vendorPlaceholder')" />
+          <UInput
+            v-model="form.vendor"
+            :placeholder="t('accounting.expenses.vendorPlaceholder')"
+            class="w-full"
+          />
         </UFormField>
 
-        <UFormField :label="t('accounting.expenses.paymentMethod')">
-          <USelect v-model="form.paymentMethod"
-            :items="paymentMethods.map(p => ({ value: p.value, label: t(`accounting.expenses.paymentMethods.${p.value}`) }))"
-            value-key="value" label-key="label" />
-        </UFormField>
+        <div class="grid grid-cols-2 gap-4">
+          <UFormField :label="t('accounting.expenses.paymentMethod')">
+            <USelect
+              v-model="form.paymentMethod"
+              :items="
+                paymentMethods.map((p) => ({
+                  value: p.value,
+                  label: t(`accounting.expenses.paymentMethods.${p.value}`),
+                }))
+              "
+              value-key="value"
+              label-key="label"
+              class="w-full"
+            />
+          </UFormField>
 
-        <UFormField :label="t('accounting.expenses.reference')">
-          <UInput v-model="form.reference" :placeholder="t('accounting.expenses.referencePlaceholder')" />
-        </UFormField>
+          <UFormField :label="t('accounting.expenses.reference')">
+            <UInput
+              v-model="form.reference"
+              :placeholder="t('accounting.expenses.referencePlaceholder')"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
 
         <UFormField :label="t('accounting.expenses.notes')">
-          <UTextarea v-model="form.notes" :placeholder="t('accounting.expenses.notesPlaceholder')" :rows="2" />
+          <UTextarea
+            v-model="form.notes"
+            :placeholder="t('accounting.expenses.notesPlaceholder')"
+            :rows="2"
+            class="w-full"
+          />
         </UFormField>
 
         <UFormField :label="t('accounting.expenses.receipt')">
           <div class="border-2 border-dashed rounded-lg p-4 text-center">
-            <input ref="receiptInputRef" type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload">
+            <input
+              ref="receiptInputRef"
+              type="file"
+              accept="image/*,.pdf"
+              class="hidden"
+              @change="handleReceiptUpload"
+            />
             <div v-if="!form.receipt">
-              <UIcon name="i-heroicons-camera" class="text-2xl text-muted mb-2" />
-              <p class="text-sm text-muted mb-2">{{ t('accounting.expenses.uploadReceipt') }}</p>
-              <UButton size="sm" variant="outline" @click="receiptInputRef?.click()">
-                {{ t('accounting.expenses.selectFile') }}
+              <UIcon
+                name="i-heroicons-camera"
+                class="text-2xl text-muted mb-2"
+              />
+              <p class="text-sm text-muted mb-2">
+                {{ t("accounting.expenses.uploadReceipt") }}
+              </p>
+              <UButton
+                size="sm"
+                variant="outline"
+                @click="receiptInputRef?.click()"
+              >
+                {{ t("accounting.expenses.selectFile") }}
               </UButton>
             </div>
             <div v-else class="flex items-center justify-center gap-2">
               <UIcon name="i-heroicons-document-check" class="text-green-600" />
               <span class="text-sm">{{ form.receipt }}</span>
-              <UButton variant="ghost" size="xs" icon="i-heroicons-x-mark" @click="form.receipt = ''" />
+              <UButton
+                variant="ghost"
+                size="xs"
+                icon="i-heroicons-x-mark"
+                @click="form.receipt = ''"
+              />
             </div>
           </div>
         </UFormField>
@@ -179,12 +253,17 @@ function handleSave() {
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <UButton variant="ghost" @click="isOpen = false">
-          {{ t('common.cancel') }}
+      <div class="flex justify-end w-full gap-2">
+        <UButton variant="ghost" block @click="isOpen = false">
+          {{ t("common.cancel") }}
         </UButton>
-        <UButton :loading="saving" :disabled="!form.amount || !form.category || !form.description" @click="handleSave">
-          {{ expense?.id ? t('common.update') : t('common.create') }}
+        <UButton
+          :loading="saving"
+          :disabled="!form.amount || !form.category || !form.description"
+          block
+          @click="handleSave"
+        >
+          {{ expense?.id ? t("common.update") : t("common.create") }}
         </UButton>
       </div>
     </template>

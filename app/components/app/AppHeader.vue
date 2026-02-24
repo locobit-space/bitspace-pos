@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 z-40 flex items-center justify-between h-14 px-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl"
+    class="sticky top-0 z-40 flex items-center justify-between h-14 px-4 backdrop-blur-lg bg-white/20 dark:bg-gray-900/20"
   >
     <!-- Left: Hamburger (mobile) + Logo + Shop Switcher -->
     <div class="flex items-center gap-1">
@@ -317,6 +317,46 @@
                   {{ $t("legal.terms.title") }}
                 </NuxtLinkLocale>
               </li>
+              <li>
+                <!-- PWA Update Button -->
+                <button
+                  class="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-xl transition-all duration-200"
+                  :disabled="isUpdating"
+                  @click="handleUpdate"
+                >
+                  <div class="relative">
+                    <UIcon
+                      :name="
+                        isUpdating
+                          ? 'solar:refresh-bold'
+                          : 'solar:refresh-linear'
+                      "
+                      size="18"
+                      class="transition-transform"
+                      :class="{ 'animate-spin': isUpdating }"
+                    />
+                    <span
+                      v-if="pwa?.needRefresh"
+                      class="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"
+                    />
+                  </div>
+                  <span class="text-sm flex-1 text-left">
+                    {{
+                      isUpdating
+                        ? $t("account.updating", "Updating...")
+                        : $t("account.checkUpdate", "Check for Update")
+                    }}
+                  </span>
+                  <UBadge
+                    v-if="pwa?.needRefresh"
+                    color="success"
+                    variant="subtle"
+                    size="xs"
+                  >
+                    {{ $t("account.newVersion", "New") }}
+                  </UBadge>
+                </button>
+              </li>
             </ul>
 
             <!-- Divider -->
@@ -375,6 +415,46 @@ const feedback = useFeedback();
 const chatStore = useChat();
 const { settings: chatSettings } = useChatSettings();
 const setupCheck = useSetupCheck();
+
+// PWA update — usePWA() is auto-provided by @vite-pwa/nuxt plugin
+const pwa = usePWA();
+const toast = useToast();
+
+const isUpdating = ref(false);
+
+const handleUpdate = async () => {
+  if (isUpdating.value) return;
+  isUpdating.value = true;
+  try {
+    if (pwa?.needRefresh) {
+      // New version is waiting → skip waiting + reload
+      await pwa.updateServiceWorker(true);
+    } else {
+      // Manually ping for a new service worker
+      const reg =
+        pwa?.getSWRegistration?.() ??
+        (await navigator.serviceWorker?.getRegistration());
+      if (reg) {
+        await reg.update();
+        // Brief wait to let SW signal needRefresh
+        await new Promise((r) => setTimeout(r, 1800));
+      }
+      if (!pwa?.needRefresh) {
+        toast.add({
+          title: t("account.upToDate", "Up to date"),
+          description: t(
+            "account.upToDateDesc",
+            "You are already on the latest version.",
+          ),
+          icon: "solar:check-circle-linear",
+          color: "success",
+        });
+      }
+    }
+  } finally {
+    isUpdating.value = false;
+  }
+};
 
 // Check if header features should be shown (after setup complete)
 const showHeaderFeatures = computed(() => setupCheck.isSetupComplete.value);

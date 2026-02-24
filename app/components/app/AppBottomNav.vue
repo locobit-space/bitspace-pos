@@ -1,13 +1,13 @@
 <template>
   <!-- Mobile Bottom Navigation -->
   <nav
-    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-16 px-2 border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl safe-area-bottom"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-16 px-2 bg-white/20 dark:bg-gray-900/20 backdrop-blur-lg safe-area-bottom"
   >
     <NuxtLinkLocale
       v-for="item in navItems"
       :key="item.to"
       :to="item.to"
-      class="flex flex-col items-center justify-center flex-1 py-2 transition-colors"
+      class="flex flex-col items-center relative justify-center flex-1 py-2 transition-colors"
       :class="[
         isActive(item.to)
           ? 'text-primary-600 dark:text-primary-400'
@@ -15,12 +15,11 @@
       ]"
     >
       <div
+        class="h-0.5 mx-auto w-1/2 rounded-full bg-primary-500 absolute top-1"
+        :class="isActive(item.to) ? 'block' : 'hidden'"
+      ></div>
+      <div
         class="relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-        :class="[
-          isActive(item.to)
-            ? 'bg-primary-100 dark:bg-primary-900/30'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-800',
-        ]"
       >
         <Icon :name="item.icon" size="22" />
         <!-- Badge for orders -->
@@ -31,13 +30,13 @@
           {{ item.badge > 9 ? "9+" : item.badge }}
         </span>
       </div>
-      <span class="text-xs mt-0.5 font-medium">{{ item.label }}</span>
+      <span class="text-xs font-medium">{{ item.label }}</span>
     </NuxtLinkLocale>
 
     <!-- More Menu (Apps Page) -->
     <NuxtLinkLocale
       to="/apps"
-      class="flex flex-col items-center justify-center flex-1 py-2 transition-colors"
+      class="flex flex-col relative items-center justify-center flex-1 py-2 transition-colors"
       :class="[
         isActive('/apps')
           ? 'text-primary-600 dark:text-primary-400'
@@ -45,16 +44,15 @@
       ]"
     >
       <div
+        class="h-0.5 mx-auto w-1/2 rounded-full bg-primary-500 absolute top-1"
+        :class="isActive('/apps') ? 'block' : 'hidden'"
+      ></div>
+      <div
         class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-        :class="[
-          isActive('/apps')
-            ? 'bg-primary-100 dark:bg-primary-900/30'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-800',
-        ]"
       >
         <Icon name="solar:widget-2-linear" size="22" />
       </div>
-      <span class="text-xs mt-0.5 font-medium">{{
+      <span class="text-xs font-medium">{{
         $t("navigation.more", "More")
       }}</span>
     </NuxtLinkLocale>
@@ -97,7 +95,10 @@ function isActive(path: string): boolean {
   if (path === "/") {
     return route.path === "/";
   }
-  return route.path.startsWith(path);
+  // ignore locale in path
+  const locale = useI18n().locale.value;
+  const pathWithoutLocale = route.path.replace(`/${locale}/`, "/");
+  return pathWithoutLocale.startsWith(path);
 }
 </script>
 

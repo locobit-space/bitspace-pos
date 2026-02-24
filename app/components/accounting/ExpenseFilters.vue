@@ -17,17 +17,20 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'update:category': [value: string];
-  'update:startDate': [value: string];
-  'update:endDate': [value: string];
-  'update:search': [value: string];
+  "update:category": [value: string];
+  "update:startDate": [value: string];
+  "update:endDate": [value: string];
+  "update:search": [value: string];
 }>();
 
 const { t } = useI18n();
 
 const categoryOptions = computed(() => [
-  { value: 'all', label: t('common.all') },
-  ...props.categories.map(c => ({ value: c.value, label: t(`accounting.expenses.expenseCategories.${c.value}`) }))
+  { value: "all", label: t("common.all") },
+  ...props.categories.map((c) => ({
+    value: c.value,
+    label: t(`accounting.expenses.expenseCategories.${c.value}`),
+  })),
 ]);
 </script>
 
@@ -35,21 +38,43 @@ const categoryOptions = computed(() => [
   <UCard>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <UFormField :label="t('accounting.expenses.filterCategory')">
-        <USelectMenu :model-value="category" :items="categoryOptions" value-key="value" label-key="label" class="w-full"
-          :placeholder="t('common.all')" @update:model-value="emit('update:category', $event)" />
+        <USelectMenu
+          :model-value="category"
+          :items="categoryOptions"
+          value-key="value"
+          label-key="label"
+          class="w-full"
+          :placeholder="t('common.all')"
+          @update:model-value="emit('update:category', $event)"
+        />
       </UFormField>
 
       <UFormField :label="t('accounting.expenses.startDate')">
-        <UInput :model-value="startDate" type="date" @update:model-value="emit('update:startDate', $event)" />
+        <UInput
+          :model-value="startDate"
+          type="date"
+          class="w-full"
+          @update:model-value="emit('update:startDate', $event)"
+        />
       </UFormField>
 
       <UFormField :label="t('accounting.expenses.endDate')">
-        <UInput :model-value="endDate" type="date" @update:model-value="emit('update:endDate', $event)" />
+        <UInput
+          :model-value="endDate"
+          type="date"
+          class="w-full"
+          @update:model-value="emit('update:endDate', $event)"
+        />
       </UFormField>
 
       <UFormField :label="t('accounting.expenses.search')">
-        <UInput :model-value="search" :placeholder="t('accounting.expenses.searchPlaceholder')"
-          icon="i-heroicons-magnifying-glass" class="w-full" @update:model-value="emit('update:search', $event)" />
+        <UInput
+          :model-value="search"
+          :placeholder="t('accounting.expenses.searchPlaceholder')"
+          icon="i-heroicons-magnifying-glass"
+          class="w-full"
+          @update:model-value="emit('update:search', $event)"
+        />
       </UFormField>
     </div>
   </UCard>

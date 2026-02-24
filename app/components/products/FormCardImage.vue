@@ -1,6 +1,8 @@
 <!-- components/products/FormCardImage.vue -->
 <!-- Product Image Form Card with Cloudinary Upload -->
 <script setup lang="ts">
+import { resizeImage } from "~/utils/image";
+
 const { t } = useI18n();
 const cloudinary = useCloudinary();
 
@@ -74,6 +76,8 @@ const imageUrlInput = ref("");
 const customEmojiInput = ref("");
 const isDragging = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const cameraInput = ref<HTMLInputElement | null>(null);
+const showCameraModal = ref(false);
 
 // Check if Cloudinary is configured
 const isCloudinaryConfigured = computed(() => cloudinary.isConfigured());
@@ -120,6 +124,19 @@ function triggerFileInput() {
   fileInput.value?.click();
 }
 
+function onTakePhotoClick() {
+  const isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  if (isMobile) {
+    cameraInput.value?.click();
+  } else {
+    showCameraModal.value = true;
+  }
+}
+
+async function handleCameraCapture(file: File) {
+  await uploadFile(file);
+}
+
 async function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement;
   if (input.files?.[0]) {
@@ -136,10 +153,29 @@ async function handleDrop(event: DragEvent) {
 }
 
 async function uploadFile(file: File) {
-  const result = await cloudinary.uploadImage(file);
-  if (result) {
-    form.value.image = result.url;
-    imageUrlInput.value = result.url;
+  try {
+    // Resize image before upload if it's an image
+    let fileToUpload = file;
+    if (file.type.startsWith("image/")) {
+      fileToUpload = await resizeImage(file, {
+        maxWidth: 1200,
+        quality: 0.8,
+      });
+    }
+
+    const result = await cloudinary.uploadImage(fileToUpload);
+    if (result) {
+      form.value.image = result.url;
+      imageUrlInput.value = result.url;
+    }
+  } catch (e) {
+    console.error("Upload preparation failed", e);
+    // Fallback to original file
+    const result = await cloudinary.uploadImage(file);
+    if (result) {
+      form.value.image = result.url;
+      imageUrlInput.value = result.url;
+    }
   }
 }
 
@@ -245,18 +281,45 @@ function handleDragLeave() {
         @change="handleFileSelect"
       />
 
-      <!-- Upload button (when Cloudinary configured) -->
-      <UButton
-        v-if="isCloudinaryConfigured"
-        color="primary"
-        variant="soft"
-        block
-        icon="solar:cloud-upload-linear"
-        :loading="cloudinary.isUploading.value"
-        @click="triggerFileInput"
-      >
-        {{ t("products.uploadImage", "Upload Image") }}
-      </UButton>
+      <!-- Hidden camera input (Mobile) -->
+      <input
+        ref="cameraInput"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        class="hidden"
+        @change="handleFileSelect"
+      />
+
+      <!-- Camera Modal (Desktop) -->
+      <LazyCommonCameraModal
+        v-model:open="showCameraModal"
+        @capture="handleCameraCapture"
+      />
+
+      <!-- Upload buttons (when Cloudinary configured) -->
+      <div v-if="isCloudinaryConfigured" class="grid grid-cols-2 gap-3">
+        <UButton
+          color="primary"
+          variant="soft"
+          block
+          icon="solar:camera-linear"
+          :loading="cloudinary.isUploading.value"
+          @click="onTakePhotoClick"
+        >
+          {{ t("products.takePhoto", "Take Photo") }}
+        </UButton>
+        <UButton
+          color="primary"
+          variant="soft"
+          block
+          icon="solar:cloud-upload-linear"
+          :loading="cloudinary.isUploading.value"
+          @click="triggerFileInput"
+        >
+          {{ t("products.uploadImage", "Upload Image") }}
+        </UButton>
+      </div>
 
       <!-- Error message -->
       <p v-if="cloudinary.error.value" class="text-sm text-red-500 text-center">
