@@ -17,7 +17,8 @@ export type PrinterType =
   | "wireless"
   | "bluetooth"
   | "usb"
-  | "ethernet";
+  | "ethernet"
+  | "system";
 
 export interface Printer {
   id: string;

@@ -108,12 +108,21 @@ const testPrint = (printer: Printer) => {
           {{ $t("settings.printers.description") }}
         </p>
       </div>
-      <UButton
-        icon="solar:add-circle-linear"
-        :label="$t('settings.printers.addPrinter')"
-        color="primary"
-        @click="openAddModal"
-      />
+      <div class="flex gap-2">
+        <UButton
+          icon="solar:add-circle-linear"
+          :label="$t('settings.printers.addPrinter')"
+          color="primary"
+          @click="openAddModal"
+        />
+        <UButton
+          icon="solar:printer-linear"
+          :label="$t('settings.printers.testPrint')"
+          color="neutral"
+          variant="outline"
+          to="/settings/test-print"
+        />
+      </div>
     </div>
 
     <!-- Info Alert -->
