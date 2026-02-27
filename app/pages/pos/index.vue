@@ -76,6 +76,7 @@ const showDiscountModal = ref(false);
 const showCustomItemModal = ref(false);
 const showHeldOrdersModal = ref(false);
 const showSettingsModal = ref(false);
+const newTagInput = ref(""); // Input for adding a new order tag in settings
 const showProductOptionsModal = ref(false);
 const showMobileCart = ref(false); // Mobile cart slide-up panel
 const showExtras = ref(false); // Toggle for coupon/discount/tip section
@@ -95,6 +96,19 @@ const autoCloseKitchenOnPayment = ref(
   posSettings.autoCloseKitchenStatusOnPayment.value,
 );
 const splitOrder = ref<Order | null>(null); // Order being split
+
+// ── Custom Order Tag ─────────────────────────────────────────────
+// The currently-selected tag for the next/active order.
+// Initialised from the configured default (e.g. "daily").
+const currentOrderTag = ref<string>(
+  posSettings.settings.value.defaultOrderTag ?? "",
+);
+
+/** Reset tag back to the configured default after an order is completed. */
+const resetOrderTag = () => {
+  currentOrderTag.value = posSettings.settings.value.defaultOrderTag ?? "";
+};
+// ─────────────────────────────────────────────────────────────────
 
 // Reset checkbox to global setting when payment modal opens
 watch(showPaymentModal, (isOpen) => {
@@ -716,6 +730,11 @@ const sendToKitchen = async () => {
       .map((item) => `${item.product.name}: ${item.notes}`)
       .join("; ");
 
+    // Attach custom order tag if set
+    if (currentOrderTag.value) {
+      order.tags = [currentOrderTag.value];
+    }
+
     // Save order to local DB and sync to Nostr
     await ordersStore.createOrder(order);
 
@@ -741,8 +760,9 @@ const sendToKitchen = async () => {
     // Play notification sound
     sound.playNotification();
 
-    // Clear cart
+    // Clear cart and reset tag to default
     pos.clearCart();
+    resetOrderTag();
 
     // Show success toast
     toast.add({
@@ -849,6 +869,9 @@ const loadOrderForEditing = (order: Order) => {
   pos.tableNumber.value = order.tableNumber || "";
   pos.orderType.value = order.orderType || "dine_in";
   if (order.notes) pos.customerNote.value = order.notes;
+  // Restore the order's tag (first tag, fallback to default)
+  currentOrderTag.value =
+    order.tags?.[0] ?? posSettings.settings.value.defaultOrderTag ?? "";
 
   // Close the pending orders modal
   showPendingOrdersModal.value = false;
@@ -1000,6 +1023,14 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
       // 🆕 NEW ORDER
       order = pos.createOrder(method);
       order.status = "completed";
+    }
+
+    // Attach custom order tag if set (preserves any existing tags from editing)
+    if (currentOrderTag.value) {
+      order.tags = [
+        ...(order.tags?.filter((t) => t !== currentOrderTag.value) ?? []),
+        currentOrderTag.value,
+      ];
     }
 
     // Add payment proof if available
@@ -1259,6 +1290,7 @@ const handlePaymentComplete = async (method: PaymentMethod, proof: unknown) => {
     }
 
     pos.clearCart();
+    resetOrderTag();
 
     // Reset table to available if this was a table order
     if (order.tableNumber) {
@@ -2968,6 +3000,43 @@ onUnmounted(() => {
           </button>
         </div>
 
+        <!-- Custom Order Tag Selector -->
+        <div
+          v-if="posSettings.settings.value.orderTags?.length"
+          class="mt-2 px-4"
+        >
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button
+              v-for="tag in posSettings.settings.value.orderTags"
+              :key="tag"
+              class="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all border"
+              :class="
+                currentOrderTag === tag
+                  ? 'bg-violet-500 border-violet-500 text-white shadow-sm shadow-violet-500/30'
+                  : 'bg-gray-100 dark:bg-gray-800/70 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400'
+              "
+              :title="
+                currentOrderTag === tag
+                  ? 'Click to deselect'
+                  : `Tag as &quot;${tag}&quot;`
+              "
+              @click="currentOrderTag = currentOrderTag === tag ? '' : tag"
+            >
+              <span>🏷️</span>
+              <span class="capitalize">{{ tag }}</span>
+            </button>
+            <!-- Clear tag button -->
+            <button
+              v-if="currentOrderTag"
+              class="flex items-center gap-0.5 px-2 py-1 rounded-full text-xs text-gray-400 hover:text-red-500 transition-colors"
+              title="Clear tag"
+              @click="currentOrderTag = ''"
+            >
+              <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
         <!-- Table Number (for dine-in) -->
         <div v-if="pos.orderType.value === 'dine_in'" class="mt-2">
           <!-- Table Quick Selector (when tables exist) -->
@@ -3603,6 +3672,36 @@ onUnmounted(() => {
                 <span class="text-lg">{{ type.icon }}</span>
                 <span>{{ type.label }}</span>
               </button>
+            </div>
+
+            <!-- Custom Order Tag Selector (Mobile) -->
+            <div
+              v-if="posSettings.settings.value.orderTags?.length"
+              class="mt-2"
+            >
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button
+                  v-for="tag in posSettings.settings.value.orderTags"
+                  :key="tag"
+                  class="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all border touch-manipulation"
+                  :class="
+                    currentOrderTag === tag
+                      ? 'bg-violet-500 border-violet-500 text-white shadow-sm shadow-violet-500/30'
+                      : 'bg-gray-100 dark:bg-gray-800/70 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
+                  "
+                  @click="currentOrderTag = currentOrderTag === tag ? '' : tag"
+                >
+                  <span>🏷️</span>
+                  <span class="capitalize">{{ tag }}</span>
+                </button>
+                <button
+                  v-if="currentOrderTag"
+                  class="flex items-center px-2 py-1.5 rounded-full text-xs text-gray-400 hover:text-red-500 transition-colors"
+                  @click="currentOrderTag = ''"
+                >
+                  <UIcon name="i-heroicons-x-mark" class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <!-- Table Selector (Mobile - for dine-in) -->
@@ -4321,6 +4420,14 @@ onUnmounted(() => {
                       >
                         🪑 {{ order.tableNumber }}
                       </span>
+                      <!-- Order tag badges -->
+                      <span
+                        v-for="tag in order.tags"
+                        :key="tag"
+                        class="text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full capitalize"
+                      >
+                        🏷️ {{ tag }}
+                      </span>
                     </p>
                     <p class="text-xs text-gray-500">
                       {{ new Date(order.date).toLocaleTimeString() }}
@@ -4781,6 +4888,139 @@ onUnmounted(() => {
                 />
               </div>
             </div>
+
+            <!-- ── Order Tags Management ───────────────────────── -->
+            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl">🏷️</span>
+                <div>
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    Order Tags
+                  </span>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Quick-assign labels per order (e.g. daily, booth)
+                  </p>
+                </div>
+              </div>
+
+              <!-- Existing tags list -->
+              <div class="flex flex-wrap gap-2 mb-3">
+                <div
+                  v-for="tag in posSettings.settings.value.orderTags"
+                  :key="tag"
+                  class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-all"
+                  :class="
+                    posSettings.settings.value.defaultOrderTag === tag
+                      ? 'bg-violet-100 dark:bg-violet-900/30 border-violet-400 text-violet-700 dark:text-violet-300'
+                      : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                  "
+                >
+                  <span class="capitalize">{{ tag }}</span>
+                  <span
+                    v-if="posSettings.settings.value.defaultOrderTag === tag"
+                    class="text-violet-400 ml-0.5"
+                    title="Default tag"
+                    >★</span
+                  >
+                  <!-- Set as default button -->
+                  <button
+                    v-else
+                    class="ml-0.5 opacity-40 hover:opacity-80 transition-opacity"
+                    title="Set as default"
+                    @click="
+                      posSettings.updateSettings({ defaultOrderTag: tag });
+                      resetOrderTag();
+                    "
+                  >
+                    ☆
+                  </button>
+                  <!-- Remove tag button -->
+                  <button
+                    class="ml-1 opacity-40 hover:opacity-100 hover:text-red-500 transition-all"
+                    title="Remove tag"
+                    @click="
+                      posSettings.updateSettings({
+                        orderTags: posSettings.settings.value.orderTags.filter(
+                          (t) => t !== tag,
+                        ),
+                        defaultOrderTag:
+                          posSettings.settings.value.defaultOrderTag === tag
+                            ? ''
+                            : posSettings.settings.value.defaultOrderTag,
+                      })
+                    "
+                  >
+                    <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
+                  </button>
+                </div>
+
+                <span
+                  v-if="!posSettings.settings.value.orderTags?.length"
+                  class="text-xs text-gray-400 italic"
+                >
+                  No tags yet — add one below
+                </span>
+              </div>
+
+              <!-- Add new tag -->
+              <div class="flex gap-2">
+                <UInput
+                  v-model="newTagInput"
+                  size="sm"
+                  placeholder="New tag name…"
+                  class="flex-1"
+                  @keydown.enter="
+                    () => {
+                      const tag = newTagInput.trim().toLowerCase();
+                      if (
+                        tag &&
+                        !posSettings.settings.value.orderTags?.includes(tag)
+                      ) {
+                        posSettings.updateSettings({
+                          orderTags: [
+                            ...(posSettings.settings.value.orderTags ?? []),
+                            tag,
+                          ],
+                        });
+                        newTagInput = '';
+                      }
+                    }
+                  "
+                />
+                <UButton
+                  size="sm"
+                  color="violet"
+                  variant="soft"
+                  icon="i-heroicons-plus"
+                  :disabled="
+                    !newTagInput.trim() ||
+                    posSettings.settings.value.orderTags?.includes(
+                      newTagInput.trim().toLowerCase(),
+                    )
+                  "
+                  @click="
+                    () => {
+                      const tag = newTagInput.trim().toLowerCase();
+                      if (
+                        tag &&
+                        !posSettings.settings.value.orderTags?.includes(tag)
+                      ) {
+                        posSettings.updateSettings({
+                          orderTags: [
+                            ...(posSettings.settings.value.orderTags ?? []),
+                            tag,
+                          ],
+                        });
+                        newTagInput = '';
+                      }
+                    }
+                  "
+                >
+                  Add
+                </UButton>
+              </div>
+            </div>
+            <!-- ──────────────────────────────────────────────────── -->
 
             <!-- Session Info -->
             <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">

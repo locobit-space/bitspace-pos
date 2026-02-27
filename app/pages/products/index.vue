@@ -391,7 +391,7 @@
     </div>
 
     <!-- Desktop Table View -->
-    <div class="hidden lg:block overflow-x-auto px-4">
+    <div class="hidden lg:block overflow-x-auto">
       <table class="w-full">
         <!-- ... existing table header ... -->
         <thead>

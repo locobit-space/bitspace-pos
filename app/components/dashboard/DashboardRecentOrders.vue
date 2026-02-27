@@ -79,6 +79,16 @@ const getStatusColor = (
             <p class="text-[10px] text-gray-400">
               {{ formatTime(order.date) }}
             </p>
+            <!-- Tag badges -->
+            <div v-if="order.tags?.length" class="flex flex-wrap gap-1 mt-0.5">
+              <span
+                v-for="tag in order.tags"
+                :key="tag"
+                class="text-[9px] bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded-full capitalize leading-tight"
+              >
+                🏷️ {{ tag }}
+              </span>
+            </div>
           </div>
         </div>
         <div class="flex items-center gap-2">
