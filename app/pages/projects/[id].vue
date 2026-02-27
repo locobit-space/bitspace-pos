@@ -3,8 +3,8 @@ import IssueDetailPanel from "~/components/project-manager/IssueDetailPanel.vue"
 
 definePageMeta({
   pageTransition: {
-    name: "page",
-    mode: "out-in",
+    name: "slide",
+    mode: "in-out",
   },
 });
 

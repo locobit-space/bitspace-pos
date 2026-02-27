@@ -19,6 +19,17 @@ export default defineNuxtRouteMiddleware((to, from) => {
   const toDepth = getDepth(to.path);
   const fromDepth = getDepth(from.path);
 
+  // 0. Honor explicit pageTransition already set in definePageMeta (e.g. projects/[id])
+  //    Only skip if the page itself declared a custom name (not the default "page")
+  if (
+    to.meta.pageTransition &&
+    typeof to.meta.pageTransition === "object" &&
+    "name" in to.meta.pageTransition &&
+    (to.meta.pageTransition as { name: string }).name !== "page"
+  ) {
+    return;
+  }
+
   // 1. Depth-based Navigation (Drilling down/up)
   if (toDepth > fromDepth) {
     to.meta.pageTransition = { name: "slide-left", mode: "out-in" };
