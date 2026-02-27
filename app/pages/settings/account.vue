@@ -161,7 +161,7 @@
                         {{
                           $t(
                             "account.no_nsec_available",
-                            "No private key available (using NIP-07 extension)"
+                            "No private key available (using NIP-07 extension)",
                           )
                         }}
                       </p>
@@ -170,7 +170,7 @@
                         {{
                           $t(
                             "account.nsec_warning",
-                            "Never share your nsec! Anyone with this key has full control of your account."
+                            "Never share your nsec! Anyone with this key has full control of your account.",
                           )
                         }}
                       </p>
@@ -305,104 +305,6 @@
           <!-- Security Tab -->
           <template #security>
             <div class="space-y-8">
-              <!-- Change Password -->
-              <div>
-                <h3
-                  class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-                >
-                  {{ $t("account.change_password") }}
-                </h3>
-                <UForm
-                  :schema="passwordSchema"
-                  :state="passwordForm"
-                  @submit="changePassword"
-                >
-                  <div class="space-y-4">
-                    <UFormField
-                      name="currentPassword"
-                      :label="$t('account.current_password')"
-                    >
-                      <UInput
-                        v-model="passwordForm.currentPassword"
-                        type="password"
-                        icon="i-heroicons-lock-closed"
-                        class="w-full"
-                      />
-                    </UFormField>
-
-                    <UFormField
-                      name="newPassword"
-                      :label="$t('account.new_password')"
-                    >
-                      <UInput
-                        v-model="passwordForm.newPassword"
-                        type="password"
-                        icon="i-heroicons-lock-closed"
-                        class="w-full"
-                      />
-                    </UFormField>
-
-                    <UFormField
-                      name="confirmPassword"
-                      :label="$t('account.confirm_password')"
-                    >
-                      <UInput
-                        v-model="passwordForm.confirmPassword"
-                        type="password"
-                        icon="i-heroicons-lock-closed"
-                        class="w-full"
-                      />
-                    </UFormField>
-                  </div>
-
-                  <div class="flex justify-end mt-6">
-                    <UButton
-                      type="submit"
-                      color="primary"
-                      :loading="isChangingPassword"
-                      icon="i-heroicons-lock-closed"
-                    >
-                      {{ $t("account.update_password") }}
-                    </UButton>
-                  </div>
-                </UForm>
-              </div>
-
-              <!-- Two-Factor Authentication -->
-              <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <h3
-                      class="text-lg font-semibold text-gray-900 dark:text-white"
-                    >
-                      {{ $t("account.two_factor_auth") }}
-                    </h3>
-                    <p class="text-gray-600 dark:text-gray-400">
-                      {{ $t("account.two_factor_description") }}
-                    </p>
-                  </div>
-                  <USwitch
-                    v-model="securitySettings.twoFactorEnabled"
-                    @update:model-value="toggleTwoFactor"
-                  />
-                </div>
-
-                <div
-                  v-if="securitySettings.twoFactorEnabled"
-                  class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg"
-                >
-                  <div class="flex items-center">
-                    <Icon
-                      name="heroicons:shield-check"
-                      class="text-green-600 dark:text-green-400 text-xl mr-3"
-                    />
-                    <span class="text-green-800 dark:text-green-300">{{
-                      $t("account.two_factor_enabled")
-                    }}</span>
-                  </div>
-                </div>
-              </div>
-
               <!-- Active Sessions -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
                 <h3
@@ -556,7 +458,7 @@
                   :loading="isSavingPreferences"
                   @click="savePreferences"
                 >
-                  {{ $t("common.save_changes") }}
+                  {{ $t("common.save") }}
                 </UButton>
               </div>
             </div>
@@ -678,7 +580,7 @@
                   :loading="isSavingNotifications"
                   @click="saveNotifications"
                 >
-                  {{ $t("common.save_changes") }}
+                  {{ $t("common.save") }}
                 </UButton>
               </div>
             </div>
@@ -770,7 +672,7 @@
                 {{
                   $t(
                     "account.nsec_confirm_warning",
-                    "Your private key (nsec) gives FULL ACCESS to your account!"
+                    "Your private key (nsec) gives FULL ACCESS to your account!",
                   )
                 }}
               </p>
@@ -781,7 +683,7 @@
                   {{
                     $t(
                       "account.nsec_warning_1",
-                      "Anyone with this key can sign messages as you"
+                      "Anyone with this key can sign messages as you",
                     )
                   }}
                 </li>
@@ -789,7 +691,7 @@
                   {{
                     $t(
                       "account.nsec_warning_2",
-                      "They can access all your encrypted data"
+                      "They can access all your encrypted data",
                     )
                   }}
                 </li>
@@ -797,7 +699,7 @@
                   {{
                     $t(
                       "account.nsec_warning_3",
-                      "You cannot revoke access once shared"
+                      "You cannot revoke access once shared",
                     )
                   }}
                 </li>
@@ -805,7 +707,7 @@
                   {{
                     $t(
                       "account.nsec_warning_4",
-                      "Never share on screenshots, chats, or emails"
+                      "Never share on screenshots, chats, or emails",
                     )
                   }}
                 </li>
@@ -824,7 +726,7 @@
                 {{
                   $t(
                     "account.nsec_confirm_checkbox",
-                    "I understand the risks and want to copy my private key"
+                    "I understand the risks and want to copy my private key",
                   )
                 }}
               </label>
@@ -963,7 +865,7 @@ const userProfile = computed(() => {
   return {
     id: currentUserInfo.value?.pubkey || "",
     name:
-      currentUserInfo.value?.displayName ||
+      currentUserInfo.value?.display_name ||
       currentUserInfo.value?.name ||
       "User",
     email: currentUserInfo.value?.nip05 || "",
@@ -1100,7 +1002,7 @@ const copyNsec = async () => {
       title: t("account.nsec_copied", "Private key copied!"),
       description: t(
         "account.nsec_copied_warning",
-        "Keep it safe and never share it!"
+        "Keep it safe and never share it!",
       ),
       color: "warning",
     });
@@ -1124,7 +1026,7 @@ const confirmAndCopyNsec = async () => {
       title: t("account.nsec_copied", "Private key copied!"),
       description: t(
         "account.nsec_copied_warning",
-        "Keep it safe and never share it!"
+        "Keep it safe and never share it!",
       ),
       color: "warning",
     });
@@ -1357,7 +1259,7 @@ const uploadAvatar = async () => {
         title: t("common.success"),
         description: t(
           "account.avatar_updated_nostr",
-          "Avatar updated and published to Nostr"
+          "Avatar updated and published to Nostr",
         ),
         color: "success",
       });
@@ -1441,6 +1343,6 @@ watch(
   () => colorMode.value,
   (newVal) => {
     preferences.darkMode = newVal === "dark";
-  }
+  },
 );
 </script>
