@@ -2574,6 +2574,7 @@ export interface NostrUser {
   publicKey: string;
   nsec: string;
   npub: string;
+  pubkey?: string;
 }
 
 /**

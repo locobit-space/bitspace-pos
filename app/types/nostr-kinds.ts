@@ -266,7 +266,7 @@ export const NOSTR_KINDS = {
   /** Issue / ticket (bug, story, task, epic) */
   PM_ISSUE: 31102,
   /** Comment on an issue */
-  PM_COMMENT: 31103,
+  PM_COMMENT: 31105,
   /** Label / tag definition */
   PM_LABEL: 31104,
   /** Milestone / version */
@@ -275,6 +275,8 @@ export const NOSTR_KINDS = {
   PM_WORKFLOW: 31106,
   /** Kanban board view config */
   PM_BOARD: 31107,
+  /** Project Wiki / Rich Markdown Page */
+  PM_PAGE: 31109,
 } as const;
 
 /**

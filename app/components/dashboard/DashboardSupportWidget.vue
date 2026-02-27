@@ -153,7 +153,7 @@ onMounted(() => {
         <h3
           class="text-base font-semibold text-gray-900 dark:text-white truncate"
         >
-          {{ t("dashboard.support.title", "Enjoying BitSpace POS?") }}
+          {{ t("dashboard.support.title", "Enjoying BnOS POS?") }}
         </h3>
         <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
           {{
