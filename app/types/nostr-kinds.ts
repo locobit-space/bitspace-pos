@@ -16,6 +16,9 @@
  * - 30500-30599: Staff & Access Control
  * - 30600-30699: Branch Management
  * - 30700-30799: Supply Chain (Suppliers, POs)
+ * - 30800-30899: Accounting
+ * - 30950-30999: Marketplace Integration
+ * - 31100-31199: Project Manager (Issues, Sprints, Boards)
  */
 export const NOSTR_KINDS = {
   // ─────────────────────────────────────────
@@ -251,6 +254,27 @@ export const NOSTR_KINDS = {
   GROUP_CHAT_MESSAGE: 9,
   /** Delete message from group - NIP-29 */
   GROUP_DELETE_MESSAGE: 5,
+
+  // ─────────────────────────────────────────
+  // 🗂️ PROJECT MANAGER (31100-31199)
+  // Jira-like project tracking
+  // ─────────────────────────────────────────
+  /** Project board (like a Jira Project) */
+  PM_PROJECT: 31100,
+  /** Sprint / iteration */
+  PM_SPRINT: 31101,
+  /** Issue / ticket (bug, story, task, epic) */
+  PM_ISSUE: 31102,
+  /** Comment on an issue */
+  PM_COMMENT: 31103,
+  /** Label / tag definition */
+  PM_LABEL: 31104,
+  /** Milestone / version */
+  PM_MILESTONE: 31105,
+  /** Workflow status config (columns: To Do → Done) */
+  PM_WORKFLOW: 31106,
+  /** Kanban board view config */
+  PM_BOARD: 31107,
 } as const;
 
 /**
