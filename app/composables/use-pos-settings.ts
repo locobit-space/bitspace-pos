@@ -15,10 +15,9 @@ export interface POSSettings {
   // Kitchen Management
   autoCloseKitchenStatusOnPayment: boolean; // Auto-close (serve) kitchen orders when payment is completed
 
-  // Future settings can be added here
-  // autoOpenCashDrawer?: boolean;
-  // requireReceiptPrint?: boolean;
-  // etc.
+  // Order Tags
+  orderTags: string[]; // Configurable list of tags assignable per order (e.g. "daily", "booth")
+  defaultOrderTag: string; // Tag auto-selected when creating a new order (empty = no default)
 }
 
 // ============================================
@@ -30,6 +29,8 @@ const POS_SETTINGS_KEY = "pos_settings";
 // Default settings
 const defaultSettings: POSSettings = {
   autoCloseKitchenStatusOnPayment: false, // Default OFF for backward compatibility
+  orderTags: ["daily", "booth", "booth food"], // Default tags for stores
+  defaultOrderTag: "daily", // Auto-selected on each new order
 };
 
 // ============================================
@@ -123,7 +124,7 @@ export function usePOSSettings() {
 
   // Computed helpers
   const autoCloseKitchenStatusOnPayment = computed(
-    () => settings.value.autoCloseKitchenStatusOnPayment
+    () => settings.value.autoCloseKitchenStatusOnPayment,
   );
 
   // Auto-load on first use (client-side only)

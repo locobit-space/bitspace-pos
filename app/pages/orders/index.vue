@@ -757,6 +757,14 @@ onMounted(async () => {
               >
                 {{ order.orderType }}
               </span>
+              <!-- Tag badges -->
+              <span
+                v-for="tag in order.tags"
+                :key="tag"
+                class="text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full capitalize"
+              >
+                🏷️ {{ tag }}
+              </span>
             </div>
             <div class="text-right">
               <p class="font-semibold text-gray-900 dark:text-white">
@@ -938,6 +946,19 @@ onMounted(async () => {
                   >
                     #{{ order?.code || order.id.slice(-6).toUpperCase() }}
                   </span>
+                  <!-- Tag badges -->
+                  <div
+                    v-if="order.tags?.length"
+                    class="flex flex-wrap gap-1 mt-1"
+                  >
+                    <span
+                      v-for="tag in order.tags"
+                      :key="tag"
+                      class="text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded-full capitalize"
+                    >
+                      🏷️ {{ tag }}
+                    </span>
+                  </div>
                 </td>
 
                 <!-- Date -->

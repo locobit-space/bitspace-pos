@@ -131,6 +131,15 @@ const printerTypes = computed(() => [
     icon: "solar:server-path-linear",
     description: t("settings.printers.types.ethernetDesc"),
   },
+  {
+    label: t("settings.printers.types.system", "System Print"),
+    value: "system",
+    icon: "solar:printer-minimalistic-linear",
+    description: t(
+      "settings.printers.types.systemDesc",
+      "Print via Browser System Dialog",
+    ),
+  },
 ]);
 
 const paperWidths = [
@@ -220,7 +229,7 @@ const onSubmit = (event: FormSubmitEvent<Schema>) => {
             name="type"
             required
           >
-            <div class="grid grid-cols-5 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button
                 v-for="type in printerTypes"
                 :key="type.value"

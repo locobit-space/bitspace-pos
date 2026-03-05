@@ -42,6 +42,8 @@ export const usePrintService = () => {
         return await sendToBluetoothPrinter(printer, receiptHtml);
       case "usb":
         return await sendToUSBPrinter(printer, receiptHtml);
+      case "system":
+        return await printWithBrowser(receiptHtml);
       default:
         throw new Error(`Unsupported printer type: ${printer.type}`);
     }

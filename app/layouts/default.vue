@@ -7,7 +7,7 @@
       <!-- Desktop Sidebar - Always visible on large screens -->
       <aside
         v-if="showNavigation"
-        class="shrink-0 hidden lg:block border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+        class="shrink-0 hidden lg:block border-r border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900"
       >
         <AppSideBar @navigate="sidebarOpen = false" />
       </aside>

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col h-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out"
+    class="flex flex-col h-full bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 transition-all duration-300 ease-in-out"
     :class="[isExpanded ? 'w-64' : 'w-[4.5rem]']"
   >
     <!-- Navigation Items -->
@@ -145,6 +145,12 @@ const allItems = computed(() => [
     to: "/accounting",
     icon: "solar:calculator-linear",
     feature: "accounting",
+  },
+  {
+    label: "Projects",
+    to: "/projects",
+    icon: "solar:folder-with-files-linear",
+    feature: "projects",
   },
   {
     label: t("navigation.invoicing", "Invoicing"),

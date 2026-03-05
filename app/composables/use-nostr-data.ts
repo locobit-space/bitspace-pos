@@ -724,13 +724,16 @@ export function useNostrData() {
         ["d", order.id],
         ["status", order.status],
         ["method", order.paymentMethod || "unknown"],
-        ["t", order.date],
+        ["t", order.date], // timestamp t-tag (existing)
         ["amount", order.total.toString()],
         order.customerPubkey ? ["p", order.customerPubkey] : [],
         // Add company code hash tag for team sync
         company.companyCodeHash.value
           ? ["c", company.companyCodeHash.value]
           : [],
+        // 🏷️ Custom order tags — each emitted as a Nostr t-tag
+        // Enables relay-side filtering via #t: ["daily"], #t: ["booth"] etc.
+        ...(order.tags || []).map((tag) => ["t", tag]),
       ].filter((t) => t.length > 0) as string[][],
       shouldEncrypt,
     );
@@ -877,6 +880,49 @@ export function useNostrData() {
   async function getOrdersByCustomer(customerPubkey: string): Promise<Order[]> {
     const allOrders = await getAllOrders();
     return allOrders.filter((o) => o.customerPubkey === customerPubkey);
+  }
+
+  /**
+   * Query orders on the relay by a custom tag label (e.g. "daily", "booth")
+   * Uses the Nostr #t filter — only works when orders are published unencrypted
+   * (i.e., team/company-code mode). Falls back to in-memory filter otherwise.
+   */
+  async function getOrdersByTag(tag: string): Promise<Order[]> {
+    try {
+      const filter: Record<string, unknown> = {
+        kinds: [NOSTR_KINDS.ORDER],
+        "#t": [tag],
+        limit: 200,
+      };
+
+      const events = await relay.queryEvents(
+        filter as Parameters<typeof relay.queryEvents>[0],
+      );
+
+      const orders: Order[] = [];
+      for (const event of events) {
+        try {
+          const isEncrypted =
+            event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+          const data = isEncrypted
+            ? await decryptData<Order>(event.content)
+            : JSON.parse(event.content);
+
+          if (data && data.id) {
+            orders.push(data);
+          }
+        } catch {
+          // Skip invalid events
+        }
+      }
+
+      return orders.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      );
+    } catch (e) {
+      console.error("[NostrData] getOrdersByTag failed:", e);
+      return [];
+    }
   }
 
   /**
@@ -1869,6 +1915,7 @@ export function useNostrData() {
     getAllOrders,
     getOrdersByStatus,
     getOrdersByCustomer,
+    getOrdersByTag,
     getOrdersForStore,
 
     // Customers
