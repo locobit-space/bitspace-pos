@@ -6,13 +6,21 @@ import QRCodeVue from "qrcode.vue";
 
 const config = useRuntimeConfig();
 const { t } = useI18n();
-const toast = useToast();
 const relay = useNostrRelay();
+
+type NostrProfile = {
+  display_name?: string;
+  name?: string;
+  picture?: string;
+  lud16?: string;
+  lud06?: string;
+  [key: string]: unknown;
+};
 
 // State
 const isDismissed = ref(false);
 const isLoading = ref(true);
-const profile = ref<any>(null);
+const profile = ref<NostrProfile | null>(null);
 const shouldShow = ref(false);
 
 // Developer's npub - hardcoded (same as SupportModal)
@@ -21,6 +29,13 @@ const DEVELOPER_NPUB =
 
 // Storage key for daily dismissal
 const DISMISS_KEY = "bitspace_support_widget_last_shown";
+const PROFILE_CACHE_KEY = "bitspace_support_widget_profile_cache";
+const PROFILE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+type CachedProfile = {
+  profile: NostrProfile;
+  cachedAt: number;
+};
 
 // Computed
 const developerPubkey = computed(() => {
@@ -35,15 +50,23 @@ const developerPubkey = computed(() => {
   return null;
 });
 
-const lightningAddress = computed(() => {
-  return profile.value?.lud16 || config.public?.developerLud16 || "";
+const toStringValue = (value: unknown) => {
+  return typeof value === "string" ? value : "";
+};
+
+const lightningAddress = computed<string>(() => {
+  return (
+    toStringValue(profile.value?.lud16) ||
+    toStringValue(profile.value?.lud06) ||
+    toStringValue(config.public?.developerLud16)
+  );
 });
 
-const developerName = computed(() => {
+const developerName = computed<string>(() => {
   return (
-    profile.value?.display_name ||
-    profile.value?.name ||
-    config.public?.developerName ||
+    toStringValue(profile.value?.display_name) ||
+    toStringValue(profile.value?.name) ||
+    toStringValue(config.public?.developerName) ||
     "BitSpace Developer"
   );
 });
@@ -69,6 +92,47 @@ const checkVisibility = () => {
   }
 };
 
+const readProfileCache = () => {
+  if (import.meta.server) return null;
+
+  const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as CachedProfile;
+    const isValid =
+      parsed &&
+      typeof parsed.cachedAt === "number" &&
+      typeof parsed.profile === "object" &&
+      parsed.profile !== null;
+
+    if (!isValid) {
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+      return null;
+    }
+
+    const isFresh = Date.now() - parsed.cachedAt < PROFILE_CACHE_TTL_MS;
+    return {
+      profile: parsed.profile as NostrProfile,
+      isFresh,
+    };
+  } catch {
+    localStorage.removeItem(PROFILE_CACHE_KEY);
+    return null;
+  }
+};
+
+const writeProfileCache = (nextProfile: NostrProfile) => {
+  if (import.meta.server) return;
+
+  const payload: CachedProfile = {
+    profile: nextProfile,
+    cachedAt: Date.now(),
+  };
+
+  localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(payload));
+};
+
 // Fetch profile
 async function fetchProfile() {
   if (!developerPubkey.value) {
@@ -85,7 +149,11 @@ async function fetchProfile() {
 
     if (events.length > 0 && events[0]) {
       const content = JSON.parse(events[0].content);
-      profile.value = content;
+      if (content && typeof content === "object") {
+        const parsedProfile = content as NostrProfile;
+        profile.value = parsedProfile;
+        writeProfileCache(parsedProfile);
+      }
     }
   } catch (e) {
     console.error("Failed to fetch profile:", e);
@@ -111,9 +179,27 @@ const openSupportModal = () => {
 // Lifecycle
 onMounted(() => {
   checkVisibility();
-  if (shouldShow.value) {
-    fetchProfile();
+  if (!shouldShow.value) return;
+
+  const cached = readProfileCache();
+  if (cached?.profile) {
+    profile.value = cached.profile;
   }
+
+  if (cached?.isFresh) {
+    isLoading.value = false;
+    return;
+  }
+
+  if (cached?.profile) {
+    isLoading.value = false;
+    setTimeout(() => {
+      fetchProfile();
+    }, 0);
+    return;
+  }
+
+  fetchProfile();
 });
 </script>
 
@@ -125,20 +211,20 @@ onMounted(() => {
     <!-- Decoration -->
     <div
       class="absolute -top-6 -right-6 w-24 h-24 bg-amber-400/20 rounded-full blur-2xl"
-    ></div>
+    />
 
     <div class="flex items-start gap-4 relative z-10">
       <!-- Avatar -->
       <div class="shrink-0">
         <div
-          class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 p-0.5"
+          class="w-12 h-12 rounded-full bg-linear-to-br from-amber-400 to-orange-500 p-0.5"
         >
           <img
             v-if="profile?.picture"
             :src="profile.picture"
             :alt="developerName"
             class="w-full h-full rounded-full object-cover"
-          />
+          >
           <div
             v-else
             class="w-full h-full rounded-full bg-gray-800 flex items-center justify-center text-xl"

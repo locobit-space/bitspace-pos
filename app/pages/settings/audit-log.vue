@@ -41,6 +41,7 @@
             :items="actionTypes"
             value-key="value"
             label-key="label"
+            class="w-full"
             :placeholder="$t('common.all')"
           />
         </UFormField>
@@ -51,16 +52,17 @@
             :items="userOptions"
             value-key="value"
             label-key="label"
+            class="w-full"
             :placeholder="$t('common.all')"
           />
         </UFormField>
 
         <UFormField :label="$t('settings.auditLog.startDate')">
-          <UInput v-model="filters.startDate" type="date" />
+          <UInput v-model="filters.startDate" type="date" class="w-full" />
         </UFormField>
 
         <UFormField :label="$t('settings.auditLog.endDate')">
-          <UInput v-model="filters.endDate" type="date" />
+          <UInput v-model="filters.endDate" type="date" class="w-full" />
         </UFormField>
       </div>
 
@@ -258,76 +260,80 @@
     </UCard>
 
     <!-- Detail Modal -->
-    <UModal v-model:open="showDetailModal">
+    <UModal v-model:open="showDetailModal" title="Audit" description="Detail">
       <template #header>
         <h3 class="font-semibold">{{ $t("settings.auditLog.logDetails") }}</h3>
       </template>
 
-      <div v-if="selectedLog" class="p-4 space-y-4">
-        <div class="grid grid-cols-2 gap-4">
+      <template #body>
+        <div v-if="selectedLog" class="p-4 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-muted">
+                {{ $t("settings.auditLog.action") }}
+              </p>
+              <UBadge
+                :color="getActionColor(selectedLog.action)"
+                variant="subtle"
+              >
+                {{ getActionLabel(selectedLog.action) }}
+              </UBadge>
+            </div>
+
+            <div>
+              <p class="text-sm text-muted">
+                {{ $t("settings.auditLog.user") }}
+              </p>
+              <p class="font-medium">{{ selectedLog.userName }}</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-muted">
+                {{ $t("settings.auditLog.timestamp") }}
+              </p>
+              <p class="font-medium">
+                {{ formatDateTime(selectedLog.timestamp) }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-sm text-muted">
+                {{ $t("settings.auditLog.ipAddress") }}
+              </p>
+              <code class="text-sm">{{ selectedLog.ipAddress || "N/A" }}</code>
+            </div>
+          </div>
+
           <div>
-            <p class="text-sm text-muted">
-              {{ $t("settings.auditLog.action") }}
+            <p class="text-sm text-muted mb-2">
+              {{ $t("settings.auditLog.details") }}
             </p>
-            <UBadge
-              :color="getActionColor(selectedLog.action)"
-              variant="subtle"
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+              <p>{{ selectedLog.details }}</p>
+            </div>
+          </div>
+
+          <div v-if="selectedLog.metadata">
+            <p class="text-sm text-muted mb-2">
+              {{ $t("settings.auditLog.metadata") }}
+            </p>
+            <pre
+              class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs overflow-auto"
+              >{{ JSON.stringify(selectedLog.metadata, null, 2) }}</pre
             >
-              {{ getActionLabel(selectedLog.action) }}
-            </UBadge>
           </div>
 
-          <div>
-            <p class="text-sm text-muted">{{ $t("settings.auditLog.user") }}</p>
-            <p class="font-medium">{{ selectedLog.userName }}</p>
-          </div>
-
-          <div>
-            <p class="text-sm text-muted">
-              {{ $t("settings.auditLog.timestamp") }}
+          <div v-if="selectedLog.resourceType">
+            <p class="text-sm text-muted mb-2">
+              {{ $t("settings.auditLog.affectedResource") }}
             </p>
-            <p class="font-medium">
-              {{ formatDateTime(selectedLog.timestamp) }}
-            </p>
-          </div>
-
-          <div>
-            <p class="text-sm text-muted">
-              {{ $t("settings.auditLog.ipAddress") }}
-            </p>
-            <code class="text-sm">{{ selectedLog.ipAddress || "N/A" }}</code>
+            <div class="flex items-center gap-2">
+              <UBadge variant="outline">{{ selectedLog.resourceType }}</UBadge>
+              <code class="text-sm">{{ selectedLog.resourceId }}</code>
+            </div>
           </div>
         </div>
-
-        <div>
-          <p class="text-sm text-muted mb-2">
-            {{ $t("settings.auditLog.details") }}
-          </p>
-          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-            <p>{{ selectedLog.details }}</p>
-          </div>
-        </div>
-
-        <div v-if="selectedLog.metadata">
-          <p class="text-sm text-muted mb-2">
-            {{ $t("settings.auditLog.metadata") }}
-          </p>
-          <pre
-            class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs overflow-auto"
-            >{{ JSON.stringify(selectedLog.metadata, null, 2) }}</pre
-          >
-        </div>
-
-        <div v-if="selectedLog.resourceType">
-          <p class="text-sm text-muted mb-2">
-            {{ $t("settings.auditLog.affectedResource") }}
-          </p>
-          <div class="flex items-center gap-2">
-            <UBadge variant="outline">{{ selectedLog.resourceType }}</UBadge>
-            <code class="text-sm">{{ selectedLog.resourceId }}</code>
-          </div>
-        </div>
-      </div>
+      </template>
 
       <template #footer>
         <UButton variant="ghost" @click="showDetailModal = false">
@@ -499,7 +505,7 @@ const filteredLogs = computed(() => {
       (log) =>
         log.details.toLowerCase().includes(query) ||
         log.userName.toLowerCase().includes(query) ||
-        log.action.toLowerCase().includes(query)
+        log.action.toLowerCase().includes(query),
     );
   }
 
@@ -520,11 +526,11 @@ watch(
     pagination.total = logs.length;
     pagination.from = Math.min(
       (pagination.page - 1) * pagination.perPage + 1,
-      logs.length
+      logs.length,
     );
     pagination.to = Math.min(pagination.page * pagination.perPage, logs.length);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Table columns
@@ -543,7 +549,7 @@ const columns = [
 
 // Methods
 function getActionColor(
-  action: string
+  action: string,
 ): "primary" | "success" | "warning" | "error" | "info" | "neutral" {
   const colors: Record<
     string,
@@ -667,7 +673,7 @@ function exportLogs() {
         log.ipAddress || "",
         log.resourceType || "",
         log.resourceId || "",
-      ].join(",")
+      ].join(","),
     ),
   ].join("\n");
 
