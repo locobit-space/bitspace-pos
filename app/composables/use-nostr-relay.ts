@@ -2,6 +2,12 @@
 
 import { ref, computed } from "vue";
 import type { Event, Filter } from "nostr-tools";
+import {
+  ensureRelayConnected,
+  normalizeRelayUrls,
+  publishToRelays,
+  queryRelays,
+} from "@bitos/bnos-core/relays";
 import type { RelayConfig } from "~/types";
 
 // ============================================
@@ -313,19 +319,28 @@ export const useNostrRelay = () => {
    * Connect to all configured relays
    */
   async function connect(customRelays?: string[]): Promise<boolean> {
-    const urlsToConnect = customRelays || relays.value;
+    const urlsToConnect = normalizeRelayUrls(customRelays || relays.value);
 
     try {
-      urlsToConnect.forEach((url) => {
-        pool.ensureRelay(url);
-        // Update status
-        const config = relayConfigs.value.find((r) => r.url === url);
-        if (config) {
-          config.status = "connected";
+      const results = await Promise.allSettled(
+        urlsToConnect.map(async (url) => {
+          await ensureRelayConnected(url);
+          return url;
+        }),
+      );
+
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          const config = relayConfigs.value.find(
+            (r) => r.url === result.value,
+          );
+          if (config) config.status = "connected";
         }
-      });
-      isConnected.value = true;
-      return true;
+      }
+
+      const connected = results.some((result) => result.status === "fulfilled");
+      isConnected.value = connected;
+      return connected;
     } catch (e) {
       error.value = e;
       isConnected.value = false;
@@ -359,7 +374,9 @@ export const useNostrRelay = () => {
 
     // Connect to the new relay
     try {
-      pool.ensureRelay(url);
+      ensureRelayConnected(url).catch(() => {
+        newRelay.status = "error";
+      });
       newRelay.status = "connected";
     } catch (e) {
       error.value = e;
@@ -487,7 +504,7 @@ export const useNostrRelay = () => {
 
     try {
       const useRelays = selectedRelays || readRelays.value;
-      return await pool.querySync(useRelays, filter);
+      return (await queryRelays(useRelays, filter)) as Event[];
     } catch (e) {
       error.value = e;
       return [];
@@ -543,8 +560,7 @@ export const useNostrRelay = () => {
 
     try {
       const useRelays = selectedRelays || writeRelays.value;
-      await Promise.any(pool.publish(useRelays, event));
-      return true;
+      return publishToRelays(event, useRelays);
     } catch (e) {
       error.value = e;
       return false;

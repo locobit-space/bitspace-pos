@@ -598,33 +598,189 @@ export function useNostrData() {
   // 🛍️ PRODUCT OPERATIONS
   // ============================================
 
+  const normalizeBdgoOsProduct = (raw: Record<string, unknown> & Partial<Product>): Product => {
+    const pricing = raw.pricing as Record<string, number> | undefined;
+    const inventory = raw.inventory as Record<string, unknown> | undefined;
+    const available = raw.available;
+    const status = raw.status;
+    const isActive = available !== false && status !== "inactive" && status !== "archived";
+    const resolvedPrice = raw.price ?? pricing?.price ?? 0;
+    const resolvedCostPrice = raw.costPrice ?? pricing?.costPrice ?? 0;
+    const eventCreatedAt = (raw as { created_at?: number }).created_at;
+    const now = new Date().toISOString();
+    return {
+      id: raw.id || "",
+      name: raw.name || "",
+      sku: raw.sku || "",
+      barcode: raw.barcode,
+      description: raw.description,
+      categoryId: raw.categoryId || "default",
+      unitId: raw.unitId || "piece",
+      price: resolvedPrice,
+      costPrice: resolvedCostPrice || undefined,
+      stock: (raw as Record<string, unknown>).stock as number ?? 0,
+      minStock: (inventory?.lowStockThreshold as number) ?? raw.minStock ?? 0,
+      branchId: raw.branchId || "main",
+      status: isActive ? "active" : "inactive",
+      image: Array.isArray(raw.images) ? raw.images[0] : raw.image,
+      images: Array.isArray(raw.images) ? raw.images : raw.image ? [raw.image] : undefined,
+      createdAt: raw.createdAt || (eventCreatedAt ? new Date(eventCreatedAt * 1000).toISOString() : now),
+      updatedAt: raw.updatedAt || now,
+      productType: (raw as Record<string, unknown>).type === "service" ? "service" : "good",
+      trackStock: (raw as Record<string, unknown>).trackInventory !== false && raw.trackStock !== false,
+      hasVariants: raw.hasVariants,
+      variants: raw.variants,
+      tags: raw.tags,
+      isPublic: raw.isPublic !== false,
+      synced: true,
+    };
+  };
+
+  const isBdgoOsProduct = (data: Record<string, unknown>): boolean => {
+    return "pricing" in data || "trackInventory" in data || "available" in data;
+  };
+
+  // ============================================
+  // 🏢 CROSS-APP COMPANY ID DISCOVERY
+  // ============================================
+
+  const CACHED_COMPANY_IDS_KEY = "bnos_discovered_company_ids";
+
+  const getTagVal = (tags: string[][], name: string) =>
+    tags.find((t) => t[0] === name)?.[1];
+
+  const getAllTagVals = (tags: string[][], name: string) =>
+    tags.filter((t) => t[0] === name).map((t) => t[1]);
+
+  async function discoverCompanyIdsFromRelay(): Promise<string[]> {
+    const keys = getUserKeys();
+    if (!keys?.pubkey) return [];
+
+    const cached = localStorage.getItem(CACHED_COMPANY_IDS_KEY);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as { ids: string[]; ts: number };
+        if (Date.now() - parsed.ts < 5 * 60 * 1000 && parsed.ids.length > 0) {
+          return parsed.ids;
+        }
+      } catch {}
+    }
+
+    try {
+      const events = await relay.queryEvents({
+        kinds: [NOSTR_KINDS.STORE_SETTINGS],
+        authors: [keys.pubkey],
+        limit: 50,
+      } as Parameters<typeof relay.queryEvents>[0]);
+
+      const ids = new Set<string>();
+
+      for (const event of events) {
+        const dTag = getTagVal(event.tags, "d");
+        if (dTag) ids.add(dTag);
+
+        for (const cVal of getAllTagVals(event.tags, "c")) {
+          if (cVal) ids.add(cVal);
+        }
+        for (const companyVal of getAllTagVals(event.tags, "company")) {
+          if (companyVal) ids.add(companyVal);
+        }
+        for (const nVal of getAllTagVals(event.tags, "n")) {
+          if (nVal) ids.add(nVal);
+        }
+
+        try {
+          const data = JSON.parse(event.content) as Record<string, unknown>;
+          if (data.companyId && typeof data.companyId === "string") ids.add(data.companyId);
+          if (data.storeId && typeof data.storeId === "string") ids.add(data.storeId);
+          if (data.code && typeof data.code === "string") ids.add(data.code as string);
+          if (data.name && typeof data.name === "string") ids.add(data.name as string);
+          const meta = data.metadata as Record<string, unknown> | undefined;
+          if (meta?.companyId && typeof meta.companyId === "string") ids.add(meta.companyId);
+          if (Array.isArray(data.codeAliases)) {
+            for (const alias of data.codeAliases) {
+              if (typeof alias === "string") ids.add(alias);
+            }
+          }
+        } catch {}
+      }
+
+      const company = useCompany();
+      if (company.companyCode.value) {
+        ids.add(company.companyCode.value);
+      }
+
+      const result = [...ids].filter(Boolean);
+      console.log("[bnos-space] discovered company IDs from relay", result);
+
+      try {
+        localStorage.setItem(CACHED_COMPANY_IDS_KEY, JSON.stringify({ ids: result, ts: Date.now() }));
+      } catch {}
+
+      return result;
+    } catch (e) {
+      console.warn("[bnos-space] failed to discover company IDs", e);
+      return [];
+    }
+  }
+
+  const buildCompanyTags = async (): Promise<string[][]> => {
+    const company = useCompany();
+    const tags: string[][] = [];
+
+    const discoveredIds = await discoverCompanyIdsFromRelay();
+    const seen = new Set<string>();
+
+    for (const id of discoveredIds) {
+      if (!seen.has(id)) {
+        seen.add(id);
+        tags.push(["c", id], ["company", id]);
+      }
+    }
+
+    if (company.companyCode.value && !seen.has(company.companyCode.value)) {
+      tags.push(["c", company.companyCode.value], ["company", company.companyCode.value]);
+    }
+
+    return tags;
+  };
+
   async function saveProduct(product: Product): Promise<Event | null> {
-    // Products are saved UNENCRYPTED so customers can read them from public QR menu
+    const companyTags = await buildCompanyTags();
+    const extraTags: string[][] = [
+      ["name", product.name],
+      ["sku", product.sku],
+      ["category", product.categoryId],
+      ["status", product.status],
+      ["public", product.isPublic !== false ? "true" : "false"],
+      ...companyTags,
+    ];
     return publishReplaceableEvent(
       NOSTR_KINDS.PRODUCT,
       product,
       product.id,
-      [
-        ["name", product.name],
-        ["sku", product.sku],
-        ["category", product.categoryId],
-        ["status", product.status],
-        ["public", product.isPublic !== false ? "true" : "false"],
-      ],
-      false, // DO NOT ENCRYPT - products need to be publicly readable
+      extraTags,
+      false,
     );
   }
 
   async function getProduct(id: string): Promise<Product | null> {
-    const result = await getReplaceableEvent<Product>(NOSTR_KINDS.PRODUCT, id);
-    return result?.data || null;
+    const result = await getReplaceableEvent<Record<string, unknown> & Partial<Product>>(NOSTR_KINDS.PRODUCT, id);
+    if (!result?.data) return null;
+    const data = result.data;
+    if ((data as { deleted?: boolean }).deleted) return null;
+    return isBdgoOsProduct(data) ? normalizeBdgoOsProduct(data) : data as Product;
   }
 
   async function getAllProducts(): Promise<Product[]> {
-    const results = await getAllEventsOfKind<Product>(NOSTR_KINDS.PRODUCT);
+    const results = await getAllEventsOfKind<Record<string, unknown> & Partial<Product>>(NOSTR_KINDS.PRODUCT);
     return results
-      .map((r) => r.data)
-      .filter((p) => !(p as Product & { deleted?: boolean }).deleted);
+      .map((r) => {
+        const data = r.data;
+        if ((data as { deleted?: boolean }).deleted) return null;
+        return isBdgoOsProduct(data) ? normalizeBdgoOsProduct(data) : data as Product;
+      })
+      .filter((p): p is Product => p !== null);
   }
 
   /**
@@ -632,12 +788,18 @@ export function useNostrData() {
    * This is used when a customer scans a QR code and needs to load the store's products
    */
   async function getProductsForOwner(ownerPubkey: string): Promise<Product[]> {
-    const results = await getAllEventsOfKind<Product>(NOSTR_KINDS.PRODUCT, {
+    const results = await getAllEventsOfKind<Record<string, unknown> & Partial<Product>>(NOSTR_KINDS.PRODUCT, {
       authors: [ownerPubkey],
     });
     return results
-      .map((r) => r.data)
-      .filter((p) => p.status === "active" && p.isPublic !== false);
+      .map((r) => {
+        const data = r.data;
+        if ((data as { deleted?: boolean }).deleted) return null;
+        const product = isBdgoOsProduct(data) ? normalizeBdgoOsProduct(data) : data as Product;
+        if (product.status !== "active" || product.isPublic === false) return null;
+        return product;
+      })
+      .filter((p): p is Product => p !== null);
   }
 
   /**
@@ -655,12 +817,12 @@ export function useNostrData() {
   }
 
   async function deleteProduct(id: string): Promise<boolean> {
-    // Publish with empty content to mark as deleted
+    const companyTags = await buildCompanyTags();
     const event = await publishReplaceableEvent(
       NOSTR_KINDS.PRODUCT,
       { deleted: true, deletedAt: new Date().toISOString() },
       id,
-      [["deleted", "true"]],
+      [["deleted", "true"], ...companyTags],
     );
     return event !== null;
   }
@@ -670,13 +832,14 @@ export function useNostrData() {
   // ============================================
 
   async function saveCategory(category: Category): Promise<Event | null> {
-    // Categories are saved UNENCRYPTED so customers can read them from public QR menu
+    const companyTags = await buildCompanyTags();
+    const tags: string[][] = [["name", category.name], ...companyTags];
     return publishReplaceableEvent(
       NOSTR_KINDS.CATEGORY,
       category,
       category.id,
-      [["name", category.name]],
-      false, // DO NOT ENCRYPT - categories need to be publicly readable
+      tags,
+      false,
     );
   }
 
@@ -692,10 +855,9 @@ export function useNostrData() {
   // ============================================
 
   async function saveUnit(unit: Unit): Promise<Event | null> {
-    return publishReplaceableEvent(NOSTR_KINDS.UNIT, unit, unit.id, [
-      ["name", unit.name],
-      ["symbol", unit.symbol],
-    ]);
+    const companyTags = await buildCompanyTags();
+    const tags: string[][] = [["name", unit.name], ["symbol", unit.symbol], ...companyTags];
+    return publishReplaceableEvent(NOSTR_KINDS.UNIT, unit, unit.id, tags);
   }
 
   async function getAllUnits(): Promise<Unit[]> {
@@ -711,10 +873,8 @@ export function useNostrData() {
 
   async function saveOrder(order: Order): Promise<Event | null> {
     const company = useCompany();
+    const companyTags = await buildCompanyTags();
 
-    // IMPORTANT: Do NOT encrypt orders when company code is enabled
-    // This allows owner and staff to see each other's orders
-    // Orders without company code are encrypted for privacy
     const shouldEncrypt = !company.isCompanyCodeEnabled.value;
 
     return publishEvent(
@@ -724,15 +884,10 @@ export function useNostrData() {
         ["d", order.id],
         ["status", order.status],
         ["method", order.paymentMethod || "unknown"],
-        ["t", order.date], // timestamp t-tag (existing)
+        ["t", order.date],
         ["amount", order.total.toString()],
         order.customerPubkey ? ["p", order.customerPubkey] : [],
-        // Add company code hash tag for team sync
-        company.companyCodeHash.value
-          ? ["c", company.companyCodeHash.value]
-          : [],
-        // 🏷️ Custom order tags — each emitted as a Nostr t-tag
-        // Enables relay-side filtering via #t: ["daily"], #t: ["booth"] etc.
+        ...companyTags,
         ...(order.tags || []).map((tag) => ["t", tag]),
       ].filter((t) => t.length > 0) as string[][],
       shouldEncrypt,
@@ -754,19 +909,17 @@ export function useNostrData() {
       items?: number;
       timestamp: string;
     },
-    companyCodeHash?: string | null,
+    _companyCodeHash?: string | null,
   ): Promise<Event | null> {
     try {
+      const companyTags = await buildCompanyTags();
+
       const tags: string[][] = [
         ["type", alertData.type],
         ["order_id", alertData.orderId],
         ["status", alertData.status],
+        ...companyTags,
       ];
-
-      // Add company tag for team-wide broadcast
-      if (companyCodeHash) {
-        tags.push(["c", companyCodeHash]);
-      }
 
       // Add optional fields
       if (alertData.orderNumber) {
@@ -941,6 +1094,8 @@ export function useNostrData() {
       const { $nostr } = useNuxtApp();
       const ephemeralKeys = $nostr.generateKeys();
 
+      const companyTags = await buildCompanyTags();
+
       // Create order event with owner tag
       const content = JSON.stringify(order);
       const tags = [
@@ -952,6 +1107,7 @@ export function useNostrData() {
         ["amount", order.total.toString()],
         ["type", "customer-order"], // Mark as customer order
         ["encrypted", "false"],
+        ...companyTags,
       ];
 
       const unsignedEvent: UnsignedEvent = {
@@ -1031,6 +1187,7 @@ export function useNostrData() {
   // ============================================
 
   async function saveCustomer(customer: LoyaltyMember): Promise<Event | null> {
+    const companyTags = await buildCompanyTags();
     return publishReplaceableEvent(
       NOSTR_KINDS.CUSTOMER,
       customer,
@@ -1039,6 +1196,7 @@ export function useNostrData() {
         ["p", customer.nostrPubkey],
         ["tier", customer.tier],
         ["points", customer.points.toString()],
+        ...companyTags,
       ],
     );
   }
@@ -1080,10 +1238,7 @@ export function useNostrData() {
   }): Promise<Event | null> {
     const company = useCompany();
 
-    // Build tags for conversation
-    // Using BOTH standard #t tag (NIP-12) AND custom #c tag for maximum relay compatibility
-    const companyHash = company.companyCodeHash.value;
-    const teamTag = companyHash ? `team:${companyHash}` : null;
+    const companyTags = await buildCompanyTags();
 
     const tags: string[][] = [
       ["type", conversation.type],
@@ -1091,10 +1246,7 @@ export function useNostrData() {
       conversation.shopId ? ["shop", conversation.shopId] : [],
       conversation.groupName ? ["name", conversation.groupName] : [],
       conversation.isReadOnly ? ["read-only", "true"] : [],
-      // Add standard #t tag for team sync (better relay support - NIP-12)
-      teamTag ? ["t", teamTag] : [],
-      // Add custom #c tag for backward compatibility
-      companyHash ? ["c", companyHash] : [],
+      ...companyTags,
       // Add custom tags
       ...(conversation.tags || []).map((t) => ["t", t]),
       // Add member pubkeys for private channels
@@ -1255,7 +1407,7 @@ export function useNostrData() {
     picture?: string;
     isPrivate?: boolean;
   }): Promise<Event | null> {
-    const company = useCompany();
+    const companyTags = await buildCompanyTags();
 
     const metadata = {
       id: params.groupId,
@@ -1272,8 +1424,7 @@ export function useNostrData() {
       ["picture", params.picture || ""],
       ["about", params.about || ""],
       params.isPrivate ? ["private"] : ["public"],
-      // Company code for team filtering
-      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+      ...companyTags,
     ].filter((t) => t.length > 0 && t[1] !== "") as string[][];
 
     return publishReplaceableEvent(
@@ -1292,12 +1443,12 @@ export function useNostrData() {
     groupId: string,
     adminPubkeys: string[],
   ): Promise<Event | null> {
-    const company = useCompany();
+    const companyTags = await buildCompanyTags();
 
     const tags: string[][] = [
       ["d", groupId],
       ...adminPubkeys.map((pubkey) => ["p", pubkey, "", "admin"]),
-      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+      ...companyTags,
     ].filter((t) => t.length > 0) as string[][];
 
     return publishReplaceableEvent(
@@ -1316,12 +1467,12 @@ export function useNostrData() {
     groupId: string,
     memberPubkeys: string[],
   ): Promise<Event | null> {
-    const company = useCompany();
+    const companyTags = await buildCompanyTags();
 
     const tags: string[][] = [
       ["d", groupId],
       ...memberPubkeys.map((pubkey) => ["p", pubkey, "", "member"]),
-      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+      ...companyTags,
     ].filter((t) => t.length > 0) as string[][];
 
     return publishReplaceableEvent(
@@ -1341,12 +1492,12 @@ export function useNostrData() {
     content: string;
     replyTo?: string;
   }): Promise<Event | null> {
-    const company = useCompany();
+    const companyTags = await buildCompanyTags();
 
     const tags: string[][] = [
       ["h", params.groupId], // NIP-29: group reference
       params.replyTo ? ["e", params.replyTo, "", "reply"] : [],
-      company.companyCodeHash.value ? ["c", company.companyCodeHash.value] : [],
+      ...companyTags,
     ].filter((t) => t.length > 0) as string[][];
 
     return publishEvent(
@@ -1460,12 +1611,13 @@ export function useNostrData() {
   // ============================================
 
   async function saveSettings(settings: StoreSettings): Promise<Event | null> {
+    const companyTags = await buildCompanyTags();
     return publishReplaceableEvent(
       NOSTR_KINDS.STORE_SETTINGS,
       settings,
       "store-settings",
-      [],
-      true, // Always encrypt settings
+      companyTags,
+      true,
     );
   }
 
@@ -1482,9 +1634,11 @@ export function useNostrData() {
   // ============================================
 
   async function saveBranch(branch: Branch): Promise<Event | null> {
+    const companyTags = await buildCompanyTags();
     return publishReplaceableEvent(NOSTR_KINDS.BRANCH, branch, branch.id, [
       ["name", branch.name],
       ["code", branch.code],
+      ...companyTags,
     ]);
   }
 
@@ -1498,11 +1652,7 @@ export function useNostrData() {
   // ============================================
 
   async function saveStaff(staff: StoreUser): Promise<Event | null> {
-    // Get company code hash for tagging (if available)
-    const company = useCompany();
-    const companyTag = company.companyCodeHash.value
-      ? ["c", company.companyCodeHash.value]
-      : [];
+    const companyTags = await buildCompanyTags();
 
     return publishReplaceableEvent(
       NOSTR_KINDS.STAFF_MEMBER,
@@ -1512,7 +1662,7 @@ export function useNostrData() {
         ["name", staff.name],
         ["role", staff.role],
         staff.pubkeyHex ? ["p", staff.pubkeyHex] : [],
-        companyTag,
+        ...companyTags,
       ].filter((t) => t.length > 0) as string[][],
     );
   }
@@ -1610,6 +1760,8 @@ export function useNostrData() {
       return null;
     }
 
+    const companyTags = await buildCompanyTags();
+
     // Publish unencrypted, public event that maps company code hash → owner pubkey
     const content = JSON.stringify({
       type: "company-index",
@@ -1620,7 +1772,7 @@ export function useNostrData() {
 
     const tags = [
       ["d", companyCodeHash], // Use code hash as d-tag for replaceability
-      ["c", companyCodeHash], // Also as c-tag for filtering
+      ...companyTags,
       ["client", "bnos.space"],
     ];
 
@@ -1688,15 +1840,18 @@ export function useNostrData() {
   async function recordStockAdjustment(
     adjustment: StockAdjustment,
   ): Promise<Event | null> {
+    const companyTags = await buildCompanyTags();
     return publishReplaceableEvent(
       NOSTR_KINDS.STOCK_ADJUSTMENT,
       adjustment,
       adjustment.id,
+      companyTags,
     );
   }
 
   async function saveProductActivityLog(log: any): Promise<Event | null> {
-    return publishReplaceableEvent(NOSTR_KINDS.AUDIT_LOG, log, log.id);
+    const companyTags = await buildCompanyTags();
+    return publishReplaceableEvent(NOSTR_KINDS.AUDIT_LOG, log, log.id, companyTags);
   }
 
   async function getStockHistory(
@@ -1967,6 +2122,10 @@ export function useNostrData() {
     // Sync
     fullSync,
     subscribeToUpdates,
+
+    // Cross-app company discovery
+    discoverCompanyIdsFromRelay,
+    buildCompanyTags,
 
     // Constants
     NOSTR_KINDS,

@@ -7,7 +7,9 @@
           name="i-heroicons-arrow-path"
           class="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4"
         />
-        <p class="text-gray-500">{{ $t("common.loading") }}</p>
+        <p class="text-gray-500 dark:text-gray-400">
+          {{ $t("common.loading") }}
+        </p>
       </div>
     </div>
 
@@ -29,7 +31,7 @@
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {{ $t("order.invalidLink", "Invalid Link") }}
           </h1>
-          <p class="text-gray-500 mb-6">{{ error }}</p>
+          <p class="text-gray-500 dark:text-gray-400 mb-6">{{ error }}</p>
           <p class="text-sm text-gray-400">
             {{ $t("order.askStaff", "Please ask staff for a new QR code") }}
           </p>
@@ -87,7 +89,9 @@
                 >
                   {{ step.icon }}
                 </div>
-                <span class="text-xs mt-1 text-gray-500">{{ step.label }}</span>
+                <span class="text-xs mt-1 text-gray-500 dark:text-gray-400">{{
+                  step.label
+                }}</span>
                 <div
                   v-if="index < orderStatusSteps.length - 1"
                   class="absolute h-1 bg-gray-200 dark:bg-gray-700"
@@ -144,7 +148,7 @@
                   📍
                   {{ tableInfo.tableName || `Table ${tableInfo.tableNumber}` }}
                 </h1>
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-gray-500 dark:text-gray-400">
                   {{ $t("order.browseMenu", "Browse our menu") }}
                 </p>
               </div>
@@ -275,10 +279,8 @@
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {{ $t("order.noProducts", "No products available") }}
           </h2>
-          <p class="text-gray-500">
-            {{
-              $t("order.noProductsDesc", "Please ask staff for assistance")
-            }}
+          <p class="text-gray-500 dark:text-gray-400">
+            {{ $t("order.noProductsDesc", "Please ask staff for assistance") }}
           </p>
         </div>
       </div>
@@ -366,7 +368,7 @@
                   name="i-heroicons-shopping-cart"
                   class="w-16 h-16 text-gray-300 mx-auto mb-4"
                 />
-                <p class="text-gray-500">
+                <p class="text-gray-500 dark:text-gray-400">
                   {{ $t("order.cartEmpty", "Your cart is empty") }}
                 </p>
               </div>
@@ -506,7 +508,7 @@
                   name="i-heroicons-document-text"
                   class="w-16 h-16 text-gray-300 mx-auto mb-4"
                 />
-                <p class="text-gray-500">
+                <p class="text-gray-500 dark:text-gray-400">
                   {{ $t("order.noHistory", "No order history yet") }}
                 </p>
               </div>
@@ -520,50 +522,54 @@
                   <!-- Order Header -->
                   <div class="flex items-center justify-between mb-2">
                     <div>
-                      <span class="font-bold text-sm">
+                      <span
+                        class="font-bold text-sm text-gray-900 dark:text-white"
+                      >
                         #{{ historyOrder.code || historyOrder.id }}
                       </span>
-                      <span class="text-xs text-gray-500 ml-2">
+                      <span
+                        class="text-xs text-gray-500 dark:text-gray-400 ml-2"
+                      >
                         {{ formatOrderTime(historyOrder.date) }}
                       </span>
+                      <UBadge
+                        :color="getStatusColor(historyOrder.kitchenStatus)"
+                        size="xs"
+                      >
+                        {{ getStatusLabel(historyOrder.kitchenStatus) }}
+                      </UBadge>
                     </div>
-                    <UBadge
-                      :color="getStatusColor(historyOrder.kitchenStatus)"
-                      size="xs"
-                    >
-                      {{ getStatusLabel(historyOrder.kitchenStatus) }}
-                    </UBadge>
-                  </div>
 
-                  <!-- Order Items -->
-                  <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {{
-                      historyOrder.items
-                        .map((i) => `${i.quantity}x ${i.product.name}`)
-                        .join(", ")
-                    }}
-                  </div>
+                    <!-- Order Items -->
+                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {{
+                        historyOrder.items
+                          .map((i) => `${i.quantity}x ${i.product.name}`)
+                          .join(", ")
+                      }}
+                    </div>
 
-                  <!-- Order Total & Reorder -->
-                  <div class="flex items-center justify-between">
-                    <span
-                      class="font-bold text-primary-600 dark:text-primary-400"
-                    >
-                      {{ formatPrice(historyOrder.total) }}
-                    </span>
-                    <UButton
-                      color="primary"
-                      variant="soft"
-                      size="xs"
-                      class="min-h-[36px]"
-                      @click="reorderFromHistory(historyOrder)"
-                    >
-                      <UIcon
-                        name="i-heroicons-arrow-path"
-                        class="w-4 h-4 mr-1"
-                      />
-                      {{ $t("order.reorder", "Reorder") }}
-                    </UButton>
+                    <!-- Order Total & Reorder -->
+                    <div class="flex items-center justify-between">
+                      <span
+                        class="font-bold text-primary-600 dark:text-primary-400"
+                      >
+                        {{ formatPrice(historyOrder.total) }}
+                      </span>
+                      <UButton
+                        color="primary"
+                        variant="soft"
+                        size="xs"
+                        class="min-h-[36px]"
+                        @click="reorderFromHistory(historyOrder)"
+                      >
+                        <UIcon
+                          name="i-heroicons-arrow-path"
+                          class="w-4 h-4 mr-1"
+                        />
+                        {{ $t("order.reorder", "Reorder") }}
+                      </UButton>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -600,7 +606,9 @@
                 class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-4"
               >
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm text-gray-500">Table</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Table</span
+                  >
                   <span class="font-semibold text-gray-900 dark:text-white">
                     {{
                       currentSession.tableName ||
@@ -609,7 +617,9 @@
                   </span>
                 </div>
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm text-gray-500">Session Duration</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Session Duration</span
+                  >
                   <span class="text-sm text-gray-700 dark:text-gray-300">
                     {{
                       tableSession.calculateDuration(currentSession.startTime)
@@ -617,7 +627,9 @@
                   </span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500">Status</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Status</span
+                  >
                   <UBadge
                     :color="
                       currentSession.status === 'requesting_bill'
@@ -641,10 +653,8 @@
                   name="i-heroicons-document-text"
                   class="w-16 h-16 text-gray-300 mx-auto mb-4"
                 />
-                <p class="text-gray-500">
-                  {{
-                    $t("order.noOrdersYet", "No orders in this session yet")
-                  }}
+                <p class="text-gray-500 dark:text-gray-400">
+                  {{ $t("order.noOrdersYet", "No orders in this session yet") }}
                 </p>
               </div>
 
@@ -658,10 +668,14 @@
                   <!-- Order Header -->
                   <div class="flex items-center justify-between mb-2">
                     <div>
-                      <span class="font-bold text-sm">
+                      <span
+                        class="font-bold text-sm text-gray-900 dark:text-white"
+                      >
                         #{{ sessionOrder.code || sessionOrder.id }}
                       </span>
-                      <span class="text-xs text-gray-500 ml-2">
+                      <span
+                        class="text-xs text-gray-500 dark:text-gray-400 ml-2"
+                      >
                         {{ formatOrderTime(sessionOrder.date) }}
                       </span>
                     </div>
@@ -686,7 +700,9 @@
                   <div
                     class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700"
                   >
-                    <span class="text-xs text-gray-500">Order Total</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400"
+                      >Order Total</span
+                    >
                     <span
                       class="font-bold text-primary-600 dark:text-primary-400"
                     >
@@ -837,7 +853,7 @@ const PENDING_ORDERS_KEY = "bitspace_pending_orders"; // For admin to pick up
 
 // Table session tracking
 const currentSession = ref<ReturnType<typeof tableSession.getSession> | null>(
-  null
+  null,
 );
 const sessionOrders = ref<Order[]>([]); // All orders in current session
 
@@ -870,7 +886,7 @@ const publishPosAlert = async (
     orderId?: string;
     orderCode?: string;
   },
-  retryCount = 0
+  retryCount = 0,
 ) => {
   if (!ownerPubkey.value) {
     console.warn("[Order] ⚠️ No ownerPubkey - cannot publish POS_ALERT");
@@ -905,7 +921,7 @@ const publishPosAlert = async (
         ],
         content,
       },
-      sk
+      sk,
     );
 
     // Publish to relays
@@ -924,7 +940,7 @@ const publishPosAlert = async (
 
     // Non-blocking - order still works even if Nostr fails
     console.warn(
-      `[Order] ⚠️ All retries exhausted for ${type} alert. Falling back to BroadcastChannel only.`
+      `[Order] ⚠️ All retries exhausted for ${type} alert. Falling back to BroadcastChannel only.`,
     );
     return false;
   }
@@ -1070,7 +1086,7 @@ const getStepClass = (stepKey: string, index: number) => {
   } else if (stepIndex === currentIndex) {
     return "bg-primary-500 text-white animate-pulse";
   }
-  return "bg-gray-200 dark:bg-gray-700 text-gray-500";
+  return "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400";
 };
 
 const isStepCompleted = (stepKey: string) => {
@@ -1121,7 +1137,7 @@ const getOrderStatusIconClass = (status: string) => {
     case "served":
       return "text-primary-500";
     default:
-      return "text-gray-500";
+      return "text-gray-500 dark:text-gray-400";
   }
 };
 
@@ -1143,16 +1159,16 @@ const getOrderStatusTitle = (status: string) => {
 const getOrderStatusDescription = (status: string) => {
   switch (status) {
     case "new":
-      return (
-        t("order.orderPlacedDesc", "Your order has been sent to the kitchen")
+      return t(
+        "order.orderPlacedDesc",
+        "Your order has been sent to the kitchen",
       );
     case "preparing":
-      return (
-        t("order.orderPreparingDesc", "The chef is preparing your order")
-      );
+      return t("order.orderPreparingDesc", "The chef is preparing your order");
     case "ready":
-      return (
-        t("order.orderReadyDesc", "Your order is ready for pickup or delivery")
+      return t(
+        "order.orderReadyDesc",
+        "Your order is ready for pickup or delivery",
       );
     case "served":
       return t("order.orderServedDesc", "Thank you for dining with us!");
@@ -1211,7 +1227,7 @@ const addToCart = (product: Product) => {
 
   // No variants, add directly
   const existing = cart.value.find(
-    (item) => item.product.id === product.id && !item.selectedVariant
+    (item) => item.product.id === product.id && !item.selectedVariant,
   );
   if (existing) {
     existing.quantity++;
@@ -1241,7 +1257,7 @@ const handleVariantConfirm = (data: {
     (item) =>
       item.product.id === data.product.id &&
       item.selectedVariant?.id === data.variant?.id &&
-      JSON.stringify(item.selectedModifiers) === JSON.stringify(data.modifiers)
+      JSON.stringify(item.selectedModifiers) === JSON.stringify(data.modifiers),
   );
 
   if (existingIndex !== -1) {
@@ -1349,8 +1365,10 @@ const callWaiter = async () => {
     // Show toast to customer
     toast.add({
       title: t("order.waiterCalled", "Waiter Called!"),
-      description:
-        t("order.waiterCalledDesc", "Staff will be with you shortly"),
+      description: t(
+        "order.waiterCalledDesc",
+        "Staff will be with you shortly",
+      ),
       icon: "i-heroicons-bell-alert",
       color: "amber",
     });
@@ -1391,14 +1409,14 @@ const requestBill = async () => {
     if (currentSession.value) {
       tableSession.requestBill(currentSession.value.sessionId);
       currentSession.value = tableSession.getSession(
-        currentSession.value.sessionId
+        currentSession.value.sessionId,
       );
     }
 
     // Get session info for notifications
     const sessionInfo = currentSession.value
       ? `${sessionOrderCount.value} orders, Total: ${formatPrice(
-          sessionTotal.value
+          sessionTotal.value,
         )}`
       : "No active session";
 
@@ -1424,8 +1442,10 @@ const requestBill = async () => {
     // Show toast to customer
     toast.add({
       title: t("order.billRequested", "Bill Requested!"),
-      description:
-        t("order.billRequestedDesc", "Staff will bring your bill shortly"),
+      description: t(
+        "order.billRequestedDesc",
+        "Staff will bring your bill shortly",
+      ),
       icon: "i-heroicons-receipt-percent",
       color: "emerald",
     });
@@ -1527,7 +1547,7 @@ const loadOrderHistory = () => {
             );
           })
           .sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
           );
       }
     } catch (e) {
@@ -1604,10 +1624,10 @@ const submitOrder = async () => {
       tableSession.addOrderToSession(
         currentSession.value.sessionId,
         order.id,
-        order.total
+        order.total,
       );
       currentSession.value = tableSession.getSession(
-        currentSession.value.sessionId
+        currentSession.value.sessionId,
       );
       // Reload session orders
       await loadSessionOrders();
@@ -1624,7 +1644,7 @@ const submitOrder = async () => {
         .catch((e) => {
           console.warn(
             "[Order] Failed to sync to Nostr (order still saved locally):",
-            e
+            e,
           );
         });
     }
@@ -1665,8 +1685,10 @@ const submitOrder = async () => {
 
     toast.add({
       title: t("order.orderSuccess", "Order placed!"),
-      description:
-        t("order.orderSuccessDesc", "Your order has been sent to the kitchen"),
+      description: t(
+        "order.orderSuccessDesc",
+        "Your order has been sent to the kitchen",
+      ),
       icon: "i-heroicons-check-circle",
       color: "green",
     });
@@ -1782,7 +1804,7 @@ onMounted(async () => {
       tableInfo.value.tableId,
       tableInfo.value.tableNumber,
       tableInfo.value.tableName,
-      "LAK"
+      "LAK",
     );
     // Load existing orders in session
     await loadSessionOrders();

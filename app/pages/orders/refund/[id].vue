@@ -245,7 +245,7 @@ onMounted(async () => {
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <span>💸</span> {{ t('refund.title') }}
           </h1>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
             {{ t('refund.description') }}
           </p>
         </div>
@@ -281,7 +281,7 @@ onMounted(async () => {
                 <h3 class="font-semibold text-gray-900 dark:text-white">
                   {{ t('refund.order') }} #{{ order.id }}
                 </h3>
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{ new Date(order.date).toLocaleString() }}
                 </p>
               </div>
@@ -298,25 +298,25 @@ onMounted(async () => {
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <div class="text-sm text-gray-500">{{ t('refund.originalAmount') }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('refund.originalAmount') }}</div>
             <div class="text-xl font-bold text-gray-900 dark:text-white">
               {{ currency.format(order.total, 'LAK') }}
             </div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">{{ t('refund.paymentMethod') }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('refund.paymentMethod') }}</div>
             <div class="font-medium text-gray-900 dark:text-white">
               {{ getPaymentMethodLabel(order.paymentMethod) }}
             </div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">{{ t('orders.customer') }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('orders.customer') }}</div>
             <div class="font-medium text-gray-900 dark:text-white">
               {{ order.customerName || order.customer || '—' }}
             </div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">{{ t('refund.items') }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('refund.items') }}</div>
             <div class="font-medium text-gray-900 dark:text-white">
               {{ order.items?.length || 0 }} {{ t('refund.itemsLabel') }}
             </div>
@@ -348,7 +348,7 @@ onMounted(async () => {
           >
             <div class="text-2xl mb-2">💯</div>
             <div class="font-medium text-gray-900 dark:text-white">{{ t('refund.fullRefund') }}</div>
-            <div class="text-sm text-gray-500">{{ t('refund.fullRefundDesc') }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('refund.fullRefundDesc') }}</div>
           </button>
 
           <button
@@ -358,7 +358,7 @@ onMounted(async () => {
           >
             <div class="text-2xl mb-2">📦</div>
             <div class="font-medium text-gray-900 dark:text-white">{{ t('refund.partialRefund') }}</div>
-            <div class="text-sm text-gray-500">{{ t('refund.partialRefundDesc') }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('refund.partialRefundDesc') }}</div>
           </button>
 
           <button
@@ -369,7 +369,7 @@ onMounted(async () => {
           >
             <div class="text-2xl mb-2">🚫</div>
             <div class="font-medium text-gray-900 dark:text-white">{{ t('refund.voidOrder') }}</div>
-            <div class="text-sm text-gray-500">{{ t('refund.voidOrderDesc') }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('refund.voidOrderDesc') }}</div>
           </button>
         </div>
       </UCard>
@@ -398,7 +398,7 @@ onMounted(async () => {
               <div class="font-medium text-gray-900 dark:text-white">
                 {{ item.product?.name || 'Unknown Item' }}
               </div>
-              <div class="text-sm text-gray-500">
+              <div class="text-sm text-gray-500 dark:text-gray-400">
                 {{ currency.format(item.total / item.quantity, 'LAK') }} × {{ item.quantity }}
               </div>
             </div>
@@ -412,7 +412,7 @@ onMounted(async () => {
                 :disabled="(selectedItems.get(index)?.quantity || 1) <= 1"
                 @click="updateItemQuantity(index, (selectedItems.get(index)?.quantity || 1) - 1)"
               />
-              <span class="w-8 text-center font-bold">
+               <span class="w-8 text-center font-bold text-gray-900 dark:text-white">
                 {{ selectedItems.get(index)?.quantity }}
               </span>
               <UButton
@@ -463,7 +463,7 @@ onMounted(async () => {
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('refund.refundAmount') }}</h3>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
               {{ refundType === 'void' ? t('refund.voidNote') : t('refund.refundNote') }}
             </p>
           </div>
@@ -471,7 +471,7 @@ onMounted(async () => {
             <div class="text-3xl font-bold text-red-600 dark:text-red-400">
               -{{ currency.format(refundAmount, 'LAK') }}
             </div>
-            <div class="text-sm text-gray-500">
+            <div class="text-sm text-gray-500 dark:text-gray-400">
               {{ refundItemsCount }} {{ t('refund.itemsLabel') }}
             </div>
           </div>

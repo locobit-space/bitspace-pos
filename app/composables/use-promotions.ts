@@ -167,18 +167,15 @@ export function usePromotionsStore() {
     try {
       const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
       
-      // Sync promotion with company code tag for team visibility
+      const companyTags = await nostrData.buildCompanyTags();
+
       const tags: string[][] = [
         ["d", promotion.id],
         ["type", promotion.type],
         ["status", promotion.status],
         ["name", promotion.name],
+        ...companyTags,
       ];
-
-      // Add company code hash tag for team sync
-      if (company.companyCodeHash.value) {
-        tags.push(["c", company.companyCodeHash.value]);
-      }
 
       const event = await nostrData.publishReplaceableEvent(
         NOSTR_KINDS.PROMOTION,
@@ -407,11 +404,12 @@ export function usePromotionsStore() {
     if (offline.isOnline.value) {
       try {
         const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
+        const companyTags = await nostrData.buildCompanyTags();
         await nostrData.publishReplaceableEvent(
           NOSTR_KINDS.PROMOTION,
           { deleted: true, deletedAt: new Date().toISOString() },
           id,
-          [["deleted", "true"]],
+          [["deleted", "true"], ...companyTags],
           true
         );
       } catch (e) {
@@ -616,14 +614,16 @@ export function usePromotionsStore() {
     try {
       const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
       
+      const companyTags = await nostrData.buildCompanyTags();
+
       const event = await nostrData.publishEvent(
-        NOSTR_KINDS.PROMOTION_USAGE || 30314, // New kind for promotion usage logs
+        NOSTR_KINDS.PROMOTION_USAGE || 30314,
         usage,
         [
           ["d", usage.id],
           ["promotion_id", usage.promotionId],
           ["order_id", usage.orderId],
-          ["company", company.companyCodeHash.value || ""],
+          ...companyTags,
         ]
       );
 

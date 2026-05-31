@@ -3,6 +3,7 @@
 import Dexie from "dexie";
 import type { Table } from "dexie";
 import type { IngredientUnit } from "~/types";
+import type { BnosLegacySpaceRecord } from "@bitos/bnos-core/types";
 
 // ============================================
 // Database Types
@@ -36,6 +37,8 @@ export interface PendingSync {
   status: "pending" | "error" | "synced";
   lastAttempt?: number;
 }
+
+export type LegacyBnosSpaceRecord<TData = unknown> = BnosLegacySpaceRecord<TData>;
 
 // New: Offline Payments
 export interface OfflinePaymentRecord {

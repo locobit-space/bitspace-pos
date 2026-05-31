@@ -18,6 +18,8 @@ const nostrUser = useNostrUser();
 const usersComposable = useUsers();
 const shopManager = useShopManager();
 const { syncNostrOwner } = usersComposable;
+const migration = useBnosSpaceMigration();
+const bdgoOsImport = useBdgoOsEventImport();
 
 // UI state
 const hasNostr = ref(false);
@@ -38,6 +40,87 @@ const companyCodeError = ref<string | null>(null);
 const showCompanyCode = ref(false);
 const company = useCompany();
 const nostrData = useNostrData();
+
+const runBnosSpaceMigrationAfterLogin = async () => {
+  try {
+    const status = migration.getSettingsMigrationStatus();
+    if (status.complete) return;
+
+    const result = await migration.publishSettingsMigrationDrafts();
+    const catalogResult = await migration.publishCatalogMigrationDrafts();
+    const customerResult = await migration.publishCustomerMigrationDrafts();
+    const orderResult = await migration.publishOrderMigrationDrafts();
+    const promotionResult = await migration.publishPromotionMigrationDrafts();
+    const inventoryResult = await migration.publishInventoryMigrationDrafts();
+    const staffResult = await migration.publishStaffMigrationDrafts();
+    const results = [
+      result,
+      catalogResult,
+      customerResult,
+      orderResult,
+      promotionResult,
+      inventoryResult,
+      staffResult,
+    ];
+    const totals = results.reduce(
+      (sum, item) => ({
+        attempted: sum.attempted + item.attempted,
+        published: sum.published + item.published,
+        failed: sum.failed + item.failed,
+      }),
+      { attempted: 0, published: 0, failed: 0 },
+    );
+    if (
+      totals.attempted === 0
+    ) {
+      return;
+    }
+
+    if (totals.failed === 0) {
+      toast.add({
+        title: t("auth.signin.migrationSynced", "Workspace synced"),
+        description: t(
+          "auth.signin.migrationSyncedDesc",
+          `Published ${totals.published} workspace records across settings, catalog, customers, orders, payments, promotions, inventory, and staff.`,
+        ),
+        icon: "i-heroicons-cloud-arrow-up",
+        color: "green",
+      });
+      return;
+    }
+
+    toast.add({
+      title: t("auth.signin.migrationPartial", "Workspace sync incomplete"),
+      description: t(
+        "auth.signin.migrationPartialDesc",
+        `Published ${totals.published} records; ${totals.failed} could not publish yet. Local data remains available and can be retried.`,
+      ),
+      icon: "i-heroicons-exclamation-triangle",
+      color: "yellow",
+    });
+  } catch (error) {
+    console.warn("[Migration] bnos-space settings migration failed:", error);
+  }
+};
+
+const importBdgoOsDataAfterLogin = async () => {
+  try {
+    const result = await bdgoOsImport.importCanonicalEventsForCurrentUser();
+    if (result.imported === 0) return;
+
+    toast.add({
+      title: t("auth.signin.bdgoDataImported", "Shared data ready"),
+      description: t(
+        "auth.signin.bdgoDataImportedDesc",
+        `Imported ${result.imported} shared records from bdgo-os into this workspace.`,
+      ),
+      icon: "i-heroicons-arrow-down-tray",
+      color: "green",
+    });
+  } catch (error) {
+    console.warn("[bdgo-os import] shared data import failed:", error);
+  }
+};
 
 // Computed
 const isValidCompanyCode = computed(() =>
@@ -103,6 +186,8 @@ const handleNostrSignIn = async () => {
       }
 
       // Try to load workspaces from Nostr (for new device login)
+      await runBnosSpaceMigrationAfterLogin();
+      await importBdgoOsDataAfterLogin();
       await shopManager.loadWorkspacesFromNostr();
 
       router.push("/");
@@ -179,6 +264,8 @@ const triggerNos2xPopup = async () => {
       const success = await auth.signInWithNpub(pubkey);
       if (success) {
         // Try to load workspaces from Nostr (for new device login)
+        await runBnosSpaceMigrationAfterLogin();
+        await importBdgoOsDataAfterLogin();
         await shopManager.loadWorkspacesFromNostr();
         router.push("/");
       }
@@ -312,6 +399,8 @@ const handleNsecSignIn = async () => {
 
     // Try to load workspaces from Nostr (for new device login)
     // This restores workspace list synced from other devices
+    await runBnosSpaceMigrationAfterLogin();
+    await importBdgoOsDataAfterLogin();
     await shopManager.loadWorkspacesFromNostr();
 
     manualNsec.value = "";

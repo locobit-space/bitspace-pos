@@ -453,7 +453,7 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ stats.total }}
               </p>
-              <p class="text-xs text-gray-500">Total Orders</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Total Orders</p>
             </div>
           </div>
         </div>
@@ -474,7 +474,7 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ stats.today }}
               </p>
-              <p class="text-xs text-gray-500">Today's Orders</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Today's Orders</p>
             </div>
           </div>
         </div>
@@ -495,7 +495,7 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ currency.format(stats.todayRevenue, "LAK") }}
               </p>
-              <p class="text-xs text-gray-500">Today's Revenue</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Today's Revenue</p>
             </div>
           </div>
         </div>
@@ -516,7 +516,7 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ stats.pending }}
               </p>
-              <p class="text-xs text-gray-500">Pending</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Pending</p>
             </div>
           </div>
         </div>
@@ -666,7 +666,7 @@ onMounted(async () => {
             name="i-heroicons-arrow-path"
             class="w-10 h-10 animate-spin text-primary-500 mb-4"
           />
-          <p class="text-gray-500">Loading orders...</p>
+          <p class="text-gray-500 dark:text-gray-400">Loading orders...</p>
         </div>
       </div>
 
@@ -686,13 +686,13 @@ onMounted(async () => {
       <!-- Empty State -->
       <div
         v-else-if="filteredOrders.length === 0"
-        class="bg-white dark:bg-gray-900 rounded-xl border-gray-200 dark:border-gray-800 p-16 text-center"
+        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-16 text-center"
       >
         <div class="text-6xl mb-4">📋</div>
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           No orders yet
         </h3>
-        <p class="text-gray-500 mb-6 max-w-md mx-auto">
+        <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
           Create your first order to start tracking sales and managing your
           business.
         </p>
@@ -731,7 +731,7 @@ onMounted(async () => {
                 >
                   #{{ order?.code || order.id.slice(-6).toUpperCase() }}
                 </span>
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-gray-500 dark:text-gray-400">
                   {{ formatDate(order.date) }}
                 </p>
               </div>
@@ -770,7 +770,7 @@ onMounted(async () => {
               <p class="font-semibold text-gray-900 dark:text-white">
                 {{ currency.format(order.total, "LAK") }}
               </p>
-              <p v-if="order.totalSats" class="text-xs text-amber-600">
+              <p v-if="order.totalSats" class="text-xs text-amber-600 dark:text-amber-400">
                 ⚡ {{ order.totalSats.toLocaleString() }} sats
               </p>
             </div>
@@ -791,7 +791,7 @@ onMounted(async () => {
       <!-- Orders Table (hidden on mobile, visible on md+) -->
       <div
         v-if="filteredOrders.length > 0"
-        class="hidden md:block bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 overflow-hidden"
+        class="hidden md:block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
       >
         <div class="overflow-x-auto">
           <table class="w-full">
