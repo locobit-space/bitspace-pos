@@ -967,6 +967,8 @@ export const useNotifications = () => {
     };
 
     try {
+      const relayConfig = useNostrRelay();
+      await relayConfig.init();
       const filter = {
         kinds: [NOSTR_KINDS.TEXT_NOTE],
         "#t": ANNOUNCEMENT_TAGS,
@@ -975,7 +977,10 @@ export const useNotifications = () => {
 
       // Get all relay URLs (deduplicated)
       const allRelays = [
-        ...new Set([...useNostrRelay().DEFAULT_RELAYS.map((r) => r.url)]),
+        ...new Set([
+          ...relayConfig.relays.value,
+          ...relayConfig.readRelays.value,
+        ]),
       ];
 
       if (allRelays.length === 0) {
@@ -1002,7 +1007,7 @@ export const useNotifications = () => {
             "#t": ANNOUNCEMENT_TAGS,
             since: Math.floor(Date.now() / 1000),
           },
-        ],
+        ] as any,
         {
           onevent: processEvent,
         },
@@ -1243,10 +1248,13 @@ export const useNotifications = () => {
         await relayConfig.init();
 
         // Use the ACTUAL configured relays (not static defaults)
-        let allRelays = relayConfig.writeRelays.value;
+        const allRelays = relayConfig.writeRelays.value.length
+          ? relayConfig.writeRelays.value
+          : relayConfig.relays.value;
 
-        if (!allRelays || allRelays.length === 0) {
-          allRelays = relayConfig.DEFAULT_RELAYS.map((r) => r.url);
+        if (!allRelays.length) {
+          console.warn("[POS Alerts] No relays configured");
+          return;
         }
 
         const { NOSTR_KINDS } = await import("~/types/nostr-kinds");
@@ -1339,7 +1347,7 @@ export const useNotifications = () => {
         );
 
         // Real-time subscription with multiple filters
-        const sub = $nostr.pool.subscribeMany(allRelays, realtimeFilters, {
+        const sub = $nostr.pool.subscribeMany(allRelays, realtimeFilters as any, {
           onevent(event: any) {
             console.log(
               "[POS Alerts] 📨 Received event:",

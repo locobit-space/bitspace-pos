@@ -304,7 +304,7 @@ export function useOrders() {
           handleNewOrderEvent as EventListener
         );
 
-        subscribeToOrderUpdates();
+        await subscribeToOrderUpdates();
         startPendingOrdersPolling(5000);
         startBackgroundSync(60000);
       }
@@ -407,14 +407,22 @@ export function useOrders() {
         order.id.slice(-8),
         "status:",
         order.status,
-        "kitchenStatus:",
-        order.kitchenStatus
+        "items:",
+        order.items?.length || 0,
+        "total:",
+        order.total,
+        "paymentMethod:",
+        order.paymentMethod || "none",
       );
       const event = await nostrData.saveOrder(order);
       if (event) {
         console.log(
           "[Orders] ✅ Order published successfully, event ID:",
-          event.id.slice(0, 8) + "..."
+          event.id.slice(0, 8) + "...",
+          "kind:",
+          event.kind,
+          "tags:",
+          event.tags.map((t) => t[0] + ":" + (t[1] || "").slice(0, 12)).join(", "),
         );
         // Update local record with nostr event ID
         await db.localOrders.update(order.id, {
@@ -601,8 +609,29 @@ export function useOrders() {
 
     const result = await updateOrderStatus(orderId, "completed", updateData);
 
-    // Log order completion
     if (result) {
+      if (offline.isOnline.value) {
+        try {
+          const keys = nostrData.getUserKeys();
+          if (keys) {
+            await nostrData.savePayment({
+              orderId: result.id,
+              orderPubkey: keys.pubkey,
+              method: paymentMethod,
+              amount: result.total,
+              currency: result.currency,
+              status: "completed",
+            });
+            console.log(
+              "[Orders] ✅ PAYMENT event (30201) published for bdgo-os compatibility:",
+              result.id.slice(-8),
+            );
+          }
+        } catch (e) {
+          console.warn("[Orders] Failed to publish PAYMENT event:", e);
+        }
+      }
+
       try {
         const { logActivity } = useAuditLog();
         await logActivity(
@@ -818,12 +847,16 @@ export function useOrders() {
     const batchSize = options.batchSize ?? 50;
     let synced = 0;
 
+    console.log("[Orders] 🔄 syncWithNostr started, batchSize:", batchSize);
+
     try {
       // Get unsynced orders (limit batch to avoid blocking)
       const unsyncedOrders = await db.localOrders
         .filter((o) => !o.syncedAt || o.syncedAt === 0)
         .limit(batchSize)
         .toArray();
+
+      console.log("[Orders] 📤 Unsynced local orders:", unsyncedOrders.length);
 
       for (const localOrder of unsyncedOrders) {
         const order = JSON.parse(localOrder.data) as Order;
@@ -840,16 +873,36 @@ export function useOrders() {
         ? Math.floor(lastSyncAt.value / 1000) - 3600 // 1 hour buffer
         : undefined;
 
+      console.log("[Orders] 📥 Fetching from Nostr, since:", since || "beginning", "limit:", batchSize);
+
       const nostrOrders = await loadFromNostr({ since, limit: batchSize });
 
+      console.log("[Orders] 📥 Received", nostrOrders.length, "orders from Nostr");
+
       // Merge with local
+      let newCount = 0;
       for (const nostrOrder of nostrOrders) {
         const exists = orders.value.find((o) => o.id === nostrOrder.id);
         if (!exists) {
+          console.log(
+            "[Orders] ➕ New order from Nostr:",
+            nostrOrder.id.slice(-8),
+            "items:",
+            nostrOrder.items?.length || 0,
+            "status:",
+            nostrOrder.status,
+            "total:",
+            nostrOrder.total,
+            "tags:",
+            nostrOrder.tags?.join(",") || "none",
+          );
           orders.value.push(nostrOrder);
           await saveToLocal(nostrOrder);
+          newCount++;
         }
       }
+
+      console.log("[Orders] 📊 Sync result: synced:", synced, "new:", newCount, "total orders:", orders.value.length);
 
       // Also fetch customer orders tagged to this store (via #p tag)
       // This gets orders from customers who scanned QR and used ephemeral keys
@@ -1009,13 +1062,12 @@ export function useOrders() {
    * Subscribe to real-time order updates from Nostr
    * This enables instant sync across multiple staff devices
    */
-  function subscribeToOrderUpdates(): void {
-    // Clean up existing subscription
+  async function subscribeToOrderUpdates(): Promise<void> {
     if (orderSubscription) {
       orderSubscription.close();
     }
 
-    const sub = nostrData.subscribeToUpdates({
+    const sub = await nostrData.subscribeToUpdates({
       onOrder: async (incomingOrder: Order) => {
         console.log(
           "[Orders] Real-time order update received:",

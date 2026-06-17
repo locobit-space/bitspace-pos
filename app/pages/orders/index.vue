@@ -362,13 +362,31 @@ const deleteOrder = async (id: string) => {
 };
 
 // Sync orders
+const isManualSyncing = ref(false);
+
 const handleSync = async () => {
-  await ordersStore.syncWithNostr();
-  toast.add({
-    title: "Sync Complete",
-    description: "Orders synced with Nostr relays",
-    color: "green",
-  });
+  isManualSyncing.value = true;
+  ordersStore.isSyncing.value = true;
+  try {
+    const synced = await ordersStore.syncWithNostr();
+    toast.add({
+      title: "Sync Complete",
+      description:
+        synced > 0
+          ? `${synced} order(s) synced with Nostr relays`
+          : "All orders are already up to date",
+      color: "green",
+    });
+  } catch (e) {
+    toast.add({
+      title: "Sync Failed",
+      description: String(e),
+      color: "red",
+    });
+  } finally {
+    isManualSyncing.value = false;
+    ordersStore.isSyncing.value = false;
+  }
 };
 
 // Initialize
@@ -397,18 +415,27 @@ onMounted(async () => {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
-            <!-- Sync Status -->
+            <!-- Sync Button -->
             <UButton
               v-if="ordersStore.syncPending.value > 0"
               icon="solar:refresh-circle-linear"
               color="amber"
               variant="soft"
               size="sm"
-              :loading="ordersStore.isLoading.value"
+              :loading="isManualSyncing"
               @click="handleSync"
             >
               {{ ordersStore.syncPending.value }} pending
             </UButton>
+            <UButton
+              v-else
+              icon="solar:refresh-circle-linear"
+              color="gray"
+              variant="ghost"
+              size="sm"
+              :loading="isManualSyncing"
+              @click="handleSync"
+            />
 
             <!-- Export Button -->
             <UButton
@@ -453,7 +480,9 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ stats.total }}
               </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Total Orders</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Total Orders
+              </p>
             </div>
           </div>
         </div>
@@ -474,7 +503,9 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ stats.today }}
               </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Today's Orders</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Today's Orders
+              </p>
             </div>
           </div>
         </div>
@@ -495,7 +526,9 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ currency.format(stats.todayRevenue, "LAK") }}
               </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Today's Revenue</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Today's Revenue
+              </p>
             </div>
           </div>
         </div>
@@ -671,7 +704,10 @@ onMounted(async () => {
       </div>
 
       <!-- Syncing Indicator (background sync) -->
-      <div v-if="ordersStore.isSyncing?.value" class="px-4 mb-4">
+      <div
+        v-if="ordersStore.isSyncing?.value || isManualSyncing"
+        class="px-4 mb-4"
+      >
         <div
           class="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400"
         >
@@ -770,7 +806,10 @@ onMounted(async () => {
               <p class="font-semibold text-gray-900 dark:text-white">
                 {{ currency.format(order.total, "LAK") }}
               </p>
-              <p v-if="order.totalSats" class="text-xs text-amber-600 dark:text-amber-400">
+              <p
+                v-if="order.totalSats"
+                class="text-xs text-amber-600 dark:text-amber-400"
+              >
                 ⚡ {{ order.totalSats.toLocaleString() }} sats
               </p>
             </div>

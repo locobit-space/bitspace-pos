@@ -361,7 +361,7 @@ export function useAuditLog() {
   /**
    * Subscribe to real-time audit log updates
    */
-  function subscribeToLogs(callback?: (log: AuditLog) => void): () => void {
+  async function subscribeToLogs(callback?: (log: AuditLog) => void): Promise<() => void> {
     const relay = useNostrRelay();
     const keys = nostrData.getUserKeys();
 
@@ -384,7 +384,7 @@ export function useAuditLog() {
     }
 
     // Subscribe using subscribeToEvents
-    subscriptionHandle = relay.subscribeToEvents(subFilter, {
+    subscriptionHandle = await relay.subscribeToEvents(subFilter, {
       onevent: async (event: Event) => {
         try {
           const isEncrypted =

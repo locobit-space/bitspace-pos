@@ -3,7 +3,7 @@
 // Syncs POS data to Nostr relays with NIP-04/44 encryption
 // Uses centralized useEncryption module for all crypto operations
 // ============================================
-import { nip19 } from "nostr-tools";
+import { nip19, nip44 } from "nostr-tools";
 import { finalizeEvent, type UnsignedEvent, type Event } from "nostr-tools";
 import type {
   Product,
@@ -14,6 +14,7 @@ import type {
   Branch,
   StoreSettings,
   StoreUser,
+  UserPermissions,
 } from "~/types";
 
 // Import centralized NOSTR_KINDS
@@ -254,6 +255,110 @@ export function useNostrData() {
     try {
       const payload = JSON.parse(encrypted);
 
+      // Detect bdgo-os AES-256-GCM encryption envelope
+      // bdgo-os produces: {v:1, encrypted:true, scheme:"bdgoos.local-company-key.v1", alg:"AES-256-GCM", ciphertext:"...", nonce:"...", aad:{...}}
+      // This is NOT bnos-space's v1 (NIP-04) — it's a completely different format
+      const isBdgoOsEnvelope =
+        payload.encrypted === true &&
+        payload.scheme === "bdgoos.local-company-key.v1" &&
+        payload.ciphertext;
+
+      if (isBdgoOsEnvelope) {
+        console.log(
+          "[NostrData] 🔒 Detected bdgo-os AES-256-GCM encrypted envelope",
+          "kid:",
+          payload.kid,
+          "domain:",
+          payload.domain,
+        );
+
+        // 1. Try stored bdgo-os AES key (imported from COMPANY_KEY_GRANT events)
+        const rawKey = readBdgoOsKey(payload.kid);
+        if (rawKey) {
+          try {
+            const aesKey = await crypto.subtle.importKey(
+              "raw",
+              rawKey as BufferSource,
+              { name: "AES-GCM" },
+              false,
+              ["decrypt"],
+            );
+
+            const nonceBytes = fromBase64Url(payload.nonce);
+            const ciphertextBytes = fromBase64Url(payload.ciphertext);
+            const aadBytes = new TextEncoder().encode(
+              JSON.stringify(payload.aad),
+            );
+
+            const decrypted = await crypto.subtle.decrypt(
+              { name: "AES-GCM", iv: nonceBytes, additionalData: aadBytes },
+              aesKey,
+              ciphertextBytes,
+            );
+
+            const plaintext = new TextDecoder().decode(decrypted);
+            console.log(
+              "[NostrData] ✅ bdgo-os envelope decrypted with imported AES key!",
+            );
+            return JSON.parse(plaintext) as T;
+          } catch (e) {
+            console.warn(
+              "[NostrData] ❌ Imported AES key decryption failed for bdgo-os envelope:",
+              e,
+            );
+          }
+        }
+
+        // 2. Try company code SHA-256 derivation (fallback, may not match bdgo-os random key)
+        if (company.companyCode.value) {
+          try {
+            console.log(
+              "[NostrData] 🔑 Attempting company code decryption for bdgo-os envelope...",
+            );
+            const keyMaterial = new TextEncoder().encode(
+              `bitspace:company:${company.companyCode.value}`,
+            );
+            const hashBuffer = await crypto.subtle.digest(
+              "SHA-256",
+              keyMaterial,
+            );
+            const aesKey = await crypto.subtle.importKey(
+              "raw",
+              hashBuffer as BufferSource,
+              { name: "AES-GCM" },
+              false,
+              ["decrypt"],
+            );
+
+            const nonceBytes = fromBase64Url(payload.nonce);
+            const ciphertextBytes = fromBase64Url(payload.ciphertext);
+
+            const decrypted = await crypto.subtle.decrypt(
+              { name: "AES-GCM", iv: nonceBytes },
+              aesKey,
+              ciphertextBytes,
+            );
+
+            const plaintext = new TextDecoder().decode(decrypted);
+            console.log(
+              "[NostrData] ✅ bdgo-os envelope decrypted with company code!",
+            );
+            return JSON.parse(plaintext) as T;
+          } catch (e) {
+            console.warn(
+              "[NostrData] ❌ Company code decryption failed for bdgo-os envelope:",
+              e,
+            );
+          }
+        } else {
+          console.warn(
+            "[NostrData] ❌ No bdgo-os AES key or company code available to decrypt envelope",
+          );
+        }
+
+        return null;
+      }
+
       // Version 4: Company Code Encryption (cross-device sync)
       if (payload.v === 4 && payload.cc && company.companyCode.value) {
         try {
@@ -261,6 +366,7 @@ export function useNostrData() {
             payload.cc,
             company.companyCode.value,
           );
+          console.log("[NostrData] ✅ Decrypted v4 company-code payload");
           return decrypted;
         } catch {
           // Expected when switching shops or data from different company
@@ -271,6 +377,9 @@ export function useNostrData() {
       // Version 3: Local AES-256-GCM (no Nostr keys needed)
       if (payload.v === 3 && payload.algorithm === "aes-256-gcm") {
         const result = await encryption.decrypt<T>(payload);
+        if (result.success) {
+          console.log("[NostrData] ✅ Decrypted v3 AES-256-GCM payload");
+        }
         return result.success ? result.data || null : null;
       }
 
@@ -290,11 +399,14 @@ export function useNostrData() {
             },
             { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey },
           );
+          if (result.success) {
+            console.log("[NostrData] ✅ Decrypted v2 NIP-44 payload");
+          }
           return result.success ? result.data || null : null;
         }
 
-        // Version 1: NIP-04
-        if (payload.v === 1 || payload.ct) {
+        // Version 1: NIP-04 (bnos-space format uses "ct" field)
+        if ((payload.v === 1 && payload.ct) || payload.ct) {
           const result = await encryption.decrypt<T>(
             {
               ciphertext: payload.ct,
@@ -304,6 +416,9 @@ export function useNostrData() {
             },
             { nostrPrivkey: keys.privkey, nostrPubkey: keys.pubkey },
           );
+          if (result.success) {
+            console.log("[NostrData] ✅ Decrypted v1 NIP-04 payload");
+          }
           return result.success ? result.data || null : null;
         }
       }
@@ -317,21 +432,31 @@ export function useNostrData() {
             };
           };
         };
-        if (win.nostr?.nip04?.decrypt && (payload.v === 1 || payload.ct)) {
+        if (win.nostr?.nip04?.decrypt && payload.ct) {
           try {
             const plaintext = await win.nostr.nip04.decrypt(
               keys.pubkey,
               payload.ct,
             );
+            console.log("[NostrData] ✅ Decrypted via NIP-07 extension");
             return JSON.parse(plaintext) as T;
           } catch (e) {
             console.warn("[NostrData] NIP-07 decrypt failed:", e);
-            // Fall through
           }
         }
       }
 
       // Not encrypted, return as-is
+      if (payload.v && payload.encrypted) {
+        console.warn(
+          "[NostrData] ❌ Unrecognized encrypted payload, returning null",
+          "v:",
+          payload.v,
+          "scheme:",
+          payload.scheme,
+        );
+        return null;
+      }
       return payload as T;
     } catch {
       // Try parsing as plain JSON
@@ -745,6 +870,149 @@ export function useNostrData() {
     return tags;
   };
 
+  // ============================================
+  // 🔑 BDGO-OS KEY GRANT IMPORT
+  // Fetches kind 30512 (COMPANY_KEY_GRANT) events from relay,
+  // NIP-44 decrypts the wrapped AES key, and stores it in
+  // localStorage using bdgo-os's key format so decryptData()
+  // can decrypt bdgo-os order content.
+  // ============================================
+
+  const BDGOOS_KEY_PREFIX = "bdgoos_sensitive_data_key";
+
+  const toBase64Url = (bytes: Uint8Array) => {
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary)
+      .replaceAll("+", "-")
+      .replaceAll("/", "_")
+      .replaceAll("=", "");
+  };
+
+  const fromBase64Url = (value: string) => {
+    const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      "=",
+    );
+    const binary = atob(padded);
+    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  };
+
+  const storeBdgoOsKey = (keyId: string, rawKey: Uint8Array) => {
+    if (!import.meta.client) return;
+    localStorage.setItem(`${BDGOOS_KEY_PREFIX}:${keyId}`, toBase64Url(rawKey));
+    console.log("[NostrData] 🔑 Stored bdgo-os AES key:", keyId);
+  };
+
+  const readBdgoOsKey = (keyId: string): Uint8Array | null => {
+    if (!import.meta.client) return null;
+    const stored = localStorage.getItem(`${BDGOOS_KEY_PREFIX}:${keyId}`);
+    return stored ? fromBase64Url(stored) : null;
+  };
+
+  const getBdgoOsKeyIds = (): string[] => {
+    if (!import.meta.client) return [];
+    const ids: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(`${BDGOOS_KEY_PREFIX}:`)) {
+        ids.push(key.slice(BDGOOS_KEY_PREFIX.length + 1));
+      }
+    }
+    return ids;
+  };
+
+  async function nip44Decrypt(
+    senderPubkey: string,
+    ciphertext: string,
+    recipientPrivkey: string,
+  ): Promise<string> {
+    type Nip44Window = Window & {
+      nostr?: {
+        nip44?: {
+          decrypt: (pubkey: string, ct: string) => Promise<string>;
+        };
+      };
+    };
+
+    const wnostr = (window as Nip44Window).nostr;
+    if (wnostr?.nip44?.decrypt) {
+      return wnostr.nip44.decrypt(senderPubkey, ciphertext);
+    }
+
+    const conversationKey = nip44.v2.utils.getConversationKey(
+      hexToBytes(recipientPrivkey),
+      senderPubkey,
+    );
+    return nip44.v2.decrypt(ciphertext, conversationKey);
+  }
+
+  async function importKeyGrantsForCurrentUser(): Promise<number> {
+    const keys = getUserKeys();
+    if (!keys?.pubkey) {
+      console.log("[NostrData] ⏭ Skipping key grant import — no user keys");
+      return 0;
+    }
+
+    try {
+      const events = await relay.queryEvents({
+        kinds: [NOSTR_KINDS.COMPANY_KEY_GRANT],
+        ["#p"]: [keys.pubkey],
+        limit: 100,
+      } as Parameters<typeof relay.queryEvents>[0]);
+
+      console.log(
+        `[NostrData] 🔑 Found ${events.length} COMPANY_KEY_GRANT events for user`,
+      );
+
+      let imported = 0;
+      for (const event of events) {
+        try {
+          const grant = JSON.parse(event.content) as {
+            recipientPubkey: string;
+            wrappedKey: string;
+            keyId: string;
+            companyId: string;
+            keyVersion?: number;
+            revokedAt?: number;
+          };
+
+          if (grant.recipientPubkey !== keys.pubkey) continue;
+          if (grant.revokedAt) continue;
+
+          if (!keys.privkey) {
+            console.warn(
+              "[NostrData] ⚠️ Cannot decrypt key grant — no privkey (NIP-07 user needs extension with nip44 support)",
+            );
+            continue;
+          }
+
+          const decryptedBase64Url = await nip44Decrypt(
+            event.pubkey,
+            grant.wrappedKey,
+            keys.privkey,
+          );
+          const rawKey = fromBase64Url(decryptedBase64Url);
+
+          storeBdgoOsKey(grant.keyId, rawKey);
+          imported++;
+
+          console.log(
+            `[NostrData] ✅ Imported key grant: kid=${grant.keyId}, company=${grant.companyId}`,
+          );
+        } catch (e) {
+          console.warn("[NostrData] ❌ Failed to import key grant:", e);
+        }
+      }
+
+      return imported;
+    } catch (e) {
+      console.warn("[NostrData] ❌ Failed to fetch key grants:", e);
+      return 0;
+    }
+  }
+
   async function saveProduct(product: Product): Promise<Event | null> {
     const companyTags = await buildCompanyTags();
     const extraTags: string[][] = [
@@ -871,25 +1139,204 @@ export function useNostrData() {
   // 🧾 ORDER OPERATIONS
   // ============================================
 
+  const normalizeBdgoOsOrder = (
+    raw: Record<string, unknown>,
+    eventAuthorPubkey?: string,
+  ): Order | null => {
+    try {
+      const orderCreatedAt =
+        typeof raw.createdAt === "number"
+          ? raw.createdAt
+          : typeof raw.date === "number"
+            ? Math.floor((raw.date as number) / 1000)
+            : Math.floor(Date.now() / 1000);
+
+      const orderUpdatedAt =
+        typeof raw.updatedAt === "number"
+          ? raw.updatedAt
+          : typeof raw.completedAt === "number"
+            ? raw.completedAt
+            : orderCreatedAt;
+
+      const items = Array.isArray(raw.items)
+        ? (raw.items as Record<string, unknown>[]).map(
+            (item: Record<string, unknown>, idx: number) => {
+              const product = (item.product as Record<string, unknown>) || {};
+              return {
+                id:
+                  (item.id as string) ||
+                  `item_${idx}_${Date.now()}`,
+                productId:
+                  (item.productId as string) ||
+                  (item.product_id as string) ||
+                  "",
+                quantity: (item.quantity as number) || 1,
+                price:
+                  (item.unitPrice as number) ||
+                  (item.price as number) ||
+                  0,
+                total:
+                  (item.lineTotal as number) ||
+                  ((item.quantity as number) || 1) *
+                    ((item.unitPrice as number) || (item.price as number) || 0),
+                createdAt: new Date(orderCreatedAt * 1000).toISOString(),
+                updatedAt: new Date(orderUpdatedAt * 1000).toISOString(),
+                product: {
+                  id:
+                    (item.productId as string) ||
+                    (product.id as string) ||
+                    "",
+                  name:
+                    (item.productName as string) ||
+                    (product.name as string) ||
+                    "Unknown",
+                  price:
+                    (item.unitPrice as number) ||
+                    (product.price as number) ||
+                    0,
+                  categoryId:
+                    (product.categoryId as string) ||
+                    (product.cat as string) ||
+                    "default",
+                  sku: (product.sku as string) || "",
+                  status: "active",
+                  image: (product.img as string) || (product.image as string) || undefined,
+                } as Product,
+                notes: (item.notes as string) || (item.note as string) || undefined,
+              };
+            },
+          )
+        : [];
+
+      const totals = (raw.totals as Record<string, number>) || {};
+      const metadata = (raw.metadata as Record<string, unknown>) || {};
+      const total = totals.total || (raw.total as number) || 0;
+
+      return {
+        id: (raw.id as string) || (raw.dTag as string) || `bdgo_${Date.now()}`,
+        customer:
+          (raw.customerName as string) ||
+          (raw.customer as string) ||
+          "Walk-in",
+        branch:
+          (raw.branchId as string) ||
+          (metadata.branchId as string) ||
+          "main",
+        date: new Date(orderCreatedAt * 1000).toISOString(),
+        total,
+        currency: (raw.currency as string) || "LAK",
+        status: (raw.status as string) || "pending",
+        paymentMethod: (raw.paymentMethod as string) || undefined,
+        items,
+        notes: (raw.notes as string) || undefined,
+        discount: totals.discountAmount || (raw.discount as number) || 0,
+        tax: totals.taxAmount || (raw.tax as number) || 0,
+        orderType: (raw.type as string) || (raw.orderType as string) || undefined,
+        tableNumber: (raw.tableId as string) || (raw.tableNumber as string) || undefined,
+        updatedAt: new Date(orderUpdatedAt * 1000).toISOString(),
+        tags: ["bdgo-os"],
+        isOffline: false,
+      } as Order;
+    } catch (e) {
+      console.warn("[NostrData] Failed to normalize bdgo-os order:", e);
+      return null;
+    }
+  };
+
+  const isBdgoOsOrder = (data: Record<string, unknown>): boolean => {
+    return (
+      "items" in data &&
+      typeof data.items === "object" &&
+      ("totals" in data ||
+        "orderNumber" in data ||
+        "branchId" in data ||
+        "covers" in data ||
+        ("metadata" in data &&
+          typeof (data as Record<string, unknown>).metadata === "object"))
+    );
+  };
+
   async function saveOrder(order: Order): Promise<Event | null> {
     const company = useCompany();
     const companyTags = await buildCompanyTags();
 
     const shouldEncrypt = !company.isCompanyCodeEnabled.value;
 
+    const tags: string[][] = [
+      ["d", order.id],
+      ["status", order.status],
+      ["method", order.paymentMethod || "unknown"],
+      ["t", order.date],
+      ["amount", order.total.toString()],
+      ["t", "order"],
+      ["t", "bnos"],
+    ];
+
+    if (order.customerPubkey) {
+      tags.push(["p", order.customerPubkey]);
+    }
+    if (order.orderType) {
+      tags.push(["order_type", order.orderType]);
+    }
+    if (order.tableNumber) {
+      tags.push(["table", order.tableNumber]);
+    }
+
+    tags.push(...companyTags);
+    tags.push(
+      ...(order.tags || []).map((tag) => ["t", tag]),
+    );
+
     return publishEvent(
       NOSTR_KINDS.ORDER,
       order,
-      [
-        ["d", order.id],
-        ["status", order.status],
-        ["method", order.paymentMethod || "unknown"],
-        ["t", order.date],
-        ["amount", order.total.toString()],
-        order.customerPubkey ? ["p", order.customerPubkey] : [],
-        ...companyTags,
-        ...(order.tags || []).map((tag) => ["t", tag]),
-      ].filter((t) => t.length > 0) as string[][],
+      tags.filter((t) => t.length > 0),
+      shouldEncrypt,
+    );
+  }
+
+  async function savePayment(data: {
+    orderId: string;
+    orderPubkey: string;
+    method: string;
+    amount: number;
+    currency?: string;
+    status?: string;
+  }): Promise<Event | null> {
+    const company = useCompany();
+    const companyTags = await buildCompanyTags();
+    const keys = getUserKeys();
+    if (!keys) return null;
+
+    const paymentId = `payment_${data.orderId}_${Date.now()}`;
+    const paymentData = {
+      id: paymentId,
+      orderId: data.orderId,
+      method: data.method,
+      amount: data.amount,
+      currency: data.currency || "LAK",
+      status: data.status || "completed",
+      receivedAt: new Date().toISOString(),
+      createdBy: keys.pubkey,
+    };
+
+    const tags: string[][] = [
+      ["d", paymentId],
+      ["a", `30200:${data.orderPubkey}:${data.orderId}`],
+      ["e", data.orderId],
+      ["t", "payment"],
+      ["t", "bnos"],
+      ["method", data.method],
+      ["amount", data.amount.toString()],
+      ...companyTags,
+    ];
+
+    const shouldEncrypt = !company.isCompanyCodeEnabled.value;
+
+    return publishEvent(
+      NOSTR_KINDS.PAYMENT,
+      paymentData,
+      tags.filter((t) => t.length > 0),
       shouldEncrypt,
     );
   }
@@ -958,22 +1405,177 @@ export function useNostrData() {
       : JSON.parse(event.content);
   }
 
+  const parseOrderEvent = async (
+    event: { content: string; tags: string[][]; pubkey: string },
+  ): Promise<Order | null> => {
+    try {
+      const isEncrypted =
+        event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
+      const dTag = event.tags.find((t) => t[0] === "d")?.[1];
+      const sourceApp = event.tags.find((t) => t[1] === "bdgoos")
+        ? "bdgo-os"
+        : event.tags.find((t) => t[1] === "bnos")
+          ? "bnos-space"
+          : "unknown";
+
+      console.log(
+        "[NostrData] 🔍 parseOrderEvent:",
+        "dTag:",
+        dTag?.slice(-8),
+        "encrypted:",
+        isEncrypted,
+        "source:",
+        sourceApp,
+        "author:",
+        event.pubkey.slice(0, 8) + "...",
+      );
+
+      let data: unknown = null;
+      if (isEncrypted) {
+        data = await decryptData(event.content);
+        if (!data) {
+          console.warn(
+            "[NostrData] ❌ Decryption FAILED for order:",
+            dTag?.slice(-8),
+            "source:",
+            sourceApp,
+            "— creating minimal order from tags as fallback",
+          );
+          return buildOrderFromTags(event);
+        }
+        console.log(
+          "[NostrData] ✅ Decryption succeeded for order:",
+          dTag?.slice(-8),
+          "source:",
+          sourceApp,
+          "dataKeys:",
+          Object.keys(data as object).slice(0, 10).join(","),
+        );
+      } else {
+        data = JSON.parse(event.content);
+      }
+
+      if (!data) return null;
+
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        !Array.isArray(data)
+      ) {
+        const record = data as Record<string, unknown>;
+        if (isBdgoOsOrder(record)) {
+          console.log(
+            "[NostrData] 📦 Normalizing bdgo-os order:",
+            dTag?.slice(-8),
+            "items:",
+            Array.isArray(record.items) ? record.items.length : 0,
+          );
+          return normalizeBdgoOsOrder(record, event.pubkey);
+        }
+        if (record.id) {
+          return data as Order;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      console.warn("[NostrData] parseOrderEvent error:", e);
+      return null;
+    }
+  };
+
+  function buildOrderFromTags(event: {
+    content: string;
+    tags: string[][];
+    pubkey: string;
+  }): Order | null {
+    const dTag = event.tags.find((t) => t[0] === "d")?.[1];
+    if (!dTag) return null;
+
+    const amount = event.tags.find((t) => t[0] === "amount")?.[1];
+    const method = event.tags.find((t) => t[0] === "method")?.[1];
+    const status = event.tags.find((t) => t[0] === "status")?.[1];
+    const table = event.tags.find((t) => t[0] === "table")?.[1];
+    const branchTag = event.tags.find((t) => t[0] === "b" || t[0] === "branch")?.[1];
+    const companyTag = event.tags.find((t) => t[0] === "c" || t[0] === "company")?.[1];
+
+    console.log(
+      "[NostrData] 📋 buildOrderFromTags:",
+      "id:",
+      dTag.slice(-8),
+      "amount:",
+      amount,
+      "method:",
+      method,
+      "status:",
+      status,
+      "company:",
+      companyTag,
+    );
+
+    return {
+      id: dTag,
+      customer: "Walk-in",
+      branch: branchTag || "main",
+      date: new Date(
+        ((event as unknown as { created_at?: number }).created_at || 0) * 1000 || Date.now(),
+      ).toISOString(),
+      total: amount ? parseFloat(amount) : 0,
+      currency: "LAK",
+      status: (status as string) || "pending",
+      paymentMethod: method || undefined,
+      items: [],
+      notes: "⚠️ Order content encrypted (bdgo-os). Enable company code to decrypt.",
+      orderType: undefined,
+      tableNumber: table || undefined,
+      updatedAt: new Date().toISOString(),
+      tags: ["bdgo-os", "encrypted-fallback"],
+      isOffline: false,
+    } as Order;
+  }
+
   async function getAllOrders(
     options: { since?: number; limit?: number } = {},
   ): Promise<Order[]> {
     const company = useCompany();
 
-    // If company code is enabled, query by company code hash tag instead of authors
-    // This allows owner and staff to see all team orders without circular dependencies
+    await importKeyGrantsForCurrentUser();
+
+    const seenIds = new Set<string>();
+    const orders: Order[] = [];
+
+    const addOrder = (order: Order | null) => {
+      if (order && order.id && !seenIds.has(order.id)) {
+        seenIds.add(order.id);
+        orders.push(order);
+      }
+    };
+
     if (
       company.hasCompanyCode.value &&
       company.isCompanyCodeEnabled.value &&
       company.companyCodeHash.value
     ) {
       try {
+        const cTags = [company.companyCodeHash.value];
+
+        const discoveredIds = await discoverCompanyIdsFromRelay();
+        for (const id of discoveredIds) {
+          if (!cTags.includes(id)) {
+            cTags.push(id);
+          }
+        }
+
+        console.log(
+          "[NostrData] 📡 getAllOrders: querying with",
+          cTags.length,
+          "company IDs:",
+          cTags.map((t) => t.slice(0, 12) + "..."),
+        );
+
         const filter: Record<string, unknown> = {
           kinds: [NOSTR_KINDS.ORDER],
-          "#c": [company.companyCodeHash.value], // Query by company code tag
+          "#c": cTags,
         };
 
         if (options.since) {
@@ -987,42 +1589,58 @@ export function useNostrData() {
           filter as Parameters<typeof relay.queryEvents>[0],
         );
 
-        const orders: Order[] = [];
-        for (const event of events) {
-          try {
-            const isEncrypted =
-              event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
-            const data = isEncrypted
-              ? await decryptData<Order>(event.content)
-              : JSON.parse(event.content);
-
-            if (data && data.id) {
-              orders.push(data);
-            }
-          } catch {
-            // Skip invalid events
-          }
-        }
-
-        // Sort by date descending
-        return orders.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        console.log(
+          "[NostrData] 📡 getAllOrders: received",
+          events.length,
+          "events from relay",
         );
+
+        for (const event of events) {
+          const order = await parseOrderEvent(event);
+          if (order) {
+            console.log(
+              "[NostrData] ✅ Parsed order:",
+              order.id.slice(-8),
+              "items:",
+              order.items?.length || 0,
+              "status:",
+              order.status,
+              "total:",
+              order.total,
+            );
+          }
+          addOrder(order);
+        }
       } catch (e) {
         console.warn(
           "[NostrData] Company code query failed, falling back to normal query:",
           e,
         );
-        // Fall through to normal query
       }
     }
 
-    // Normal query by authors (for non-team mode)
-    const results = await getAllEventsOfKind<Order>(NOSTR_KINDS.ORDER, options);
-    // Sort by date descending
-    return results
-      .map((r) => r.data)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    try {
+      const results = await getAllEventsOfKind<Order>(
+        NOSTR_KINDS.ORDER,
+        options,
+      );
+      for (const r of results) {
+        const record = r.data as unknown as Record<string, unknown>;
+        if (isBdgoOsOrder(record)) {
+          addOrder(
+            normalizeBdgoOsOrder(record, r.event.pubkey),
+          );
+        } else {
+          addOrder(r.data);
+        }
+      }
+    } catch {
+      // Silently continue
+    }
+
+    return orders.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
   }
 
   async function getOrdersByStatus(status: string): Promise<Order[]> {
@@ -1144,7 +1762,6 @@ export function useNostrData() {
    */
   async function getOrdersForStore(ownerPubkey: string): Promise<Order[]> {
     try {
-      // Query for orders tagged with this owner's pubkey
       const filter = {
         kinds: [NOSTR_KINDS.ORDER],
         "#p": [ownerPubkey],
@@ -1157,22 +1774,12 @@ export function useNostrData() {
       const orders: Order[] = [];
 
       for (const event of events) {
-        try {
-          const isEncrypted =
-            event.tags.find((t) => t[0] === "encrypted")?.[1] === "true";
-          const data = isEncrypted
-            ? await decryptData<Order>(event.content)
-            : JSON.parse(event.content);
-
-          if (data && data.id) {
-            orders.push(data);
-          }
-        } catch {
-          // Skip invalid events
+        const order = await parseOrderEvent(event);
+        if (order) {
+          orders.push(order);
         }
       }
 
-      // Sort by date descending
       return orders.sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       );
@@ -1607,26 +2214,203 @@ export function useNostrData() {
   }
 
   // ============================================
+  // 🔄 BDGO-OS DATA MODEL NORMALIZERS
+  // Maps bdgo-os entity fields to bnos-space types
+  // ============================================
+
+  const isBdgoOsSettings = (data: Record<string, unknown>): boolean => {
+    return (
+      typeof data.name === "string" &&
+      typeof data.currency === "string" &&
+      ("storeId" in data ||
+        "businessModel" in data ||
+        "businessType" in data ||
+        "taxInclusive" in data ||
+        "currencySymbol" in data)
+    );
+  };
+
+  const normalizeBdgoOsSettings = (
+    raw: Record<string, unknown>,
+  ): StoreSettings => {
+    const address = raw.address as Record<string, unknown> | undefined;
+    return {
+      companyName: (raw.name as string) || undefined,
+      companyEmail: (raw.email as string) || undefined,
+      companyPhone: (raw.phone as string) || undefined,
+      companyAddress:
+        typeof raw.address === "string"
+          ? (raw.address as string)
+          : [address?.street, address?.city, address?.country]
+              .filter(Boolean)
+              .join(", ") || undefined,
+      defaultCurrency: (raw.currency as string) || "LAK",
+      defaultLanguage: (raw.locale as string) || "en-US",
+      timezone: (raw.timezone as string) || "Asia/Vientiane",
+      marketplace: {
+        shopType: (raw.businessType as string) || undefined,
+        platformTag: "bdgo-os",
+      },
+      updatedAt: new Date().toISOString(),
+    } as StoreSettings;
+  };
+
+  const isBdgoOsBranch = (data: Record<string, unknown>): boolean => {
+    return "storeId" in data && typeof data.storeId === "string";
+  };
+
+  const normalizeBdgoOsBranch = (
+    raw: Record<string, unknown>,
+    event?: Event,
+  ): Branch => {
+    const address = raw.address as Record<string, unknown> | undefined;
+    return {
+      id:
+        (raw.id as string) ||
+        (event ? getTagVal(event.tags, "d") || "" : ""),
+      name: (raw.name as string) || "Main Branch",
+      code: (raw.code as string) || "main",
+      nostrPubkey: (raw.managerPubkey as string) || undefined,
+      address:
+        typeof raw.address === "string"
+          ? (raw.address as string)
+          : [address?.street, address?.city, address?.country]
+              .filter(Boolean)
+              .join(", ") || undefined,
+      status:
+        raw.status === "active" || raw.status === "inactive"
+          ? (raw.status as "active" | "inactive")
+          : "active",
+    };
+  };
+
+  const isBdgoOsStaff = (data: Record<string, unknown>): boolean => {
+    return (
+      "companyId" in data &&
+      typeof data.companyId === "string" &&
+      "branchIds" in data &&
+      Array.isArray(data.branchIds)
+    );
+  };
+
+  const normalizeBdgoOsStaff = (
+    raw: Record<string, unknown>,
+    event?: Event,
+  ): StoreUser => {
+    const roleMap: Record<string, string> = {
+      owner: "owner",
+      admin: "admin",
+      manager: "admin",
+      cashier: "cashier",
+      waiter: "staff",
+      staff: "staff",
+      viewer: "staff",
+    };
+    const mappedRole =
+      roleMap[(raw.role as string) || ""] || "staff";
+
+    const branchIds = Array.isArray(raw.branchIds)
+      ? (raw.branchIds as string[])
+      : [];
+    const createdAt = (raw.createdAt as number) || Date.now() / 1000;
+
+    return {
+      id:
+        (raw.id as string) ||
+        (event ? getTagVal(event.tags, "d") || "" : ""),
+      name:
+        (raw.displayName as string) ||
+        (raw.name as string) ||
+        "Staff",
+      email: (raw.email as string) || undefined,
+      role: mappedRole as StoreUser["role"],
+      permissions: {} as UserPermissions,
+      branchId: branchIds[0] || undefined,
+      isActive: raw.status === "active",
+      avatar: (raw.avatar as string) || undefined,
+      createdAt: new Date(createdAt * 1000).toISOString(),
+      updatedAt: new Date(
+        ((raw.updatedAt as number) || createdAt) * 1000,
+      ).toISOString(),
+      authMethod: "nostr" as const,
+      pubkeyHex: (raw.pubkey as string) || undefined,
+      npub: (raw.npub as string) || undefined,
+    };
+  };
+
+  // ============================================
   // ⚙️ SETTINGS OPERATIONS
   // ============================================
 
   async function saveSettings(settings: StoreSettings): Promise<Event | null> {
+    const company = useCompany();
     const companyTags = await buildCompanyTags();
+    const bdgoOsTags: string[][] = [
+      ["t", "bdgoos"],
+      ["t", "pos"],
+      ["t", "organization"],
+      ["encrypted", "true"],
+    ];
+    if (settings.companyName) {
+      bdgoOsTags.push(["n", settings.companyName]);
+    }
+    if (company.companyCode.value) {
+      bdgoOsTags.push(["n", company.companyCode.value]);
+    }
     return publishReplaceableEvent(
       NOSTR_KINDS.STORE_SETTINGS,
       settings,
       "store-settings",
-      companyTags,
+      [...companyTags, ...bdgoOsTags],
       true,
     );
   }
 
   async function getSettings(): Promise<StoreSettings | null> {
-    const result = await getReplaceableEvent<StoreSettings>(
+    const company = useCompany();
+
+    const result = await getReplaceableEvent<Record<string, unknown>>(
       NOSTR_KINDS.STORE_SETTINGS,
       "store-settings",
     );
-    return result?.data || null;
+
+    if (result?.data) {
+      return isBdgoOsSettings(result.data)
+        ? normalizeBdgoOsSettings(result.data)
+        : (result.data as unknown as StoreSettings);
+    }
+
+    if (
+      company.hasCompanyCode.value &&
+      company.isCompanyCodeEnabled.value &&
+      company.companyCodeHash.value
+    ) {
+      try {
+        const cTags = [company.companyCodeHash.value];
+        const discoveredIds = await discoverCompanyIdsFromRelay();
+        for (const id of discoveredIds) {
+          if (!cTags.includes(id)) cTags.push(id);
+        }
+
+        const events = await relay.queryEvents({
+          kinds: [NOSTR_KINDS.STORE_SETTINGS],
+          "#c": cTags,
+          limit: 20,
+        } as Parameters<typeof relay.queryEvents>[0]);
+
+        for (const event of events) {
+          const data = await parseEventContent<Record<string, unknown>>(event);
+          if (!data) continue;
+          return isBdgoOsSettings(data)
+            ? normalizeBdgoOsSettings(data)
+            : (data as unknown as StoreSettings);
+        }
+      } catch (e) {
+        console.warn("[NostrData] bdgo-os settings query failed:", e);
+      }
+    }
+
+    return null;
   }
 
   // ============================================
@@ -1635,16 +2419,108 @@ export function useNostrData() {
 
   async function saveBranch(branch: Branch): Promise<Event | null> {
     const companyTags = await buildCompanyTags();
+    const bdgoOsTags: string[][] = [
+      ["t", "bdgoos"],
+      ["t", "pos"],
+      ["t", "organization"],
+      ["b", branch.code],
+      ["branch", branch.code],
+    ];
+    if (branch.nostrPubkey) {
+      bdgoOsTags.push(["p", branch.nostrPubkey]);
+    }
     return publishReplaceableEvent(NOSTR_KINDS.BRANCH, branch, branch.id, [
       ["name", branch.name],
       ["code", branch.code],
       ...companyTags,
+      ...bdgoOsTags,
     ]);
   }
 
   async function getAllBranches(): Promise<Branch[]> {
-    const results = await getAllEventsOfKind<Branch>(NOSTR_KINDS.BRANCH);
-    return results.map((r) => r.data);
+    const company = useCompany();
+    const seenIds = new Set<string>();
+    const branches: Branch[] = [];
+
+    const addBranch = (branch: Branch | null) => {
+      if (branch && branch.id && !seenIds.has(branch.id)) {
+        seenIds.add(branch.id);
+        branches.push(branch);
+      }
+    };
+
+    const ownResults = await getAllEventsOfKind<Record<string, unknown>>(
+      NOSTR_KINDS.BRANCH,
+    );
+    for (const { event, data } of ownResults) {
+      addBranch(
+        isBdgoOsBranch(data)
+          ? normalizeBdgoOsBranch(data, event)
+          : (data as unknown as Branch),
+      );
+    }
+
+    if (
+      company.hasCompanyCode.value &&
+      company.isCompanyCodeEnabled.value &&
+      company.companyCodeHash.value
+    ) {
+      try {
+        const cTags = [company.companyCodeHash.value];
+        const discoveredIds = await discoverCompanyIdsFromRelay();
+        for (const id of discoveredIds) {
+          if (!cTags.includes(id)) cTags.push(id);
+        }
+
+        const events = await relay.queryEvents({
+          kinds: [NOSTR_KINDS.BRANCH],
+          "#c": cTags,
+          limit: 200,
+        } as Parameters<typeof relay.queryEvents>[0]);
+
+        for (const event of events) {
+          try {
+            const data = await parseEventContent<Record<string, unknown>>(event);
+            if (!data) continue;
+            addBranch(
+              isBdgoOsBranch(data)
+                ? normalizeBdgoOsBranch(data, event)
+                : (data as unknown as Branch),
+            );
+          } catch {}
+        }
+      } catch (e) {
+        console.warn("[NostrData] bdgo-os branch query failed:", e);
+      }
+    }
+
+    return branches;
+  }
+
+  async function parseEventContent<T>(event: Event): Promise<T | null> {
+    try {
+      const parsed = JSON.parse(event.content);
+      const isBdgoEnvelope =
+        parsed.encrypted === true &&
+        parsed.scheme === "bdgoos.local-company-key.v1" &&
+        parsed.ciphertext;
+
+      if (isBdgoEnvelope) {
+        const result = await decryptData<T>(event.content);
+        return result;
+      }
+
+      const isBnosEncrypted =
+        (parsed.v === 1 || parsed.v === 2) && parsed.ct;
+      if (isBnosEncrypted) {
+        const result = await decryptData<T>(event.content);
+        return result;
+      }
+
+      return parsed as T;
+    } catch {
+      return null;
+    }
   }
 
   // ============================================
@@ -1652,7 +2528,19 @@ export function useNostrData() {
   // ============================================
 
   async function saveStaff(staff: StoreUser): Promise<Event | null> {
+    const company = useCompany();
     const companyTags = await buildCompanyTags();
+    const bdgoOsTags: string[][] = [
+      ["t", "bdgoos"],
+      ["t", "pos"],
+      ["t", "staff"],
+    ];
+    if (staff.branchId) {
+      bdgoOsTags.push(["b", staff.branchId], ["branch", staff.branchId]);
+    }
+    if (company.companyCode.value) {
+      bdgoOsTags.push(["n", company.companyCode.value]);
+    }
 
     return publishReplaceableEvent(
       NOSTR_KINDS.STAFF_MEMBER,
@@ -1663,15 +2551,69 @@ export function useNostrData() {
         ["role", staff.role],
         staff.pubkeyHex ? ["p", staff.pubkeyHex] : [],
         ...companyTags,
+        ...bdgoOsTags,
       ].filter((t) => t.length > 0) as string[][],
     );
   }
 
   async function getAllStaff(): Promise<StoreUser[]> {
-    const results = await getAllEventsOfKind<StoreUser>(
+    const company = useCompany();
+    const seenIds = new Set<string>();
+    const staff: StoreUser[] = [];
+
+    const addStaff = (s: StoreUser | null) => {
+      if (s && s.id && !seenIds.has(s.id) && s.isActive) {
+        seenIds.add(s.id);
+        staff.push(s);
+      }
+    };
+
+    const ownResults = await getAllEventsOfKind<Record<string, unknown>>(
       NOSTR_KINDS.STAFF_MEMBER,
     );
-    return results.map((r) => r.data).filter((s) => s.isActive);
+    for (const { event, data } of ownResults) {
+      addStaff(
+        isBdgoOsStaff(data)
+          ? normalizeBdgoOsStaff(data, event)
+          : (data as unknown as StoreUser),
+      );
+    }
+
+    if (
+      company.hasCompanyCode.value &&
+      company.isCompanyCodeEnabled.value &&
+      company.companyCodeHash.value
+    ) {
+      try {
+        const cTags = [company.companyCodeHash.value];
+        const discoveredIds = await discoverCompanyIdsFromRelay();
+        for (const id of discoveredIds) {
+          if (!cTags.includes(id)) cTags.push(id);
+        }
+
+        const events = await relay.queryEvents({
+          kinds: [NOSTR_KINDS.STAFF_MEMBER],
+          "#c": cTags,
+          limit: 200,
+        } as Parameters<typeof relay.queryEvents>[0]);
+
+        for (const event of events) {
+          try {
+            const data = await parseEventContent<Record<string, unknown>>(event);
+            if (!data) continue;
+            addStaff(
+              isBdgoOsStaff(data)
+                ? normalizeBdgoOsStaff(data, event)
+                : (data as unknown as StoreUser),
+            );
+          } catch {}
+        }
+      } catch (e) {
+        console.warn("[NostrData] bdgo-os staff query failed:", e);
+      }
+    }
+
+    return staff;
   }
 
   /**
@@ -1889,6 +2831,8 @@ export function useNostrData() {
     error.value = null;
 
     try {
+      await importKeyGrantsForCurrentUser();
+
       const [products, categories, orders, customers] = await Promise.all([
         getAllProducts(),
         getAllCategories(),
@@ -1914,12 +2858,7 @@ export function useNostrData() {
     }
   }
 
-  /**
-   * Subscribe to real-time updates
-   * ENHANCED: Now supports team sync via company code hash tag
-   * This allows all staff in the same company to receive each other's updates
-   */
-  function subscribeToUpdates(callbacks: {
+  async function subscribeToUpdates(callbacks: {
     onProduct?: (product: Product) => void;
     onOrder?: (order: Order) => void;
     onCustomer?: (customer: LoyaltyMember) => void;
@@ -1929,35 +2868,79 @@ export function useNostrData() {
 
     const company = useCompany();
 
-    // Build filter based on company mode
-    // If company code is enabled, filter by company tag to get ALL team updates
-    // Otherwise, filter by author only (personal mode)
     const filter: Record<string, unknown> = {
       kinds: [NOSTR_KINDS.PRODUCT, NOSTR_KINDS.ORDER, NOSTR_KINDS.CUSTOMER],
-      since: Math.floor(Date.now() / 1000),
+      since: Math.floor(Date.now() / 1000) - 300,
     };
 
     if (company.isCompanyCodeEnabled.value && company.companyCodeHash.value) {
-      // TEAM MODE: Subscribe to all events with the company code tag
-      // This enables cross-device sync between all staff members
-      filter["#c"] = [company.companyCodeHash.value];
+      const cTags = [company.companyCodeHash.value];
+
+      discoverCompanyIdsFromRelay()
+        .then((discoveredIds) => {
+          for (const id of discoveredIds) {
+            if (!cTags.includes(id)) cTags.push(id);
+          }
+        })
+        .catch(() => {});
+
+      filter["#c"] = cTags;
       console.log(
-        "[NostrData] Subscribing to team updates with company hash:",
-        company.companyCodeHash.value.slice(0, 8) + "...",
+        "[NostrData] Subscribing to team + cross-app updates with company tags:",
+        cTags.length,
+        "IDs",
       );
     } else {
-      // PERSONAL MODE: Only subscribe to own events
       filter.authors = [keys.pubkey];
       console.log("[NostrData] Subscribing to personal updates only");
     }
 
-    return relay.subscribeToEvents(
+    await relay.subscribeToEvents(
+      {
+        kinds: [NOSTR_KINDS.COMPANY_KEY_GRANT],
+        ["#p"]: [keys.pubkey],
+        since: Math.floor(Date.now() / 1000) - 300,
+      } as Parameters<typeof relay.subscribeToEvents>[0],
+      {
+        onevent: async (event) => {
+          if (event.kind !== NOSTR_KINDS.COMPANY_KEY_GRANT) return;
+          if (!keys.privkey) return;
+
+          try {
+            const grant = JSON.parse(event.content) as {
+              recipientPubkey: string;
+              wrappedKey: string;
+              keyId: string;
+              revokedAt?: number;
+            };
+            if (grant.recipientPubkey !== keys.pubkey || grant.revokedAt) return;
+
+            const decryptedBase64Url = await nip44Decrypt(
+              event.pubkey,
+              grant.wrappedKey,
+              keys.privkey,
+            );
+            const rawKey = fromBase64Url(decryptedBase64Url);
+            storeBdgoOsKey(grant.keyId, rawKey);
+
+            console.log(
+              "[NostrData] 🔑 Real-time key grant imported:",
+              grant.keyId,
+            );
+          } catch (e) {
+            console.warn(
+              "[NostrData] Failed to process real-time key grant:",
+              e,
+            );
+          }
+        },
+      },
+    );
+
+    return await relay.subscribeToEvents(
       filter as Parameters<typeof relay.subscribeToEvents>[0],
       {
         onevent: async (event) => {
-          // In team mode, we process ALL events including our own
-          // (staff may share same keys, and we want updates from all devices)
-          // In personal mode, skip own events
           const isTeamMode = company.isCompanyCodeEnabled.value;
           if (!isTeamMode && event.pubkey === keys.pubkey) {
             return;
@@ -1978,12 +2961,10 @@ export function useNostrData() {
 
             let data;
             if (isEncrypted) {
-              // Try company code decryption first for team data
               if (company.isCompanyCodeEnabled.value) {
                 try {
                   const payload = JSON.parse(event.content);
                   if (payload.v === 4) {
-                    // Company-code encrypted
                     data = await company.decryptWithCode(
                       payload.ct,
                       company.companyCode.value || "",
@@ -2007,13 +2988,22 @@ export function useNostrData() {
               case NOSTR_KINDS.PRODUCT:
                 callbacks.onProduct?.(data as Product);
                 break;
-              case NOSTR_KINDS.ORDER:
-                console.log(
-                  "[NostrData] 📨 Real-time order update received:",
-                  (data as Order).id?.slice(-8),
-                );
-                callbacks.onOrder?.(data as Order);
+              case NOSTR_KINDS.ORDER: {
+                const record = data as unknown as Record<string, unknown>;
+                const order = isBdgoOsOrder(record)
+                  ? normalizeBdgoOsOrder(record, event.pubkey)
+                  : (data as Order);
+                if (order) {
+                  console.log(
+                    "[NostrData] 📨 Real-time order update received:",
+                    order.id?.slice(-8),
+                    "source:",
+                    isBdgoOsOrder(record) ? "bdgo-os" : "bnos-space",
+                  );
+                  callbacks.onOrder?.(order);
+                }
                 break;
+              }
               case NOSTR_KINDS.CUSTOMER:
                 callbacks.onCustomer?.(data as LoyaltyMember);
                 break;
@@ -2065,6 +3055,7 @@ export function useNostrData() {
 
     // Orders
     saveOrder,
+    savePayment,
     saveOrderAsAnonymous,
     getOrder,
     getAllOrders,
@@ -2126,6 +3117,10 @@ export function useNostrData() {
     // Cross-app company discovery
     discoverCompanyIdsFromRelay,
     buildCompanyTags,
+
+    // bdgo-os key grant import
+    importKeyGrantsForCurrentUser,
+    getBdgoOsKeyIds,
 
     // Constants
     NOSTR_KINDS,

@@ -45,6 +45,11 @@ const marketplace = useMarketplace();
 const nostrUser = useNostrUser();
 const offline = useOffline();
 const nostrRelay = useNostrRelay();
+const setupRelayOptions = computed(() =>
+  nostrRelay.relayConfigs.value.length
+    ? nostrRelay.relayConfigs.value
+    : nostrRelay.DEFAULT_RELAYS,
+);
 
 // ============ State ============
 const currentStep = ref(0);
@@ -89,9 +94,6 @@ const marketplaceForm = reactive({
 
 const generatedCompanyCode = ref("");
 const selectedRelayUrl = ref<string>("");
-
-// Debug mode
-const isWorkspaceMode = computed(() => props.mode === "workspace");
 
 // ============ Steps Configuration ============
 interface WizardStep {
@@ -569,7 +571,6 @@ const completeSetup = async () => {
 
     // Sync products to Nostr if templates were applied
     if (applyTemplates.value && props.mode !== "workspace") {
-      const offline = useOffline();
       if (offline.isOnline.value) {
         try {
           console.log("[ShopSetup] Syncing products to Nostr...");
@@ -632,8 +633,8 @@ onMounted(async () => {
     selectedRelayUrl.value = savedRelay;
   } else if (nostrRelay.primaryRelay.value) {
     selectedRelayUrl.value = nostrRelay.primaryRelay.value;
-  } else if (nostrRelay.DEFAULT_RELAYS.length > 0) {
-    selectedRelayUrl.value = nostrRelay.DEFAULT_RELAYS[0]?.url || "";
+  } else if (setupRelayOptions.value.length > 0) {
+    selectedRelayUrl.value = setupRelayOptions.value[0]?.url || "";
   }
 
   // Always generate new company code for new workspace
@@ -771,7 +772,7 @@ onMounted(async () => {
 
           <div class="space-y-3">
             <button
-              v-for="relay in nostrRelay.DEFAULT_RELAYS"
+              v-for="relay in setupRelayOptions"
               :key="relay.url"
               type="button"
               class="w-full p-4 rounded-xl border-2 transition-all duration-200 text-left active:scale-[0.98]"

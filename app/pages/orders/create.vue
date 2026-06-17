@@ -678,6 +678,27 @@ const processOrder = async () => {
   }
 };
 
+// Warn before leaving with unsaved cart items
+const hasUnsavedChanges = computed(() => cart.value.length > 0);
+
+onBeforeRouteLeave(() => {
+  if (hasUnsavedChanges.value) {
+    if (!confirm(t('orders.unsavedChanges', 'You have unsaved items in your order. Are you sure you want to leave?'))) {
+      return false;
+    }
+  }
+});
+
+onMounted(() => {
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (hasUnsavedChanges.value) {
+      e.preventDefault();
+    }
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  onUnmounted(() => window.removeEventListener("beforeunload", handleBeforeUnload));
+});
+
 // Keyboard shortcuts
 onMounted(() => {
   const handleKeydown = (e: KeyboardEvent) => {
@@ -2170,20 +2191,21 @@ onMounted(() => {
     <!-- ============ PAYMENT MODAL ============ -->
     <UModal v-model:open="showPaymentModal" :ui="{ width: 'sm:max-w-md' }">
       <template #content>
-        <div class="p-6">
+        <div class="p-6 bg-white dark:bg-gray-900">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold">Record Payment</h3>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Record Payment</h3>
             <UButton
               icon="i-heroicons-x-mark"
               variant="ghost"
+              color="gray"
               @click="showPaymentModal = false"
             />
           </div>
           <div
             class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6 text-center"
           >
-            <p class="text-sm text-gray-500 mb-1">Amount Due</p>
-            <p class="text-3xl font-bold text-primary-600">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Amount Due</p>
+            <p class="text-3xl font-bold text-primary-600 dark:text-primary-400">
               {{ formatCurrency(total, "LAK") }}
             </p>
           </div>
@@ -2194,8 +2216,8 @@ onMounted(() => {
               class="p-3 rounded-lg border text-center transition-all"
               :class="
                 selectedPaymentMethod === method.value
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-gray-200'
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               "
               @click="selectedPaymentMethod = method.value as PaymentMethod"
             >
@@ -2206,17 +2228,20 @@ onMounted(() => {
           <div class="flex gap-3">
             <UButton
               variant="outline"
-              class="flex-1"
+              color="gray"
+              block
               @click="showPaymentModal = false"
-              >Cancel</UButton
             >
+              Cancel
+            </UButton>
             <UButton
               color="green"
-              class="flex-1"
+              block
               :loading="processing"
               @click="processOrder"
-              >Confirm Payment</UButton
             >
+              Confirm Payment
+            </UButton>
           </div>
         </div>
       </template>

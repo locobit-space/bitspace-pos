@@ -696,7 +696,7 @@ onMounted(async () => {
   });
 
   // Subscribe to real-time updates
-  unsubscribe = subscribeToLogs();
+  unsubscribe = await subscribeToLogs();
 });
 
 onUnmounted(() => {

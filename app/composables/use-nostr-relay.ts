@@ -17,11 +17,10 @@ import type { RelayConfig } from "~/types";
 const STORAGE_KEY = "bitspace_relays";
 const SELECTED_RELAY_KEY = "bitspace_selected_relay";
 
-const {
-  public: { devRelayUrl = "" },
-} = useRuntimeConfig();
-
-const _devRelays = devRelayUrl ? devRelayUrl.split(",") : [];
+const _devRelays = (import.meta.env.NUXT_PUBLIC_DEV_RELAY_URL || "")
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
 
 // Default relay configurations
 const _DEFAULT_DEV: RelayConfig[] = [
@@ -42,55 +41,10 @@ const _DEFAULT_DEV: RelayConfig[] = [
   })) || []),
 ];
 
-const _DEFAULT_PROD: RelayConfig[] = [
-  {
-    url: "wss://relay.bnos.space",
-    read: true,
-    write: true,
-    outbox: false,
-    isPrimary: true,
-  },
-  {
-    url: "wss://relay.damus.io",
-    read: true,
-    write: true,
-    outbox: false,
-    isPrimary: false,
-  },
-  {
-    url: "wss://nos.lol",
-    read: true,
-    write: true,
-    outbox: false,
-    isPrimary: false,
-  },
-  {
-    url: "wss://nostr-01.yakihonne.com",
-    read: true,
-    write: false,
-    outbox: false,
-    isPrimary: false,
-  },
-  {
-    url: "wss://nostr-pub.wellorder.net",
-    read: true,
-    write: false,
-    outbox: false,
-    isPrimary: false,
-  },
-  {
-    url: "wss://yabu.me",
-    read: true,
-    write: false,
-    outbox: false,
-    isPrimary: false,
-  },
-];
-
-// Default relays - Use dev relays in development, prod relays in production
+// Default relays - Only use dev relays in development.
 const DEFAULT_RELAYS: RelayConfig[] = import.meta.dev
   ? _DEFAULT_DEV
-  : _DEFAULT_PROD;
+  : [];
 
 // ============================================
 // 🔄 SHARED STATE (singleton pattern)
@@ -292,16 +246,6 @@ export const useNostrRelay = () => {
         });
       }
 
-      // Also ensure defaults are present (but don't override if already configured)
-      for (const defaultRelay of DEFAULT_RELAYS) {
-        if (!currentMap.has(defaultRelay.url)) {
-          currentMap.set(defaultRelay.url, {
-            ...defaultRelay,
-            status: "disconnected",
-          });
-        }
-      }
-
       relayConfigs.value = Array.from(currentMap.values());
 
       // Save merged result to localStorage
@@ -395,12 +339,15 @@ export const useNostrRelay = () => {
   function removeRelay(url: string): boolean {
     const index = relayConfigs.value.findIndex((r) => r.url === url);
     if (index !== -1) {
-      const wasPrimary = relayConfigs.value[index].isPrimary;
+      const relayToRemove = relayConfigs.value[index];
+      if (!relayToRemove) return true;
+      const wasPrimary = relayToRemove.isPrimary;
       relayConfigs.value.splice(index, 1);
 
       // If removed relay was primary, set first relay as primary
-      if (wasPrimary && relayConfigs.value.length > 0) {
-        relayConfigs.value[0].isPrimary = true;
+      const firstRelay = relayConfigs.value[0];
+      if (wasPrimary && firstRelay) {
+        firstRelay.isPrimary = true;
       }
 
       // Save to localStorage
@@ -514,7 +461,7 @@ export const useNostrRelay = () => {
   /**
    * Subscribe to events from relays
    */
-  function subscribeToEvents(
+  async function subscribeToEvents(
     filter: Filter,
     callbacks: {
       onevent: (event: Event) => void;
@@ -522,9 +469,20 @@ export const useNostrRelay = () => {
     },
     selectedRelays?: string[],
   ) {
+    if (!isInitialized.value) {
+      await init();
+    }
+
+    const useRelays = selectedRelays || readRelays.value;
+    if (useRelays.length === 0) {
+      console.warn(
+        "[NostrRelay] ⚠️ subscribeToEvents called with no relays — subscription skipped",
+      );
+      return null;
+    }
+
     try {
-      const useRelays = selectedRelays || readRelays.value;
-      const sub = pool.subscribeMany(useRelays, [filter], {
+      const sub = pool.subscribeMany(useRelays, [filter] as any, {
         onevent: (event) => {
           console.log(
             "[NostrRelay] 📨 Event received, kind:",

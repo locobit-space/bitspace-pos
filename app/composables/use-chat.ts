@@ -114,9 +114,23 @@ export function useChat() {
   const usersStore = useUsers();
   const nostrKey = useNostrKey();
   const sound = useSound();
-  const { DEFAULT_RELAYS } = useNostrRelay();
+  const relayConfig = useNostrRelay();
   const nostrData = useNostrData();
   const company = useCompany();
+
+  const getRelayUrls = async (
+    mode: "read" | "write" | "all" = "all",
+  ): Promise<string[]> => {
+    await relayConfig.init();
+    const read = relayConfig.readRelays.value;
+    const write = relayConfig.writeRelays.value;
+    const configured = relayConfig.relays.value;
+
+    if (mode === "read") return read.length ? [...read] : [...configured];
+    if (mode === "write") return write.length ? [...write] : [...configured];
+
+    return [...new Set([...configured, ...read, ...write])];
+  };
 
   // ============================================
   // State
@@ -386,7 +400,7 @@ export function useChat() {
       return reactionsMap;
     }
 
-    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const relayUrls = await getRelayUrls("read");
 
     try {
       // Query for reactions (kind 7) that reference these messages
@@ -454,7 +468,7 @@ export function useChat() {
       return;
     }
 
-    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const relayUrls = await getRelayUrls("read");
 
     try {
       // Collect all events from different filter queries
@@ -599,7 +613,7 @@ export function useChat() {
       return;
     }
 
-    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const relayUrls = await getRelayUrls("read");
     const conversationId = generateConversationId(keys.pubkey, otherPubkey);
 
     try {
@@ -827,7 +841,7 @@ export function useChat() {
       const encryptedContent = await encryptMessage(content, recipientPubkey);
 
       // Publish encrypted DM via Nostr relay
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("write");
 
       const privateKeyHex = nostrKey.decodePrivateKey(keys.privkey);
       const privateKey = hexToBytes(privateKeyHex);
@@ -1088,7 +1102,7 @@ export function useChat() {
       };
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("write");
       const pubs = $nostr.pool.publish(relayUrls, signedEvent);
       await Promise.race(pubs).catch(() => null);
 
@@ -1238,7 +1252,7 @@ export function useChat() {
       if (!keys?.privkey || !$nostr?.pool) return false;
 
       // Query for the channel creator (who created the channel)
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("read");
       const channelCreationEvents = await $nostr.pool.querySync(relayUrls, {
         kinds: [NOSTR_KINDS.CHANNEL_CREATE],
         ids: [channelId],
@@ -1356,7 +1370,7 @@ export function useChat() {
       };
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("write");
 
       const pubs = $nostr.pool.publish(relayUrls, signedEvent);
 
@@ -1516,7 +1530,7 @@ export function useChat() {
       };
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("write");
       const pubs = $nostr.pool.publish(relayUrls, signedEvent);
       await Promise.race(pubs).catch(() => null);
     } catch (e) {
@@ -1624,7 +1638,7 @@ export function useChat() {
       };
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("write");
       const pubs = $nostr.pool.publish(relayUrls, signedEvent);
       await Promise.race(pubs).catch(() => null);
 
@@ -1717,7 +1731,7 @@ export function useChat() {
       };
 
       const signedEvent = $nostr.finalizeEvent(eventTemplate, privateKey);
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("write");
       const pubs = $nostr.pool.publish(relayUrls, signedEvent);
       await Promise.race(pubs).catch(() => null);
 
@@ -1852,7 +1866,7 @@ export function useChat() {
       return;
     }
 
-    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const relayUrls = await getRelayUrls("read");
 
     // Get known contact pubkeys for DM subscription
     const contactPubkeys = availableContacts.value
@@ -2023,7 +2037,7 @@ export function useChat() {
     const currentPubkey = usersStore.currentUser.value?.pubkeyHex;
     if (!currentPubkey) return;
 
-    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const relayUrls = await getRelayUrls("read");
     const now = Math.floor(Date.now() / 1000);
 
     try {
@@ -2196,7 +2210,7 @@ export function useChat() {
           // Fetch channel metadata BEFORE creating to get isPrivate and key
           if ($nostr?.pool) {
             try {
-              const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+              const relayUrls = await getRelayUrls("read");
               const channelMetadata = await $nostr.pool.querySync(relayUrls, {
                 kinds: [NOSTR_KINDS.CHANNEL_CREATE],
                 ids: [channelId],
@@ -3001,7 +3015,7 @@ export function useChat() {
         return false;
       }
 
-      const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+      const relayUrls = await getRelayUrls("read");
       let newEventsCount = 0;
 
       if (conv.type === "channel" || conv.type === "group") {
@@ -3337,7 +3351,7 @@ export function useChat() {
     // Publish deletion events to Nostr
     if (keys?.pubkey && keys?.privkey && $nostr?.pool) {
       try {
-        const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+        const relayUrls = await getRelayUrls("all");
         const privateKey = hexToBytes(nostrKey.decodePrivateKey(keys.privkey));
 
         // If it's a channel and user is the creator, delete the channel itself
@@ -3522,7 +3536,7 @@ export function useChat() {
       return;
     }
 
-    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const relayUrls = await getRelayUrls("read");
     const teamTag = `team:${company.companyCodeHash.value}`;
 
     console.log(
@@ -3695,7 +3709,7 @@ export function useChat() {
       return;
     }
 
-    const relayUrls = DEFAULT_RELAYS.map((r) => r.url);
+    const relayUrls = await getRelayUrls("read");
 
     // Check relay connection status
     for (const url of relayUrls) {
